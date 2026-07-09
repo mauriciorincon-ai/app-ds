@@ -1,0 +1,14 @@
+{
+  "app": {
+    "name": "Probeta DS",
+    "tagline": "Honest data science, end to end."
+  },
+  "landing": {
+    "lead": "Load your data, train a model and get an honest verdict on whether it works. Everything runs in your browser; your data never leaves it."
+  },
+  "language": {
+    "label": "Language",
+    "es": "Español",
+    "en": "English"
+  }
+}

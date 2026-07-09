@@ -6,9 +6,12 @@ build/
 coverage/
 playwright-report/
 test-results/
+# Assets de Pyodide self-hosteados: generados en prebuild desde node_modules.
+public/pyodide/
 .env
 .env.local
 .env.*.local
+.claude/settings.local.json
 *.tsbuildinfo
 .vercel/
 .DS_Store

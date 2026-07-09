@@ -1,0 +1,14 @@
+{
+  "app": {
+    "name": "Probeta DS",
+    "tagline": "Ciencia de datos honesta, de principio a fin."
+  },
+  "landing": {
+    "lead": "Carga tus datos, entrena un modelo y recibe un veredicto honesto de si sirve. Todo corre en tu navegador; tus datos nunca salen de él."
+  },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English"
+  }
+}
