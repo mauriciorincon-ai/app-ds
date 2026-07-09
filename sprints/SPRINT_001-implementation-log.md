@@ -177,5 +177,31 @@ worker anterior (por eso `lib/experiment.ts` reemplazó a `workers/pyodide-worke
 ejemplo → objetivo → entrenar → veredicto. **axe limpio** (arreglada una violación `empty-table-header`
 en la esquina de la matriz de confusión → `<td>`).
 
-_(pendiente: gate visual final del usuario sobre la app corriendo → cerrar Fase 2 → observabilidad
-Sentry (Fase 3) → ADRs + manual + deploy-check (Fase 4))_
+**Gate de diseño FINAL — ✅ APROBADO por el usuario** (2026-07-08) sobre la app real corriendo,
+mostrada como galería de capturas (Artifact): flujo del veredicto en desktop y móvil, claro y oscuro,
+casos _supera_ y _fuga_. Respuesta: "Aprobado — cierra Fase 2", sin ajustes. Auto-auditoría del
+checklist `diseno-ui` completa; consola limpia, axe sin violaciones, build de prod limpio.
+
+**Fase 2 CERRADA.**
+
+## Fase 3 — Integración + observabilidad (en curso)
+
+**Observabilidad — ✅ Sentry client-only, metadata-only.**
+
+- `@sentry/nextjs 10.64.0`, init en `instrumentation-client.ts` **solo si hay DSN** (en CI no está →
+  no inicializa, sin ruido). Sin backend en S1 → solo cliente; sin PII, sin tracing/replay.
+- **Privacidad (regla dura 2):** `beforeSend` elimina `request` y breadcrumbs (console/fetch/xhr) que
+  pudieran arrastrar valores. `lib/observability.ts::reportExperimentError` envía **solo** el tipo de
+  error + nº filas/columnas — **jamás** el mensaje crudo (un traceback de pandas podría filtrar nombres
+  de columnas). Test unit blinda ese contrato (`observability.test.ts`).
+- Cableado en `useExperiment`: los errores de runtime del worker se reportan con metadatos.
+- **Fricción (K12):** `@sentry/cli` trae un build script; pnpm 11 lo marca como error en el
+  deps-status check. Como no subo source maps, lo declaré ignorado (`allowBuilds: false` +
+  `ignoredBuiltDependencies` en `pnpm-workspace.yaml`). Sin source maps este sprint (deuda menor).
+- Gates: typecheck · lint · build · 62 unit tests · e2e happy path — todos verdes.
+- Nota: **Pino N/A** este sprint (es logger de servidor; la app es 100% cliente). El error-tracking
+  irrenunciable lo cubre Sentry. Pino entra cuando llegue backend (S2+).
+
+**Fase 3 CERRADA.**
+
+_(pendiente Fase 4: 3 ADRs · manual de uso · deploy-check · summary · PR)_

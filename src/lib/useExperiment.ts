@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { LeakageFinding } from "@/engine/leakage";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import { assembleResult, prepareRun, summarizeDataset } from "@/lib/experiment";
+import { reportExperimentError } from "@/lib/observability";
 import type {
   DatasetSummary,
   ExperimentResult,
@@ -74,6 +75,11 @@ export function useExperiment() {
         }));
       } else {
         console.error("[experiment] runtime", message.message);
+        const table = tableRef.current;
+        reportExperimentError(
+          "runtime",
+          table ? { rows: table.rows.length, cols: table.headers.length } : undefined,
+        );
         setState((s) => ({
           ...s,
           phase: "error",
