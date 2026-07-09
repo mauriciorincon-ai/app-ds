@@ -124,3 +124,18 @@ que es glue de navegador y se valida en el **e2e** — por eso se construye en e
 (su API de mensajes la moldea el consumo de la UI). El núcleo testeable de Fase 1 (motores + pipeline
 
 - garantía anti-fuga) está **completo y en CI**.
+
+### Puente Fase 1→2 — worker + self-host de Pyodide — ✅
+
+- `scripts/copy-pyodide.mjs` (self-host, decisión del ADR de cómputo): copia el runtime core +
+  resuelve el cierre de dependencias desde `pyodide-lock.json` y copia/descarga las 9 wheels
+  (pandas + scikit-learn + transitivas) + `pipeline.py` a `public/pyodide/` (gitignored, ~39 MB).
+  Corre en `prebuild`/`predev`; en CI descarga del CDN de Pyodide. Verificado local: 9 wheels + core.
+- `workers/protocol.ts` — contrato tipado UI↔worker (init · loadDataset · runExperiment; progress ·
+  dataset · result · error).
+- `workers/pyodide-worker.ts` — carga Pyodide bajo demanda desde `/pyodide/`, orquesta
+  parse → perfilado → split (engine) → `pipeline.py` → verdict (engine) → leakage (engine, sobre
+  train). La lógica pura ya está testeada; el runtime en navegador se valida con el **e2e** (Fase 3).
+- **Fricción de config (K10):** eslint lintaba los 39 MB de JS generado en `public/pyodide/`
+  (5905 problemas) → añadido `public/pyodide/**` a los `globalIgnores`.
+- Gates: typecheck · lint · build verdes con la copia real de 39 MB.

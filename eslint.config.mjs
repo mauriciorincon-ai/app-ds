@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Reportes generados (v8 coverage) — no son código fuente.
     "coverage/**",
+    // Assets de Pyodide self-hosteados (runtime WASM/JS generado en prebuild).
+    "public/pyodide/**",
   ]),
 ]);
 
