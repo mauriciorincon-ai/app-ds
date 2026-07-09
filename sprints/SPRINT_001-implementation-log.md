@@ -76,4 +76,22 @@ pytz, six) además de copiar el core. Se refina en el ADR del motor de cómputo.
 del kit era `src/lib/**`, no `*.ts`) → `PARSE_ERROR`. Corregido a `src/lib/**/*.ts` +
 `src/engine/**/*.ts`. Además K7 resuelto: el script `test` ahora pasa `--coverage`.
 
-_(pendiente: pipeline anti-fuga `.py` → csv/perfilado + worker → datasets → test de integración fit-solo-en-train)_
+**Datasets de ejemplo + ingesta — ✅ completos.**
+
+- `scripts/make-example-datasets.mjs` — generador seeded (reproducible, 100% sintético) →
+  `public/datasets/`: `marketing-campania.csv` y `rotacion-empleados.csv` (limpios, con señal real)
+  - `credito-fuga-plantada.csv` (**fuga plantada**: `monto_recuperado`, variable post-resultado,
+    proxy casi perfecto del objetivo). 200 filas c/u.
+- `lib/ds/csv.ts` — parser RFC-4180 (comillas, comas/saltos/comillas escapadas), límite de tamaño
+  honesto (5 MB / 50k filas), detección de filas irregulares, y perfilado (tipo, nulos,
+  cardinalidad, detección de columna de fecha). El parseo es en TS (fuente única) y Python recibirá
+  los registros ya parseados.
+- Tests: `csv.test.ts` (parseo/límites/perfilado) + `leakage-datasets.test.ts` que valida el
+  **criterio de aceptación sobre los datasets reales**: el de fuga marca `monto_recuperado`, los
+  limpios no disparan. **54 tests verdes**; cobertura global 98.7%.
+
+**Fricción de config (K9):** eslint lintaba el directorio generado `coverage/` (warning de directiva
+eslint-disable) → añadido `coverage/**` a los `globalIgnores` de `eslint.config.mjs`.
+
+_(pendiente: pipeline anti-fuga `.py` (fit-solo-en-train + baseline + RF + métricas test) → worker
+Pyodide → test de integración fit-solo-en-train)_

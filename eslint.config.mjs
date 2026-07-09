@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Reportes generados (v8 coverage) — no son código fuente.
+    "coverage/**",
   ]),
 ]);
 
