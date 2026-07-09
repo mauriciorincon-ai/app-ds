@@ -152,4 +152,30 @@ preview visual (Artifact: paleta + tipografía + el momento del veredicto en cla
 respuesta "Apruebo — construye las pantallas", sin ajustes. El gate final se re-corre sobre la app
 real corriendo al cerrar la fase.
 
-_(pendiente: tokens en globals.css → microcopy i18n → 5 pantallas → hook del worker → gate final)_
+**Implementación — ✅ construida y funcionando end-to-end.**
+
+- Tokens del design-system en `globals.css` (Tailwind 4 `@theme inline`, claro/oscuro por
+  `prefers-color-scheme`). Foco visible con el acento.
+- **Microcopy i18n ES/EN completo** de todo el flujo (start · config · training · results · errors),
+  con interpolación de `{placeholders}` añadida al provider. Test de paridad sigue verde.
+- **5 pantallas** (`src/components/`): StartScreen (dropzone + 3 ejemplos), ConfigScreen (preview +
+  perfilado + selección de objetivo + aviso de fecha), TrainingScreen (stepper honesto de 3 etapas),
+  ResultsScreen (VerdictBanner + tiles de métricas + matriz de confusión + alerta de fuga +
+  baselines), ErrorScreen. Header con LangToggle. Responsive (móvil + desktop, verificado en e2e).
+- **Orquestación pura y testeada** (`lib/experiment.ts`: summarizeDataset · prepareRun · assembleResult)
+  en el hilo principal + `useExperiment` (máquina de estados). **60 unit tests**, cobertura global 83%,
+  `experiment.ts` 100%.
+
+**K11 — fricción real de Turbopack + Pyodide (resuelta).** `new Worker(new URL(...))` bundleado por
+Turbopack se instancia como **worker clásico** (ignora `{ type: "module" }`), y Pyodide aborta con
+"classic web workers are not supported". **Solución:** el runner de Pyodide es un **module worker
+autónomo servido desde `public/pyodide-runner.js`** (no pasa por el bundler → module worker real que
+carga el runtime ESM). La orquestación pura se movió al hilo principal — **más testeable** que el
+worker anterior (por eso `lib/experiment.ts` reemplazó a `workers/pyodide-worker.ts`).
+
+**e2e happy path — ✅ VERDE en móvil y desktop** (~20 s c/u con carga real de Pyodide): elegir
+ejemplo → objetivo → entrenar → veredicto. **axe limpio** (arreglada una violación `empty-table-header`
+en la esquina de la matriz de confusión → `<td>`).
+
+_(pendiente: gate visual final del usuario sobre la app corriendo → cerrar Fase 2 → observabilidad
+Sentry (Fase 3) → ADRs + manual + deploy-check (Fase 4))_

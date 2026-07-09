@@ -3,12 +3,117 @@
     "name": "Probeta DS",
     "tagline": "Ciencia de datos honesta, de principio a fin."
   },
-  "landing": {
-    "lead": "Carga tus datos, entrena un modelo y recibe un veredicto honesto de si sirve. Todo corre en tu navegador; tus datos nunca salen de él."
-  },
   "language": {
     "label": "Idioma",
     "es": "Español",
     "en": "English"
+  },
+  "common": {
+    "loading": "Cargando…"
+  },
+  "start": {
+    "title": "Empieza tu experimento",
+    "subtitle": "Sube un CSV o elige un ejemplo. Todo corre en tu navegador; tus datos nunca salen de él.",
+    "dropzone": {
+      "label": "Arrastra un CSV aquí o haz clic para elegir",
+      "hint": "Hasta 5 MB o 50 000 filas",
+      "button": "Elegir archivo"
+    },
+    "examples": {
+      "title": "O empieza con un ejemplo",
+      "marketing": {
+        "name": "Campaña de marketing",
+        "desc": "¿Quién convierte? Señal real: el modelo supera al baseline."
+      },
+      "rotacion": {
+        "name": "Rotación de empleados",
+        "desc": "¿Quién renuncia? Un caso donde un modelo simple basta."
+      },
+      "credito": {
+        "name": "Incumplimiento de crédito",
+        "desc": "Trae una fuga plantada: mira cómo se detecta."
+      }
+    }
+  },
+  "config": {
+    "title": "Configura el experimento",
+    "summary": "{rows} filas · {cols} columnas",
+    "preview": "Vista previa",
+    "target": {
+      "label": "¿Qué quieres predecir?",
+      "placeholder": "Elige una columna…",
+      "help": "Debe ser una columna con dos categorías (sí/no, 0/1)."
+    },
+    "profile": {
+      "numeric": "numérica",
+      "categorical": "categórica",
+      "nulls": "{count} nulos",
+      "cardinality": "{count} distintos",
+      "date": "parece fecha"
+    },
+    "warnings": {
+      "date": "Detectamos columnas que parecen fecha ({cols}). En esta versión no se usan para dividir por tiempo; se ignoran como predictores."
+    },
+    "train": "Entrenar modelo",
+    "back": "Cambiar de dataset"
+  },
+  "training": {
+    "title": "Entrenando…",
+    "loading-runtime": "Preparando el motor de análisis…",
+    "loading-packages": "Cargando pandas y scikit-learn…",
+    "training": "Entrenando y evaluando sobre datos de prueba…",
+    "wait": "La primera vez tarda unos segundos: el motor se descarga una sola vez."
+  },
+  "results": {
+    "title": "Veredicto",
+    "dataset": "{name} · {rows} filas",
+    "verdict": {
+      "beats": "El modelo supera al baseline",
+      "ties": "El modelo empata con el baseline",
+      "loses": "El modelo NO supera al baseline",
+      "beatsDetail": "por {delta} en {metric} — {model} frente a {baseline} del mejor baseline",
+      "tiesDetail": "un modelo simple rinde igual: {model} frente a {baseline}",
+      "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Revisa tus features.",
+      "suspicious": "Métricas casi perfectas — sospechoso",
+      "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo."
+    },
+    "primaryMetric": "Métrica principal: {metric}",
+    "metrics": {
+      "accuracy": "Exactitud",
+      "precision": "Precisión",
+      "recall": "Sensibilidad",
+      "f1": "F1",
+      "auc": "AUC"
+    },
+    "confusion": {
+      "title": "Matriz de confusión (prueba)",
+      "pred": "Pred {label}",
+      "real": "Real {label}",
+      "positive": "Clase positiva: {label}"
+    },
+    "baselines": {
+      "title": "Baselines",
+      "majority": "Clase mayoritaria",
+      "logistic": "Regresión logística"
+    },
+    "testNote": "Todas las métricas se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento.",
+    "leakage": {
+      "title": "Posible fuga de datos",
+      "finding": "La columna «{column}» podría ser un proxy del objetivo.",
+      "hint": "Quítala y vuelve a entrenar para ver el rendimiento honesto.",
+      "none": "No detectamos fugas evidentes (el chequeo es una ayuda, no una garantía)."
+    },
+    "again": "Nuevo experimento"
+  },
+  "errors": {
+    "title": "Algo no cuadra",
+    "csv-empty": "El archivo está vacío o solo tiene la cabecera.",
+    "csv-too-large": "El archivo supera el límite de 5 MB.",
+    "csv-too-many-rows": "El archivo supera las 50 000 filas.",
+    "csv-ragged": "Hay filas con distinto número de columnas que la cabecera.",
+    "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
+    "no-features": "No hay columnas utilizables como predictores.",
+    "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
+    "retry": "Volver a empezar"
   }
 }

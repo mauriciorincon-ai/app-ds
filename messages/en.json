@@ -3,12 +3,117 @@
     "name": "Probeta DS",
     "tagline": "Honest data science, end to end."
   },
-  "landing": {
-    "lead": "Load your data, train a model and get an honest verdict on whether it works. Everything runs in your browser; your data never leaves it."
-  },
   "language": {
     "label": "Language",
     "es": "Español",
     "en": "English"
+  },
+  "common": {
+    "loading": "Loading…"
+  },
+  "start": {
+    "title": "Start your experiment",
+    "subtitle": "Upload a CSV or pick an example. Everything runs in your browser; your data never leaves it.",
+    "dropzone": {
+      "label": "Drag a CSV here or click to choose",
+      "hint": "Up to 5 MB or 50,000 rows",
+      "button": "Choose file"
+    },
+    "examples": {
+      "title": "Or start with an example",
+      "marketing": {
+        "name": "Marketing campaign",
+        "desc": "Who converts? Real signal: the model beats the baseline."
+      },
+      "rotacion": {
+        "name": "Employee attrition",
+        "desc": "Who leaves? A case where a simple model is enough."
+      },
+      "credito": {
+        "name": "Credit default",
+        "desc": "Ships with a planted leak: watch it get caught."
+      }
+    }
+  },
+  "config": {
+    "title": "Configure the experiment",
+    "summary": "{rows} rows · {cols} columns",
+    "preview": "Preview",
+    "target": {
+      "label": "What do you want to predict?",
+      "placeholder": "Pick a column…",
+      "help": "It must be a column with two categories (yes/no, 0/1)."
+    },
+    "profile": {
+      "numeric": "numeric",
+      "categorical": "categorical",
+      "nulls": "{count} nulls",
+      "cardinality": "{count} distinct",
+      "date": "looks like a date"
+    },
+    "warnings": {
+      "date": "We found columns that look like dates ({cols}). This version doesn't split by time; they're ignored as predictors."
+    },
+    "train": "Train model",
+    "back": "Change dataset"
+  },
+  "training": {
+    "title": "Training…",
+    "loading-runtime": "Warming up the analysis engine…",
+    "loading-packages": "Loading pandas and scikit-learn…",
+    "training": "Training and evaluating on test data…",
+    "wait": "The first run takes a few seconds: the engine downloads only once."
+  },
+  "results": {
+    "title": "Verdict",
+    "dataset": "{name} · {rows} rows",
+    "verdict": {
+      "beats": "The model beats the baseline",
+      "ties": "The model ties the baseline",
+      "loses": "The model does NOT beat the baseline",
+      "beatsDetail": "by {delta} in {metric} — {model} vs the best baseline's {baseline}",
+      "tiesDetail": "a simple model does just as well: {model} vs {baseline}",
+      "losesDetail": "a simple model does better: {model} vs {baseline}. Review your features.",
+      "suspicious": "Almost perfect metrics — suspicious",
+      "suspiciousDetail": "A perfect result almost always hides a leak, not a great model."
+    },
+    "primaryMetric": "Primary metric: {metric}",
+    "metrics": {
+      "accuracy": "Accuracy",
+      "precision": "Precision",
+      "recall": "Recall",
+      "f1": "F1",
+      "auc": "AUC"
+    },
+    "confusion": {
+      "title": "Confusion matrix (test)",
+      "pred": "Pred {label}",
+      "real": "Actual {label}",
+      "positive": "Positive class: {label}"
+    },
+    "baselines": {
+      "title": "Baselines",
+      "majority": "Majority class",
+      "logistic": "Logistic regression"
+    },
+    "testNote": "All metrics are computed on the test set, never on the training set.",
+    "leakage": {
+      "title": "Possible data leakage",
+      "finding": "The column “{column}” could be a proxy for the target.",
+      "hint": "Remove it and retrain to see the honest performance.",
+      "none": "No obvious leakage found (this check is a help, not a guarantee)."
+    },
+    "again": "New experiment"
+  },
+  "errors": {
+    "title": "Something doesn't add up",
+    "csv-empty": "The file is empty or has only a header.",
+    "csv-too-large": "The file exceeds the 5 MB limit.",
+    "csv-too-many-rows": "The file exceeds 50,000 rows.",
+    "csv-ragged": "Some rows have a different number of columns than the header.",
+    "target-not-binary": "The target must have exactly two categories.",
+    "no-features": "There are no usable columns as predictors.",
+    "runtime": "Something went wrong while processing. Please try again.",
+    "retry": "Start over"
   }
 }

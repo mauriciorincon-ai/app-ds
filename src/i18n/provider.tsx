@@ -17,6 +17,8 @@ import {
 } from "./config";
 import { dictionaries, type Dictionary } from "./dictionaries";
 
+export type TParams = Record<string, string | number>;
+
 // La preferencia de idioma vive en localStorage y se lee con useSyncExternalStore:
 // el patrón de React para stores externos con SSR (sin setState-en-efecto ni
 // hidratación inconsistente — el primer render usa defaultLocale y luego se
@@ -51,7 +53,7 @@ function writeLocale(next: Locale): void {
 type I18nContextValue = {
   locale: Locale;
   setLocale: (next: Locale) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: TParams) => string;
 };
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -69,6 +71,14 @@ function resolve(dictionary: Dictionary, key: string): string {
   return typeof current === "string" ? current : key;
 }
 
+// Reemplaza {nombre} por params.nombre; deja el marcador si falta el parámetro.
+function interpolate(template: string, params?: TParams): string {
+  if (!params) return template;
+  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
+    name in params ? String(params[name]) : match,
+  );
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   const locale = useSyncExternalStore(subscribe, readLocale, getServerLocale);
 
@@ -79,7 +89,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLocale = useCallback((next: Locale) => writeLocale(next), []);
 
   const t = useCallback(
-    (key: string) => resolve(dictionaries[locale], key),
+    (key: string, params?: TParams) =>
+      interpolate(resolve(dictionaries[locale], key), params),
     [locale],
   );
 
