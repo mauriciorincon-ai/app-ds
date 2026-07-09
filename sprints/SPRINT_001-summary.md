@@ -5,7 +5,7 @@ status: closed
 opened: 2026-07-08
 closed: 2026-07-09
 branch: sprint-001/veredicto-honesto
-pr: (pendiente — se completa al abrir el PR)
+pr: https://github.com/mauriciorincon-ai/app-ds/pull/1
 ---
 
 # Sprint 001 Summary — Probeta DS
