@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --coverage --passWithNoTests",
     "test:e2e": "playwright test --pass-with-no-tests"
   },
   "dependencies": {
@@ -35,6 +35,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.4",
+    "pyodide": "^314.0.2",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"

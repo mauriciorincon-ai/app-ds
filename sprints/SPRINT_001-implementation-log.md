@@ -46,4 +46,34 @@
 
 ### Fase 1 — Motor/núcleo (en curso)
 
-- _(pendiente: spike Pyodide → engines puros → pipeline anti-fuga → csv/perfilado → datasets)_
+**Spike Pyodide (riesgo #1 de la orden) — ✅ de-riskeado.** `pyodide@314.0.2` instalado (devDep).
+En Node: pyodide cargó en ~1.3 s; `pandas`+`scikit-learn` en ~4.2 s; humo de `RandomForest` OK.
+Versiones WASM confirmadas: python=3.14.2 · numpy=2.4.3 · scipy=1.18.0 · pandas=3.0.2 · sklearn=1.8.0.
+El paquete npm trae **solo el runtime core** (sin wheels) → self-hostear exige que `copy-pyodide.mjs`
+**descargue** las wheels (pandas, numpy, scipy, scikit_learn, joblib, threadpoolctl, python_dateutil,
+pytz, six) además de copiar el core. Se refina en el ADR del motor de cómputo.
+
+**Motores puros (TS) + tests — ✅ completos.**
+
+- `engine/split.ts` — split estratificado, seeded (mulberry32), determinista. Devuelve índices; el
+  preprocesamiento se ajustará SOLO sobre `trainIdx`. Cobertura 100/100/100.
+- `engine/verdict.ts` — veredicto estructurado (beats/ties/loses) con margen de empate honesto
+  (`TIE_EPSILON`); selección de métrica primaria (AUC si desbalanceado, F1 si balanceado) y mejor
+  baseline. El texto franco bilingüe lo arma la UI vía i18n. Cobertura 100/90/100.
+- `engine/leakage.ts` — heurística de fuga: AUC univariada por rangos (numéricas) + pureza de
+  categoría (categóricas), agnóstica a la dirección, ignora nulos. Cobertura 98.6/97/87.5.
+- `tests/unit/i18n-parity.test.ts` — paridad de claves es/en.
+- **35 tests verdes**; umbral engine >80% cumplido (todos ≥87.5%).
+
+**Bugs propios encontrados y resueltos (en los tests, no en los motores):**
+
+- Test de veredicto frágil a punto flotante (`0.5 + TIE_EPSILON` ≠ `0.01` exacto) → reescrito con
+  un delta claramente dentro del margen.
+- Fixture de leakage "limpio" era en realidad un separador inverso perfecto → reemplazado por uno
+  con relación débil real.
+
+**Fricción de config (K8):** la cobertura v8 intentaba parsear los `.gitkeep` como JS (el `include`
+del kit era `src/lib/**`, no `*.ts`) → `PARSE_ERROR`. Corregido a `src/lib/**/*.ts` +
+`src/engine/**/*.ts`. Además K7 resuelto: el script `test` ahora pasa `--coverage`.
+
+_(pendiente: pipeline anti-fuga `.py` → csv/perfilado + worker → datasets → test de integración fit-solo-en-train)_
