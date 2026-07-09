@@ -204,4 +204,15 @@ checklist `diseno-ui` completa; consola limpia, axe sin violaciones, build de pr
 
 **Fase 3 CERRADA.**
 
-_(pendiente Fase 4: 3 ADRs · manual de uso · deploy-check · summary · PR)_
+## Fase 4 — Calidad / cierre
+
+- **3 ADRs** en `decisions/`: 001 motor de cómputo (Pyodide), 002 anti-fuga por construcción,
+  003 i18n (diccionario ligero).
+- **`docs/MANUAL-DE-USO.md`** reescrito para el usuario final (flujo del veredicto, cómo leer
+  métricas y advertencias de fuga, limitaciones).
+- **`/deploy-check`: 9/10 pasa**, decisión **MERGE OK**. Warnings (no bloquean): 1 audit _moderate_
+  (postcss transitiva de Next), Lighthouse se mide en CI, falta añadir el DSN a Vercel env, README/
+  CHANGELOG sin tocar (el CHANGELOG es del kit; no aplica a la app).
+- **`SPRINT_001-summary.md`** generado (artefacto obligatorio para la retrospectiva de la planeadora).
+
+**Fase 4 CERRADA. Sprint 001 listo para PR.**
