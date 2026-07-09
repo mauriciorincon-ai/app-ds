@@ -43,9 +43,12 @@ function marketingCampaign(n = 200, seed = 101) {
     const emailOpens = round(rng() * 20);
     const region = pick(rng, ["norte", "sur", "este", "oeste"]);
     const device = pick(rng, ["movil", "escritorio"]);
-    // señal difusa: más aperturas/visitas/ingreso ⇒ más probable conversión (con ruido)
-    const logit = -3 + 0.09 * emailOpens + 0.04 * webVisits + 0.0002 * income + (rng() - 0.5) * 1.5;
-    const converted = rng() < sigmoid(logit) ? 1 : 0;
+    // señal NO lineal (interacción canal×dispositivo): en móvil convierte quien
+    // navega mucho la web; en escritorio, quien abre muchos correos. Los árboles
+    // capturan la interacción; un modelo lineal sin términos cruzados, no → aquí
+    // el Random Forest SÍ supera al baseline (happy-path del veredicto).
+    const engaged = device === "movil" ? webVisits >= 22 : emailOpens >= 11;
+    const converted = rng() < (engaged ? 0.85 : 0.15) ? 1 : 0;
     rows.push([age, income, webVisits, emailOpens, region, device, converted]);
   }
   return toCsv(
@@ -66,7 +69,7 @@ function employeeAttrition(n = 200, seed = 202) {
     const department = pick(rng, ["ventas", "ingenieria", "soporte", "rrhh"]);
     const overtime = pick(rng, ["si", "no"]);
     const logit =
-      -1.2 - 1.8 * satisfaction + 0.012 * monthlyHours + (overtime === "si" ? 0.6 : 0) + (rng() - 0.5) * 1.4;
+      -2.5 - 2.5 * satisfaction + 0.014 * monthlyHours + (overtime === "si" ? 0.8 : 0) + (rng() - 0.5) * 1.0;
     const left = rng() < sigmoid(logit) ? 1 : 0;
     rows.push([age, tenure, monthlyHours, satisfaction, department, overtime, left]);
   }

@@ -93,5 +93,34 @@ del kit era `src/lib/**`, no `*.ts`) → `PARSE_ERROR`. Corregido a `src/lib/**/
 **Fricción de config (K9):** eslint lintaba el directorio generado `coverage/` (warning de directiva
 eslint-disable) → añadido `coverage/**` a los `globalIgnores` de `eslint.config.mjs`.
 
-_(pendiente: pipeline anti-fuga `.py` (fit-solo-en-train + baseline + RF + métricas test) → worker
-Pyodide → test de integración fit-solo-en-train)_
+**Pipeline anti-fuga + test de integración — ✅ completos.**
+
+- `lib/ds/pipeline.py` — corre en Pyodide. Recibe/devuelve JSON. Split por índices (los da
+  `engine/split.ts`); `ColumnTransformer` (imputación mediana + escalado para numéricas;
+  most_frequent + one-hot para categóricas) dentro de un `Pipeline` que hace **`fit` SOLO en train**.
+  Baselines (clase mayoritaria + regresión logística) + Random Forest. Métricas sobre **test**
+  (accuracy, precision, recall, F1, AUC) + matriz de confusión. Positiva = clase minoritaria.
+- **Test de integración `tests/integration/pipeline.test.ts`** (Pyodide, entorno node, config
+  aparte) — el test DoD: afirma que la mediana aprendida por el imputer proviene SOLO de train
+  (2.5, no 3.5); **falla si alguien ajusta sobre todo el dataset**. + smoke de forma/métricas.
+  Job `integration` añadido a la CI. 2 tests verdes (~11.5 s con carga WASM).
+
+**Calidad de los datasets — ajuste tras validación empírica en Pyodide.** La primera versión
+generaba señal **lineal**, así que la regresión logística (baseline) igualaba o batía al Random
+Forest → nunca había veredicto "supera". Se rediseñó `marketing-campania` con señal **no lineal**
+(interacción canal×dispositivo) para que el RF sí gane. Los tres datasets ahora cuentan tres
+historias honestas:
+
+| Dataset                 | Veredicto (val. empírica)                               | Demuestra                                |
+| ----------------------- | ------------------------------------------------------- | ---------------------------------------- |
+| `marketing-campania`    | forest AUC 0.75 vs baseline 0.65 → **+0.10 supera**     | RF gana con señal no lineal (happy path) |
+| `rotacion-empleados`    | forest 0.76 ≈ logística 0.76 → **empata**               | honestidad: "un modelo simple basta"     |
+| `credito-fuga-plantada` | ambos AUC 1.00 → perfecto **sospechoso** + fuga marcada | métricas infladas por fuga               |
+
+**Decisión pendiente de ADR:** self-host de Pyodide. El paquete npm trae solo el core; `copy-pyodide.mjs`
+deberá **descargar** las wheels (pandas, numpy, scipy, scikit_learn, joblib, threadpoolctl,
+python_dateutil, pytz, six) a `public/pyodide/`. Se implementa junto al **worker** (`workers/pyodide-worker.ts`),
+que es glue de navegador y se valida en el **e2e** — por eso se construye en el puente Fase 1→2
+(su API de mensajes la moldea el consumo de la UI). El núcleo testeable de Fase 1 (motores + pipeline
+
+- garantía anti-fuga) está **completo y en CI**.

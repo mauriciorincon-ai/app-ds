@@ -11,6 +11,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage --passWithNoTests",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test --pass-with-no-tests"
   },
   "dependencies": {
