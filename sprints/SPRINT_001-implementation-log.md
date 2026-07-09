@@ -139,3 +139,17 @@ que es glue de navegador y se valida en el **e2e** — por eso se construye en e
 - **Fricción de config (K10):** eslint lintaba los 39 MB de JS generado en `public/pyodide/`
   (5905 problemas) → añadido `public/pyodide/**` a los `globalIgnores`.
 - Gates: typecheck · lint · build verdes con la copia real de 39 MB.
+
+## Fase 2 — UI (en curso)
+
+**`design-system.md` creado desde cero.** Personalidad: instrumento de laboratorio — preciso,
+confiable, sobrio (nunca pedagógico/lúdico/genérico). Paleta: papel cálido + tinta + **un** acento
+petróleo (`#0E6E6B`) + semánticos del veredicto. Tipografía Geist Sans (UI) + Geist Mono (todas las
+cifras, tabular-nums). Tokens, radios, sombras, motion definidos.
+
+**Gate de diseño — alineación de dirección: ✅ APROBADA por el usuario** (2026-07-08) sobre una
+preview visual (Artifact: paleta + tipografía + el momento del veredicto en claro y oscuro),
+respuesta "Apruebo — construye las pantallas", sin ajustes. El gate final se re-corre sobre la app
+real corriendo al cerrar la fase.
+
+_(pendiente: tokens en globals.css → microcopy i18n → 5 pantallas → hook del worker → gate final)_
