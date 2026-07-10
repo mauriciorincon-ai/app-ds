@@ -96,6 +96,9 @@ Verificado end-to-end en navegador real (6 e2e, móvil + desktop).
   match exacto.
 - Reglas react-hooks nuevas (`set-state-in-effect`, `refs`): el estado "cargando" de la narración
   se rediseñó como estado DERIVADO (respuesta keyed por payload) — más limpio que el patrón con ref.
+- **Lighthouse rojo por 48 bytes** (script budget 300 KB): `useNarration` importaba el schema Zod
+  en runtime ⇒ zod entró al bundle del cliente. Fix: type-guard sin zod en el cliente (el route
+  sigue siendo el guardián); regla derivada: del lado cliente, `schemas.ts` solo con `import type`.
 
 ## Qué salió bien / qué generó fricción
 
@@ -119,6 +122,8 @@ la evidencia más fuerte de la promesa de privacidad.
   la wiki: es reusable en cualquier app con narrativa LLM sobre números.
 - **Documentar en `repo-app.md`:** los esquemas Zod de entrada de un route deben ser `.strict()`
   (vocabulario cerrado real) — el default de Zod silenciosamente acepta y descarta.
+- **Regla para el skill `ia-embebida`:** en código cliente, importar de `lib/ia/schemas.ts` SOLO
+  con `import type` — un import runtime mete zod al bundle y revienta el budget de la landing.
 - **Nota Pyodide:** añadir al patrón wiki existente que `pipeline.py` servido desde `public/` exige
   re-correr `copy-pyodide.mjs` tras editarlo con el dev server vivo.
 

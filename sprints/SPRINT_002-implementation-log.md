@@ -169,3 +169,12 @@ cierra el sprint", sin ajustes.
   (GROQ_API_KEY → .env.local + Vercel).
 
 **Fase 4 CERRADA. Sprint 002 listo para merge.**
+
+### Post-PR — Lighthouse rojo por 48 bytes (resuelto)
+
+El primer CI del PR #3 falló SOLO en lighthouse: presupuesto de script de la landing 300 KB,
+medido 307 248 (48 bytes de exceso, determinista en las 3 corridas). Causa: `useNarration`
+importaba el schema Zod en runtime ⇒ **zod entró al bundle del cliente** (hasta S2 era solo
+server). Fix honesto (no renegociar el budget): type-guard defensivo sin zod en el cliente —
+el guardián Zod sigue siendo el route. Lección para el patrón ia-embebida: en el cliente,
+importar de `schemas.ts` SOLO con `import type`.

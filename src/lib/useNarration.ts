@@ -10,11 +10,10 @@
 // el callback — sin setState síncrono en el cuerpo (regla set-state-in-effect).
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/i18n/provider";
-import {
-  narrateResponseSchema,
-  type FallbackReason,
-  type NarrationPayload,
-} from "@/lib/ia/schemas";
+// SOLO tipos: importar el schema Zod aquí metería zod al bundle del cliente
+// (reventó el presupuesto de script de la landing por 48 bytes en CI). El
+// guardián Zod es el route; en el cliente basta un type-guard defensivo.
+import type { FallbackReason, NarrationPayload } from "@/lib/ia/schemas";
 import { buildNarrationPayload } from "@/lib/narration/payload";
 import { buildTemplateNarrative } from "@/lib/narration/templates";
 import type { ExperimentResult } from "@/workers/protocol";
@@ -29,6 +28,35 @@ type RemoteOutcome =
   | { kind: "failed"; reason: FallbackReason };
 
 type RemoteResponse = { for: NarrationPayload; outcome: RemoteOutcome };
+
+const FALLBACK_REASONS: readonly string[] = [
+  "disabled",
+  "no-provider",
+  "invalid-request",
+  "rate-limited",
+  "provider-error",
+  "verification-failed",
+  "grader-rejected",
+];
+
+// Type-guard defensivo de la respuesta del route (sin zod en el cliente):
+// cualquier forma inesperada se trata como fallo del proveedor ⇒ plantilla.
+function toOutcome(json: unknown): RemoteOutcome {
+  if (typeof json === "object" && json !== null) {
+    const value = json as Record<string, unknown>;
+    if (value.status === "verified" && typeof value.narrative === "string") {
+      return { kind: "verified", text: value.narrative };
+    }
+    if (
+      value.status === "fallback" &&
+      typeof value.reason === "string" &&
+      FALLBACK_REASONS.includes(value.reason)
+    ) {
+      return { kind: "failed", reason: value.reason as FallbackReason };
+    }
+  }
+  return { kind: "failed", reason: "provider-error" };
+}
 
 export function useNarration(input: {
   result: ExperimentResult;
@@ -64,16 +92,7 @@ export function useNarration(input: {
       body: JSON.stringify({ payload }),
     })
       .then((res) => res.json())
-      .then((json: unknown) => {
-        const parsed = narrateResponseSchema.safeParse(json);
-        if (!parsed.success) {
-          done({ kind: "failed", reason: "provider-error" });
-        } else if (parsed.data.status === "verified") {
-          done({ kind: "verified", text: parsed.data.narrative });
-        } else {
-          done({ kind: "failed", reason: parsed.data.reason });
-        }
-      })
+      .then((json: unknown) => done(toOutcome(json)))
       .catch(() => done({ kind: "failed", reason: "provider-error" }));
 
     return () => {
