@@ -2,7 +2,12 @@
 
 import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
+import { useConsent } from "@/lib/useConsent";
+import { useNarration } from "@/lib/useNarration";
+import type { RunMeta } from "@/lib/useExperiment";
 import type { ExperimentResult } from "@/workers/protocol";
+import { ModelCardView } from "./ModelCardView";
+import { WhySection } from "./WhySection";
 import { Button, Card, MetricTile } from "./ui";
 
 const METRIC_KEYS: MetricName[] = [
@@ -31,14 +36,25 @@ const LEVEL_MARK: Record<string, { tone: BannerTone; mark: string }> = {
 export function ResultsScreen({
   result,
   datasetName,
+  cols,
+  runMeta,
   onAgain,
 }: {
   result: ExperimentResult;
   datasetName: string | null;
+  cols: number;
+  runMeta: RunMeta;
   onAgain: () => void;
 }) {
   const t = useT();
   const { verdict, model, leakage, confusionMatrix } = result;
+  const { consent, setConsent } = useConsent();
+  const narration = useNarration({
+    result,
+    target: runMeta.target,
+    cols,
+    consent,
+  });
   const hasLeak = leakage.length > 0;
   const fmt = (value: number) => value.toFixed(2);
   const metricLabel = (metric: MetricName) => t(`results.metrics.${metric}`);
@@ -190,6 +206,30 @@ export function ResultsScreen({
           <p className="text-ink-muted">{t("results.testNote")}</p>
         </div>
       </section>
+
+      {/* S2: el porqué — gráfico siempre visible + narración verificada/plantilla. */}
+      <WhySection
+        explain={result.explainability}
+        narration={narration}
+        consent={consent}
+        onConsentChange={setConsent}
+      />
+
+      {/* S2: la constancia exportable del experimento. */}
+      <ModelCardView
+        result={result}
+        meta={{
+          datasetName: datasetName ?? "dataset",
+          cols,
+          numericFeatures: runMeta.numericFeatures,
+          categoricalFeatures: runMeta.categoricalFeatures,
+          target: runMeta.target,
+          seed: runMeta.seed,
+        }}
+        verifiedNarrative={
+          narration.kind === "verified" ? narration.text : null
+        }
+      />
 
       <div>
         <Button variant="secondary" onClick={onAgain}>

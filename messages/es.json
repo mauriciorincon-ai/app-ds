@@ -105,6 +105,35 @@
     },
     "again": "Nuevo experimento"
   },
+  "why": {
+    "title": "¿Por qué predice así?",
+    "method": "Importancia por permutación sobre el conjunto de prueba: cuánto empeora el modelo cuando se rompe la relación de cada variable con el objetivo.",
+    "empty": "No hay importancias que mostrar para este experimento.",
+    "barLabel": "Importancia de {name}: {value}",
+    "direction": {
+      "positive": "▲ asociación positiva con el objetivo",
+      "negative": "▼ asociación negativa con el objetivo",
+      "categorical": "· el efecto varía por categoría",
+      "unclear": "· sin dirección clara"
+    },
+    "narration": {
+      "title": "En palabras",
+      "loading": "Generando la narración y verificándola contra los números…",
+      "verifiedBadge": "verificada con los números",
+      "templateBadge": "Texto estándar"
+    }
+  },
+  "consent": {
+    "toggle": "Narrar con IA (opcional)",
+    "explain": "Si lo activas, se envían a un proveedor de IA los nombres de tus columnas y estadísticas agregadas (métricas, importancias). NUNCA se envían tus filas de datos.",
+    "verifiedNote": "Toda narración se verifica contra los números antes de mostrarse; si no pasa, verás el texto estándar."
+  },
+  "card": {
+    "title": "Model card",
+    "desc": "La constancia de tu experimento: datos, método, métricas, veredicto y límites — lista para guardar o compartir.",
+    "download": "Descargar model card (.md)",
+    "preview": "Ver el contenido"
+  },
   "narration": {
     "template": {
       "verdict": {

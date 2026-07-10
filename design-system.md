@@ -88,6 +88,17 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
 - **Badge** — perfilado (tipo/nulos/cardinalidad, fecha detectada) y estados.
 - **LangToggle** — ES/EN, `aria-pressed`.
 
+### Añadidos Sprint 002 (mismos tokens, cero valores nuevos)
+
+- **ImportanceChart** (en WhySection) — barras CSS puras: relleno `accent` sobre `surface-sunken`,
+  cifras en mono/tabular-nums, dirección SIEMPRE con símbolo + texto (▲/▼/·), nunca solo color.
+- **VerifiedBadge** — variante `positive` del Badge: "✓ verificada con los números"; su contraparte
+  neutral "Texto estándar" distingue la plantilla. La diferencia es informativa, no decorativa.
+- **ConsentPanel** — panel `surface-sunken` con checkbox nativo (accent, táctil ≥44px) y explicación
+  honesta en llano; sin tono legalista, sin modal interruptor.
+- **ModelCardView** — tarjeta sobria con acción primaria (descarga) y vista previa plegable en mono
+  (`details`, sin JS extra). El documento es el protagonista, no la tarjeta.
+
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).

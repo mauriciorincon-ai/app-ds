@@ -37,7 +37,7 @@ export function Card({
   );
 }
 
-type BadgeTone = "neutral" | "caution";
+type BadgeTone = "neutral" | "caution" | "positive";
 
 export function Badge({
   children,
@@ -49,6 +49,7 @@ export function Badge({
   const tones: Record<BadgeTone, string> = {
     neutral: "border-hairline text-ink-muted",
     caution: "border-caution/40 text-caution",
+    positive: "border-positive/40 text-positive",
   };
   return (
     <span

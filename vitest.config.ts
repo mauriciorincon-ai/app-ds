@@ -14,7 +14,13 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
-      include: ["src/lib/**/*.ts", "src/engine/**/*.ts"],
+      // S2: la capa UI entra a la medición (deuda S1 pagada) — componentes y
+      // hooks con Testing Library; page/layout quedan al e2e.
+      include: [
+        "src/lib/**/*.ts",
+        "src/engine/**/*.ts",
+        "src/components/**/*.tsx",
+      ],
       thresholds: {
         lines: 70,
         functions: 70,

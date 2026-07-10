@@ -105,6 +105,35 @@
     },
     "again": "New experiment"
   },
+  "why": {
+    "title": "Why does it predict this way?",
+    "method": "Permutation importance on the test set: how much the model degrades when each variable's relationship with the target is broken.",
+    "empty": "There are no importances to show for this experiment.",
+    "barLabel": "Importance of {name}: {value}",
+    "direction": {
+      "positive": "▲ positive association with the target",
+      "negative": "▼ negative association with the target",
+      "categorical": "· the effect varies by category",
+      "unclear": "· no clear direction"
+    },
+    "narration": {
+      "title": "In words",
+      "loading": "Generating the narrative and verifying it against the numbers…",
+      "verifiedBadge": "verified against the numbers",
+      "templateBadge": "Standard text"
+    }
+  },
+  "consent": {
+    "toggle": "Narrate with AI (optional)",
+    "explain": "If you turn this on, your column names and aggregate statistics (metrics, importances) are sent to an AI provider. Your data rows are NEVER sent.",
+    "verifiedNote": "Every narrative is verified against the numbers before display; if it fails, you'll see the standard text."
+  },
+  "card": {
+    "title": "Model card",
+    "desc": "The record of your experiment: data, method, metrics, verdict and limits — ready to save or share.",
+    "download": "Download model card (.md)",
+    "preview": "View content"
+  },
   "narration": {
     "template": {
       "verdict": {
