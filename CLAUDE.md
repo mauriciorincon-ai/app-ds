@@ -5,10 +5,10 @@
 
 ## Las dos casas (regla dura)
 
-| Casa | Path | Escritor único | Qué vive ahí |
-|---|---|---|---|
+| Casa           | Path                            | Escritor único   | Qué vive ahí                                                                     |
+| -------------- | ------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
 | **Planeadora** | `C:\Code\hr01-develop-ai-apps\` | su propia sesión | brief, VISION, sprints (plan+retro), órdenes de construcción, método, estándares |
-| **Esta app** | este repo | **tú** | código, tests, ADRs de implementación, bitácora y summary del sprint |
+| **Esta app**   | este repo                       | **tú**           | código, tests, ADRs de implementación, bitácora y summary del sprint             |
 
 - ✅ Puedes **leer** la planeadora (agregada como `additionalDirectories`, o por path absoluto).
 - ❌ **Nunca escribes** en la planeadora. Si el plan necesita cambio, lo anotas en tu
@@ -17,7 +17,7 @@
 
 ## Qué es esta app
 
-**Probeta DS** — *"Ciencia de datos honesta, de principio a fin."* App web que lleva a
+**Probeta DS** — _"Ciencia de datos honesta, de principio a fin."_ App web que lleva a
 profesionales **no científicos de datos** por el ciclo completo (cargar → limpiar → entender →
 modelar → comprobar → publicar) para construir un **modelo defendible a nivel de investigación**:
 sin fuga de datos, validado correctamente, honesto contra un baseline, con incertidumbre y un
@@ -69,7 +69,8 @@ src/
 ├─ app/            (App Router: workspace del experimento)
 ├─ components/     (UI sin lógica: carga · configuración · entrenamiento · resultados/veredicto)
 ├─ engine/         (motores puros, >80% cobertura: verdict.ts modelo-vs-baseline · leakage heurística)
-├─ workers/        (pyodide-worker.ts — carga de Pyodide + API de mensajes)
+├─ workers/        (protocol.ts — contrato tipado UI↔worker; el runner es un module worker
+│                   autónomo en public/pyodide-runner.js — ver ADR-001, fricción K11 de Turbopack)
 ├─ lib/
 │  ├─ ds/          (parsing/validación CSV · perfilado · pipeline sklearn anti-fuga [.py embebido])
 │  └─ ia/          (S2 — patrón IA-embebida: schemas.ts · client.ts · guardrails.ts · persist.ts)
@@ -106,11 +107,11 @@ decisions/NNN-titulo.md   (ADRs de implementación)
    NO técnico: cómo cargar datos, elegir el objetivo, leer el veredicto y las advertencias de fuga.
    Toda feature que llegue a `main` queda documentada en el mismo sprint.
 10. **Diseño con gate (`design-system.md` + skill `diseno-ui`).** **No hay prototipo utilizable**
-   (el legado "Visual Lab" de `referencias-ui/ds/` fue ANULADO — es pedagógico-visual, justo lo
-   que esta app NO es; no tomarlo como referencia). El **Sprint 1 CREA** el `design-system.md`
-   desde cero (tono: claro, confiable, de herramienta seria — no pedagógico, no lúdico). Cada
-   sprint con UI cierra con el checklist `diseno-ui` + aprobación visual del usuario sobre la
-   preview. Claude Design es BAJO DEMANDA (solo si el gate no converge).
+    (el legado "Visual Lab" de `referencias-ui/ds/` fue ANULADO — es pedagógico-visual, justo lo
+    que esta app NO es; no tomarlo como referencia). El **Sprint 1 CREA** el `design-system.md`
+    desde cero (tono: claro, confiable, de herramienta seria — no pedagógico, no lúdico). Cada
+    sprint con UI cierra con el checklist `diseno-ui` + aprobación visual del usuario sobre la
+    preview. Claude Design es BAJO DEMANDA (solo si el gate no converge).
 
 ## Estándares (los 6+1, gates en CI)
 
@@ -149,16 +150,27 @@ closed: YYYY-MM-DD
 branch: sprint-NNN/<tema>
 pr: <link>
 ---
+
 # Sprint NNN Summary — Probeta DS
-## Outcome            [¿Se logró el outcome del SPRINT_NNN.md? Sí/No/Parcial + 1 frase]
-## Qué se construyó   [features/pantallas/componentes]
-## DoD — checklist    [los 6+1 estándares, uno a uno, con evidencia breve]
-## Métricas técnicas  [cumplidas vs. no, del SPRINT_NNN.md]
-## Decisiones no anticipadas  [ADR-NNN: resumen]
+
+## Outcome [¿Se logró el outcome del SPRINT_NNN.md? Sí/No/Parcial + 1 frase]
+
+## Qué se construyó [features/pantallas/componentes]
+
+## DoD — checklist [los 6+1 estándares, uno a uno, con evidencia breve]
+
+## Métricas técnicas [cumplidas vs. no, del SPRINT_NNN.md]
+
+## Decisiones no anticipadas [ADR-NNN: resumen]
+
 ## Bugs + resoluciones
-## Qué salió bien / qué generó fricción   [S1: fricciones del kit v1.2.0 aparte]
-## Sugerencias de mejora al método  [¿algo de metodo/metodo.md debería cambiar?]
-## Deuda técnica aceptada  [qué, por qué, sprint de pago]
+
+## Qué salió bien / qué generó fricción [S1: fricciones del kit v1.2.0 aparte]
+
+## Sugerencias de mejora al método [¿algo de metodo/metodo.md debería cambiar?]
+
+## Deuda técnica aceptada [qué, por qué, sprint de pago]
+
 ## Archivos clave (máx. 10) · ## Cómo probar
 ```
 

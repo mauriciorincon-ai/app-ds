@@ -216,3 +216,16 @@ checklist `diseno-ui` completa; consola limpia, axe sin violaciones, build de pr
 - **`SPRINT_001-summary.md`** generado (artefacto obligatorio para la retrospectiva de la planeadora).
 
 **Fase 4 CERRADA. Sprint 001 listo para PR.**
+
+## Post-cierre (2026-07-09) — auditoría docs-vs-código
+
+PR #1 mergeado; auditoría completa sobre `main`: todos los gates re-verificados en verde (62 unit ·
+2 integración · 2 e2e · typecheck · lint · audit · CI del merge). Los documentos del sprint son
+fieles al código. Tres ajustes menores aplicados en PR aparte:
+
+- Summary: CI/CD y Performance actualizados al estado final real (preview probada, Lighthouse verde
+  en CI) — habían quedado con redacción pre-merge.
+- Summary: deuda técnica nueva registrada — cobertura unit de la capa UI (`useExperiment.ts` 0%,
+  componentes fuera de la medición); hoy cubierta por e2e; se paga en S2 con Testing Library.
+- CLAUDE.md: la línea de estructura de `workers/` describía el `pyodide-worker.ts` original; ahora
+  refleja la arquitectura real post-K11 (`protocol.ts` + runner en `public/pyodide-runner.js`).
