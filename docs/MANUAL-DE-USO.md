@@ -67,6 +67,50 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Formato admitido: **CSV** (con cabecera). Los valores vacíos, `NA`, `null`, etc. se tratan como
     faltantes.
 
+### El porqué, contado honesto · desde Sprint 002
+
+- **Qué hace:** después de entrenar, la sección **"¿Por qué predice así?"** te muestra qué
+  variables pesan más en el modelo (un gráfico de barras con la dirección del efecto) y te lo
+  explica **en palabras llanas**. Además puedes descargar una **model card**: un documento con la
+  constancia completa de tu experimento.
+
+- **Cómo leer el gráfico de importancia:**
+  - Cada barra es una variable; cuanto más larga, más pesa en el modelo.
+  - **▲ asociación positiva** significa que a mayor valor de esa variable, más probable el
+    resultado; **▼ negativa**, lo contrario; en las variables de categorías el efecto **varía por
+    categoría** (no tiene una sola dirección).
+  - La importancia se mide **por permutación sobre el conjunto de prueba**: cuánto empeora el
+    modelo si se rompe la relación de esa variable con el objetivo. Es honesta pero **global** (no
+    explica caso por caso).
+
+- **La explicación en palabras y el badge:**
+  - Debajo del gráfico verás un texto que resume el veredicto y las variables clave.
+  - Si dice **"Texto estándar"**, lo generó la propia app con tus números (sin IA).
+  - Si activas la narración con IA y muestra **"✓ verificada con los números"**, la escribió una
+    IA **y la app comprobó, cifra por cifra, que no miente** antes de mostrártela. Si la IA cita
+    una variable inexistente o una cifra falsa, esa narración **se descarta** y verás el texto
+    estándar. El gráfico siempre queda visible para que compruebes por ti mismo.
+
+- **Privacidad de la narración con IA (importante):**
+  - Es **opcional y viene apagada**. Si la activas, se envían a un proveedor de IA **solo los
+    nombres de tus columnas y estadísticas agregadas** (métricas, importancias).
+  - **Tus filas de datos NUNCA se envían.** Sin activarla, no sale nada de tu navegador.
+  - Tu elección se recuerda en este navegador; puedes apagarla cuando quieras.
+
+- **La model card:**
+  - Pulsa **"Descargar model card (.md)"** en Resultados. Obtienes un documento con: los datos
+    usados (forma y tipos), la partición, el método, las métricas sobre prueba, el veredicto, el
+    chequeo de fuga, la importancia de variables y los **límites** del experimento.
+  - Se genera **completa en tu navegador** y en el idioma activo. Es tu constancia: "no solo hice
+    un modelo — tengo un experimento documentado".
+
+- **Limitaciones conocidas (Sprint 002):**
+  - La importancia es **global**, no por predicción individual, y puede repartirse entre variables
+    correlacionadas.
+  - La dirección del efecto es una asociación simple: no captura interacciones entre variables.
+  - La narración con IA requiere que el administrador haya configurado un proveedor; si no lo hay,
+    siempre verás el texto estándar (que es igual de fiel a los números).
+
 ## Preguntas frecuentes
 
 - **¿Mis datos se suben a algún sitio?** No. Todo el cálculo ocurre en tu navegador; el archivo nunca
@@ -75,9 +119,16 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   resto, explicando el resultado en lenguaje llano.
 - **El modelo dio métricas perfectas, ¿genial?** Casi siempre es una señal de alarma, no de éxito.
   Revisa la advertencia de fuga: seguramente hay una columna que ya contiene la respuesta.
+- **¿La explicación con IA puede inventarse cosas?** Podría intentarlo — por eso la app **verifica
+  cada afirmación contra los números reales** antes de mostrarla. Si no pasa la verificación, se
+  descarta y ves el texto estándar. Y el gráfico con las cifras crudas siempre está al lado.
+- **¿Qué se envía exactamente si activo la narración con IA?** Los nombres de tus columnas y
+  estadísticas agregadas (métricas, importancias, el veredicto). Nunca tus filas de datos, nunca
+  valores individuales.
 
 ## Historial
 
-| Sprint | Features añadidas a este manual                                                                                                                |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test). |
+| Sprint | Features añadidas a este manual                                                                                                                                 |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                  |
+| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable). |

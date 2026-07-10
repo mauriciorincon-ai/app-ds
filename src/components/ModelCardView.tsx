@@ -3,6 +3,9 @@
 // Model card: la constancia del experimento. Vista previa plegable + descarga
 // .md (Blob, 100% client-side — el archivo no toca ninguna red). Cita la
 // narración IA solo si quedó verificada (la decide el estado, no este componente).
+// El <pre> se monta SOLO al abrir el <details>: si viviera siempre en el DOM,
+// duplicaría los títulos de la pantalla (rompe lectores/tests en modo estricto).
+import { useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { buildModelCard, modelCardFileName } from "@/lib/modelcard";
 import type { ExperimentResult } from "@/workers/protocol";
@@ -27,6 +30,7 @@ export function ModelCardView({
   verifiedNarrative: string | null;
 }) {
   const { locale, t } = useI18n();
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const markdown = buildModelCard({
     locale,
@@ -62,13 +66,18 @@ export function ModelCardView({
           <Button onClick={download}>{t("card.download")}</Button>
         </div>
 
-        <details className="mt-3">
+        <details
+          className="mt-3"
+          onToggle={(event) => setPreviewOpen(event.currentTarget.open)}
+        >
           <summary className="cursor-pointer text-sm text-ink-muted underline-offset-4 hover:underline">
             {t("card.preview")}
           </summary>
-          <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-sunken p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">
-            {markdown}
-          </pre>
+          {previewOpen && (
+            <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-sunken p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+              {markdown}
+            </pre>
+          )}
         </details>
       </Card>
     </section>

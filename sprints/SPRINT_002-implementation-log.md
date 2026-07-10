@@ -10,7 +10,8 @@
 - [x] Fase 1a — Spike explicabilidad (¿`shap` en Pyodide?) → ADR + `pipeline.py` + integración
 - [x] Fase 1b — Motores TS (payload de narración · verificador · plantillas · model card)
 - [x] Fase 1c — Adapter IA (`lib/ia/`) + route `/api/narrate` + ADRs proveedor/privacidad
-- [ ] Fase 2 — UI ("¿Por qué?" · consentimiento · model card) + i18n + tests de componentes
+- [x] Fase 2 — UI ("¿Por qué?" · consentimiento · model card) + i18n + tests de componentes
+      (gate visual pendiente)
 - [ ] Fase 3 — e2e (happy + fallback) + observabilidad server-side + manual
 - [ ] Fase 4 — Calidad / cierre (`/deploy-check` + summary + PR)
 
@@ -98,3 +99,37 @@ de paridad. **Sin fricciones nuevas de kit al arrancar** (numeración continúa 
   se necesita `.strict()` explícito (un payload con `rows` colado ahora RECHAZA la petición).
   Detectado por el propio test del guardrail.
 - **101 unit verdes** (route completo con mock: los 3 escenarios + rate limit + kill-switch).
+
+### Fase 2 — UI (2026-07-09)
+
+- **3 superficies nuevas** sobre el design-system existente (extensión documentada en
+  `design-system.md § Añadidos Sprint 002`, mismos tokens): `WhySection` (barras CSS puras con
+  dirección símbolo+texto, badge "✓ verificada" vs "Texto estándar", `aria-live` en el estado),
+  `ConsentPanel` (opt-in honesto, default OFF, localStorage) y `ModelCardView` (descarga .md por
+  Blob + vista previa plegable). `ResultsScreen` las integra bajo el fold; landing intacta.
+- `useConsent` (useSyncExternalStore) + `useNarration` (sin consentimiento ⇒ plantilla local con
+  CERO red; con consentimiento ⇒ route con fallback SIEMPRE). `useExperiment` expone `runMeta`.
+- Microcopy ES/EN completo en el mismo paso (paridad verde).
+- **Deuda S1 pagada:** componentes y hooks medidos con Testing Library — componentes 72%
+  (regla UI >50% ✓), `useExperiment` 88% (Worker stub), global 92%. **120 unit verdes.**
+- **Bug propio (fricción de RTL):** sin `globals: true`, Testing Library no registra su
+  auto-cleanup y los renders se acumulan entre tests → cleanup manual en `tests/setup.ts`.
+- **Bug propio (e2e estricto):** la vista previa de la model card (el `<pre>` con TODO el
+  markdown) vivía en el DOM aunque el `<details>` estuviera cerrado → duplicaba títulos de la
+  pantalla y rompía el modo estricto de Playwright (incluido el spec S1). Arreglo: el contenido
+  se monta solo al abrir.
+- Gate visual: PENDIENTE de aprobación del usuario (galería sobre la app real al cierre).
+
+## Fase 3 — Integración + e2e + observabilidad (en curso)
+
+- **2 e2e nuevos** (×2 dispositivos): `why-modelcard.spec` — entrenar → porqué → opt-in →
+  narración VERIFICADA (route real con mock) → descarga real de la model card + **inspección de
+  la request**: sin `"rows"`, sin valores de celdas (`6089`, `escritorio`), CON nombres de
+  columnas (lo consentido) + axe de la pantalla completa. `fallback-sin-consentimiento.spec` —
+  plantilla visible + **cero peticiones** a `/api/narrate`.
+- `playwright.config`: el webServer corre con `NARRATION_ENABLED=true` + `NARRATION_PROVIDER=mock`.
+- **Sentry server-side** (`instrumentation.ts` + `sentry.server.config.ts`): mismo contrato de
+  privacidad que el cliente — `beforeSend` elimina la request entera (el body del route contiene
+  nombres de columnas), sin PII, sin tracing; no inicializa sin DSN (CI limpio).
+- **Manual de uso** actualizado (el porqué, el badge de verificación, privacidad de la narración,
+  la model card, limitaciones S2) + 2 FAQs nuevas.

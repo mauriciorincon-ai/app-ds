@@ -7,7 +7,6 @@ import type { ReactNode } from "react";
 import type { Metrics } from "@/engine/verdict";
 import { I18nProvider } from "@/i18n/provider";
 import { summarizeDataset } from "@/lib/experiment";
-import type { NarrationState } from "@/lib/useNarration";
 import type { ExperimentResult } from "@/workers/protocol";
 import { ConfigScreen } from "@/components/ConfigScreen";
 import { ConsentPanel } from "@/components/ConsentPanel";
@@ -160,8 +159,8 @@ describe("ConsentPanel", () => {
 });
 
 describe("ModelCardView", () => {
-  it("ofrece la descarga y una vista previa con el contenido real", () => {
-    ui(
+  it("ofrece la descarga; la vista previa se monta SOLO al abrir (sin duplicar títulos)", () => {
+    const { container } = ui(
       <ModelCardView
         result={result()}
         meta={{ datasetName: "marketing.csv", cols: 7, ...RUN_META }}
@@ -172,7 +171,13 @@ describe("ModelCardView", () => {
       screen.getByRole("button", { name: /Descargar model card/ }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Ver el contenido/)).toBeInTheDocument();
-    // El markdown real está en la vista previa (título + sección de límites).
+    // Cerrada: el markdown NO está en el DOM (no duplica títulos de pantalla).
+    expect(screen.queryByText(/# Model card — marketing.csv/)).toBeNull();
+
+    // Abierta: el contenido real aparece.
+    const details = container.querySelector("details")!;
+    details.open = true;
+    fireEvent(details, new Event("toggle", { bubbles: false }));
     expect(
       screen.getByText(/# Model card — marketing.csv/),
     ).toBeInTheDocument();
