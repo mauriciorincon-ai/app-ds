@@ -35,12 +35,12 @@ columna proxy. Verificado end-to-end en navegador real (e2e móvil + desktop).
 
 - **Testing** ✅ — unit split/veredicto/fuga + integración fit-solo-en-train + e2e happy path
   (móvil+desktop) + axe. 62 unit + 2 integración + 2 e2e; en CI.
-- **CI/CD** ✅ — Actions (quality + integration + e2e + lighthouse); preview Vercel **pendiente de
-  probar a mano** en el PR.
+- **CI/CD** ✅ — Actions (quality + integration + e2e + lighthouse) verde en el PR y en `main`
+  post-merge; preview Vercel probada a mano antes de mergear.
 - **Observabilidad** ✅ — errores del worker → Sentry (metadata-only, sin contenido del dataset).
 - **Seguridad** ✅ — `pnpm audit --audit-level high` exit 0 (1 moderate transitiva, no bloquea);
   cero secrets; datos del usuario nunca salen del navegador.
-- **Performance** ⏳ — Lighthouse se mide en CI sobre `/` (liviana, Pyodide fuera del LCP); validar en el PR.
+- **Performance** ✅ — Lighthouse verde en CI sobre `/` (landing liviana, Pyodide bajo demanda fuera del LCP).
 - **UX/A11y** ✅ — axe sin violaciones; teclado (HTML semántico + focus ring); contraste AA en la paleta.
 - **IA embebida** — **N/A** (sin LLM este sprint).
 - **Manual de uso** ✅ — `docs/MANUAL-DE-USO.md` con el flujo del veredicto.
@@ -99,6 +99,9 @@ testeable que el worker original.
 
 ## Deuda técnica aceptada
 
+- **Cobertura unit de la capa UI** — `useExperiment.ts` en 0% y los componentes `.tsx` fuera de la
+  medición de cobertura (el CLAUDE.md pide UI >50%). Hoy la UI se valida por e2e (happy path
+  móvil+desktop + axe, verdes). Se paga en S2 con Testing Library (ya en el stack, sin usar).
 - **Sin source maps de Sentry** (no se subió `@sentry/cli`) — se paga cuando haya release con usuarios.
 - **1 audit moderate** (postcss, transitiva de Next) — se paga cuando Next la bumpee.
 - **Pino sin usar** (logger de servidor; N/A en app 100% cliente) — entra con backend en S2.
