@@ -26,9 +26,11 @@ runtime.
 - **Computed on TEST** (consistent with the app's "all metrics on test" rule), scoring `roc_auc`
   (fallback `accuracy` if the test fold is single-class), `n_repeats=10`, seeded.
 - **Direction of effect:** for numeric features, the sign of the univariate feature↔target
-  correlation on test (point-biserial, since the target is 0/1); |r| < 0.01 or degenerate columns →
-  no direction. Categorical features get **no direction** (it varies by category) — the UI says so
-  instead of faking a sign.
+  correlation on test (point-biserial, since the target is 0/1), **read against the positive
+  class** (the UI names the actual class label so the sign is unambiguous). Below the ~95% null
+  band — `|r| < max(0.05, 2/√n)` — or on degenerate columns, the honest answer is "no clear
+  direction" (an arrow on noise would dress noise as signal). Categorical features get **no
+  direction** (it varies by category) — the UI says so instead of faking a sign.
 - **The UI names the method honestly** ("importancia por permutación") and never calls it SHAP.
 
 ## Consequences

@@ -90,8 +90,12 @@ def _feature_directions(X_test, y_test, numeric):
             directions[col] = None
             continue
         r = x.corr(y)
-        # Umbral honesto: por debajo, la "dirección" sería ruido con flecha.
-        if pd.isna(r) or abs(r) < 0.05:
+        # Umbral honesto ~ banda nula al 95%: con n observaciones, una
+        # correlación de puro ruido fluctúa ~2/sqrt(n). Por debajo, poner una
+        # flecha sería vestir el ruido de señal → "sin dirección clara".
+        n_valid = int(x.notna().sum())
+        threshold = max(0.05, 2.0 / (n_valid**0.5))
+        if pd.isna(r) or abs(r) < threshold:
             directions[col] = None
         else:
             directions[col] = "positive" if r > 0 else "negative"
