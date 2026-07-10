@@ -11,9 +11,8 @@
 - [x] Fase 1b — Motores TS (payload de narración · verificador · plantillas · model card)
 - [x] Fase 1c — Adapter IA (`lib/ia/`) + route `/api/narrate` + ADRs proveedor/privacidad
 - [x] Fase 2 — UI ("¿Por qué?" · consentimiento · model card) + i18n + tests de componentes
-      (gate visual pendiente)
-- [ ] Fase 3 — e2e (happy + fallback) + observabilidad server-side + manual
-- [ ] Fase 4 — Calidad / cierre (`/deploy-check` + summary + PR)
+- [x] Fase 3 — e2e (happy + fallback) + observabilidad server-side + manual
+- [x] Fase 4 — Calidad / cierre (`/deploy-check` + summary + PR)
 
 ## Verificación de supuestos del kit (fricciones K#)
 
@@ -133,3 +132,40 @@ de paridad. **Sin fricciones nuevas de kit al arrancar** (numeración continúa 
   nombres de columnas), sin PII, sin tracing; no inicializa sin DSN (CI limpio).
 - **Manual de uso** actualizado (el porqué, el badge de verificación, privacidad de la narración,
   la model card, limitaciones S2) + 2 FAQs nuevas.
+- **Bugs de e2e encontrados y resueltos:** (1) la vista previa de la model card duplicaba títulos
+  en el DOM (modo estricto de Playwright) → el `<pre>` se monta solo al abrir; (2) `getByText` de
+  Playwright es case-insensitive → "Texto estándar" chocaba con la nota del consentimiento →
+  match exacto. **6/6 e2e verdes** (~51 s la suite completa).
+
+**Fase 3 CERRADA.**
+
+## Gate de diseño (2026-07-09) — ✅ APROBADO
+
+**La auto-auditoría sobre la app real encontró y corrigió un bug de honestidad** (el valor del
+gate): la dirección del efecto decía "asociación positiva con el objetivo" — ambiguo/invertido
+cuando la clase positiva es la minoritaria (en marketing es «0» = no convirtió). Correcciones:
+
+1. El microcopy nombra la clase real: "▲ a mayor valor, más probable «0»" (la etiqueta de clase
+   NUNCA entra al payload de narración — solo en UI local; las plantillas dicen "la clase
+   positiva" genérico).
+2. El ruido ya no lleva flecha: umbral estadístico `max(0.05, 2/√n)` (banda nula ~95%) ⇒
+   "sin dirección clara" (con 50 filas de test, r nulo fluctúa hasta ~0.28 — un 0.05 fijo vestía
+   ruido de señal). ADR-004 actualizado.
+3. Fricción de infraestructura detectada de paso: el runner sirve `public/pyodide/pipeline.py`
+   (copiado en predev) — editar `src/lib/ds/pipeline.py` con el dev server corriendo NO se
+   refleja hasta re-correr `copy-pyodide.mjs`.
+
+**Gate FINAL: APROBADO por el usuario** (2026-07-09) sobre galería de capturas de la app real
+(Artifact: desktop/móvil × claro/oscuro × verificada/plantilla/fuga), respuesta "Aprobado —
+cierra el sprint", sin ajustes.
+
+## Fase 4 — Calidad / cierre
+
+- `/deploy-check`: **10/10 pasa** (detalle en el summary), decisión **MERGE OK**. Checklist
+  `ia-embebida` completo: Zod en toda salida LLM ✓ · guardrails input/output (`strict()`,
+  vocabulario cerrado, rate limit, kill-switch) ✓ · circuit breaker → plantilla ✓ · mock en CI ✓
+  · ≤2 llamadas + tokens acotados ✓ · nada del LLM persistido ✓ · costo loggeado (Pino) ✓.
+- `sprints/SPRINT_002-summary.md` generado. PR abierto; checklist de aprovisionamiento re-emitido
+  (GROQ_API_KEY → .env.local + Vercel).
+
+**Fase 4 CERRADA. Sprint 002 listo para merge.**
