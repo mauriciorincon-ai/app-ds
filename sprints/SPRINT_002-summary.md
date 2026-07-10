@@ -5,7 +5,7 @@ status: closed
 opened: 2026-07-09
 closed: 2026-07-09
 branch: sprint-002/porque-honesto
-pr: (se enlaza al abrir)
+pr: https://github.com/mauriciorincon-ai/app-ds/pull/3
 ---
 
 # Sprint 002 Summary — Probeta DS
