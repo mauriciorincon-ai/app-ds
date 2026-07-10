@@ -132,11 +132,27 @@ describe("assembleResult", () => {
         [1, 0],
         [0, 1],
       ],
+      explainability: {
+        method: "permutation_importance",
+        scoring: "roc_auc",
+        n_repeats: 10,
+        features: [
+          {
+            name: "x",
+            kind: "numeric",
+            importance: 0.2,
+            std: 0.01,
+            direction: "positive",
+          },
+        ],
+      },
     };
     const result = assembleResult(py, []);
     // desbalanceado (0.3) → métrica primaria AUC; mejor baseline 0.6; modelo 0.8 → supera
     expect(result.verdict.primaryMetric).toBe("auc");
     expect(result.verdict.level).toBe("beats");
     expect(result.verdict.baselineScore).toBe(0.6);
+    // La explicabilidad pasa intacta al resultado (la consume la UI y la model card).
+    expect(result.explainability.features[0]?.name).toBe("x");
   });
 });

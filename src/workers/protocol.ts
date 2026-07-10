@@ -39,6 +39,24 @@ export type PipelinePayload = {
   seed: number;
 };
 
+// Explicabilidad global (S2): permutation importance sobre TEST, calculada por
+// pipeline.py (método según ADR-004). Ordenada por importancia descendente.
+export type FeatureImportance = {
+  name: string;
+  kind: "numeric" | "categorical";
+  importance: number;
+  std: number;
+  /** Solo numéricas; las categóricas no tienen dirección única → null. */
+  direction: "positive" | "negative" | null;
+};
+
+export type Explainability = {
+  method: "permutation_importance";
+  scoring: string;
+  n_repeats: number;
+  features: FeatureImportance[];
+};
+
 // Lo que devuelve pipeline.py (JSON).
 export type PipelineResult = {
   positive_class: string;
@@ -48,6 +66,7 @@ export type PipelineResult = {
   baselines: { majority: Metrics; logistic: Metrics };
   model: Metrics;
   confusion_matrix: number[][];
+  explainability: Explainability;
   preprocessing?: { numeric_medians: Record<string, number> };
 };
 
@@ -61,6 +80,7 @@ export type ExperimentResult = {
   confusionMatrix: number[][];
   verdict: Verdict;
   leakage: LeakageFinding[];
+  explainability: Explainability;
 };
 
 export type RunnerRequest = { id: number; payload: PipelinePayload };

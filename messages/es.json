@@ -105,6 +105,77 @@
     },
     "again": "Nuevo experimento"
   },
+  "narration": {
+    "template": {
+      "verdict": {
+        "beats": "El modelo supera al baseline: {model} frente a {baseline} en {metric} (mejora de {delta}).",
+        "ties": "El modelo empata con el baseline: {model} frente a {baseline} en {metric}; una regla simple rinde prácticamente igual.",
+        "loses": "El modelo NO supera al baseline: {model} frente a {baseline} en {metric}; con estas variables no aporta."
+      },
+      "features": "Las variables con más peso fueron: {list}.",
+      "direction": {
+        "positive": "asociación positiva con el objetivo",
+        "negative": "asociación negativa con el objetivo",
+        "categorical": "el efecto varía por categoría",
+        "unclear": "sin dirección clara"
+      },
+      "method": "La importancia se midió por permutación sobre el conjunto de prueba (datos que el modelo no vio al entrenar).",
+      "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas."
+    }
+  },
+  "modelcard": {
+    "title": "Model card — {name}",
+    "generated": "Generada el {date} por Probeta DS. Todo el cómputo ocurrió en el navegador: los datos nunca salieron del equipo.",
+    "sections": {
+      "data": "Datos",
+      "split": "Partición",
+      "method": "Método",
+      "metrics": "Métricas (sobre prueba)",
+      "verdict": "Veredicto",
+      "leakage": "Chequeo de fuga",
+      "explainability": "¿Por qué predice así?",
+      "narrative": "Narración verificada",
+      "limits": "Límites"
+    },
+    "data": {
+      "dataset": "Dataset: {name}",
+      "shape": "{rows} filas × {cols} columnas ({numeric} predictores numéricos, {categorical} categóricos)",
+      "target": "Objetivo: «{target}» (clasificación binaria; clase positiva: «{positive}»)"
+    },
+    "split": {
+      "sizes": "Entrenamiento: {train} filas · Prueba: {test} filas (estratificado, semilla {seed}).",
+      "rule": "El preprocesamiento se ajustó SOLO con el entrenamiento (anti-fuga por construcción)."
+    },
+    "method": {
+      "pipeline": "Imputación (mediana / más frecuente), escalado y one-hot dentro de un Pipeline de scikit-learn.",
+      "models": "Baselines: clase mayoritaria y regresión logística. Modelo: Random Forest (200 árboles)."
+    },
+    "metrics": {
+      "metric": "Métrica",
+      "model": "Modelo"
+    },
+    "verdict": {
+      "primary": "Métrica principal: {metric}."
+    },
+    "leakage": {
+      "found": "Columnas sospechosas de fuga: {columns}. Las métricas pueden estar infladas; quítalas y vuelve a entrenar.",
+      "none": "No se detectaron fugas evidentes (el chequeo es una ayuda honesta, no una garantía)."
+    },
+    "explainability": {
+      "method": "Método: importancia por permutación sobre el conjunto de prueba (scoring {scoring}, {repeats} repeticiones).",
+      "feature": "Variable",
+      "kind": "Tipo",
+      "importance": "Importancia",
+      "direction": "Dirección",
+      "notVerified": "No se incluye narración IA: no se generó o no pasó la verificación numérica."
+    },
+    "limits": {
+      "binary": "Solo clasificación binaria en esta versión.",
+      "leakage": "El chequeo de fuga atrapa casos evidentes; no es una garantía.",
+      "explainability": "La importancia por permutación es global (no por predicción) y puede repartirse entre variables correlacionadas; la dirección es univariada y no captura interacciones.",
+      "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal)."
+    }
+  },
   "errors": {
     "title": "Algo no cuadra",
     "csv-empty": "El archivo está vacío o solo tiene la cabecera.",

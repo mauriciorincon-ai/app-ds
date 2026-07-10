@@ -105,6 +105,77 @@
     },
     "again": "New experiment"
   },
+  "narration": {
+    "template": {
+      "verdict": {
+        "beats": "The model beats the baseline: {model} vs {baseline} in {metric} (an improvement of {delta}).",
+        "ties": "The model ties the baseline: {model} vs {baseline} in {metric}; a simple rule does practically as well.",
+        "loses": "The model does NOT beat the baseline: {model} vs {baseline} in {metric}; with these variables it adds nothing."
+      },
+      "features": "The variables with the most weight were: {list}.",
+      "direction": {
+        "positive": "positive association with the target",
+        "negative": "negative association with the target",
+        "categorical": "the effect varies by category",
+        "unclear": "no clear direction"
+      },
+      "method": "Importance was measured by permutation on the test set (data the model never saw during training).",
+      "leakage": "Warning: {columns} could contain the answer (possible leak); these figures may be inflated."
+    }
+  },
+  "modelcard": {
+    "title": "Model card — {name}",
+    "generated": "Generated on {date} by Probeta DS. All computation happened in the browser: the data never left the device.",
+    "sections": {
+      "data": "Data",
+      "split": "Split",
+      "method": "Method",
+      "metrics": "Metrics (on test)",
+      "verdict": "Verdict",
+      "leakage": "Leakage check",
+      "explainability": "Why does it predict this way?",
+      "narrative": "Verified narrative",
+      "limits": "Limits"
+    },
+    "data": {
+      "dataset": "Dataset: {name}",
+      "shape": "{rows} rows × {cols} columns ({numeric} numeric predictors, {categorical} categorical)",
+      "target": "Target: “{target}” (binary classification; positive class: “{positive}”)"
+    },
+    "split": {
+      "sizes": "Training: {train} rows · Test: {test} rows (stratified, seed {seed}).",
+      "rule": "Preprocessing was fitted ONLY on the training set (anti-leakage by construction)."
+    },
+    "method": {
+      "pipeline": "Imputation (median / most frequent), scaling and one-hot inside a scikit-learn Pipeline.",
+      "models": "Baselines: majority class and logistic regression. Model: Random Forest (200 trees)."
+    },
+    "metrics": {
+      "metric": "Metric",
+      "model": "Model"
+    },
+    "verdict": {
+      "primary": "Primary metric: {metric}."
+    },
+    "leakage": {
+      "found": "Columns suspected of leakage: {columns}. Metrics may be inflated; remove them and retrain.",
+      "none": "No obvious leakage found (this check is an honest help, not a guarantee)."
+    },
+    "explainability": {
+      "method": "Method: permutation importance on the test set (scoring {scoring}, {repeats} repeats).",
+      "feature": "Variable",
+      "kind": "Kind",
+      "importance": "Importance",
+      "direction": "Direction",
+      "notVerified": "No AI narrative is included: it was not generated or it failed the numeric verification."
+    },
+    "limits": {
+      "binary": "Binary classification only in this version.",
+      "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
+      "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
+      "dates": "Date columns are detected but not used yet (no temporal split)."
+    }
+  },
   "errors": {
     "title": "Something doesn't add up",
     "csv-empty": "The file is empty or has only a header.",
