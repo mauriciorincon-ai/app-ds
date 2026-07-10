@@ -25,37 +25,49 @@ export const narrationFeatureSchema = z.object({
 });
 
 // Lo que la app envía al route (y el route, tras validar, al Narrator).
-export const narrationPayloadSchema = z.object({
-  locale: localeSchema,
-  problem: z.literal("binary-classification"),
-  target: z.string().min(1).max(120),
-  dataset: z.object({
-    rows: z.number().int().min(1).max(1_000_000),
-    cols: z.number().int().min(1).max(10_000),
-  }),
-  metrics: z.object({
-    accuracy: score01,
-    precision: score01,
-    recall: score01,
-    f1: score01,
-    auc: score01,
-  }),
-  verdict: z.object({
-    level: z.enum(["beats", "ties", "loses"]),
-    primaryMetric: metricNameSchema,
-    modelScore: score01,
-    baselineScore: score01,
-    delta: z.number().min(-1).max(1),
-  }),
-  explainability: z.object({
-    method: z.literal("permutation_importance"),
-    scoring: z.string().min(1).max(40),
-    // Solo el top-N viaja (guardrail de tamaño), ya ordenado por importancia.
-    features: z.array(narrationFeatureSchema).min(1).max(8),
-  }),
-  /** Nombres de columnas marcadas por la heurística de fuga (puede ser vacío). */
-  leakage: z.array(z.string().min(1).max(120)).max(8),
-});
+// strict(): una clave desconocida (p. ej. filas coladas) RECHAZA la petición
+// entera — vocabulario cerrado de verdad, no "se ignora lo demás".
+export const narrationPayloadSchema = z
+  .object({
+    locale: localeSchema,
+    problem: z.literal("binary-classification"),
+    target: z.string().min(1).max(120),
+    dataset: z
+      .object({
+        rows: z.number().int().min(1).max(1_000_000),
+        cols: z.number().int().min(1).max(10_000),
+      })
+      .strict(),
+    metrics: z
+      .object({
+        accuracy: score01,
+        precision: score01,
+        recall: score01,
+        f1: score01,
+        auc: score01,
+      })
+      .strict(),
+    verdict: z
+      .object({
+        level: z.enum(["beats", "ties", "loses"]),
+        primaryMetric: metricNameSchema,
+        modelScore: score01,
+        baselineScore: score01,
+        delta: z.number().min(-1).max(1),
+      })
+      .strict(),
+    explainability: z
+      .object({
+        method: z.literal("permutation_importance"),
+        scoring: z.string().min(1).max(40),
+        // Solo el top-N viaja (guardrail de tamaño), ya ordenado por importancia.
+        features: z.array(narrationFeatureSchema.strict()).min(1).max(8),
+      })
+      .strict(),
+    /** Nombres de columnas marcadas por la heurística de fuga (puede ser vacío). */
+    leakage: z.array(z.string().min(1).max(120)).max(8),
+  })
+  .strict();
 
 export type NarrationPayload = z.infer<typeof narrationPayloadSchema>;
 
@@ -86,9 +98,11 @@ export const graderOutputSchema = z.object({
 export type GraderOutput = z.infer<typeof graderOutputSchema>;
 
 // Contrato del route POST /api/narrate.
-export const narrateRequestSchema = z.object({
-  payload: narrationPayloadSchema,
-});
+export const narrateRequestSchema = z
+  .object({
+    payload: narrationPayloadSchema,
+  })
+  .strict();
 
 export const fallbackReasonSchema = z.enum([
   "disabled",

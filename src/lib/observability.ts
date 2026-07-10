@@ -14,3 +14,13 @@ export function reportExperimentError(
     extra: { rows: meta?.rows ?? null, cols: meta?.cols ?? null },
   });
 }
+
+// Errores del flujo de narración (route /api/narrate). Mismo contrato de
+// privacidad: SOLO el tipo de error — jamás el payload (contiene nombres de
+// columnas del usuario) ni mensajes crudos del proveedor.
+export function reportNarrationError(kind: string): void {
+  Sentry.captureMessage(`narration-error:${kind}`, {
+    level: "error",
+    tags: { area: "narration", kind },
+  });
+}

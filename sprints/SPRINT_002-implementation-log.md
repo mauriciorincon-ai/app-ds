@@ -8,8 +8,8 @@
 
 - [ ] **Fase 0 — Setup** (branch · bitácora · `.env.example` · verificación de supuestos del kit)
 - [x] Fase 1a — Spike explicabilidad (¿`shap` en Pyodide?) → ADR + `pipeline.py` + integración
-- [ ] Fase 1b — Motores TS (payload de narración · verificador · plantillas · model card)
-- [ ] Fase 1c — Adapter IA (`lib/ia/`) + route `/api/narrate` + ADRs proveedor/privacidad
+- [x] Fase 1b — Motores TS (payload de narración · verificador · plantillas · model card)
+- [x] Fase 1c — Adapter IA (`lib/ia/`) + route `/api/narrate` + ADRs proveedor/privacidad
 - [ ] Fase 2 — UI ("¿Por qué?" · consentimiento · model card) + i18n + tests de componentes
 - [ ] Fase 3 — e2e (happy + fallback) + observabilidad server-side + manual
 - [ ] Fase 4 — Calidad / cierre (`/deploy-check` + summary + PR)
@@ -66,3 +66,35 @@ de paridad. **Sin fricciones nuevas de kit al arrancar** (numeración continúa 
   `visitas_web`/`correos_abiertos`; ruido nunca primero) y sanity de fuga (`monto_recuperado`
   domina con >2× la segunda). Los tests reusan la orquestación de producción
   (`parseCsvWithLimits` + `prepareRun`) sobre los CSV reales empaquetados.
+
+### Fase 1b — Motores puros TS (2026-07-09) ✅
+
+- `lib/ia/schemas.ts` — contratos Zod de TODO el flujo (payload cerrado, claims del Narrator,
+  Grader, request/response del route). El payload lleva SOLO metadatos agregados — ni filas ni la
+  etiqueta de clase positiva (es un valor de celda).
+- `lib/narration/payload.ts` — ensamblador; **test-garantía: cero valores de filas** en el payload
+  serializado. `verify.ts` — verificación determinista estilo Explingo (variable inexistente,
+  dirección falsa, cifra fuera de ε, mención sin claim ⇒ rechazo). `templates.ts` — plantilla
+  determinista ES/EN (fallback universal). `lib/modelcard.ts` — model card markdown determinista.
+- i18n: `translate()` puro extraído del provider React (los motores comparten diccionarios; la
+  paridad sigue cubriendo TODO el copy). 86 unit verdes.
+
+### Fase 1c — Adapter IA + route (2026-07-09) ✅
+
+- **`ai` 7.0.18 + `@ai-sdk/groq` 4.0.6** instalados (decisión ADR-005, aprobada en el plan).
+- `lib/ia/client.ts` — único punto de llamada LLM: `generateObject` + schema Zod, maxOutputTokens
+  400/150, timeout 10 s, **cero retries**; Narrator `llama-3.3-70b-versatile`, Grader
+  `llama-3.1-8b-instant`; proveedor por env. `mock.ts` — proveedor de CI (éxito · mentiroso ·
+  caído). `guardrails.ts` — Zod **`.strict()`** (clave desconocida ⇒ rechazo total, no strip),
+  kill-switch, rate limit ventana deslizante (10/min/IP), umbral del Grader. `cost.ts` — log Pino
+  por request (modelo/tokens/USD, sin nombres de columnas) — **paga la deuda S1 "Pino sin usar"**.
+- `app/api/narrate/route.ts` — primera superficie server-side: kill-switch → proveedor → rate
+  limit → Zod → Narrator → **verificación determinista** → Grader → verified/fallback. Nada se
+  persiste; cualquier fallo ⇒ plantilla.
+- **ADR-005** (Groq + precios verificados 2026-07-09: 70B $0.59/$0.79, 8B $0.05/$0.08 por M
+  tokens, free tier sin tarjeta) y **ADR-006** (privacidad: qué viaja con opt-in, qué jamás, tres
+  capas de garantía).
+- **Hallazgo de diseño:** Zod por defecto _ignora_ claves desconocidas — para vocabulario cerrado
+  se necesita `.strict()` explícito (un payload con `rows` colado ahora RECHAZA la petición).
+  Detectado por el propio test del guardrail.
+- **101 unit verdes** (route completo con mock: los 3 escenarios + rate limit + kill-switch).
