@@ -22,6 +22,20 @@ jobs:
       - run: pnpm build
       - run: pnpm audit --audit-level high
 
+  integration:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 11 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      # Pipeline anti-fuga en Pyodide/WASM (fit-solo-en-train). Descarga las
+      # wheels de pandas/scikit-learn del CDN de Pyodide en la primera corrida.
+      - run: pnpm test:integration
+
   e2e:
     runs-on: ubuntu-latest
     needs: quality

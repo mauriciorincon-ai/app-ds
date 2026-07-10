@@ -4,6 +4,9 @@ allowBuilds:
   '@swc/core': true
   esbuild: true
   '@tailwindcss/oxide': true
+  '@sentry/cli': false
+ignoredBuiltDependencies:
+  - '@sentry/cli'
 onlyBuiltDependencies:
   - sharp
   - unrs-resolver

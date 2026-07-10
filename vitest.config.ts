@@ -14,12 +14,20 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
-      include: ["src/lib/**", "src/engine/**"],
+      include: ["src/lib/**/*.ts", "src/engine/**/*.ts"],
       thresholds: {
         lines: 70,
         functions: 70,
         branches: 70,
         statements: 70,
+        // El CLAUDE.md exige >80% en los motores puros de engine/ (el split
+        // anti-fuga, el veredicto y la heurística de fuga son la garantía del sprint).
+        "src/engine/**": {
+          lines: 80,
+          functions: 80,
+          branches: 80,
+          statements: 80,
+        },
       },
     },
   },

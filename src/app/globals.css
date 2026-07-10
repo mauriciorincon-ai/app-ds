@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
+/* Tokens del design-system.md — fuente única. Los componentes usan utilidades
+   (bg-surface, text-ink-muted, border-hairline…) que apuntan a estas variables;
+   cero valores mágicos sueltos. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #fafaf7;
+  --surface: #ffffff;
+  --sunken: #f2f2ec;
+  --ink: #14181f;
+  --ink-muted: #586172;
+  --hairline: #e4e4dc;
+  --accent: #0e6e6b;
+  --accent-ink: #ffffff;
+  --positive: #1c7c4a;
+  --caution: #8a5a0c;
+  --negative: #a5372f;
+  --sh-sm: 0 1px 2px rgb(20 24 31 / 0.06);
+  --sh-md: 0 2px 10px rgb(20 24 31 / 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #0e1116;
+    --surface: #161a21;
+    --sunken: #1c222b;
+    --ink: #e7e9ec;
+    --ink-muted: #9aa4b2;
+    --hairline: #28303b;
+    --accent: #2fa6a0;
+    --accent-ink: #08201f;
+    --positive: #54b885;
+    --caution: #d69b4a;
+    --negative: #e0776e;
+    --sh-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --sh-md: 0 2px 12px rgb(0 0 0 / 0.5);
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-hairline: var(--hairline);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-positive: var(--positive);
+  --color-caution: var(--caution);
+  --color-negative: var(--negative);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --shadow-sm: var(--sh-sm);
+  --shadow-md: var(--sh-md);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Foco visible coherente con la paleta (a11y). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
