@@ -32,7 +32,9 @@ test("del porqué a la model card, con narración verificada y sin filas en la r
   // aún ⇒ plantilla ("Texto estándar") y CERO llamadas a /api/narrate.
   await expect(page.getByText("¿Por qué predice así?")).toBeVisible();
   await expect(
-    page.getByText(/asociación (positiva|negativa)/).first(),
+    page
+      .getByText(/a mayor valor|varía por categoría|sin dirección clara/)
+      .first(),
   ).toBeVisible();
   // exact: la nota del consentimiento también contiene "texto estándar" (minúsculas).
   await expect(page.getByText("Texto estándar", { exact: true })).toBeVisible();

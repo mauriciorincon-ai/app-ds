@@ -210,6 +210,7 @@ export function ResultsScreen({
       {/* S2: el porqué — gráfico siempre visible + narración verificada/plantilla. */}
       <WhySection
         explain={result.explainability}
+        positiveClass={result.positiveClass}
         narration={narration}
         consent={consent}
         onConsentChange={setConsent}

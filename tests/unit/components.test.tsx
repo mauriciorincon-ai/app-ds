@@ -94,11 +94,12 @@ beforeEach(() => {
 describe("WhySection", () => {
   const base = {
     explain: result().explainability,
+    positiveClass: "1",
     consent: false,
     onConsentChange: vi.fn(),
   };
 
-  it("muestra el gráfico con dirección en símbolo + texto (no solo color)", () => {
+  it("muestra el gráfico con dirección en símbolo + texto contra la clase positiva real", () => {
     ui(
       <WhySection
         {...base}
@@ -108,7 +109,7 @@ describe("WhySection", () => {
     expect(screen.getByText("¿Por qué predice así?")).toBeInTheDocument();
     expect(screen.getByText("visitas_web")).toBeInTheDocument();
     expect(
-      screen.getByText("▲ asociación positiva con el objetivo"),
+      screen.getByText("▲ a mayor valor, más probable «1»"),
     ).toBeInTheDocument();
     expect(
       screen.getByText("· el efecto varía por categoría"),

@@ -18,7 +18,13 @@ function directionKey(feature: FeatureImportance): string {
   return feature.direction;
 }
 
-function ImportanceChart({ explain }: { explain: Explainability }) {
+function ImportanceChart({
+  explain,
+  positiveClass,
+}: {
+  explain: Explainability;
+  positiveClass: string;
+}) {
   const t = useT();
   const features = explain.features.slice(0, MAX_BARS);
   const max = Math.max(...features.map((f) => f.importance), 0);
@@ -58,7 +64,9 @@ function ImportanceChart({ explain }: { explain: Explainability }) {
               />
             </div>
             <p className="mt-0.5 text-xs text-ink-muted">
-              {t(`why.direction.${directionKey(feature)}`)}
+              {t(`why.direction.${directionKey(feature)}`, {
+                positive: positiveClass,
+              })}
             </p>
           </li>
         );
@@ -69,11 +77,14 @@ function ImportanceChart({ explain }: { explain: Explainability }) {
 
 export function WhySection({
   explain,
+  positiveClass,
   narration,
   consent,
   onConsentChange,
 }: {
   explain: Explainability;
+  /** Etiqueta real de la clase positiva — las direcciones se leen contra ella. */
+  positiveClass: string;
   narration: NarrationState;
   consent: boolean;
   onConsentChange: (next: boolean) => void;
@@ -93,7 +104,7 @@ export function WhySection({
       </header>
 
       <Card className="p-5">
-        <ImportanceChart explain={explain} />
+        <ImportanceChart explain={explain} positiveClass={positiveClass} />
       </Card>
 
       <Card className="p-5">

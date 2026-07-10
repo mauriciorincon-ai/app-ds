@@ -90,7 +90,8 @@ def _feature_directions(X_test, y_test, numeric):
             directions[col] = None
             continue
         r = x.corr(y)
-        if pd.isna(r) or abs(r) < 0.01:
+        # Umbral honesto: por debajo, la "dirección" sería ruido con flecha.
+        if pd.isna(r) or abs(r) < 0.05:
             directions[col] = None
         else:
             directions[col] = "positive" if r > 0 else "negative"

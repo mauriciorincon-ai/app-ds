@@ -111,8 +111,8 @@
     "empty": "No hay importancias que mostrar para este experimento.",
     "barLabel": "Importancia de {name}: {value}",
     "direction": {
-      "positive": "▲ asociación positiva con el objetivo",
-      "negative": "▼ asociación negativa con el objetivo",
+      "positive": "▲ a mayor valor, más probable «{positive}»",
+      "negative": "▼ a mayor valor, menos probable «{positive}»",
       "categorical": "· el efecto varía por categoría",
       "unclear": "· sin dirección clara"
     },
@@ -143,8 +143,8 @@
       },
       "features": "Las variables con más peso fueron: {list}.",
       "direction": {
-        "positive": "asociación positiva con el objetivo",
-        "negative": "asociación negativa con el objetivo",
+        "positive": "a mayor valor, más probable la clase positiva",
+        "negative": "a mayor valor, menos probable la clase positiva",
         "categorical": "el efecto varía por categoría",
         "unclear": "sin dirección clara"
       },

@@ -57,7 +57,9 @@ describe("buildTemplateNarrative", () => {
     expect(text).toContain("0.81");
     expect(text).toContain("0.77");
     expect(text).toContain("AUC");
-    expect(text).toContain("visitas_web (asociación positiva con el objetivo)");
+    expect(text).toContain(
+      "visitas_web (a mayor valor, más probable la clase positiva)",
+    );
     expect(text).toContain("dispositivo (el efecto varía por categoría)");
     expect(text).toContain("permutación sobre el conjunto de prueba");
   });
@@ -66,7 +68,7 @@ describe("buildTemplateNarrative", () => {
     const text = buildTemplateNarrative(payload({ locale: "en" }));
     expect(text).toContain("beats the baseline");
     expect(text).toContain(
-      "visitas_web (positive association with the target)",
+      "visitas_web (higher values make the positive class more likely)",
     );
     expect(text).toContain("permutation on the test set");
   });
