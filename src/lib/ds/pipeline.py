@@ -16,6 +16,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
+from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
@@ -76,6 +77,56 @@ def _fit_score(estimator, preprocessor, X_train, y_train, X_test):
     return pipe, y_pred, y_score
 
 
+def _feature_directions(X_test, y_test, numeric):
+    """Signo de la asociación univariada feature↔target sobre TEST (solo
+    numéricas; y es 0/1, así que la correlación de Pearson es punto-biserial).
+    Las categóricas no tienen una dirección única (varía por categoría) → None.
+    """
+    directions = {}
+    y = pd.Series(y_test, index=X_test.index, dtype="float64")
+    for col in numeric:
+        x = X_test[col]
+        if x.notna().sum() < 2 or x.nunique(dropna=True) < 2 or y.nunique() < 2:
+            directions[col] = None
+            continue
+        r = x.corr(y)
+        if pd.isna(r) or abs(r) < 0.01:
+            directions[col] = None
+        else:
+            directions[col] = "positive" if r > 0 else "negative"
+    return directions
+
+
+def _explainability(pipe, X_test, y_test, features, numeric, seed):
+    """Importancia global por permutación sobre TEST (modelo-agnóstica; método
+    respaldado — shap no carga en Pyodide, ver decisions/004). Devuelve las
+    features ordenadas por importancia descendente, con dirección del efecto.
+    """
+    scoring = "roc_auc" if len(np.unique(y_test)) > 1 else "accuracy"
+    pi = permutation_importance(
+        pipe, X_test, y_test,
+        n_repeats=10, random_state=seed, scoring=scoring, n_jobs=1,
+    )
+    directions = _feature_directions(X_test, y_test, numeric)
+    numeric_set = set(numeric)
+    order = np.argsort(pi.importances_mean)[::-1]
+    return {
+        "method": "permutation_importance",
+        "scoring": scoring,
+        "n_repeats": 10,
+        "features": [
+            {
+                "name": features[i],
+                "kind": "numeric" if features[i] in numeric_set else "categorical",
+                "importance": float(pi.importances_mean[i]),
+                "std": float(pi.importances_std[i]),
+                "direction": directions.get(features[i]),
+            }
+            for i in order
+        ],
+    }
+
+
 def run_experiment(payload_json):
     p = json.loads(payload_json)
     numeric = list(p["numeric"])
@@ -109,6 +160,7 @@ def run_experiment(payload_json):
 
     results = {}
     forest_pred = None
+    forest_pipe = None
     for name, estimator in models.items():
         from sklearn.base import clone
 
@@ -116,6 +168,7 @@ def run_experiment(payload_json):
         results[name] = _metrics(y_test, y_pred, y_score)
         if name == "forest":
             forest_pred = y_pred
+            forest_pipe = pipe
             # medianas aprendidas por el imputer numérico (para el test anti-fuga):
             # deben provenir SOLO de train.
             num_imputer = pipe.named_steps["prep"].named_transformers_["num"].named_steps["imputer"]
@@ -124,6 +177,8 @@ def run_experiment(payload_json):
             }
 
     cm = confusion_matrix(y_test, forest_pred, labels=[0, 1]).tolist()
+
+    explainability = _explainability(forest_pipe, X_test, y_test, features, numeric, seed)
 
     return json.dumps(
         {
@@ -135,6 +190,7 @@ def run_experiment(payload_json):
             "baselines": {"majority": results["majority"], "logistic": results["logistic"]},
             "model": results["forest"],
             "confusion_matrix": cm,
+            "explainability": explainability,
             "preprocessing": {"numeric_medians": learned_medians},
         }
     )

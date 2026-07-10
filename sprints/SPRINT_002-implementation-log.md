@@ -7,7 +7,7 @@
 ## Estado por fase
 
 - [ ] **Fase 0 — Setup** (branch · bitácora · `.env.example` · verificación de supuestos del kit)
-- [ ] Fase 1a — Spike explicabilidad (¿`shap` en Pyodide?) → ADR + `pipeline.py` + integración
+- [x] Fase 1a — Spike explicabilidad (¿`shap` en Pyodide?) → ADR + `pipeline.py` + integración
 - [ ] Fase 1b — Motores TS (payload de narración · verificador · plantillas · model card)
 - [ ] Fase 1c — Adapter IA (`lib/ia/`) + route `/api/narrate` + ADRs proveedor/privacidad
 - [ ] Fase 2 — UI ("¿Por qué?" · consentimiento · model card) + i18n + tests de componentes
@@ -28,7 +28,11 @@ de paridad. **Sin fricciones nuevas de kit al arrancar** (numeración continúa 
 
 ## Desviación del plan
 
-- (ninguna registrada aún)
+- **D1 (aclaración, no cambio de alcance):** el acceptance criteria de la orden dice que en
+  `marketing-campania` deben quedar arriba "`canal`/`dispositivo`" — pero el dataset real no tiene
+  columna `canal` (el término venía del texto de la bitácora S1 "interacción canal×dispositivo").
+  La señal real del generador es **`dispositivo` × (`visitas_web` | `correos_abiertos`)**. El
+  sanity empírico afirma esas columnas reales. Avisado al usuario.
 
 ## Deuda S1 que este sprint paga (declarada en SPRINT_001-summary.md)
 
@@ -45,3 +49,20 @@ de paridad. **Sin fricciones nuevas de kit al arrancar** (numeración continúa 
 - Bitácora creada. `.env.example` ampliado con las env vars de narración (`NARRATION_PROVIDER`,
   `NARRATION_ENABLED`, `GROQ_API_KEY` — server-only, sin `NEXT_PUBLIC_`).
 - Verificación de supuestos del kit: ver tabla arriba (todo verde, sin fricciones nuevas).
+- Commit: `64b6812`. **Fase 0 CERRADA.**
+
+### Fase 1a — Spike explicabilidad + pipeline (2026-07-09) ✅
+
+- **Spike (riesgo #1): `shap` NO carga en Pyodide.** No está en el repo oficial
+  (`loadPackage("shap")` → "No known package") y micropip no resuelve su cierre de dependencias
+  (numba/llvmlite sin wheels emscripten). Decisión: **`permutation_importance` sobre test**
+  (sklearn ya presente, modelo-agnóstica, defendible) → **ADR-004**.
+- `pipeline.py`: AÑADIDO (sin refactor del núcleo anti-fuga) `_explainability` — permutation
+  importance sobre test (scoring `roc_auc`, `n_repeats=10`, seeded) + `_feature_directions`
+  (dirección = signo de la asociación punto-biserial sobre test; solo numéricas — las categóricas
+  no tienen dirección única y se dice honestamente). Nuevo campo `explainability` en el JSON.
+- **Integración: 5/5 verdes a la primera** — los 2 tests anti-fuga del S1 intactos + 3 nuevos:
+  forma/orden descendente, sanity de marketing (señal real arriba: `dispositivo` +
+  `visitas_web`/`correos_abiertos`; ruido nunca primero) y sanity de fuga (`monto_recuperado`
+  domina con >2× la segunda). Los tests reusan la orquestación de producción
+  (`parseCsvWithLimits` + `prepareRun`) sobre los CSV reales empaquetados.
