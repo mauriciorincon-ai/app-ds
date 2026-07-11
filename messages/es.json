@@ -120,7 +120,12 @@
       "title": "En palabras",
       "loading": "Generando la narración y verificándola contra los números…",
       "verifiedBadge": "verificada con los números",
-      "templateBadge": "Texto estándar"
+      "templateBadge": "Texto estándar",
+      "fallback": {
+        "unavailable": "La narración con IA no está configurada en este despliegue; se muestra el texto estándar.",
+        "provider": "El proveedor de IA no respondió; se muestra el texto estándar. Apaga y vuelve a encender «Narrar con IA» para reintentar.",
+        "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad se muestra el texto estándar. Apaga y enciende «Narrar con IA» para reintentar."
+      }
     }
   },
   "consent": {

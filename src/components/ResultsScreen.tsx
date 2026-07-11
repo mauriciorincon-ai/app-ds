@@ -49,12 +49,18 @@ export function ResultsScreen({
   const t = useT();
   const { verdict, model, leakage, confusionMatrix } = result;
   const { consent, setConsent } = useConsent();
-  const narration = useNarration({
+  const { narration, retryNarration } = useNarration({
     result,
     target: runMeta.target,
     cols,
     consent,
   });
+  // Re-activar el consentimiento reintenta la narración (si la anterior falló,
+  // el toggle no puede sentirse "muerto": siempre se ve cargar → resultado).
+  const handleConsentChange = (next: boolean) => {
+    if (next && !consent) retryNarration();
+    setConsent(next);
+  };
   const hasLeak = leakage.length > 0;
   const fmt = (value: number) => value.toFixed(2);
   const metricLabel = (metric: MetricName) => t(`results.metrics.${metric}`);
@@ -213,7 +219,7 @@ export function ResultsScreen({
         positiveClass={result.positiveClass}
         narration={narration}
         consent={consent}
-        onConsentChange={setConsent}
+        onConsentChange={handleConsentChange}
       />
 
       {/* S2: la constancia exportable del experimento. */}

@@ -8,7 +8,7 @@
 // "Cargando" es estado DERIVADO (hay consentimiento y aún no hay respuesta
 // para ESTE payload): el efecto solo dispara el fetch y guarda la respuesta en
 // el callback — sin setState síncrono en el cuerpo (regla set-state-in-effect).
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 // SOLO tipos: importar el schema Zod aquí metería zod al bundle del cliente
 // (reventó el presupuesto de script de la landing por 48 bytes en CI). El
@@ -63,7 +63,7 @@ export function useNarration(input: {
   target: string;
   cols: number;
   consent: boolean;
-}): NarrationState {
+}): { narration: NarrationState; retryNarration: () => void } {
   const { result, target, cols, consent } = input;
   const { locale } = useI18n();
 
@@ -74,6 +74,11 @@ export function useNarration(input: {
   const template = useMemo(() => buildTemplateNarrative(payload), [payload]);
 
   const [response, setResponse] = useState<RemoteResponse | null>(null);
+
+  // Reintento manual (p. ej. al re-activar el consentimiento): descarta la
+  // respuesta previa; el efecto vuelve a pedir. Iniciado por el usuario y
+  // protegido por el rate limit del route — no es un retry automático.
+  const retryNarration = useCallback(() => setResponse(null), []);
 
   useEffect(() => {
     if (!consent) return;
@@ -100,14 +105,19 @@ export function useNarration(input: {
     };
   }, [consent, payload, response]);
 
+  let narration: NarrationState;
   if (!consent) {
-    return { kind: "template", text: template, reason: "no-consent" };
+    narration = { kind: "template", text: template, reason: "no-consent" };
+  } else if (response === null || response.for !== payload) {
+    narration = { kind: "loading" };
+  } else if (response.outcome.kind === "verified") {
+    narration = { kind: "verified", text: response.outcome.text };
+  } else {
+    narration = {
+      kind: "template",
+      text: template,
+      reason: response.outcome.reason,
+    };
   }
-  if (response === null || response.for !== payload) {
-    return { kind: "loading" };
-  }
-  if (response.outcome.kind === "verified") {
-    return { kind: "verified", text: response.outcome.text };
-  }
-  return { kind: "template", text: template, reason: response.outcome.reason };
+  return { narration, retryNarration };
 }

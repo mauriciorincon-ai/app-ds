@@ -131,6 +131,34 @@ describe("WhySection", () => {
     expect(screen.getByText("texto estándar aquí")).toBeInTheDocument();
   });
 
+  it("plantilla por fallo del proveedor: el aviso dice qué pasó y cómo reintentar", () => {
+    ui(
+      <WhySection
+        {...base}
+        consent
+        narration={{
+          kind: "template",
+          text: "texto estándar aquí",
+          reason: "provider-error",
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(/El proveedor de IA no respondió/),
+    ).toBeInTheDocument();
+  });
+
+  it("plantilla sin consentimiento: SIN aviso de fallo (no hubo intento)", () => {
+    ui(
+      <WhySection
+        {...base}
+        narration={{ kind: "template", text: "texto", reason: "no-consent" }}
+      />,
+    );
+    expect(screen.queryByText(/proveedor de IA no respondió/)).toBeNull();
+    expect(screen.queryByText(/no está configurada/)).toBeNull();
+  });
+
   it("estado verificado: badge con símbolo + texto", () => {
     ui(
       <WhySection
