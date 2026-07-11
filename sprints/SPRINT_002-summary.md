@@ -78,8 +78,11 @@ Verificado end-to-end en navegador real (6 e2e, móvil + desktop).
 
 - **ADR-004** — explicabilidad: permutation importance sobre test (spike: shap no carga en
   Pyodide); dirección contra la clase positiva con banda nula `2/√n`.
-- **ADR-005** — proveedor LLM: Groq vía Vercel AI SDK (precios verificados 2026-07-09: 70B
-  $0.59/$0.79, 8B $0.05/$0.08 por M tokens; free tier sin tarjeta) + mock en CI.
+- **ADR-005** — proveedor LLM: Groq vía Vercel AI SDK + mock en CI. **Amendment tras validar con
+  key real:** los llama-3.x de Groq no soportan `json_schema` ⇒ `openai/gpt-oss-120b` en ambos
+  roles ($0.15/$0.60 por M tokens; ~US$0.0005 por narración; free tier sin tarjeta). 5 hallazgos
+  del proveedor real documentados (razonamiento, acentos, semántica de dirección, varianza del
+  grader) — ver bitácora.
 - **ADR-006** — privacidad de la narración: qué viaja con opt-in (nombres de columnas +
   agregados), qué JAMÁS (filas, valores, etiqueta de clase), 3 capas de garantía.
 
@@ -131,8 +134,9 @@ la evidencia más fuerte de la promesa de privacidad.
 
 - **Rate limit en memoria por instancia serverless** (no global) — suficiente a escala personal;
   se paga si llegan usuarios reales (store compartido).
-- **Narración probada con proveedor real (Groq) solo manualmente** — CI usa mock por diseño; la
-  validación con key real queda como paso manual del usuario en la preview (checklist del PR).
+- ~~Narración probada con proveedor real solo manualmente~~ — **pagada antes del merge:** el
+  circuito completo se validó contra Groq real con la key del usuario (5/5 verificadas); CI sigue
+  en mock por diseño.
 - **1 audit moderate** (postcss, transitiva de Next) — heredada de S1, se paga cuando Next la bumpee.
 
 ## Archivos clave (máx. 10)

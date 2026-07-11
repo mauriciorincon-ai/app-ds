@@ -18,8 +18,13 @@ export type VerificationFailure =
 export type VerificationResult =
   { ok: true } | { ok: false; reason: VerificationFailure };
 
+// Matching insensible a diacríticos: el LLM escribe español natural ("la
+// región") aunque la columna se llame "region"; sigue siendo matching literal.
+const fold = (text: string) =>
+  text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
 const mentions = (narrative: string, name: string) =>
-  narrative.toLowerCase().includes(name.toLowerCase());
+  fold(narrative).includes(fold(name));
 
 export function verifyNarration(
   payload: NarrationPayload,

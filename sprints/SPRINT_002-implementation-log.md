@@ -170,6 +170,34 @@ cierra el sprint", sin ajustes.
 
 **Fase 4 CERRADA. Sprint 002 listo para merge.**
 
+> **Nota de secuencia:** el usuario mergeó el PR #3 minutos antes de que aterrizara el commit de
+> esta validación → el fix va en el **PR #4** (follow-up de 1 commit, misma rama). Producción
+> entre ambos merges no se rompe: sin el fix, la narración cae a plantilla (fallback honesto).
+
+### Post-PR — Validación con Groq REAL (la key del usuario) — 5 hallazgos, todos resueltos
+
+El usuario aprovisionó la key y el primer request real devolvió `provider-error`. La validación
+end-to-end (curl al route con payload realista) destapó una cadena de 5 problemas que el mock,
+por diseño, no podía ver — todos corregidos y documentados en el **amendment del ADR-005**:
+
+1. **Groq no soporta `json_schema` en los llama-3.x** (solo `json_object`); `generateObject` lo
+   exige ⇒ modelos cambiados a `openai/gpt-oss-120b` (soporta structured outputs y es más barato).
+2. **gpt-oss razona antes de responder:** 400 tokens de salida se iban en razonamiento ⇒
+   `reasoningEffort: "low"` + presupuestos 1500/600 (siguen acotados).
+3. **Acentos del español vs matching literal:** "la región" no respaldaba el claim `region` ⇒
+   `mentions()` insensible a diacríticos (+ test unit).
+4. **Honestidad semántica de la dirección:** el modelo escribió "reduce la probabilidad de
+   conversión" sin poder saber cuál es la clase positiva (no se la enviamos, ADR-006) ⇒ el prompt
+   prohíbe frasear direcciones como desenlaces reales; solo "asociación positiva/negativa".
+5. **Varianza del Grader:** el 20b puntuaba 3/4/5 la misma narrativa buena (fallbacks arbitrarios)
+   ⇒ 120b para ambos roles (estable 5/5/5) + rúbrica explícita en el prompt del Grader + el
+   Narrator ahora exige cobertura completa (veredicto + cifras + top variables + aviso de fuga).
+
+**Resultado final: 5/5 narraciones reales verificadas** contra el route local con la key del
+usuario (~1.5K tokens ≈ US$0.0005 por narración). Lección de método: el mock prueba el circuito,
+pero **el contrato del proveedor real solo se valida contra el proveedor real** — hacerlo ANTES
+del merge evitó descubrirlo en producción.
+
 ### Post-PR — Lighthouse rojo por 48 bytes (resuelto)
 
 El primer CI del PR #3 falló SOLO en lighthouse: presupuesto de script de la landing 300 KB,
