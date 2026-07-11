@@ -8,3 +8,14 @@ import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
 
 afterEach(() => cleanup());
+
+// jsdom no implementa crypto.subtle (lo usa model-file.ts para el SHA-256 del
+// payload). Polyfill guardado desde Node; en navegador real existe nativo.
+import { webcrypto } from "node:crypto";
+
+if (!globalThis.crypto?.subtle) {
+  Object.defineProperty(globalThis, "crypto", {
+    value: webcrypto,
+    configurable: true,
+  });
+}

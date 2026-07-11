@@ -252,6 +252,7 @@ describe("useExperiment", () => {
         data: {
           id: worker.posted[0]!.id,
           type: "result",
+          command: "train",
           result: pipelineResult(),
         },
       } as MessageEvent);

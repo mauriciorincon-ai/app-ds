@@ -34,6 +34,26 @@ export default defineConfig({
           branches: 80,
           statements: 80,
         },
+        // Motores puros del S3 (chequeo de esquema, manifiesto+hash, CSV
+        // puntuado): misma exigencia que engine/ — son la garantía del sprint.
+        "src/lib/ds/schema-check.ts": {
+          lines: 80,
+          functions: 80,
+          branches: 80,
+          statements: 80,
+        },
+        "src/lib/model-file.ts": {
+          lines: 80,
+          functions: 80,
+          branches: 80,
+          statements: 80,
+        },
+        "src/lib/scored-csv.ts": {
+          lines: 80,
+          functions: 80,
+          branches: 80,
+          statements: 80,
+        },
       },
     },
   },

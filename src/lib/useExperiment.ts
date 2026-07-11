@@ -77,13 +77,13 @@ export function useExperiment() {
 
       if (message.type === "progress") {
         setState((s) => ({ ...s, phase: "running", progress: message.stage }));
-      } else if (message.type === "result") {
+      } else if (message.type === "result" && message.command === "train") {
         setState((s) => ({
           ...s,
           phase: "results",
           result: assembleResult(message.result, pending.leakage),
         }));
-      } else {
+      } else if (message.type === "error") {
         console.error("[experiment] runtime", message.message);
         const table = tableRef.current;
         reportExperimentError(
@@ -157,7 +157,11 @@ export function useExperiment() {
         seed: SEED,
       },
     }));
-    workerRef.current?.postMessage({ id, payload: prepared.payload });
+    workerRef.current?.postMessage({
+      id,
+      type: "train",
+      payload: prepared.payload,
+    });
   }, []);
 
   const reset = useCallback(() => {
