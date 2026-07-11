@@ -170,6 +170,10 @@ cierra el sprint", sin ajustes.
 
 **Fase 4 CERRADA. Sprint 002 listo para merge.**
 
+> **Nota de secuencia:** el usuario mergeó el PR #3 minutos antes de que aterrizara el commit de
+> esta validación → el fix va en el **PR #4** (follow-up de 1 commit, misma rama). Producción
+> entre ambos merges no se rompe: sin el fix, la narración cae a plantilla (fallback honesto).
+
 ### Post-PR — Validación con Groq REAL (la key del usuario) — 5 hallazgos, todos resueltos
 
 El usuario aprovisionó la key y el primer request real devolvió `provider-error`. La validación
