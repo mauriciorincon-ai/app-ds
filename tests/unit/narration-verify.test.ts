@@ -126,6 +126,36 @@ describe("verifyNarration", () => {
     expect(verifyNarration(payload(), rounded)).toEqual({ ok: true });
   });
 
+  it("acepta menciones con acentos naturales del español (región respalda a region)", () => {
+    // Visto con Groq real: la columna "region" aparece como "la región" en la
+    // prosa. El matching es insensible a diacríticos — sigue siendo literal.
+    const base = payload();
+    const accented: NarrationPayload = {
+      ...base,
+      explainability: {
+        ...base.explainability,
+        features: [
+          ...base.explainability.features,
+          {
+            name: "region",
+            kind: "categorical",
+            importance: 0.02,
+            direction: null,
+          },
+        ],
+      },
+    };
+    const withAccent = output({
+      claims: [
+        { feature: "visitas_web", direction: "positive", importance: 0.21 },
+        { feature: "region", direction: "none", importance: 0.02 },
+      ],
+      narrative:
+        "visitas_web pesa más, mientras que la región prácticamente no influye.",
+    });
+    expect(verifyNarration(accented, withAccent)).toEqual({ ok: true });
+  });
+
   it("rechaza un claim que la narrativa no menciona (claim-not-in-narrative)", () => {
     const detached = output({
       narrative:

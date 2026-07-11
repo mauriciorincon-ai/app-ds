@@ -17,14 +17,21 @@ import { mockGrader, mockNarrator, resolveMockMode } from "./mock";
 
 export type NarrationProvider = "groq" | "mock";
 
-export const NARRATOR_MAX_TOKENS = 400;
-export const GRADER_MAX_TOKENS = 150;
-export const LLM_TIMEOUT_MS = 10_000;
+// Los gpt-oss son modelos razonadores: el presupuesto de salida incluye los
+// tokens de razonamiento (reasoningEffort: "low" los mantiene en ~40-100),
+// por eso es mayor que el texto final visible. Sigue acotado y ≤2 llamadas.
+export const NARRATOR_MAX_TOKENS = 1500;
+export const GRADER_MAX_TOKENS = 600;
+export const LLM_TIMEOUT_MS = 15_000;
 
-// Modelos Groq (decisión y precios: decisions/005). El Narrator usa el modelo
-// grande (mejor tasa de verificación); el Grader evalúa estilo → el barato basta.
-export const GROQ_NARRATOR_MODEL = "llama-3.3-70b-versatile";
-export const GROQ_GRADER_MODEL = "llama-3.1-8b-instant";
+// Modelos Groq (decisión y precios: decisions/005). Validado empíricamente
+// (2026-07-09): los llama-3.x en Groq NO soportan response_format json_schema
+// (lo que generateObject exige); los openai/gpt-oss SÍ — y son más baratos.
+// Ambos roles usan el 120b: el 20b como Grader puntuaba con varianza (3-5 en
+// completitud sobre la misma narrativa buena) ⇒ fallbacks innecesarios; el
+// 120b es estable (5/5/5 en 3 corridas) y el costo sigue siendo ~US$0.0002.
+export const GROQ_NARRATOR_MODEL = "openai/gpt-oss-120b";
+export const GROQ_GRADER_MODEL = "openai/gpt-oss-120b";
 
 export type LlmUsage = { inputTokens: number; outputTokens: number };
 
@@ -62,8 +69,11 @@ function narratorPrompt(payload: NarrationPayload): string {
     `Explain a binary-classification experiment to a non-expert, in plain ${language}.`,
     "Rules (violations are discarded by a deterministic verifier):",
     "- Mention ONLY variables listed in the payload; copy importance values and directions exactly.",
+    "- Refer to variables by their exact technical names, verbatim (no translation, no renaming).",
+    "- Directions are relative to an internal positive class whose label you do NOT know: describe them as a 'positive/negative association', NEVER as increasing or decreasing a specific real-world outcome.",
     "- Echo the verdict level exactly as given; never soften an unfavorable verdict.",
-    "- 2-4 short sentences, no marketing tone, no advice beyond the data.",
+    "- 3-5 short sentences, no marketing tone, no advice beyond the data.",
+    "- Cover ALL of: the verdict with the primary metric scores (model vs baseline); the 2-3 most important variables with their importance values and association direction; and, if the leakage list is non-empty, a warning that those columns look like proxies of the target.",
     "- Every variable you mention in the narrative MUST appear in your claims, and vice versa.",
     `Payload: ${JSON.stringify(payload)}`,
   ].join("\n");
@@ -72,7 +82,11 @@ function narratorPrompt(payload: NarrationPayload): string {
 function graderPrompt(payload: NarrationPayload, narrative: string): string {
   return [
     "You grade a short narrative that explains a machine-learning experiment.",
-    "Score 1-5 (integers): accuracy (faithful to the payload numbers), completeness (covers verdict + top variables), clarity (plain language).",
+    "The narrative ALREADY passed deterministic numeric verification against the payload; grade only the writing.",
+    "Score 1-5 (integers) with this rubric:",
+    "- accuracy: 5 = every number/direction mentioned matches the payload; subtract only for misleading phrasing.",
+    "- completeness: 4-5 = states the verdict with both scores AND names at least the top 2 variables; 3 = one of those is thin; 1-2 = verdict or top variables missing.",
+    "- clarity: plain language a non-expert follows; 5 = no jargon left unexplained.",
     `Payload: ${JSON.stringify(payload)}`,
     `Narrative: ${narrative}`,
   ].join("\n");
@@ -97,6 +111,7 @@ export async function runNarrator(
     prompt: narratorPrompt(payload),
     maxOutputTokens: NARRATOR_MAX_TOKENS,
     abortSignal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+    providerOptions: { groq: { reasoningEffort: "low" } },
   });
   return {
     output: result.object,
@@ -125,6 +140,7 @@ export async function runGrader(
     prompt: graderPrompt(payload, narrative),
     maxOutputTokens: GRADER_MAX_TOKENS,
     abortSignal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+    providerOptions: { groq: { reasoningEffort: "low" } },
   });
   return {
     output: result.object,

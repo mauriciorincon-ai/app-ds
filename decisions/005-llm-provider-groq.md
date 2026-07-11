@@ -16,18 +16,17 @@ adapter switchable by env, with the concrete provider decided by ADR with curren
 **Groq** as the single configured real provider, called through the **Vercel AI SDK**
 (`ai` + `@ai-sdk/groq`, `generateObject` + Zod schema — the `ia-embebida` skill pattern).
 
-- **Models:** Narrator → `llama-3.3-70b-versatile` (better instruction-following → higher
-  verification pass rate); Grader → `llama-3.1-8b-instant` (style scoring; the cheap model is
-  enough).
+- **Models:** `openai/gpt-oss-120b` for BOTH roles (Narrator and Grader) — see the amendment
+  below for why the originally chosen llama models were replaced.
 - **Prices (verified 2026-07-09, [groq.com/pricing](https://groq.com/pricing)):**
-  70B $0.59/$0.79 per 1M tokens (in/out); 8B $0.05/$0.08. **Free tier without a credit card**
-  (~30 req/min, 1K req/day for the 70B) covers personal-scale usage entirely; even on paid
-  on-demand, a narration (≤2 calls, ≤550 output tokens total) costs well under **$0.001** —
-  the $10/month ceiling has enormous margin.
+  gpt-oss-120b $0.15/$0.60 per 1M tokens (in/out). **Free tier without a credit card** covers
+  personal-scale usage entirely; a full narration (2 calls, ~1.5K total tokens including
+  reasoning) costs ~**$0.0005** — the $10/month ceiling has enormous margin.
 - **Budget bounded by construction** (`lib/ia/client.ts`): ≤2 calls per narration (Narrator +
-  Grader), `maxOutputTokens` 400/150, 10 s timeout, **zero retries** — any failure falls back to
-  the deterministic template. Cost per request logged with Pino (`lib/ia/cost.ts`), no column
-  names in logs.
+  Grader), `maxOutputTokens` 1500/600 (gpt-oss are reasoning models: the output budget includes
+  reasoning tokens, kept at ~40-100 via `reasoningEffort: "low"`), 15 s timeout, **zero
+  retries** — any failure falls back to the deterministic template. Cost per request logged with
+  Pino (`lib/ia/cost.ts`), no column names in logs.
 - **`mock` provider** (`NARRATION_PROVIDER=mock`): in-process, deterministic, no network; modes
   `success` / `lying` / `down` (env `NARRATION_MOCK_MODE`) reproduce the three standard-7 test
   scenarios. CI and all tests run on mock only.
@@ -46,5 +45,29 @@ as documented contingency if AI SDK + Zod 4 ever conflict — the Zod contract w
   the flow (route → client → verify → grader).
 - Nothing the LLM produces is persisted; the narration lives in the experiment state and the
   model card cites it only when verified (`persist.ts` of the skill pattern is N/A this sprint).
-- Free-tier rate limits (1K req/day on the 70B) are far above personal usage; if exceeded, the
-  route's fallback already degrades honestly to templates.
+- Free-tier rate limits are far above personal usage; if exceeded, the route's fallback already
+  degrades honestly to templates.
+
+## Amendment (2026-07-09) — empirical validation with a real key
+
+The original choice (`llama-3.3-70b-versatile` + `llama-3.1-8b-instant`) failed on first contact
+with the real API and was replaced after end-to-end testing:
+
+1. **Groq does not support `response_format: json_schema` on the llama-3.x models** (only
+   `json_object`), and the AI SDK's `generateObject` requires it. The `openai/gpt-oss` models DO
+   support structured outputs — and are cheaper than the 70B.
+2. **gpt-oss models are reasoning models:** with `maxOutputTokens: 400` the whole budget went to
+   reasoning and Groq returned "Failed to validate JSON". Fixed with `reasoningEffort: "low"` +
+   larger output budgets (still bounded: 1500/600).
+3. **Grader stability decides the model:** `gpt-oss-20b` scored the same good narrative 3/4/5 on
+   completeness across runs ⇒ arbitrary template fallbacks. `gpt-oss-120b` was stable (5/5/5 × 3
+   runs) at ~$0.0002/call, so both roles use the 120b.
+4. **Two verifier/prompt hardenings found by real output:** (a) Spanish prose naturally accents
+   column names ("la región" for `region`) — the deterministic mention-check is now
+   diacritic-insensitive (still literal matching); (b) the model interpreted `direction:
+negative` as "reduces conversion" — but it cannot know the positive class (we never send class
+   labels, by ADR-006), so the prompt now forbids phrasing directions as real-world outcomes.
+5. **Grader rubric made explicit** (what 1-5 means per axis) after real narratives were rejected
+   2/3 times on vague completeness judgments; with the narrator prompt also requiring full
+   coverage (verdict + scores + top variables + leakage warning), the circuit went **5/5
+   verified** on repeat runs.
