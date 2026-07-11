@@ -22,10 +22,12 @@ export default function Home() {
 
       {state.phase === "running" && <TrainingScreen stage={state.progress} />}
 
-      {state.phase === "results" && state.result && (
+      {state.phase === "results" && state.result && state.runMeta && (
         <ResultsScreen
           result={state.result}
           datasetName={state.datasetName}
+          cols={state.dataset?.headers.length ?? 0}
+          runMeta={state.runMeta}
           onAgain={reset}
         />
       )}

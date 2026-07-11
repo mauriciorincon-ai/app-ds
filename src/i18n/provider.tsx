@@ -15,9 +15,9 @@ import {
   LOCALE_STORAGE_KEY,
   type Locale,
 } from "./config";
-import { dictionaries, type Dictionary } from "./dictionaries";
+import { translate, type TParams } from "./translate";
 
-export type TParams = Record<string, string | number>;
+export type { TParams };
 
 // La preferencia de idioma vive en localStorage y se lee con useSyncExternalStore:
 // el patrón de React para stores externos con SSR (sin setState-en-efecto ni
@@ -58,27 +58,6 @@ type I18nContextValue = {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-// Resuelve una clave con notación de punto ("app.name"). Si falta, devuelve la
-// clave misma (fallback honesto y visible, nunca una cadena vacía silenciosa).
-function resolve(dictionary: Dictionary, key: string): string {
-  let current: string | Dictionary = dictionary;
-  for (const part of key.split(".")) {
-    if (typeof current === "string") return key;
-    const next: string | Dictionary | undefined = current[part];
-    if (next === undefined) return key;
-    current = next;
-  }
-  return typeof current === "string" ? current : key;
-}
-
-// Reemplaza {nombre} por params.nombre; deja el marcador si falta el parámetro.
-function interpolate(template: string, params?: TParams): string {
-  if (!params) return template;
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in params ? String(params[name]) : match,
-  );
-}
-
 export function I18nProvider({ children }: { children: ReactNode }) {
   const locale = useSyncExternalStore(subscribe, readLocale, getServerLocale);
 
@@ -89,8 +68,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLocale = useCallback((next: Locale) => writeLocale(next), []);
 
   const t = useCallback(
-    (key: string, params?: TParams) =>
-      interpolate(resolve(dictionaries[locale], key), params),
+    (key: string, params?: TParams) => translate(locale, key, params),
     [locale],
   );
 

@@ -140,5 +140,6 @@ export function assembleResult(
     confusionMatrix: py.confusion_matrix,
     verdict,
     leakage,
+    explainability: py.explainability,
   };
 }

@@ -105,6 +105,106 @@
     },
     "again": "New experiment"
   },
+  "why": {
+    "title": "Why does it predict this way?",
+    "method": "Permutation importance on the test set: how much the model degrades when each variable's relationship with the target is broken.",
+    "empty": "There are no importances to show for this experiment.",
+    "barLabel": "Importance of {name}: {value}",
+    "direction": {
+      "positive": "▲ higher values make “{positive}” more likely",
+      "negative": "▼ higher values make “{positive}” less likely",
+      "categorical": "· the effect varies by category",
+      "unclear": "· no clear direction"
+    },
+    "narration": {
+      "title": "In words",
+      "loading": "Generating the narrative and verifying it against the numbers…",
+      "verifiedBadge": "verified against the numbers",
+      "templateBadge": "Standard text"
+    }
+  },
+  "consent": {
+    "toggle": "Narrate with AI (optional)",
+    "explain": "If you turn this on, your column names and aggregate statistics (metrics, importances) are sent to an AI provider. Your data rows are NEVER sent.",
+    "verifiedNote": "Every narrative is verified against the numbers before display; if it fails, you'll see the standard text."
+  },
+  "card": {
+    "title": "Model card",
+    "desc": "The record of your experiment: data, method, metrics, verdict and limits — ready to save or share.",
+    "download": "Download model card (.md)",
+    "preview": "View content"
+  },
+  "narration": {
+    "template": {
+      "verdict": {
+        "beats": "The model beats the baseline: {model} vs {baseline} in {metric} (an improvement of {delta}).",
+        "ties": "The model ties the baseline: {model} vs {baseline} in {metric}; a simple rule does practically as well.",
+        "loses": "The model does NOT beat the baseline: {model} vs {baseline} in {metric}; with these variables it adds nothing."
+      },
+      "features": "The variables with the most weight were: {list}.",
+      "direction": {
+        "positive": "higher values make the positive class more likely",
+        "negative": "higher values make the positive class less likely",
+        "categorical": "the effect varies by category",
+        "unclear": "no clear direction"
+      },
+      "method": "Importance was measured by permutation on the test set (data the model never saw during training).",
+      "leakage": "Warning: {columns} could contain the answer (possible leak); these figures may be inflated."
+    }
+  },
+  "modelcard": {
+    "title": "Model card — {name}",
+    "generated": "Generated on {date} by Probeta DS. All computation happened in the browser: the data never left the device.",
+    "sections": {
+      "data": "Data",
+      "split": "Split",
+      "method": "Method",
+      "metrics": "Metrics (on test)",
+      "verdict": "Verdict",
+      "leakage": "Leakage check",
+      "explainability": "Why does it predict this way?",
+      "narrative": "Verified narrative",
+      "limits": "Limits"
+    },
+    "data": {
+      "dataset": "Dataset: {name}",
+      "shape": "{rows} rows × {cols} columns ({numeric} numeric predictors, {categorical} categorical)",
+      "target": "Target: “{target}” (binary classification; positive class: “{positive}”)"
+    },
+    "split": {
+      "sizes": "Training: {train} rows · Test: {test} rows (stratified, seed {seed}).",
+      "rule": "Preprocessing was fitted ONLY on the training set (anti-leakage by construction)."
+    },
+    "method": {
+      "pipeline": "Imputation (median / most frequent), scaling and one-hot inside a scikit-learn Pipeline.",
+      "models": "Baselines: majority class and logistic regression. Model: Random Forest (200 trees)."
+    },
+    "metrics": {
+      "metric": "Metric",
+      "model": "Model"
+    },
+    "verdict": {
+      "primary": "Primary metric: {metric}."
+    },
+    "leakage": {
+      "found": "Columns suspected of leakage: {columns}. Metrics may be inflated; remove them and retrain.",
+      "none": "No obvious leakage found (this check is an honest help, not a guarantee)."
+    },
+    "explainability": {
+      "method": "Method: permutation importance on the test set (scoring {scoring}, {repeats} repeats).",
+      "feature": "Variable",
+      "kind": "Kind",
+      "importance": "Importance",
+      "direction": "Direction",
+      "notVerified": "No AI narrative is included: it was not generated or it failed the numeric verification."
+    },
+    "limits": {
+      "binary": "Binary classification only in this version.",
+      "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
+      "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
+      "dates": "Date columns are detected but not used yet (no temporal split)."
+    }
+  },
   "errors": {
     "title": "Something doesn't add up",
     "csv-empty": "The file is empty or has only a header.",

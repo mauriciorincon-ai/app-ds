@@ -28,5 +28,11 @@ export default defineConfig({
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Narración con el proveedor MOCK (sin red, sin key): el e2e ejercita el
+    // route real /api/narrate con el circuito verificación+grader completo.
+    env: {
+      NARRATION_ENABLED: "true",
+      NARRATION_PROVIDER: "mock",
+    },
   },
 });

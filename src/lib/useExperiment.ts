@@ -16,12 +16,21 @@ import type {
 export type ExperimentPhase =
   "empty" | "configuring" | "running" | "results" | "error";
 
+/** Metadatos del run que consumen la narración y la model card (S2). */
+export type RunMeta = {
+  target: string;
+  numericFeatures: number;
+  categoricalFeatures: number;
+  seed: number;
+};
+
 export type ExperimentState = {
   phase: ExperimentPhase;
   datasetName: string | null;
   dataset: DatasetSummary | null;
   progress: ProgressStage | null;
   result: ExperimentResult | null;
+  runMeta: RunMeta | null;
   error: { kind: WorkerErrorKind; message: string } | null;
 };
 
@@ -31,6 +40,7 @@ const INITIAL: ExperimentState = {
   dataset: null,
   progress: null,
   result: null,
+  runMeta: null,
   error: null,
 };
 
@@ -78,7 +88,9 @@ export function useExperiment() {
         const table = tableRef.current;
         reportExperimentError(
           "runtime",
-          table ? { rows: table.rows.length, cols: table.headers.length } : undefined,
+          table
+            ? { rows: table.rows.length, cols: table.headers.length }
+            : undefined,
         );
         setState((s) => ({
           ...s,
@@ -133,7 +145,18 @@ export function useExperiment() {
 
     const id = nextId.current++;
     pendingRef.current = { id, leakage: prepared.leakage };
-    setState((s) => ({ ...s, phase: "running", progress: null, error: null }));
+    setState((s) => ({
+      ...s,
+      phase: "running",
+      progress: null,
+      error: null,
+      runMeta: {
+        target: targetColumn,
+        numericFeatures: prepared.payload.numeric.length,
+        categoricalFeatures: prepared.payload.categorical.length,
+        seed: SEED,
+      },
+    }));
     workerRef.current?.postMessage({ id, payload: prepared.payload });
   }, []);
 
