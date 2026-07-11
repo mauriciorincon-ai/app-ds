@@ -198,6 +198,25 @@ usuario (~1.5K tokens ≈ US$0.0005 por narración). Lección de método: el moc
 pero **el contrato del proveedor real solo se valida contra el proveedor real** — hacerlo ANTES
 del merge evitó descubrirlo en producción.
 
+### Post-PR — Hallazgo de UX del usuario probando la preview real (resuelto)
+
+El usuario activó "Narrar con IA" en una preview sin el fix del proveedor y reportó: _"lo activo y
+no pasa nada"_. Tenía razón dos veces:
+
+1. **El fallback era mudo:** la app intentaba narrar, fallaba y caía a la plantilla sin decir POR
+   QUÉ — el toggle parecía muerto. Ahora la plantilla lleva un aviso ⚠ honesto con el motivo en 3
+   cubetas: no configurado en este despliegue · el proveedor no respondió · la narración no pasó
+   la verificación (ES/EN).
+2. **No había reintento:** la respuesta quedaba memorizada por payload y re-activar el toggle no
+   volvía a intentar. Ahora `useNarration` expone `retryNarration()` y re-activar el consentimiento
+   reintenta (iniciado por el usuario, protegido por el rate limit — sigue sin haber retries
+   automáticos).
+
+- Test unit del reintento + 2 tests del aviso (con fallo ⇒ visible; sin consentimiento ⇒ no hay
+  aviso porque no hubo intento). Manual actualizado. **124 unit · 6 e2e verdes.**
+- Lección de método: "nunca sección vacía" no basta — el fallback debe **contar que lo es y por
+  qué**, o la feature parece rota justo cuando está siendo honesta.
+
 ### Post-PR — Lighthouse rojo por 48 bytes (resuelto)
 
 El primer CI del PR #3 falló SOLO en lighthouse: presupuesto de script de la landing 300 KB,

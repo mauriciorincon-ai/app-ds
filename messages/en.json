@@ -120,7 +120,12 @@
       "title": "In words",
       "loading": "Generating the narrative and verifying it against the numbers…",
       "verifiedBadge": "verified against the numbers",
-      "templateBadge": "Standard text"
+      "templateBadge": "Standard text",
+      "fallback": {
+        "unavailable": "AI narration is not configured on this deployment; the standard text is shown.",
+        "provider": "The AI provider did not respond; the standard text is shown. Toggle “Narrate with AI” off and on to retry.",
+        "rejected": "The AI narrative failed verification against the numbers; for honesty, the standard text is shown. Toggle “Narrate with AI” off and on to retry."
+      }
     }
   },
   "consent": {

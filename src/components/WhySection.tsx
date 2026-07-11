@@ -5,12 +5,27 @@
 // bloque de narración con badge que distingue "verificada" de "texto estándar".
 // El método se nombra con honestidad (importancia por permutación, ADR-004).
 import { useT } from "@/i18n/use-translation";
+// SOLO tipo (un import runtime de schemas.ts metería zod al bundle del cliente).
+import type { FallbackReason } from "@/lib/ia/schemas";
 import type { NarrationState } from "@/lib/useNarration";
 import type { Explainability, FeatureImportance } from "@/workers/protocol";
 import { Badge, Card } from "./ui";
 import { ConsentPanel } from "./ConsentPanel";
 
 const MAX_BARS = 8;
+
+// La narración cayó a plantilla: decir POR QUÉ, en tres cubetas honestas.
+// Sin esto el toggle se siente "muerto" (hallazgo del usuario probando la
+// preview real): la app intentaba, fallaba y no contaba nada.
+const FALLBACK_NOTICE: Record<FallbackReason, string> = {
+  disabled: "unavailable",
+  "no-provider": "unavailable",
+  "invalid-request": "provider",
+  "rate-limited": "provider",
+  "provider-error": "provider",
+  "verification-failed": "rejected",
+  "grader-rejected": "rejected",
+};
 
 function directionKey(feature: FeatureImportance): string {
   if (feature.kind === "categorical") return "categorical";
@@ -126,7 +141,20 @@ export function WhySection({
               {t("why.narration.loading")}
             </p>
           ) : (
-            <p className="text-sm leading-relaxed">{narration.text}</p>
+            <>
+              <p className="text-sm leading-relaxed">{narration.text}</p>
+              {narration.kind === "template" &&
+                narration.reason !== "no-consent" && (
+                  <p className="mt-2 text-xs text-caution">
+                    <span aria-hidden className="mr-1">
+                      ⚠
+                    </span>
+                    {t(
+                      `why.narration.fallback.${FALLBACK_NOTICE[narration.reason]}`,
+                    )}
+                  </p>
+                )}
+            </>
           )}
         </div>
       </Card>

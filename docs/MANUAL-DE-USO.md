@@ -90,6 +90,10 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     IA **y la app comprobó, cifra por cifra, que no miente** antes de mostrártela. Si la IA cita
     una variable inexistente o una cifra falsa, esa narración **se descarta** y verás el texto
     estándar. El gráfico siempre queda visible para que compruebes por ti mismo.
+  - **Si la narración con IA no pudo generarse, la app te lo dice**: debajo del texto estándar
+    aparece un aviso ⚠ con el motivo (el proveedor no respondió · la narración no pasó la
+    verificación · la función no está configurada en este despliegue). Para **reintentar**, apaga
+    y vuelve a encender _Narrar con IA_.
 
 - **Privacidad de la narración con IA (importante):**
   - Es **opcional y viene apagada**. Si la activas, se envían a un proveedor de IA **solo los

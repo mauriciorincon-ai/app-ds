@@ -98,10 +98,11 @@ describe("useNarration", () => {
       () => useNarration({ ...input, consent: false }),
       { wrapper },
     );
-    expect(result.current.kind).toBe("template");
-    if (result.current.kind === "template") {
-      expect(result.current.reason).toBe("no-consent");
-      expect(result.current.text.length).toBeGreaterThan(20);
+    const narration = result.current.narration;
+    expect(narration.kind).toBe("template");
+    if (narration.kind === "template") {
+      expect(narration.reason).toBe("no-consent");
+      expect(narration.text.length).toBeGreaterThan(20);
     }
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -119,8 +120,8 @@ describe("useNarration", () => {
       () => useNarration({ ...input, consent: true }),
       { wrapper },
     );
-    expect(result.current.kind).toBe("loading");
-    await waitFor(() => expect(result.current.kind).toBe("verified"));
+    expect(result.current.narration.kind).toBe("loading");
+    await waitFor(() => expect(result.current.narration.kind).toBe("verified"));
   });
 
   it("fallo del route ⇒ plantilla con razón (nunca sección vacía)", async () => {
@@ -129,10 +130,34 @@ describe("useNarration", () => {
       () => useNarration({ ...input, consent: true }),
       { wrapper },
     );
-    await waitFor(() => expect(result.current.kind).toBe("template"));
-    if (result.current.kind === "template") {
-      expect(result.current.reason).toBe("provider-error");
+    await waitFor(() => expect(result.current.narration.kind).toBe("template"));
+    if (result.current.narration.kind === "template") {
+      expect(result.current.narration.reason).toBe("provider-error");
     }
+  });
+
+  it("retryNarration tras un fallo vuelve a pedir (el toggle nunca queda muerto)", async () => {
+    const verified: NarrateResponse = {
+      status: "verified",
+      narrative: "Narrativa verificada tras el reintento con x.",
+      grader: { accuracy: 5, completeness: 4, clarity: 5 },
+    };
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(verified), { status: 200 }),
+      );
+    const { result } = renderHook(
+      () => useNarration({ ...input, consent: true }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.narration.kind).toBe("template"));
+
+    act(() => result.current.retryNarration());
+    expect(result.current.narration.kind).toBe("loading");
+    await waitFor(() => expect(result.current.narration.kind).toBe("verified"));
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 });
 
