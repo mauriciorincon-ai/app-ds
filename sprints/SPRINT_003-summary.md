@@ -110,10 +110,12 @@ correr Lighthouse local antes del PR atrapó el budget roto sin quemar ciclos de
 volvió a pagar: verificar contra el CSV real, no asumir; (2) jsdom sin `crypto.subtle` (polyfill
 guardado en `tests/setup.ts`); (3) Playwright sin navegadores instalados en esta máquina
 (`playwright install chromium`) y lhci local necesita `CHROME_PATH` apuntando al Chromium de
-Playwright; (4) `git config core.hooksPath githooks` no estaba aplicado localmente — el hook
-gitleaks no corría (se configuró; scan manual del branch limpio).
+Playwright.
 
-**Fricciones de kit v1.2.0: ninguna** — todo lo que la orden asume presente, estaba.
+**Fricciones de kit v1.2.0: 1** — **K12: `githooks/pre-commit` estampado sin bit de ejecución
+(100644) y `core.hooksPath` sin aplicar en el clon ⇒ el gate local de gitleaks nunca corrió
+(S1–S3), silenciosamente.** Corregido aquí (`chmod +x` commiteado + config local + scan manual
+limpio del branch). Propuesta al kit: estampar 100755 y aplicar `core.hooksPath` en el setup.
 
 ## Sugerencias de mejora al método
 

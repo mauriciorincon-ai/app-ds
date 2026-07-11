@@ -17,7 +17,15 @@ Plan aprobado por el usuario el 2026-07-11 (plan mode).
 - ✅ Supuesto de la orden confirmado en código: `run_experiment` NO retiene el pipeline fitted
   (`forest_pipe` variable local, `src/lib/ds/pipeline.py:168`).
 
-**Fricciones de kit: ninguna.** Todo lo que la orden asume "ya viene" está presente.
+**Fricciones de kit: 1 (descubierta al cierre, no en la verificación inicial).**
+
+- **K12 — `githooks/pre-commit` estampado SIN bit de ejecución (modo 100644).** Git ignora
+  silenciosamente hooks no ejecutables ("hook was ignored because it's not set as executable"),
+  así que el gate local de gitleaks **nunca corrió** en ningún commit de este repo (S1–S3).
+  Además `core.hooksPath` no estaba configurado en este clon (el kit documenta el comando pero
+  nada lo aplica). Corregido en este sprint: `chmod +x` commiteado (100755) +
+  `git config core.hooksPath githooks` local + scan manual `gitleaks detect` del branch (limpio).
+  Propuesta al kit: estampar el hook con modo 100755 y aplicar `core.hooksPath` en el setup.
 
 ## Desviación del plan
 
