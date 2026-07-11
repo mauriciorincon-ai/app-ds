@@ -24,6 +24,12 @@ Plan aprobado por el usuario el 2026-07-11 (plan mode).
 - (menor) La orden lista `src/i18n/dictionaries.ts` como archivo a modificar; en este repo ese
   archivo solo importa `messages/{es,en}.json` — el microcopy nuevo va en los JSON y
   `dictionaries.ts` no cambia. Sin impacto en el alcance.
+- (detalle de implementación) El plan aprobado decía "manifiesto con schema zod" en
+  `model-file.ts`. Zod en el bundle CLIENTE rompió el budget de script de Lighthouse
+  (315KB > 300KB) y arrastró el LCP simulado (3.25s > 3.0s). Se reemplazó por **validación
+  estructural a mano en TS puro** (mismos error kinds, mismos tests) — reafirma la lección S2:
+  zod vive del lado servidor. El requisito de producto (validar forma+hash ANTES de
+  deserializar) queda intacto.
 
 ## Spike export (riesgo #1) — resultado
 

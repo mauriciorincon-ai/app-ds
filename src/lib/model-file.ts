@@ -5,7 +5,6 @@
 // integridad: el import valida forma, versión de formato y SHA-256 del payload
 // ANTES de que el payload (pickle) toque Pyodide. Un archivo ajeno o corrupto
 // se rechaza aquí, en TS puro, sin deserializar nada.
-import { z } from "zod";
 import type { LeakageFinding } from "@/engine/leakage";
 import type { Metrics, Verdict } from "@/engine/verdict";
 import type {
@@ -56,71 +55,119 @@ export type ModelFile = {
   payload: string;
 };
 
-// --- Esquemas zod (rechazo claro de archivos ajenos/corruptos) --------------
+// --- Validación estructural (rechazo claro de archivos ajenos/corruptos) ----
+// A mano, en TS puro: zod vive del lado servidor (lección S2 de bundle — aquí
+// rompía el budget de script de 300KB). La forma es fija y pequeña; los tests
+// de model-file cubren cada rechazo.
 
-const metricsSchema = z.object({
-  accuracy: z.number(),
-  precision: z.number(),
-  recall: z.number(),
-  f1: z.number(),
-  auc: z.number(),
-});
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+const isString = (v: unknown): v is string => typeof v === "string";
+const isNumber = (v: unknown): v is number =>
+  typeof v === "number" && Number.isFinite(v);
+const isStringArray = (v: unknown): v is string[] =>
+  Array.isArray(v) && v.every(isString);
 
-const manifestSchema = z.object({
-  app: z.object({ name: z.literal(APP_NAME), version: z.string() }),
-  created_at: z.string(),
-  dataset: z.object({
-    name: z.string(),
-    n_train: z.number().int(),
-    n_test: z.number().int(),
-  }),
-  schema: z.object({
-    numeric: z.array(z.string()),
-    categorical: z.array(z.string()),
-    target: z.string(),
-    classes: z.array(z.string()).length(2),
-    positive_class: z.string(),
-  }),
-  training_profile: z.object({
-    numeric: z.record(
-      z.string(),
-      z.object({ min: z.number().nullable(), max: z.number().nullable() }),
-    ),
-    categorical: z.record(z.string(), z.array(z.string())),
-  }),
-  metrics: z.object({
-    model: metricsSchema,
-    baselines: z.object({ majority: metricsSchema, logistic: metricsSchema }),
-  }),
-  positive_rate: z.number(),
-  verdict: z.object({
-    level: z.enum(["beats", "ties", "loses"]),
-    primaryMetric: z.enum(["accuracy", "precision", "recall", "f1", "auc"]),
-    modelScore: z.number(),
-    baselineScore: z.number(),
-    delta: z.number(),
-  }),
-  leakage: z.array(
-    z.object({
-      column: z.string(),
-      score: z.number(),
-      reason: z.enum(["near-perfect-separation", "category-purity"]),
-    }),
-  ),
-  versions: z.object({
-    pyodide: z.string(),
-    sklearn: z.string(),
-    python: z.string(),
-  }),
-  payload_sha256: z.string(),
-  payload_encoding: z.literal(PAYLOAD_ENCODING),
-});
+const isMetrics = (v: unknown): v is Metrics =>
+  isRecord(v) &&
+  (["accuracy", "precision", "recall", "f1", "auc"] as const).every((k) =>
+    isNumber(v[k]),
+  );
 
-const modelFileSchema = z.object({
-  format_version: z.literal(MODEL_FILE_FORMAT_VERSION),
-  manifest: manifestSchema,
-  payload: z.string().min(1),
-});
+function isModelSchema(v: unknown): v is ModelSchema {
+  return (
+    isRecord(v) &&
+    isStringArray(v.numeric) &&
+    isStringArray(v.categorical) &&
+    isString(v.target) &&
+    isStringArray(v.classes) &&
+    v.classes.length === 2 &&
+    isString(v.positive_class)
+  );
+}
+
+function isTrainingProfile(v: unknown): v is TrainingProfile {
+  if (!isRecord(v) || !isRecord(v.numeric) || !isRecord(v.categorical)) {
+    return false;
+  }
+  return (
+    Object.values(v.numeric).every(
+      (bounds) =>
+        isRecord(bounds) &&
+        (bounds.min === null || isNumber(bounds.min)) &&
+        (bounds.max === null || isNumber(bounds.max)),
+    ) && Object.values(v.categorical).every(isStringArray)
+  );
+}
+
+function isVerdict(v: unknown): v is Verdict {
+  return (
+    isRecord(v) &&
+    isString(v.level) &&
+    ["beats", "ties", "loses"].includes(v.level) &&
+    isString(v.primaryMetric) &&
+    ["accuracy", "precision", "recall", "f1", "auc"].includes(
+      v.primaryMetric,
+    ) &&
+    isNumber(v.modelScore) &&
+    isNumber(v.baselineScore) &&
+    isNumber(v.delta)
+  );
+}
+
+function isLeakage(v: unknown): v is LeakageFinding[] {
+  return (
+    Array.isArray(v) &&
+    v.every(
+      (finding) =>
+        isRecord(finding) &&
+        isString(finding.column) &&
+        isNumber(finding.score) &&
+        isString(finding.reason) &&
+        ["near-perfect-separation", "category-purity"].includes(finding.reason),
+    )
+  );
+}
+
+function isManifest(v: unknown): v is ModelManifest {
+  return (
+    isRecord(v) &&
+    isRecord(v.app) &&
+    v.app.name === APP_NAME &&
+    isString(v.app.version) &&
+    isString(v.created_at) &&
+    isRecord(v.dataset) &&
+    isString(v.dataset.name) &&
+    isNumber(v.dataset.n_train) &&
+    isNumber(v.dataset.n_test) &&
+    isModelSchema(v.schema) &&
+    isTrainingProfile(v.training_profile) &&
+    isRecord(v.metrics) &&
+    isMetrics(v.metrics.model) &&
+    isRecord(v.metrics.baselines) &&
+    isMetrics(v.metrics.baselines.majority) &&
+    isMetrics(v.metrics.baselines.logistic) &&
+    isNumber(v.positive_rate) &&
+    isVerdict(v.verdict) &&
+    isLeakage(v.leakage) &&
+    isRecord(v.versions) &&
+    isString(v.versions.pyodide) &&
+    isString(v.versions.sklearn) &&
+    isString(v.versions.python) &&
+    isString(v.payload_sha256) &&
+    v.payload_encoding === PAYLOAD_ENCODING
+  );
+}
+
+function isModelFile(v: unknown): v is ModelFile {
+  return (
+    isRecord(v) &&
+    v.format_version === MODEL_FILE_FORMAT_VERSION &&
+    isManifest(v.manifest) &&
+    isString(v.payload) &&
+    v.payload.length > 0
+  );
+}
 
 // --- Hash ---------------------------------------------------------------
 
@@ -212,9 +259,10 @@ function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
 
 /**
  * Valida el texto de un `.probeta.json`: JSON → versión de formato → forma
- * (zod) → SHA-256 del payload contra el manifiesto. El payload NUNCA se
- * deserializa aquí; si algo falla, se rechaza sin tocarlo. Un mismatch de
- * versiones de runtime NO bloquea: devuelve warnings (advertencia honesta).
+ * (validación estructural) → SHA-256 del payload contra el manifiesto. El
+ * payload NUNCA se deserializa aquí; si algo falla, se rechaza sin tocarlo. Un
+ * mismatch de versiones de runtime NO bloquea: devuelve warnings (advertencia
+ * honesta).
  */
 export async function validateModelFile(
   text: string,
@@ -228,15 +276,15 @@ export async function validateModelFile(
 
   // La versión de formato se mira ANTES de exigir la forma completa: un
   // archivo de un formato futuro merece "versión no soportada", no "corrupto".
-  const probe = z.object({ format_version: z.number() }).safeParse(raw);
-  if (!probe.success) return { ok: false, error: "invalid-format" };
-  if (probe.data.format_version !== MODEL_FILE_FORMAT_VERSION) {
+  if (!isRecord(raw) || !isNumber(raw.format_version)) {
+    return { ok: false, error: "invalid-format" };
+  }
+  if (raw.format_version !== MODEL_FILE_FORMAT_VERSION) {
     return { ok: false, error: "unsupported-version" };
   }
 
-  const parsed = modelFileSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: "invalid-format" };
-  const file = parsed.data;
+  if (!isModelFile(raw)) return { ok: false, error: "invalid-format" };
+  const file = raw;
 
   let payloadBytes: Uint8Array;
   try {

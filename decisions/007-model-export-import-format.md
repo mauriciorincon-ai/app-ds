@@ -29,7 +29,8 @@ before the payload is ever deserialized.**
   owns (no server surface), and joblib would add nothing here (it wraps pickle; its wins are
   memory-mapped large arrays on disk, irrelevant in WASM) while pickle is stdlib.
 - **Import validates BEFORE deserializing** (all in TypeScript, without touching Pyodide):
-  1. JSON shape + `format_version` known (zod schema);
+  1. JSON shape + `format_version` known (hand-rolled structural validation — zod stays
+     server-side; pulling it into the client bundle broke the 300KB script budget);
   2. **SHA-256 of the decoded payload bytes matches `manifest.payload_sha256`** (Web Crypto);
   3. runtime versions in the manifest vs the app's `RUNTIME_VERSIONS` constant — mismatch loads
      best-effort with an honest warning; unpickle failure surfaces a clear error.
