@@ -385,7 +385,16 @@ function ScoredResults({
             total: table.rows.length,
           })}
         </h2>
-        <div className="overflow-x-auto rounded-md border border-hairline">
+        {/* Región scrolleable accesible por teclado (axe: scrollable-region-focusable). */}
+        <div
+          className="overflow-x-auto rounded-md border border-hairline"
+          role="region"
+          tabIndex={0}
+          aria-label={t("score.preview.title", {
+            shown: Math.min(PREVIEW_ROWS, table.rows.length),
+            total: table.rows.length,
+          })}
+        >
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-sunken text-left">

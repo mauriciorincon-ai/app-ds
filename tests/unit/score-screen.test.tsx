@@ -3,11 +3,10 @@
 // aparte; aquí se prueba que la pantalla los COMUNICA con símbolo + texto.
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
 import { I18nProvider } from "@/i18n/provider";
 import { downloadTextFile } from "@/lib/files";
 import type { ModelMeta, ScoringState } from "@/lib/useExperiment";
-import type { CsvTable, ColumnProfile } from "@/lib/ds/csv";
+import type { CsvTable } from "@/lib/ds/csv";
 import { ScoreScreen } from "@/components/ScoreScreen";
 
 vi.mock("@/lib/files", async (importOriginal) => {

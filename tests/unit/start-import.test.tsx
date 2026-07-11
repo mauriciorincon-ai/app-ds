@@ -10,7 +10,7 @@ import {
   packModelFile,
   type ModelFile,
 } from "@/lib/model-file";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { ExperimentResult, RuntimeVersions } from "@/workers/protocol";
 import { StartScreen } from "@/components/StartScreen";
 
 const METRICS = {
@@ -51,7 +51,9 @@ const RESULT: ExperimentResult = {
   },
 };
 
-function packFixture(versions = { ...RUNTIME_VERSIONS, python: "3.14.2" }) {
+function packFixture(
+  versions: RuntimeVersions = { ...RUNTIME_VERSIONS, python: "3.14.2" },
+) {
   return packModelFile({
     datasetName: "ventas.csv",
     result: RESULT,
