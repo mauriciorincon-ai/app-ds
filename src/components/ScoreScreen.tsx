@@ -14,7 +14,7 @@ import {
   resolveScoredColumnNames,
   scoredCsvFileName,
 } from "@/lib/scored-csv";
-import type { ModelMeta, ScoringState } from "@/lib/useExperiment";
+import type { ExportState, ModelMeta, ScoringState } from "@/lib/useExperiment";
 import type { ProgressStage } from "@/workers/protocol";
 import { Button, Card, MetricTile } from "./ui";
 
@@ -31,19 +31,23 @@ export function ScoreScreen({
   ready,
   progress,
   scoring,
+  exportState,
   onScoreFile,
   onScoreAnother,
   onBackToResults,
   onExit,
+  onExportModel,
 }: {
   meta: ModelMeta;
   ready: boolean;
   progress: ProgressStage | null;
   scoring: ScoringState;
+  exportState: ExportState;
   onScoreFile: (csv: string, name: string) => void;
   onScoreAnother: () => void;
   onBackToResults: () => void;
   onExit: () => void;
+  onExportModel: () => void;
 }) {
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -208,7 +212,32 @@ export function ScoreScreen({
         </div>
       )}
 
-      <div>{backButton}</div>
+      {/* Export también aquí (feedback visual S3): solo para modelos entrenados
+          en esta sesión — un modelo importado ya ES el archivo. */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-3">
+          {backButton}
+          {meta.source === "trained" && ready && (
+            <Button
+              variant="secondary"
+              onClick={onExportModel}
+              disabled={exportState === "exporting"}
+            >
+              {exportState === "exporting"
+                ? t("results.export.exporting")
+                : t("results.export.button")}
+            </Button>
+          )}
+        </div>
+        {meta.source === "trained" && exportState === "error" && (
+          <p role="alert" className="text-sm text-negative">
+            <span aria-hidden className="mr-1">
+              ✕
+            </span>
+            {t("results.export.error")}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

@@ -56,10 +56,12 @@ export default function Home() {
           ready={state.modelReady}
           progress={state.progress}
           scoring={state.scoring}
+          exportState={state.exportState}
           onScoreFile={scoreCsv}
           onScoreAnother={resetScoring}
           onBackToResults={backToResults}
           onExit={reset}
+          onExportModel={exportModel}
         />
       )}
 

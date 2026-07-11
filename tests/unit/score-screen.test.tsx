@@ -64,10 +64,12 @@ function ui(
     ready: true,
     progress: null,
     scoring,
+    exportState: "idle" as const,
     onScoreFile: vi.fn(),
     onScoreAnother: vi.fn(),
     onBackToResults: vi.fn(),
     onExit: vi.fn(),
+    onExportModel: vi.fn(),
     ...overrides,
   };
   render(
@@ -104,6 +106,22 @@ describe("ScoreScreen — vacío", () => {
     const trained = ui({ status: "idle" });
     fireEvent.click(screen.getByText("Volver a los resultados"));
     expect(trained.onBackToResults).toHaveBeenCalledOnce();
+  });
+
+  it("modelo entrenado ⇒ 'Exportar modelo' también aquí (feedback visual S3)", () => {
+    const props = ui({ status: "idle" });
+    fireEvent.click(screen.getByText("Exportar modelo"));
+    expect(props.onExportModel).toHaveBeenCalledOnce();
+  });
+
+  it("exportando ⇒ botón deshabilitado; error ⇒ aviso con símbolo + texto", () => {
+    ui({ status: "idle" }, { exportState: "error" });
+    expect(screen.getByRole("alert")).toHaveTextContent(/No se pudo exportar/);
+  });
+
+  it("modelo importado ⇒ SIN botón de export (el archivo ya existe)", () => {
+    ui({ status: "idle" }, { meta: { ...META, source: "imported" } });
+    expect(screen.queryByText("Exportar modelo")).toBeNull();
   });
 });
 

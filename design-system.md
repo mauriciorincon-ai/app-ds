@@ -113,7 +113,9 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   con la razón exacta y microcopy "solo archivos de Probeta". El payload nunca se toca aquí.
 - **ExportModelCard** (en ResultsScreen) — par de acciones "Usar el modelo" (primaria) y "Exportar
   modelo" (secundaria, estados listo/exportando/error) + microcopy honesto de qué contiene el
-  archivo (y qué no: filas crudas).
+  archivo (y qué no: filas crudas). Tras el feedback visual del usuario (S3), "Exportar modelo"
+  también vive en la barra inferior de ScoreScreen — SOLO para modelos entrenados en la sesión
+  (un modelo importado ya es el archivo).
 
 ## Jerarquía por pantalla (la "una cosa importante")
 

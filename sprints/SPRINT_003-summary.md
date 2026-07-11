@@ -67,9 +67,10 @@ para puntuar sin re-entrenar. Todo client-side; los e2e vigilan que ninguna peti
   `why-modelcard` siguen verdes sin tocarse).
 - ✅ **Manual de uso** — sección "El modelo se usa": puntuar, leer la novedad, export/import, qué
   contiene el archivo (y qué no), límites honestos.
-- ⚠️ **Revisión de diseño** — construido fiel a `design-system.md` (componentes S3 documentados);
-  **checklist `diseno-ui` + aprobación visual del usuario sobre la preview: PENDIENTE** (bloquea
-  el merge, es el paso manual del usuario).
+- ✅ **Revisión de diseño** — construido fiel a `design-system.md` (componentes S3 documentados).
+  **Aprobación visual del usuario sobre la preview: DADA (2026-07-11)**, con un ajuste solicitado
+  y aplicado pre-merge: "Exportar modelo" también en la pantalla de scoring (solo modelos
+  entrenados en la sesión — un importado ya es el archivo).
 
 ## Métricas técnicas
 
