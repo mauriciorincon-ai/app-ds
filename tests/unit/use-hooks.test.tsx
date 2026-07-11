@@ -5,12 +5,25 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { I18nProvider } from "@/i18n/provider";
+import { downloadTextFile } from "@/lib/files";
 import type { NarrateResponse } from "@/lib/ia/schemas";
+import {
+  RUNTIME_VERSIONS,
+  packModelFile,
+  validateModelFile,
+} from "@/lib/model-file";
 import { CONSENT_STORAGE_KEY, useConsent } from "@/lib/useConsent";
 import { useExperiment } from "@/lib/useExperiment";
 import { useNarration } from "@/lib/useNarration";
 import type { ExperimentResult, PipelineResult } from "@/workers/protocol";
 import type { Metrics } from "@/engine/verdict";
+
+// La descarga real (Blob + anchor) se prueba en files.test.ts; aquí solo
+// importa QUE el hook la dispare con el archivo empaquetado correcto.
+vi.mock("@/lib/files", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/files")>();
+  return { ...actual, downloadTextFile: vi.fn() };
+});
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <I18nProvider>{children}</I18nProvider>
@@ -165,11 +178,11 @@ describe("useExperiment", () => {
   class FakeWorker {
     static last: FakeWorker | null = null;
     onmessage: ((event: MessageEvent) => void) | null = null;
-    posted: Array<{ id: number; payload: unknown }> = [];
+    posted: Array<{ id: number; type: string; payload?: unknown }> = [];
     constructor() {
       FakeWorker.last = this;
     }
-    postMessage(message: { id: number; payload: unknown }) {
+    postMessage(message: { id: number; type: string; payload?: unknown }) {
       this.posted.push(message);
     }
     terminate() {}
@@ -189,6 +202,7 @@ describe("useExperiment", () => {
 
   function pipelineResult(): PipelineResult {
     return {
+      classes: ["0", "1"],
       positive_class: "1",
       // Desbalanceado ⇒ métrica primaria AUC (0.8 vs 0.6 ⇒ supera).
       positive_rate: 0.3,
@@ -252,6 +266,7 @@ describe("useExperiment", () => {
         data: {
           id: worker.posted[0]!.id,
           type: "result",
+          command: "train",
           result: pipelineResult(),
         },
       } as MessageEvent);
@@ -284,5 +299,263 @@ describe("useExperiment", () => {
     });
     expect(result.current.state.phase).toBe("error");
     expect(result.current.state.error?.kind).toBe("runtime");
+  });
+
+  // --- S3: usar el modelo (scoring + export/import) -------------------------
+
+  type Hook = ReturnType<
+    typeof renderHook<ReturnType<typeof useExperiment>, unknown>
+  >;
+
+  /** Carga + entrena + responde el worker: deja el hook en "results". */
+  function trainToResults(): Hook {
+    const rendered = renderHook(() => useExperiment());
+    act(() => rendered.result.current.loadCsv(CSV, "test.csv"));
+    act(() => rendered.result.current.run("y"));
+    const worker = FakeWorker.last!;
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id: worker.posted[0]!.id,
+          type: "result",
+          command: "train",
+          result: pipelineResult(),
+        },
+      } as MessageEvent);
+    });
+    return rendered;
+  }
+
+  it("goToScoring ⇄ backToResults conservan el resultado y el modelo", () => {
+    const { result } = trainToResults();
+    expect(result.current.state.modelReady).toBe(true);
+    expect(result.current.state.modelMeta).toMatchObject({
+      source: "trained",
+      datasetName: "test.csv",
+      schema: {
+        numeric: ["x"],
+        categorical: ["cat"],
+        target: "y",
+        classes: ["0", "1"],
+        positive_class: "1",
+      },
+    });
+
+    act(() => result.current.goToScoring());
+    expect(result.current.state.phase).toBe("scoring");
+    expect(result.current.state.result).not.toBeNull();
+
+    act(() => result.current.backToResults());
+    expect(result.current.state.phase).toBe("results");
+    expect(result.current.state.result?.verdict.level).toBe("beats");
+  });
+
+  it("scoreCsv con columna faltante ⇒ bloqueo local SIN postear al worker", () => {
+    const { result } = trainToResults();
+    const worker = FakeWorker.last!;
+    act(() => result.current.goToScoring());
+
+    act(() => result.current.scoreCsv("x,otra\n1,z", "nuevo.csv"));
+    const scoring = result.current.state.scoring;
+    expect(scoring.status).toBe("blocked");
+    if (scoring.status === "blocked") {
+      expect(scoring.check.missing).toEqual(["cat"]);
+      expect(scoring.fileName).toBe("nuevo.csv");
+    }
+    // El bloqueo es TS puro: el único mensaje sigue siendo el train.
+    expect(worker.posted).toHaveLength(1);
+  });
+
+  it("scoreCsv válido ⇒ postea SOLO columnas del modelo en orden del esquema", () => {
+    const { result } = trainToResults();
+    const worker = FakeWorker.last!;
+    act(() => result.current.goToScoring());
+
+    // Columnas desordenadas + extra: el payload va en orden del esquema.
+    act(() =>
+      result.current.scoreCsv("extra,cat,x\nfoo,a,7\nbar,b,3", "nuevo.csv"),
+    );
+    expect(result.current.state.scoring.status).toBe("running");
+    expect(worker.posted).toHaveLength(2);
+    expect(worker.posted[1]).toMatchObject({
+      type: "score",
+      payload: {
+        headers: ["x", "cat"],
+        rows: [
+          ["7", "a"],
+          ["3", "b"],
+        ],
+      },
+    });
+
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id: worker.posted[1]!.id,
+          type: "result",
+          command: "score",
+          result: {
+            predictions: ["1", "0"],
+            probabilities: [0.9, 0.2],
+            positive_class: "1",
+            novelty: { columns: [], affected_rows: 0, n_rows: 2 },
+          },
+        },
+      } as MessageEvent);
+    });
+    const scoring = result.current.state.scoring;
+    expect(scoring.status).toBe("scored");
+    if (scoring.status === "scored") {
+      expect(scoring.score.predictions).toEqual(["1", "0"]);
+      expect(scoring.check.extra).toEqual(["extra"]);
+    }
+  });
+
+  it("error del worker al puntuar ⇒ scoring.error runtime (la fase no se cae)", () => {
+    const { result } = trainToResults();
+    const worker = FakeWorker.last!;
+    act(() => result.current.goToScoring());
+    act(() => result.current.scoreCsv("x,cat\n1,a", "nuevo.csv"));
+    act(() => {
+      worker.onmessage?.({
+        data: { id: worker.posted[1]!.id, type: "error", message: "boom" },
+      } as MessageEvent);
+    });
+    expect(result.current.state.phase).toBe("scoring");
+    expect(result.current.state.scoring).toEqual({
+      status: "error",
+      kind: "runtime",
+    });
+  });
+
+  it("exportModel ⇒ postea export-model y al resolver descarga el archivo", async () => {
+    const { result } = trainToResults();
+    const worker = FakeWorker.last!;
+
+    act(() => result.current.exportModel());
+    expect(result.current.state.exportState).toBe("exporting");
+    expect(worker.posted[1]).toMatchObject({ type: "export-model" });
+
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id: worker.posted[1]!.id,
+          type: "result",
+          command: "export-model",
+          result: {
+            payload_b64: btoa("payload"),
+            versions: { ...RUNTIME_VERSIONS, python: "3.14.2" },
+            schema: {
+              numeric: ["x"],
+              categorical: ["cat"],
+              target: "y",
+              classes: ["0", "1"],
+              positive_class: "1",
+            },
+            training_profile: {
+              numeric: { x: { min: 1, max: 8 } },
+              categorical: { cat: ["a", "b"] },
+            },
+          },
+        },
+      } as MessageEvent);
+    });
+
+    await waitFor(() => expect(downloadTextFile).toHaveBeenCalledOnce());
+    const [fileName, content, mime] =
+      vi.mocked(downloadTextFile).mock.calls[0]!;
+    expect(fileName).toMatch(/^modelo-test-.*\.probeta\.json$/);
+    expect(mime).toBe("application/json");
+    // El archivo descargado valida (manifiesto + hash) — roundtrip honesto.
+    const validation = await validateModelFile(content);
+    expect(validation.ok).toBe(true);
+    expect(result.current.state.exportState).toBe("idle");
+  });
+
+  it("activateImportedModel ⇒ scoring con modelReady false → true al resolver", async () => {
+    const { result } = renderHook(() => useExperiment());
+    const worker = FakeWorker.last!;
+    const file = await packModelFile({
+      datasetName: "viejo.csv",
+      result: experimentResult(),
+      exported: {
+        payload_b64: btoa("payload"),
+        versions: { ...RUNTIME_VERSIONS, python: "3.14.2" },
+        schema: {
+          numeric: ["x"],
+          categorical: ["cat"],
+          target: "y",
+          classes: ["0", "1"],
+          positive_class: "1",
+        },
+        training_profile: {
+          numeric: { x: { min: 1, max: 8 } },
+          categorical: { cat: ["a", "b"] },
+        },
+      },
+    });
+
+    act(() => result.current.activateImportedModel(file));
+    expect(result.current.state.phase).toBe("scoring");
+    expect(result.current.state.modelReady).toBe(false);
+    expect(result.current.state.modelMeta?.source).toBe("imported");
+    expect(result.current.state.modelMeta?.manifest).not.toBeNull();
+    expect(worker.posted[0]).toMatchObject({
+      type: "import-model",
+      payload: { payload_b64: file.payload },
+    });
+
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id: worker.posted[0]!.id,
+          type: "result",
+          command: "import-model",
+          result: { ok: true },
+        },
+      } as MessageEvent);
+    });
+    expect(result.current.state.modelReady).toBe(true);
+  });
+
+  it("fallo del import en el worker ⇒ scoring.error import-failed", async () => {
+    const { result } = renderHook(() => useExperiment());
+    const worker = FakeWorker.last!;
+    const file = await packModelFile({
+      datasetName: "viejo.csv",
+      result: experimentResult(),
+      exported: {
+        payload_b64: btoa("payload"),
+        versions: { ...RUNTIME_VERSIONS, python: "3.14.2" },
+        schema: {
+          numeric: ["x"],
+          categorical: [],
+          target: "y",
+          classes: ["0", "1"],
+          positive_class: "1",
+        },
+        training_profile: {
+          numeric: { x: { min: 1, max: 8 } },
+          categorical: {},
+        },
+      },
+    });
+
+    act(() => result.current.activateImportedModel(file));
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id: worker.posted[0]!.id,
+          type: "error",
+          message: "unpickle boom",
+        },
+      } as MessageEvent);
+    });
+    expect(result.current.state.phase).toBe("scoring");
+    expect(result.current.state.scoring).toEqual({
+      status: "error",
+      kind: "import-failed",
+    });
+    expect(result.current.state.modelReady).toBe(false);
   });
 });

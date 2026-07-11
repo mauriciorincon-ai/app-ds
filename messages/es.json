@@ -33,6 +33,31 @@
         "name": "Incumplimiento de crédito",
         "desc": "Trae una fuga plantada: mira cómo se detecta."
       }
+    },
+    "import": {
+      "title": "¿Ya tienes un modelo?",
+      "desc": "Carga un archivo .probeta.json exportado por Probeta y puntúa datos nuevos sin volver a entrenar.",
+      "button": "Cargar modelo guardado",
+      "validating": "Validando el archivo…",
+      "summary": {
+        "title": "Modelo válido — esto es lo que trae",
+        "dataset": "Entrenado con «{name}» ({rows} filas) el {date}",
+        "target": "Predice «{target}» (clase positiva: «{positive}»)",
+        "metric": "{metric} en prueba: {value}",
+        "leakage": "{count} advertencia(s) de posible fuga registradas en el entrenamiento",
+        "noLeakage": "Sin advertencias de fuga registradas en el entrenamiento",
+        "versionWarning": "Este archivo se creó con versiones distintas a las de esta app ({list}). Se cargará igual; si falla, re-entrena y exporta de nuevo.",
+        "use": "Usar este modelo",
+        "cancel": "Cancelar"
+      },
+      "errors": {
+        "invalid-json": "Ese archivo no es un JSON válido.",
+        "invalid-format": "Ese archivo no parece un modelo exportado por Probeta.",
+        "unsupported-version": "Ese archivo viene de una versión del formato de Probeta que esta app no soporta.",
+        "hash-mismatch": "El contenido del archivo no coincide con su manifiesto (pudo corromperse o ser modificado). Por seguridad no se cargó.",
+        "hint": "Solo carga archivos .probeta.json exportados por Probeta. El contenido del archivo no se tocó."
+      },
+      "retry": "Elegir otro archivo"
     }
   },
   "config": {
@@ -103,7 +128,75 @@
       "hint": "Quítala y vuelve a entrenar para ver el rendimiento honesto.",
       "none": "No detectamos fugas evidentes (el chequeo es una ayuda, no una garantía)."
     },
-    "again": "Nuevo experimento"
+    "again": "Nuevo experimento",
+    "use": {
+      "title": "Usa tu modelo",
+      "desc": "Puntúa un CSV nuevo con este modelo, o guárdalo como archivo para reutilizarlo sin volver a entrenar.",
+      "button": "Usar el modelo"
+    },
+    "export": {
+      "button": "Exportar modelo",
+      "exporting": "Exportando…",
+      "error": "No se pudo exportar el modelo. Inténtalo de nuevo.",
+      "contents": "El archivo contiene lo que el modelo aprendió de tus datos (parámetros, categorías, medianas) — no tus filas crudas. Aun así, trátalo como un archivo sensible."
+    }
+  },
+  "score": {
+    "title": "Usar el modelo",
+    "subtitle": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la predicción y su probabilidad para cada fila. Todo ocurre en tu navegador.",
+    "modelLine": "Modelo: {dataset} · objetivo: {target} · clase positiva: {positive}",
+    "preparing": {
+      "title": "Preparando el modelo…",
+      "importing": "Restaurando el modelo guardado…"
+    },
+    "dropzone": {
+      "label": "Arrastra tu CSV nuevo aquí o haz clic para elegir",
+      "hint": "Hasta 5 MB o 50 000 filas",
+      "button": "Elegir archivo"
+    },
+    "needed": {
+      "title": "Columnas que el modelo necesita",
+      "noTarget": "No incluyas «{target}»: aquí el modelo predice, no se evalúa. Si viene, se ignora."
+    },
+    "blocked": {
+      "title": "No se puede puntuar «{name}»",
+      "missing": "Faltan columnas que el modelo necesita:",
+      "hint": "El modelo jamás puntúa a medias: agrega las columnas faltantes (con esos nombres exactos) y vuelve a intentarlo."
+    },
+    "tryAnother": "Probar con otro archivo",
+    "running": "Puntuando tus filas…",
+    "warnings": {
+      "title": "Avisos",
+      "extra": "Columnas que el modelo no usa y se ignoran: {columns}",
+      "target": "Tu archivo trae la columna objetivo «{target}»: se ignora (aquí se predice, no se evalúa)."
+    },
+    "novelty": {
+      "title": "El modelo está viendo cosas nuevas",
+      "numeric": "«{column}»: {count} valores fuera del rango visto en el entrenamiento",
+      "categorical": "«{column}»: {count} valores con categorías nunca vistas en el entrenamiento",
+      "summary": "El modelo está adivinando en {affected} de {total} filas ({percent}%).",
+      "hint": "En esas filas la predicción es menos confiable: el modelo nunca vio valores así al entrenar.",
+      "none": "Sin novedades: todos los valores están dentro de lo que el modelo vio al entrenar."
+    },
+    "distribution": {
+      "title": "Predicciones ({rows} filas)"
+    },
+    "preview": {
+      "title": "Vista previa ({shown} de {total} filas)"
+    },
+    "columns": {
+      "prediction": "prediccion",
+      "probability": "probabilidad_{label}"
+    },
+    "fileSuffix": "puntuado",
+    "download": "Descargar CSV puntuado",
+    "another": "Puntuar otro CSV",
+    "backResults": "Volver a los resultados",
+    "backStart": "Volver al inicio",
+    "errors": {
+      "runtime": "No se pudo puntuar. Revisa que las columnas tengan el mismo tipo de datos que en el entrenamiento e inténtalo de nuevo.",
+      "import-failed": "No se pudo restaurar el modelo guardado. El archivo puede venir de una versión incompatible; re-entrena y exporta de nuevo."
+    }
   },
   "why": {
     "title": "¿Por qué predice así?",

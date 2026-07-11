@@ -99,6 +99,24 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
 - **ModelCardView** — tarjeta sobria con acción primaria (descarga) y vista previa plegable en mono
   (`details`, sin JS extra). El documento es el protagonista, no la tarjeta.
 
+### Añadidos Sprint 003 (mismos tokens, cero valores nuevos)
+
+- **NoveltyPanel** (en ScoreScreen) — la advertencia central del scoring: conteos por columna en
+  `caution` con ⚠ + texto ("«columna»: N valores fuera del rango…"), resumen en mono/tabular-nums
+  ("adivinando en N de M filas (P%)") y su contraparte positiva "✓ Sin novedades". Nunca solo color.
+- **SchemaBlock** (en ScoreScreen) — bloqueo honesto en `negative` con ✕ + lista mono de columnas
+  faltantes EXACTAS; jamás puntúa a medias. Chips mono de columnas requeridas en el estado vacío.
+- **ScoredPreview** (en ScoreScreen) — tabla con las 2 columnas nuevas primero (nombres resueltos,
+  cifras en mono) y las del usuario en `ink-muted`; overflow-x en móvil.
+- **ImportSummary** (en StartScreen) — resumen del manifiesto ANTES de continuar: ✓ + dataset,
+  fecha, métrica, veredicto y fugas; advertencia de versión en `caution`; rechazo en `negative`
+  con la razón exacta y microcopy "solo archivos de Probeta". El payload nunca se toca aquí.
+- **ExportModelCard** (en ResultsScreen) — par de acciones "Usar el modelo" (primaria) y "Exportar
+  modelo" (secundaria, estados listo/exportando/error) + microcopy honesto de qué contiene el
+  archivo (y qué no: filas crudas). Tras el feedback visual del usuario (S3), "Exportar modelo"
+  también vive en la barra inferior de ScoreScreen — SOLO para modelos entrenados en la sesión
+  (un modelo importado ya es el archivo).
+
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).
@@ -106,6 +124,8 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
 3. **Entrenamiento** → el progreso honesto (qué está pasando ahora).
 4. **Resultados** → el **VerdictBanner**; métricas, matriz y advertencias lo sostienen.
 5. **Error** → el mensaje llano + la acción de recuperación.
+6. **Usar el modelo (S3)** → el **NoveltyPanel** antes de descargar; la descarga lo sostiene.
+   Encabezado estático (candidato LCP, patrón lcp-nace-estatico).
 
 ## Modo claro/oscuro
 

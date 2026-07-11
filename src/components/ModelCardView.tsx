@@ -7,6 +7,7 @@
 // duplicaría los títulos de la pantalla (rompe lectores/tests en modo estricto).
 import { useState } from "react";
 import { useI18n } from "@/i18n/provider";
+import { downloadTextFile } from "@/lib/files";
 import { buildModelCard, modelCardFileName } from "@/lib/modelcard";
 import type { ExperimentResult } from "@/workers/protocol";
 import { Button, Card } from "./ui";
@@ -45,13 +46,11 @@ export function ModelCardView({
   });
 
   const download = () => {
-    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = modelCardFileName(meta.datasetName);
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadTextFile(
+      modelCardFileName(meta.datasetName),
+      markdown,
+      "text/markdown;charset=utf-8",
+    );
   };
 
   return (

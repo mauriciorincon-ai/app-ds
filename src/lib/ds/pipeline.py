@@ -2,13 +2,24 @@
 
 El preprocesamiento (imputación + escalado + one-hot) se ajusta SOLO sobre las
 filas de train (`train_idx`). Es el único camino: no existe función que
-preprocese antes del split. `run_experiment` recibe y devuelve JSON (interop
-simple y robusta con el worker de TS).
+preprocese antes del split. Todas las funciones públicas reciben y devuelven
+JSON (interop simple y robusta con el worker de TS).
 
 Todas las métricas se calculan sobre TEST, nunca sobre train.
+
+S3 — el modelo se usa: `run_experiment` retiene el pipeline fitted y el perfil
+de train en `_MODEL` (nivel de módulo, vive lo que viva el worker);
+`score_new_data` puntúa CSV nuevos con reporte honesto de novedad;
+`export_model`/`import_model` serializan/restauran el modelo (pickle+zlib+
+base64 — ADR-007; el manifiesto y su hash se validan en TS ANTES de llamar
+a import_model).
 """
 
+import base64
 import json
+import pickle
+import sys
+import zlib
 
 import numpy as np
 import pandas as pd
@@ -28,6 +39,11 @@ from sklearn.metrics import (
 )
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+
+# Modelo fitted retenido tras run_experiment/import_model (S3). Vive a nivel de
+# módulo dentro del worker: es lo que permite puntuar y exportar sin re-entrenar.
+_MODEL = None
 
 
 def _build_frame(headers, rows, numeric):
@@ -132,7 +148,40 @@ def _explainability(pipe, X_test, y_test, features, numeric, seed):
     }
 
 
+def _training_profile(X_train, numeric, categorical):
+    """Perfil de TRAIN (jamás de test/total): rango visto por numérica y
+    categorías vistas por categórica. Es la base del reporte de novedad — un
+    valor que solo aparece en test ES novedad para el modelo (honestidad).
+    """
+    profile = {"numeric": {}, "categorical": {}}
+    for col in numeric:
+        series = X_train[col].dropna()
+        if len(series) == 0:
+            profile["numeric"][col] = {"min": None, "max": None}
+        else:
+            profile["numeric"][col] = {
+                "min": float(series.min()),
+                "max": float(series.max()),
+            }
+    for col in categorical:
+        series = X_train[col].dropna()
+        profile["categorical"][col] = sorted(str(v) for v in series.unique())
+    return profile
+
+
+def _runtime_versions():
+    import pyodide
+    import sklearn
+
+    return {
+        "pyodide": pyodide.__version__,
+        "sklearn": sklearn.__version__,
+        "python": sys.version.split()[0],
+    }
+
+
 def run_experiment(payload_json):
+    global _MODEL
     p = json.loads(payload_json)
     numeric = list(p["numeric"])
     categorical = list(p["categorical"])
@@ -185,6 +234,20 @@ def run_experiment(payload_json):
 
     explainability = _explainability(forest_pipe, X_test, y_test, features, numeric, seed)
 
+    # S3: retener el modelo (forest, el que recibe el veredicto) + esquema +
+    # perfil de train — lo que score_new_data y export_model necesitan.
+    _MODEL = {
+        "pipe": forest_pipe,
+        "schema": {
+            "numeric": numeric,
+            "categorical": categorical,
+            "target": p["target"],
+            "classes": classes,
+            "positive_class": positive,
+        },
+        "training_profile": _training_profile(X_train, numeric, categorical),
+    }
+
     return json.dumps(
         {
             "n_train": int(len(train_idx)),
@@ -199,3 +262,120 @@ def run_experiment(payload_json):
             "preprocessing": {"numeric_medians": learned_medians},
         }
     )
+
+
+# --- S3: puntuar datos nuevos + export/import (ADR-007) ----------------------
+
+
+def score_new_data(payload_json):
+    """Puntúa un CSV nuevo con el modelo retenido. Devuelve la etiqueta
+    ORIGINAL de la clase (jamás 0/1) + probabilidad de la clase positiva por
+    fila, precedidas del reporte honesto de novedad: cuántos valores por
+    columna el modelo nunca vio en train (categorías nuevas / numéricos fuera
+    de rango). Los nulos no son novedad (los imputa el pipeline, como en train).
+    """
+    if _MODEL is None:
+        raise RuntimeError("no-model")
+    p = json.loads(payload_json)
+    schema = _MODEL["schema"]
+    numeric = list(schema["numeric"])
+    categorical = list(schema["categorical"])
+    features = numeric + categorical
+
+    df = _build_frame(p["headers"], p["rows"], numeric)
+    X = df[features]
+
+    profile = _MODEL["training_profile"]
+    novelty_columns = []
+    row_flags = np.zeros(len(X), dtype=bool)
+    for col in numeric:
+        bounds = profile["numeric"].get(col)
+        if not bounds or bounds["min"] is None:
+            continue
+        values = X[col]
+        mask = values.notna() & ((values < bounds["min"]) | (values > bounds["max"]))
+        count = int(mask.sum())
+        if count:
+            novelty_columns.append({"column": col, "kind": "numeric", "count": count})
+            row_flags |= mask.to_numpy()
+    for col in categorical:
+        seen = profile["categorical"].get(col, [])
+        values = X[col]
+        mask = values.notna() & ~values.isin(list(seen))
+        count = int(mask.sum())
+        if count:
+            novelty_columns.append({"column": col, "kind": "categorical", "count": count})
+            row_flags |= mask.to_numpy()
+
+    pipe = _MODEL["pipe"]
+    pred01 = pipe.predict(X)
+    proba = pipe.predict_proba(X)[:, 1]
+    positive = schema["positive_class"]
+    negative = next(c for c in schema["classes"] if c != positive)
+
+    return json.dumps(
+        {
+            "predictions": [positive if v == 1 else negative for v in pred01],
+            "probabilities": [float(v) for v in proba],
+            "positive_class": positive,
+            "novelty": {
+                "columns": novelty_columns,
+                "affected_rows": int(row_flags.sum()),
+                "n_rows": int(len(X)),
+            },
+        }
+    )
+
+
+def export_model(payload_json="{}"):
+    """Serializa el modelo retenido como payload único: pickle(protocolo 5) →
+    zlib → base64. El payload incluye esquema y perfil de train, así el import
+    restaura TODO sin depender de campos del manifiesto (que es la cara humana
+    del archivo y se valida en TS con su hash ANTES de deserializar).
+    """
+    if _MODEL is None:
+        raise RuntimeError("no-model")
+    blob = pickle.dumps(
+        {
+            "pipe": _MODEL["pipe"],
+            "schema": _MODEL["schema"],
+            "training_profile": _MODEL["training_profile"],
+        },
+        protocol=5,
+    )
+    return json.dumps(
+        {
+            "payload_b64": base64.b64encode(zlib.compress(blob)).decode("ascii"),
+            "versions": _runtime_versions(),
+            "schema": _MODEL["schema"],
+            "training_profile": _MODEL["training_profile"],
+        }
+    )
+
+
+def import_model(payload_json):
+    """Restaura un modelo exportado. La validación de manifiesto + SHA-256
+    ocurre en TS ANTES de llegar aquí (regla del sprint); esto solo
+    deserializa y verifica la forma del payload restaurado.
+    """
+    global _MODEL
+    p = json.loads(payload_json)
+    blob = zlib.decompress(base64.b64decode(p["payload_b64"]))
+    restored = pickle.loads(blob)
+    if not isinstance(restored, dict) or not all(
+        key in restored for key in ("pipe", "schema", "training_profile")
+    ):
+        raise RuntimeError("invalid-payload")
+    _MODEL = {
+        "pipe": restored["pipe"],
+        "schema": restored["schema"],
+        "training_profile": restored["training_profile"],
+    }
+    return json.dumps({"ok": True})
+
+
+def reset_model(payload_json="{}"):
+    """Olvida el modelo retenido (higiene para tests de integración)."""
+    global _MODEL
+    _MODEL = None
+    return json.dumps({"ok": True})

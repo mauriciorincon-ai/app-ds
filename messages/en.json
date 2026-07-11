@@ -33,6 +33,31 @@
         "name": "Credit default",
         "desc": "Ships with a planted leak: watch it get caught."
       }
+    },
+    "import": {
+      "title": "Already have a model?",
+      "desc": "Load a .probeta.json file exported by Probeta and score new data without retraining.",
+      "button": "Load saved model",
+      "validating": "Validating the file…",
+      "summary": {
+        "title": "Valid model — here is what it contains",
+        "dataset": "Trained on “{name}” ({rows} rows) on {date}",
+        "target": "Predicts “{target}” (positive class: “{positive}”)",
+        "metric": "{metric} on test: {value}",
+        "leakage": "{count} possible-leak warning(s) recorded during training",
+        "noLeakage": "No leak warnings recorded during training",
+        "versionWarning": "This file was created with versions different from this app's ({list}). It will load anyway; if it fails, retrain and export again.",
+        "use": "Use this model",
+        "cancel": "Cancel"
+      },
+      "errors": {
+        "invalid-json": "That file isn't valid JSON.",
+        "invalid-format": "That file doesn't look like a model exported by Probeta.",
+        "unsupported-version": "That file comes from a Probeta format version this app doesn't support.",
+        "hash-mismatch": "The file's content doesn't match its manifest (it may be corrupted or modified). For safety it was not loaded.",
+        "hint": "Only load .probeta.json files exported by Probeta. The file's payload was never touched."
+      },
+      "retry": "Choose another file"
     }
   },
   "config": {
@@ -103,7 +128,75 @@
       "hint": "Remove it and retrain to see the honest performance.",
       "none": "No obvious leakage found (this check is a help, not a guarantee)."
     },
-    "again": "New experiment"
+    "again": "New experiment",
+    "use": {
+      "title": "Use your model",
+      "desc": "Score a new CSV with this model, or save it as a file to reuse it without retraining.",
+      "button": "Use the model"
+    },
+    "export": {
+      "button": "Export model",
+      "exporting": "Exporting…",
+      "error": "The model could not be exported. Try again.",
+      "contents": "The file contains what the model learned from your data (parameters, categories, medians) — not your raw rows. Still, treat it as a sensitive file."
+    }
+  },
+  "score": {
+    "title": "Use the model",
+    "subtitle": "Upload a new CSV with the columns the model knows (without the target column) and get the prediction and its probability for every row. Everything happens in your browser.",
+    "modelLine": "Model: {dataset} · target: {target} · positive class: {positive}",
+    "preparing": {
+      "title": "Preparing the model…",
+      "importing": "Restoring the saved model…"
+    },
+    "dropzone": {
+      "label": "Drop your new CSV here or click to choose",
+      "hint": "Up to 5 MB or 50,000 rows",
+      "button": "Choose file"
+    },
+    "needed": {
+      "title": "Columns the model needs",
+      "noTarget": "Don't include “{target}”: the model predicts here, it isn't evaluated. If present, it is ignored."
+    },
+    "blocked": {
+      "title": "Can't score “{name}”",
+      "missing": "Columns the model needs are missing:",
+      "hint": "The model never scores halfway: add the missing columns (with those exact names) and try again."
+    },
+    "tryAnother": "Try another file",
+    "running": "Scoring your rows…",
+    "warnings": {
+      "title": "Warnings",
+      "extra": "Columns the model doesn't use, ignored: {columns}",
+      "target": "Your file includes the target column “{target}”: it is ignored (the model predicts here, it isn't evaluated)."
+    },
+    "novelty": {
+      "title": "The model is seeing new things",
+      "numeric": "“{column}”: {count} values outside the range seen in training",
+      "categorical": "“{column}”: {count} values with categories never seen in training",
+      "summary": "The model is guessing on {affected} of {total} rows ({percent}%).",
+      "hint": "On those rows the prediction is less reliable: the model never saw values like these while training.",
+      "none": "Nothing new: every value falls within what the model saw while training."
+    },
+    "distribution": {
+      "title": "Predictions ({rows} rows)"
+    },
+    "preview": {
+      "title": "Preview ({shown} of {total} rows)"
+    },
+    "columns": {
+      "prediction": "prediction",
+      "probability": "probability_{label}"
+    },
+    "fileSuffix": "scored",
+    "download": "Download scored CSV",
+    "another": "Score another CSV",
+    "backResults": "Back to results",
+    "backStart": "Back to start",
+    "errors": {
+      "runtime": "Scoring failed. Check that the columns hold the same kind of data as in training and try again.",
+      "import-failed": "The saved model could not be restored. The file may come from an incompatible version; retrain and export again."
+    }
   },
   "why": {
     "title": "Why does it predict this way?",

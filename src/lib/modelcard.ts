@@ -7,6 +7,7 @@
 import type { Locale } from "@/i18n/config";
 import { translate, type TParams } from "@/i18n/translate";
 import type { MetricName } from "@/engine/verdict";
+import { datasetSlug } from "@/lib/files";
 import type { ExperimentResult } from "@/workers/protocol";
 
 export type ModelCardInput = {
@@ -160,10 +161,5 @@ export function buildModelCard(input: ModelCardInput): string {
 }
 
 export function modelCardFileName(datasetName: string): string {
-  const slug = datasetName
-    .toLowerCase()
-    .replace(/\.csv$/i, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return `model-card-${slug || "experimento"}.md`;
+  return `model-card-${datasetSlug(datasetName) || "experimento"}.md`;
 }

@@ -115,6 +115,55 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - La narración con IA requiere que el administrador haya configurado un proveedor; si no lo hay,
     siempre verás el texto estándar (que es igual de fiel a los números).
 
+### El modelo se usa · desde Sprint 003
+
+- **Qué hace:** tu modelo deja de ser solo un experimento. Después de entrenar puedes **puntuar
+  datos nuevos** (subir otra tabla y obtener la predicción para cada fila) y **guardar el modelo
+  como archivo** para volver a usarlo otro día — o en otro computador — **sin re-entrenar**.
+
+- **Puntuar datos nuevos:**
+  1. En Resultados, pulsa **"Usar el modelo"**.
+  2. Sube un CSV nuevo con **las mismas columnas** que usaste al entrenar (la pantalla te las
+     lista), pero **sin la columna que predices** — aquí el modelo responde, no se evalúa. Si la
+     incluyes de todos modos, se ignora y se te avisa.
+  3. Si a tu archivo le **falta** alguna columna del modelo, la app **se niega a puntuar** y te
+     dice exactamente cuáles faltan. Nunca puntúa "a medias" rellenando en silencio.
+  4. Antes de descargar verás el **aviso de novedad**: cuántos valores de tu archivo el modelo
+     **nunca vio al entrenar** (categorías nuevas, números fuera del rango de entrenamiento) y en
+     cuántas filas — _"el modelo está adivinando en el N% de tus filas"_. En esas filas la
+     predicción es menos confiable; la app te lo dice de frente en vez de callárselo.
+  5. Revisa la **distribución** de predicciones y la **vista previa**, y pulsa **"Descargar CSV
+     puntuado"**: tu tabla completa + dos columnas nuevas — la **predicción** (con las etiquetas
+     originales de tus datos: sí/no, 0/1…) y la **probabilidad**. Si ya tenías una columna con ese
+     nombre, la nueva sale con un sufijo (`_2`) — nunca se pisa nada tuyo.
+
+- **Guardar el modelo (exportar):**
+  - En Resultados, pulsa **"Exportar modelo"**. Se descarga un único archivo `.probeta.json`.
+  - **Qué contiene, dicho honesto:** lo que el modelo **aprendió** de tus datos (parámetros,
+    categorías vistas, medianas, rangos) y su constancia (métricas, veredicto, advertencias) —
+    **no tus filas crudas**. Aun así, lo aprendido refleja tus datos: **trátalo como un archivo
+    sensible** y compártelo solo con quien compartirías el resultado.
+
+- **Volver a usar un modelo guardado (importar):**
+  1. En la pantalla de inicio, pulsa **"Cargar modelo guardado"** y elige tu `.probeta.json`.
+  2. La app **valida el archivo antes de abrirlo**: comprueba que es un modelo de Probeta y que su
+     contenido está íntegro (una huella digital debe coincidir). Un archivo ajeno, corrupto o
+     manipulado se **rechaza con la razón exacta**, sin llegar a abrirse.
+  3. Si es válido, verás un **resumen honesto** de lo que trae (dataset, fecha, métrica, veredicto,
+     advertencias de fuga) para que decidas con conocimiento. Si el archivo se creó con **otra
+     versión** del motor, la app te lo advierte: se carga igual, pero si falla, re-entrena y
+     exporta de nuevo.
+  4. Confirma con **"Usar este modelo"** y puntúa datos nuevos directamente — sin re-entrenar.
+
+- **Limitaciones conocidas (Sprint 003):**
+  - El archivo `.probeta.json` **solo lo entiende Probeta** (no es un formato estándar de
+    intercambio). Publicar el modelo para que otros lo usen llegará más adelante.
+  - El CSV nuevo tiene los **mismos límites** de siempre: 5 MB o 50 000 filas.
+  - El aviso de novedad detecta **valores nunca vistos**; no puede detectar cambios más sutiles
+    (por ejemplo, que la relación entre variables haya cambiado con el tiempo).
+  - Por seguridad, **carga solo archivos exportados por Probeta**. La app valida la integridad,
+    pero el archivo no está cifrado ni firmado.
+
 ## Preguntas frecuentes
 
 - **¿Mis datos se suben a algún sitio?** No. Todo el cálculo ocurre en tu navegador; el archivo nunca

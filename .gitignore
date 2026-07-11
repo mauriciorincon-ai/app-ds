@@ -16,3 +16,6 @@ public/pyodide/
 .vercel/
 .DS_Store
 Thumbs.db
+
+# Reportes locales de Lighthouse CI
+.lighthouseci/
