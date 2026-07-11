@@ -65,6 +65,8 @@ export type Explainability = {
 
 // Lo que devuelve pipeline.py (JSON).
 export type PipelineResult = {
+  /** Las 2 clases del objetivo, orden lexicográfico (S3: esquema del modelo). */
+  classes: string[];
   positive_class: string;
   positive_rate: number;
   n_train: number;

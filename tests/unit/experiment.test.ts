@@ -119,6 +119,7 @@ describe("prepareRun", () => {
 describe("assembleResult", () => {
   it("elige la métrica primaria, el mejor baseline y calcula el veredicto", () => {
     const py: PipelineResult = {
+      classes: ["0", "1"],
       positive_class: "1",
       positive_rate: 0.3,
       n_train: 6,

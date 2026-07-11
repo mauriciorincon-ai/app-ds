@@ -42,7 +42,10 @@ pyodide **314.0.2** · sklearn **1.8.0** · python **3.14.2**.
 
 ## Registro
 
-| Fecha      | Evento                                                                                 |
-| ---------- | -------------------------------------------------------------------------------------- |
-| 2026-07-11 | Plan mode + /plan-sprint; plan aprobado. Branch creado. Kit verificado sin fricciones. |
-| 2026-07-11 | Spike skl2onnx: NO carga (sin wheel para onnx). Fallback pickle+manifiesto → ADR 007.  |
+| Fecha      | Evento                                                                                                                                                                                                                                                |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-11 | Plan mode + /plan-sprint; plan aprobado. Branch creado. Kit verificado sin fricciones.                                                                                                                                                                |
+| 2026-07-11 | Spike skl2onnx: NO carga (sin wheel para onnx). Fallback pickle+manifiesto → ADR 007.                                                                                                                                                                 |
+| 2026-07-11 | Fase 1 (motor) verde: schema-check/model-file/scored-csv + pipeline.py (_MODEL, score_new_data, export/import) + protocol union + runner dispatch. Integración Pyodide 15/15 (S1/S2 intactos); RUNTIME_VERSIONS validada contra runtime real.         |
+| 2026-07-11 | Decisión de detalle: el payload picklea {pipe, schema, training_profile} completo — import_model solo necesita payload_b64; el manifiesto queda como cara humana + integridad. PipelineResult solo gana `classes`.                                    |
+| 2026-07-11 | Fase 2 (UI) verde: fase `scoring` en useExperiment (mapa de pendientes por id), ScoreScreen (4 estados + preparación import), export en Results, import con resumen en Start, i18n ES/EN mismo paso. Unit 179/179 con umbrales 80% en motores nuevos. |

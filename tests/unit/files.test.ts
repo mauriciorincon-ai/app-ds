@@ -15,7 +15,9 @@ describe("downloadTextFile", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("descarga vía Blob + anchor sintético y libera la URL (cero red)", () => {
-    const createObjectURL = vi.fn(() => "blob:fake-url");
+    const createObjectURL = vi.fn<(blob: Blob) => string>(
+      () => "blob:fake-url",
+    );
     const revokeObjectURL = vi.fn();
     vi.stubGlobal("URL", {
       ...URL,

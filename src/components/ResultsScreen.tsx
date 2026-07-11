@@ -4,7 +4,7 @@ import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { useConsent } from "@/lib/useConsent";
 import { useNarration } from "@/lib/useNarration";
-import type { RunMeta } from "@/lib/useExperiment";
+import type { ExportState, RunMeta } from "@/lib/useExperiment";
 import type { ExperimentResult } from "@/workers/protocol";
 import { ModelCardView } from "./ModelCardView";
 import { WhySection } from "./WhySection";
@@ -39,12 +39,18 @@ export function ResultsScreen({
   cols,
   runMeta,
   onAgain,
+  onUseModel,
+  onExportModel,
+  exportState,
 }: {
   result: ExperimentResult;
   datasetName: string | null;
   cols: number;
   runMeta: RunMeta;
   onAgain: () => void;
+  onUseModel: () => void;
+  onExportModel: () => void;
+  exportState: ExportState;
 }) {
   const t = useT();
   const { verdict, model, leakage, confusionMatrix } = result;
@@ -221,6 +227,39 @@ export function ResultsScreen({
         consent={consent}
         onConsentChange={handleConsentChange}
       />
+
+      {/* S3: el modelo se usa — puntuar datos nuevos y exportar como archivo. */}
+      <section aria-labelledby="use-model-title">
+        <Card className="p-5">
+          <h2 id="use-model-title" className="text-sm font-semibold">
+            {t("results.use.title")}
+          </h2>
+          <p className="mt-1 text-sm text-ink-muted">{t("results.use.desc")}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Button onClick={onUseModel}>{t("results.use.button")}</Button>
+            <Button
+              variant="secondary"
+              onClick={onExportModel}
+              disabled={exportState === "exporting"}
+            >
+              {exportState === "exporting"
+                ? t("results.export.exporting")
+                : t("results.export.button")}
+            </Button>
+          </div>
+          {exportState === "error" && (
+            <p role="alert" className="mt-2 text-sm text-negative">
+              <span aria-hidden className="mr-1">
+                ✕
+              </span>
+              {t("results.export.error")}
+            </p>
+          )}
+          <p className="mt-3 max-w-prose text-xs text-ink-muted">
+            {t("results.export.contents")}
+          </p>
+        </Card>
+      </section>
 
       {/* S2: la constancia exportable del experimento. */}
       <ModelCardView

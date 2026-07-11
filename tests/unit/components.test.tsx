@@ -223,6 +223,9 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         cols={7}
         runMeta={RUN_META}
         onAgain={() => {}}
+        onUseModel={() => {}}
+        onExportModel={() => {}}
+        exportState="idle"
       />,
     );
     expect(
@@ -252,6 +255,9 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         cols={6}
         runMeta={RUN_META}
         onAgain={() => {}}
+        onUseModel={() => {}}
+        onExportModel={() => {}}
+        exportState="idle"
       />,
     );
     expect(
@@ -264,7 +270,7 @@ describe("ResultsScreen (integración de la pantalla)", () => {
 
 describe("pantallas S1 (smoke)", () => {
   it("StartScreen: dropzone + 3 ejemplos", () => {
-    ui(<StartScreen onLoad={() => {}} />);
+    ui(<StartScreen onLoad={() => {}} onImport={() => {}} />);
     expect(screen.getByText("Empieza tu experimento")).toBeInTheDocument();
     expect(screen.getByText("Campaña de marketing")).toBeInTheDocument();
   });

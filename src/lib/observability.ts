@@ -24,3 +24,31 @@ export function reportNarrationError(kind: string): void {
     tags: { area: "narration", kind },
   });
 }
+
+// S3 — scoring/export/import del modelo. Mismo contrato metadata-only: kind y
+// conteos; jamás nombres de columnas, valores del CSV nuevo ni contenido del
+// archivo del modelo (regla dura 2).
+export function reportScoringError(
+  kind: string,
+  meta?: { rows?: number; cols?: number },
+): void {
+  Sentry.captureMessage(`scoring-error:${kind}`, {
+    level: "error",
+    tags: { area: "scoring", kind },
+    extra: { rows: meta?.rows ?? null, cols: meta?.cols ?? null },
+  });
+}
+
+export function reportExportError(kind: string): void {
+  Sentry.captureMessage(`model-export-error:${kind}`, {
+    level: "error",
+    tags: { area: "model-export", kind },
+  });
+}
+
+export function reportImportError(kind: string): void {
+  Sentry.captureMessage(`model-import-error:${kind}`, {
+    level: "error",
+    tags: { area: "model-import", kind },
+  });
+}
