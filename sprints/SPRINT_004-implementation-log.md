@@ -138,4 +138,20 @@ una feature continua tiene alta cardinalidad natural y marcarla "identificador" 
   valida schema + cero valores de celda) + `narration-templates` (frases EDA deterministas).
   210/210 unit; zod sigue server-side (R8: bloque eda a mano, cero zod en el cliente).
 
-### F5 — e2e — EN CURSO
+### F5 — e2e — HECHA
+
+- `saneamiento-sucio.spec.ts` (nuevo): cargar `clientes-sucio.csv` → informe con conteos (10
+  duplicadas, id_cliente + pais excluidos, edad coaccionada) → alerta de desbalance al elegir
+  `contrato` → entrenar → veredicto con candidatos → exportar (`format_version` 1 +
+  `manifest.sanitation` con dedup/exclusiones) → CERO valores de celda en la red (ni "C-00…" ni
+  "fax") → axe limpio.
+- `happy-path.spec.ts` extendido: dataset limpio dice "nada que sanear"; resultados muestran los
+  candidatos con el ganador marcado.
+- **Fricción (no de producto):** un `next-server` viejo (arrancado antes de F3) seguía en :3000 y
+  Playwright lo reusaba (reuseExistingServer local), sirviendo la StartScreen de 3 ejemplos → el
+  spec no hallaba el 4º botón. Se detuvo el server viejo; con uno fresco pasó a la primera.
+- Suite e2e COMPLETA: **12/12 verdes ×2 devices** (mobile Pixel 7 + desktop). score-download y
+  why-modelcard (conteos exactos + privacidad de narración) intactos ⇒ R3/R6 confirmados.
+- Unit 213/213; typecheck + lint limpios.
+
+### F6 — CIERRE DE CICLO — EN CURSO

@@ -58,3 +58,18 @@ describe("clientes-sucio.csv — el dataset sucio demuestra el saneamiento", () 
     expect(alerts.some((a) => a.kind === "possible-leak")).toBe(false);
   });
 });
+
+describe("datasets limpios — sanitize es no-op (protege 'nada que sanear' + byte-idéntico)", () => {
+  it.each([
+    "marketing-campania.csv",
+    "rotacion-empleados.csv",
+    "credito-fuga-plantada.csv",
+  ])("%s sanea a clean:true sin tocar la tabla", (file) => {
+    const path = resolve(process.cwd(), "public", "datasets", file);
+    const parsed = parseCsvWithLimits(readFileSync(path, "utf8"));
+    if (!parsed.ok) throw new Error(parsed.error.kind);
+    const { table, report } = sanitizeTable(parsed.table);
+    expect(report.clean).toBe(true);
+    expect(table).toEqual(parsed.table);
+  });
+});
