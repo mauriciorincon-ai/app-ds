@@ -25,7 +25,10 @@ import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import (
+    HistGradientBoostingClassifier,
+    RandomForestClassifier,
+)
 from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
@@ -63,7 +66,20 @@ def _make_preprocessor(numeric, categorical):
     categorical_pipe = Pipeline(
         [
             ("imputer", SimpleImputer(strategy="most_frequent")),
-            ("onehot", OneHotEncoder(handle_unknown="ignore")),
+            # S4 — saneamiento estadístico DENTRO del pipeline (ADR-002 extendido):
+            # min_frequency agrupa las categorías raras (count < 2) en un bucket
+            # "infrecuente" APRENDIDO SOLO EN TRAIN (el fit del pipeline es train-only
+            # ⇒ fuga imposible por construcción). handle_unknown="infrequent_if_exist"
+            # manda las categorías nunca vistas a ese mismo bucket. sparse_output=False
+            # porque HistGradientBoosting no acepta matrices dispersas.
+            (
+                "onehot",
+                OneHotEncoder(
+                    handle_unknown="infrequent_if_exist",
+                    min_frequency=2,
+                    sparse_output=False,
+                ),
+            ),
         ]
     )
     return ColumnTransformer(
@@ -206,38 +222,77 @@ def run_experiment(payload_json):
 
     preprocessor = _make_preprocessor(numeric, categorical)
 
-    models = {
+    from sklearn.base import clone
+
+    # Baselines (rivales honestos) + candidatos reales. TODOS comparten el MISMO
+    # preprocesador (clonado) ⇒ comparabilidad justa y un solo camino de
+    # export/scoring. HGB corre dentro del pipeline: el imputer ya llenó los NaN,
+    # así que NO usa su modo NaN-nativo (decisión H1 — ADR-008).
+    baseline_estimators = {
         "majority": DummyClassifier(strategy="most_frequent"),
         "logistic": LogisticRegression(max_iter=1000, random_state=seed),
+    }
+    candidate_estimators = {
         "forest": RandomForestClassifier(n_estimators=200, random_state=seed, n_jobs=1),
+        "hgb": HistGradientBoostingClassifier(random_state=seed),
     }
 
-    results = {}
-    forest_pred = None
-    forest_pipe = None
-    for name, estimator in models.items():
-        from sklearn.base import clone
+    baselines = {}
+    for name, estimator in baseline_estimators.items():
+        _, y_pred, y_score = _fit_score(
+            clone(estimator), clone(preprocessor), X_train, y_train, X_test
+        )
+        baselines[name] = _metrics(y_test, y_pred, y_score)
 
-        pipe, y_pred, y_score = _fit_score(clone(estimator), clone(preprocessor), X_train, y_train, X_test)
-        results[name] = _metrics(y_test, y_pred, y_score)
-        if name == "forest":
-            forest_pred = y_pred
-            forest_pipe = pipe
-            # medianas aprendidas por el imputer numérico (para el test anti-fuga):
-            # deben provenir SOLO de train.
-            num_imputer = pipe.named_steps["prep"].named_transformers_["num"].named_steps["imputer"]
-            learned_medians = {
-                col: float(val) for col, val in zip(numeric, num_imputer.statistics_)
-            }
+    fitted = {}  # name -> (pipe, y_pred, metrics)
+    candidate_order = ["forest", "hgb"]
+    for name in candidate_order:
+        pipe, y_pred, y_score = _fit_score(
+            clone(candidate_estimators[name]), clone(preprocessor), X_train, y_train, X_test
+        )
+        fitted[name] = (pipe, y_pred, _metrics(y_test, y_pred, y_score))
 
-    cm = confusion_matrix(y_test, forest_pred, labels=[0, 1]).tolist()
+    # Ganador: argmax de la métrica primaria; empate → forest (orden estable). La
+    # REGLA de métrica vive en TS (verdict.ts, pickPrimaryMetric); aquí solo se
+    # recibe CUÁL es (payload). Default "auc" si un caller directo no la manda.
+    primary_metric = p.get("primary_metric", "auc")
+    winner = max(
+        candidate_order,
+        key=lambda n: (fitted[n][2][primary_metric], n == "forest"),
+    )
+    winner_pipe, winner_pred, winner_metrics = fitted[winner]
+    candidates = [{"name": n, "metrics": fitted[n][2]} for n in candidate_order]
 
-    explainability = _explainability(forest_pipe, X_test, y_test, features, numeric, seed)
+    cm = confusion_matrix(y_test, winner_pred, labels=[0, 1]).tolist()
+    explainability = _explainability(winner_pipe, X_test, y_test, features, numeric, seed)
 
-    # S3: retener el modelo (forest, el que recibe el veredicto) + esquema +
-    # perfil de train — lo que score_new_data y export_model necesitan.
+    # Medianas del imputer numérico del GANADOR (para el test anti-fuga: deben
+    # provenir SOLO de train — son idénticas entre candidatos, mismo preprocesador).
+    num_imputer = (
+        winner_pipe.named_steps["prep"].named_transformers_["num"].named_steps["imputer"]
+    )
+    learned_medians = {
+        col: float(val) for col, val in zip(numeric, num_imputer.statistics_)
+    }
+
+    # Categorías raras agrupadas por el OneHotEncoder (min_frequency, train-only).
+    rare_categories = {}
+    if categorical:
+        cat_oh = (
+            winner_pipe.named_steps["prep"]
+            .named_transformers_["cat"]
+            .named_steps["onehot"]
+        )
+        infreq = getattr(cat_oh, "infrequent_categories_", None)
+        if infreq is not None:
+            for col, cats in zip(categorical, infreq):
+                if cats is not None and len(cats) > 0:
+                    rare_categories[col] = sorted(str(c) for c in cats)
+
+    # S3/S4: retener el GANADOR (el que recibe el veredicto) + esquema + perfil de
+    # train — lo que score_new_data y export_model necesitan.
     _MODEL = {
-        "pipe": forest_pipe,
+        "pipe": winner_pipe,
         "schema": {
             "numeric": numeric,
             "categorical": categorical,
@@ -255,11 +310,16 @@ def run_experiment(payload_json):
             "classes": classes,
             "positive_class": positive,
             "positive_rate": float(y.mean()),
-            "baselines": {"majority": results["majority"], "logistic": results["logistic"]},
-            "model": results["forest"],
+            "baselines": {"majority": baselines["majority"], "logistic": baselines["logistic"]},
+            "model": winner_metrics,
+            "model_name": winner,
+            "candidates": candidates,
             "confusion_matrix": cm,
             "explainability": explainability,
-            "preprocessing": {"numeric_medians": learned_medians},
+            "preprocessing": {
+                "numeric_medians": learned_medians,
+                "rare_categories": rare_categories,
+            },
         }
     )
 

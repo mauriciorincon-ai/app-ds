@@ -80,4 +80,23 @@ numéricas — una columna numérica (o casi, que se coacciona) con todos los va
 feature continua legítima, no un identificador; descartarla sería deshonesto. La casi-ID numérica
 la señala la EDA como aviso `id-like`, no la excluye sanitize.
 
-### F2 — pipeline.py multi-candidato + integración — EN CURSO
+### F2 — pipeline.py multi-candidato + integración — HECHA
+
+- `pipeline.py`: `OneHotEncoder(min_frequency=2, handle_unknown="infrequent_if_exist",
+sparse_output=False)` — agrupa categorías raras aprendiendo SOLO de train (fit train-only ⇒
+  fuga imposible; `sparse_output=False` porque HGB no acepta matrices dispersas). Multi-candidato:
+  forest + `HistGradientBoostingClassifier` con el MISMO preprocesador clonado; ganador = argmax
+  de `primary_metric` (empate → forest); `_MODEL` = pipe del ganador; retorno gana `model_name` +
+  `candidates` + `preprocessing.rare_categories`.
+- Test nuevo `sanitation-pipeline.test.ts`: **anti-fuga del saneamiento** (categoría rara agrupada
+  con la frecuencia de TRAIN, no de todo el dataset — FALLA si se rompe la garantía) + HGB compite
+  - ganador = argmax.
+- **Bug cazado (regla 9):** el sanity S3 "x alto → si" asumía forest. En el dataset de novedad de
+  10 filas, HGB (min_samples_leaf=20) no puede entrenar y aun así ganaba por AUC sobre un test de
+  2 filas (AUC no discrimina con 2 muestras). Reescrito con dataset propio separable (60 filas)
+  donde AMBOS candidatos aprenden el patrón — la intención (scoring correcto) queda intacta y
+  robusta al ganador. Los conteos de novedad y el export→import siguen sobre el dataset original.
+- Suites pipeline.test.ts + scoring.test.ts + los 2 nuevos: 24/24 integración verdes
+  (incl. export→import con HGB retenido — pickle proto5 OK).
+
+### F3 — UI + i18n + generador — EN CURSO
