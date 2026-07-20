@@ -29,6 +29,8 @@ const RESULT: ExperimentResult = {
     logistic: { ...METRICS, auc: 0.6 },
   },
   model: METRICS,
+  modelName: "forest",
+  candidates: [{ name: "forest", metrics: METRICS }],
   confusionMatrix: [
     [20, 2],
     [1, 2],

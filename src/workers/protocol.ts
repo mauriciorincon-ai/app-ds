@@ -2,7 +2,7 @@
 // runner de Pyodide (public/pyodide-runner.js), que solo entrena y devuelve
 // métricas. La UI no habla WASM: lee el estado de useExperiment.
 import type { LeakageFinding } from "@/engine/leakage";
-import type { Metrics, Verdict } from "@/engine/verdict";
+import type { MetricName, Metrics, Verdict } from "@/engine/verdict";
 import type { ColumnProfile } from "@/lib/ds/csv";
 
 export type ProgressStage =
@@ -20,6 +20,9 @@ export type WorkerErrorKind =
   | "csv-ragged"
   | "target-not-binary"
   | "no-features"
+  // S4: tras el saneamiento no queda estructura modelable (todo eran IDs/constantes,
+  // o no quedan filas/columnas suficientes) — irrecuperable, con reporte honesto.
+  | "csv-unusable"
   | "runtime";
 
 export type DatasetSummary = {
@@ -43,6 +46,10 @@ export type PipelinePayload = {
   train_idx: number[];
   test_idx: number[];
   seed: number;
+  // S4: la regla de métrica primaria vive SOLO en verdict.ts (pickPrimaryMetric es
+  // simétrica en p↔1−p ⇒ TS la resuelve sin conocer cuál clase es la positiva de
+  // Python). Python la usa para elegir el candidato ganador — no la re-deriva.
+  primary_metric: MetricName;
 };
 
 // Explicabilidad global (S2): permutation importance sobre TEST, calculada por
@@ -63,6 +70,14 @@ export type Explainability = {
   features: FeatureImportance[];
 };
 
+// S4: cada candidato entrenado (mismo preprocesador) con sus métricas sobre test.
+// El ganador (argmax de la métrica primaria) es el que se retiene y exporta.
+export type ModelCandidate = {
+  /** Clave estable e independiente de idioma; la UI la traduce por i18n. */
+  name: "forest" | "hgb";
+  metrics: Metrics;
+};
+
 // Lo que devuelve pipeline.py (JSON).
 export type PipelineResult = {
   /** Las 2 clases del objetivo, orden lexicográfico (S3: esquema del modelo). */
@@ -73,9 +88,17 @@ export type PipelineResult = {
   n_test: number;
   baselines: { majority: Metrics; logistic: Metrics };
   model: Metrics;
+  /** S4: clave del candidato ganador (el que `model` representa). */
+  model_name: ModelCandidate["name"];
+  /** S4: todos los candidatos entrenados, para mostrar la competencia franca. */
+  candidates: ModelCandidate[];
   confusion_matrix: number[][];
   explainability: Explainability;
-  preprocessing?: { numeric_medians: Record<string, number> };
+  preprocessing?: {
+    numeric_medians: Record<string, number>;
+    /** S4: categorías raras agrupadas por columna (min_frequency, aprendido de train). */
+    rare_categories?: Record<string, string[]>;
+  };
 };
 
 export type ExperimentResult = {
@@ -85,6 +108,10 @@ export type ExperimentResult = {
   nTest: number;
   baselines: { majority: Metrics; logistic: Metrics };
   model: Metrics;
+  /** S4: candidato ganador retenido + toda la competencia (para el veredicto franco). */
+  modelName: ModelCandidate["name"];
+  candidates: ModelCandidate[];
+  rareCategories?: Record<string, string[]>;
   confusionMatrix: number[][];
   verdict: Verdict;
   leakage: LeakageFinding[];

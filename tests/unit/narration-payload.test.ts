@@ -53,6 +53,8 @@ function experimentResult(
     nTest: 50,
     baselines: { majority: metrics({ auc: 0.5 }), logistic: metrics() },
     model: metrics({ auc: 0.812345 }),
+    modelName: "forest",
+    candidates: [{ name: "forest", metrics: metrics({ auc: 0.812345 }) }],
     confusionMatrix: [
       [30, 5],
       [7, 8],

@@ -43,6 +43,8 @@ function result(overrides: Partial<ExperimentResult> = {}): ExperimentResult {
       logistic: metrics({ auc: 0.77 }),
     },
     model: metrics(),
+    modelName: "forest",
+    candidates: [{ name: "forest", metrics: metrics() }],
     confusionMatrix: [
       [30, 5],
       [7, 8],

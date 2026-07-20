@@ -53,4 +53,31 @@ cierres de ciclo (BLUEPRINT.html + design system publicado + guía v1 acumulativ
 
 ## Fase por fase (progreso, decisiones, bugs)
 
-### F0 — Setup + deltas + supuestos — EN CURSO
+### F0 — Setup + deltas + supuestos — HECHA
+
+Deltas del kit aplicados y commiteados; hook gitleaks ejercitado en un commit real (vivo);
+supuestos HGB + min_frequency verdes en el Pyodide real.
+
+### F1 — Motores TS — HECHA
+
+- `src/engine/sanitize.ts` (puro): dedup de filas exactas (pre-split ⇒ previene fuga por
+  duplicación), exclusión de ID exacta (solo NO-numéricas — una feature numérica de valores
+  distintos NUNCA se descarta en silencio) y de constantes, coerción de numéricas mixtas
+  (≥90% parsean ⇒ basura→nulo, contado). Reporte con conteos + `usable` para el caso
+  irrecuperable.
+- `src/engine/eda.ts` (puro): alertas honestas — posible fuga (heurística de leakage sobre TODO
+  el dataset, etiquetada aviso exploratorio pre-split), id-like (casi-única; excluida del escaneo
+  de fuga), desbalance. `EdaAlert` tipo separado de `LeakageFinding`.
+- `experiment.ts`: `primary_metric` en el payload (regla simétrica, vive SOLO en verdict.ts) +
+  `modelName`/`candidates`/`rareCategories` en el resultado.
+- `protocol.ts`: tipos `ModelCandidate`, `csv-unusable`, campos multi-candidato + rare_categories.
+- Tests: `sanitize.test.ts` (9) + `eda.test.ts` (7) + experiment (primary_metric por balance,
+  candidatos). Fixtures de UI/narración actualizados a los tipos nuevos (ganador por defecto
+  `forest`). 199/199 unit verdes; engine 96.6% agregado (>80%).
+
+**Nota de diseño (ID numérica):** el rule de exclusión de ID se restringió a columnas NO
+numéricas — una columna numérica (o casi, que se coacciona) con todos los valores distintos es una
+feature continua legítima, no un identificador; descartarla sería deshonesto. La casi-ID numérica
+la señala la EDA como aviso `id-like`, no la excluye sanitize.
+
+### F2 — pipeline.py multi-candidato + integración — EN CURSO
