@@ -156,10 +156,6 @@ export function useExperiment() {
   const [state, setState] = useState<ExperimentState>(INITIAL);
 
   useEffect(() => {
-    // Module worker real servido desde public/ (Pyodide exige module worker).
-    const worker = new Worker("/pyodide-runner.js", { type: "module" });
-    workerRef.current = worker;
-
     const finishExport = async (
       pending: Extract<Pending, { kind: "export-model" }>,
       exported: ExportResult,
@@ -183,7 +179,7 @@ export function useExperiment() {
       }
     };
 
-    worker.onmessage = (event: MessageEvent<RunnerResponse>) => {
+    const handleMessage = (event: MessageEvent<RunnerResponse>) => {
       const message = event.data;
       const pending = pendingRef.current.get(message.id);
       if (!pending) return;
@@ -292,8 +288,70 @@ export function useExperiment() {
       }
     };
 
+    // Auditoría H1: si el worker muere no llega NINGÚN mensaje — sin esto la
+    // UI quedaba en "running" para siempre. onerror cubre la carga fallida de
+    // /pyodide-runner.js y los abortos del runtime WASM (p. ej. sin memoria en
+    // un móvil con un dataset grande). Se falla todo comando en vuelo con un
+    // error honesto y se re-crea el worker para que reintentar funcione.
+    const handleWorkerDeath = (detail: string) => {
+      console.error("[experiment] worker-dead", detail);
+      const pendings = [...pendingRef.current.values()];
+      pendingRef.current.clear();
+      workerRef.current?.terminate();
+      spawnWorker();
+      for (const pending of pendings) {
+        if (pending.kind === "train") {
+          const table = tableRef.current;
+          reportExperimentError(
+            "worker-dead",
+            table
+              ? { rows: table.rows.length, cols: table.headers.length }
+              : undefined,
+          );
+          setState((s) => ({
+            ...s,
+            phase: "error",
+            error: { kind: "worker-dead", message: detail },
+          }));
+        } else if (pending.kind === "score") {
+          reportScoringError("worker-dead", {
+            rows: pending.table.rows.length,
+            cols: pending.table.headers.length,
+          });
+          setState((s) => ({
+            ...s,
+            scoring: { status: "error", kind: "runtime" },
+          }));
+        } else if (pending.kind === "export-model") {
+          reportExportError("worker-dead");
+          setState((s) => ({ ...s, exportState: "error" }));
+        } else {
+          reportImportError("worker-dead");
+          setState((s) => ({
+            ...s,
+            progress: null,
+            modelReady: false,
+            scoring: { status: "error", kind: "import-failed" },
+          }));
+        }
+      }
+    };
+
+    // Module worker real servido desde public/ (Pyodide exige module worker).
+    function spawnWorker() {
+      const worker = new Worker("/pyodide-runner.js", { type: "module" });
+      worker.onmessage = handleMessage;
+      worker.onerror = (event) =>
+        handleWorkerDeath(event.message || "worker-error");
+      worker.onmessageerror = () =>
+        handleWorkerDeath("message-deserialization-failed");
+      workerRef.current = worker;
+    }
+
+    spawnWorker();
+
     return () => {
-      worker.terminate();
+      workerRef.current?.terminate();
       workerRef.current = null;
     };
   }, []);
@@ -491,7 +549,12 @@ export function useExperiment() {
     workerRef.current?.postMessage({
       id,
       type: "import-model",
-      payload: { payload_b64: file.payload },
+      payload: {
+        payload_b64: file.payload,
+        // El esquema del manifiesto (el que la UI muestra y usa para el gate
+        // de columnas) DEBE ser el del pickle: pipeline.py los coteja.
+        expected_schema: file.manifest.schema,
+      },
     });
   }, []);
 

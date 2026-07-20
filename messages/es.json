@@ -56,6 +56,7 @@
         "model": "Modelo elegido: {model}."
       },
       "errors": {
+        "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
         "invalid-json": "Ese archivo no es un JSON válido.",
         "invalid-format": "Ese archivo no parece un modelo exportado por Probeta.",
         "unsupported-version": "Ese archivo viene de una versión del formato de Probeta que esta app no soporta.",
@@ -356,6 +357,7 @@
     "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
     "no-features": "No hay columnas utilizables como predictores.",
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
+    "worker-dead": "El motor de cómputo se detuvo de forma inesperada (pudo quedarse sin memoria, o falló la carga de sus componentes). Intenta de nuevo; si persiste, prueba con un archivo más pequeño.",
     "retry": "Volver a empezar",
     "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo."
   }

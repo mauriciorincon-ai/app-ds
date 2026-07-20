@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
 import {
+  MAX_MODEL_FILE_BYTES,
   validateModelFile,
   type ModelFile,
   type ModelFileErrorKind,
@@ -133,6 +134,13 @@ function ImportModelSection({
   const [status, setStatus] = useState<ImportStatus>({ step: "idle" });
 
   async function handleFile(file: File) {
+    // file.size se mira ANTES de leer: el tope debe proteger la memoria, no
+    // llegar tarde con el archivo ya cargado.
+    if (file.size > MAX_MODEL_FILE_BYTES) {
+      reportImportError("file-too-large");
+      setStatus({ step: "rejected", error: "file-too-large" });
+      return;
+    }
     setStatus({ step: "validating" });
     const validation = await validateModelFile(await file.text());
     if (!validation.ok) {

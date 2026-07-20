@@ -23,7 +23,10 @@ export type WorkerErrorKind =
   // S4: tras el saneamiento no queda estructura modelable (todo eran IDs/constantes,
   // o no quedan filas/columnas suficientes) — irrecuperable, con reporte honesto.
   | "csv-unusable"
-  | "runtime";
+  | "runtime"
+  // Auditoría H1: el worker murió sin responder (carga del runner fallida o
+  // aborto del runtime WASM, p. ej. sin memoria) — sin esto la UI colgaba.
+  | "worker-dead";
 
 export type DatasetSummary = {
   headers: string[];
@@ -188,7 +191,14 @@ export type RunnerRequest =
   | { id: number; type: "train"; payload: PipelinePayload }
   | { id: number; type: "score"; payload: ScorePayload }
   | { id: number; type: "export-model" }
-  | { id: number; type: "import-model"; payload: { payload_b64: string } };
+  | {
+      id: number;
+      type: "import-model";
+      // expected_schema = el esquema del MANIFIESTO (validado en TS): la UI
+      // gatea columnas con él, pero quien puntúa es el esquema del pickle.
+      // pipeline.py los coteja y rechaza el archivo si no coinciden.
+      payload: { payload_b64: string; expected_schema: ModelSchema };
+    };
 
 export type RunnerCommand = RunnerRequest["type"];
 

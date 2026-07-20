@@ -49,11 +49,23 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 _MODEL = None
 
 
+# Espejo EXACTO de NULL_TOKENS/isNullToken de csv.ts (paridad TS↔Python,
+# auditoría H1) — el test unit null-token-parity falla si divergen. Antes se
+# reemplazaban solo literales exactos: "si " y "si" eran clases distintas y
+# "None"/"NULL" categorías reales, divergiendo de lo que TS validó.
+_NULL_TOKENS = {"", "na", "n/a", "null", "nan", "none", "-"}
+
+
+def _normalize_cell(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    return None if text.lower() in _NULL_TOKENS else text
+
+
 def _build_frame(headers, rows, numeric):
     df = pd.DataFrame(rows, columns=headers)
-    df = df.replace(
-        {"": None, "NA": None, "N/A": None, "null": None, "NaN": None, "nan": None, "none": None, "-": None}
-    )
+    df = df.map(_normalize_cell)
     for col in numeric:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     return df
@@ -415,8 +427,11 @@ def export_model(payload_json="{}"):
 
 def import_model(payload_json):
     """Restaura un modelo exportado. La validación de manifiesto + SHA-256
-    ocurre en TS ANTES de llegar aquí (regla del sprint); esto solo
-    deserializa y verifica la forma del payload restaurado.
+    ocurre en TS ANTES de llegar aquí (regla del sprint); esto deserializa,
+    verifica la forma del payload restaurado y coteja su esquema contra el del
+    manifiesto (auditoría H1): la UI gatea columnas con el esquema del
+    MANIFIESTO, pero quien puntúa es el del pickle — si no coinciden, el
+    archivo miente y se rechaza en vez de puntuar con otro esquema.
     """
     global _MODEL
     p = json.loads(payload_json)
@@ -426,6 +441,9 @@ def import_model(payload_json):
         key in restored for key in ("pipe", "schema", "training_profile")
     ):
         raise RuntimeError("invalid-payload")
+    expected = p.get("expected_schema")
+    if expected is not None and restored["schema"] != expected:
+        raise RuntimeError("schema-mismatch")
     _MODEL = {
         "pipe": restored["pipe"],
         "schema": restored["schema"],

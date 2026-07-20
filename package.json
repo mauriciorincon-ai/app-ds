@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prepare": "node scripts/apply-hooks.mjs",
     "predev": "node scripts/copy-pyodide.mjs",
     "dev": "next dev",
     "prebuild": "node scripts/copy-pyodide.mjs",

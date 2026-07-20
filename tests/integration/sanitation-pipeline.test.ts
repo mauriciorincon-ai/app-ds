@@ -14,6 +14,8 @@ import type { PipelineResult } from "@/workers/protocol";
 let pyodide: PyodideInterface;
 type PyFn = (payloadJson: string) => string;
 let runExperiment: PyFn;
+let exportModel: PyFn;
+let importModel: PyFn;
 
 beforeAll(async () => {
   pyodide = await loadPyodide();
@@ -22,6 +24,8 @@ beforeAll(async () => {
     readFileSync(resolve(process.cwd(), "src/lib/ds/pipeline.py"), "utf8"),
   );
   runExperiment = pyodide.globals.get("run_experiment") as unknown as PyFn;
+  exportModel = pyodide.globals.get("export_model") as unknown as PyFn;
+  importModel = pyodide.globals.get("import_model") as unknown as PyFn;
 }, 180_000);
 
 const run = (payload: unknown): PipelineResult =>
@@ -128,5 +132,85 @@ describe("multi-candidato con boosting (integración Pyodide)", () => {
     const expectedWinner = byName.hgb > byName.forest ? "hgb" : "forest"; // empate → forest
     expect(result.model_name).toBe(expectedWinner);
     expect(result.model.auc).toBe(byName[expectedWinner]);
+  });
+});
+
+// Auditoría H1 (A5): pipeline.py debe ver EXACTAMENTE los mismos datos que TS
+// validó — celdas trimeadas y tokens de nulo sin distinguir mayúsculas. Antes
+// "si " y "si" eran clases distintas (3 clases ⇒ el export se rechazaba a sí
+// mismo al re-importar) y "None"/"NULL" eran categorías reales.
+describe("paridad de nulos/trim TS↔Python (integración Pyodide)", () => {
+  const dirtyRun = () =>
+    JSON.parse(
+      runExperiment(
+        JSON.stringify({
+          headers: ["x", "color", "y"],
+          rows: [
+            ["1.0", "azul", "no"],
+            ["2.0", "None", "si "], // target con espacio + nulo disfrazado
+            [" 3.5 ", "rojo", "si"], // numérica con espacios
+            ["4.0", "azul", "no "],
+            ["NULL", "rojo", "si"], // token de nulo en mayúsculas
+            ["6.0", "azul", "no"],
+            ["7.0", "rojo", "si"],
+            ["8.0", "azul", "no"],
+            ["9.0", "rojo", "si"],
+            ["10.0", "azul", "no"],
+          ],
+          target: "y",
+          numeric: ["x"],
+          categorical: ["color"],
+          train_idx: [0, 1, 2, 3, 4, 5, 6, 7],
+          test_idx: [8, 9],
+          seed: 42,
+          primary_metric: "f1",
+        }),
+      ),
+    ) as PipelineResult;
+
+  it('el objetivo con "si " queda en 2 clases (el export ya no se rechaza a sí mismo)', () => {
+    const result = dirtyRun();
+    expect(result.classes).toEqual(["no", "si"]);
+  });
+
+  it('"None"/"NULL" son nulos (se imputan), no categorías vistas en train', () => {
+    dirtyRun();
+    const exported = JSON.parse(exportModel("{}")) as {
+      payload_b64: string;
+      schema: { classes: string[] };
+      training_profile: { categorical: Record<string, string[]> };
+    };
+    expect(exported.schema.classes).toEqual(["no", "si"]);
+    expect(exported.training_profile.categorical.color).toEqual([
+      "azul",
+      "rojo",
+    ]);
+  });
+
+  // Auditoría H1 (A2): la UI gatea columnas con el esquema del MANIFIESTO pero
+  // quien puntúa es el del pickle — import_model los coteja y rechaza mentiras.
+  it("import_model rechaza un payload cuyo esquema no coincide con el esperado", () => {
+    dirtyRun();
+    const exported = JSON.parse(exportModel("{}")) as {
+      payload_b64: string;
+      schema: Record<string, unknown>;
+    };
+    expect(() =>
+      importModel(
+        JSON.stringify({
+          payload_b64: exported.payload_b64,
+          expected_schema: { ...exported.schema, target: "otra_columna" },
+        }),
+      ),
+    ).toThrow(/schema-mismatch/);
+    // Con el esquema fiel, restaura sin error.
+    expect(() =>
+      importModel(
+        JSON.stringify({
+          payload_b64: exported.payload_b64,
+          expected_schema: exported.schema,
+        }),
+      ),
+    ).not.toThrow();
   });
 });

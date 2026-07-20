@@ -24,6 +24,12 @@ export const MODEL_FILE_EXTENSION = ".probeta.json";
 export const PAYLOAD_ENCODING = "pickle+zlib+base64";
 const APP_NAME = "probeta-ds";
 
+// Tope del archivo de import (auditoría H1): se chequea con file.size ANTES de
+// leerlo a memoria — un archivo absurdo no debe tumbar la pestaña para luego
+// rechazarse. Holgado a propósito: muy por encima de cualquier export real de
+// esta app (CSV ≤5MB), muy por debajo de lo que revienta atob/hash.
+export const MAX_MODEL_FILE_BYTES = 100 * 1024 * 1024;
+
 // Versiones del runtime que ESTA build trae self-hosteado (public/pyodide).
 // Permiten advertir de un mismatch de versiones en el import SIN cargar
 // Pyodide. Un test de integración las compara contra el runtime real: si
@@ -256,7 +262,11 @@ export function modelFileName(datasetName: string, date?: Date): string {
 // --- Validar (import) — ANTES de deserializar ------------------------------
 
 export type ModelFileErrorKind =
-  "invalid-json" | "invalid-format" | "unsupported-version" | "hash-mismatch";
+  | "file-too-large"
+  | "invalid-json"
+  | "invalid-format"
+  | "unsupported-version"
+  | "hash-mismatch";
 
 export type VersionWarning = {
   component: "pyodide" | "sklearn";
