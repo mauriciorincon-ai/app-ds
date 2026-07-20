@@ -154,4 +154,44 @@ una feature continua tiene alta cardinalidad natural y marcarla "identificador" 
   why-modelcard (conteos exactos + privacidad de narración) intactos ⇒ R3/R6 confirmados.
 - Unit 213/213; typecheck + lint limpios.
 
-### F6 — CIERRE DE CICLO — EN CURSO
+### F6 — CIERRE DE CICLO — HECHA (salvo pasos interactivos del usuario)
+
+- **ADR-008** (boosting multi-candidato + saneamiento en dos capas) + **revisión de ADR-007**
+  (aditivo-opcional NO sube format_version; compat S3↔S4 con tests dedicados).
+- **`docs/kit-de-prueba/`** (nuevo — no existía; desviación registrada): README + 4 datasets
+  espejo + `clientes-nuevos.csv` (scoring). Generador = fuente única a `public/datasets/` Y al kit.
+- **MANUAL**: sección S4 + FAQ; Historial con la fila S3 que faltaba + fila S4.
+- **`docs/BLUEPRINT.html`**: as-built (SVG local-first + tabla 14 filas + costo ≈US$0 + punto
+  único de falla), autocontenido.
+- **`docs/GUIA-DE-PRUEBA.html` v1**: acumulativa S1–S4 (24 pruebas), chips de origen, filtros,
+  gate ⭐ de 11 pruebas no-automatizables, `localStorage guia-ds:s4:`, kit enlazado, autocontenida.
+- **Lighthouse local (lección S3):** el script de la landing mide **282KB < 300KB** (budget
+  intacto — zod sigue server-side; sanitize/eda son TS puro). `lhci autorun` local falló en el
+  healthcheck del entorno; se midió el gate crítico (script gzip de la landing) directamente.
+- **`/deploy-check`:** typecheck·lint limpios · unit 215 · integración 24 · e2e 12 ×2 devices ·
+  cobertura 90.8%/85.4% (>70%) · build OK · audit(high) exit 0 (1 moderate = deuda postcss
+  declarada) · axe limpio en e2e.
+
+**Pasos interactivos del usuario (cierre del ciclo):**
+
+- **`/design-sync`** — la fuente (`design-system.md`) está lista; la publicación a Claude Design es
+  outward-facing con prompts de permiso (create_project/finalize_plan) y no hay skill `/design-sync`
+  estampada en esta app ⇒ la corre el usuario. No existe aún proyecto "Probeta DS — Design System"
+  (sí los de habla/inmobiliaria).
+- **Gate ⭐** sobre la guía v1 (11 pruebas, ~25–30 min) — única vía de cierre del ciclo.
+- **`/cierre-sprint ds`** en la planeadora tras el merge — cierra sprint Y ciclo (H1 COMPLETO).
+
+## Estándares 6+1 — evidencia
+
+- **Testing:** unit 215 · integración 24 (Pyodide) · e2e 12 ×2 devices · engine >80% agregado ·
+  el test-que-falla del saneamiento anti-fuga (categorías raras SOLO de train).
+- **CI/CD:** 4 jobs verdes localmente; sin jobs nuevos (no cambia la ruleset).
+- **Observabilidad:** metadata-only intacta; la narración registra costo con Pino; Sentry inerte
+  sin DSN. Cero contenido del dataset en logs.
+- **Seguridad:** doble gitleaks vivo (carnada partida armada solo en el test del hook); audit(high)
+  limpio; sin secretos en el diff.
+- **Performance:** budget de 300KB respetado (282KB); landing liviana (Pyodide bajo demanda).
+- **UX+A11y:** axe limpio; región de preview enfocable (deuda ConfigScreen pagada); alertas con
+  símbolo+texto; `role="status"` (no `alert`).
+- **IA embebida responsable:** narración extendida = mismo adapter, misma verificación, mismo
+  opt-in; `.strict()` en el schema; bloque eda a mano (zod server-side); fallback determinista.
