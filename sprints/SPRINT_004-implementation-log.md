@@ -34,6 +34,16 @@ cierres de ciclo (BLUEPRINT.html + design system publicado + guía v1 acumulativ
   guía acumulativa —que lo enlaza— es entregable NUEVO de este sprint). Se CREA en F6 como parte
   del cierre, con un README y los CSV de prueba (los 3 de scoring del S3 + el nuevo
   `clientes-sucio.csv`). Sin impacto en el alcance; avisado al usuario.
+- **O2 se entregó como "EDA mínima de ALERTAS", sin vista de distribuciones/correlaciones**
+  (registrado 2026-07-20, detectado por la auditoría de cierre — debió anotarse durante F1/F3).
+  El outcome O2 del SPRINT_004.md y la D3 del plan prometían "distribuciones por columna,
+  faltantes, correlaciones"; lo construido es `computeEdaAlerts` (posible fuga / casi-ID /
+  desbalance) + el perfil por columna que ya existía de S1 (tipo + nulos en la preview). Las
+  correlaciones solo afloran como alerta si cruzan el umbral de fuga. Las acceptance criteria
+  formales (las 3 alertas con sus umbrales, silencio en limpio) SÍ se cumplen todas; lo recortado
+  es la vista exploratoria general. Motivo: presupuesto de pasos de la pantalla (regla 8) —
+  ConfigScreen ya absorbía saneamiento + alertas + fix de a11y. Queda como deuda explícita en el
+  summary (vista de distribuciones/correlaciones, candidata a H2).
 
 ## Deltas del kit aplicados (v1.2.x → v1.7.3)
 
@@ -195,3 +205,52 @@ una feature continua tiene alta cardinalidad natural y marcarla "identificador" 
   símbolo+texto; `role="status"` (no `alert`).
 - **IA embebida responsable:** narración extendida = mismo adapter, misma verificación, mismo
   opt-in; `.strict()` en el schema; bloque eda a mano (zod server-side); fallback determinista.
+
+## Auditoría final pre-cierre (2026-07-20) — hallazgos y ajustes
+
+Auditoría de solo lectura sobre TODO el ciclo (S1–S4: cobertura de alcance contra órdenes/planes
+de la planeadora, calidad de código, seguridad, dependencias, documentación) ANTES del gate ⭐ y
+del merge. Resultado: 0 Críticos, 7 Altos (todos corregidos o documentados en esta pasada),
+~17 Medios y ~20 Bajos que quedan como backlog documentado aquí. Ajustes aplicados (aprobados
+por el usuario, «Realiza los ajustes»):
+
+1. **Worker sin manejo de muerte (UI colgada para siempre)** → `useExperiment` registra
+   `onerror`/`onmessageerror`: falla los comandos en vuelo con error honesto (kind nuevo
+   `worker-dead`, i18n ES/EN) y RE-CREA el worker para que reintentar funcione.
+2. **Perímetro del import de modelo** → (a) CSP en `next.config.ts` (`connect-src` limitado a
+   self+Sentry: contiene la exfiltración del peor caso pickle — la CSP que ADR-001 asumía);
+   (b) `import_model` coteja el esquema del pickle contra el del manifiesto
+   (`expected_schema` → `schema-mismatch`); (c) tope `file.size` ≤100 MB ANTES de leer
+   (`file-too-large`). Revisión 2026-07-20 en ADR-007; test de integración del cotejo.
+3. **Gate gitleaks mortal en clon nuevo** → script `prepare` real (`scripts/apply-hooks.mjs`,
+   multiplataforma — CLAUDE.md lo afirmaba sin existir) + step gitleaks 8.30.1 pineado en el job
+   quality del CI (tercera red; verificado en local contra el árbol trackeado: 0 hallazgos).
+4. **Costo LLM loggeado siempre en US$0** → precio de `openai/gpt-oss-120b` en `cost.ts`
+   ($0.15/$0.60 por 1M, cifras del ADR-005) + `ia-cost.test.ts` que exige precio para los
+   modelos de producción. Amendment en ADR-005.
+5. **Divergencia de nulos/trim TS↔Python** ("si "≠"si" ⇒ 3 clases ⇒ el export se rechazaba a sí
+   mismo al re-importar; "None"/"NULL" como categorías reales) → `_normalize_cell` en pipeline.py
+   espeja `isNullToken` (strip+lower, mismo set); `parseNumber` rechaza hex/bin/octal como
+   pandas; test-tripwire `null-token-parity.test.ts` + tests de integración con celdas sucias.
+6. **Inyección de prompt vía nombres de columna** → comentario falso de `guardrails.ts`
+   corregido ("no tiene vehículo" → sí lo tiene, mitigado y con residuo documentado), prompt del
+   Narrator endurecido (nombres = datos no-instrucciones), amendment en ADR-005 y ADR-006 (que
+   además salda la revisita que el propio ADR-006 exigía por el bloque `eda` de S4).
+7. **Recorte de O2 sin documentar** → registrado arriba en `## Desviación del plan` + deuda en el
+   summary.
+
+**Backlog de la auditoría (Medios/Bajos NO corregidos en esta pasada — para la planeadora):**
+headers duplicados sin detectar en ninguna capa; falsa alarma de fuga en columnas casi-ID
+(prepareRun no aplica la exclusión id-like de eda.ts); filas con objetivo nulo descartadas en
+silencio; BOM UTF-8; frontera de desbalance EDA (0.15) ≠ frontera de métrica (0.35); re-fetch de
+narración en cada remount de Results + retry que descarta narrativa verificada; `pickExample`/
+`handleFile` sin manejo de errores y límite de 5 MB validado tras leer el archivo; matriz de
+confusión etiquetada 0/1 en vez de las clases reales; sin gestión de foco entre pantallas;
+"circuit breaker" nominal (kill-switch + rate limit por instancia); wheels de Pyodide sin
+verificación sha256 en `copy-pyodide.mjs`; `console*.html` de Pyodide publicados con scripts de
+CDN (REPL bajo el origen); `design-system.md` sin sección S4 (insumo del `/design-sync`); README
+raíz boilerplate; e2e faltantes (fuga plantada con Pyodide real, flujo en EN); ID numérico puro
+entra al modelo sin aviso en ninguna capa (comentario de sanitize.ts corregible); `.gitignore`
+sin `.env.production`/`.env.development`; formula injection en CSV puntuado; claves i18n
+huérfanas (`results.leakage.none` nunca se renderiza); metadata SSR solo ES; preview sin tope de
+columnas; revocación inmediata del ObjectURL (Safari); datasets degenerados sin gate de n mínimo.

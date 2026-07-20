@@ -85,3 +85,24 @@ tests (an S3-shaped file with no S4 fields validates; an S4 file with the new fi
 round-trips).
 
 The H2 items previously deferred still stand: exported-file signature (H2) and ONNX re-evaluation.
+
+## Revision (2026-07-20) — H1 closing audit: import perimeter hardened
+
+The audit sharpened the threat model of the pickle payload beyond what "integrity, not
+authenticity" covered:
+
+- **The manifest and the pickle could disagree.** The SHA-256 covers the payload only, and the UI
+  gates scoring columns with the MANIFEST schema while the restored PICKLE schema is what
+  actually scores. `import_model` now receives the manifest schema (`expected_schema`) and
+  rejects the file (`schema-mismatch`) when the restored schema differs — a lying file is refused
+  instead of scoring with a schema the user never saw. Covered by an integration test.
+- **Exfiltration containment.** A malicious pickle (`__reduce__`) could attempt `fetch` from the
+  worker with the victim's data. The app now ships a CSP (next.config.ts): `default-src 'self'`,
+  `connect-src` limited to self + Sentry ingest, `worker-src 'self'` — the network a hostile
+  payload can reach is the app's own origin. This is the CSP that ADR-001 assumed when
+  self-hosting Pyodide; it existed as design intent only until now.
+- **Memory safety before validation.** The import path reads `file.size` and rejects >100 MB
+  (`file-too-large`) BEFORE reading the file into memory.
+
+Unchanged and still accepted for H1: the manifest's informative fields (metrics, verdict) are not
+covered by the hash — an exported-file **signature remains the H2 item** for authenticity.

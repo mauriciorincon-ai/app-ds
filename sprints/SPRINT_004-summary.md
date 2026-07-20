@@ -16,6 +16,10 @@ pr: https://github.com/mauriciorincon-ai/app-ds/pull/7
 señales de riesgo antes de entrenar y suma boosting compitiendo con el mismo veredicto honesto.
 Con este sprint (y el gate ⭐ del usuario) **el ciclo H1 queda completo**.
 
+**Matiz honesto (auditoría de cierre 2026-07-20):** O2 se entregó como EDA de ALERTAS; la vista
+de distribuciones/correlaciones que el outcome enunciaba se recortó (todas las acceptance
+criteria formales sí pasan). Desviación registrada en la bitácora; la vista queda como deuda.
+
 ## Qué se construyó
 
 - **Saneamiento en dos capas** (ADR-008): estructural pre-split en TS (`engine/sanitize.ts` — dedup
@@ -88,6 +92,14 @@ high` exit 0; sin secretos en el diff.
 - **Fricción de entorno (no de producto)** — un `next-server` viejo (pre-F3) en :3000 hacía que
   Playwright reusara código estancado; se detuvo y con server fresco pasó. `lhci autorun` local
   falló en el healthcheck del entorno; se midió el gate crítico (script gzip) a mano.
+- **Auditoría final pre-cierre (2026-07-20)** — 0 Críticos, 7 Altos, todos corregidos o
+  documentados antes del gate ⭐: worker sin manejo de muerte (UI colgada) → `worker-dead` +
+  re-spawn; perímetro del import (CSP + cotejo esquema pickle↔manifiesto + tope 100 MB); gate
+  gitleaks mortal en clon nuevo → script `prepare` real + gitleaks en CI; costo LLM loggeado en
+  US$0 → precio del modelo real + test; divergencia de nulos/trim TS↔Python ("si "≠"si" ⇒ el
+  export se rechazaba a sí mismo) → paridad espejada + tripwire; inyección de prompt vía nombres
+  de columna → prompt endurecido + residuo documentado (ADR-005/006); recorte de O2 registrado.
+  Detalle y backlog de Medios/Bajos: bitácora § "Auditoría final pre-cierre".
 
 ## Qué salió bien / qué generó fricción
 
@@ -115,6 +127,14 @@ high` exit 0; sin secretos en el diff.
   usar el campo más allá del resumen de importación.
 - **Publicación del design system + gate ⭐** — pasos interactivos del usuario (no diferidos a otro
   sprint: son el cierre de ESTE ciclo; el momento lo elige el usuario — enmienda F0 #6).
+- **Vista EDA de distribuciones/correlaciones (recorte de O2)** — solo alertas en H1; la vista
+  exploratoria general es candidata a H2 (desviación en bitácora, auditoría de cierre).
+- **Residuo de inyección de prompt** — verify.ts no acota frases que no citan features; mitigado
+  (prompt endurecido, nombres = datos) y documentado en ADR-005; regla de verificación extra si
+  el escenario "dataset de terceros" se vuelve real (H2).
+- **Backlog de la auditoría de cierre (Medios/Bajos)** — listado completo en la bitácora
+  § "Auditoría final pre-cierre"; los de producto (headers duplicados, casi-ID como falsa fuga,
+  objetivo nulo silencioso, matriz 0/1, foco entre pantallas) son insumo del plan H2.
 
 ## Archivos clave (máx. 10)
 
