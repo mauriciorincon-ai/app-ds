@@ -226,6 +226,7 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         cols={7}
         runMeta={RUN_META}
         sanitation={null}
+        edaAlerts={null}
         onAgain={() => {}}
         onUseModel={() => {}}
         onExportModel={() => {}}
@@ -259,6 +260,7 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         cols={6}
         runMeta={RUN_META}
         sanitation={null}
+        edaAlerts={null}
         onAgain={() => {}}
         onUseModel={() => {}}
         onExportModel={() => {}}
@@ -440,6 +442,7 @@ describe("ResultsScreen — candidatos", () => {
         cols={7}
         runMeta={RUN_META}
         sanitation={null}
+        edaAlerts={null}
         onAgain={() => {}}
         onUseModel={() => {}}
         onExportModel={() => {}}

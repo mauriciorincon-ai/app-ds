@@ -1,5 +1,6 @@
 "use client";
 
+import type { EdaAlert } from "@/engine/eda";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
@@ -40,6 +41,7 @@ export function ResultsScreen({
   cols,
   runMeta,
   sanitation,
+  edaAlerts,
   onAgain,
   onUseModel,
   onExportModel,
@@ -50,6 +52,7 @@ export function ResultsScreen({
   cols: number;
   runMeta: RunMeta;
   sanitation: SanitationReport | null;
+  edaAlerts: EdaAlert[] | null;
   onAgain: () => void;
   onUseModel: () => void;
   onExportModel: () => void;
@@ -63,6 +66,7 @@ export function ResultsScreen({
     target: runMeta.target,
     cols,
     consent,
+    edaAlerts,
   });
   // Re-activar el consentimiento reintenta la narración (si la anterior falló,
   // el toggle no puede sentirse "muerto": siempre se ve cargar → resultado).

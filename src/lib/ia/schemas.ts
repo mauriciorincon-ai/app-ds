@@ -24,6 +24,23 @@ export const narrationFeatureSchema = z.object({
   direction: z.enum(["positive", "negative"]).nullable(),
 });
 
+// S4 — alerta EDA como agregado (tipo + columna o tasa; JAMÁS un valor de celda).
+// Vocabulario cerrado: cada variante lleva SOLO sus campos (strict).
+export const edaAlertSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("possible-leak"),
+      column: z.string().min(1).max(120),
+    })
+    .strict(),
+  z
+    .object({ kind: z.literal("id-like"), column: z.string().min(1).max(120) })
+    .strict(),
+  z
+    .object({ kind: z.literal("class-imbalance"), minorityRate: score01 })
+    .strict(),
+]);
+
 // Lo que la app envía al route (y el route, tras validar, al Narrator).
 // strict(): una clave desconocida (p. ej. filas coladas) RECHAZA la petición
 // entera — vocabulario cerrado de verdad, no "se ignora lo demás".
@@ -66,6 +83,9 @@ export const narrationPayloadSchema = z
       .strict(),
     /** Nombres de columnas marcadas por la heurística de fuga (puede ser vacío). */
     leakage: z.array(z.string().min(1).max(120)).max(8),
+    /** S4: alertas EDA (agregados). Se OMITE si el dataset está limpio ⇒ el
+     *  payload queda BYTE-IDÉNTICO al de S3 (no-regresión + privacidad). */
+    eda: z.array(edaAlertSchema).max(20).optional(),
   })
   .strict();
 

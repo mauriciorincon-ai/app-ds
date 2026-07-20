@@ -278,7 +278,9 @@
         "unclear": "sin dirección clara"
       },
       "method": "La importancia se midió por permutación sobre el conjunto de prueba (datos que el modelo no vio al entrenar).",
-      "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas."
+      "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas.",
+      "idLike": "Además, {columns} parece un identificador: aporta poco para generalizar.",
+      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate}%); por eso la métrica principal es el AUC."
     }
   },
   "modelcard": {

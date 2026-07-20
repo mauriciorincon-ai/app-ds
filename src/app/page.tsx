@@ -52,6 +52,7 @@ export default function Home() {
           cols={state.dataset?.headers.length ?? 0}
           runMeta={state.runMeta}
           sanitation={state.sanitation}
+          edaAlerts={state.edaAlerts}
           onAgain={reset}
           onUseModel={goToScoring}
           onExportModel={exportModel}

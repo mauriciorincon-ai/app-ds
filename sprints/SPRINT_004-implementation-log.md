@@ -122,4 +122,20 @@ sparse_output=False)` — agrupa categorías raras aprendiendo SOLO de train (fi
 una feature continua tiene alta cardinalidad natural y marcarla "identificador" sería ruido
 (coherente con la exclusión de sanitize). Evita un falso positivo sobre `ingreso` en el CSV sucio.
 
-### F4 — Narración extendida — EN CURSO
+### F4 — Narración extendida — HECHA
+
+- `schemas.ts`: bloque `eda` OPCIONAL (unión discriminada strict) en el payload; el contrato
+  cerrado ahora admite alertas agregadas (tipo + columna/tasa; jamás valor de celda).
+- `payload.ts`: `buildNarrationPayload` incluye `eda` solo si hay alertas; **si está limpio OMITE
+  la clave ⇒ payload byte-idéntico al de S3** (no-regresión de privacidad; el e2e why-modelcard
+  usa marketing, limpio).
+- `templates.ts`: extensión determinista al informe EDA (frases de id-like + desbalance con cifras
+  del payload, NUNCA del LLM); la posible-fuga la cubre ya la frase de fuga.
+- `useNarration` + `ResultsScreen` + `page.tsx`: threading de `edaAlerts` (referencia estable de
+  `state.edaAlerts` ⇒ no re-dispara el fetch, R7). El prompt real ya incluía el payload completo
+  vía `JSON.stringify` ⇒ el LLM ve el contexto EDA sin cambiar el prompt; `verify.ts` sin cambios.
+- Tests: `narration-payload` (limpio SIN clave `eda`, igualdad estricta; sucio solo agregados +
+  valida schema + cero valores de celda) + `narration-templates` (frases EDA deterministas).
+  210/210 unit; zod sigue server-side (R8: bloque eda a mano, cero zod en el cliente).
+
+### F5 — e2e — EN CURSO

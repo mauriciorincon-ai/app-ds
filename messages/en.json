@@ -278,7 +278,9 @@
         "unclear": "no clear direction"
       },
       "method": "Importance was measured by permutation on the test set (data the model never saw during training).",
-      "leakage": "Warning: {columns} could contain the answer (possible leak); these figures may be inflated."
+      "leakage": "Warning: {columns} could contain the answer (possible leak); these figures may be inflated.",
+      "idLike": "Also, {columns} looks like an identifier: it adds little for generalizing.",
+      "imbalance": "The target is imbalanced (the minority class is {rate}%); that's why the primary metric is AUC."
     }
   },
   "modelcard": {
