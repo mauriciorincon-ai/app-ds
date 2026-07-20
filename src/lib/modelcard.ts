@@ -6,6 +6,7 @@
 // narración IA SOLO si quedó verificada. Strings en messages/{es,en}.json.
 import type { Locale } from "@/i18n/config";
 import { translate, type TParams } from "@/i18n/translate";
+import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { datasetSlug } from "@/lib/files";
 import type { ExperimentResult } from "@/workers/protocol";
@@ -20,6 +21,8 @@ export type ModelCardInput = {
   target: string;
   seed: number;
   result: ExperimentResult;
+  /** Saneamiento del dataset (S4) — cifras exactas en la constancia. */
+  sanitation?: SanitationReport | null;
   /** Narración IA que PASÓ la verificación numérica; null ⇒ no se cita. */
   verifiedNarrative: string | null;
   /** Inyectable para tests deterministas. */
@@ -88,6 +91,58 @@ export function buildModelCard(input: ModelCardInput): string {
       ? `${section("narrative")}\n\n> ${input.verifiedNarrative}`
       : `${section("narrative")}\n\n${t("modelcard.explainability.notVerified")}`;
 
+  // S4 — nombre del modelo ganador y candidatos comparados (parametrizados; ya
+  // no se hardcodea "Random Forest").
+  const modelLabel = (name: ExperimentResult["modelName"]) =>
+    t(`results.candidates.model.${name}`);
+  const candidatesList = result.candidates
+    .map((c) => modelLabel(c.name))
+    .join(" · ");
+
+  // S4 — categorías raras agrupadas por el pipeline (si las hubo).
+  const rareEntries = Object.entries(result.rareCategories ?? {});
+  const rareLine =
+    rareEntries.length > 0
+      ? [
+          `- ${t("modelcard.method.rareCategories", {
+            cols: rareEntries
+              .map(([col, cats]) => `«${col}» (${cats.join(", ")})`)
+              .join("; "),
+          })}`,
+        ]
+      : [];
+
+  // S4 — sección de saneamiento: cifras EXACTAS y deterministas (nunca del LLM).
+  const san = input.sanitation;
+  const sanitationSection =
+    san && !san.clean
+      ? [
+          section("sanitation"),
+          "",
+          ...(san.duplicateRowsRemoved > 0
+            ? [
+                `- ${t("modelcard.sanitation.duplicates", {
+                  count: san.duplicateRowsRemoved,
+                })}`,
+              ]
+            : []),
+          ...san.exclusions.map(
+            (ex) =>
+              `- ${t(`modelcard.sanitation.exclusion.${ex.reason}`, {
+                column: ex.column,
+              })}`,
+          ),
+          ...san.coercions.map(
+            (co) =>
+              `- ${t("modelcard.sanitation.coercion", {
+                column: co.column,
+                count: co.cellsNulled,
+              })}`,
+          ),
+          "",
+        ]
+      : [section("sanitation"), "", t("modelcard.sanitation.none"), ""];
+
   return [
     `# ${t("modelcard.title", { name: input.datasetName })}`,
     "",
@@ -107,6 +162,7 @@ export function buildModelCard(input: ModelCardInput): string {
       positive: result.positiveClass,
     })}`,
     "",
+    ...sanitationSection,
     section("split"),
     "",
     `- ${t("modelcard.split.sizes", {
@@ -119,7 +175,11 @@ export function buildModelCard(input: ModelCardInput): string {
     section("method"),
     "",
     `- ${t("modelcard.method.pipeline")}`,
-    `- ${t("modelcard.method.models")}`,
+    `- ${t("modelcard.method.models", {
+      model: modelLabel(result.modelName),
+      candidates: candidatesList,
+    })}`,
+    ...rareLine,
     "",
     section("metrics"),
     "",

@@ -16,6 +16,9 @@ const EXAMPLES = [
   { key: "marketing", file: "marketing-campania.csv" },
   { key: "rotacion", file: "rotacion-empleados.csv" },
   { key: "credito", file: "credito-fuga-plantada.csv" },
+  // S4: dataset "real" sucio (nulos mixtos, basura, ID, constante, duplicados,
+  // categoría rara) para demostrar el saneamiento transparente.
+  { key: "clientes", file: "clientes-sucio.csv" },
 ] as const;
 
 export function StartScreen({
@@ -88,7 +91,7 @@ export function StartScreen({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
           {t("start.examples.title")}
         </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {EXAMPLES.map(({ key, file }) => (
             <button
               key={key}
@@ -274,6 +277,15 @@ function ImportSummary({
           })}{" "}
           — {t(`results.verdict.${manifest.verdict.level}`)}
         </li>
+        {/* S4: nombre del modelo ganador (campo aditivo opcional del manifiesto;
+            un archivo S3 sin él simplemente no muestra esta línea). */}
+        {manifest.model_name && (
+          <li>
+            {t("start.import.summary.model", {
+              model: t(`results.candidates.model.${manifest.model_name}`),
+            })}
+          </li>
+        )}
         <li>
           {manifest.leakage.length > 0
             ? t("start.import.summary.leakage", {

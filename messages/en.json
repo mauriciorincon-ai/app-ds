@@ -32,6 +32,10 @@
       "credito": {
         "name": "Credit default",
         "desc": "Ships with a planted leak: watch it get caught."
+      },
+      "clientes": {
+        "name": "Customers (messy data)",
+        "desc": "Nulls, junk, an ID and duplicates: see the cleanup in action."
       }
     },
     "import": {
@@ -48,7 +52,8 @@
         "noLeakage": "No leak warnings recorded during training",
         "versionWarning": "This file was created with versions different from this app's ({list}). It will load anyway; if it fails, retrain and export again.",
         "use": "Use this model",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "model": "Chosen model: {model}."
       },
       "errors": {
         "invalid-json": "That file isn't valid JSON.",
@@ -80,7 +85,24 @@
       "date": "We found columns that look like dates ({cols}). This version doesn't split by time; they're ignored as predictors."
     },
     "train": "Train model",
-    "back": "Change dataset"
+    "back": "Change dataset",
+    "sanitation": {
+      "clean": "Nothing to clean up: the dataset was already tidy.",
+      "title": "We cleaned up the dataset before training:",
+      "duplicates": "Removed {count} exact duplicate rows (keeps the same row out of both training and test).",
+      "exclusion": {
+        "id-column": "Dropped «{column}»: a distinct value per row (an identifier or free text), no signal to generalize from.",
+        "constant-column": "Dropped «{column}»: a single value, it carries no information."
+      },
+      "coercion": "In «{column}» we set {count} non-numeric cells to empty (the rest are numbers)."
+    },
+    "eda": {
+      "clean": "No alerts for this target.",
+      "title": "Before training, look at these signals:",
+      "possible-leak": "«{column}» predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time).",
+      "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize.",
+      "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
+    }
   },
   "training": {
     "title": "Training…",
@@ -139,6 +161,15 @@
       "exporting": "Exporting…",
       "error": "The model could not be exported. Try again.",
       "contents": "The file contains what the model learned from your data (parameters, categories, medians) — not your raw rows. Still, treat it as a sensitive file."
+    },
+    "candidates": {
+      "title": "Models that competed",
+      "model": {
+        "forest": "Random Forest (200 trees)",
+        "hgb": "HistGradientBoosting"
+      },
+      "winner": "chosen",
+      "note": "Both use the same preprocessing and compete under the same verdict. We pick the best on the primary metric; no tricks."
     }
   },
   "score": {
@@ -262,7 +293,8 @@
       "leakage": "Leakage check",
       "explainability": "Why does it predict this way?",
       "narrative": "Verified narrative",
-      "limits": "Limits"
+      "limits": "Limits",
+      "sanitation": "Sanitization"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -274,8 +306,9 @@
       "rule": "Preprocessing was fitted ONLY on the training set (anti-leakage by construction)."
     },
     "method": {
-      "pipeline": "Imputation (median / most frequent), scaling and one-hot inside a scikit-learn Pipeline.",
-      "models": "Baselines: majority class and logistic regression. Model: Random Forest (200 trees)."
+      "pipeline": "Imputation (median / most frequent), rare-category grouping, scaling and one-hot inside a scikit-learn Pipeline.",
+      "models": "Baselines: majority class and logistic regression. Candidates compared: {candidates}. Chosen model: {model}.",
+      "rareCategories": "Rare categories grouped (learned from training only): {cols}."
     },
     "metrics": {
       "metric": "Metric",
@@ -301,6 +334,15 @@
       "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
       "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
       "dates": "Date columns are detected but not used yet (no temporal split)."
+    },
+    "sanitation": {
+      "duplicates": "Removed {count} exact duplicate rows (prevents leakage by duplication).",
+      "exclusion": {
+        "id-column": "Dropped «{column}» (identifier: one value per row).",
+        "constant-column": "Dropped «{column}» (constant: a single value)."
+      },
+      "coercion": "In «{column}», {count} non-numeric cells were set to empty.",
+      "none": "The dataset needed no sanitization."
     }
   },
   "errors": {
@@ -312,6 +354,7 @@
     "target-not-binary": "The target must have exactly two categories.",
     "no-features": "There are no usable columns as predictors.",
     "runtime": "Something went wrong while processing. Please try again.",
-    "retry": "Start over"
+    "retry": "Start over",
+    "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file."
   }
 }

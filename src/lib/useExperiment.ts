@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LeakageFinding } from "@/engine/leakage";
+import { computeEdaAlerts, type EdaAlert } from "@/engine/eda";
+import { sanitizeTable, type SanitationReport } from "@/engine/sanitize";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import {
   checkSchema,
@@ -88,6 +90,9 @@ export type ExperimentState = {
   result: ExperimentResult | null;
   runMeta: RunMeta | null;
   error: { kind: WorkerErrorKind; message: string } | null;
+  // S4 — saneamiento (fijado UNA vez en loadCsv) + alertas EDA por objetivo elegido.
+  sanitation: SanitationReport | null;
+  edaAlerts: EdaAlert[] | null;
   // S3 — el modelo se usa:
   modelMeta: ModelMeta | null;
   /** false mientras un import está deserializando en el worker. */
@@ -104,6 +109,8 @@ const INITIAL: ExperimentState = {
   result: null,
   runMeta: null,
   error: null,
+  sanitation: null,
+  edaAlerts: null,
   modelMeta: null,
   modelReady: false,
   scoring: { status: "idle" },
@@ -139,6 +146,8 @@ export function useExperiment() {
   const workerRef = useRef<Worker | null>(null);
   const nextId = useRef(0);
   const tableRef = useRef<CsvTable | null>(null);
+  // Reporte de saneamiento del dataset activo (para adjuntarlo al export).
+  const sanitationRef = useRef<SanitationReport | null>(null);
   const pendingRef = useRef(new Map<number, Pending>());
   // Espejos para leer en callbacks sin closures obsoletas (patrón tableRef).
   const modelRef = useRef<ModelMeta | null>(null);
@@ -160,6 +169,7 @@ export function useExperiment() {
           datasetName: pending.datasetName,
           result: pending.result,
           exported,
+          sanitation: sanitationRef.current ?? undefined,
         });
         downloadTextFile(
           modelFileName(pending.datasetName),
@@ -302,14 +312,41 @@ export function useExperiment() {
       });
       return;
     }
-    tableRef.current = parsed.table;
+    // S4: saneamiento estructural pre-split (dedup previene fuga por duplicación,
+    // excluye ID/constantes, coacciona numéricas mixtas). Se fija UNA vez aquí.
+    const { table, report } = sanitizeTable(parsed.table);
+    if (!report.usable) {
+      sanitationRef.current = report;
+      setState({
+        ...INITIAL,
+        phase: "error",
+        datasetName: name,
+        sanitation: report,
+        error: { kind: "csv-unusable", message: "csv-unusable" },
+      });
+      return;
+    }
+    tableRef.current = table;
+    sanitationRef.current = report;
     datasetNameRef.current = name;
     setState({
       ...INITIAL,
       phase: "configuring",
       datasetName: name,
-      dataset: summarizeDataset(parsed.table),
+      dataset: summarizeDataset(table),
+      sanitation: report,
     });
+  }, []);
+
+  // S4: alertas EDA para el objetivo elegido (posible fuga / id-like / desbalance).
+  // Puras y baratas sobre la tabla saneada; se recomputan al cambiar el objetivo.
+  const selectTarget = useCallback((targetColumn: string) => {
+    const table = tableRef.current;
+    setState((s) => ({
+      ...s,
+      edaAlerts:
+        table && targetColumn ? computeEdaAlerts(table, targetColumn) : null,
+    }));
   }, []);
 
   const run = useCallback((targetColumn: string) => {
@@ -470,6 +507,7 @@ export function useExperiment() {
   return {
     state,
     loadCsv,
+    selectTarget,
     run,
     reset,
     goToScoring,

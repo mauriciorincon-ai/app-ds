@@ -1,5 +1,6 @@
 "use client";
 
+import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { useConsent } from "@/lib/useConsent";
@@ -8,7 +9,7 @@ import type { ExportState, RunMeta } from "@/lib/useExperiment";
 import type { ExperimentResult } from "@/workers/protocol";
 import { ModelCardView } from "./ModelCardView";
 import { WhySection } from "./WhySection";
-import { Button, Card, MetricTile } from "./ui";
+import { Badge, Button, Card, MetricTile } from "./ui";
 
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
@@ -38,6 +39,7 @@ export function ResultsScreen({
   datasetName,
   cols,
   runMeta,
+  sanitation,
   onAgain,
   onUseModel,
   onExportModel,
@@ -47,6 +49,7 @@ export function ResultsScreen({
   datasetName: string | null;
   cols: number;
   runMeta: RunMeta;
+  sanitation: SanitationReport | null;
   onAgain: () => void;
   onUseModel: () => void;
   onExportModel: () => void;
@@ -156,6 +159,42 @@ export function ResultsScreen({
             />
           ))}
         </div>
+      </section>
+
+      {/* S4: los candidatos compitieron con el MISMO veredicto — sin selector del
+          usuario: el veredicto habla. Se marca el ganador (símbolo + texto). */}
+      <section className="flex flex-col gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          {t("results.candidates.title")}
+        </p>
+        <ul className="flex flex-col gap-1 text-sm">
+          {result.candidates.map((candidate) => {
+            const isWinner = candidate.name === result.modelName;
+            return (
+              <li key={candidate.name} className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className={isWinner ? "text-positive" : "text-ink-muted"}
+                >
+                  {isWinner ? "▶" : "·"}
+                </span>
+                <span className={isWinner ? "font-medium" : ""}>
+                  {t(`results.candidates.model.${candidate.name}`)}
+                </span>
+                <span className="font-mono tabular-nums text-ink-muted">
+                  {metricLabel(verdict.primaryMetric)}:{" "}
+                  {fmt(candidate.metrics[verdict.primaryMetric])}
+                </span>
+                {isWinner && (
+                  <Badge tone="positive">
+                    {t("results.candidates.winner")}
+                  </Badge>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-xs text-ink-muted">{t("results.candidates.note")}</p>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
@@ -272,6 +311,7 @@ export function ResultsScreen({
           target: runMeta.target,
           seed: runMeta.seed,
         }}
+        sanitation={sanitation}
         verifiedNarrative={
           narration.kind === "verified" ? narration.text : null
         }

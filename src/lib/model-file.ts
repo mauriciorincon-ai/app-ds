@@ -6,10 +6,12 @@
 // ANTES de que el payload (pickle) toque Pyodide. Un archivo ajeno o corrupto
 // se rechaza aquí, en TS puro, sin deserializar nada.
 import type { LeakageFinding } from "@/engine/leakage";
+import type { SanitationReport } from "@/engine/sanitize";
 import type { Metrics, Verdict } from "@/engine/verdict";
 import type {
   ExperimentResult,
   ExportResult,
+  ModelCandidate,
   ModelSchema,
   RuntimeVersions,
   TrainingProfile,
@@ -47,6 +49,15 @@ export type ModelManifest = {
   versions: RuntimeVersions;
   payload_sha256: string;
   payload_encoding: typeof PAYLOAD_ENCODING;
+  // S4 — campos ADITIVOS OPCIONALES (ADR-007 revisado): un archivo S3 (sin
+  // ellos) importa en S4 y viceversa; la validación estructural tolera extras ⇒
+  // aditivo-opcional NO sube format_version. `model_name` nombra al candidato
+  // ganador; `sanitation` deja constancia honesta de qué se saneó al entrenar.
+  model_name?: ModelCandidate["name"];
+  sanitation?: Pick<
+    SanitationReport,
+    "duplicateRowsRemoved" | "exclusions" | "coercions"
+  >;
 };
 
 export type ModelFile = {
@@ -191,13 +202,25 @@ export type PackModelInput = {
   datasetName: string;
   result: ExperimentResult;
   exported: ExportResult;
+  /** Reporte de saneamiento del entrenamiento (S4) — se registra si no estaba limpio. */
+  sanitation?: SanitationReport;
   /** Inyectable para tests deterministas. */
   date?: Date;
 };
 
 export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
-  const { result, exported } = input;
+  const { result, exported, sanitation } = input;
   const payload_sha256 = await sha256Hex(base64ToBytes(exported.payload_b64));
+  // Solo se registra el saneamiento si HUBO algo que sanear (dataset limpio ⇒
+  // se omite el campo, sin ruido).
+  const sanitationSummary =
+    sanitation && !sanitation.clean
+      ? {
+          duplicateRowsRemoved: sanitation.duplicateRowsRemoved,
+          exclusions: sanitation.exclusions,
+          coercions: sanitation.coercions,
+        }
+      : undefined;
   return {
     format_version: MODEL_FILE_FORMAT_VERSION,
     manifest: {
@@ -217,6 +240,8 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
       versions: exported.versions,
       payload_sha256,
       payload_encoding: PAYLOAD_ENCODING,
+      model_name: result.modelName,
+      ...(sanitationSummary ? { sanitation: sanitationSummary } : {}),
     },
     payload: exported.payload_b64,
   };

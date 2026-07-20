@@ -195,6 +195,7 @@ describe("ModelCardView", () => {
       <ModelCardView
         result={result()}
         meta={{ datasetName: "marketing.csv", cols: 7, ...RUN_META }}
+        sanitation={null}
         verifiedNarrative={null}
       />,
     );
@@ -224,6 +225,7 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         datasetName="marketing.csv"
         cols={7}
         runMeta={RUN_META}
+        sanitation={null}
         onAgain={() => {}}
         onUseModel={() => {}}
         onExportModel={() => {}}
@@ -256,6 +258,7 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         datasetName="credito.csv"
         cols={6}
         runMeta={RUN_META}
+        sanitation={null}
         onAgain={() => {}}
         onUseModel={() => {}}
         onExportModel={() => {}}
@@ -271,10 +274,11 @@ describe("ResultsScreen (integración de la pantalla)", () => {
 });
 
 describe("pantallas S1 (smoke)", () => {
-  it("StartScreen: dropzone + 3 ejemplos", () => {
+  it("StartScreen: dropzone + 4 ejemplos (incl. el sucio de S4)", () => {
     ui(<StartScreen onLoad={() => {}} onImport={() => {}} />);
     expect(screen.getByText("Empieza tu experimento")).toBeInTheDocument();
     expect(screen.getByText("Campaña de marketing")).toBeInTheDocument();
+    expect(screen.getByText("Clientes (datos sucios)")).toBeInTheDocument();
   });
 
   it("ConfigScreen: preview + selección de objetivo", () => {
@@ -286,7 +290,16 @@ describe("pantallas S1 (smoke)", () => {
         ["3", "0"],
       ],
     });
-    ui(<ConfigScreen dataset={dataset} onRun={() => {}} onBack={() => {}} />);
+    ui(
+      <ConfigScreen
+        dataset={dataset}
+        sanitation={null}
+        edaAlerts={null}
+        onSelectTarget={() => {}}
+        onRun={() => {}}
+        onBack={() => {}}
+      />,
+    );
     expect(screen.getByText("Configura el experimento")).toBeInTheDocument();
     expect(screen.getByText("¿Qué quieres predecir?")).toBeInTheDocument();
   });
@@ -302,5 +315,140 @@ describe("pantallas S1 (smoke)", () => {
     expect(screen.getByText(/5 MB/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button"));
     expect(onRetry).toHaveBeenCalled();
+  });
+
+  it("ErrorScreen: caso irrecuperable (csv-unusable) con mensaje honesto", () => {
+    ui(<ErrorScreen kind="csv-unusable" onRetry={() => {}} />);
+    expect(screen.getByText(/nada para modelar/)).toBeInTheDocument();
+  });
+});
+
+// --- S4: saneamiento + EDA + candidatos ------------------------------------
+
+const DATASET = summarizeDataset({
+  headers: ["edad", "y"],
+  rows: [
+    ["30", "0"],
+    ["45", "1"],
+    ["50", "0"],
+  ],
+});
+
+describe("ConfigScreen — informe de saneamiento", () => {
+  it("dataset limpio ⇒ dice de frente 'nada que sanear'", () => {
+    ui(
+      <ConfigScreen
+        dataset={DATASET}
+        sanitation={{
+          clean: true,
+          duplicateRowsRemoved: 0,
+          exclusions: [],
+          coercions: [],
+          rowsBefore: 3,
+          rowsAfter: 3,
+          colsBefore: 2,
+          colsAfter: 2,
+          usable: true,
+        }}
+        edaAlerts={null}
+        onSelectTarget={() => {}}
+        onRun={() => {}}
+        onBack={() => {}}
+      />,
+    );
+    expect(screen.getByText(/nada que sanear/)).toBeInTheDocument();
+  });
+
+  it("dataset sucio ⇒ lista las acciones con conteos", () => {
+    ui(
+      <ConfigScreen
+        dataset={DATASET}
+        sanitation={{
+          clean: false,
+          duplicateRowsRemoved: 4,
+          exclusions: [{ column: "id_cliente", reason: "id-column" }],
+          coercions: [{ column: "edad", cellsNulled: 3 }],
+          rowsBefore: 100,
+          rowsAfter: 96,
+          colsBefore: 5,
+          colsAfter: 4,
+          usable: true,
+        }}
+        edaAlerts={null}
+        onSelectTarget={() => {}}
+        onRun={() => {}}
+        onBack={() => {}}
+      />,
+    );
+    expect(screen.getByText(/4 filas duplicadas/)).toBeInTheDocument();
+    expect(screen.getByText(/id_cliente/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/edad.*3 celdas|3 celdas.*edad/),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("ConfigScreen — alertas EDA + accesibilidad", () => {
+  it("al elegir objetivo llama a onSelectTarget y muestra las alertas (role=status)", () => {
+    const onSelectTarget = vi.fn();
+    ui(
+      <ConfigScreen
+        dataset={DATASET}
+        sanitation={null}
+        edaAlerts={[{ kind: "class-imbalance", minorityRate: 0.1 }]}
+        onSelectTarget={onSelectTarget}
+        onRun={() => {}}
+        onBack={() => {}}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText(/¿Qué quieres predecir?/), {
+      target: { value: "y" },
+    });
+    expect(onSelectTarget).toHaveBeenCalledWith("y");
+    expect(screen.getByText(/desbalanceado/)).toBeInTheDocument();
+  });
+
+  it("la región de la preview es enfocable por teclado (axe: scrollable-region)", () => {
+    const { container } = ui(
+      <ConfigScreen
+        dataset={DATASET}
+        sanitation={null}
+        edaAlerts={null}
+        onSelectTarget={() => {}}
+        onRun={() => {}}
+        onBack={() => {}}
+      />,
+    );
+    const region = container.querySelector('[role="region"]');
+    expect(region).not.toBeNull();
+    expect(region).toHaveAttribute("tabindex", "0");
+  });
+});
+
+describe("ResultsScreen — candidatos", () => {
+  it("muestra los candidatos y marca al ganador (símbolo + texto)", () => {
+    ui(
+      <ResultsScreen
+        result={result({
+          modelName: "hgb",
+          candidates: [
+            { name: "forest", metrics: metrics({ auc: 0.79 }) },
+            { name: "hgb", metrics: metrics({ auc: 0.83 }) },
+          ],
+        })}
+        datasetName="marketing.csv"
+        cols={7}
+        runMeta={RUN_META}
+        sanitation={null}
+        onAgain={() => {}}
+        onUseModel={() => {}}
+        onExportModel={() => {}}
+        exportState="idle"
+      />,
+    );
+    expect(screen.getByText(/Random Forest/)).toBeInTheDocument();
+    expect(screen.getByText("HistGradientBoosting")).toBeInTheDocument();
+    // El ganador (hgb) lleva la etiqueta "elegido" (no solo color).
+    expect(screen.getByText("elegido")).toBeInTheDocument();
   });
 });

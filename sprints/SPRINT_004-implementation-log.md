@@ -99,4 +99,27 @@ sparse_output=False)` — agrupa categorías raras aprendiendo SOLO de train (fi
 - Suites pipeline.test.ts + scoring.test.ts + los 2 nuevos: 24/24 integración verdes
   (incl. export→import con HGB retenido — pickle proto5 OK).
 
-### F3 — UI + i18n + generador — EN CURSO
+### F3 — UI + i18n + generador — HECHA
+
+- `useExperiment`: saneamiento en `loadCsv` (fija `sanitation` una vez; `csv-unusable` si no queda
+  estructura), acción `selectTarget` (alertas EDA por objetivo), `sanitationRef` para el export.
+- `ConfigScreen` EXTENDIDA (sin fase nueva — los e2e existentes la atraviesan): bloque de informe
+  de saneamiento (limpio ⇒ "nada que sanear" VISIBLE; sucio ⇒ acciones con conteos), alertas EDA
+  con `role="status"` (no `alert` — regla 7), fix axe de la preview (`role="region"` + `tabIndex`).
+- `StartScreen`: 4º ejemplo `clientes-sucio.csv`; `ResultsScreen`: bloque de candidatos con ganador
+  marcado (símbolo + texto, sin selector); `ModelCardView`/`modelcard.ts`: sección de saneamiento +
+  nombre del modelo parametrizado (ya no hardcodea "Random Forest") + categorías raras.
+- `model-file.ts`: campos aditivos OPCIONALES `model_name` + `sanitation` (D7 — sin bump; el
+  resumen de importación muestra el modelo ganador).
+- Generador: `messyCustomers()` → `clientes-sucio.csv` (200 filas: 10 duplicadas, id_cliente único,
+  pais constante, edad con 6 "error" + 18 nulos, canal con "fax" raro, contrato 13.5% ⇒ desbalance).
+- i18n ES/EN (paridad verde) para todo lo nuevo; `Card` gana `role` opcional.
+- Tests: `dirty-dataset.test.ts` (el CSV sucio demuestra el saneamiento) + 6 tests de componentes
+  nuevos (informe limpio/sucio, alertas, región enfocable, candidatos, csv-unusable). 207/207 unit
+  verdes; typecheck + lint + build limpios; ConfigScreen 92.6%.
+
+**Diseño (id-like solo NO numérica):** la alerta EDA `id-like` se limitó a columnas no numéricas —
+una feature continua tiene alta cardinalidad natural y marcarla "identificador" sería ruido
+(coherente con la exclusión de sanitize). Evita un falso positivo sobre `ingreso` en el CSV sucio.
+
+### F4 — Narración extendida — EN CURSO

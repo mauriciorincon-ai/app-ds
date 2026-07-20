@@ -68,13 +68,16 @@ export function computeEdaAlerts(
 
   // 1) Columnas casi-únicas (id-like) — target-independiente; se excluyen del
   //    escaneo de fuga para no confundir "identificador" con "proxy del objetivo".
+  //    Solo NO numéricas: una feature continua tiene alta cardinalidad natural y
+  //    NO es un identificador (coherente con la exclusión de sanitize).
   const idLike = new Set<string>();
   table.headers.forEach((name, index) => {
     if (index === targetIndex) return;
+    const cells = rowsWithTarget.map((row) => row[index]);
+    if (profileColumn(name, cells).kind === "numeric") return;
     const distinct = new Set<string>();
     let nonNull = 0;
-    for (const row of rowsWithTarget) {
-      const cell = row[index];
+    for (const cell of cells) {
       if (isNullToken(cell)) continue;
       nonNull += 1;
       distinct.add(cell.trim());
