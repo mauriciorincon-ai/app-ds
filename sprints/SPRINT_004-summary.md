@@ -5,7 +5,7 @@ status: closed
 opened: 2026-07-19
 closed: 2026-07-19
 branch: sprint-004/sobrevive-datos-reales
-pr: <pendiente>
+pr: https://github.com/mauriciorincon-ai/app-ds/pull/7
 ---
 
 # Sprint 004 Summary — Probeta DS
