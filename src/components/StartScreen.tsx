@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
 import {
+  MAX_MODEL_FILE_BYTES,
   validateModelFile,
   type ModelFile,
   type ModelFileErrorKind,
@@ -16,6 +17,9 @@ const EXAMPLES = [
   { key: "marketing", file: "marketing-campania.csv" },
   { key: "rotacion", file: "rotacion-empleados.csv" },
   { key: "credito", file: "credito-fuga-plantada.csv" },
+  // S4: dataset "real" sucio (nulos mixtos, basura, ID, constante, duplicados,
+  // categoría rara) para demostrar el saneamiento transparente.
+  { key: "clientes", file: "clientes-sucio.csv" },
 ] as const;
 
 export function StartScreen({
@@ -88,7 +92,7 @@ export function StartScreen({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
           {t("start.examples.title")}
         </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {EXAMPLES.map(({ key, file }) => (
             <button
               key={key}
@@ -130,6 +134,13 @@ function ImportModelSection({
   const [status, setStatus] = useState<ImportStatus>({ step: "idle" });
 
   async function handleFile(file: File) {
+    // file.size se mira ANTES de leer: el tope debe proteger la memoria, no
+    // llegar tarde con el archivo ya cargado.
+    if (file.size > MAX_MODEL_FILE_BYTES) {
+      reportImportError("file-too-large");
+      setStatus({ step: "rejected", error: "file-too-large" });
+      return;
+    }
     setStatus({ step: "validating" });
     const validation = await validateModelFile(await file.text());
     if (!validation.ok) {
@@ -274,6 +285,15 @@ function ImportSummary({
           })}{" "}
           — {t(`results.verdict.${manifest.verdict.level}`)}
         </li>
+        {/* S4: nombre del modelo ganador (campo aditivo opcional del manifiesto;
+            un archivo S3 sin él simplemente no muestra esta línea). */}
+        {manifest.model_name && (
+          <li>
+            {t("start.import.summary.model", {
+              model: t(`results.candidates.model.${manifest.model_name}`),
+            })}
+          </li>
+        )}
         <li>
           {manifest.leakage.length > 0
             ? t("start.import.summary.leakage", {

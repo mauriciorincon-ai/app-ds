@@ -32,6 +32,10 @@
       "credito": {
         "name": "Incumplimiento de crédito",
         "desc": "Trae una fuga plantada: mira cómo se detecta."
+      },
+      "clientes": {
+        "name": "Clientes (datos sucios)",
+        "desc": "Nulos, basura, un ID y duplicados: mira el saneamiento en acción."
       }
     },
     "import": {
@@ -48,9 +52,11 @@
         "noLeakage": "Sin advertencias de fuga registradas en el entrenamiento",
         "versionWarning": "Este archivo se creó con versiones distintas a las de esta app ({list}). Se cargará igual; si falla, re-entrena y exporta de nuevo.",
         "use": "Usar este modelo",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "model": "Modelo elegido: {model}."
       },
       "errors": {
+        "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
         "invalid-json": "Ese archivo no es un JSON válido.",
         "invalid-format": "Ese archivo no parece un modelo exportado por Probeta.",
         "unsupported-version": "Ese archivo viene de una versión del formato de Probeta que esta app no soporta.",
@@ -80,7 +86,24 @@
       "date": "Detectamos columnas que parecen fecha ({cols}). En esta versión no se usan para dividir por tiempo; se ignoran como predictores."
     },
     "train": "Entrenar modelo",
-    "back": "Cambiar de dataset"
+    "back": "Cambiar de dataset",
+    "sanitation": {
+      "clean": "No hubo nada que sanear: el dataset venía limpio.",
+      "title": "Saneamos el dataset antes de entrenar:",
+      "duplicates": "Quitamos {count} filas duplicadas exactas (evita que la misma fila caiga en entrenamiento y prueba).",
+      "exclusion": {
+        "id-column": "Excluimos «{column}»: un valor distinto por fila (identificador o texto libre), sin señal para generalizar.",
+        "constant-column": "Excluimos «{column}»: tiene un solo valor, no aporta información."
+      },
+      "coercion": "En «{column}» convertimos {count} celdas no numéricas a vacío (el resto son números)."
+    },
+    "eda": {
+      "clean": "Sin alertas para este objetivo.",
+      "title": "Antes de entrenar, revisa estas señales:",
+      "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad).",
+      "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar.",
+      "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
+    }
   },
   "training": {
     "title": "Entrenando…",
@@ -139,6 +162,15 @@
       "exporting": "Exportando…",
       "error": "No se pudo exportar el modelo. Inténtalo de nuevo.",
       "contents": "El archivo contiene lo que el modelo aprendió de tus datos (parámetros, categorías, medianas) — no tus filas crudas. Aun así, trátalo como un archivo sensible."
+    },
+    "candidates": {
+      "title": "Modelos que compitieron",
+      "model": {
+        "forest": "Random Forest (200 árboles)",
+        "hgb": "HistGradientBoosting"
+      },
+      "winner": "elegido",
+      "note": "Ambos usan el mismo preprocesamiento y compiten con el mismo veredicto. Elegimos el mejor en la métrica primaria; sin trucos."
     }
   },
   "score": {
@@ -247,7 +279,9 @@
         "unclear": "sin dirección clara"
       },
       "method": "La importancia se midió por permutación sobre el conjunto de prueba (datos que el modelo no vio al entrenar).",
-      "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas."
+      "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas.",
+      "idLike": "Además, {columns} parece un identificador: aporta poco para generalizar.",
+      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate}%); por eso la métrica principal es el AUC."
     }
   },
   "modelcard": {
@@ -262,7 +296,8 @@
       "leakage": "Chequeo de fuga",
       "explainability": "¿Por qué predice así?",
       "narrative": "Narración verificada",
-      "limits": "Límites"
+      "limits": "Límites",
+      "sanitation": "Saneamiento"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -274,8 +309,9 @@
       "rule": "El preprocesamiento se ajustó SOLO con el entrenamiento (anti-fuga por construcción)."
     },
     "method": {
-      "pipeline": "Imputación (mediana / más frecuente), escalado y one-hot dentro de un Pipeline de scikit-learn.",
-      "models": "Baselines: clase mayoritaria y regresión logística. Modelo: Random Forest (200 árboles)."
+      "pipeline": "Imputación (mediana / más frecuente), agrupación de categorías raras, escalado y one-hot dentro de un Pipeline de scikit-learn.",
+      "models": "Baselines: clase mayoritaria y regresión logística. Candidatos comparados: {candidates}. Modelo elegido: {model}.",
+      "rareCategories": "Categorías raras agrupadas (aprendido solo de entrenamiento): {cols}."
     },
     "metrics": {
       "metric": "Métrica",
@@ -301,6 +337,15 @@
       "leakage": "El chequeo de fuga atrapa casos evidentes; no es una garantía.",
       "explainability": "La importancia por permutación es global (no por predicción) y puede repartirse entre variables correlacionadas; la dirección es univariada y no captura interacciones.",
       "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal)."
+    },
+    "sanitation": {
+      "duplicates": "Se quitaron {count} filas duplicadas exactas (previene fuga por duplicación).",
+      "exclusion": {
+        "id-column": "Se excluyó «{column}» (identificador: un valor por fila).",
+        "constant-column": "Se excluyó «{column}» (constante: un solo valor)."
+      },
+      "coercion": "En «{column}» se convirtieron {count} celdas no numéricas a vacío.",
+      "none": "El dataset no requirió saneamiento."
     }
   },
   "errors": {
@@ -312,6 +357,8 @@
     "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
     "no-features": "No hay columnas utilizables como predictores.",
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
-    "retry": "Volver a empezar"
+    "worker-dead": "El motor de cómputo se detuvo de forma inesperada (pudo quedarse sin memoria, o falló la carga de sus componentes). Intenta de nuevo; si persiste, prueba con un archivo más pequeño.",
+    "retry": "Volver a empezar",
+    "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo."
   }
 }

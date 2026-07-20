@@ -7,7 +7,18 @@
 export const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_ROWS = 50_000;
 
-const NULL_TOKENS = new Set(["", "na", "n/a", "null", "nan", "none", "-"]);
+// Exportado para el test de paridad TS↔Python (pipeline.py espeja este set y
+// el trim/lowercase de isNullToken; si divergen, "si " y "si" serían clases
+// distintas al entrenar — auditoría H1).
+export const NULL_TOKENS = new Set([
+  "",
+  "na",
+  "n/a",
+  "null",
+  "nan",
+  "none",
+  "-",
+]);
 
 // Fechas ISO (YYYY-MM-DD[ T]hh:mm) o D/M/Y — S1 solo detecta y avisa.
 const DATE_RE =
@@ -34,6 +45,10 @@ export function isNullToken(value: string): boolean {
 export function parseNumber(value: string): number | null {
   const trimmed = value.trim();
   if (trimmed === "") return null;
+  // Paridad con pandas.to_numeric (auditoría H1): Number() acepta literales
+  // hex/binarios/octales ("0x10" → 16) que pandas coacciona a NaN — aquí se
+  // rechazan para que TS y Python vean el mismo valor.
+  if (/^[+-]?0[xbo]/i.test(trimmed)) return null;
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
 }

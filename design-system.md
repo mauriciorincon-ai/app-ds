@@ -117,10 +117,32 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   también vive en la barra inferior de ScoreScreen — SOLO para modelos entrenados en la sesión
   (un modelo importado ya es el archivo).
 
+### Añadidos Sprint 004 (mismos tokens, cero valores nuevos)
+
+- **SanitationBlock** (en ConfigScreen) — informe de saneamiento ANTES de entrenar, con dos caras
+  honestas: dataset limpio ⇒ franja `positive` con ✓ "nada que sanear" (el usuario merece saber
+  que no se tocó nada); dataset sucio ⇒ tarjeta con ⚙ + lista de acciones con **conteos exactos**
+  en llano (filas duplicadas quitadas, columnas excluidas por ID/constante, celdas basura→nulo por
+  columna). Nada silencioso. `role="status"`.
+- **EdaBlock** (en ConfigScreen) — alertas exploratorias del objetivo elegido: posible fuga /
+  casi-identificador / desbalance, en `caution` con ⚠ + texto (nunca solo color); silencio activo
+  ✓ "sin señales" si el objetivo está sano. `role="status"` (no `alert`: informa, no interrumpe —
+  Next reserva `alert` para el anuncio de ruta, regla 7). Distinto visual y semánticamente de
+  **LeakageAlert** (aquel es el hallazgo del veredicto, este es un aviso pre-entrenamiento).
+- **CandidatesList** (en ResultsScreen) — la competencia franca de modelos (Random Forest vs
+  HistGradientBoosting) bajo el MISMO veredicto: fila por candidato con su métrica primaria en
+  mono/tabular-nums, el ganador marcado con símbolo **▶** (`positive`) + peso tipográfico y un
+  Badge `positive` "elegido"; los demás con **·** en `ink-muted`. Sin selector de usuario: el
+  veredicto habla, la lista solo muestra por qué. Símbolo + texto, nunca solo color.
+- **SanitationSection** (en ModelCardView) — el saneamiento aplicado se registra también en la
+  model card exportable (qué se limpió y con qué conteos), coherente con el informe de config; el
+  nombre del modelo ganador queda parametrizado (ya no hardcodea "Random Forest").
+
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).
-2. **Configuración** → seleccionar el objetivo; perfilado y avisos alrededor.
+2. **Configuración** → seleccionar el objetivo; el **SanitationBlock** (qué se saneó, con conteos)
+   y las alertas del **EdaBlock** lo enmarcan, con el perfilado de la preview alrededor.
 3. **Entrenamiento** → el progreso honesto (qué está pasando ahora).
 4. **Resultados** → el **VerdictBanner**; métricas, matriz y advertencias lo sostienen.
 5. **Error** → el mensaje llano + la acción de recuperación.

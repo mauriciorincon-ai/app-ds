@@ -128,13 +128,28 @@ describe("score_new_data (integración Pyodide)", () => {
   });
 
   it("predice con la etiqueta ORIGINAL de la clase y probabilidad en [0,1]", () => {
-    train();
+    // Dataset propio, separable y con volumen suficiente para una competencia
+    // JUSTA entre candidatos (S4: HGB tiene min_samples_leaf=20 ⇒ el dataset de
+    // novedad de 10 filas no basta para que aprenda). x≥30 ⇒ "si"; balanceado
+    // (30/30) ⇒ métrica primaria F1. Sea quien gane, aprende el patrón alto→si.
+    const rows = Array.from({ length: 60 }, (_, i) => [
+      String(i),
+      i >= 30 ? "si" : "no",
+    ]);
+    call(fns.run_experiment, {
+      headers: ["x", "y"],
+      rows,
+      target: "y",
+      numeric: ["x"],
+      categorical: [],
+      train_idx: Array.from({ length: 45 }, (_, i) => i),
+      test_idx: Array.from({ length: 15 }, (_, i) => i + 45),
+      seed: 42,
+      primary_metric: "f1",
+    });
     const score = call<ScoreResult>(fns.score_new_data, {
-      headers: ["x", "c"],
-      rows: [
-        ["9", "a"],
-        ["1", "b"],
-      ],
+      headers: ["x"],
+      rows: [["45"], ["5"]],
     });
 
     expect(score.positive_class).toBe("si");
@@ -146,7 +161,7 @@ describe("score_new_data (integración Pyodide)", () => {
       expect(p).toBeGreaterThanOrEqual(0);
       expect(p).toBeLessThanOrEqual(1);
     }
-    // El modelo aprendió y=si para x alto: sanity de que puntúa de verdad.
+    // El modelo (ganador) aprendió y=si para x alto: sanity de que puntúa de verdad.
     expect(score.predictions[0]).toBe("si");
     expect(score.predictions[1]).toBe("no");
   });

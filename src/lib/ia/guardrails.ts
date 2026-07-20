@@ -1,9 +1,13 @@
 // Guardrails del flujo de narración (capa base del estándar 7).
-// Input: el route SOLO acepta el payload estructurado validado por Zod — no
-// existe texto libre del usuario, así que la inyección de prompt no tiene
-// vehículo; el límite de tamaño viene dado por el propio schema (top-8
-// features, strings acotados). Output: schema Zod + verificación determinista
-// (verify.ts) + umbral del Grader. Aquí además: kill-switch y rate limit.
+// Input: el route SOLO acepta el payload estructurado validado por Zod; el
+// límite de tamaño viene dado por el propio schema (top-8 features, strings
+// acotados). OJO (auditoría H1): los NOMBRES de columna del CSV sí son texto
+// del usuario y viajan verbatim al prompt (~1KB máx.) — la inyección de prompt
+// TIENE vehículo. Mitigación: el prompt los declara datos-no-instrucciones,
+// verify.ts ancla claims/cifras/direcciones, y el residuo (frases libres que no
+// citan features) queda documentado como límite conocido en decisions/005.
+// Output: schema Zod + verificación determinista (verify.ts) + umbral del
+// Grader. Aquí además: kill-switch y rate limit.
 import {
   narrateRequestSchema,
   type GraderOutput,

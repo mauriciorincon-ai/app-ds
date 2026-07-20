@@ -9,6 +9,7 @@
 // para ESTE payload): el efecto solo dispara el fetch y guarda la respuesta en
 // el callback — sin setState síncrono en el cuerpo (regla set-state-in-effect).
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { EdaAlert } from "@/engine/eda";
 import { useI18n } from "@/i18n/provider";
 // SOLO tipos: importar el schema Zod aquí metería zod al bundle del cliente
 // (reventó el presupuesto de script de la landing por 48 bytes en CI). El
@@ -63,13 +64,15 @@ export function useNarration(input: {
   target: string;
   cols: number;
   consent: boolean;
+  /** Alertas EDA del objetivo (S4). Referencia estable ⇒ no re-dispara el fetch. */
+  edaAlerts?: EdaAlert[] | null;
 }): { narration: NarrationState; retryNarration: () => void } {
-  const { result, target, cols, consent } = input;
+  const { result, target, cols, consent, edaAlerts } = input;
   const { locale } = useI18n();
 
   const payload = useMemo(
-    () => buildNarrationPayload({ result, target, cols, locale }),
-    [result, target, cols, locale],
+    () => buildNarrationPayload({ result, target, cols, locale, edaAlerts }),
+    [result, target, cols, locale, edaAlerts],
   );
   const template = useMemo(() => buildTemplateNarrative(payload), [payload]);
 

@@ -8,7 +8,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const outDir = resolve(dirname(fileURLToPath(import.meta.url)), "..", "public", "datasets");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const outDir = resolve(root, "public", "datasets");
+// Fuente única (S4): los mismos CSV alimentan la app Y el kit de prueba de la guía.
+const kitDir = resolve(root, "docs", "kit-de-prueba");
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -103,15 +106,56 @@ function loanDefaultLeak(n = 200, seed = 303) {
   );
 }
 
+// 4) Clientes — SUCIO: datos "reales" que EXIGEN saneamiento (S4). Un solo
+// generador, escrito a public/datasets/ (app) y docs/kit-de-prueba/ (guía).
+//  - id_cliente: identificador único de texto  → se EXCLUYE (ID exacta tras dedup).
+//  - pais: constante                            → se EXCLUYE (sin información).
+//  - edad: ~12% nulos mixtos + ~2% "error"      → se COACCIONA (basura→vacío).
+//  - canal: categoría rara "fax"                → se agrupa (min_frequency, en el pipeline).
+//  - 10 filas duplicadas EXACTAS                → se DEDUPLICAN (previene fuga por duplicación).
+//  - contrato: objetivo desbalanceado con señal real (ingreso + canal).
+function messyCustomers(base = 190, dupes = 10, seed = 404) {
+  const rng = mulberry32(seed);
+  const nullTokens = ["", "NA", "-"];
+  const rows = [];
+  for (let i = 0; i < base; i++) {
+    const id = `C-${String(i + 1).padStart(4, "0")}`;
+    const income = round(1200 + rng() * 5000);
+    const canal = rng() < 0.02 ? "fax" : pick(rng, ["web", "tienda", "telefono"]);
+    // Señal real: web/tienda + ingreso alto ⇒ más probable contratar.
+    const logit =
+      -2.9 +
+      0.00035 * (income - 3000) +
+      (canal === "web" ? 1.0 : canal === "tienda" ? 0.5 : 0) +
+      (rng() - 0.5);
+    const contrato = rng() < sigmoid(logit) ? "si" : "no";
+    // edad: mayormente numérica, ensuciada con basura y nulos mixtos.
+    const roll = rng();
+    let edad;
+    if (roll < 0.02) edad = "error";
+    else if (roll < 0.14) edad = pick(rng, nullTokens);
+    else edad = round(18 + rng() * 55);
+    rows.push([id, "MX", edad, income, canal, contrato]);
+  }
+  // 10 filas duplicadas EXACTAS (copiamos filas existentes, id incluido).
+  for (let k = 0; k < dupes; k++) {
+    rows.push([...rows[Math.floor(rng() * base)]]);
+  }
+  return toCsv(["id_cliente", "pais", "edad", "ingreso", "canal", "contrato"], rows);
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
+  await mkdir(kitDir, { recursive: true });
   const files = {
     "marketing-campania.csv": marketingCampaign(),
     "rotacion-empleados.csv": employeeAttrition(),
     "credito-fuga-plantada.csv": loanDefaultLeak(),
+    "clientes-sucio.csv": messyCustomers(),
   };
   for (const [name, content] of Object.entries(files)) {
     await writeFile(resolve(outDir, name), content, "utf8");
+    await writeFile(resolve(kitDir, name), content, "utf8"); // espejo para el kit de prueba
     const rows = content.trimEnd().split("\n").length - 1;
     console.log(`[datasets] ${name} — ${rows} filas`);
   }

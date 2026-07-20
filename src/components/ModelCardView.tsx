@@ -6,6 +6,7 @@
 // El <pre> se monta SOLO al abrir el <details>: si viviera siempre en el DOM,
 // duplicaría los títulos de la pantalla (rompe lectores/tests en modo estricto).
 import { useState } from "react";
+import type { SanitationReport } from "@/engine/sanitize";
 import { useI18n } from "@/i18n/provider";
 import { downloadTextFile } from "@/lib/files";
 import { buildModelCard, modelCardFileName } from "@/lib/modelcard";
@@ -24,10 +25,12 @@ export type ModelCardMeta = {
 export function ModelCardView({
   result,
   meta,
+  sanitation,
   verifiedNarrative,
 }: {
   result: ExperimentResult;
   meta: ModelCardMeta;
+  sanitation: SanitationReport | null;
   verifiedNarrative: string | null;
 }) {
   const { locale, t } = useI18n();
@@ -42,6 +45,7 @@ export function ModelCardView({
     target: meta.target,
     seed: meta.seed,
     result,
+    sanitation,
     verifiedNarrative,
   });
 

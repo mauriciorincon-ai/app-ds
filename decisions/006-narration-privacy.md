@@ -42,3 +42,16 @@ experiment can travel. This ADR fixes exactly what, when, and what never.
   not opt in and lose nothing but the AI phrasing (template always available).
 - If a future sprint adds narration of EDA or per-row explanations, this ADR must be revisited
   BEFORE any new field enters the payload schema.
+
+## Amendment (2026-07-20) — the S4 `eda` block, revisited as this ADR requires
+
+S4 extended the payload with an optional `eda` block before this ADR was formally revisited (the
+closing audit flagged the missing trail; the design itself honored this ADR). Recorded now:
+
+- `eda` carries **aggregates and column names only** — alert kind, minority rate, or the flagged
+  column's name — never cell values; it enters the same Zod `.strict()` schema.
+- A clean dataset **omits the key entirely**, so the payload is byte-identical to S3's (locked by
+  a unit test): zero privacy regression for the common case.
+- Same consent gate, same three-layer enforcement. Column names remain user-controlled text that
+  reaches the provider **only after opt-in** — and are treated as untrusted data by the prompt
+  (see ADR-005 amendment 2026-07-20).

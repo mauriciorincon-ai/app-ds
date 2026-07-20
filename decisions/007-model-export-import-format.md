@@ -57,3 +57,52 @@ before the payload is ever deserialized.**
 - ONNX is re-evaluated in H2 when public deployment ("publish in one click") needs it; the
   `format_version` field and the encoding tag in the manifest leave room to add an ONNX payload
   without breaking old files.
+
+## Revision (Sprint 004) — additive, optional manifest fields do NOT bump `format_version`
+
+Sprint 004 needed to record two new things in the exported file: the winning model's name
+(`model_name`) and what was cleaned before training (`sanitation`). The question (raised as an
+integration risk in the S4 plan): does extending the file bump `format_version` and break
+compatibility with S3 files?
+
+**Decision: additive OPTIONAL manifest fields do NOT bump `format_version`; only a change to the
+pickled payload's keys (`{pipe, schema, training_profile}`) or an incompatible manifest change
+would.** Rationale, grounded in the code as it already stands:
+
+- The pickled payload keeps its three keys unchanged, so `import_model` (which validates exactly
+  those keys) restores an S4 file and an S3 file identically.
+- The TypeScript manifest validation (`isManifest`) is **positive and tolerant**: it asserts the
+  keys it needs and ignores unknown ones. So an S3 file (no `model_name`/`sanitation`) still
+  validates in S4, and an S4 file still validates against S3's tolerant check. The import summary
+  reads the new fields defensively (renders the model-name line only when present).
+- `sanitation` is only written when there was something to clean (a clean dataset omits it), and
+  it carries metadata only (dedup count, excluded column names, coerced column names + counts) —
+  the same class of metadata the manifest already exposes via `schema`.
+
+This is the general rule for this file going forward: **additive-optional ⇒ no bump; a payload-key
+change or a breaking manifest change ⇒ bump.** Compatibility in both directions is covered by unit
+tests (an S3-shaped file with no S4 fields validates; an S4 file with the new fields validates and
+round-trips).
+
+The H2 items previously deferred still stand: exported-file signature (H2) and ONNX re-evaluation.
+
+## Revision (2026-07-20) — H1 closing audit: import perimeter hardened
+
+The audit sharpened the threat model of the pickle payload beyond what "integrity, not
+authenticity" covered:
+
+- **The manifest and the pickle could disagree.** The SHA-256 covers the payload only, and the UI
+  gates scoring columns with the MANIFEST schema while the restored PICKLE schema is what
+  actually scores. `import_model` now receives the manifest schema (`expected_schema`) and
+  rejects the file (`schema-mismatch`) when the restored schema differs — a lying file is refused
+  instead of scoring with a schema the user never saw. Covered by an integration test.
+- **Exfiltration containment.** A malicious pickle (`__reduce__`) could attempt `fetch` from the
+  worker with the victim's data. The app now ships a CSP (next.config.ts): `default-src 'self'`,
+  `connect-src` limited to self + Sentry ingest, `worker-src 'self'` — the network a hostile
+  payload can reach is the app's own origin. This is the CSP that ADR-001 assumed when
+  self-hosting Pyodide; it existed as design intent only until now.
+- **Memory safety before validation.** The import path reads `file.size` and rejects >100 MB
+  (`file-too-large`) BEFORE reading the file into memory.
+
+Unchanged and still accepted for H1: the manifest's informative fields (metrics, verdict) are not
+covered by the hash — an exported-file **signature remains the H2 item** for authenticity.

@@ -51,6 +51,8 @@ function experimentResult(): ExperimentResult {
       logistic: metrics({ auc: 0.77 }),
     },
     model: metrics(),
+    modelName: "forest",
+    candidates: [{ name: "forest", metrics: metrics() }],
     confusionMatrix: [
       [30, 5],
       [7, 8],
@@ -213,6 +215,8 @@ describe("useExperiment", () => {
         logistic: metrics({ auc: 0.6 }),
       },
       model: metrics({ auc: 0.8 }),
+      model_name: "forest",
+      candidates: [{ name: "forest", metrics: metrics({ auc: 0.8 }) }],
       confusion_matrix: [
         [1, 0],
         [0, 1],

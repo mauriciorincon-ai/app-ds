@@ -71,3 +71,23 @@ negative` as "reduces conversion" — but it cannot know the positive class (we 
    2/3 times on vague completeness judgments; with the narrator prompt also requiring full
    coverage (verdict + scores + top variables + leakage warning), the circuit went **5/5
    verified** on repeat runs.
+
+## Amendment (2026-07-20) — H1 closing audit: cost table + prompt-injection residue
+
+Two gaps found by the pre-close audit, one fixed and one documented:
+
+1. **The Pino cost log was blind.** `cost.ts` still priced only the discarded llama models, so
+   every real call logged `costUsd: 0` — the budget instrument (standard 7) measured nothing.
+   Fixed: `openai/gpt-oss-120b` priced at $0.15/$0.60 per 1M (the figures this ADR already
+   documented), plus a unit test (`ia-cost.test.ts`) that FAILS if the production models
+   (`GROQ_NARRATOR_MODEL`/`GROQ_GRADER_MODEL`) ever lack a price entry again.
+2. **Prompt injection has a vehicle; the residue is a known limit.** Column names from the user's
+   CSV (target, top-8 features, leakage columns — ~1KB bounded by the schema) travel verbatim
+   into both prompts. `verify.ts` anchors every claim, figure and direction, but it does NOT
+   bound free sentences that cite no feature: a malicious header could, in the worst case, steer
+   a sentence that still passes verification and renders with the "verified" badge. Mitigations
+   now in place: the Narrator prompt explicitly declares column names untrusted data (never
+   instructions), and the guardrails comment no longer claims the vector doesn't exist. Accepted
+   residual risk at H1 scale (self-inflicted for one's own CSVs; relevant only for "open this
+   third-party dataset" scenarios); a verifier rule bounding non-claim sentences is the H2
+   follow-up if that scenario becomes real.

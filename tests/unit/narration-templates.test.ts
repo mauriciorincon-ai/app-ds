@@ -104,4 +104,23 @@ describe("buildTemplateNarrative", () => {
     expect(withLeak).toContain("monto_recuperado");
     expect(withLeak).toContain("posible fuga");
   });
+
+  it("extiende el texto al informe EDA (id-like + desbalance) con cifras deterministas", () => {
+    const withEda = buildTemplateNarrative(
+      payload({
+        eda: [
+          { kind: "id-like", column: "id_cliente" },
+          { kind: "class-imbalance", minorityRate: 0.12 },
+        ],
+      }),
+    );
+    expect(withEda).toContain("id_cliente");
+    expect(withEda).toContain("parece un identificador");
+    // La cifra viene del payload (determinista), no del LLM: 12%.
+    expect(withEda).toContain("12%");
+    // Sin bloque eda ⇒ ninguna de esas frases.
+    const plain = buildTemplateNarrative(payload());
+    expect(plain).not.toContain("parece un identificador");
+    expect(plain).not.toContain("desbalanceado");
+  });
 });

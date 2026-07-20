@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LeakageFinding } from "@/engine/leakage";
+import { computeEdaAlerts, type EdaAlert } from "@/engine/eda";
+import { sanitizeTable, type SanitationReport } from "@/engine/sanitize";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import {
   checkSchema,
@@ -88,6 +90,9 @@ export type ExperimentState = {
   result: ExperimentResult | null;
   runMeta: RunMeta | null;
   error: { kind: WorkerErrorKind; message: string } | null;
+  // S4 — saneamiento (fijado UNA vez en loadCsv) + alertas EDA por objetivo elegido.
+  sanitation: SanitationReport | null;
+  edaAlerts: EdaAlert[] | null;
   // S3 — el modelo se usa:
   modelMeta: ModelMeta | null;
   /** false mientras un import está deserializando en el worker. */
@@ -104,6 +109,8 @@ const INITIAL: ExperimentState = {
   result: null,
   runMeta: null,
   error: null,
+  sanitation: null,
+  edaAlerts: null,
   modelMeta: null,
   modelReady: false,
   scoring: { status: "idle" },
@@ -139,6 +146,8 @@ export function useExperiment() {
   const workerRef = useRef<Worker | null>(null);
   const nextId = useRef(0);
   const tableRef = useRef<CsvTable | null>(null);
+  // Reporte de saneamiento del dataset activo (para adjuntarlo al export).
+  const sanitationRef = useRef<SanitationReport | null>(null);
   const pendingRef = useRef(new Map<number, Pending>());
   // Espejos para leer en callbacks sin closures obsoletas (patrón tableRef).
   const modelRef = useRef<ModelMeta | null>(null);
@@ -147,10 +156,6 @@ export function useExperiment() {
   const [state, setState] = useState<ExperimentState>(INITIAL);
 
   useEffect(() => {
-    // Module worker real servido desde public/ (Pyodide exige module worker).
-    const worker = new Worker("/pyodide-runner.js", { type: "module" });
-    workerRef.current = worker;
-
     const finishExport = async (
       pending: Extract<Pending, { kind: "export-model" }>,
       exported: ExportResult,
@@ -160,6 +165,7 @@ export function useExperiment() {
           datasetName: pending.datasetName,
           result: pending.result,
           exported,
+          sanitation: sanitationRef.current ?? undefined,
         });
         downloadTextFile(
           modelFileName(pending.datasetName),
@@ -173,7 +179,7 @@ export function useExperiment() {
       }
     };
 
-    worker.onmessage = (event: MessageEvent<RunnerResponse>) => {
+    const handleMessage = (event: MessageEvent<RunnerResponse>) => {
       const message = event.data;
       const pending = pendingRef.current.get(message.id);
       if (!pending) return;
@@ -282,8 +288,70 @@ export function useExperiment() {
       }
     };
 
+    // Auditoría H1: si el worker muere no llega NINGÚN mensaje — sin esto la
+    // UI quedaba en "running" para siempre. onerror cubre la carga fallida de
+    // /pyodide-runner.js y los abortos del runtime WASM (p. ej. sin memoria en
+    // un móvil con un dataset grande). Se falla todo comando en vuelo con un
+    // error honesto y se re-crea el worker para que reintentar funcione.
+    const handleWorkerDeath = (detail: string) => {
+      console.error("[experiment] worker-dead", detail);
+      const pendings = [...pendingRef.current.values()];
+      pendingRef.current.clear();
+      workerRef.current?.terminate();
+      spawnWorker();
+      for (const pending of pendings) {
+        if (pending.kind === "train") {
+          const table = tableRef.current;
+          reportExperimentError(
+            "worker-dead",
+            table
+              ? { rows: table.rows.length, cols: table.headers.length }
+              : undefined,
+          );
+          setState((s) => ({
+            ...s,
+            phase: "error",
+            error: { kind: "worker-dead", message: detail },
+          }));
+        } else if (pending.kind === "score") {
+          reportScoringError("worker-dead", {
+            rows: pending.table.rows.length,
+            cols: pending.table.headers.length,
+          });
+          setState((s) => ({
+            ...s,
+            scoring: { status: "error", kind: "runtime" },
+          }));
+        } else if (pending.kind === "export-model") {
+          reportExportError("worker-dead");
+          setState((s) => ({ ...s, exportState: "error" }));
+        } else {
+          reportImportError("worker-dead");
+          setState((s) => ({
+            ...s,
+            progress: null,
+            modelReady: false,
+            scoring: { status: "error", kind: "import-failed" },
+          }));
+        }
+      }
+    };
+
+    // Module worker real servido desde public/ (Pyodide exige module worker).
+    function spawnWorker() {
+      const worker = new Worker("/pyodide-runner.js", { type: "module" });
+      worker.onmessage = handleMessage;
+      worker.onerror = (event) =>
+        handleWorkerDeath(event.message || "worker-error");
+      worker.onmessageerror = () =>
+        handleWorkerDeath("message-deserialization-failed");
+      workerRef.current = worker;
+    }
+
+    spawnWorker();
+
     return () => {
-      worker.terminate();
+      workerRef.current?.terminate();
       workerRef.current = null;
     };
   }, []);
@@ -302,14 +370,41 @@ export function useExperiment() {
       });
       return;
     }
-    tableRef.current = parsed.table;
+    // S4: saneamiento estructural pre-split (dedup previene fuga por duplicación,
+    // excluye ID/constantes, coacciona numéricas mixtas). Se fija UNA vez aquí.
+    const { table, report } = sanitizeTable(parsed.table);
+    if (!report.usable) {
+      sanitationRef.current = report;
+      setState({
+        ...INITIAL,
+        phase: "error",
+        datasetName: name,
+        sanitation: report,
+        error: { kind: "csv-unusable", message: "csv-unusable" },
+      });
+      return;
+    }
+    tableRef.current = table;
+    sanitationRef.current = report;
     datasetNameRef.current = name;
     setState({
       ...INITIAL,
       phase: "configuring",
       datasetName: name,
-      dataset: summarizeDataset(parsed.table),
+      dataset: summarizeDataset(table),
+      sanitation: report,
     });
+  }, []);
+
+  // S4: alertas EDA para el objetivo elegido (posible fuga / id-like / desbalance).
+  // Puras y baratas sobre la tabla saneada; se recomputan al cambiar el objetivo.
+  const selectTarget = useCallback((targetColumn: string) => {
+    const table = tableRef.current;
+    setState((s) => ({
+      ...s,
+      edaAlerts:
+        table && targetColumn ? computeEdaAlerts(table, targetColumn) : null,
+    }));
   }, []);
 
   const run = useCallback((targetColumn: string) => {
@@ -454,7 +549,12 @@ export function useExperiment() {
     workerRef.current?.postMessage({
       id,
       type: "import-model",
-      payload: { payload_b64: file.payload },
+      payload: {
+        payload_b64: file.payload,
+        // El esquema del manifiesto (el que la UI muestra y usa para el gate
+        // de columnas) DEBE ser el del pickle: pipeline.py los coteja.
+        expected_schema: file.manifest.schema,
+      },
     });
   }, []);
 
@@ -470,6 +570,7 @@ export function useExperiment() {
   return {
     state,
     loadCsv,
+    selectTarget,
     run,
     reset,
     goToScoring,

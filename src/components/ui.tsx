@@ -24,12 +24,15 @@ export function Button({
 export function Card({
   children,
   className = "",
+  role,
 }: {
   children: ReactNode;
   className?: string;
+  role?: string;
 }) {
   return (
     <div
+      role={role}
       className={`rounded-lg border border-hairline bg-surface shadow-sm ${className}`}
     >
       {children}
