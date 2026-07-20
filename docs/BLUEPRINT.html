@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Probeta DS — Blueprint de infraestructura (as-built)</title>
+<style>
+  :root {
+    --fondo: #fafaf9; --tinta: #1c1917; --tinta-suave: #57534e;
+    --borde: #d6d3d1; --tarjeta: #ffffff; --acento: #1d4ed8;
+    --acento-suave: #dbeafe; --ok: #15803d; --alerta: #b45309;
+    --futuro: #9333ea; --caja-svg: #ffffff; --bd-svg: #eff6ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #1c1917; --tinta: #fafaf9; --tinta-suave: #a8a29e;
+      --borde: #44403c; --tarjeta: #292524; --acento: #60a5fa;
+      --acento-suave: #1e3a5f; --ok: #4ade80; --alerta: #fbbf24;
+      --futuro: #c084fc; --caja-svg: #292524; --bd-svg: #1e3a5f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem 1rem 4rem; background: var(--fondo); color: var(--tinta);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.55;
+  }
+  main { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.15rem; margin: 2.2rem 0 .8rem; border-bottom: 2px solid var(--borde); padding-bottom: .35rem; }
+  .badge {
+    display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .05em;
+    background: var(--acento-suave); color: var(--acento); border-radius: 999px;
+    padding: .15rem .6rem; vertical-align: middle; text-transform: uppercase;
+  }
+  .meta { color: var(--tinta-suave); font-size: .9rem; margin: .2rem 0 1rem; }
+  .nota {
+    background: var(--tarjeta); border: 1px solid var(--borde); border-left: 4px solid var(--acento);
+    border-radius: 8px; padding: .8rem 1rem; font-size: .88rem; color: var(--tinta-suave);
+  }
+  .diagrama { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 1rem; overflow-x: auto; }
+  .diagrama svg { display: block; min-width: 720px; width: 100%; height: auto; }
+  .caja { fill: var(--caja-svg); stroke: var(--borde); stroke-width: 1.5; }
+  .caja-principal { stroke: var(--acento); stroke-width: 2.5; }
+  .caja-bd { fill: none; stroke: var(--futuro); stroke-width: 1.5; stroke-dasharray: 6 5; }
+  .titulo-caja { font: 700 13px system-ui, sans-serif; fill: var(--tinta); }
+  .detalle-caja { font: 400 11px system-ui, sans-serif; fill: var(--tinta-suave); }
+  .detalle-ok { fill: var(--ok); font-weight: 600; }
+  .detalle-futuro { fill: var(--futuro); }
+  .flecha { stroke: var(--tinta-suave); stroke-width: 1.5; fill: none; marker-end: url(#punta); }
+  .flecha-opt { stroke: var(--acento); stroke-dasharray: 4 4; }
+  .etiqueta-flecha { font: 600 10.5px system-ui, sans-serif; fill: var(--tinta-suave); }
+  .etiqueta-acento { fill: var(--acento); }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; background: var(--tarjeta); border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: .55rem .7rem; border: 1px solid var(--borde); vertical-align: top; }
+  th { background: var(--acento-suave); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+  tr.critica td { font-weight: 700; }
+  code { font-size: .85em; background: var(--acento-suave); color: var(--acento); padding: .05rem .3rem; border-radius: 4px; }
+  .tabla-scroll { overflow-x: auto; }
+  footer { margin-top: 3rem; font-size: .8rem; color: var(--tinta-suave); border-top: 1px solid var(--borde); padding-top: .8rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Probeta DS — Blueprint de infraestructura <span class="badge">as-built</span></h1>
+  <p class="meta">Ciclo: <strong>H1 — "El veredicto honesto → sobrevive datos reales"</strong> · Cerrado: <strong>2026-07-19</strong> · Sprints del ciclo: <strong>S001–S004</strong> (4) · Última actualización: <strong>2026-07-19</strong></p>
+  <p class="nota"><strong>La forma de esta infraestructura es el producto.</strong> Probeta DS es <strong>local-first radical</strong>: TODO el cómputo pesado (perfilado, saneamiento, EDA, entrenamiento, scoring, export/import) corre <strong>en el navegador del usuario</strong> con Pyodide/WASM (pandas + scikit-learn). Los datos del usuario <strong>JAMÁS salen del dispositivo</strong> (regla dura 2). El servidor es finísimo: Vercel sirve estáticos + <strong>una sola</strong> ruta serverless (<code>/api/narrate</code>), opt-in y con fallback determinista. <strong>No hay base de datos</strong> en H1.</p>
+
+  <h2>Diagrama</h2>
+  <div class="diagrama">
+  <svg viewBox="0 0 960 470" role="img" aria-label="Diagrama de infraestructura de Probeta DS: cómputo client-side en el navegador, Vercel sirviendo estáticos y una ruta serverless opt-in hacia Groq, sin base de datos.">
+    <defs>
+      <marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" opacity="0.65"/>
+      </marker>
+    </defs>
+
+    <!-- Navegador del usuario (la pieza principal) -->
+    <rect class="caja caja-principal" x="20" y="70" width="330" height="250" rx="12"/>
+    <text class="titulo-caja" x="185" y="96" text-anchor="middle">Navegador del usuario (móvil / desktop)</text>
+    <text class="detalle-caja detalle-ok" x="185" y="114" text-anchor="middle">aquí vive TODO el cómputo y el dataset</text>
+
+    <rect class="caja" x="42" y="130" width="286" height="70" rx="9"/>
+    <text class="titulo-caja" x="185" y="153" text-anchor="middle">UI — Next.js 16 + React 19</text>
+    <text class="detalle-caja" x="185" y="170" text-anchor="middle">App Router · Tailwind · i18n ES/EN</text>
+    <text class="detalle-caja" x="185" y="186" text-anchor="middle">máquina de estados del experimento</text>
+
+    <rect class="caja" x="42" y="212" width="286" height="88" rx="9"/>
+    <text class="titulo-caja" x="185" y="235" text-anchor="middle">Web Worker — Pyodide/WASM</text>
+    <text class="detalle-caja" x="185" y="252" text-anchor="middle">pandas + scikit-learn (self-hosteados)</text>
+    <text class="detalle-caja" x="185" y="268" text-anchor="middle">pipeline anti-fuga · forest + HGB · scoring</text>
+    <text class="detalle-caja detalle-ok" x="185" y="285" text-anchor="middle">dataset en memoria — nunca sale de aquí</text>
+
+    <!-- Vercel -->
+    <rect class="caja" x="430" y="70" width="250" height="130" rx="10"/>
+    <text class="titulo-caja" x="555" y="96" text-anchor="middle">Vercel (Hobby / Free)</text>
+    <text class="detalle-caja" x="555" y="114" text-anchor="middle">estáticos + wheels de Pyodide (CDN)</text>
+    <text class="detalle-caja" x="555" y="131" text-anchor="middle">prod desde <tspan font-family="monospace">main</tspan> · preview por PR</text>
+    <text class="detalle-caja" x="555" y="153" text-anchor="middle">— única superficie server —</text>
+    <text class="detalle-caja etiqueta-acento" x="555" y="170" text-anchor="middle">ruta serverless /api/narrate</text>
+    <text class="detalle-caja" x="555" y="186" text-anchor="middle">Node · rate limit en memoria · sin persistencia</text>
+
+    <!-- Groq -->
+    <rect class="caja" x="740" y="90" width="200" height="90" rx="10"/>
+    <text class="titulo-caja" x="840" y="116" text-anchor="middle">Groq (LLM)</text>
+    <text class="detalle-caja etiqueta-acento" x="840" y="134" text-anchor="middle">narración OPT-IN (ADR-005)</text>
+    <text class="detalle-caja" x="840" y="151" text-anchor="middle">solo agregados, jamás filas</text>
+    <text class="detalle-caja" x="840" y="168" text-anchor="middle">fallback determinista si falla</text>
+
+    <!-- Sin base de datos -->
+    <rect class="caja-bd" x="740" y="210" width="200" height="70" rx="10"/>
+    <text class="titulo-caja detalle-futuro" x="840" y="238" text-anchor="middle">Base de datos</text>
+    <text class="detalle-caja detalle-futuro" x="840" y="256" text-anchor="middle">NINGUNA en H1 (local-first)</text>
+    <text class="detalle-caja detalle-futuro" x="840" y="272" text-anchor="middle">Supabase solo-metadata → H2</text>
+
+    <!-- GitHub + CI -->
+    <rect class="caja" x="430" y="250" width="250" height="90" rx="10"/>
+    <text class="titulo-caja" x="555" y="276" text-anchor="middle">GitHub — mauriciorincon-ai/app-ds</text>
+    <text class="detalle-caja" x="555" y="294" text-anchor="middle">público · ruleset main-protegida</text>
+    <text class="detalle-caja" x="555" y="311" text-anchor="middle">CI: quality · integration · e2e · lighthouse</text>
+    <text class="detalle-caja" x="555" y="328" text-anchor="middle">hooks gitleaks (PreToolUse + pre-commit)</text>
+
+    <!-- Observabilidad -->
+    <rect class="caja" x="430" y="370" width="250" height="76" rx="10"/>
+    <text class="titulo-caja" x="555" y="396" text-anchor="middle">Observabilidad</text>
+    <text class="detalle-caja" x="555" y="414" text-anchor="middle">Sentry (inerte sin DSN) · metadata-only</text>
+    <text class="detalle-caja" x="555" y="431" text-anchor="middle">Pino: costo de narración (sin datos)</text>
+
+    <!-- Flechas -->
+    <path class="flecha" d="M 350 150 L 425 130"/>
+    <text class="etiqueta-flecha" x="388" y="128" text-anchor="middle">HTTPS · estáticos</text>
+
+    <path class="flecha flecha-opt" d="M 350 230 C 390 230 400 175 425 168"/>
+    <text class="etiqueta-flecha etiqueta-acento" x="392" y="205" text-anchor="middle">POST opt-in</text>
+
+    <path class="flecha flecha-opt" d="M 680 150 L 736 140"/>
+    <text class="etiqueta-flecha etiqueta-acento" x="708" y="132" text-anchor="middle">≤2 llamadas</text>
+
+    <path class="flecha" d="M 555 250 L 555 205"/>
+    <text class="etiqueta-flecha" x="563" y="230">CI → deploy</text>
+
+    <path class="flecha flecha-opt" d="M 430 410 C 380 410 360 340 348 305"/>
+    <text class="etiqueta-flecha" x="372" y="392" text-anchor="middle">errores (metadata)</text>
+  </svg>
+  </div>
+
+  <h2>Tabla por pieza</h2>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Pieza</th><th>Servicio + plan</th><th>Detalle operativo</th></tr></thead>
+    <tbody>
+      <tr><td>Código / versionamiento</td><td>GitHub <code>mauriciorincon-ai/app-ds</code> (público)</td><td>Ruleset <code>main-protegida</code>: jamás push directo; PR con checks requeridos.</td></tr>
+      <tr><td>CI/CD</td><td>GitHub Actions</td><td>4 jobs que gatean el merge: <code>quality</code> (typecheck·lint·test+cobertura·build·audit), <code>integration</code> (Pyodide/WASM), <code>e2e</code> (Playwright ×2 devices + axe), <code>lighthouse</code> (vs <code>perf-budget.json</code>, solo páginas públicas).</td></tr>
+      <tr><td>Hosting / publicación</td><td>Vercel — Hobby (Free)</td><td>Prod desde <code>main</code>, preview por PR; subdominio <code>*.vercel.app</code>. Sirve la app estática + las wheels de Pyodide. Uso comercial permitido en el plan Hobby solo para proyectos no comerciales (para lanzar de verdad → plan Pro, decisión de H2).</td></tr>
+      <tr class="critica"><td>Base de datos</td><td><strong>NINGUNA</strong> — local-first (ADR-001)</td><td>El cómputo corre en el navegador; los datasets viven en memoria/OPFS del cliente. Supabase entra en H2 <strong>solo para metadata</strong> (proyectos, métricas, model cards) con RLS desde la 1ª tabla — <strong>jamás datos crudos del usuario</strong>.</td></tr>
+      <tr><td>Auth</td><td>No aplica (H1)</td><td>Sin cuentas: la app es de un solo uso local. Auth llega con la BD de metadata en H2.</td></tr>
+      <tr><td>Almacenamiento de archivos</td><td>El disco del usuario (descargas del navegador)</td><td>El modelo (<code>.probeta.json</code>), el CSV puntuado y la model card se descargan al equipo del usuario vía Blob; <strong>nada se sube</strong>. Sin storage de servidor.</td></tr>
+      <tr><td>Email / notificaciones</td><td>No aplica</td><td>La app no envía correo ni notificaciones.</td></tr>
+      <tr><td>IA embebida</td><td>Groq (OpenAI-compatible) — free tier</td><td>Única IA: la <strong>narración del porqué</strong> (desde S2, ADR-005/006), <strong>opt-in</strong> y verificada contra los números. Envía solo agregados (nombres de columna, métricas, alertas EDA) — nunca filas. Adapter conmutable por env; en CI corre el proveedor <code>mock</code>. Guardrails + circuit breaker con fallback determinista.</td></tr>
+      <tr><td>Observabilidad</td><td>Sentry + Pino</td><td>Sentry client-side, <strong>inerte sin</strong> <code>NEXT_PUBLIC_SENTRY_DSN</code>, solo tipos+metadatos (nº filas/columnas), <strong>jamás contenido del dataset</strong>. Pino registra el costo de cada narración (~US$0.0005) sin datos del usuario.</td></tr>
+      <tr><td>Crons / keep-alives</td><td>Ninguno</td><td>No hay procesos programados (no hay servidor con estado que mantener vivo).</td></tr>
+      <tr><td>Secretos</td><td><code>.env.local</code> (gitignored) + Vercel env vars</td><td>Doble cinturón gitleaks: hook PreToolUse de Claude Code + <code>githooks/pre-commit</code> (100755, verificado vivo en S3/S4 con carnada canónica). El repo nunca guarda secretos.</td></tr>
+      <tr><td>Dominio</td><td>Subdominio de Vercel</td><td>Sin dominio propio en H1; se administra desde el panel de Vercel. Dominio propio es decisión de H2 (lanzamiento).</td></tr>
+      <tr class="critica"><td>Costo real / mes</td><td><strong>≈ US$0</strong></td><td>Vercel Hobby: US$0 (dentro del free tier; app estática liviana). GitHub: US$0 (repo público). Groq: US$0 en la práctica (narración opt-in, ~US$0.0005/uso, medida por Pino; techo declarado US$10/mes). Sentry: US$0 (free tier, inerte sin DSN).</td></tr>
+      <tr class="critica"><td>Punto único de falla</td><td>Vercel (hosting de los estáticos)</td><td>Si Vercel cae, no se puede <em>cargar</em> la app; pero una vez cargada, <strong>corre 100% en el navegador</strong> (sin dependencia de servidor para su función central — entrenar/puntuar/exportar). La única llamada de servidor (<code>/api/narrate</code>) es opt-in y <strong>degrada a plantilla determinista</strong> si Vercel o Groq fallan. Mitigación: estáticos cacheables + degradación honesta; no hay estado central que perder (no hay BD).</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Historial del blueprint</h2>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Fecha</th><th>Ciclo</th><th>Cambios</th></tr></thead>
+    <tbody>
+      <tr><td>2026-07-19</td><td>H1 (S001–S004)</td><td>Versión inicial (as-built del cierre del ciclo H1): local-first con Pyodide, Vercel + <code>/api/narrate</code> hacia Groq (opt-in), sin BD, observabilidad metadata-only. Sin cambios de infraestructura respecto al plan — H1 se sostuvo en client-side puro.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <footer>Blueprint as-built de Probeta DS · pipeline AI-APPs · se actualiza en cada cierre de ciclo (método v1.8.1). Archivo del repo — sin CDNs ni dependencias externas. La infraestructura de H2 (Supabase solo-metadata, auth, dominio propio, plan Pro) se dibujará al cerrar ese ciclo.</footer>
+</main>
+</body>
+</html>
