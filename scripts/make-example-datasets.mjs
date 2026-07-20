@@ -8,7 +8,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const outDir = resolve(dirname(fileURLToPath(import.meta.url)), "..", "public", "datasets");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const outDir = resolve(root, "public", "datasets");
+// Fuente única (S4): los mismos CSV alimentan la app Y el kit de prueba de la guía.
+const kitDir = resolve(root, "docs", "kit-de-prueba");
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -143,6 +146,7 @@ function messyCustomers(base = 190, dupes = 10, seed = 404) {
 
 async function main() {
   await mkdir(outDir, { recursive: true });
+  await mkdir(kitDir, { recursive: true });
   const files = {
     "marketing-campania.csv": marketingCampaign(),
     "rotacion-empleados.csv": employeeAttrition(),
@@ -151,6 +155,7 @@ async function main() {
   };
   for (const [name, content] of Object.entries(files)) {
     await writeFile(resolve(outDir, name), content, "utf8");
+    await writeFile(resolve(kitDir, name), content, "utf8"); // espejo para el kit de prueba
     const rows = content.trimEnd().split("\n").length - 1;
     console.log(`[datasets] ${name} — ${rows} filas`);
   }

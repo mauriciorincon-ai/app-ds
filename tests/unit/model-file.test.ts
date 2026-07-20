@@ -105,6 +105,67 @@ describe("packModelFile → validateModelFile (roundtrip)", () => {
   });
 });
 
+describe("compatibilidad S3↔S4 (campos aditivos opcionales — ADR-007 revisado)", () => {
+  it("un archivo S4 trae model_name; sin él (forma S3) sigue validando (tolerante)", async () => {
+    const file = await pack();
+    expect(file.manifest.model_name).toBe("forest");
+
+    // Simula un archivo de S3: sin los campos S4. El hash es del payload (no del
+    // manifiesto) ⇒ sigue cuadrando; la validación estructural tolera la ausencia.
+    const raw = JSON.parse(JSON.stringify(file)) as {
+      manifest: Record<string, unknown>;
+    };
+    delete raw.manifest.model_name;
+    delete raw.manifest.sanitation;
+    const validation = await validateModelFile(JSON.stringify(raw));
+    expect(validation.ok).toBe(true);
+  });
+
+  it("registra el saneamiento SOLO si el dataset no estaba limpio", async () => {
+    const dirty = await packModelFile({
+      datasetName: "sucio.csv",
+      result: RESULT,
+      exported: EXPORTED,
+      date: DATE,
+      sanitation: {
+        clean: false,
+        duplicateRowsRemoved: 10,
+        exclusions: [{ column: "id", reason: "id-column" }],
+        coercions: [{ column: "edad", cellsNulled: 6 }],
+        rowsBefore: 200,
+        rowsAfter: 190,
+        colsBefore: 6,
+        colsAfter: 4,
+        usable: true,
+      },
+    });
+    expect(dirty.manifest.sanitation?.duplicateRowsRemoved).toBe(10);
+    expect(dirty.manifest.sanitation?.exclusions).toHaveLength(1);
+
+    const clean = await packModelFile({
+      datasetName: "limpio.csv",
+      result: RESULT,
+      exported: EXPORTED,
+      date: DATE,
+      sanitation: {
+        clean: true,
+        duplicateRowsRemoved: 0,
+        exclusions: [],
+        coercions: [],
+        rowsBefore: 200,
+        rowsAfter: 200,
+        colsBefore: 6,
+        colsAfter: 6,
+        usable: true,
+      },
+    });
+    // Dataset limpio ⇒ el manifiesto NO gana la clave sanitation (sin ruido).
+    expect(clean.manifest.sanitation).toBeUndefined();
+    // Y sigue siendo format_version 1 (aditivo-opcional NO sube la versión).
+    expect(clean.format_version).toBe(1);
+  });
+});
+
 describe("validateModelFile — rechazos ANTES de deserializar", () => {
   it("payload manipulado ⇒ hash-mismatch", async () => {
     const file = await pack();

@@ -164,10 +164,47 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Por seguridad, **carga solo archivos exportados por Probeta**. La app valida la integridad,
     pero el archivo no está cifrado ni firmado.
 
+### Sobrevive datos reales · desde Sprint 004
+
+- **Qué hace:** la app deja de asumir datos "de laboratorio". Ahora aguanta CSV reales —con
+  huecos, basura, columnas inútiles y filas repetidas— **saneándolos de frente** y avisándote de
+  las señales de riesgo antes de entrenar.
+
+- **Saneamiento transparente:** al cargar un CSV, verás un recuadro con lo que la app hizo antes de
+  entrenar (o, si tus datos venían limpios, un franco **"nada que sanear"**). Con conteos exactos:
+  - **Filas duplicadas exactas eliminadas** (dos filas idénticas cayendo una en entrenamiento y
+    otra en prueba inflarían las métricas — se quitan por seguridad).
+  - **Columnas excluidas:** una columna con **un valor distinto por fila** (un identificador, como
+    un número de cliente) o **con un solo valor** (una constante) no ayuda a predecir; se aparta.
+  - **Celdas basura convertidas a vacío:** si una columna es casi toda numérica pero tiene algún
+    `"error"` suelto, esas celdas se vacían (contadas) y la columna se trata como número.
+
+- **Alertas antes de entrenar (exploración de datos):** al elegir el objetivo, la app revisa tus
+  columnas y te avisa —con símbolo y texto, nunca solo color— de:
+  - una columna que predice el objetivo **casi a la perfección** (posible fuga: un dato que no
+    tendrías al predecir de verdad),
+  - una columna que **parece un identificador** (aporta poco para generalizar),
+  - un **objetivo desbalanceado** (una clase es rara) — por eso el veredicto usa AUC.
+
+- **Boosting que compite:** además del Random Forest, la app entrena un **HistGradientBoosting**.
+  Ambos usan el mismo preprocesamiento y compiten con el **mismo veredicto**; se queda el mejor en
+  la métrica principal. En Resultados verás los dos y cuál **ganó** — sin que tengas que elegir a
+  mano: el veredicto habla.
+
+- **Limitaciones conocidas (Sprint 004):**
+  - El saneamiento es **honesto, no mágico**: arregla lo estructural (duplicados, basura,
+    identificadores) pero no adivina el valor "correcto" de un dato faltante — lo rellena con la
+    mediana o la categoría más común del **entrenamiento**, y lo dice.
+  - Las alertas son una **ayuda, no una garantía**: la de fuga marca los casos evidentes, no todos.
+  - El boosting corre en CPU (como toda la app): entrenar un dataset grande puede tardar un poco.
+
 ## Preguntas frecuentes
 
 - **¿Mis datos se suben a algún sitio?** No. Todo el cálculo ocurre en tu navegador; el archivo nunca
   sale de tu equipo.
+- **Cargué datos sucios y la app cambió mis columnas, ¿por qué?** Antes de entrenar, la app sanea el
+  dataset y te lo dice de frente en un recuadro (filas duplicadas, columnas identificadoras o
+  constantes, celdas basura). Nunca lo hace en silencio: cada acción viene con su conteo.
 - **¿Necesito saber programar o de estadística?** No. Eliges la columna a predecir y la app hace el
   resto, explicando el resultado en lenguaje llano.
 - **El modelo dio métricas perfectas, ¿genial?** Casi siempre es una señal de alarma, no de éxito.
@@ -181,7 +218,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 ## Historial
 
-| Sprint | Features añadidas a este manual                                                                                                                                 |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                  |
-| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable). |
+| Sprint | Features añadidas a este manual                                                                                                                                                |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                                 |
+| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable).                |
+| 003    | El modelo se usa (puntuar datos nuevos con aviso de novedad, exportar el modelo como archivo `.probeta.json`, volver a importarlo y puntuar sin re-entrenar).                  |
+| 004    | Sobrevive datos reales (saneamiento transparente con conteos, alertas EDA de fuga/identificador/desbalance, boosting HistGradientBoosting compitiendo con el mismo veredicto). |
