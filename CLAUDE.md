@@ -100,8 +100,15 @@ decisions/NNN-titulo.md   (ADRs de implementación)
 6. **Commits convencionales**; branch `sprint-NNN/<tema>`; **jamás push directo a `main`** (hook lo
    bloquea); PR con CI verde + preview probado.
 7. **Secrets solo en `.env.local` (gitignored) y Vercel env vars.** Doble protección gitleaks
-   (hook PreToolUse + `githooks/pre-commit`). En esta app el gate de privacidad es doble: secrets
-   Y datos del usuario (regla dura 2 — nunca salen del navegador, nunca a logs).
+   (hook PreToolUse + `githooks/pre-commit`). El hook nace ejecutable (100755) y `core.hooksPath`
+   se re-aplica en cada `pnpm install` (script `prepare` — K12 pagada en S3); si un commit con
+   secreto de prueba NO es bloqueado, el gate está muerto. **Carnada canónica verificada (kit
+   v1.6.3; desde v1.7.3 viaja PARTIDA aquí para no disparar el hook al comitear este archivo):
+   ármala concatenando `AWS_ACCESS_KEY_ID=` + `AKIAQ7RTZ4PX` + `KM2WNB3S` SOLO en el archivo de
+   prueba del hook** — no improvises el secreto (las reglas modernas de gitleaks exigen alfabeto
+   base32 tras `AKIA` y entropía; una carnada floja pasa en silencio dando falsa tranquilidad).
+   En esta app el gate de privacidad es doble: secrets Y datos del usuario (regla dura 2 — nunca
+   salen del navegador, nunca a logs).
 8. **Presupuesto de esfuerzo:** ~12 pasos por pantalla; si lo excedes, detente y simplifica o consulta.
 9. **Manual de uso vivo (`docs/MANUAL-DE-USO.md`, obligatorio).** Español llano, para un usuario
    NO técnico: cómo cargar datos, elegir el objetivo, leer el veredicto y las advertencias de fuga.
@@ -126,6 +133,10 @@ del LCP; la landing es liviana y el motor se trae al iniciar el experimento (Lig
 **Apertura** — el usuario trae la **orden de construcción**
 (`portafolio/ds/ordenes/SPRINT_NNN-orden.md` de la planeadora). Léela entera + sus referencias
 (SPRINT_NNN.md, VISION.md, brief, investigación científica). **Plan mode primero, siempre.**
+**La aprobación del plan NO arranca la construcción** (gate de arranque, kit v1.6.2): tras
+aprobarse el plan, emite el **bloque de arranque** — tu recomendación de **modelo y esfuerzo**
+para el sprint (por fase si difiere; el usuario los fija con `/model`) + espacio para sus
+ajustes — y espera su **«construye»** explícito antes de tocar cualquier archivo.
 Branch `sprint-NNN/<tema>`.
 
 **Durante** — construye por fases (setup → motor → UI → integración → e2e). Mantén viva la bitácora
@@ -137,6 +148,19 @@ bitácora, SEPARADA del trabajo del producto.
 **Cierre — summary OBLIGATORIO.** Con la DoD completa: `/deploy-check` → genera
 `sprints/SPRINT_NNN-summary.md` (plantilla abajo) → PR → merge con CI verde. **Sin summary el
 sprint NO está cerrado** (es lo que la planeadora lee para la retrospectiva).
+
+**Cierre de CICLO (método v1.8.0 — cuando este sprint es el ÚLTIMO de un ciclo H1/fase/MVP; la
+orden lo declara):** además de la DoD, el sprint entrega (1) **`docs/BLUEPRINT.html`** — as-built
+de TODA la infraestructura que soporta la app (plantilla `docs/BLUEPRINT.plantilla.html` del kit:
+**HTML autocontenido con diagrama SVG embebido** — jamás mermaid ni CDNs — + tabla por pieza +
+costo real/mes + punto único de falla), vivo y acumulativo entre ciclos; (2) el **design system
+publicado en Claude Design** (`/design-sync`); y (3) la **`docs/GUIA-DE-PRUEBA.html` v1
+ACUMULATIVA** con TODAS las pruebas vigentes del ciclo (chips de origen `Nuevo·SN`/`Mejorado en
+SN`/`SN` heredada, filtros, gate mínimo ⭐ SOLO no-automatizable, `localStorage` con prefijo
+versionado por sprint, kit de prueba en `docs/kit-de-prueba/` enlazado, HTML autocontenido;
+referencia: `app-habla/docs/GUIA-DE-PRUEBA.html`). El **gate ⭐ del usuario** sobre la guía v1 es
+la ÚNICA vía de cierre del ciclo y JAMÁS se difiere a otro sprint (lo que puede pausarse es el
+MOMENTO en que se ejecuta). Todo ciclo tiene MÍNIMO 3 sprints (regla dura 2026-07-17).
 
 ### Plantilla del summary
 
