@@ -66,6 +66,9 @@
   ul.pasos li:has(input:checked) label { color: var(--tinta-suave); }
   code { font-family: ui-monospace, Menlo, monospace; font-size: 0.85em; background: var(--acento-suave); color: var(--acento); padding: .05rem .3rem; border-radius: 4px; }
 
+  a { color: var(--acento); }
+  .donde { margin: 0 0 12px; font-size: 0.8rem; color: var(--tinta-suave); }
+  .donde a { font-weight: 600; }
   .esperar, .mal { margin: 6px 0 0; font-size: 0.875rem; padding: 4px 0 4px 12px;
     border-left: 3px solid; line-height: 1.45; }
   .esperar { border-color: var(--ok); }
@@ -101,12 +104,18 @@
   </div>
 
   <div class="url-caja">
-    <p style="margin:0 0 4px"><strong>Dónde:</strong> abre la app — <code>http://localhost:3000</code> en desarrollo (o la URL de preview/producción de Vercel).</p>
+    <p style="margin:0 0 4px"><strong>Dónde probar (elige una):</strong></p>
+    <ul class="chica" style="margin:4px 0; padding-left:20px">
+      <li><strong>Preview del Sprint 4</strong> (para el gate ⭐ ANTES del merge): <a href="https://app-ds-git-sprint-004-sobrevive-datos-reales-mauricio-rincon.vercel.app">app-ds-git-sprint-004…vercel.app</a></li>
+      <li><strong>Producción</strong> (tras el merge a main): <a href="https://app-ds-mauricio-rincon.vercel.app">app-ds-mauricio-rincon.vercel.app</a></li>
+      <li><strong>Desarrollo local:</strong> <code>pnpm dev</code> → <a href="http://localhost:3000">localhost:3000</a></li>
+    </ul>
+    <p class="chica suave" style="margin:2px 0 0">Las URLs de Vercel pueden pedirte iniciar sesión en Vercel (protección de despliegues — es tu proyecto). Ojo: <code>app-ds.vercel.app</code> a secas NO es esta app.</p>
     <p class="chica suave" style="margin:6px 0 0"><strong>¿Poco tiempo?</strong> Filtra por <span class="origen o-clave">⭐ gate mínimo</span>: son las <strong>11</strong> pruebas que <strong>ninguna automatización puede verificar por ti</strong> (juicio humano, la IA real, aprobación visual) — unos <strong>25–30 minutos</strong>. El resto lo respaldan los tests automáticos del sprint (unit, integración, e2e ×2 dispositivos, axe, Lighthouse) y puede esperar.</p>
   </div>
 
   <div class="kit">
-    <strong>Kit de prueba:</strong> los archivos que usa esta guía están en <code>docs/kit-de-prueba/</code> — los 4 datasets de ejemplo (también botones en la app) y <code>clientes-nuevos.csv</code> para el paso de puntuar datos nuevos. Todo sintético; nada sale de tu navegador.
+    <strong>Kit de prueba:</strong> los archivos que usa esta guía están en <a href="kit-de-prueba/">docs/kit-de-prueba/</a> — los 4 datasets de ejemplo (también botones en la app) y <a href="kit-de-prueba/clientes-nuevos.csv" download>clientes-nuevos.csv</a> para el paso de puntuar datos nuevos. Todo sintético; nada sale de tu navegador.
   </div>
 
   <div class="filtros" role="group" aria-label="Filtrar pruebas por origen">
@@ -123,6 +132,7 @@
   <section class="bloque">
     <div class="bloque-cabeza"><span class="letra" aria-hidden="true">A</span><h2>Cargar datos, sanear y elegir el objetivo</h2></div>
     <p class="meta-bloque chica suave">De un CSV crudo a un experimento listo — con el saneamiento transparente del S4.</p>
+    <p class="donde"><strong>Dónde:</strong> la pantalla de inicio de la app — <a href="https://app-ds-git-sprint-004-sobrevive-datos-reales-mauricio-rincon.vercel.app">preview S4</a> · <a href="https://app-ds-mauricio-rincon.vercel.app">producción</a></p>
     <ul class="pasos">
       <li data-origen="s1"><input type="checkbox" id="a1"><div>
         <label for="a1">Abre la app y pulsa el ejemplo <strong>«Campaña de marketing»</strong>. <span class="origen o-s1">S1</span></label>
@@ -149,6 +159,11 @@
         <label for="a5"><strong>La alerta de posible fuga.</strong> Inicio → ejemplo <strong>«Incumplimiento de crédito»</strong> → objetivo <strong>«incumplio»</strong>. Mira la alerta al elegir el objetivo. <span class="origen o-s4">Nuevo · S4</span></label>
         <p class="esperar"><span class="et">Esperado</span> Avisa que <strong>«monto_recuperado»</strong> predice el objetivo casi a la perfección — <strong>posible fuga</strong> (un dato que no tendrías al predecir de verdad).</p>
       </div></li>
+
+      <li data-origen="s1"><input type="checkbox" id="a6"><div>
+        <label for="a6"><strong>Tu propio CSV (el recuadro de carga).</strong> Descarga <a href="kit-de-prueba/clientes-sucio.csv" download>clientes-sucio.csv</a> del kit y cárgalo como archivo propio: arrástralo al recuadro de carga del inicio (o «Elegir archivo»). <span class="origen o-s1">S1</span></label>
+        <p class="esperar"><span class="et">Esperado</span> El mismo flujo que con el botón de ejemplo: pasas a configuración con la vista previa y el <strong>mismo informe de saneamiento</strong> de A3. Cargar por archivo o por botón no cambia nada.</p>
+      </div></li>
     </ul>
   </section>
 
@@ -156,6 +171,7 @@
   <section class="bloque">
     <div class="bloque-cabeza"><span class="letra" aria-hidden="true">B</span><h2>El veredicto honesto</h2></div>
     <p class="meta-bloque chica suave">El corazón de la app: ¿el modelo sirve, dicho de frente, contra un baseline? — y qué modelo ganó (S4).</p>
+    <p class="donde"><strong>Dónde:</strong> inicio → elegir ejemplo → objetivo → «Entrenar modelo» — <a href="https://app-ds-git-sprint-004-sobrevive-datos-reales-mauricio-rincon.vercel.app">preview S4</a> · <a href="https://app-ds-mauricio-rincon.vercel.app">producción</a></p>
     <ul class="pasos">
       <li data-origen="s1"><input type="checkbox" id="b1"><div>
         <label for="b1">Con «Campaña de marketing» y objetivo <strong>«convirtio»</strong>, pulsa <strong>«Entrenar modelo»</strong> y espera el veredicto (la primera carga de Pyodide tarda). <span class="origen o-s1">S1</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
@@ -184,6 +200,7 @@
   <section class="bloque">
     <div class="bloque-cabeza"><span class="letra" aria-hidden="true">C</span><h2>El porqué, contado honesto</h2></div>
     <p class="meta-bloque chica suave">Importancia de variables + narración opt-in verificada contra los números (S2), extendida al informe EDA (S4).</p>
+    <p class="donde"><strong>Dónde:</strong> la pantalla de resultados, sección «¿Por qué predice así?» (tras entrenar) — <a href="https://app-ds-git-sprint-004-sobrevive-datos-reales-mauricio-rincon.vercel.app">preview S4</a> · <a href="https://app-ds-mauricio-rincon.vercel.app">producción</a>. Para C3 la key real de Groq debe estar configurada en el despliegue (env de Vercel).</p>
     <ul class="pasos">
       <li data-origen="s2"><input type="checkbox" id="c1"><div>
         <label for="c1">En Resultados, mira <strong>«¿Por qué predice así?»</strong>: el gráfico de importancia de variables. <span class="origen o-s2">S2</span></label>
@@ -222,6 +239,7 @@
   <section class="bloque">
     <div class="bloque-cabeza"><span class="letra" aria-hidden="true">D</span><h2>El modelo se usa</h2></div>
     <p class="meta-bloque chica suave">Puntuar datos nuevos con aviso de novedad, y exportar/importar el modelo sin re-entrenar (S3).</p>
+    <p class="donde"><strong>Dónde:</strong> resultados → «Usar el modelo» (y el inicio para importar) — <a href="https://app-ds-git-sprint-004-sobrevive-datos-reales-mauricio-rincon.vercel.app">preview S4</a> · <a href="https://app-ds-mauricio-rincon.vercel.app">producción</a>. Archivo del kit: <a href="kit-de-prueba/clientes-nuevos.csv" download>clientes-nuevos.csv</a>.</p>
     <ul class="pasos">
       <li data-origen="s3"><input type="checkbox" id="d1"><div>
         <label for="d1">Entrena «Campaña de marketing» → <strong>«Usar el modelo»</strong> → carga <code>docs/kit-de-prueba/clientes-nuevos.csv</code>. Mira el aviso de novedad. <span class="origen o-s3">S3</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
@@ -254,6 +272,7 @@
   <section class="bloque">
     <div class="bloque-cabeza"><span class="letra" aria-hidden="true">E</span><h2>Privacidad, honestidad y diseño (cierre del ciclo)</h2></div>
     <p class="meta-bloque chica suave">El juicio que ninguna máquina da: ¿es privada, honesta y clara — y aprobada visualmente?</p>
+    <p class="donde"><strong>Dónde:</strong> toda la app, recorriendo lo anterior — <a href="https://app-ds-git-sprint-004-sobrevive-datos-reales-mauricio-rincon.vercel.app">preview S4</a> · <a href="https://app-ds-mauricio-rincon.vercel.app">producción</a>. En móvil y desktop (E4).</p>
     <ul class="pasos">
       <li data-origen="s1"><input type="checkbox" id="e1"><div>
         <label for="e1"><strong>La honestidad transversal.</strong> Recorriendo todo lo anterior, pregúntate: ¿en algún momento la app <strong>infló</strong> una métrica, <strong>escondió</strong> una advertencia, o <strong>fingió</strong> saber algo que no midió? <span class="origen o-s1">S1</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
@@ -271,8 +290,13 @@
       </div></li>
 
       <li data-origen="s4"><input type="checkbox" id="e4"><div>
-        <label for="e4"><strong>Veredicto de diseño ⭐.</strong> Recorre las pantallas nuevas (informe de saneamiento, alertas EDA, candidatos) en <strong>móvil y desktop</strong>. <span class="origen o-s4">Nuevo · S4</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
-        <p class="esperar"><span class="et">Esperado</span> Se ven serias, claras y confiables (el tono de la app); táctil cómodo en móvil; nada roto ni apretado. <strong>¿Apruebas visualmente el cierre, o qué cambiar?</strong></p>
+        <label for="e4"><strong>Veredicto de diseño ⭐.</strong> Recorre las pantallas nuevas (informe de saneamiento, alertas EDA, candidatos) en <strong>móvil y desktop</strong> — y si tu sistema usa <strong>modo oscuro</strong>, revisa también ese tema. <span class="origen o-s4">Nuevo · S4</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Se ven serias, claras y confiables (el tono de la app); táctil cómodo en móvil; nada roto ni apretado en ninguno de los dos temas. <strong>¿Apruebas visualmente el cierre, o qué cambiar?</strong></p>
+      </div></li>
+
+      <li data-origen="s1"><input type="checkbox" id="e5"><div>
+        <label for="e5"><strong>Los dos idiomas.</strong> En cualquier pantalla con contenido (p. ej. resultados), cambia el idioma a <strong>EN</strong> con el conmutador ES/EN, recorre lo visible, y vuelve a <strong>ES</strong>. <span class="origen o-s1">S1</span></label>
+        <p class="esperar"><span class="et">Esperado</span> <strong>Toda</strong> la interfaz cambia (títulos, veredicto, alertas, botones, avisos) — nada queda a medias ni en el otro idioma. Los nombres de TUS columnas no se traducen (son tus datos, no interfaz).</p>
       </div></li>
     </ul>
   </section>
@@ -287,6 +311,7 @@
     <p class="chica suave"><strong>Regla de la bola de nieve:</strong> esta guía es acumulativa. Contiene <strong>todas</strong> las pruebas vigentes de la app, con el <strong>origen</strong> de cada una (de qué sprint nació y si un sprint posterior la cambió). Una prueba solo se elimina cuando la feature que probaba deja de existir — y se anota abajo.</p>
 
     <p class="eyebrow" style="margin-top:16px">Historial</p>
+    <p class="chica suave"><strong>Validación de cobertura (2026-07-20):</strong> enlaces directos «Dónde» por bloque (preview S4 · producción · kit) y 2 regresiones que faltaban del inventario S1: <strong>A6</strong> (cargar CSV propio por el recuadro de carga) y <strong>E5</strong> (bilingüe ES/EN). E4 ahora pide revisar también el modo oscuro. Gate ⭐ sin cambios: 11 pruebas.</p>
     <p class="chica suave"><strong>Sprint 004 (2026-07-19) — cierre del ciclo H1 · v1 de esta guía:</strong> primera guía de prueba de Probeta DS, ya acumulativa con TODO lo vigente de S1–S4. <strong>Nuevo · S4:</strong> saneamiento transparente con conteos (A2–A3), alertas EDA de desbalance/identificador/fuga (A4–A5), boosting con candidatos compitiendo (B4), narración extendida al informe EDA (C4), model card con saneamiento + modelo ganador (C6), y el juicio de cierre (E3–E4). <strong>Toda prueba de S1–S3 se hereda entera</strong> como <strong>regresión</strong>. Gate ⭐: <strong>11 pruebas</strong> (~25–30 min). <strong>Eliminado:</strong> nada. <strong>Kit de prueba:</strong> <code>docs/kit-de-prueba/</code> (4 datasets + <code>clientes-nuevos.csv</code>).</p>
     <p class="chica suave"><strong>S001–S003 (origen de las pruebas heredadas):</strong> S001 — el veredicto honesto (carga, objetivo, entrenamiento, veredicto vs baseline, advertencia de fuga, métricas en prueba). S002 — el porqué (importancia + dirección, narración IA verificada, consentimiento de privacidad, model card). S003 — el modelo se usa (puntuar datos nuevos con aviso de novedad, exportar/importar sin re-entrenar, validación del archivo). Ninguna se ha eliminado.</p>
   </footer>
