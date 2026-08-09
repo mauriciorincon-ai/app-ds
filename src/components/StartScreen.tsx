@@ -11,7 +11,7 @@ import {
   type VersionWarning,
 } from "@/lib/model-file";
 import { reportImportError } from "@/lib/observability";
-import { Button, Card } from "./ui";
+import { Button, Card, Icon } from "./ui";
 
 const EXAMPLES = [
   { key: "marketing", file: "marketing-campania.csv" },
@@ -72,8 +72,9 @@ export function StartScreen({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="min-h-11 rounded-md bg-accent px-4 text-sm font-medium text-accent-ink hover:opacity-90"
+          className="inline-flex min-h-11 items-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-ink hover:opacity-90"
         >
+          <Icon name="upload" />
           {t("start.dropzone.button")}
         </button>
         <input
@@ -100,7 +101,8 @@ export function StartScreen({
               onClick={() => void pickExample(file)}
               className="flex flex-col gap-1 rounded-lg border border-hairline bg-surface p-4 text-left shadow-sm transition-colors hover:border-accent"
             >
-              <span className="font-medium">
+              <span className="flex items-center gap-2 font-medium">
+                <Icon name="table" className="text-accent" />
                 {t(`start.examples.${key}.name`)}
               </span>
               <span className="text-sm text-ink-muted">
@@ -174,7 +176,7 @@ function ImportModelSection({
         {status.step === "idle" && (
           <div className="flex flex-col items-start gap-2">
             <p className="text-sm text-ink-muted">{t("start.import.desc")}</p>
-            <Button variant="secondary" onClick={pickFile}>
+            <Button variant="secondary" icon="import" onClick={pickFile}>
               {t("start.import.button")}
             </Button>
           </div>
@@ -209,7 +211,7 @@ function ImportModelSection({
               {t(`start.import.errors.${status.error}`)}
             </p>
             <p className="text-ink-muted">{t("start.import.errors.hint")}</p>
-            <Button variant="secondary" onClick={pickFile}>
+            <Button variant="secondary" icon="retry" onClick={pickFile}>
               {t("start.import.retry")}
             </Button>
           </div>
@@ -317,8 +319,10 @@ function ImportSummary({
       )}
 
       <div className="mt-1 flex flex-wrap gap-3">
-        <Button onClick={onConfirm}>{t("start.import.summary.use")}</Button>
-        <Button variant="secondary" onClick={onCancel}>
+        <Button icon="check" onClick={onConfirm}>
+          {t("start.import.summary.use")}
+        </Button>
+        <Button variant="secondary" icon="x" onClick={onCancel}>
           {t("start.import.summary.cancel")}
         </Button>
       </div>

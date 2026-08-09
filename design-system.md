@@ -72,7 +72,10 @@ Escala (rem, base 16): `display` 2.25/600 · `h1` 1.75/600 · `h2` 1.25/600 · `
 shadcn/ui **personalizados** con estos tokens (nunca el default):
 
 - **Button** — `primary` (acento sólido), `secondary` (hairline + ink), `ghost`. Alto 44px (táctil),
-  radio `md`, foco con ring de `accent`.
+  radio `md`, foco con ring de `accent`. **Todo botón de acción lleva icono de trazo a la
+  izquierda del texto** (gate ⭐ S4): SVG inline propio (`Icon` en `ui.tsx`), `currentColor`,
+  stroke ~1.8, `aria-hidden`, ~16px — jamás emojis; el texto siempre permanece (el icono
+  refuerza, no reemplaza).
 - **Card** — `surface`, hairline, radio `lg`, sombra `sm`.
 - **Dropzone** — carga de CSV: borde punteado hairline, estado hover/drag con acento; microcopy
   honesto del límite (5 MB / 50k filas).
@@ -123,7 +126,10 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   honestas: dataset limpio ⇒ franja `positive` con ✓ "nada que sanear" (el usuario merece saber
   que no se tocó nada); dataset sucio ⇒ tarjeta con ⚙ + lista de acciones con **conteos exactos**
   en llano (filas duplicadas quitadas, columnas excluidas por ID/constante, celdas basura→nulo por
-  columna). Nada silencioso. `role="status"`.
+  columna). Nada silencioso. `role="status"`. **Estados positivos con verde EVIDENTE** (gate ⭐
+  S4, daltonismo leve del usuario): tinte 15% + borde sólido + barra izquierda + ✓ en **círculo
+  relleno** `positive` con texto `--bg` — la tranquilidad jamás depende de percibir un tinte
+  sutil.
 - **EdaBlock** (en ConfigScreen) — alertas exploratorias del objetivo elegido: posible fuga /
   casi-identificador / desbalance, en `caution` con ⚠ + texto (nunca solo color); silencio activo
   ✓ "sin señales" si el objetivo está sano. `role="status"` (no `alert`: informa, no interrumpe —

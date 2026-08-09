@@ -279,9 +279,12 @@ export function ResultsScreen({
           </h2>
           <p className="mt-1 text-sm text-ink-muted">{t("results.use.desc")}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <Button onClick={onUseModel}>{t("results.use.button")}</Button>
+            <Button icon="table" onClick={onUseModel}>
+              {t("results.use.button")}
+            </Button>
             <Button
               variant="secondary"
+              icon="download"
               onClick={onExportModel}
               disabled={exportState === "exporting"}
             >
@@ -322,7 +325,7 @@ export function ResultsScreen({
       />
 
       <div>
-        <Button variant="secondary" onClick={onAgain}>
+        <Button variant="secondary" icon="plus" onClick={onAgain}>
           {t("results.again")}
         </Button>
       </div>

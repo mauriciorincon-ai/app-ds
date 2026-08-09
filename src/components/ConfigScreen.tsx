@@ -143,10 +143,14 @@ export function ConfigScreen({
       </Card>
 
       <div className="flex flex-wrap gap-3">
-        <Button onClick={() => onRun(target)} disabled={target === ""}>
+        <Button
+          icon="play"
+          onClick={() => onRun(target)}
+          disabled={target === ""}
+        >
           {t("config.train")}
         </Button>
-        <Button variant="secondary" onClick={onBack}>
+        <Button variant="secondary" icon="back" onClick={onBack}>
           {t("config.back")}
         </Button>
       </div>
@@ -161,12 +165,18 @@ function SanitationBlock({ report }: { report: SanitationReport }) {
   const t = useT();
 
   if (report.clean) {
+    // Verde EVIDENTE sin ser intrusivo (gate ⭐ S4, daltonismo leve del
+    // usuario): tinte 15% + borde sólido + barra izquierda + ✓ en círculo
+    // relleno — la tranquilidad no depende de percibir un tinte sutil.
     return (
       <div
-        className="rounded-md border border-positive/40 bg-positive/10 p-3 text-sm"
+        className="flex items-center gap-2.5 rounded-md border border-positive/60 border-l-4 border-l-positive bg-positive/15 p-3 text-sm font-medium"
         role="status"
       >
-        <span aria-hidden className="mr-1 text-positive">
+        <span
+          aria-hidden
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-positive text-xs font-bold text-bg"
+        >
           ✓
         </span>
         {t("config.sanitation.clean")}
@@ -217,10 +227,13 @@ function EdaBlock({ alerts }: { alerts: EdaAlert[] }) {
   if (alerts.length === 0) {
     return (
       <p
-        className="rounded-md border border-hairline bg-surface p-3 text-sm text-ink-muted"
+        className="flex items-center gap-2.5 rounded-md border border-hairline bg-surface p-3 text-sm text-ink-muted"
         role="status"
       >
-        <span aria-hidden className="mr-1 text-positive">
+        <span
+          aria-hidden
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-positive text-xs font-bold text-bg"
+        >
           ✓
         </span>
         {t("config.eda.clean")}

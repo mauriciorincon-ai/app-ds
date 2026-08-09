@@ -19,7 +19,7 @@ export function ErrorScreen({
       </span>
       <h1 className="text-2xl font-semibold">{t("errors.title")}</h1>
       <p className="text-ink-muted">{t(`errors.${kind}`)}</p>
-      <Button variant="secondary" onClick={onRetry}>
+      <Button variant="secondary" icon="retry" onClick={onRetry}>
         {t("errors.retry")}
       </Button>
     </div>

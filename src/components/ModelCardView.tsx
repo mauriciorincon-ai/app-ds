@@ -66,7 +66,9 @@ export function ModelCardView({
         <p className="mt-1 text-sm text-ink-muted">{t("card.desc")}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <Button onClick={download}>{t("card.download")}</Button>
+          <Button icon="download" onClick={download}>
+            {t("card.download")}
+          </Button>
         </div>
 
         <details

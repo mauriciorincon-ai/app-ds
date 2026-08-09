@@ -16,7 +16,7 @@ import {
 } from "@/lib/scored-csv";
 import type { ExportState, ModelMeta, ScoringState } from "@/lib/useExperiment";
 import type { ProgressStage } from "@/workers/protocol";
-import { Button, Card, MetricTile } from "./ui";
+import { Button, Card, Icon, MetricTile } from "./ui";
 
 const PREVIEW_ROWS = 10;
 
@@ -56,11 +56,11 @@ export function ScoreScreen({
   const features = modelFeatures(meta.schema);
   const backButton =
     meta.source === "trained" ? (
-      <Button variant="secondary" onClick={onBackToResults}>
+      <Button variant="secondary" icon="back" onClick={onBackToResults}>
         {t("score.backResults")}
       </Button>
     ) : (
-      <Button variant="secondary" onClick={onExit}>
+      <Button variant="secondary" icon="plus" onClick={onExit}>
         {t("score.backStart")}
       </Button>
     );
@@ -115,8 +115,9 @@ export function ScoreScreen({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="min-h-11 rounded-md bg-accent px-4 text-sm font-medium text-accent-ink hover:opacity-90"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-ink hover:opacity-90"
             >
+              <Icon name="upload" />
               {t("score.dropzone.button")}
             </button>
             <input
@@ -173,7 +174,7 @@ export function ScoreScreen({
             {t("score.blocked.hint")}
           </p>
           <div className="mt-3">
-            <Button variant="secondary" onClick={onScoreAnother}>
+            <Button variant="secondary" icon="upload" onClick={onScoreAnother}>
               {t("score.tryAnother")}
             </Button>
           </div>
@@ -205,7 +206,7 @@ export function ScoreScreen({
               : t(`errors.${scoring.kind}`)}
           </p>
           {scoring.kind !== "import-failed" && (
-            <Button variant="secondary" onClick={onScoreAnother}>
+            <Button variant="secondary" icon="upload" onClick={onScoreAnother}>
               {t("score.tryAnother")}
             </Button>
           )}
@@ -220,6 +221,7 @@ export function ScoreScreen({
           {meta.source === "trained" && ready && (
             <Button
               variant="secondary"
+              icon="download"
               onClick={onExportModel}
               disabled={exportState === "exporting"}
             >
@@ -468,8 +470,10 @@ function ScoredResults({
       </section>
 
       <div className="flex flex-wrap gap-3">
-        <Button onClick={download}>{t("score.download")}</Button>
-        <Button variant="secondary" onClick={onScoreAnother}>
+        <Button icon="download" onClick={download}>
+          {t("score.download")}
+        </Button>
+        <Button variant="secondary" icon="upload" onClick={onScoreAnother}>
           {t("score.another")}
         </Button>
       </div>

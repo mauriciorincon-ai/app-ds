@@ -254,3 +254,50 @@ entra al modelo sin aviso en ninguna capa (comentario de sanitize.ts corregible)
 sin `.env.production`/`.env.development`; formula injection en CSV puntuado; claves i18n
 huérfanas (`results.leakage.none` nunca se renderiza); metadata SSR solo ES; preview sin tope de
 columnas; revocación inmediata del ObjectURL (Safari); datasets degenerados sin gate de n mínimo.
+
+## Gate ⭐ en curso (2026-07-20) — feedback del usuario por bloques
+
+El usuario decidió correr la guía POR BLOQUES (feedback incremental, no una lista gigante al
+final). Registro por bloque: resultado, ajustes aplicados en caliente (gate de diseño del
+sprint) y propuestas que van a backlog para la planeadora (features nuevas, algunas con
+tensión de reglas duras — se decide en H2, no se improvisa en el cierre).
+
+### Bloque A — Cargar datos, sanear y elegir el objetivo (6/6 pasan)
+
+Las 6 pruebas pasaron; veredicto del usuario sobre velocidad: "me dejó boquiabierto".
+**Dato nuevo del usuario (importantísimo, va a memoria):** tiene **daltonismo leve** — el verde
+sutil (tinte 10%) del recuadro "nada que sanear" no le transmitía tranquilidad; el ámbar del
+desbalance lo distingue perfecto.
+
+**Ajustes aplicados en caliente (gate de diseño):**
+
+1. **Iconos en todos los botones de acción** (pedido explícito A1): componente `Icon` en
+   `ui.tsx` (SVG de trazo inline, `currentColor`, `aria-hidden`, 10 glifos) + prop `icon` en
+   `Button`; aplicado en las 7 pantallas (Start, Config, Results, Score, Error, ModelCard,
+   import). Cero emojis (regla del design system); el texto siempre permanece.
+2. **Verde evidente sin ser intrusivo** (A2, daltonismo): recuadro limpio de saneamiento con
+   tinte 15% + borde sólido + barra izquierda + ✓ en círculo relleno (texto `--bg` ⇒ contraste
+   en ambos temas); mismo círculo en el silencio activo de la EDA.
+3. **Guía A1 corregida:** prometía "conteo de nulos" en un dataset limpio — ahora aclara que la
+   etiqueta solo aparece en columnas CON nulos (marketing no tiene).
+
+**Backlog para la planeadora (H2) — propuestas del usuario con análisis de reglas duras:**
+
+- **A1 · Mini-dashboard de estadísticas descriptivas por columna.** Coincide EXACTAMENTE con el
+  recorte de O2 documentado en `## Desviación del plan` (distribuciones/correlaciones) — el
+  usuario lo pidió sin saber del recorte, lo que lo valida como necesidad real. Candidato
+  natural a primer ítem de H2.
+- **A3 · Saneamiento selectivo (elegir qué limpiezas aplicar).** OJO regla dura 3: el dedup
+  pre-split PREVIENE fuga por duplicación — hacerlo opcional reabre la trampa "misma fila en
+  train y test". Si H2 lo toma: exclusiones de columna pueden ser opcionales (ID/constante son
+  ruido, no fuga), el dedup NO debería serlo (o exige un aviso rojo de "esto invalida el
+  veredicto"). La coerción podría ser configurable.
+- **A4 · Alternativas + elección ante desbalance (no solo "usaré AUC").** Tensión con "el
+  veredicto habla": permitir elegir métrica abre metric-shopping. Vía honesta posible: mostrar
+  TODAS las métricas con la primaria justificada (ya se hace) + explicar alternativas
+  (class_weight, umbral) como EDUCACIÓN, y si se permite elegir, dejar constancia en la model
+  card de que la métrica fue elección del usuario.
+- **A5 · Botón "aplicar solución" en la alerta de fuga (excluir columna y re-entrenar).** La más
+  viable de las cuatro: excluir la columna sospechosa ES la solución canónica y no viola nada.
+  Diseño natural: acción "entrenar sin esta columna" en la alerta, con el before/after de
+  métricas para que el usuario VEA el efecto de la fuga. Candidato fuerte a H2.
