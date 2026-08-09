@@ -301,3 +301,18 @@ desbalance lo distingue perfecto.
   viable de las cuatro: excluir la columna sospechosa ES la solución canónica y no viola nada.
   Diseño natural: acción "entrenar sin esta columna" en la alerta, con el before/after de
   métricas para que el usuario VEA el efecto de la fuga. Candidato fuerte a H2.
+
+**Decisión propuesta sobre el backlog del bloque A (2026-07-20, acordada con el usuario):**
+las cuatro entran a H2 en versiones que NO reabren la trampa, con esta prioridad:
+
+1. **A5 — "Entrenar sin esta columna" con antes/después** (con la columna: AUC inflada y
+   sospechosa · sin ella: la creíble). Refuerza la honestidad; enseña la fuga visceralmente.
+2. **A1 — Mini-dashboard de estadísticas por columna** (TS puro en engine/, mini-histogramas
+   CSS; exploración pre-split, no toca la garantía train-only). Paga el recorte de O2.
+3. **A4 — versión honesta del desbalance:** explicador "¿por qué AUC?" + interruptor "entrenar
+   también con class_weight" que añade un CANDIDATO a la competencia existente. El mismo juez
+   evalúa a todos; NUNCA elección de métrica primaria (metric-shopping).
+4. **A3 — saneamiento selectivo PARCIAL:** interruptores solo en lo reversible (exclusiones de
+   ID/constante con "incluir de todos modos", coerción como-categórica); el **dedup jamás es
+   opcional** — se muestra con candado y explicación llana ("protege la comparación honesta"),
+   ni siquiera con aviso rojo (la UI no ofrece camino a la fuga — regla dura 3).
