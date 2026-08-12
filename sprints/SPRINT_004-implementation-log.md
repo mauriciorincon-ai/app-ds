@@ -382,3 +382,21 @@ a atrapar una colisión real (la nueva frase "la métrica principal aquí es…"
 encabezado "Métrica principal:"). **Sin key local no se pudo probar el texto real de Groq**: la
 mejora está razonada sobre la causa (el prompt pedía literalmente lo que salía), pero el juicio
 final es del usuario sobre la preview.
+
+**Verificación del arreglo contra Groq REAL (2026-07-20).** El usuario creó una key local y se
+comprobó el route de punta a punta con el payload del caso que falló en C4 (clientes-sucio →
+contrato, AUC 0.6864 vs 0.6341, desbalance 13.5%). Resultado final: `status: verified`,
+Grader 5/5/5, y los 6 chequeos en verde — menciona el desbalance (el bug de C4), cero jerga
+interna, métrica explicada con su rango, y las cifras COINCIDEN con lo que muestra la pantalla.
+
+En el camino se encontró y arregló un **bug latente que el arreglo del prompt destapó**: el
+payload trae `direction: null`, pero el esquema de claims solo acepta los strings
+positive/negative/**none**. Al pedirle al modelo "copia los códigos de dirección exactamente como
+los da el payload", copió `null` literal ⇒ Groq rechazó la generación entera
+(`json_validate_failed`) ⇒ **fallback silencioso a plantilla**. El prompt declara ahora el mapeo
+explícito (`null` ⇒ `"none"`). Riesgo residual aceptado: si algún día el modelo volviera a emitir
+`null`, la app degrada honestamente (plantilla + aviso), no rompe.
+
+También quedó confirmado en real el arreglo A4 de la auditoría: el log de costo ya NO reporta
+US$0 (`costUsd: 0.000452` por narración, ~US$0.0007 con Grader incluido — el presupuesto de
+US$10/mes da para ~14.000 narraciones).
