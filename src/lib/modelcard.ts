@@ -71,7 +71,9 @@ export function buildModelCard(input: ModelCardInput): string {
     }),
   ].join("\n");
 
-  const verdictHeadline = t(`results.verdict.${result.verdict.level}`);
+  const verdictHeadline = t(`results.verdict.${result.verdict.level}`, {
+    name: t(`results.candidates.short.${result.modelName}`),
+  });
   const verdictDetail = t(`results.verdict.${result.verdict.level}Detail`, {
     delta: `+${fmt(result.verdict.delta)}`,
     metric: t(`results.metrics.${result.verdict.primaryMetric}`),

@@ -100,8 +100,8 @@
     "eda": {
       "clean": "Sin alertas para este objetivo.",
       "title": "Antes de entrenar, revisa estas señales:",
-      "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad).",
-      "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar.",
+      "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo.",
+      "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
       "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
     }
   },
@@ -116,12 +116,12 @@
     "title": "Veredicto",
     "dataset": "{name} · {rows} filas",
     "verdict": {
-      "beats": "El modelo supera al baseline",
-      "ties": "El modelo empata con el baseline",
-      "loses": "El modelo NO supera al baseline",
+      "beats": "«{name}» supera al baseline",
+      "ties": "«{name}» empata con el baseline",
+      "loses": "«{name}» NO supera al baseline",
       "beatsDetail": "por {delta} en {metric} — {model} frente a {baseline} del mejor baseline",
-      "tiesDetail": "un modelo simple rinde igual: {model} frente a {baseline}",
-      "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Revisa tus features.",
+      "tiesDetail": "un modelo simple rinde igual: {model} frente a {baseline}. Con estas columnas no hay señal extra que aprender — suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.",
+      "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Tus columnas actuales no aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con lo que quieres predecir.",
       "suspicious": "Métricas casi perfectas — sospechoso",
       "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo."
     },
@@ -169,7 +169,13 @@
         "forest": "Random Forest (200 árboles)",
         "hgb": "HistGradientBoosting"
       },
+      "short": {
+        "forest": "Random Forest",
+        "hgb": "HistGradientBoosting"
+      },
       "winner": "elegido",
+      "metricCol": "Métrica",
+      "primary": "primaria",
       "note": "Ambos usan el mismo preprocesamiento y compiten con el mismo veredicto. Elegimos el mejor en la métrica primaria; sin trucos."
     }
   },

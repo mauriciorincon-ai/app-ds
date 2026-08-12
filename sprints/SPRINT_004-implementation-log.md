@@ -316,3 +316,31 @@ las cuatro entran a H2 en versiones que NO reabren la trampa, con esta prioridad
    ID/constante con "incluir de todos modos", coerción como-categórica); el **dedup jamás es
    opcional** — se muestra con candado y explicación llana ("protege la comparación honesta"),
    ni siquiera con aviso rojo (la UI no ofrece camino a la fuga — regla dura 3).
+
+### Bloque B — El veredicto honesto (4/4 pasan)
+
+Las 4 pruebas pasaron. Veredicto del usuario sobre B3 (fuga): "es el resultado más adecuado que
+he visto — sinceridad, puntualidad, especificidad". Ese mensaje queda como el ESTÁNDAR de copy
+de la app (qué pasa + elemento nombrado + acción concreta).
+
+**Ajustes aplicados en caliente (gate de diseño):**
+
+1. **B1 — El veredicto nombra al ganador:** "«Random Forest» supera al baseline" en vez de "El
+   modelo supera…" (claves `results.verdict.*` con `{name}`, nombres cortos nuevos
+   `candidates.short.*`; también en la model card). Tests unit + e2e actualizados (el e2e ahora
+   AFIRMA el titular con nombre).
+2. **B2+B4 — Candidatos con protagonismo y métricas completas:** el bloque pasó de lista con
+   solo la métrica primaria a **caja destacada** (accent 5% + borde) con **tabla comparativa de
+   las 5 métricas de AMBOS candidatos** (primaria resaltada + "(primaria)"; ganador ▶ + badge);
+   la nota metodológica subió de text-xs a text-sm.
+3. **B3 — Pase de copy contra el patrón del mensaje de fuga:** revisados TODOS los avisos.
+   Ya cumplían: saneamiento (columna+conteo+porqué), novedad, bloqueo de esquema, desbalance.
+   Mejorados: veredicto empate/derrota ahora dan la acción concreta en llano ("suele ayudar más
+   añadir variables relacionadas con el objetivo que cambiar de modelo" / "prueba con variables
+   más relacionadas con lo que quieres predecir"); alertas EDA de posible-fuga e id-like ganan
+   su acción ("quítala de tu CSV y vuelve a cargarlo").
+
+Verificación: unit 223/223 · e2e 12/12 (×2 devices, axe) · typecheck/lint. Un fallo intermedio
+legítimo atrapado por el e2e: el titular con nombre creaba doble match de "HistGradientBoosting"
+(strict mode) — resuelto afirmando la celda exacta de la tabla. design-system.md actualizado
+(VerdictBanner nombra al ganador; CandidatesList = caja destacada con tabla completa).

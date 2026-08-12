@@ -28,9 +28,19 @@ test("del inicio al veredicto con un dataset de ejemplo", async ({ page }) => {
   });
   await expect(page.getByText(/Métrica principal/i)).toBeVisible();
 
+  // Gate ⭐ S4 (bloque B): el veredicto NOMBRA al modelo ganador.
+  await expect(
+    page.getByRole("heading", { name: /«.+» supera al baseline/ }),
+  ).toBeVisible();
+
   // S4: los candidatos compitieron y se marcó al ganador (símbolo + texto).
+  // exact:true — el nombre del ganador también aparece en el titular del
+  // veredicto; aquí se afirma la celda de la tabla comparativa.
   await expect(page.getByText(/Modelos que compitieron/i)).toBeVisible();
-  await expect(page.getByText("HistGradientBoosting")).toBeVisible();
+  await expect(
+    page.getByText("HistGradientBoosting", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Random Forest", { exact: true })).toBeVisible();
   await expect(page.getByText("elegido")).toBeVisible();
 
   // A11y: sin violaciones en la pantalla de resultados.

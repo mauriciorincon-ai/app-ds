@@ -93,7 +93,8 @@ describe("buildModelCard", () => {
     expect(card).toContain("semilla 42");
     expect(card).toContain("anti-fuga por construcción");
     expect(card).toContain("| AUC | 0.81 | 0.50 | 0.77 |");
-    expect(card).toContain("El modelo supera al baseline");
+    // Gate ⭐ S4 (bloque B): el veredicto nombra al modelo ganador.
+    expect(card).toContain("«Random Forest» supera al baseline");
     expect(card).toContain("importancia por permutación");
     expect(card).toContain("| visitas_web |");
     expect(card).toContain("0.2134");
@@ -103,7 +104,7 @@ describe("buildModelCard", () => {
   it("EN: la misma card narra en inglés", () => {
     const card = build({ locale: "en" });
     expect(card).toContain("200 rows × 7 columns");
-    expect(card).toContain("The model beats the baseline");
+    expect(card).toContain("Random Forest beats the baseline");
     expect(card).toContain("permutation importance on the test set");
     expect(card).toContain("anti-leakage by construction");
   });

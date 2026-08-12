@@ -83,7 +83,9 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   `surface-sunken`.
 - **MetricTile** — una métrica (valor mono grande + etiqueta caption); en fila para el panel de test.
 - **VerdictBanner** — **la pieza jerárquica del producto**: enuncia el veredicto (símbolo + texto +
-  color semántico) y el delta vs baseline. Es lo más importante de la pantalla de resultados.
+  color semántico) y el delta vs baseline, **nombrando al modelo ganador** («Random Forest» supera
+  al baseline — gate ⭐ S4: "el modelo" a secas dejaba la duda de cuál). Es lo más importante de la
+  pantalla de resultados.
 - **LeakageAlert** — advertencia de fuga (`caution`, icono ⚠ + texto): "esta columna podría ser un
   proxy del objetivo", sin prometer exhaustividad.
 - **ProgressStepper** — etapas honestas del entrenamiento (preparando motor → cargando datos →
@@ -136,10 +138,13 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   Next reserva `alert` para el anuncio de ruta, regla 7). Distinto visual y semánticamente de
   **LeakageAlert** (aquel es el hallazgo del veredicto, este es un aviso pre-entrenamiento).
 - **CandidatesList** (en ResultsScreen) — la competencia franca de modelos (Random Forest vs
-  HistGradientBoosting) bajo el MISMO veredicto: fila por candidato con su métrica primaria en
-  mono/tabular-nums, el ganador marcado con símbolo **▶** (`positive`) + peso tipográfico y un
-  Badge `positive` "elegido"; los demás con **·** en `ink-muted`. Sin selector de usuario: el
-  veredicto habla, la lista solo muestra por qué. Símbolo + texto, nunca solo color.
+  HistGradientBoosting) bajo el MISMO veredicto, en **caja destacada** (`accent` al 5% + borde
+  `accent/40`, título `text-base` — gate ⭐ S4: merece protagonismo): tabla comparativa con las
+  **métricas completas de AMBOS candidatos** (columna por candidato, fila por métrica; la primaria
+  resaltada con fondo `sunken` + sufijo "(primaria)"), el ganador marcado con símbolo **▶**
+  (`positive`) + peso tipográfico + Badge `positive` "elegido"; los demás con **·** en `ink-muted`.
+  La nota metodológica ("mismo preprocesamiento, mismo veredicto; sin trucos") en `text-sm`, nunca
+  letra pequeña. Sin selector de usuario: el veredicto habla, la tabla solo muestra por qué. Símbolo + texto, nunca solo color.
 - **SanitationSection** (en ModelCardView) — el saneamiento aplicado se registra también en la
   model card exportable (qué se limpió y con qué conteos), coherente con el informe de config; el
   nombre del modelo ganador queda parametrizado (ya no hardcodea "Random Forest").

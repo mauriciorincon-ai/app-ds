@@ -100,8 +100,8 @@
     "eda": {
       "clean": "No alerts for this target.",
       "title": "Before training, look at these signals:",
-      "possible-leak": "«{column}» predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time).",
-      "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize.",
+      "possible-leak": "«{column}» predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again.",
+      "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
       "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
     }
   },
@@ -116,12 +116,12 @@
     "title": "Verdict",
     "dataset": "{name} · {rows} rows",
     "verdict": {
-      "beats": "The model beats the baseline",
-      "ties": "The model ties the baseline",
-      "loses": "The model does NOT beat the baseline",
+      "beats": "{name} beats the baseline",
+      "ties": "{name} ties the baseline",
+      "loses": "{name} does NOT beat the baseline",
       "beatsDetail": "by {delta} in {metric} — {model} vs the best baseline's {baseline}",
-      "tiesDetail": "a simple model does just as well: {model} vs {baseline}",
-      "losesDetail": "a simple model does better: {model} vs {baseline}. Review your features.",
+      "tiesDetail": "a simple model does just as well: {model} vs {baseline}. There is no extra signal to learn from these columns — adding variables related to the target usually helps more than switching models.",
+      "losesDetail": "a simple model does better: {model} vs {baseline}. Your current columns don't carry enough signal about the target — try variables more related to what you want to predict.",
       "suspicious": "Almost perfect metrics — suspicious",
       "suspiciousDetail": "A perfect result almost always hides a leak, not a great model."
     },
@@ -169,7 +169,13 @@
         "forest": "Random Forest (200 trees)",
         "hgb": "HistGradientBoosting"
       },
+      "short": {
+        "forest": "Random Forest",
+        "hgb": "HistGradientBoosting"
+      },
       "winner": "chosen",
+      "metricCol": "Metric",
+      "primary": "primary",
       "note": "Both use the same preprocessing and compete under the same verdict. We pick the best on the primary metric; no tricks."
     }
   },

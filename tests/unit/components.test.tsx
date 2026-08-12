@@ -233,8 +233,9 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         exportState="idle"
       />,
     );
+    // Gate ⭐ S4 (bloque B): el veredicto NOMBRA al modelo ganador.
     expect(
-      screen.getByText("El modelo supera al baseline"),
+      screen.getByText("«Random Forest» supera al baseline"),
     ).toBeInTheDocument();
     expect(screen.getByText("¿Por qué predice así?")).toBeInTheDocument();
     expect(screen.getByText("Model card")).toBeInTheDocument();
@@ -449,9 +450,13 @@ describe("ResultsScreen — candidatos", () => {
         exportState="idle"
       />,
     );
-    expect(screen.getByText(/Random Forest/)).toBeInTheDocument();
+    expect(screen.getByText("Random Forest")).toBeInTheDocument();
     expect(screen.getByText("HistGradientBoosting")).toBeInTheDocument();
     // El ganador (hgb) lleva la etiqueta "elegido" (no solo color).
     expect(screen.getByText("elegido")).toBeInTheDocument();
+    // Gate ⭐ S4 (bloque B): la tabla trae las métricas de AMBOS candidatos
+    // (la primaria de cada uno visible, no solo la del ganador).
+    expect(screen.getByText("0.79")).toBeInTheDocument();
+    expect(screen.getByText("0.83")).toBeInTheDocument();
   });
 });
