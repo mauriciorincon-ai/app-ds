@@ -9,7 +9,6 @@ import { I18nProvider } from "@/i18n/provider";
 import { summarizeDataset } from "@/lib/experiment";
 import type { ExperimentResult } from "@/workers/protocol";
 import { ConfigScreen } from "@/components/ConfigScreen";
-import { ConsentPanel } from "@/components/ConsentPanel";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { ModelCardView } from "@/components/ModelCardView";
 import { ResultsScreen } from "@/components/ResultsScreen";
@@ -96,96 +95,83 @@ beforeEach(() => {
 describe("WhySection", () => {
   const base = {
     explain: result().explainability,
+    target: "convirtio",
     positiveClass: "1",
-    consent: false,
-    onConsentChange: vi.fn(),
+    template: "texto estándar aquí",
+    onRequestNarration: vi.fn(),
   };
 
-  it("muestra el gráfico con dirección en símbolo + texto contra la clase positiva real", () => {
-    ui(
-      <WhySection
-        {...base}
-        narration={{ kind: "template", text: "texto", reason: "no-consent" }}
-      />,
-    );
+  it("muestra el gráfico con dirección en símbolo + texto contra el objetivo real", () => {
+    ui(<WhySection {...base} ai={{ kind: "idle" }} />);
     expect(screen.getByText("¿Por qué predice así?")).toBeInTheDocument();
     expect(screen.getByText("visitas_web")).toBeInTheDocument();
+    // Gate ⭐ S4 (bloque C): la dirección nombra la COLUMNA objetivo, no un
+    // «0» huérfano que no le dice nada a nadie.
     expect(
-      screen.getByText("▲ a mayor valor, más probable «1»"),
+      screen.getByText(
+        "▲ a mayor valor, más probable que «convirtio» sea «1»",
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("· el efecto varía por categoría"),
+      screen.getByText(/el efecto varía según la categoría/),
+    ).toBeInTheDocument();
+    // Leyenda: importancia ≠ dirección (una variable sin dirección no es irrelevante).
+    expect(screen.getByText(/no la hace irrelevante/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/La clase que intenta detectar/),
     ).toBeInTheDocument();
   });
 
-  it("estado plantilla: etiqueta 'Texto estándar' visible", () => {
-    ui(
-      <WhySection
-        {...base}
-        narration={{
-          kind: "template",
-          text: "texto estándar aquí",
-          reason: "disabled",
-        }}
-      />,
-    );
+  it("el texto estándar vive en su propio bloque y SIEMPRE está presente", () => {
+    ui(<WhySection {...base} ai={{ kind: "idle" }} />);
     expect(screen.getByText("Texto estándar")).toBeInTheDocument();
     expect(screen.getByText("texto estándar aquí")).toBeInTheDocument();
+    // Bloque de IA separado, en reposo: sin texto de IA todavía.
+    expect(screen.getByText("Narración con IA")).toBeInTheDocument();
   });
 
-  it("plantilla por fallo del proveedor: el aviso dice qué pasó y cómo reintentar", () => {
+  it("en reposo ofrece el botón de pedir la narración (nunca se pide sola)", () => {
+    const onRequest = vi.fn();
     ui(
       <WhySection
         {...base}
-        consent
-        narration={{
-          kind: "template",
-          text: "texto estándar aquí",
-          reason: "provider-error",
-        }}
+        ai={{ kind: "idle" }}
+        onRequestNarration={onRequest}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: /Narrar con IA/ }));
+    expect(onRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("fallo del proveedor: dice qué pasó y deja volver a pedirla", () => {
+    ui(<WhySection {...base} ai={{ kind: "failed", reason: "provider-error" }} />);
     expect(
       screen.getByText(/El proveedor de IA no respondió/),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Narrar de nuevo/ }),
+    ).toBeInTheDocument();
+    // La plantilla NUNCA se pierde por un fallo de la IA.
+    expect(screen.getByText("texto estándar aquí")).toBeInTheDocument();
   });
 
-  it("plantilla sin consentimiento: SIN aviso de fallo (no hubo intento)", () => {
-    ui(
-      <WhySection
-        {...base}
-        narration={{ kind: "template", text: "texto", reason: "no-consent" }}
-      />,
-    );
+  it("en reposo NO hay aviso de fallo (no hubo intento)", () => {
+    ui(<WhySection {...base} ai={{ kind: "idle" }} />);
     expect(screen.queryByText(/proveedor de IA no respondió/)).toBeNull();
     expect(screen.queryByText(/no está configurada/)).toBeNull();
   });
 
-  it("estado verificado: badge con símbolo + texto", () => {
-    ui(
-      <WhySection
-        {...base}
-        narration={{ kind: "verified", text: "narrativa verificada" }}
-      />,
-    );
+  it("estado verificado: badge con símbolo + texto, junto al texto estándar", () => {
+    ui(<WhySection {...base} ai={{ kind: "verified", text: "narrativa verificada" }} />);
     expect(screen.getByText(/verificada con los números/)).toBeInTheDocument();
     expect(screen.getByText("narrativa verificada")).toBeInTheDocument();
+    expect(screen.getByText("texto estándar aquí")).toBeInTheDocument();
   });
 
   it("estado cargando: mensaje en región aria-live", () => {
-    ui(<WhySection {...base} narration={{ kind: "loading" }} />);
+    ui(<WhySection {...base} ai={{ kind: "loading" }} />);
     const loading = screen.getByText(/Generando la narración/);
     expect(loading.closest("[aria-live='polite']")).not.toBeNull();
-  });
-});
-
-describe("ConsentPanel", () => {
-  it("explica qué viaja y qué no, y reporta el cambio", () => {
-    const onChange = vi.fn();
-    ui(<ConsentPanel consent={false} onChange={onChange} />);
-    expect(screen.getByText(/NUNCA se envían tus filas/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("checkbox"));
-    expect(onChange).toHaveBeenCalledWith(true);
   });
 });
 

@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 // Happy path del S2: entrenar → "¿Por qué predice así?" (gráfico + plantilla)
-// → opt-in → narración VERIFICADA (route real con proveedor mock) → descargar
+// → pulsar "Narrar con IA" → narración VERIFICADA (route real, proveedor mock) → descargar
 // la model card. Además, la garantía de privacidad sobre la request REAL:
 // ninguna petición contiene valores de filas del dataset.
 test("del porqué a la model card, con narración verificada y sin filas en la red", async ({
@@ -28,20 +28,19 @@ test("del porqué a la model card, con narración verificada y sin filas en la r
     page.getByRole("button", { name: /Nuevo experimento/i }),
   ).toBeVisible({ timeout: 150_000 });
 
-  // El porqué: gráfico visible con dirección símbolo+texto; sin consentimiento
-  // aún ⇒ plantilla ("Texto estándar") y CERO llamadas a /api/narrate.
+  // El porqué: gráfico visible con dirección símbolo+texto; sin pedir la IA
+  // ⇒ solo el "Texto estándar" y CERO llamadas a /api/narrate.
   await expect(page.getByText("¿Por qué predice así?")).toBeVisible();
   await expect(
     page
       .getByText(/a mayor valor|varía por categoría|sin dirección clara/)
       .first(),
   ).toBeVisible();
-  // exact: la nota del consentimiento también contiene "texto estándar" (minúsculas).
   await expect(page.getByText("Texto estándar", { exact: true })).toBeVisible();
   expect(narrateBodies).toHaveLength(0);
 
-  // Opt-in ⇒ el route real (mock) responde y aparece el badge de verificación.
-  await page.getByRole("checkbox").check();
+  // A demanda: el botón dispara el route real (mock) ⇒ badge de verificación.
+  await page.getByRole("button", { name: /Narrar con IA/i }).click();
   await expect(page.getByText(/verificada con los números/)).toBeVisible({
     timeout: 15_000,
   });

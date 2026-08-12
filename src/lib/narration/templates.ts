@@ -40,6 +40,13 @@ export function buildTemplateNarrative(payload: NarrationPayload): string {
 
   const parts = [
     verdictSentence,
+    // Gate ⭐ S4 (bloque C): qué mide la métrica y en qué rango vive. Anclas
+    // FÁCTICAS (0.50 sería azar, 1.00 perfecto), no etiquetas subjetivas
+    // ("alto"/"bajo") — un juicio de valor no es un dato medido.
+    t("narration.template.metricNote", {
+      metric: t(`results.metrics.${verdict.primaryMetric}`),
+      help: t(`narration.template.metricHelp.${verdict.primaryMetric}`),
+    }),
     t("narration.template.features", { list }),
     t("narration.template.method"),
   ];

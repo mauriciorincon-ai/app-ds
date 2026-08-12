@@ -204,23 +204,24 @@
     <ul class="pasos">
       <li data-origen="s2"><input type="checkbox" id="c1"><div>
         <label for="c1">En Resultados, mira <strong>«¿Por qué predice así?»</strong>: el gráfico de importancia de variables. <span class="origen o-s2">S2</span></label>
-        <p class="esperar"><span class="et">Esperado</span> Barras por variable + la <strong>dirección</strong> del efecto en <strong>símbolo y texto</strong> («a mayor valor, más probable…», «varía por categoría», «sin dirección clara»).</p>
+        <p class="esperar"><span class="et">Esperado</span> Barras por variable + la <strong>dirección</strong> en <strong>símbolo y texto</strong>, nombrando <strong>tu columna objetivo</strong> («a mayor valor, menos probable que «convirtio» sea «0»»). Debajo, una nota dice <strong>qué clase intenta detectar</strong> el modelo y que la barra mide <strong>importancia</strong> mientras la línea dice <strong>dirección</strong>: una variable puede pesar mucho y no tener una sola dirección.</p>
       </div></li>
 
       <li data-origen="s2"><input type="checkbox" id="c2"><div>
-        <label for="c2">Sin activar el interruptor de IA, lee el texto del porqué. <span class="origen o-s2">S2</span></label>
-        <p class="esperar"><span class="et">Esperado</span> Aparece el <strong>«Texto estándar»</strong> (plantilla local, con las cifras reales). <strong>Cero</strong> peticiones de red — la IA es opcional.</p>
+        <label for="c2">Sin pulsar nada, lee el bloque <strong>«Texto estándar»</strong>. <span class="origen o-s2">S2</span> <span class="origen o-mejora">Mejorado · S4</span></label>
+        <p class="esperar"><span class="et">Esperado</span> El bloque <strong>«Texto estándar»</strong> ya está ahí (plantilla local, con las cifras reales) e incluye <strong>qué mide la métrica y en qué rango vive</strong> (p. ej. «AUC: 0.50 sería azar y 1.00 perfecto»). <strong>Cero</strong> peticiones de red: la IA vive en un bloque APARTE y no se pide sola.</p>
       </div></li>
 
       <li data-origen="s2"><input type="checkbox" id="c3"><div>
-        <label for="c3"><strong>La narración con IA real.</strong> Con una <strong>key real de Groq</strong> configurada (no el mock), <strong>activa</strong> el interruptor de consentimiento y lee la narración verificada. <span class="origen o-s2">S2</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
-        <p class="esperar"><span class="et">Esperado</span> Aparece el badge <strong>«verificada con los números»</strong> y un texto que <strong>suena natural</strong> y <strong>coincide</strong> con las variables e importancias reales. <strong>Tu juicio:</strong> ¿es fiel y legible? (esto no lo puede juzgar ninguna máquina).</p>
-        <p class="mal"><span class="et">Mal</span> El texto menciona una variable que no existe, contradice el gráfico, o suena robótico/confuso.</p>
+        <label for="c3"><strong>La narración con IA real.</strong> Con una <strong>key real de Groq</strong> configurada (no el mock), pulsa el botón <strong>«Narrar con IA»</strong> y lee la narración verificada. <span class="origen o-s2">S2</span> <span class="origen o-mejora">Mejorado · S4</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Aparece el badge <strong>«verificada con los números»</strong> y un texto en <strong>lenguaje llano</strong>: explica la métrica entre paréntesis, dice qué significa cada dirección y <strong>no</strong> usa vocabulario interno («beats», «none»). El texto estándar sigue visible en su propio bloque. <strong>Tu juicio:</strong> ¿es fiel y legible? (esto no lo puede juzgar ninguna máquina).</p>
+        <p class="mal"><span class="et">Mal</span> El texto menciona una variable que no existe, contradice el gráfico, suena robótico, o filtra jerga interna («nivel beats», «asociación none»).</p>
       </div></li>
 
       <li data-origen="s4"><input type="checkbox" id="c4"><div>
-        <label for="c4"><strong>La narración al informe EDA (S4).</strong> En un dataset con alertas (p. ej. «Clientes (datos sucios)» → «contrato»), entrena, activa la IA y lee el texto. <span class="origen o-s4">Nuevo · S4</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
-        <p class="esperar"><span class="et">Esperado</span> El texto (IA o plantilla) <strong>añade una nota</strong> sobre el desbalance o el identificador, con la cifra del propio experimento. <strong>Tu juicio:</strong> ¿la nota es correcta y encaja, sin inventar?</p>
+        <label for="c4"><strong>La narración al informe EDA (S4).</strong> En un dataset con alertas (p. ej. «Clientes (datos sucios)» → «contrato»), entrena y pulsa <strong>«Narrar con IA»</strong>. Compara el bloque de IA con el «Texto estándar». <span class="origen o-s4">Nuevo · S4</span> <span class="origen o-clave">⭐ gate mínimo</span></label>
+        <p class="esperar"><span class="et">Esperado</span> <strong>AMBOS</strong> textos añaden la nota sobre el desbalance (con el % real de la clase minoritaria) o el identificador. <strong>Tu juicio:</strong> ¿la nota es correcta y encaja, sin inventar?</p>
+        <p class="mal"><span class="et">Mal</span> La nota aparece en el texto estándar pero NO en el de IA (era el defecto del gate: el prompt no pedía cubrir el informe EDA).</p>
       </div></li>
 
       <li data-origen="s2"><input type="checkbox" id="c5"><div>

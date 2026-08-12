@@ -4,7 +4,6 @@ import type { EdaAlert } from "@/engine/eda";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
-import { useConsent } from "@/lib/useConsent";
 import { useNarration } from "@/lib/useNarration";
 import type { ExportState, RunMeta } from "@/lib/useExperiment";
 import type { ExperimentResult } from "@/workers/protocol";
@@ -60,20 +59,14 @@ export function ResultsScreen({
 }) {
   const t = useT();
   const { verdict, model, leakage, confusionMatrix } = result;
-  const { consent, setConsent } = useConsent();
-  const { narration, retryNarration } = useNarration({
+  // Narración a demanda (gate ⭐ S4, bloque C): la plantilla existe siempre;
+  // la IA solo se pide cuando el usuario pulsa el botón de WhySection.
+  const { template, ai, requestNarration } = useNarration({
     result,
     target: runMeta.target,
     cols,
-    consent,
     edaAlerts,
   });
-  // Re-activar el consentimiento reintenta la narración (si la anterior falló,
-  // el toggle no puede sentirse "muerto": siempre se ve cargar → resultado).
-  const handleConsentChange = (next: boolean) => {
-    if (next && !consent) retryNarration();
-    setConsent(next);
-  };
   const hasLeak = leakage.length > 0;
   const fmt = (value: number) => value.toFixed(2);
   const metricLabel = (metric: MetricName) => t(`results.metrics.${metric}`);
@@ -334,13 +327,14 @@ export function ResultsScreen({
         </div>
       </section>
 
-      {/* S2: el porqué — gráfico siempre visible + narración verificada/plantilla. */}
+      {/* S2: el porqué — gráfico siempre visible + texto estándar + IA a demanda. */}
       <WhySection
         explain={result.explainability}
+        target={runMeta.target}
         positiveClass={result.positiveClass}
-        narration={narration}
-        consent={consent}
-        onConsentChange={handleConsentChange}
+        template={template}
+        ai={ai}
+        onRequestNarration={requestNarration}
       />
 
       {/* S3: el modelo se usa — puntuar datos nuevos y exportar como archivo. */}
@@ -391,9 +385,7 @@ export function ResultsScreen({
           seed: runMeta.seed,
         }}
         sanitation={sanitation}
-        verifiedNarrative={
-          narration.kind === "verified" ? narration.text : null
-        }
+        verifiedNarrative={ai.kind === "verified" ? ai.text : null}
       />
 
       <div>

@@ -14,7 +14,8 @@ export type IconName =
   | "plus"
   | "check"
   | "x"
-  | "table";
+  | "table"
+  | "sparkle";
 
 const ICON_PATHS: Record<IconName, ReactNode> = {
   upload: (
@@ -65,6 +66,18 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <path d="M3 10h18" />
       <path d="M9 10v10" />
+    </>
+  ),
+  sparkle: (
+    <>
+      <path d="M12 3v6" />
+      <path d="M12 15v6" />
+      <path d="M3 12h6" />
+      <path d="M15 12h6" />
+      <path d="m6.3 6.3 3 3" />
+      <path d="m14.7 14.7 3 3" />
+      <path d="m17.7 6.3-3 3" />
+      <path d="m9.3 14.7-3 3" />
     </>
   ),
 };

@@ -55,3 +55,23 @@ closing audit flagged the missing trail; the design itself honored this ADR). Re
 - Same consent gate, same three-layer enforcement. Column names remain user-controlled text that
   reaches the provider **only after opt-in** — and are treated as untrusted data by the prompt
   (see ADR-005 amendment 2026-07-20).
+
+## Amendment (2026-07-20) — consent becomes a per-request action (gate ⭐ S4, block C)
+
+The original design stored an opt-in toggle in `localStorage`: once ON, every experiment's
+narration fired automatically. User feedback during the closing gate: *"queda activo
+indefinidamente y de ahora en adelante todas las respuestas son con IA … debería ser un botón y
+pedido a demanda"*.
+
+The toggle is replaced by an explicit **"Narrar con IA" button** in its own block:
+
+- **Nothing is sent without a press.** The press IS the consent, for THAT experiment, once. A new
+  experiment resets the block to idle — a previous decision can no longer leak into a dataset the
+  user never meant to share. This is **stricter** than the remembered opt-in it replaces, so the
+  ADR's guarantee ("rows never leave; names and aggregates only if you say yes") is strengthened,
+  not relaxed; the three enforcement layers (payload builder, `.strict()` schema, e2e traffic
+  assertion) are unchanged.
+- **Consent persistence is gone** (`useConsent` + `CONSENT_STORAGE_KEY` deleted): the app no
+  longer stores any decision about the user in the browser.
+- The deterministic template moves to a **separate, always-present block**, so the AI text never
+  replaces the honest local one — they are read side by side, each labelled.

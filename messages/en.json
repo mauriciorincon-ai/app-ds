@@ -242,27 +242,29 @@
     "empty": "There are no importances to show for this experiment.",
     "barLabel": "Importance of {name}: {value}",
     "direction": {
-      "positive": "▲ higher values make “{positive}” more likely",
-      "negative": "▼ higher values make “{positive}” less likely",
-      "categorical": "· the effect varies by category",
-      "unclear": "· no clear direction"
+      "positive": "▲ higher values make “{target}” = “{positive}” more likely",
+      "negative": "▼ higher values make “{target}” = “{positive}” less likely",
+      "categorical": "· the effect varies by category (there is no single direction)",
+      "unclear": "· no clear direction (it doesn't push consistently one way)"
     },
     "narration": {
       "title": "In words",
+      "templateTitle": "Standard text",
+      "templateBadge": "no AI · always available",
+      "aiTitle": "AI narration",
+      "aiIntro": "Generates a plain-language explanation. Column names and aggregate figures are sent to an AI provider —NEVER your rows— and only when you press the button.",
+      "request": "Narrate with AI",
+      "again": "Narrate again",
       "loading": "Generating the narrative and verifying it against the numbers…",
       "verifiedBadge": "verified against the numbers",
-      "templateBadge": "Standard text",
       "fallback": {
-        "unavailable": "AI narration is not configured on this deployment; the standard text is shown.",
-        "provider": "The AI provider did not respond; the standard text is shown. Toggle “Narrate with AI” off and on to retry.",
-        "rejected": "The AI narrative failed verification against the numbers; for honesty, the standard text is shown. Toggle “Narrate with AI” off and on to retry."
+        "unavailable": "AI narration isn't configured in this deployment.",
+        "provider": "The AI provider didn't respond. You can try again.",
+        "rejected": "The AI narrative didn't pass verification against the numbers; for honesty it isn't shown. You can try again."
       }
-    }
-  },
-  "consent": {
-    "toggle": "Narrate with AI (optional)",
-    "explain": "If you turn this on, your column names and aggregate statistics (metrics, importances) are sent to an AI provider. Your data rows are NEVER sent.",
-    "verifiedNote": "Every narrative is verified against the numbers before display; if it fails, you'll see the standard text."
+    },
+    "legend": "The bar measures how much each variable MATTERS; the line below says which way it PUSHES. A variable can matter a lot and still have no single direction — that doesn't make it irrelevant.",
+    "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”."
   },
   "card": {
     "title": "Model card",
@@ -287,7 +289,15 @@
       "method": "Importance was measured by permutation on the test set (data the model never saw during training).",
       "leakage": "Warning: {columns} could contain the answer (possible leak); these figures may be inflated.",
       "idLike": "Also, {columns} looks like an identifier: it adds little for generalizing.",
-      "imbalance": "The target is imbalanced (the minority class is {rate}%); that's why the primary metric is AUC."
+      "imbalance": "The target is imbalanced (the minority class is {rate}%); that's why the primary metric is AUC.",
+      "metricHelp": {
+        "accuracy": "share of correct calls out of the total, from 0 to 1",
+        "precision": "of the cases it flagged as positive, how many really were, from 0 to 1",
+        "recall": "of the real positive cases, how many it managed to catch, from 0 to 1",
+        "f1": "balance between precision and recall, from 0 to 1",
+        "auc": "how well it separates the two classes: 0.50 would be chance and 1.00 perfect"
+      },
+      "metricNote": "The primary metric here is {metric} ({help})."
     }
   },
   "modelcard": {

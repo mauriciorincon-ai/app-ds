@@ -242,27 +242,29 @@
     "empty": "No hay importancias que mostrar para este experimento.",
     "barLabel": "Importancia de {name}: {value}",
     "direction": {
-      "positive": "▲ a mayor valor, más probable «{positive}»",
-      "negative": "▼ a mayor valor, menos probable «{positive}»",
-      "categorical": "· el efecto varía por categoría",
-      "unclear": "· sin dirección clara"
+      "positive": "▲ a mayor valor, más probable que «{target}» sea «{positive}»",
+      "negative": "▼ a mayor valor, menos probable que «{target}» sea «{positive}»",
+      "categorical": "· el efecto varía según la categoría (no hay una sola dirección)",
+      "unclear": "· sin dirección clara (no empuja de forma consistente hacia un lado)"
     },
     "narration": {
       "title": "En palabras",
+      "templateTitle": "Texto estándar",
+      "templateBadge": "sin IA · siempre disponible",
+      "aiTitle": "Narración con IA",
+      "aiIntro": "Genera una explicación en lenguaje natural. Se envían nombres de columnas y cifras agregadas a un proveedor de IA —JAMÁS tus filas— y solo cuando pulsas el botón.",
+      "request": "Narrar con IA",
+      "again": "Narrar de nuevo",
       "loading": "Generando la narración y verificándola contra los números…",
       "verifiedBadge": "verificada con los números",
-      "templateBadge": "Texto estándar",
       "fallback": {
-        "unavailable": "La narración con IA no está configurada en este despliegue; se muestra el texto estándar.",
-        "provider": "El proveedor de IA no respondió; se muestra el texto estándar. Apaga y vuelve a encender «Narrar con IA» para reintentar.",
-        "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad se muestra el texto estándar. Apaga y enciende «Narrar con IA» para reintentar."
+        "unavailable": "La narración con IA no está configurada en este despliegue.",
+        "provider": "El proveedor de IA no respondió. Puedes volver a intentarlo.",
+        "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad no se muestra. Puedes volver a intentarlo."
       }
-    }
-  },
-  "consent": {
-    "toggle": "Narrar con IA (opcional)",
-    "explain": "Si lo activas, se envían a un proveedor de IA los nombres de tus columnas y estadísticas agregadas (métricas, importancias). NUNCA se envían tus filas de datos.",
-    "verifiedNote": "Toda narración se verifica contra los números antes de mostrarse; si no pasa, verás el texto estándar."
+    },
+    "legend": "La barra mide cuánto IMPORTA cada variable; la línea de abajo dice hacia dónde EMPUJA. Una variable puede pesar mucho y no tener una sola dirección: eso no la hace irrelevante.",
+    "positiveClass": "El modelo predice la columna «{target}». La clase que intenta detectar (la menos frecuente) es «{positive}»."
   },
   "card": {
     "title": "Model card",
@@ -287,7 +289,15 @@
       "method": "La importancia se midió por permutación sobre el conjunto de prueba (datos que el modelo no vio al entrenar).",
       "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas.",
       "idLike": "Además, {columns} parece un identificador: aporta poco para generalizar.",
-      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate}%); por eso la métrica principal es el AUC."
+      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate}%); por eso la métrica principal es el AUC.",
+      "metricHelp": {
+        "accuracy": "proporción de aciertos sobre el total, de 0 a 1",
+        "precision": "de los casos que marcó como positivos, cuántos lo eran de verdad, de 0 a 1",
+        "recall": "de los casos positivos reales, cuántos logró detectar, de 0 a 1",
+        "f1": "equilibrio entre precisión y sensibilidad, de 0 a 1",
+        "auc": "qué tan bien separa las dos clases: 0.50 sería azar y 1.00 perfecto"
+      },
+      "metricNote": "La métrica principal aquí es {metric} ({help})."
     }
   },
   "modelcard": {

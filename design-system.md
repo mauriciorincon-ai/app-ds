@@ -97,10 +97,18 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
 
 - **ImportanceChart** (en WhySection) — barras CSS puras: relleno `accent` sobre `surface-sunken`,
   cifras en mono/tabular-nums, dirección SIEMPRE con símbolo + texto (▲/▼/·), nunca solo color.
+  La dirección **nombra la columna objetivo del usuario** ("más probable que «convirtio» sea «1»"),
+  jamás una etiqueta huérfana; al pie, una nota fija explica **qué clase se intenta detectar** y que
+  la barra mide *importancia* mientras la línea dice *dirección* — una variable puede pesar mucho y
+  no tener una sola dirección (gate ⭐ S4, bloque C).
 - **VerifiedBadge** — variante `positive` del Badge: "✓ verificada con los números"; su contraparte
   neutral "Texto estándar" distingue la plantilla. La diferencia es informativa, no decorativa.
-- **ConsentPanel** — panel `surface-sunken` con checkbox nativo (accent, táctil ≥44px) y explicación
-  honesta en llano; sin tono legalista, sin modal interruptor.
+- **NarrationBlocks** — DOS tarjetas hermanas y rotuladas (gate ⭐ S4): **"Texto estándar"**
+  (determinista, local, SIEMPRE presente, con Badge neutro "sin IA · siempre disponible") y
+  **"Narración con IA"** (a demanda, con botón `secondary` + icono `sparkle`, explicación honesta
+  de qué viaja y Badge `positive` "✓ verificada con los números" al llegar). La IA jamás reemplaza
+  al texto local: se leen uno al lado del otro. Sin interruptor persistente — la pulsación ES el
+  consentimiento, para ese experimento y una vez (ADR-006 enmendado).
 - **ModelCardView** — tarjeta sobria con acción primaria (descarga) y vista previa plegable en mono
   (`details`, sin JS extra). El documento es el protagonista, no la tarjeta.
 

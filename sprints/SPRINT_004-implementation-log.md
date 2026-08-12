@@ -344,3 +344,41 @@ Verificación: unit 223/223 · e2e 12/12 (×2 devices, axe) · typecheck/lint. U
 legítimo atrapado por el e2e: el titular con nombre creaba doble match de "HistGradientBoosting"
 (strict mode) — resuelto afirmando la celda exacta de la tabla. design-system.md actualizado
 (VerdictBanner nombra al ganador; CandidatesList = caja destacada con tabla completa).
+
+### Bloque C — El porqué, contado honesto (5/6 pasan · C4 FALLÓ)
+
+El usuario detectó el primer **fallo real de un ⭐ gate**: C4. Diagnóstico contra el código (el
+texto recibido NO era del mock —el mock se autoidentifica—, así que era Groq real con key):
+
+**Defecto 1 (causa de C4): el prompt nunca pedía cubrir el bloque `eda`.** `narratorPrompt`
+enumeraba veredicto + variables + fuga, pero NO las alertas EDA, aunque el payload sí las lleva
+desde S4. Resultado: la nota de desbalance salía en la plantilla y desaparecía en la IA — justo
+lo que C4 verifica. **Fix:** el prompt cubre ahora el array `eda` (tasa minoritaria en % e
+identificadores).
+
+**Defecto 2: vocabulario interno filtrado ("nivel beats", "asociación none").** El prompt exigía
+"echo the verdict level exactly" y "copy directions exactly" **sobre la prosa**, cuando la
+verificación (`verify.ts`) contrasta los CLAIMS y `verdictLevel` —campos estructurados—, jamás la
+redacción. **Fix:** el prompt separa los dos planos — prosa en lenguaje llano (prohibido escribir
+los códigos internos, redondeo a 2 decimales) y claims exactos para la máquina.
+
+**Ajustes aplicados (gate de diseño):**
+
+1. **C1 — dirección con sentido:** la etiqueta nombra la COLUMNA objetivo ("más probable que
+   «convirtio» sea «0»") en vez de un «0» huérfano; nota fija que explica qué clase se detecta y
+   que **importancia ≠ dirección** (una variable sin dirección única NO es irrelevante — era la
+   duda literal del usuario).
+2. **C2/C3 — texto más rico y honesto:** explicación de la métrica **y su rango** en la plantilla
+   determinista y en el prompt, desde UNA sola fuente (`narration.template.metricHelp.*` del
+   i18n). Anclas **fácticas** (0.50 sería azar, 1.00 perfecto), NO etiquetas subjetivas
+   (alto/medio/bajo): un juicio de valor no es un dato medido. `narrative` máx. 900→1200.
+3. **C2 — dos bloques separados + botón a demanda:** "Texto estándar" (siempre) y "Narración con
+   IA" (botón). Se elimina el consentimiento persistente (`useConsent` + `ConsentPanel` borrados):
+   la pulsación ES el consentimiento, para ESE experimento y una vez; cambiar de dataset vuelve a
+   reposo. Es MÁS estricto que el opt-in recordado ⇒ refuerza la regla dura 2. ADR-006 enmendado.
+
+Verificación: unit 222 · integración 27 · e2e 12 ×2 devices (axe) · typecheck/lint. El e2e volvió
+a atrapar una colisión real (la nueva frase "la métrica principal aquí es…" chocaba con el
+encabezado "Métrica principal:"). **Sin key local no se pudo probar el texto real de Groq**: la
+mejora está razonada sobre la causa (el prompt pedía literalmente lo que salía), pero el juicio
+final es del usuario sobre la preview.

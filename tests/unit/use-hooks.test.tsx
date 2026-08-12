@@ -1,6 +1,7 @@
-// Hooks de estado del S2: consentimiento (localStorage) + narración (route con
-// fetch mockeado) + máquina de estados del experimento (Worker stub) — pago de
-// la deuda S1 de cobertura de la capa UI.
+// Hooks de estado: narración a demanda (route con fetch mockeado) + máquina de
+// estados del experimento (Worker stub) — pago de la deuda S1 de cobertura de
+// la capa UI. El consentimiento persistente desapareció en el gate ⭐ S4: el
+// consentimiento ES la pulsación del botón (ADR-006 enmendado).
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -12,7 +13,6 @@ import {
   packModelFile,
   validateModelFile,
 } from "@/lib/model-file";
-import { CONSENT_STORAGE_KEY, useConsent } from "@/lib/useConsent";
 import { useExperiment } from "@/lib/useExperiment";
 import { useNarration } from "@/lib/useNarration";
 import type { ExperimentResult, PipelineResult } from "@/workers/protocol";
@@ -90,16 +90,6 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("useConsent", () => {
-  it("default OFF; el cambio persiste en localStorage", () => {
-    const { result } = renderHook(() => useConsent());
-    expect(result.current.consent).toBe(false);
-    act(() => result.current.setConsent(true));
-    expect(result.current.consent).toBe(true);
-    expect(window.localStorage.getItem(CONSENT_STORAGE_KEY)).toBe("true");
-  });
-});
-
 describe("useNarration", () => {
   const input = {
     result: experimentResult(),
@@ -107,22 +97,15 @@ describe("useNarration", () => {
     cols: 7,
   };
 
-  it("sin consentimiento: plantilla local y CERO fetch", () => {
+  it("por defecto NADA viaja: plantilla presente, IA en idle, cero fetch", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
-    const { result } = renderHook(
-      () => useNarration({ ...input, consent: false }),
-      { wrapper },
-    );
-    const narration = result.current.narration;
-    expect(narration.kind).toBe("template");
-    if (narration.kind === "template") {
-      expect(narration.reason).toBe("no-consent");
-      expect(narration.text.length).toBeGreaterThan(20);
-    }
+    const { result } = renderHook(() => useNarration(input), { wrapper });
+    expect(result.current.ai.kind).toBe("idle");
+    expect(result.current.template.length).toBeGreaterThan(20);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("con consentimiento: loading → verified cuando el route verifica", async () => {
+  it("al pedirla: loading → verified cuando el route verifica", async () => {
     const response: NarrateResponse = {
       status: "verified",
       narrative: "Narrativa verificada de prueba con x.",
@@ -131,27 +114,28 @@ describe("useNarration", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify(response), { status: 200 }),
     );
-    const { result } = renderHook(
-      () => useNarration({ ...input, consent: true }),
-      { wrapper },
-    );
-    expect(result.current.narration.kind).toBe("loading");
-    await waitFor(() => expect(result.current.narration.kind).toBe("verified"));
+    const { result } = renderHook(() => useNarration(input), { wrapper });
+
+    act(() => result.current.requestNarration());
+    expect(result.current.ai.kind).toBe("loading");
+    await waitFor(() => expect(result.current.ai.kind).toBe("verified"));
+    // La plantilla sigue ahí: los dos textos conviven, no se reemplazan.
+    expect(result.current.template.length).toBeGreaterThan(20);
   });
 
-  it("fallo del route ⇒ plantilla con razón (nunca sección vacía)", async () => {
+  it("fallo del route ⇒ estado failed con razón (la plantilla nunca se pierde)", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network down"));
-    const { result } = renderHook(
-      () => useNarration({ ...input, consent: true }),
-      { wrapper },
-    );
-    await waitFor(() => expect(result.current.narration.kind).toBe("template"));
-    if (result.current.narration.kind === "template") {
-      expect(result.current.narration.reason).toBe("provider-error");
+    const { result } = renderHook(() => useNarration(input), { wrapper });
+
+    act(() => result.current.requestNarration());
+    await waitFor(() => expect(result.current.ai.kind).toBe("failed"));
+    if (result.current.ai.kind === "failed") {
+      expect(result.current.ai.reason).toBe("provider-error");
     }
+    expect(result.current.template.length).toBeGreaterThan(20);
   });
 
-  it("retryNarration tras un fallo vuelve a pedir (el toggle nunca queda muerto)", async () => {
+  it("volver a pedirla tras un fallo re-pide (el botón nunca queda muerto)", async () => {
     const verified: NarrateResponse = {
       status: "verified",
       narrative: "Narrativa verificada tras el reintento con x.",
@@ -163,15 +147,14 @@ describe("useNarration", () => {
       .mockResolvedValueOnce(
         new Response(JSON.stringify(verified), { status: 200 }),
       );
-    const { result } = renderHook(
-      () => useNarration({ ...input, consent: true }),
-      { wrapper },
-    );
-    await waitFor(() => expect(result.current.narration.kind).toBe("template"));
+    const { result } = renderHook(() => useNarration(input), { wrapper });
 
-    act(() => result.current.retryNarration());
-    expect(result.current.narration.kind).toBe("loading");
-    await waitFor(() => expect(result.current.narration.kind).toBe("verified"));
+    act(() => result.current.requestNarration());
+    await waitFor(() => expect(result.current.ai.kind).toBe("failed"));
+
+    act(() => result.current.requestNarration());
+    expect(result.current.ai.kind).toBe("loading");
+    await waitFor(() => expect(result.current.ai.kind).toBe("verified"));
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 });

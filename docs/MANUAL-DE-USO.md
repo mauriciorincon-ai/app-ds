@@ -83,23 +83,27 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     modelo si se rompe la relación de esa variable con el objetivo. Es honesta pero **global** (no
     explica caso por caso).
 
-- **La explicación en palabras y el badge:**
-  - Debajo del gráfico verás un texto que resume el veredicto y las variables clave.
-  - Si dice **"Texto estándar"**, lo generó la propia app con tus números (sin IA).
-  - Si activas la narración con IA y muestra **"✓ verificada con los números"**, la escribió una
-    IA **y la app comprobó, cifra por cifra, que no miente** antes de mostrártela. Si la IA cita
-    una variable inexistente o una cifra falsa, esa narración **se descarta** y verás el texto
-    estándar. El gráfico siempre queda visible para que compruebes por ti mismo.
-  - **Si la narración con IA no pudo generarse, la app te lo dice**: debajo del texto estándar
-    aparece un aviso ⚠ con el motivo (el proveedor no respondió · la narración no pasó la
-    verificación · la función no está configurada en este despliegue). Para **reintentar**, apaga
-    y vuelve a encender _Narrar con IA_.
+- **Debajo del gráfico hay dos textos, en bloques separados:**
+  - **"Texto estándar"** — lo genera la propia app con tus números, **sin IA y sin internet**.
+    Siempre está ahí. Te dice el veredicto, **qué mide la métrica principal y en qué rango vive**
+    (por ejemplo, en AUC: 0.50 sería azar y 1.00 perfecto), las variables con más peso y las
+    señales del informe (fuga, desbalance, identificadores).
+  - **"Narración con IA"** — un bloque aparte con un botón **"Narrar con IA"**. Solo se pide
+    cuando **tú lo pulsas**. Si aparece **"✓ verificada con los números"**, la escribió una IA
+    **y la app comprobó, cifra por cifra, que no miente** antes de mostrártela. Si la IA cita una
+    variable inexistente o una cifra falsa, esa narración **se descarta** y no la verás.
+  - Los dos textos conviven: la IA **nunca reemplaza** al texto honesto de la app, y el gráfico
+    siempre queda visible para que compruebes por ti mismo.
+  - **Si la narración con IA no pudo generarse, la app te lo dice** con un aviso ⚠ y el motivo
+    (el proveedor no respondió · no pasó la verificación · no está configurada en este
+    despliegue). Para reintentar, pulsa **"Narrar de nuevo"**.
 
 - **Privacidad de la narración con IA (importante):**
-  - Es **opcional y viene apagada**. Si la activas, se envían a un proveedor de IA **solo los
-    nombres de tus columnas y estadísticas agregadas** (métricas, importancias).
-  - **Tus filas de datos NUNCA se envían.** Sin activarla, no sale nada de tu navegador.
-  - Tu elección se recuerda en este navegador; puedes apagarla cuando quieras.
+  - **No se pide sola nunca.** Solo viaja algo cuando pulsas el botón, y solo para ese
+    experimento: si cargas otro dataset, el bloque vuelve a estar en reposo.
+  - Al pulsarlo se envían a un proveedor de IA **solo los nombres de tus columnas y estadísticas
+    agregadas** (métricas, importancias, alertas). **Tus filas de datos NUNCA se envían.**
+  - La app **no guarda** ninguna decisión tuya sobre esto en el navegador.
 
 - **La model card:**
   - Pulsa **"Descargar model card (.md)"** en Resultados. Obtienes un documento con: los datos

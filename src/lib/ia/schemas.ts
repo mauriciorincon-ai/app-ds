@@ -102,7 +102,9 @@ export const narratorClaimSchema = z.object({
 
 export const narratorOutputSchema = z.object({
   verdictLevel: z.enum(["beats", "ties", "loses"]),
-  narrative: z.string().min(40).max(900),
+  // 1200: la narrativa del gate ⭐ S4 explica la métrica, las direcciones en
+  // llano y las señales EDA — 900 la truncaba y el esquema la rechazaba entera.
+  narrative: z.string().min(40).max(1200),
   claims: z.array(narratorClaimSchema).min(1).max(5),
 });
 
@@ -139,7 +141,7 @@ export type FallbackReason = z.infer<typeof fallbackReasonSchema>;
 export const narrateResponseSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("verified"),
-    narrative: z.string().min(1).max(900),
+    narrative: z.string().min(1).max(1200),
     grader: graderOutputSchema,
   }),
   z.object({

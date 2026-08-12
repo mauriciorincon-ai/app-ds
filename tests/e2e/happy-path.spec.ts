@@ -26,7 +26,8 @@ test("del inicio al veredicto con un dataset de ejemplo", async ({ page }) => {
   ).toBeVisible({
     timeout: 150_000,
   });
-  await expect(page.getByText(/Métrica principal/i)).toBeVisible();
+  // ^: la plantilla de narración también dice "la métrica principal aquí es…".
+  await expect(page.getByText(/^Métrica principal:/)).toBeVisible();
 
   // Gate ⭐ S4 (bloque B): el veredicto NOMBRA al modelo ganador.
   await expect(
