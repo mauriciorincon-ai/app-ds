@@ -164,6 +164,10 @@
         <label for="a6"><strong>Tu propio CSV (el recuadro de carga).</strong> Descarga <a href="kit-de-prueba/clientes-sucio.csv" download>clientes-sucio.csv</a> del kit y cárgalo como archivo propio: arrástralo al recuadro de carga del inicio (o «Elegir archivo»). <span class="origen o-s1">S1</span></label>
         <p class="esperar"><span class="et">Esperado</span> El mismo flujo que con el botón de ejemplo: pasas a configuración con la vista previa y el <strong>mismo informe de saneamiento</strong> de A3. Cargar por archivo o por botón no cambia nada.</p>
       </div></li>
+      <li data-origen="s4"><input type="checkbox" id="a7"><div>
+        <label for="a7"><strong>El CSV que salió de Excel.</strong> Carga <a href="kit-de-prueba/ejemplo-exportado-de-excel.csv" download>ejemplo-exportado-de-excel.csv</a>: es un CSV guardado desde Excel en español, que separa las columnas con <strong>punto y coma</strong> en vez de comas. <span class="origen o-s4">Nuevo · S4</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La app <strong>no adivina</strong>: te dice que el archivo usa <strong>punto y coma (;)</strong>, que por eso no reconoce ninguna columna, y qué hacer («vuelve a guardarlo como CSV delimitado por comas»). <br><em>Por qué importa:</em> leerlo por su cuenta obligaría a reinterpretar también los decimales, y una lectura mal adivinada convertiría tus columnas de números en categorías <strong>sin avisarte</strong>. Prefiere bloquear y decirte la verdad.</p>
+      </div></li>
     </ul>
   </section>
 
@@ -248,8 +252,8 @@
       </div></li>
 
       <li data-origen="s3"><input type="checkbox" id="d2"><div>
-        <label for="d2"><strong>El bloqueo honesto.</strong> Abre <code>clientes-nuevos.csv</code> en un editor, borra la columna <strong>dispositivo</strong>, guarda y cárgalo para puntuar. <span class="origen o-s3">S3</span></label>
-        <p class="esperar"><span class="et">Esperado</span> La app <strong>se niega a puntuar</strong> y nombra exactamente la columna que falta («dispositivo»). Nunca puntúa «a medias».</p>
+        <label for="d2"><strong>El bloqueo honesto.</strong> Carga para puntuar <code>clientes-nuevos-sin-dispositivo.csv</code> (es el mismo archivo, sin esa columna — ya viene listo en el kit). <span class="origen o-s3">S3</span> <span class="origen o-s4">Mejorado en S4</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La app <strong>se niega a puntuar</strong> y nombra <strong>exactamente la única columna que falta</strong>: «dispositivo». Nunca puntúa «a medias».<br><em>Si prefieres editarlo tú:</em> guárdalo como <strong>CSV delimitado por comas</strong>. Si tu Excel lo guarda con punto y coma, la app te lo dirá con esas palabras — ese también es el comportamiento correcto (prueba A7).</p>
       </div></li>
 
       <li data-origen="s3"><input type="checkbox" id="d3"><div>
@@ -263,8 +267,8 @@
       </div></li>
 
       <li data-origen="s3"><input type="checkbox" id="d5"><div>
-        <label for="d5"><strong>El rechazo de un archivo ajeno.</strong> En «Cargar modelo guardado», elige cualquier <code>.json</code> que no sea de Probeta (o un <code>.probeta.json</code> con un carácter cambiado a mano). <span class="origen o-s3">S3</span></label>
-        <p class="esperar"><span class="et">Esperado</span> Se <strong>rechaza con la razón exacta</strong> (formato inválido / huella no coincide) <strong>sin abrirse</strong>. La validación ocurre antes de tocar nada.</p>
+        <label for="d5"><strong>El rechazo de un archivo ajeno.</strong> En «Cargar modelo guardado», carga los dos señuelos del kit — no hace falta editar nada a mano: <code>modelo-ajeno.json</code> (JSON de otra herramienta) y <code>modelo-manipulado.probeta.json</code> (un archivo de Probeta con un carácter cambiado). <span class="origen o-s3">S3</span> <span class="origen o-s4">Mejorado en S4</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Cada uno se <strong>rechaza con su razón exacta</strong> y <strong>sin abrirse</strong>: el ajeno por <strong>formato inválido</strong>, el manipulado porque <strong>la huella no coincide</strong>. La validación ocurre antes de que el contenido toque el motor.</p>
       </div></li>
     </ul>
   </section>
@@ -312,6 +316,7 @@
     <p class="chica suave"><strong>Regla de la bola de nieve:</strong> esta guía es acumulativa. Contiene <strong>todas</strong> las pruebas vigentes de la app, con el <strong>origen</strong> de cada una (de qué sprint nació y si un sprint posterior la cambió). Una prueba solo se elimina cuando la feature que probaba deja de existir — y se anota abajo.</p>
 
     <p class="eyebrow" style="margin-top:16px">Historial</p>
+    <p class="chica suave"><strong>Hallazgos del gate ⭐, bloque D (2026-08-12):</strong> <strong>A7</strong> nueva — un CSV exportado de Excel (punto y coma + BOM) hacía que la app no reconociera <em>ninguna</em> columna y respondiera «faltan todas»: cierto pero inútil. Ahora nombra el separador y dice cómo arreglarlo. <strong>D2</strong> y <strong>D5</strong> ya no piden editar archivos a mano: el kit trae los tres archivos listos (<code>clientes-nuevos-sin-dispositivo.csv</code>, <code>modelo-ajeno.json</code>, <code>modelo-manipulado.probeta.json</code>). Gate ⭐ sin cambios: 11 pruebas.</p>
     <p class="chica suave"><strong>Validación de cobertura (2026-07-20):</strong> enlaces directos «Dónde» por bloque (preview S4 · producción · kit) y 2 regresiones que faltaban del inventario S1: <strong>A6</strong> (cargar CSV propio por el recuadro de carga) y <strong>E5</strong> (bilingüe ES/EN). E4 ahora pide revisar también el modo oscuro. Gate ⭐ sin cambios: 11 pruebas.</p>
     <p class="chica suave"><strong>Sprint 004 (2026-07-19) — cierre del ciclo H1 · v1 de esta guía:</strong> primera guía de prueba de Probeta DS, ya acumulativa con TODO lo vigente de S1–S4. <strong>Nuevo · S4:</strong> saneamiento transparente con conteos (A2–A3), alertas EDA de desbalance/identificador/fuga (A4–A5), boosting con candidatos compitiendo (B4), narración extendida al informe EDA (C4), model card con saneamiento + modelo ganador (C6), y el juicio de cierre (E3–E4). <strong>Toda prueba de S1–S3 se hereda entera</strong> como <strong>regresión</strong>. Gate ⭐: <strong>11 pruebas</strong> (~25–30 min). <strong>Eliminado:</strong> nada. <strong>Kit de prueba:</strong> <code>docs/kit-de-prueba/</code> (4 datasets + <code>clientes-nuevos.csv</code>).</p>
     <p class="chica suave"><strong>S001–S003 (origen de las pruebas heredadas):</strong> S001 — el veredicto honesto (carga, objetivo, entrenamiento, veredicto vs baseline, advertencia de fuga, métricas en prueba). S002 — el porqué (importancia + dirección, narración IA verificada, consentimiento de privacidad, model card). S003 — el modelo se usa (puntuar datos nuevos con aviso de novedad, exportar/importar sin re-entrenar, validación del archivo). Ninguna se ha eliminado.</p>

@@ -370,6 +370,8 @@
     "csv-too-large": "The file exceeds the 5 MB limit.",
     "csv-too-many-rows": "The file exceeds 50,000 rows.",
     "csv-ragged": "Some rows have a different number of columns than the header.",
+    "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
+    "csv-tab": "Your file separates columns with tabs rather than commas, so no column is recognised. Save it again as “CSV (comma delimited)” and upload it once more.",
     "target-not-binary": "The target must have exactly two categories.",
     "no-features": "There are no usable columns as predictors.",
     "runtime": "Something went wrong while processing. Please try again.",

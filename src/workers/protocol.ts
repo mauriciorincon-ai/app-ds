@@ -18,6 +18,10 @@ export type WorkerErrorKind =
   | "csv-too-large"
   | "csv-too-many-rows"
   | "csv-ragged"
+  // S4 (gate ⭐ D2): el archivo no está separado por comas — típicamente Excel en
+  // configuración regional europea/latina. Se nombra el separador real.
+  | "csv-semicolon"
+  | "csv-tab"
   | "target-not-binary"
   | "no-features"
   // S4: tras el saneamiento no queda estructura modelable (todo eran IDs/constantes,

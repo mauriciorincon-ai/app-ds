@@ -33,7 +33,52 @@ export type CsvError =
   | { kind: "empty" }
   | { kind: "too-large"; bytes: number; maxBytes: number }
   | { kind: "too-many-rows"; rows: number; maxRows: number }
-  | { kind: "ragged"; row: number; expected: number; found: number };
+  | { kind: "ragged"; row: number; expected: number; found: number }
+  | { kind: "semicolon-delimiter" }
+  | { kind: "tab-delimiter" };
+
+/**
+ * Delimitador equivocado en la CABECERA. Si no hay NI UNA coma fuera de comillas
+ * pero sí `;` o tabuladores, el archivo no es un CSV separado por comas: Excel en
+ * configuración regional europea/latina exporta con `;` justamente porque ahí la
+ * coma es el separador decimal.
+ *
+ * Se detecta para BLOQUEAR con un mensaje exacto, no para adivinar: leerlo con `;`
+ * obligaría además a reinterpretar los decimales («1234,5»), y una lectura
+ * silenciosamente equivocada convertiría columnas numéricas en categorías — un
+ * fallo mudo, peor que un bloqueo honesto (regla dura 3). Soporte completo de CSV
+ * europeo: backlog H2.
+ *
+ * Conservador por diseño: basta UNA coma en la cabecera para no disparar, así que
+ * un CSV normal que contenga `;` dentro de sus campos nunca se bloquea.
+ */
+function detectWrongDelimiter(text: string): ";" | "\t" | null {
+  let inQuotes = false;
+  let commas = 0;
+  let semicolons = 0;
+  let tabs = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') i += 1;
+        else inQuotes = false;
+      }
+      continue;
+    }
+    if (char === '"') inQuotes = true;
+    else if (char === "\n") break;
+    else if (char === ",") commas += 1;
+    else if (char === ";") semicolons += 1;
+    else if (char === "\t") tabs += 1;
+  }
+
+  if (commas > 0) return null;
+  if (semicolons > 0 && semicolons >= tabs) return ";";
+  if (tabs > 0) return "\t";
+  return null;
+}
 
 export type CsvParseResult =
   { ok: true; table: CsvTable } | { ok: false; error: CsvError };
@@ -132,12 +177,24 @@ export function parseCsvWithLimits(
   const maxBytes = options.maxBytes ?? MAX_BYTES;
   const maxRows = options.maxRows ?? MAX_ROWS;
 
-  const bytes = byteLength(text);
+  // BOM de UTF-8 (lo escribe Excel al "Guardar como CSV UTF-8"): invisible, pero
+  // se pegaría al nombre de la PRIMERA columna y la volvería irreconocible.
+  const clean = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+
+  const bytes = byteLength(clean);
   if (bytes > maxBytes) {
     return { ok: false, error: { kind: "too-large", bytes, maxBytes } };
   }
 
-  const allRows = parseRows(text).filter(
+  const wrongDelimiter = detectWrongDelimiter(clean);
+  if (wrongDelimiter === ";") {
+    return { ok: false, error: { kind: "semicolon-delimiter" } };
+  }
+  if (wrongDelimiter === "\t") {
+    return { ok: false, error: { kind: "tab-delimiter" } };
+  }
+
+  const allRows = parseRows(clean).filter(
     (r) => !(r.length === 1 && r[0].trim() === ""),
   );
   if (allRows.length < 2) {

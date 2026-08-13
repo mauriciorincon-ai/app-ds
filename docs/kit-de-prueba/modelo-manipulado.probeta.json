@@ -1,0 +1,86 @@
+{
+  "format_version": 1,
+  "manifest": {
+    "app": {
+      "name": "probeta-ds",
+      "version": "0.1.0"
+    },
+    "created_at": "2026-08-12T12:00:00.000Z",
+    "dataset": {
+      "name": "Campaña de marketing.csv",
+      "n_train": 75,
+      "n_test": 25
+    },
+    "schema": {
+      "numeric": [
+        "edad"
+      ],
+      "categorical": [
+        "region"
+      ],
+      "target": "convirtio",
+      "classes": [
+        "no",
+        "si"
+      ],
+      "positive_class": "si"
+    },
+    "training_profile": {
+      "numeric": {
+        "edad": {
+          "min": 18,
+          "max": 70
+        }
+      },
+      "categorical": {
+        "region": [
+          "norte",
+          "sur"
+        ]
+      }
+    },
+    "metrics": {
+      "model": {
+        "accuracy": 0.9,
+        "precision": 0.8,
+        "recall": 0.7,
+        "f1": 0.75,
+        "auc": 0.85
+      },
+      "baselines": {
+        "majority": {
+          "accuracy": 0.9,
+          "precision": 0.8,
+          "recall": 0.7,
+          "f1": 0.75,
+          "auc": 0.5
+        },
+        "logistic": {
+          "accuracy": 0.9,
+          "precision": 0.8,
+          "recall": 0.7,
+          "f1": 0.75,
+          "auc": 0.6
+        }
+      }
+    },
+    "positive_rate": 0.3,
+    "verdict": {
+      "level": "beats",
+      "primaryMetric": "auc",
+      "modelScore": 0.85,
+      "baselineScore": 0.6,
+      "delta": 0.25
+    },
+    "leakage": [],
+    "versions": {
+      "pyodide": "314.0.2",
+      "sklearn": "1.8.0",
+      "python": "3.14.2"
+    },
+    "payload_sha256": "e1814a98d98a23ef6f7db993c040c827753476a7916827d446fb2ba957cc780a",
+    "payload_encoding": "pickle+zlib+base64",
+    "model_name": "forest"
+  },
+  "payload": "AGF5bG9hZC1waWNrbGUtemxpYi1kZS1tZW50aXJh"
+}

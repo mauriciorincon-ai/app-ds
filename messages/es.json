@@ -370,6 +370,8 @@
     "csv-too-large": "El archivo supera el límite de 5 MB.",
     "csv-too-many-rows": "El archivo supera las 50 000 filas.",
     "csv-ragged": "Hay filas con distinto número de columnas que la cabecera.",
+    "csv-semicolon": "Tu archivo separa las columnas con punto y coma (;), no con comas, así que no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
+    "csv-tab": "Tu archivo separa las columnas con tabulaciones, no con comas, así que no se reconoce ninguna columna. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
     "no-features": "No hay columnas utilizables como predictores.",
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",

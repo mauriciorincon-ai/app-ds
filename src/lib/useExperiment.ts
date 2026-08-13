@@ -63,6 +63,8 @@ export type ScoringErrorKind =
   | "csv-too-large"
   | "csv-too-many-rows"
   | "csv-ragged"
+  | "csv-semicolon"
+  | "csv-tab"
   | "runtime"
   | "import-failed";
 
@@ -124,6 +126,8 @@ const CSV_ERROR: Record<string, WorkerErrorKind & ScoringErrorKind> = {
   "too-large": "csv-too-large",
   "too-many-rows": "csv-too-many-rows",
   ragged: "csv-ragged",
+  "semicolon-delimiter": "csv-semicolon",
+  "tab-delimiter": "csv-tab",
 };
 
 // Qué esperaba cada mensaje en vuelo. Mapa por id (no un único pending): un

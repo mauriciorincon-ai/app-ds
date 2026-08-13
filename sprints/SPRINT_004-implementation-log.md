@@ -434,3 +434,55 @@ explícito (`null` ⇒ `"none"`). Riesgo residual aceptado: si algún día el mo
 También quedó confirmado en real el arreglo A4 de la auditoría: el log de costo ya NO reporta
 US$0 (`costUsd: 0.000452` por narración, ~US$0.0007 con Grader incluido — el presupuesto de
 US$10/mes da para ~14.000 narraciones).
+
+### Bloque D — El modelo se usa (4/4 probadas pasan · D5 no ejecutable a mano)
+
+D1 ⭐ y D4 ⭐ (los dos gates mínimos del bloque) **pasan**. D3 pasa. D2 pasa pero destapó un fallo
+real de robustez. D5 no se pudo ejecutar: el `.probeta.json` descargado no se dejaba abrir en el
+equipo del usuario para manipularlo.
+
+**🐛 Hallazgo D2 — el CSV de Excel en español (el más valioso del gate).** El usuario borró UNA
+columna y la app respondió «faltan» las SEIS. `checkSchema` estaba correcto
+([schema-check.ts:35](../src/lib/ds/schema-check.ts#L35)): las seis faltaban de verdad, porque el
+archivo se guardó con **punto y coma**, el parser solo separaba por coma
+([csv.ts:103](../src/lib/ds/csv.ts#L103)) y no se reconoció ningún encabezado. Reproducido con
+tres escenarios antes de tocar nada:
+
+| Archivo                       | Columnas reportadas como faltantes |
+| ----------------------------- | ---------------------------------- |
+| Coma, sin `dispositivo`       | solo `dispositivo` ✅              |
+| **Punto y coma** (Excel es)   | **las 6** ← lo que vio el usuario  |
+| Con BOM (Excel UTF-8)         | `edad` + `dispositivo`             |
+
+Esto pega en el centro de la tesis del sprint ("sobrevive datos reales"): el público objetivo son
+profesionales NO técnicos, y en español Excel exporta con `;` **precisamente porque la coma es el
+separador decimal**.
+
+**Arreglo (aplicado):** el parser descarta el BOM de UTF-8 y **detecta el separador real en la
+cabecera**; si no hay ni una coma fuera de comillas pero sí `;` o tabuladores, bloquea nombrando
+el separador y diciendo cómo arreglarlo (patrón de copy B3). Conservador por diseño: basta UNA
+coma en la cabecera para no disparar, así que un CSV normal con `;` dentro de sus campos nunca se
+bloquea. Cubre los DOS caminos (entrenar y puntuar) porque ambos pasan por `parseCsvWithLimits`.
+
+**Decisión deliberada: bloquear, no adivinar.** Leer el archivo con `;` obligaría a reinterpretar
+también los decimales («1234,5»); una lectura mal adivinada convertiría columnas numéricas en
+categorías **sin avisar** — un fallo mudo, peor que el bloqueo (regla dura 3). Soporte completo de
+CSV europeo (delimitador + decimales + fidelidad del original al descargar) → **backlog H2**.
+
+**Fricción de la guía (arreglada).** D2 y D5 pedían editar archivos a mano; eso fue justo lo que
+desvió la prueba. El kit ahora trae los tres archivos listos: `clientes-nuevos-sin-dispositivo.csv`,
+`modelo-ajeno.json` y `modelo-manipulado.probeta.json` (los dos últimos generados con
+`packModelFile` y **verificados** contra `validateModelFile`: `invalid-format` y `hash-mismatch`).
+Nueva prueba **A7** con `ejemplo-exportado-de-excel.csv` (`;` + BOM). Guía: 26 → 27 pruebas, gate ⭐
+sin cambios (11).
+
+**D5 sin ejecutar a mano, pero verificado.** El rechazo tiene 6 tests unit (hash manipulado, JSON
+ajeno, manifiesto mutilado, base64 corrupto, no-JSON, versión futura). Con los señuelos del kit ya
+es ejecutable en dos clics.
+
+**Petición del usuario en D2 ("que me diga cuál columna falta") — ya estaba implementada:** la
+app nombra solo las que faltan; el listado de seis era el síntoma del delimitador, no un defecto
+de ese mensaje.
+
+Tests: 222 → **227** (5 nuevos en `csv.test.ts`: `;`, tabulador, conservador con `;` en campos,
+una sola columna, BOM). Typecheck y lint limpios.
