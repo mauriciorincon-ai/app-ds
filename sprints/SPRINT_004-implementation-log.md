@@ -317,6 +317,40 @@ las cuatro entran a H2 en versiones que NO reabren la trampa, con esta prioridad
    opcional** — se muestra con candado y explicación llana ("protege la comparación honesta"),
    ni siquiera con aviso rojo (la UI no ofrece camino a la fuga — regla dura 3).
 
+**⚠️ Este orden fue REVISADO el 2026-08-12** — ver `sprints/H2-PROPUESTA-liga-honesta.md`.
+
+### Propuesta mayor para H2 — «La liga honesta» (2026-08-12)
+
+Surgida de dos preguntas del usuario durante el gate ⭐ ("¿con cuántos modelos cuentas y cómo
+eliges?" / "¿no es ridículamente baja la oferta de cuatro modelos?"). Documento completo:
+[H2-PROPUESTA-liga-honesta.md](H2-PROPUESTA-liga-honesta.md). Resumen para la planeadora:
+
+- **Hallazgo:** el diseño actual (argmax sobre TEST entre 2 candidatos) es lo que limita la oferta
+  a dos, porque cada candidato extra evaluado sobre test infla el puntaje del ganador. Lo escaso
+  **no es el número de modelos, son las decisiones tomadas sobre el test**.
+- **Desbloqueo:** mover la selección a **validación cruzada dentro de train**; el test se abre UNA
+  vez, solo para el ganador. Entonces N deja de estar acotado por la estadística. `cross_val_score`
+  sobre el `Pipeline` reajusta el preprocesador por fold ⇒ la garantía del ADR-002 se mantiene por
+  construcción.
+- **Oferta propuesta:** ~11 modelos cubriendo el espectro de familias tabulares; 7 son
+  prácticamente gratis (el costo sigue en RF y HGB). Cero dependencias nuevas: scikit-learn ya se
+  carga entero. Ejecución en dos niveles (barato automático · liga completa a demanda con
+  estimación de tiempo y cancelación).
+- **Regla que protege la tabla:** la liga muestra SOLO puntajes de CV; el test solo para ganador y
+  baselines (mostrar el test de los perdedores sería invitar al model-shopping).
+- **Efecto esperado a anticipar:** al corregir el sesgo de selección, algunas métricas quedarán
+  ligeramente por debajo de las de H1. Es la corrección, no una regresión.
+- **Corrige el matiz de A4 acordado arriba:** `class_weight` como candidato autoseleccionado sobre
+  test paga el mismo peaje; debe ser reejecución pedida por el usuario, o un miembro más de la liga
+  (donde el problema desaparece solo).
+- **Decisión de producto pendiente (no la toma esta sesión):** acerca la app al terreno del AutoML,
+  del que la constitución se distancia. Lectura propuesta: el diferenciador nunca fue "pocos
+  modelos" sino "método honesto", y sobrevive intacto — pero lo decide la planeadora.
+
+Nueva secuencia sugerida para H2: **liga honesta → A5 → A1 → regresión → A4/A3.** La regresión
+(hoy imposible: un objetivo numérico no puede usarse) duplica a quién le sirve la herramienta,
+pero conviene después de la liga porque hereda la selección por CV.
+
 ### Bloque B — El veredicto honesto (4/4 pasan)
 
 Las 4 pruebas pasaron. Veredicto del usuario sobre B3 (fuga): "es el resultado más adecuado que
