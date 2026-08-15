@@ -660,3 +660,31 @@ Resuelto en tres piezas con jerarquía explícita, TODO implementado ya en esta 
 
 Regla que queda fijada: **Claude Design es vitrina, jamás editor** — no hay camino de vuelta al
 repo, así que editar allí desincronizaría la fuente de verdad en silencio.
+
+### Post-cierre — la variable que no aporta ya no se lee igual que la que no tiene dirección
+
+Detectado por el usuario al verificar producción (2026-08-15). El arreglo del bloque E impidió la
+afirmación FALSA (ya no se pinta dirección sobre una variable de importancia 0), pero dejó a dos
+casos distintos con el MISMO texto:
+
+| Variable            | Importancia | Decía          |
+| ------------------- | ----------- | -------------- |
+| `correos_abiertos`  | **0.063**   | sin dirección clara |
+| `edad`              | **-0.005**  | sin dirección clara |
+
+La primera sí pesa pero no empuja consistentemente; la segunda no aporta nada. Es exactamente la
+duda que el usuario ya había planteado en el bloque C ("¿o sea que las otras variables no tienen
+relevancia?") y que seguía sin responderse.
+
+Agravante propio: la tarjeta que publiqué en Claude Design decía «el modelo no se apoya en esta
+variable» mientras la app decía «sin dirección clara» ⇒ **el design system prometía algo que la app
+no hacía**, justo la deriva que ese documento existe para impedir.
+
+Arreglo, con la regla en UN solo sitio: `src/engine/explainability.ts` (`isFeatureUsed`) — importancia
+que redondea a 0.000 o negativa ⇒ el modelo no la usa. La consumen los DOS renderizadores que la
+duplicaban (`WhySection` y `templates.ts`), se comprueba ANTES del tipo (una categórica de
+importancia 0 tampoco puede decir "el efecto varía por categoría": insinuaría un efecto inexistente),
+y su umbral es espejo del de `pipeline.py` **con test de paridad que falla si alguien mueve uno solo**.
+Clave nueva ES/EN en el mismo paso. Design system y tarjeta publicada actualizados al copy EXACTO.
+
+Tests: 227 → **232** unit (`explainability.test.ts`), 12 e2e ×2 verdes, typecheck y lint limpios.

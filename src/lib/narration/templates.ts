@@ -3,6 +3,7 @@
 // está, falla o miente). Se construye desde el mismo payload estructurado que
 // vería el Narrator — mismos números, cero red. Los strings viven en
 // messages/{es,en}.json (test de paridad); aquí solo se ensamblan.
+import { isFeatureUsed } from "@/engine/explainability";
 import { translate } from "@/i18n/translate";
 import type { NarrationPayload } from "@/lib/ia/schemas";
 
@@ -13,6 +14,9 @@ const fmt = (value: number) => value.toFixed(2);
 function directionKey(
   feature: NarrationPayload["explainability"]["features"][number],
 ): string {
+  // Misma regla que el gráfico (engine/explainability.ts): importancia 0 ⇒ el
+  // modelo no se apoya en ella, y no se le atribuye ningún efecto.
+  if (!isFeatureUsed(feature.importance)) return "unused";
   if (feature.kind === "categorical") return "categorical";
   if (feature.direction === null) return "unclear";
   return feature.direction;

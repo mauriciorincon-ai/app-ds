@@ -245,7 +245,8 @@
       "positive": "▲ higher values make “{target}” = “{positive}” more likely",
       "negative": "▼ higher values make “{target}” = “{positive}” less likely",
       "categorical": "· the effect varies by category (there is no single direction)",
-      "unclear": "· no clear direction (it doesn't push consistently one way)"
+      "unclear": "· no clear direction (it doesn't push consistently one way)",
+      "unused": "· the model doesn't rely on this variable (removing it wouldn't cost accuracy)"
     },
     "narration": {
       "title": "In words",
@@ -284,7 +285,8 @@
         "positive": "higher values make the positive class more likely",
         "negative": "higher values make the positive class less likely",
         "categorical": "the effect varies by category",
-        "unclear": "no clear direction"
+        "unclear": "no clear direction",
+        "unused": "the model doesn't rely on it"
       },
       "method": "Importance was measured by permutation on the test set (data the model never saw during training).",
       "leakage": "Warning: {columns} could contain the answer (possible leak); these figures may be inflated.",

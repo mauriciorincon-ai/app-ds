@@ -6,6 +6,7 @@
 //   1) "Texto estándar" — determinista, local, siempre presente.
 //   2) "Narración con IA" — a demanda, con botón; nunca se pide sola.
 // El método se nombra con honestidad (importancia por permutación, ADR-004).
+import { isFeatureUsed } from "@/engine/explainability";
 import { useT } from "@/i18n/use-translation";
 // SOLO tipo (un import runtime de schemas.ts metería zod al bundle del cliente).
 import type { FallbackReason } from "@/lib/ia/schemas";
@@ -29,6 +30,10 @@ const FALLBACK_NOTICE: Record<FallbackReason, string> = {
 };
 
 function directionKey(feature: FeatureImportance): string {
+  // Se comprueba ANTES que el tipo: con importancia 0 el modelo no usa la
+  // variable, sea numérica o categórica, y decir "el efecto varía por categoría"
+  // insinuaría un efecto que no existe.
+  if (!isFeatureUsed(feature.importance)) return "unused";
   if (feature.kind === "categorical") return "categorical";
   if (feature.direction === null) return "unclear";
   return feature.direction;
