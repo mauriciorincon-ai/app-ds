@@ -1,10 +1,10 @@
 ---
 entrega: brochure
 app: ds
-status: en revisión (falta el gate visual del usuario)
+status: gate visual aprobado — revisión detallada diferida
 opened: 2026-08-15
 branch: entrega/brochure-conoce
-pr: <pendiente>
+pr: https://github.com/mauriciorincon-ai/app-ds/pull/10
 ---
 
 # Entrega puntual — El brochure vivo de Probeta DS (`/conoce`)
@@ -135,9 +135,28 @@ proyecto **ajeno** («Quarksuite App: Design Tokens»). Comprobado y anotado en 
   su propio conteo (regla 3 del molde). Su gate es la sala de proyección.
 - **Cero cambios** en `engine/`, `pipeline.py`, features o comportamiento — como pedía la orden.
 
+## El gate visual — aprobado, con una salvedad que se declara
+
+El usuario aprobó la preview el 2026-08-15: _"me gustó bastante… está bien adecuada para lo que
+tenemos construido y especialmente atractiva"_. **Y dejó dicho que la revisión detallada la hace más
+adelante.** Es decir: la dirección está aprobada; la **ronda de corrección en frío** que el molde
+describe como parte del gate (proceso, no sí/no) **está pendiente por decisión suya**, no por
+omisión. Se anota aquí para que nadie lea "aprobado" como "revisado escena por escena".
+
+## Los checks del PR (§11 — conclusión propia, no ausencia de rojo)
+
+```
+quality: SUCCESS      integration: SUCCESS
+e2e: SUCCESS          lighthouse: SUCCESS
+Vercel: SUCCESS       Vercel Preview Comments: SUCCESS
+```
+
+Ninguno `skipped`. **`lighthouse` corrió de verdad** — vale decirlo porque durante todo el ciclo H1
+estuvo saltado por colgar de un `quality` en rojo, y el DoD lo daba por cumplido.
+
 ## Qué falta para cerrar
 
-1. **Gate visual del usuario** sobre la preview del PR (obligatorio, con rondas).
-2. **Decisión sobre la protección de deployment** antes del merge.
-3. Merge con CI verde — **cada check requerido con conclusión propia `success`** (§11).
-4. Probar `/conoce` de producción sin sesión.
+1. **Decisión sobre la protección de deployment** — sin ella la acceptance #10 no puede pasar.
+2. Merge con CI verde.
+3. Probar `/conoce` de producción **sin sesión**.
+4. (Opcional, cuando el usuario quiera) la ronda de corrección en frío del gate visual.
