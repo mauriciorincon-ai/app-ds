@@ -78,8 +78,14 @@ invocación manual).
    `lastPublished` no es anterior al último sprint con UI cerrado — el equivalente a "el design
    system publicado no está podrido".
 4. **Aclarar en el método** (una línea en el bloque Cierre de CICLO): la publicación la ejecuta
-   el builder con el comando; el gate humano es la aprobación del plan de escritura, no la
-   invocación.
+   **la sesión constructora de la APP, jamás la planeadora**. No es solo reparto de trabajo — es
+   la regla de las dos casas aplicada: el bundle, el `project.json` y el comando viven en el repo
+   de la app, donde la planeadora no escribe; una sesión de la planeadora intentando publicarlo
+   opera sin el bundle, sin el projectId registrado y sin el procedimiento — que es EXACTAMENTE
+   el ruido que se observó en el cierre H1 de ds (2026-08-15, reportado por el usuario). El
+   `/cierre-sprint` de la planeadora debe LIMITARSE a verificar el `lastPublished` del punto 3;
+   si está desactualizado, el cierre pide al usuario correr `/design-sync` en la sesión de la
+   app, no lo intenta él.
 
 ## 5. Qué NO propone esto
 
