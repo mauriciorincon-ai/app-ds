@@ -154,8 +154,14 @@ por construcción** y se declara como tal en vez de darla por hecha.
 
 ## Deuda técnica aceptada
 
-- **postcss moderate transitiva** — `audit` reporta 1 moderate; no bloquea `--audit-level high`. Se
-  paga con el bump aguas arriba (declarada desde antes).
+- ~~**postcss moderate transitiva**~~ — **PAGADA el 2026-08-15**: se publicaron avisos nuevos que
+  escalaron postcss (y otros 7 paquetes) a `high` y tumbaron el gate de CI sin que nada nuestro
+  cambiara. Resuelto con `next@16.2.11` + refresco de rangos + 4 overrides acotados AL RANGO
+  VULNERABLE en `pnpm-workspace.yaml`. `pnpm audit --audit-level high`: sin vulnerabilidades.
+- **Overrides de seguridad en `pnpm-workspace.yaml`** — `fast-uri`, `nanoid`, `postcss` y `sharp`
+  se fuerzan por encima de lo que piden `next`/`@tailwindcss/postcss`/`@sentry/nextjs`. Es deuda
+  de mantenimiento: se retiran cuando esos paquetes resuelvan solos a las versiones parcheadas.
+  Sprint de pago: revisión al abrir H2.
 - **`sanitation` en el manifiesto sin validación estructural estricta** — se lee de forma tolerante
   (aditivo-opcional); si algún día se consume críticamente, añadir su type-guard. Sprint de pago: al
   usar el campo más allá del resumen de importación.

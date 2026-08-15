@@ -557,3 +557,38 @@ del LLM, para que el manual no pueda divergir de lo que la app dice en pantalla.
   cambiarlo desde la app; un usuario con el SO en oscuro no puede ver ni evaluar el tema claro.
   Con el daltonismo leve del usuario, poder elegir tema es además una ayuda de accesibilidad real,
   no solo una preferencia estética.
+
+### CI en rojo tras el gate (2026-08-15) — avisos de seguridad, no código
+
+El PR quedó en rojo con `CI / quality` fallando y e2e/integration/lighthouse **saltados** (dependen
+de quality). Causa: `pnpm audit --audit-level high` — **ningún código nuestro se ejecuta en ese
+paso**. Se publicaron avisos nuevos que escalaron a `high` 8 paquetes transitivos
+(`brace-expansion`, `fast-uri`, `js-yaml`, `nanoid`, `next`, `postcss`, `sharp`, `undici`):
+18 high + 11 moderate. Falla dependiente del TIEMPO, no del diff — las 3 corridas rojas son
+consecutivas porque el aviso apareció entre medias.
+
+Resolución, en tres pasos de menor a mayor intrusión:
+
+1. `next` 16.2.10 → **16.2.11** (el propio aviso pedía ese parche) ⇒ 18 → 14 high.
+2. `pnpm update` (refresco dentro de los rangos ya declarados) ⇒ 14 → 7 high.
+3. **4 overrides en `pnpm-workspace.yaml`** para lo que queda clavado en profundidad. Dos detalles
+   deliberados: (a) el selector acota al **rango vulnerable** (`postcss@<8.5.18`), así que solo se
+   reescriben las dependencias afectadas; (b) el reemplazo usa `^`, que **no cruza de major** —
+   nada de arrastrar una ruptura de API por un parche de seguridad.
+
+**Fricción del kit (para la planeadora):** pnpm 11 **ya no lee** el campo `pnpm.overrides` de
+`package.json` — lo ignora con un WARN y sigue. Los overrides viven ahora en
+`pnpm-workspace.yaml`. Si otra app del pipeline los tiene en `package.json`, están muertos en
+silencio.
+
+**Pyodide vuelve a estar CLAVADO (`314.0.2`, sin `^`).** `pnpm update` lo había movido a 314.0.3 y
+el test de "honestidad forzada" de `RUNTIME_VERSIONS` lo cazó de inmediato — funcionó exactamente
+como fue diseñado. Se revierte porque esa versión **forma parte de un contrato registrado**: viaja
+dentro de cada `.probeta.json` exportado y gobierna los avisos de compatibilidad al importar.
+Mover el runtime WASM en el PR de cierre habría invalidado los archivos exportados durante el gate
+sin ninguna ganancia de seguridad (Pyodide no estaba en ningún aviso). Un artefacto cuya versión se
+declara en un contrato se pinea exacto, como ya se hacía con `next` y `react`.
+
+Verificación completa tras los cambios: `build` · `typecheck` · `lint` · **227 unit** ·
+**28 integración** · **12 e2e ×2 dispositivos** · `pnpm audit --audit-level high` → *No known
+vulnerabilities found*.
