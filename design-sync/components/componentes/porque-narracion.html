@@ -63,11 +63,11 @@
     <p class="dir">· el efecto varía según la categoría (no hay una sola dirección)</p>
     <div class="bar-row"><span class="bar-name mono">correos_abiertos</span><span class="bar-track"><span class="bar-fill" style="width:34%"></span></span><span class="bar-val">0.063</span></div>
     <p class="dir">· sin dirección clara (no empuja de forma consistente hacia un lado)</p>
-    <div class="bar-row"><span class="bar-name mono">region</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="bar-val">0.000</span></div>
-    <p class="dir">el modelo no se apoya en esta variable</p>
+    <div class="bar-row"><span class="bar-name mono">region</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="bar-val">-0.005</span></div>
+    <p class="dir">· el modelo no se apoya en esta variable (quitarla no le haría perder precisión)</p>
     <p class="foot">El modelo predice la columna «convirtio». La clase que intenta detectar (la menos frecuente) es «0».</p>
     <p class="foot" style="border:0; padding-top:4px">La barra mide cuánto IMPORTA cada variable; la línea de abajo dice hacia dónde EMPUJA. Una variable puede pesar mucho y no tener una sola dirección: eso no la hace irrelevante.</p>
-    <p class="foot" style="border:0; padding-top:4px"><b>Importancia 0 ⇒ sin flecha.</b> La dirección se calcula por correlación univariada, independiente de la importancia. Pintar una flecha sobre una variable que el modelo NO usa afirmaría un comportamiento que la medición no respalda. La honestidad manda sobre la simetría visual.</p>
+    <p class="foot" style="border:0; padding-top:4px"><b>Importancia ≤ 0 ⇒ sin flecha y con mensaje propio.</b> La dirección se calcula por correlación univariada, independiente de la importancia: pintar una flecha sobre una variable que el modelo NO usa afirmaría un comportamiento que la medición no respalda. Y el mensaje es <b>distinto</b> del de «sin dirección clara» — una variable que pesa 0.063 sin dirección consistente y otra de -0.005 que no aporta nada NO pueden leerse igual. La honestidad manda sobre la simetría visual.</p>
   </div>
 
   <h2>Bloque 1 — texto estándar (siempre, sin red)</h2>
