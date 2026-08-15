@@ -526,3 +526,34 @@ empleo e ingreso_mensual tienen una importancia de 0, **por lo que el modelo no 
 ellas**… monto_recuperado parece un proxy del objetivo, lo que podría inflar las métricas.»
 
 Tests: 227 unit + **28** integración (uno nuevo). Typecheck y lint limpios.
+
+**Resultado del bloque E (2026-08-15) — 5/5, los tres ⭐ aprobados.**
+
+- **E1 ⭐** — honestidad transversal: aprobada («claramente son francas y honestas»).
+- **E2** — ver arriba: 2 peticiones, ambas esperadas; 652 B de payload.
+- **E3 ⭐** — lenguaje para profesional NO científico de datos: aprobado («muy buen lenguaje»).
+- **E4 ⭐** — veredicto de diseño: **aprobado visualmente**. Matiz importante: el usuario usa
+  macOS en modo oscuro SIEMPRE, así que su ⭐ cubre el tema oscuro; **nunca ha visto el claro** y
+  no encontró conmutador porque **no existe** (el tema sigue a `prefers-color-scheme`;
+  `globals.css` define el claro como base y el oscuro por media query).
+- **E5** — bilingüe: aprobado, incluida la narración IA y el no-traducir nombres de columna.
+
+**Cobertura del tema claro (dato para la retro):** los 5 e2e corren `AxeBuilder` sin fijar
+`colorScheme`, y el defecto de Playwright es **light** ⇒ el tema que el usuario nunca ve es
+precisamente el que más veces ha pasado el chequeo automático de contraste. Aun así, la aprobación
+⭐ humana del tema claro queda pendiente por construcción — se anota como tal, sin inflarla.
+
+**Mejora pedida en E3 (aplicada): diccionario de términos.** Nueva sección en
+`docs/MANUAL-DE-USO.md` con los términos que la app usa de verdad, en 4 grupos (resultado ·
+métricas · advertencias · porqué). Las definiciones de métricas se copian VERBATIM de
+`narration.template.metricHelp.*` — la misma fuente que usan la plantilla determinista y el prompt
+del LLM, para que el manual no pueda divergir de lo que la app dice en pantalla.
+
+**Backlog H2 derivado del bloque E:**
+
+- **Glosario dentro de la app** (la versión completa de lo que pidió el usuario): «¿qué significa
+  esto?» enlazado desde cada término, en vez de solo en el manual. Bilingüe.
+- **Conmutador de tema claro/oscuro.** Hoy el tema lo decide el sistema y no hay forma de
+  cambiarlo desde la app; un usuario con el SO en oscuro no puede ver ni evaluar el tema claro.
+  Con el daltonismo leve del usuario, poder elegir tema es además una ayuda de accesibilidad real,
+  no solo una preferencia estética.

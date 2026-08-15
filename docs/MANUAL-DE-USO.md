@@ -202,6 +202,49 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Las alertas son una **ayuda, no una garantía**: la de fuga marca los casos evidentes, no todos.
   - El boosting corre en CPU (como toda la app): entrenar un dataset grande puede tardar un poco.
 
+## Diccionario de términos
+
+Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
+cuando una te frene.
+
+**Sobre el resultado**
+
+| Término                    | Qué significa                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Baseline** (línea base)  | La regla más tonta que podría funcionar: responder siempre lo más frecuente. Si tu modelo no la supera, no sirve.                  |
+| **Veredicto**              | La comparación franca entre tu modelo y ese baseline: lo supera, empata o pierde.                                                  |
+| **Entrenamiento y prueba** | La app parte tus datos en dos. Aprende con la primera mitad y se examina con la segunda, que nunca vio. Por eso el número es real. |
+| **Candidatos**             | Los modelos que compiten entre sí (Random Forest y HistGradientBoosting). Gana el que puntúa más alto, sin que tú elijas.          |
+| **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                               |
+
+**Sobre las métricas** — la app siempre te dice cuál es la principal y por qué
+
+| Término                   | Qué significa                                                               |
+| ------------------------- | --------------------------------------------------------------------------- |
+| **Exactitud** (accuracy)  | Proporción de aciertos sobre el total, de 0 a 1.                            |
+| **Precisión**             | De los casos que marcó como positivos, cuántos lo eran de verdad, de 0 a 1. |
+| **Sensibilidad** (recall) | De los casos positivos reales, cuántos logró detectar, de 0 a 1.            |
+| **F1**                    | Equilibrio entre precisión y sensibilidad, de 0 a 1.                        |
+| **AUC**                   | Qué tan bien separa las dos clases: 0.50 sería azar y 1.00 perfecto.        |
+
+**Sobre las advertencias**
+
+| Término                    | Qué significa                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Fuga de datos**          | Una columna que ya contiene la respuesta disfrazada. Infla las métricas y hace inútil el modelo en la vida real. La app la busca y avisa.  |
+| **Desbalance de clases**   | Una de las dos respuestas es mucho más rara que la otra. Obliga a mirar AUC en vez de aciertos.                                            |
+| **Saneamiento**            | La limpieza que la app hace antes de entrenar (filas repetidas, columnas identificadoras o constantes, celdas basura), siempre con conteo. |
+| **Columna identificadora** | Una columna con un valor distinto en cada fila (un código de cliente). No predice nada; se excluye.                                        |
+| **Novedad**                | Al puntuar datos nuevos: valores que el modelo nunca vio al entrenar. En esas filas está adivinando, y te lo dice.                         |
+
+**Sobre el porqué**
+
+| Término                           | Qué significa                                                                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Importancia (por permutación)** | Cuánto empeora el modelo si se desordena esa columna. Mide **cuánto pesa**, no hacia dónde empuja. Importancia 0 = no la usa.   |
+| **Dirección**                     | Hacia dónde empuja una variable: a mayor valor, más (o menos) probable la clase detectada. Solo se muestra si la variable pesa. |
+| **Model card**                    | La ficha del modelo: con qué datos se entrenó, qué mide, qué advertencias tiene. Para que otro pueda juzgarlo sin creerte a ti. |
+
 ## Preguntas frecuentes
 
 - **¿Mis datos se suben a algún sitio?** No. Todo el cálculo ocurre en tu navegador; el archivo nunca
@@ -228,3 +271,4 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 | 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable).                |
 | 003    | El modelo se usa (puntuar datos nuevos con aviso de novedad, exportar el modelo como archivo `.probeta.json`, volver a importarlo y puntuar sin re-entrenar).                  |
 | 004    | Sobrevive datos reales (saneamiento transparente con conteos, alertas EDA de fuga/identificador/desbalance, boosting HistGradientBoosting compitiendo con el mismo veredicto). |
+| 004    | **Diccionario de términos** (pedido en el gate ⭐, prueba E3) + aviso de CSV con punto y coma.                                                                                 |
