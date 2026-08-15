@@ -1,0 +1,98 @@
+<!-- @dsCard group="Componentes · S4" name="Bloqueos honestos" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bloqueos honestos — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 64ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 26px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; }
+  .card {
+    background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 18px;
+    max-width: 620px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); margin-bottom: 12px;
+  }
+  .neg { border-left: 4px solid #a5372f; }
+  .cau { border-left: 4px solid #8a5a0c; }
+  .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .head h3 { font-size: 15px; font-weight: 600; margin: 0; }
+  .sym {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 20px; height: 20px; border-radius: 50%; font-size: 12px; font-weight: 700; color: #fff;
+  }
+  .sym.n { background: #a5372f; }
+  .sym.c { background: #8a5a0c; }
+  .txt { font-size: 14px; line-height: 1.55; margin: 0; color: #14181f; }
+  .cols { margin: 10px 0 0; padding: 10px 12px; background: #f2f2ec; border-radius: 6px;
+          font-family: "Geist Mono", ui-monospace, monospace; font-size: 13px; }
+  .anat { border-top: 1px solid #e4e4dc; margin-top: 12px; padding-top: 10px;
+          font-size: 12px; color: #586172; }
+  .anat b { color: #14181f; }
+  .why { max-width: 620px; font-size: 13px; color: #586172; line-height: 1.6;
+         background: #f2f2ec; border-radius: 8px; padding: 14px 16px; }
+  .why b { color: #14181f; }
+</style>
+</head>
+<body>
+  <h1>Bloqueos honestos</h1>
+  <p class="sub">
+    Cuando la app no puede hacer algo bien, <b>se detiene y lo explica</b> — nunca lo hace a medias
+    ni adivina. Todos estos estados comparten la misma anatomía de copy, la que el usuario declaró
+    estándar de la app en el gate ⭐: <b>qué pasa · elemento nombrado · acción concreta</b>.
+  </p>
+
+  <h2>Separador equivocado (S4)</h2>
+  <div class="card neg">
+    <div class="head"><span class="sym n">✕</span><h3>Algo no cuadra</h3></div>
+    <p class="txt">Tu archivo separa las columnas con <b>punto y coma (;)</b>, no con comas, así que
+      no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a
+      guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.</p>
+    <p class="anat"><b>Qué pasa</b> · <b>elemento nombrado</b> (el separador real) · <b>acción concreta</b></p>
+  </div>
+
+  <h2>Columnas faltantes al puntuar (S3)</h2>
+  <div class="card neg">
+    <div class="head"><span class="sym n">✕</span><h3>No se puede puntuar «clientes-nuevos.csv»</h3></div>
+    <p class="txt">Faltan columnas que el modelo necesita:</p>
+    <p class="cols">dispositivo</p>
+    <p class="txt" style="margin-top:10px">El modelo jamás puntúa a medias: agrega las columnas
+      faltantes (con esos nombres exactos) y vuelve a intentarlo.</p>
+    <p class="anat">Se nombran <b>solo</b> las que faltan de verdad, nunca la lista de requeridas.</p>
+  </div>
+
+  <h2>Archivo de modelo rechazado (S3)</h2>
+  <div class="card neg">
+    <div class="head"><span class="sym n">✕</span><h3>Ese archivo no parece un modelo exportado por Probeta.</h3></div>
+    <p class="txt">Solo carga archivos <span class="mono">.probeta.json</span> exportados por
+      Probeta. El contenido del archivo no se tocó.</p>
+    <p class="anat">Variante por integridad: «El contenido no coincide con su manifiesto (pudo
+      corromperse o ser modificado). Por seguridad no se cargó.» La validación ocurre <b>antes</b>
+      de deserializar nada.</p>
+  </div>
+
+  <h2>Nada que modelar tras sanear (S4)</h2>
+  <div class="card cau">
+    <div class="head"><span class="sym c">⚠</span><h3>Algo no cuadra</h3></div>
+    <p class="txt">Tras sanear el dataset no queda nada para modelar (todo eran identificadores,
+      constantes o filas repetidas). Prueba con otro archivo.</p>
+    <p class="anat">Irrecuperable pero <b>explicado</b>: se dice qué se encontró, no solo que falló.</p>
+  </div>
+
+  <h2>Por qué bloquear y no adivinar</h2>
+  <p class="why">
+    Con un CSV de punto y coma la app <b>podría</b> intentar leerlo por su cuenta. No lo hace: esos
+    archivos suelen traer también los decimales con coma («1234,5»), y una lectura mal adivinada
+    convertiría columnas de números en categorías <b>sin avisar</b>. Un fallo mudo es peor que un
+    bloqueo honesto — y la app existe justamente para no producir fallos mudos.
+  </p>
+</body>
+</html>

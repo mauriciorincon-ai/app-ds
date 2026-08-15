@@ -148,9 +148,11 @@ por construcción** y se declara como tal en vez de darla por hecha.
 - La orden asumió `docs/kit-de-prueba/` "ya existe" para todas las apps; para ds era la primera vez.
   Sugerencia: el kit-check de la plantilla de orden podría verificar la EXISTENCIA de
   `docs/kit-de-prueba/` (no solo su contenido) antes de referenciarlo como input.
-- `/design-sync` no está estampada como skill/comando en las apps ds; el tool DesignSync sí existe.
-  Sugerencia: estampar el comando `/design-sync` (o documentar que la publicación del cierre la
-  ejecuta el usuario) para que el builder no lo confunda con un paso automatizable.
+- `/design-sync` no estaba estampada como comando y el bundle vivía en almacenamiento efímero —
+  el usuario lo señaló como "mucho ruido" y tenía razón. **Resuelto como piloto en esta app**
+  (2026-08-15): bundle versionado en `design-sync/` (espejo 1:1 de lo publicado + `project.json`
+  con el projectId), comando `.claude/commands/design-sync.md` estampado, y **propuesta formal
+  para que el kit lo adopte en todas las apps: `sprints/PROPUESTA-metodo-design-sync.md`**.
 
 ## Deuda técnica aceptada
 

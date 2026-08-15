@@ -1,0 +1,99 @@
+<!-- @dsCard group="Componentes · S2" name="ImportanceChart + NarrationBlocks" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Por qué predice así — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 62ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 26px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .card {
+    background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 18px;
+    max-width: 560px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); margin-bottom: 12px;
+  }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 14px; }
+  .bar-name { width: 140px; flex: none; font-weight: 500; }
+  .bar-track { flex: 1; background: #f2f2ec; border-radius: 4px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; background: #0e6e6b; }
+  .bar-val { width: 46px; flex: none; text-align: right; font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; color: #586172; }
+  .dir { font-size: 12px; color: #586172; margin: 0 0 10px 150px; }
+  .foot { border-top: 1px solid #e4e4dc; margin-top: 14px; padding-top: 10px; font-size: 12px; color: #586172; }
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .head h3 { font-size: 14px; font-weight: 600; margin: 0; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; border-radius: 4px;
+    padding: 2px 8px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .verified { background: #1c7c4a1f; border: 1px solid #1c7c4a66; color: #1c7c4a; }
+  .plain { background: #f2f2ec; border: 1px solid #e4e4dc; color: #586172; }
+  .txt { font-size: 14px; line-height: 1.55; margin: 0; }
+  .intro { font-size: 14px; color: #586172; margin: 0 0 12px; }
+  button {
+    font-family: inherit; font-size: 14px; font-weight: 500; min-height: 44px; border-radius: 6px;
+    padding: 0 18px; cursor: pointer; background: transparent; color: #14181f;
+    border: 1px solid #e4e4dc; display: inline-flex; align-items: center; gap: 8px;
+  }
+  button svg { width: 16px; height: 16px; flex: none; }
+</style>
+</head>
+<body>
+  <h1>¿Por qué predice así?</h1>
+  <p class="sub">
+    Importancia por permutación sobre el conjunto de prueba (método honesto: SHAP no carga en el
+    navegador). La <b>dirección nombra tu columna objetivo</b>, nunca una etiqueta huérfana, y una
+    nota fija aclara que <b>importancia ≠ dirección</b>. Los dos textos viven en <b>bloques
+    separados</b>: el estándar siempre presente, la IA <b>a demanda</b>.
+  </p>
+
+  <h2>ImportanceChart</h2>
+  <div class="card">
+    <div class="bar-row"><span class="bar-name mono">visitas_web</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-val">0.183</span></div>
+    <p class="dir">▼ a mayor valor, menos probable que «convirtio» sea «0»</p>
+    <div class="bar-row"><span class="bar-name mono">dispositivo</span><span class="bar-track"><span class="bar-fill" style="width:37%"></span></span><span class="bar-val">0.068</span></div>
+    <p class="dir">· el efecto varía según la categoría (no hay una sola dirección)</p>
+    <div class="bar-row"><span class="bar-name mono">correos_abiertos</span><span class="bar-track"><span class="bar-fill" style="width:34%"></span></span><span class="bar-val">0.063</span></div>
+    <p class="dir">· sin dirección clara (no empuja de forma consistente hacia un lado)</p>
+    <div class="bar-row"><span class="bar-name mono">region</span><span class="bar-track"><span class="bar-fill" style="width:0%"></span></span><span class="bar-val">0.000</span></div>
+    <p class="dir">el modelo no se apoya en esta variable</p>
+    <p class="foot">El modelo predice la columna «convirtio». La clase que intenta detectar (la menos frecuente) es «0».</p>
+    <p class="foot" style="border:0; padding-top:4px">La barra mide cuánto IMPORTA cada variable; la línea de abajo dice hacia dónde EMPUJA. Una variable puede pesar mucho y no tener una sola dirección: eso no la hace irrelevante.</p>
+    <p class="foot" style="border:0; padding-top:4px"><b>Importancia 0 ⇒ sin flecha.</b> La dirección se calcula por correlación univariada, independiente de la importancia. Pintar una flecha sobre una variable que el modelo NO usa afirmaría un comportamiento que la medición no respalda. La honestidad manda sobre la simetría visual.</p>
+  </div>
+
+  <h2>Bloque 1 — texto estándar (siempre, sin red)</h2>
+  <div class="card">
+    <div class="head">
+      <h3>Texto estándar</h3><span class="badge plain">sin IA · siempre disponible</span>
+    </div>
+    <p class="txt">El modelo supera al baseline: 0.73 frente a 0.52 en F1 (mejora de 0.21).
+      La métrica principal aquí es F1 (equilibrio entre precisión y sensibilidad, de 0 a 1).
+      Las variables con más peso fueron: visitas_web (a mayor valor, menos probable la clase
+      positiva) · dispositivo (el efecto varía por categoría).</p>
+  </div>
+
+  <h2>Bloque 2 — narración con IA (a demanda)</h2>
+  <div class="card">
+    <div class="head">
+      <h3>Narración con IA</h3><span class="badge verified">✓ verificada con los números</span>
+    </div>
+    <p class="intro">Genera una explicación en lenguaje natural. Se envían nombres de columnas y
+      cifras agregadas a un proveedor de IA —JAMÁS tus filas— y solo cuando pulsas el botón.</p>
+    <p class="txt">Tu modelo distingue mejor que la regla simple de referencia: 0.73 frente a 0.52
+      en F1 (equilibrio entre precisión y sensibilidad, de 0 a 1). La variable que más pesa es
+      visitas_web (0.18): cuanto más alta, menos probable es la clase que se intenta detectar…</p>
+    <p style="margin:14px 0 0">
+      <button><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6"/><path d="M12 15v6"/><path d="M3 12h6"/><path d="M15 12h6"/><path d="m6.3 6.3 3 3"/><path d="m14.7 14.7 3 3"/><path d="m17.7 6.3-3 3"/><path d="m9.3 14.7-3 3"/></svg>Narrar de nuevo</button>
+    </p>
+  </div>
+</body>
+</html>

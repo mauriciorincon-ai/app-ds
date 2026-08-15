@@ -1,0 +1,86 @@
+<!-- @dsCard group="Fundamentos" name="Paleta — Instrumento de laboratorio" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Paleta — Probeta DS</title>
+<style>
+  body {
+    margin: 0;
+    padding: 28px;
+    background: #fafaf7;
+    color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 28px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: #586172; margin: 0 0 24px; max-width: 62ch; }
+  h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #586172; margin: 24px 0 10px;
+    font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .fila { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sw {
+    width: 116px; border-radius: 10px; overflow: hidden;
+    border: 1px solid #e4e4dc; background: #fff;
+  }
+  .chip { height: 54px; }
+  .meta { padding: 7px 9px; font-size: 11px; line-height: 1.35; }
+  .meta b { display: block; font-weight: 600; }
+  .meta code {
+    color: #586172; font-family: "Geist Mono", ui-monospace, monospace; font-size: 10px;
+  }
+  .dark {
+    background: #0e1116; color: #e7e9ec; border-radius: 12px;
+    padding: 14px 14px 18px; margin-top: 12px;
+  }
+  .dark .sw { background: #161a21; border-color: #28303b; }
+  .dark .meta { color: #e7e9ec; }
+  .dark .meta code { color: #9aa4b2; }
+</style>
+</head>
+<body>
+  <h1>Instrumento de laboratorio</h1>
+  <p class="sub">
+    Paleta restringida: papel cálido, tinta casi negra, <b>un</b> acento petróleo, y semánticos que
+    solo aparecen en veredicto y estados. El acento se gasta con avaricia (acción primaria, foco,
+    dato clave). Nada comunica solo con color.
+  </p>
+
+  <h2>Neutros · papel + tinta</h2>
+  <div class="fila">
+    <div class="sw"><div class="chip" style="background:#fafaf7"></div><div class="meta"><b>bg</b><code>#FAFAF7</code> papel</div></div>
+    <div class="sw"><div class="chip" style="background:#ffffff"></div><div class="meta"><b>surface</b><code>#FFFFFF</code> tarjeta</div></div>
+    <div class="sw"><div class="chip" style="background:#f2f2ec"></div><div class="meta"><b>sunken</b><code>#F2F2EC</code> preview</div></div>
+    <div class="sw"><div class="chip" style="background:#e4e4dc"></div><div class="meta"><b>hairline</b><code>#E4E4DC</code> borde</div></div>
+    <div class="sw"><div class="chip" style="background:#14181f"></div><div class="meta"><b>ink</b><code>#14181F</code> texto</div></div>
+    <div class="sw"><div class="chip" style="background:#586172"></div><div class="meta"><b>ink-muted</b><code>#586172</code> 2.º</div></div>
+  </div>
+
+  <h2>Acento · petróleo (acción · foco · dato clave)</h2>
+  <div class="fila">
+    <div class="sw"><div class="chip" style="background:#0e6e6b"></div><div class="meta"><b>accent</b><code>#0E6E6B</code></div></div>
+    <div class="sw"><div class="chip" style="background:#ffffff;box-shadow:inset 0 0 0 1px #e4e4dc"></div><div class="meta"><b>accent-ink</b><code>#FFFFFF</code> sobre acento</div></div>
+  </div>
+
+  <h2>Semánticos · solo en veredicto / estados (símbolo + texto)</h2>
+  <div class="fila">
+    <div class="sw"><div class="chip" style="background:#1c7c4a"></div><div class="meta"><b>positive ▲</b><code>#1C7C4A</code> supera</div></div>
+    <div class="sw"><div class="chip" style="background:#8a5a0c"></div><div class="meta"><b>caution ⚠</b><code>#8A5A0C</code> fuga</div></div>
+    <div class="sw"><div class="chip" style="background:#a5372f"></div><div class="meta"><b>negative ▼</b><code>#A5372F</code> no supera</div></div>
+  </div>
+
+  <div class="dark">
+    <h2 style="margin-top:4px">Modo oscuro (sigue prefers-color-scheme)</h2>
+    <div class="fila">
+      <div class="sw"><div class="chip" style="background:#0e1116"></div><div class="meta"><b>bg</b><code>#0E1116</code></div></div>
+      <div class="sw"><div class="chip" style="background:#161a21"></div><div class="meta"><b>surface</b><code>#161A21</code></div></div>
+      <div class="sw"><div class="chip" style="background:#2fa6a0"></div><div class="meta"><b>accent</b><code>#2FA6A0</code></div></div>
+      <div class="sw"><div class="chip" style="background:#54b885"></div><div class="meta"><b>positive</b><code>#54B885</code></div></div>
+      <div class="sw"><div class="chip" style="background:#d69b4a"></div><div class="meta"><b>caution</b><code>#D69B4A</code></div></div>
+      <div class="sw"><div class="chip" style="background:#e0776e"></div><div class="meta"><b>negative</b><code>#E0776E</code></div></div>
+    </div>
+  </div>
+</body>
+</html>
