@@ -3,7 +3,7 @@ sprint: 004
 app: ds
 status: closed
 opened: 2026-07-19
-closed: 2026-07-19
+closed: 2026-08-15
 branch: sprint-004/sobrevive-datos-reales
 pr: https://github.com/mauriciorincon-ai/app-ds/pull/7
 ---
@@ -101,6 +101,40 @@ high` exit 0; sin secretos en el diff.
   de columna → prompt endurecido + residuo documentado (ADR-005/006); recorte de O2 registrado.
   Detalle y backlog de Medios/Bajos: bitácora § "Auditoría final pre-cierre".
 
+## Gate ⭐ del usuario — cierre del ciclo H1 (2026-07-20 → 2026-08-15)
+
+Ejecutado **bloque a bloque** por decisión del usuario ("para no tener un listado largo de ajustes
+acumulados"), con corrección en caliente entre bloques. **Los 11 ⭐ aprobados**; 27 pruebas en la
+guía (26 + A7 creada durante el propio gate). Modalidad recomendada para futuros cierres: el ciclo
+corto encontrar → arreglar → re-verificar detectó defectos que un pase único habría enterrado.
+
+Lo que el gate cambió en el producto (detalle en la bitácora § "Gate ⭐"):
+
+- **A** — iconos en todos los botones de acción y **verde evidente** en los estados limpios
+  (daltonismo leve del usuario: el verde sutil no comunicaba "todo bien"). Restricción de diseño
+  permanente, no un ajuste puntual.
+- **B** — el veredicto **nombra al ganador** y los candidatos pasaron de lista a **tabla
+  comparativa completa** de las 5 métricas de ambos.
+- **C** — la narración IA pasó de consentimiento recordado a **acción por petición** (más estricta
+  que el opt-in anterior; `ConsentPanel` y `useConsent` eliminados), prompt reescrito separando
+  prosa y claims, y **un bug real solo visible contra Groq**: `direction: null` en el payload vs.
+  el esquema de claims ⇒ Groq rechazaba la generación entera ⇒ **fallback silencioso**.
+- **D** — 🐛 **el CSV exportado de Excel en español**: separado por `;`, ninguna columna se
+  reconocía y la app respondía "faltan las 6". Ahora nombra el separador real. Es el hallazgo más
+  alineado con la tesis del sprint: el público objetivo NO es técnico y su hoja de cálculo produce
+  exactamente eso.
+- **E** — 🐛 **honestidad**: la narrativa afirmaba "importancia de 0 y asociación negativa ⇒
+  valores mayores reducen la probabilidad". Con importancia 0 el modelo no usa la variable;
+  atribuirle un efecto es justo lo que esta app existe para no hacer. Arreglado en el origen
+  (una línea en `pipeline.py` cubre gráfico, plantilla y narración). Además, la rúbrica del Grader
+  penalizaba la respuesta correcta en datasets con fuga hasta el umbral de fallback.
+
+**Matiz honesto sobre E4 (veredicto de diseño):** el usuario trabaja SIEMPRE en modo oscuro, así
+que su ⭐ cubre el tema oscuro. **Nunca ha visto el claro** y no hay conmutador (el tema sigue a
+`prefers-color-scheme`). El tema claro sí está cubierto por máquina —los 5 e2e corren `AxeBuilder`
+y Playwright usa `light` por defecto—, pero la aprobación humana del tema claro **queda pendiente
+por construcción** y se declara como tal en vez de darla por hecha.
+
 ## Qué salió bien / qué generó fricción
 
 - **Bien:** la simetría de `pickPrimaryMetric` evitó duplicar la regla de métrica en Python; el
@@ -135,6 +169,24 @@ high` exit 0; sin secretos en el diff.
 - **Backlog de la auditoría de cierre (Medios/Bajos)** — listado completo en la bitácora
   § "Auditoría final pre-cierre"; los de producto (headers duplicados, casi-ID como falsa fuga,
   objetivo nulo silencioso, matriz 0/1, foco entre pantallas) son insumo del plan H2.
+- **Soporte completo de CSV europeo** — S4 detecta y BLOQUEA el `;` nombrándolo; leerlo de verdad
+  exige además reinterpretar los decimales por coma y preservar la fidelidad del original al
+  descargar. Se prefirió el bloqueo honesto a una lectura adivinada que convertiría columnas
+  numéricas en categorías **sin avisar** (regla dura 3). Sprint de pago: H2.
+- **Conmutador de tema claro/oscuro** — hoy lo decide el sistema y no hay override; un usuario con
+  el SO en oscuro no puede ver ni juzgar el tema claro. Con el daltonismo leve del usuario, elegir
+  tema es ayuda de accesibilidad real, no preferencia estética. H2.
+- **Glosario dentro de la app** — pedido en E3 y entregado en `docs/MANUAL-DE-USO.md`; la versión
+  in-app ("¿qué significa esto?" enlazado desde cada término, bilingüe) queda para H2.
+
+## Propuesta mayor para H2 (surgida del gate)
+
+`sprints/H2-PROPUESTA-liga-honesta.md` — ampliar de 4 a ~11 modelos **sin perder la garantía**.
+Hallazgo: lo escaso no es el número de modelos sino **las decisiones tomadas sobre el test**;
+moviendo la selección a validación cruzada dentro de train, N deja de estar acotado por la
+estadística. Incluye la corrección del matiz de A4 ya acordado y deja explícita una **decisión de
+producto para la planeadora**: acerca la app al terreno del AutoML del que la constitución se
+distancia. Recomendación de secuencia H2: liga honesta → A5 → A1 → regresión → A4/A3.
 
 ## Archivos clave (máx. 10)
 
@@ -151,8 +203,8 @@ high` exit 0; sin secretos en el diff.
 
 ## Cómo probar
 
-1. `pnpm test` (215) · `pnpm test:integration` (24) · `pnpm test:e2e` (12 ×2 devices) · `pnpm
-typecheck` · `pnpm lint` — todo verde.
+1. `pnpm test` (**227**) · `pnpm test:integration` (**28**) · `pnpm test:e2e` (12 ×2 devices) ·
+   `pnpm typecheck` · `pnpm lint` — todo verde (re-corrido tras el gate ⭐, 2026-08-15).
 2. Manual con la guía (`docs/GUIA-DE-PRUEBA.html`, filtro ⭐): cargar `clientes-sucio.csv` → informe
    de saneamiento → alerta de desbalance en `contrato` → entrenar → veredicto con candidatos →
    exportar → recargar → importar → puntuar. Cargar marketing → "nada que sanear" y flujo idéntico.
