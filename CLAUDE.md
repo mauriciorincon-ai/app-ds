@@ -119,6 +119,21 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     desde cero (tono: claro, confiable, de herramienta seria — no pedagógico, no lúdico). Cada
     sprint con UI cierra con el checklist `diseno-ui` + aprobación visual del usuario sobre la
     preview. Claude Design es BAJO DEMANDA (solo si el gate no converge).
+11. **Un gate se demuestra FALLANDO — y se demuestra CORRIENDO** (regla 15 del kit + su hermana,
+    kit v1.16.0; regla dura del pipeline). Todo gate nuevo que este repo agregue —job de CI, hook,
+    aserción, umbral, script— nace con su **demo**: un cambio deliberado que lo pone en **rojo**,
+    con el resultado (rojo → verde al revertir, y a quién nombró el fallo) registrado en la
+    bitácora del sprint. Un gate que nunca se vio fallar no es un gate, es decorado — y decorado
+    que da falsa tranquilidad (precedente de esta app: dos "todo bien" seguidos de una carnada
+    floja de gitleaks). **Y su hermana: un gate que nunca EJECUTÓ tampoco es un gate.** `skipped`
+    **no es verde**: un job con `needs:` sobre otro que falló queda saltado y GitHub lo lista entre
+    los checks requeridos **sin alarma**, así que una columna sin rojo se lee como aprobación.
+    Antes de cerrar, **cada check requerido debe tener conclusión propia `success`**
+    (`gh pr checks`), y si uno corrió por primera vez en ese PR se dice en el summary — sin
+    histórico **no puede afirmarse ni regresión ni no-regresión**. Detalle operativo en
+    `/deploy-check` §11. _(Origen: esta app, S4 — el job `lighthouse` estuvo `skipped` las 12
+    corridas de la rama porque `quality` llevaba en rojo; el gate de performance no corrió ni una
+    vez en un ciclo de 4 sprints mientras el DoD lo daba por verde con corridas locales.)_
 
 ## Estándares (los 6+1, gates en CI)
 

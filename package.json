@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "prepare": "node scripts/apply-hooks.mjs",
-    "predev": "node scripts/copy-pyodide.mjs",
+    "predev": "node scripts/copy-pyodide.mjs && node scripts/copy-brochure.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/copy-pyodide.mjs",
+    "prebuild": "node scripts/copy-pyodide.mjs && node scripts/copy-brochure.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

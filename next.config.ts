@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
   // El indicador de desarrollo de Next (esquina inferior) tapa la navegación inferior
   // móvil e intercepta taps en los e2e (visto en nutri-kids S1) — apagado por default.
   devIndicators: false,
+  // El brochure vivo se sirve en /conoce desde public/conoce.html (derivado de
+  // docs/BROCHURE.html en prebuild — scripts/copy-brochure.mjs). Es HTML estático
+  // autocontenido: no entra al bundle de Next ni pesa en el LCP de la app.
+  async rewrites() {
+    return [{ source: "/conoce", destination: "/conoce.html" }];
+  },
   async headers() {
     return [
       {
