@@ -1,0 +1,98 @@
+<!-- @dsCard group="Componentes" name="Controles — Button · Badge · Stepper · Dropzone" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Controles — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 62ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 22px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .rowc { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button { font-family: inherit; font-size: 14px; font-weight: 500; min-height: 44px; border-radius: 6px; padding: 0 18px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; }
+  button svg { width: 16px; height: 16px; flex: none; }
+  .primary { background: #0e6e6b; color: #fff; border: none; }
+  .secondary { background: transparent; color: #14181f; border: 1px solid #e4e4dc; }
+  .ghost { background: transparent; color: #0e6e6b; border: none; }
+  .primary.focus { outline: 2px solid #0e6e6b; outline-offset: 2px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 12px;
+    border-radius: 4px; padding: 3px 8px; border: 1px solid #e4e4dc; background: #fff;
+    font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .badge.caution { background: #8a5a0c1f; border-color: #8a5a0c66; color: #8a5a0c; }
+  .stepper { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+  .step { display: flex; align-items: center; gap: 6px; color: #586172; }
+  .step.active { color: #0e6e6b; font-weight: 500; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #e4e4dc; }
+  .step.active .dot { background: #0e6e6b; }
+  .step.done .dot { background: #1c7c4a; }
+  .arrow { color: #e4e4dc; }
+  .dropzone {
+    border: 1px dashed #e4e4dc; border-radius: 10px; padding: 26px; text-align: center;
+    background: #fff; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .dropzone .hint { color: #586172; font-size: 13px; margin: 6px 0 12px; }
+  .lang { display: inline-flex; border: 1px solid #e4e4dc; border-radius: 6px; overflow: hidden; }
+  .lang button { min-height: 36px; border: none; border-radius: 0; }
+  .lang .on { background: #0e6e6b; color: #fff; }
+  .lang .off { background: #fff; color: #586172; }
+</style>
+</head>
+<body>
+  <h1>Controles</h1>
+  <p class="sub">
+    Familia de acción y estado. Alto táctil ≥44px, radio <span class="badge">md</span> en botones,
+    foco con ring de acento. El acento se reserva para la acción primaria; el resto es hairline + tinta.
+    <b>Todo botón de acción lleva icono de trazo</b> (currentColor, aria-hidden) a la izquierda del
+    texto — jamás emojis; el texto siempre permanece (gate ⭐ S4).
+  </p>
+
+  <h2>Button (con icono de trazo)</h2>
+  <div class="rowc">
+    <button class="primary"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 4 13 8-13 8z"/></svg>Entrenar modelo</button>
+    <button class="secondary"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Volver</button>
+    <button class="secondary"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/></svg>Exportar modelo</button>
+    <button class="primary focus"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/></svg>Con foco</button>
+  </div>
+
+  <h2>Badge (perfilado / estado)</h2>
+  <div class="rowc">
+    <span class="badge">numérica</span>
+    <span class="badge">categórica</span>
+    <span class="badge">12 nulos</span>
+    <span class="badge caution">⚠ fecha</span>
+  </div>
+
+  <h2>ProgressStepper — etapas honestas del entrenamiento</h2>
+  <div class="stepper">
+    <span class="step done"><span class="dot"></span>Preparando motor</span>
+    <span class="arrow">›</span>
+    <span class="step done"><span class="dot"></span>Cargando datos</span>
+    <span class="arrow">›</span>
+    <span class="step active"><span class="dot"></span>Entrenando</span>
+  </div>
+
+  <h2>Dropzone · LangToggle</h2>
+  <div class="rowc" style="align-items:flex-start">
+    <div class="dropzone">
+      <div>Arrastra tu CSV o elige un archivo</div>
+      <div class="hint">Máx. 5 MB · 50 000 filas · nunca sale de tu navegador</div>
+      <button class="primary"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/></svg>Elegir archivo</button>
+    </div>
+    <div class="lang" role="group" aria-label="Idioma">
+      <button class="on" aria-pressed="true">ES</button>
+      <button class="off" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</body>
+</html>

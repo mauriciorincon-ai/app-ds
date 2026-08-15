@@ -635,3 +635,28 @@ y GitHub lo pinta como "Required" sin alarmar. El gate de performance estuvo **m
 durante todo el ciclo H1** y el DoD lo daba por verde apoyándose en corridas LOCALES. Sugerencia:
 que el kit-check verifique que cada job requerido haya **ejecutado** al menos una vez en el PR, no
 solo que no esté en rojo.
+
+### Design sync: de ruido a proceso (2026-08-15)
+
+El usuario señaló que la publicación del design system "genera mucho ruido" — y el diagnóstico le
+da la razón: el método ORDENA publicar (`/design-sync`, cierre de ciclo) pero no define CÓMO, el
+comando no existía en las apps, y el bundle publicable vivía en el scratchpad de sesión (efímero):
+al retomarlo hoy quedaban **4 de los 13 archivos publicados**, y hubo que reconstruir la copia
+local descargando los 9 restantes desde el proyecto remoto con `get_file`.
+
+Resuelto en tres piezas con jerarquía explícita, TODO implementado ya en esta app como piloto:
+
+1. **`design-sync/` versionado en el repo** — espejo 1:1 de lo publicado (13 archivos) +
+   `project.json` con el projectId real. El diff de publicación pasa a ser `git status`; el bundle
+   sobrevive a las sesiones, se revisa en PR y lo escanea gitleaks.
+2. **`.claude/commands/design-sync.md` estampado** — el procedimiento exacto (regla `@dsCard`,
+   `finalize_plan` con `deletes` obligatorio aunque vacío, `write_files` con `localPath`, cuándo
+   publicar, jerarquía design-system.md → bundle → vitrina). Verificado: el comando ya aparece
+   como skill invocable.
+3. **`sprints/PROPUESTA-metodo-design-sync.md`** — propuesta formal a la planeadora con la
+   evidencia, el principio ("el bundle es un artefacto del repo, no un efecto secundario de la
+   sesión"), y las 4 decisiones que le tocan al kit (adoptar comando, estructura estándar,
+   kit-check de `lastPublished`, aclarar quién ejecuta).
+
+Regla que queda fijada: **Claude Design es vitrina, jamás editor** — no hay camino de vuelta al
+repo, así que editar allí desincronizaría la fuente de verdad en silencio.

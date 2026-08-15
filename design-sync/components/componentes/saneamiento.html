@@ -1,0 +1,67 @@
+<!-- @dsCard group="Componentes · S4" name="SanitationBlock — saneamiento transparente" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Saneamiento — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 62ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 22px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .clean {
+    border: 1px solid #1c7c4a99; border-left: 4px solid #1c7c4a; background: #1c7c4a26;
+    border-radius: 6px; padding: 12px 14px; font-size: 14px; max-width: 560px;
+    font-weight: 500; display: flex; align-items: center; gap: 10px;
+  }
+  .clean .ok {
+    background: #1c7c4a; color: #fafaf7; width: 20px; height: 20px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex: none;
+  }
+  .card {
+    border: 1px solid #e4e4dc; background: #fff; border-radius: 10px; padding: 16px;
+    max-width: 560px; box-shadow: 0 1px 2px rgb(20 24 31 / 0.06);
+  }
+  .card .title { font-weight: 600; font-size: 14px; margin: 0 0 8px; }
+  .card .title .gear { color: #0e6e6b; }
+  ul { margin: 0; padding-left: 20px; font-size: 14px; color: #586172; }
+  li { margin: 4px 0; }
+</style>
+</head>
+<body>
+  <h1>SanitationBlock <span class="mono" style="font-size:13px;color:#586172">· S4</span></h1>
+  <p class="sub">
+    Informe de saneamiento ANTES de entrenar, con dos caras honestas. Si el dataset venía limpio se
+    <b>dice de frente</b> (el usuario merece saber que no se tocó nada). Si no, se listan las
+    acciones con <b>conteos exactos</b> — nada silencioso. La parte estadística (imputación,
+    categorías raras) vive dentro del pipeline y se ajusta solo con train.
+  </p>
+
+  <h2>Dataset limpio — verde EVIDENTE (gate ⭐ S4: daltonismo leve del usuario)</h2>
+  <div class="clean" role="status">
+    <span class="ok" aria-hidden="true">✓</span>
+    <span><b>Nada que sanear.</b> Tu archivo llegó sin filas repetidas, columnas constantes ni
+    valores fuera de tipo.</span>
+  </div>
+
+  <h2>Dataset real (sucio)</h2>
+  <div class="card" role="status">
+    <p class="title"><span class="gear" aria-hidden="true">⚙</span> Preparamos tus datos antes de entrenar</p>
+    <ul>
+      <li>Quitamos <span class="mono">10</span> filas duplicadas exactas (evitan una comparación tramposa).</li>
+      <li>Excluimos <span class="mono">id_cliente</span>: parece un identificador, no una característica.</li>
+      <li>Excluimos <span class="mono">pais</span>: tiene un solo valor en todo el archivo.</li>
+      <li>En <span class="mono">edad</span> convertimos <span class="mono">4</span> valores no numéricos a vacío.</li>
+    </ul>
+  </div>
+</body>
+</html>

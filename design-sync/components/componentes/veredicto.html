@@ -1,0 +1,69 @@
+<!-- @dsCard group="Componentes" name="VerdictBanner — la pieza jerárquica" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VerdictBanner — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 62ch; font-size: 14px; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .banner {
+    border-radius: 10px; padding: 18px 20px; margin-bottom: 14px;
+    border: 1px solid; display: flex; gap: 14px; align-items: flex-start;
+  }
+  .sym { font-size: 26px; line-height: 1; flex: none; }
+  .verdict { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .detail { font-size: 14px; color: #586172; margin: 0; }
+  .beats { background: #1c7c4a1f; border-color: #1c7c4a66; }
+  .beats .sym, .beats .verdict { color: #1c7c4a; }
+  .ties { background: #f2f2ec; border-color: #e4e4dc; }
+  .ties .sym, .ties .verdict { color: #14181f; }
+  .loses { background: #a5372f1f; border-color: #a5372f66; }
+  .loses .sym, .loses .verdict { color: #a5372f; }
+</style>
+</head>
+<body>
+  <h1>VerdictBanner</h1>
+  <p class="sub">
+    Lo más importante de la pantalla de resultados: enuncia el veredicto contra el baseline con
+    <b>símbolo + texto + color semántico</b>, <b>nombrando al modelo ganador</b> (gate ⭐ S4: "el
+    modelo" a secas dejaba la duda de cuál). Franco por diseño — si no supera, se dice de frente y
+    con la <b>acción concreta</b> en llano. Todas las cifras sobre el conjunto de prueba.
+  </p>
+
+  <div class="banner beats">
+    <span class="sym" aria-hidden="true">▲</span>
+    <div>
+      <p class="verdict">«Random Forest» supera al baseline</p>
+      <p class="detail">por <span class="mono">+0.12</span> en F1 — <span class="mono">0.87</span>
+        frente a <span class="mono">0.75</span> del mejor baseline.</p>
+    </div>
+  </div>
+
+  <div class="banner ties">
+    <span class="sym" aria-hidden="true">＝</span>
+    <div>
+      <p class="verdict">«Random Forest» empata con el baseline</p>
+      <p class="detail">un modelo simple rinde igual: <span class="mono">0.68</span> frente a
+        <span class="mono">0.68</span>. Con estas columnas no hay señal extra que aprender — suele
+        ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.</p>
+    </div>
+  </div>
+
+  <div class="banner loses">
+    <span class="sym" aria-hidden="true">▼</span>
+    <div>
+      <p class="verdict">«HistGradientBoosting» NO supera al baseline</p>
+      <p class="detail">un modelo simple rinde mejor: <span class="mono">0.61</span> frente a
+        <span class="mono">0.66</span>. Tus columnas actuales no aportan señal suficiente sobre el
+        objetivo — prueba con variables más relacionadas con lo que quieres predecir.</p>
+    </div>
+  </div>
+</body>
+</html>

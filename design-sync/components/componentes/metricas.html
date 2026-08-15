@@ -1,0 +1,59 @@
+<!-- @dsCard group="Componentes" name="MetricTile + Matriz de confusión" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Métricas — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 62ch; font-size: 14px; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .cap { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #586172; }
+  .tiles { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+  .tile {
+    background: #fff; border: 1px solid #e4e4dc; border-radius: 10px;
+    padding: 12px 16px; min-width: 92px;
+  }
+  .tile .v { font-size: 26px; font-weight: 600; }
+  .tile .l { margin-top: 4px; }
+  table { border-collapse: collapse; }
+  caption { text-align: left; margin-bottom: 8px; }
+  th, td { border: 1px solid #e4e4dc; padding: 8px 14px; text-align: center; }
+  thead th, tbody th { background: #f2f2ec; font-weight: 500; font-size: 13px; }
+  td.num { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 15px; }
+  td.hit { background: #1c7c4a1f; font-weight: 600; }
+</style>
+</head>
+<body>
+  <h1>MetricTile · Matriz de confusión</h1>
+  <p class="sub">
+    Las métricas del conjunto de prueba en fila (valor mono grande + etiqueta caption) y la matriz
+    de confusión como <b>DataTable</b>: cabecera <span class="mono">sunken</span>, cifras en
+    mono/tabular-nums, aciertos de la diagonal marcados en positivo. Jamás sobre entrenamiento.
+  </p>
+
+  <div class="tiles">
+    <div class="tile"><div class="v mono">0.87</div><div class="l cap">F1</div></div>
+    <div class="tile"><div class="v mono">0.89</div><div class="l cap">Precisión</div></div>
+    <div class="tile"><div class="v mono">0.85</div><div class="l cap">Recall</div></div>
+    <div class="tile"><div class="v mono">0.91</div><div class="l cap">AUC</div></div>
+    <div class="tile"><div class="v mono">0.88</div><div class="l cap">Accuracy</div></div>
+  </div>
+
+  <table>
+    <caption class="cap">Matriz de confusión · conjunto de prueba</caption>
+    <thead>
+      <tr><th></th><th>Pred. «no»</th><th>Pred. «sí»</th></tr>
+    </thead>
+    <tbody>
+      <tr><th>Real «no»</th><td class="num hit">142</td><td class="num">11</td></tr>
+      <tr><th>Real «sí»</th><td class="num">14</td><td class="num hit">81</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

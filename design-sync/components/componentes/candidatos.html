@@ -1,0 +1,76 @@
+<!-- @dsCard group="Componentes · S4" name="CandidatesList — la competencia franca" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Candidatos — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 62ch; font-size: 14px; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .card {
+    border: 1px solid #0e6e6b66; background: #0e6e6b0d; border-radius: 10px; padding: 20px;
+    max-width: 520px;
+  }
+  .card h2 { font-size: 16px; font-weight: 600; margin: 0; }
+  .note { font-size: 14px; color: #586172; margin: 4px 0 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { padding: 7px 8px; text-align: left; }
+  thead th { border-bottom: 1px solid #e4e4dc; }
+  .mcol { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #586172; font-weight: 600; }
+  .cand { display: inline-flex; align-items: center; gap: 8px; }
+  .win .sym { color: #1c7c4a; }
+  .oth .sym { color: #586172; }
+  .win .name { font-weight: 600; }
+  .oth .name { color: #586172; font-weight: 500; }
+  .badge {
+    font-size: 11px; border-radius: 4px; padding: 2px 7px; background: #1c7c4a1f;
+    border: 1px solid #1c7c4a66; color: #1c7c4a;
+    font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  tbody th { font-weight: 400; color: #586172; }
+  tbody tr.primary { background: #f2f2ec; }
+  tbody tr.primary th { font-weight: 600; color: #14181f; }
+  tbody tr.primary th small { font-weight: 400; font-size: 11px; }
+  td.v { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  td.v.win { font-weight: 600; }
+  td.v.oth { color: #586172; }
+</style>
+</head>
+<body>
+  <h1>CandidatesList <span class="mono" style="font-size:13px;color:#586172">· S4</span></h1>
+  <p class="sub">
+    La competencia franca bajo el <b>mismo</b> preprocesador y el <b>mismo</b> veredicto, en
+    <b>caja destacada</b> con las <b>métricas completas de AMBOS candidatos</b> (gate ⭐ S4: "me
+    genera siempre duda de cómo se comportó el otro"). La primaria resaltada; ganador con <b>▶</b>
+    + badge "elegido". Sin selector: el veredicto habla, la tabla muestra por qué.
+  </p>
+
+  <div class="card">
+    <h2>Modelos que compitieron</h2>
+    <p class="note">Ambos usan el mismo preprocesamiento y compiten con el mismo veredicto.
+      Elegimos el mejor en la métrica primaria; sin trucos.</p>
+    <table>
+      <thead>
+        <tr>
+          <th class="mcol">Métrica</th>
+          <th><span class="cand win"><span class="sym" aria-hidden="true">▶</span><span class="name">Random Forest</span><span class="badge">elegido</span></span></th>
+          <th><span class="cand oth"><span class="sym" aria-hidden="true">·</span><span class="name">HistGradientBoosting</span></span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th>Exactitud</th><td class="v win">0.88</td><td class="v oth">0.86</td></tr>
+        <tr><th>Precisión</th><td class="v win">0.89</td><td class="v oth">0.85</td></tr>
+        <tr><th>Recall</th><td class="v win">0.85</td><td class="v oth">0.84</td></tr>
+        <tr class="primary"><th>F1 <small>(primaria)</small></th><td class="v win">0.87</td><td class="v oth">0.84</td></tr>
+        <tr><th>AUC</th><td class="v win">0.91</td><td class="v oth">0.89</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
