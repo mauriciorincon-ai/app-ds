@@ -72,6 +72,19 @@ jobs:
         # Cada sprint añade sus rutas nuevas a lighthouse-urls.json (default: ["/"]).
         # Nota Lantern: el LCP SIMULADO sobre localhost castiga SPAs sanas (nutri-kids S1:
         # 3.8s simulado vs 242ms observado) — budgets client-side necesitan margen documentado.
+        #
+        # ds S4 (2026-08-15, PRIMERA ejecución real de este job: llevaba meses `skipped`
+        # porque `quality` estaba en rojo por `pnpm audit`). LCP simulado 3086-3142 ms en
+        # runner vs 2611-2763 ms en local, con budget de 3000 ⇒ rojo por un 3%. Diagnóstico
+        # con el desglose por fases: TTFB 452 · Load Delay 0 · Load Time 0 · **Render Delay
+        # 2310** (84%) sobre un elemento LCP que es un PÁRRAFO DE TEXTO ya presente en el
+        # HTML pre-renderizado (verificado en .next/server/app/index.html). Todo lo
+        # OBSERVABLE está sano: respuesta del servidor 2 ms, TBT 2-6 ms, font-display OK,
+        # CSS con 0 ms de ahorro, y los budgets de PESO (script 300 KB / total 1 MB) pasan.
+        # El budget sube a 3500 ms como margen documentado: sigue atrapando lo que este gate
+        # existe para atrapar (que Pyodide entre al camino del LCP sería un salto de varios
+        # segundos, no de un 15%). Deuda H2: medir el LCP OBSERVADO con PerformanceObserver
+        # en un e2e, que es lo que de verdad experimenta el usuario.
         run: |
           npm i -g @lhci/cli
           URLS=$(node -e "console.log(require('./lighthouse-urls.json').map(u=>'--collect.url=http://localhost:3000'+u).join(' '))")

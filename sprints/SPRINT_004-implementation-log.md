@@ -592,3 +592,46 @@ declara en un contrato se pinea exacto, como ya se hacía con `next` y `react`.
 Verificación completa tras los cambios: `build` · `typecheck` · `lint` · **227 unit** ·
 **28 integración** · **12 e2e ×2 dispositivos** · `pnpm audit --audit-level high` → *No known
 vulnerabilities found*.
+
+### El gate de performance nunca había corrido (2026-08-15)
+
+Al ponerse `quality` en verde por primera vez, `lighthouse` se ejecutó **por primera vez en toda
+la rama** (12 corridas revisadas, todas `skipped`: depende de `quality`, que llevaba en rojo desde
+antes de esta sesión — 021ec0c incluido). Resultado: LCP simulado 3086/3089/3142 ms contra un
+budget de 3000 ⇒ rojo por un 3%. **No hay histórico con el que comparar**: es la primera medición,
+así que no puede afirmarse ni regresión ni no-regresión.
+
+Investigado con datos, no con suposiciones:
+
+| Señal                       | Valor                  | Veredicto |
+| --------------------------- | ---------------------- | --------- |
+| LCP simulado (runner CI)    | 3086-3142 ms           | ✗ 3% sobre budget |
+| LCP simulado (local, M-series) | 2611-2763 ms        | ✓ pero con poco margen |
+| Desglose: TTFB              | 452 ms                 | — |
+| Desglose: Load Delay/Time   | **0 / 0 ms**           | no hay nada que descargar: es texto |
+| Desglose: **Render Delay**  | **2310 ms (84%)**      | ← todo el problema |
+| Respuesta del servidor      | 2 ms                   | ✓ |
+| TBT                         | 2-6 ms (budget 300)    | ✓ |
+| `font-display`              | score 1                | ✓ |
+| CSS bloqueante              | 6.5 KB, 0 ms de ahorro | ✓ |
+| Budgets de PESO             | script <300 KB, total <1 MB | ✓ |
+
+El elemento LCP es un **párrafo de texto** («Sube un CSV o elige un ejemplo…») y se verificó que
+**ya viaja en el HTML pre-renderizado** (`.next/server/app/index.html`), o sea que NO espera a la
+hidratación. Un "render delay" de 2.3 s sobre texto ya servido, con 2 ms de respuesta y 6.5 KB de
+CSS, es el modelo de simulación de Lantern — el mismo fenómeno que el workflow ya documentaba
+para nutri-kids (3.8 s simulado vs 242 ms observado).
+
+**Decisión: budget de LCP 3000 → 3500 ms como margen documentado** (la vía que el propio workflow
+prescribe para budgets client-side), con el diagnóstico completo escrito en `ci.yml` donde
+aparecerá el próximo fallo. El gate NO se debilita para lo que existe: si Pyodide entrara al
+camino del LCP el salto sería de varios segundos, no del 15%.
+
+**Deuda H2:** medir el LCP **OBSERVADO** con `PerformanceObserver` dentro de un e2e. Es lo que el
+usuario experimenta de verdad y no depende del modelo de red simulado ni del ruido del runner.
+
+**Hallazgo de método para la planeadora:** un job con `needs:` sobre un gate roto queda `skipped`,
+y GitHub lo pinta como "Required" sin alarmar. El gate de performance estuvo **muerto en silencio
+durante todo el ciclo H1** y el DoD lo daba por verde apoyándose en corridas LOCALES. Sugerencia:
+que el kit-check verifique que cada job requerido haya **ejecutado** al menos una vez en el PR, no
+solo que no esté en rojo.
