@@ -99,7 +99,7 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   cifras en mono/tabular-nums, dirección SIEMPRE con símbolo + texto (▲/▼/·), nunca solo color.
   La dirección **nombra la columna objetivo del usuario** ("más probable que «convirtio» sea «1»"),
   jamás una etiqueta huérfana; al pie, una nota fija explica **qué clase se intenta detectar** y que
-  la barra mide *importancia* mientras la línea dice *dirección* — una variable puede pesar mucho y
+  la barra mide _importancia_ mientras la línea dice _dirección_ — una variable puede pesar mucho y
   no tener una sola dirección (gate ⭐ S4, bloque C).
 - **VerifiedBadge** — variante `positive` del Badge: "✓ verificada con los números"; su contraparte
   neutral "Texto estándar" distingue la plantilla. La diferencia es informativa, no decorativa.
@@ -156,6 +156,19 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
 - **SanitationSection** (en ModelCardView) — el saneamiento aplicado se registra también en la
   model card exportable (qué se limpió y con qué conteos), coherente con el informe de config; el
   nombre del modelo ganador queda parametrizado (ya no hardcodea "Random Forest").
+- **ImportanceChart — regla nueva (gate ⭐ S4, bloque E):** una variable con **importancia 0 no
+  muestra dirección**. La dirección se calcula por correlación univariada, INDEPENDIENTE de la
+  importancia; pintar una flecha sobre una variable que el modelo no usa afirmaría un
+  comportamiento que la medición no respalda. Con importancia 0 la línea dice en llano que el
+  modelo no se apoya en ella. **La honestidad manda sobre la simetría visual**: es preferible una
+  fila sin flecha que una flecha sin respaldo.
+- **ErrorScreen — estado "esto no es un CSV de comas"** (gate ⭐ S4, bloque D): cuando el archivo
+  llega separado por `;` o tabuladores (lo que produce Excel en español), la app **no adivina**:
+  nombra el separador real, explica por qué no reconoce ninguna columna y da la acción exacta
+  ("vuelve a guardarlo como CSV delimitado por comas"). Mismo patrón de copy que el mensaje de
+  fuga —qué pasa · elemento nombrado · acción concreta— que el usuario declaró estándar de la app.
+  Bloquear con diagnóstico es preferible a leer mal en silencio: una lectura adivinada convertiría
+  columnas numéricas en categorías sin avisar.
 
 ## Jerarquía por pantalla (la "una cosa importante")
 
