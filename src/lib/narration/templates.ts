@@ -19,7 +19,7 @@ function directionKey(
 }
 
 export function buildTemplateNarrative(payload: NarrationPayload): string {
-  const { locale, verdict, explainability, leakage } = payload;
+  const { locale, verdict, explainability, leakage, eda } = payload;
   const t = (key: string, params?: Record<string, string | number>) =>
     translate(locale, key, params);
 
@@ -40,6 +40,13 @@ export function buildTemplateNarrative(payload: NarrationPayload): string {
 
   const parts = [
     verdictSentence,
+    // Gate ⭐ S4 (bloque C): qué mide la métrica y en qué rango vive. Anclas
+    // FÁCTICAS (0.50 sería azar, 1.00 perfecto), no etiquetas subjetivas
+    // ("alto"/"bajo") — un juicio de valor no es un dato medido.
+    t("narration.template.metricNote", {
+      metric: t(`results.metrics.${verdict.primaryMetric}`),
+      help: t(`narration.template.metricHelp.${verdict.primaryMetric}`),
+    }),
     t("narration.template.features", { list }),
     t("narration.template.method"),
   ];
@@ -47,6 +54,26 @@ export function buildTemplateNarrative(payload: NarrationPayload): string {
   if (leakage.length > 0) {
     parts.push(
       t("narration.template.leakage", { columns: leakage.join(", ") }),
+    );
+  }
+
+  // S4 — extensión al informe EDA: cifras deterministas (nunca del LLM). La
+  // posible-fuga de la EDA la cubre ya la frase de fuga de arriba; aquí solo se
+  // añaden las señales genuinamente nuevas: casi-identificadores y desbalance.
+  const idLike = (eda ?? [])
+    .filter((alert) => alert.kind === "id-like")
+    .map((alert) => alert.column);
+  if (idLike.length > 0) {
+    parts.push(t("narration.template.idLike", { columns: idLike.join(", ") }));
+  }
+  const imbalance = (eda ?? []).find(
+    (alert) => alert.kind === "class-imbalance",
+  );
+  if (imbalance && imbalance.kind === "class-imbalance") {
+    parts.push(
+      t("narration.template.imbalance", {
+        rate: (imbalance.minorityRate * 100).toFixed(0),
+      }),
     );
   }
 

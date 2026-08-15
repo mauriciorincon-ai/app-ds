@@ -65,6 +65,32 @@ describe("prepareRun", () => {
     ].sort((a, b) => a - b);
     expect(all).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
     expect(prepared.leakage).toEqual([]);
+    // Balanceado (4/8 = 0.5) ⇒ métrica primaria F1.
+    expect(prepared.payload.primary_metric).toBe("f1");
+  });
+
+  it("elige AUC como métrica primaria cuando el objetivo está desbalanceado", () => {
+    // 2 positivos / 10 = 0.2 ⇒ |0.2 − 0.5| = 0.3 ≥ 0.15 ⇒ AUC. La regla vive en
+    // verdict.ts; prepareRun la aplica con la tasa de una clase fija (simétrica).
+    const imbalanced = table(
+      ["x", "y"],
+      [
+        ["1", "1"],
+        ["2", "1"],
+        ["3", "0"],
+        ["4", "0"],
+        ["5", "0"],
+        ["6", "0"],
+        ["7", "0"],
+        ["8", "0"],
+        ["9", "0"],
+        ["10", "0"],
+      ],
+    );
+    const prepared = prepareRun(imbalanced, "y", 1);
+    expect(prepared.ok).toBe(true);
+    if (!prepared.ok) return;
+    expect(prepared.payload.primary_metric).toBe("auc");
   });
 
   it("rechaza un objetivo no binario", () => {
@@ -129,6 +155,11 @@ describe("assembleResult", () => {
         logistic: metrics({ auc: 0.6 }),
       },
       model: metrics({ auc: 0.8 }),
+      model_name: "hgb",
+      candidates: [
+        { name: "forest", metrics: metrics({ auc: 0.75 }) },
+        { name: "hgb", metrics: metrics({ auc: 0.8 }) },
+      ],
       confusion_matrix: [
         [1, 0],
         [0, 1],
@@ -153,6 +184,9 @@ describe("assembleResult", () => {
     expect(result.verdict.primaryMetric).toBe("auc");
     expect(result.verdict.level).toBe("beats");
     expect(result.verdict.baselineScore).toBe(0.6);
+    // El ganador y la competencia pasan al resultado (los muestra ResultsScreen).
+    expect(result.modelName).toBe("hgb");
+    expect(result.candidates.map((c) => c.name)).toEqual(["forest", "hgb"]);
     // La explicabilidad pasa intacta al resultado (la consume la UI y la model card).
     expect(result.explainability.features[0]?.name).toBe("x");
   });

@@ -87,6 +87,44 @@ describe("parseCsvWithLimits", () => {
   });
 });
 
+// Gate ⭐ S4, prueba D2: un CSV guardado desde Excel en español llegaba con `;` y
+// la app respondía "faltan TODAS las columnas" — literalmente cierto (no reconocía
+// ninguna cabecera) pero inútil. Se bloquea nombrando el separador real; NUNCA se
+// reinterpreta en silencio, porque un `;` suele venir con decimales por coma y
+// leerlo mal convertiría columnas numéricas en categorías sin avisar.
+describe("archivos que no son CSV con comas", () => {
+  it("punto y coma ⇒ bloqueo nombrando el separador", () => {
+    expect(parseCsvWithLimits("a;b;c\n1;2;3\n")).toMatchObject({
+      ok: false,
+      error: { kind: "semicolon-delimiter" },
+    });
+  });
+
+  it("tabulaciones ⇒ bloqueo nombrando el separador", () => {
+    expect(parseCsvWithLimits("a\tb\tc\n1\t2\t3\n")).toMatchObject({
+      ok: false,
+      error: { kind: "tab-delimiter" },
+    });
+  });
+
+  it("conservador: basta una coma en la cabecera para no bloquear", () => {
+    const result = parseCsvWithLimits('a,"b;c"\n1,"x;y"\n');
+    expect(result).toMatchObject({ ok: true });
+  });
+
+  it("una sola columna sin separadores sigue siendo válida", () => {
+    expect(parseCsvWithLimits("a\n1\n2\n")).toMatchObject({ ok: true });
+  });
+
+  it("el BOM de Excel no se pega al nombre de la primera columna", () => {
+    const result = parseCsvWithLimits("﻿edad,region\n34,sur\n");
+    expect(result).toMatchObject({
+      ok: true,
+      table: { headers: ["edad", "region"] },
+    });
+  });
+});
+
 describe("primitivas de tipo", () => {
   it("isNullToken reconoce tokens nulos comunes", () => {
     for (const token of ["", " ", "NA", "n/a", "null", "NaN", "-"]) {

@@ -83,23 +83,27 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     modelo si se rompe la relación de esa variable con el objetivo. Es honesta pero **global** (no
     explica caso por caso).
 
-- **La explicación en palabras y el badge:**
-  - Debajo del gráfico verás un texto que resume el veredicto y las variables clave.
-  - Si dice **"Texto estándar"**, lo generó la propia app con tus números (sin IA).
-  - Si activas la narración con IA y muestra **"✓ verificada con los números"**, la escribió una
-    IA **y la app comprobó, cifra por cifra, que no miente** antes de mostrártela. Si la IA cita
-    una variable inexistente o una cifra falsa, esa narración **se descarta** y verás el texto
-    estándar. El gráfico siempre queda visible para que compruebes por ti mismo.
-  - **Si la narración con IA no pudo generarse, la app te lo dice**: debajo del texto estándar
-    aparece un aviso ⚠ con el motivo (el proveedor no respondió · la narración no pasó la
-    verificación · la función no está configurada en este despliegue). Para **reintentar**, apaga
-    y vuelve a encender _Narrar con IA_.
+- **Debajo del gráfico hay dos textos, en bloques separados:**
+  - **"Texto estándar"** — lo genera la propia app con tus números, **sin IA y sin internet**.
+    Siempre está ahí. Te dice el veredicto, **qué mide la métrica principal y en qué rango vive**
+    (por ejemplo, en AUC: 0.50 sería azar y 1.00 perfecto), las variables con más peso y las
+    señales del informe (fuga, desbalance, identificadores).
+  - **"Narración con IA"** — un bloque aparte con un botón **"Narrar con IA"**. Solo se pide
+    cuando **tú lo pulsas**. Si aparece **"✓ verificada con los números"**, la escribió una IA
+    **y la app comprobó, cifra por cifra, que no miente** antes de mostrártela. Si la IA cita una
+    variable inexistente o una cifra falsa, esa narración **se descarta** y no la verás.
+  - Los dos textos conviven: la IA **nunca reemplaza** al texto honesto de la app, y el gráfico
+    siempre queda visible para que compruebes por ti mismo.
+  - **Si la narración con IA no pudo generarse, la app te lo dice** con un aviso ⚠ y el motivo
+    (el proveedor no respondió · no pasó la verificación · no está configurada en este
+    despliegue). Para reintentar, pulsa **"Narrar de nuevo"**.
 
 - **Privacidad de la narración con IA (importante):**
-  - Es **opcional y viene apagada**. Si la activas, se envían a un proveedor de IA **solo los
-    nombres de tus columnas y estadísticas agregadas** (métricas, importancias).
-  - **Tus filas de datos NUNCA se envían.** Sin activarla, no sale nada de tu navegador.
-  - Tu elección se recuerda en este navegador; puedes apagarla cuando quieras.
+  - **No se pide sola nunca.** Solo viaja algo cuando pulsas el botón, y solo para ese
+    experimento: si cargas otro dataset, el bloque vuelve a estar en reposo.
+  - Al pulsarlo se envían a un proveedor de IA **solo los nombres de tus columnas y estadísticas
+    agregadas** (métricas, importancias, alertas). **Tus filas de datos NUNCA se envían.**
+  - La app **no guarda** ninguna decisión tuya sobre esto en el navegador.
 
 - **La model card:**
   - Pulsa **"Descargar model card (.md)"** en Resultados. Obtienes un documento con: los datos
@@ -164,10 +168,90 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Por seguridad, **carga solo archivos exportados por Probeta**. La app valida la integridad,
     pero el archivo no está cifrado ni firmado.
 
+### Sobrevive datos reales · desde Sprint 004
+
+- **Qué hace:** la app deja de asumir datos "de laboratorio". Ahora aguanta CSV reales —con
+  huecos, basura, columnas inútiles y filas repetidas— **saneándolos de frente** y avisándote de
+  las señales de riesgo antes de entrenar.
+
+- **Saneamiento transparente:** al cargar un CSV, verás un recuadro con lo que la app hizo antes de
+  entrenar (o, si tus datos venían limpios, un franco **"nada que sanear"**). Con conteos exactos:
+  - **Filas duplicadas exactas eliminadas** (dos filas idénticas cayendo una en entrenamiento y
+    otra en prueba inflarían las métricas — se quitan por seguridad).
+  - **Columnas excluidas:** una columna con **un valor distinto por fila** (un identificador, como
+    un número de cliente) o **con un solo valor** (una constante) no ayuda a predecir; se aparta.
+  - **Celdas basura convertidas a vacío:** si una columna es casi toda numérica pero tiene algún
+    `"error"` suelto, esas celdas se vacían (contadas) y la columna se trata como número.
+
+- **Alertas antes de entrenar (exploración de datos):** al elegir el objetivo, la app revisa tus
+  columnas y te avisa —con símbolo y texto, nunca solo color— de:
+  - una columna que predice el objetivo **casi a la perfección** (posible fuga: un dato que no
+    tendrías al predecir de verdad),
+  - una columna que **parece un identificador** (aporta poco para generalizar),
+  - un **objetivo desbalanceado** (una clase es rara) — por eso el veredicto usa AUC.
+
+- **Boosting que compite:** además del Random Forest, la app entrena un **HistGradientBoosting**.
+  Ambos usan el mismo preprocesamiento y compiten con el **mismo veredicto**; se queda el mejor en
+  la métrica principal. En Resultados verás los dos y cuál **ganó** — sin que tengas que elegir a
+  mano: el veredicto habla.
+
+- **Limitaciones conocidas (Sprint 004):**
+  - El saneamiento es **honesto, no mágico**: arregla lo estructural (duplicados, basura,
+    identificadores) pero no adivina el valor "correcto" de un dato faltante — lo rellena con la
+    mediana o la categoría más común del **entrenamiento**, y lo dice.
+  - Las alertas son una **ayuda, no una garantía**: la de fuga marca los casos evidentes, no todos.
+  - El boosting corre en CPU (como toda la app): entrenar un dataset grande puede tardar un poco.
+
+## Diccionario de términos
+
+Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
+cuando una te frene.
+
+**Sobre el resultado**
+
+| Término                    | Qué significa                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Baseline** (línea base)  | La regla más tonta que podría funcionar: responder siempre lo más frecuente. Si tu modelo no la supera, no sirve.                  |
+| **Veredicto**              | La comparación franca entre tu modelo y ese baseline: lo supera, empata o pierde.                                                  |
+| **Entrenamiento y prueba** | La app parte tus datos en dos. Aprende con la primera mitad y se examina con la segunda, que nunca vio. Por eso el número es real. |
+| **Candidatos**             | Los modelos que compiten entre sí (Random Forest y HistGradientBoosting). Gana el que puntúa más alto, sin que tú elijas.          |
+| **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                               |
+
+**Sobre las métricas** — la app siempre te dice cuál es la principal y por qué
+
+| Término                   | Qué significa                                                               |
+| ------------------------- | --------------------------------------------------------------------------- |
+| **Exactitud** (accuracy)  | Proporción de aciertos sobre el total, de 0 a 1.                            |
+| **Precisión**             | De los casos que marcó como positivos, cuántos lo eran de verdad, de 0 a 1. |
+| **Sensibilidad** (recall) | De los casos positivos reales, cuántos logró detectar, de 0 a 1.            |
+| **F1**                    | Equilibrio entre precisión y sensibilidad, de 0 a 1.                        |
+| **AUC**                   | Qué tan bien separa las dos clases: 0.50 sería azar y 1.00 perfecto.        |
+
+**Sobre las advertencias**
+
+| Término                    | Qué significa                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Fuga de datos**          | Una columna que ya contiene la respuesta disfrazada. Infla las métricas y hace inútil el modelo en la vida real. La app la busca y avisa.  |
+| **Desbalance de clases**   | Una de las dos respuestas es mucho más rara que la otra. Obliga a mirar AUC en vez de aciertos.                                            |
+| **Saneamiento**            | La limpieza que la app hace antes de entrenar (filas repetidas, columnas identificadoras o constantes, celdas basura), siempre con conteo. |
+| **Columna identificadora** | Una columna con un valor distinto en cada fila (un código de cliente). No predice nada; se excluye.                                        |
+| **Novedad**                | Al puntuar datos nuevos: valores que el modelo nunca vio al entrenar. En esas filas está adivinando, y te lo dice.                         |
+
+**Sobre el porqué**
+
+| Término                           | Qué significa                                                                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Importancia (por permutación)** | Cuánto empeora el modelo si se desordena esa columna. Mide **cuánto pesa**, no hacia dónde empuja. Importancia 0 = no la usa.   |
+| **Dirección**                     | Hacia dónde empuja una variable: a mayor valor, más (o menos) probable la clase detectada. Solo se muestra si la variable pesa. |
+| **Model card**                    | La ficha del modelo: con qué datos se entrenó, qué mide, qué advertencias tiene. Para que otro pueda juzgarlo sin creerte a ti. |
+
 ## Preguntas frecuentes
 
 - **¿Mis datos se suben a algún sitio?** No. Todo el cálculo ocurre en tu navegador; el archivo nunca
   sale de tu equipo.
+- **Cargué datos sucios y la app cambió mis columnas, ¿por qué?** Antes de entrenar, la app sanea el
+  dataset y te lo dice de frente en un recuadro (filas duplicadas, columnas identificadoras o
+  constantes, celdas basura). Nunca lo hace en silencio: cada acción viene con su conteo.
 - **¿Necesito saber programar o de estadística?** No. Eliges la columna a predecir y la app hace el
   resto, explicando el resultado en lenguaje llano.
 - **El modelo dio métricas perfectas, ¿genial?** Casi siempre es una señal de alarma, no de éxito.
@@ -181,7 +265,10 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 ## Historial
 
-| Sprint | Features añadidas a este manual                                                                                                                                 |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                  |
-| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable). |
+| Sprint | Features añadidas a este manual                                                                                                                                                |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                                 |
+| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable).                |
+| 003    | El modelo se usa (puntuar datos nuevos con aviso de novedad, exportar el modelo como archivo `.probeta.json`, volver a importarlo y puntuar sin re-entrenar).                  |
+| 004    | Sobrevive datos reales (saneamiento transparente con conteos, alertas EDA de fuga/identificador/desbalance, boosting HistGradientBoosting compitiendo con el mismo veredicto). |
+| 004    | **Diccionario de términos** (pedido en el gate ⭐, prueba E3) + aviso de CSV con punto y coma.                                                                                 |

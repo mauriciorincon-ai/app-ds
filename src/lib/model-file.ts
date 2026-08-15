@@ -6,10 +6,12 @@
 // ANTES de que el payload (pickle) toque Pyodide. Un archivo ajeno o corrupto
 // se rechaza aquí, en TS puro, sin deserializar nada.
 import type { LeakageFinding } from "@/engine/leakage";
+import type { SanitationReport } from "@/engine/sanitize";
 import type { Metrics, Verdict } from "@/engine/verdict";
 import type {
   ExperimentResult,
   ExportResult,
+  ModelCandidate,
   ModelSchema,
   RuntimeVersions,
   TrainingProfile,
@@ -21,6 +23,12 @@ export const MODEL_FILE_FORMAT_VERSION = 1;
 export const MODEL_FILE_EXTENSION = ".probeta.json";
 export const PAYLOAD_ENCODING = "pickle+zlib+base64";
 const APP_NAME = "probeta-ds";
+
+// Tope del archivo de import (auditoría H1): se chequea con file.size ANTES de
+// leerlo a memoria — un archivo absurdo no debe tumbar la pestaña para luego
+// rechazarse. Holgado a propósito: muy por encima de cualquier export real de
+// esta app (CSV ≤5MB), muy por debajo de lo que revienta atob/hash.
+export const MAX_MODEL_FILE_BYTES = 100 * 1024 * 1024;
 
 // Versiones del runtime que ESTA build trae self-hosteado (public/pyodide).
 // Permiten advertir de un mismatch de versiones en el import SIN cargar
@@ -47,6 +55,15 @@ export type ModelManifest = {
   versions: RuntimeVersions;
   payload_sha256: string;
   payload_encoding: typeof PAYLOAD_ENCODING;
+  // S4 — campos ADITIVOS OPCIONALES (ADR-007 revisado): un archivo S3 (sin
+  // ellos) importa en S4 y viceversa; la validación estructural tolera extras ⇒
+  // aditivo-opcional NO sube format_version. `model_name` nombra al candidato
+  // ganador; `sanitation` deja constancia honesta de qué se saneó al entrenar.
+  model_name?: ModelCandidate["name"];
+  sanitation?: Pick<
+    SanitationReport,
+    "duplicateRowsRemoved" | "exclusions" | "coercions"
+  >;
 };
 
 export type ModelFile = {
@@ -191,13 +208,25 @@ export type PackModelInput = {
   datasetName: string;
   result: ExperimentResult;
   exported: ExportResult;
+  /** Reporte de saneamiento del entrenamiento (S4) — se registra si no estaba limpio. */
+  sanitation?: SanitationReport;
   /** Inyectable para tests deterministas. */
   date?: Date;
 };
 
 export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
-  const { result, exported } = input;
+  const { result, exported, sanitation } = input;
   const payload_sha256 = await sha256Hex(base64ToBytes(exported.payload_b64));
+  // Solo se registra el saneamiento si HUBO algo que sanear (dataset limpio ⇒
+  // se omite el campo, sin ruido).
+  const sanitationSummary =
+    sanitation && !sanitation.clean
+      ? {
+          duplicateRowsRemoved: sanitation.duplicateRowsRemoved,
+          exclusions: sanitation.exclusions,
+          coercions: sanitation.coercions,
+        }
+      : undefined;
   return {
     format_version: MODEL_FILE_FORMAT_VERSION,
     manifest: {
@@ -217,6 +246,8 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
       versions: exported.versions,
       payload_sha256,
       payload_encoding: PAYLOAD_ENCODING,
+      model_name: result.modelName,
+      ...(sanitationSummary ? { sanitation: sanitationSummary } : {}),
     },
     payload: exported.payload_b64,
   };
@@ -231,7 +262,11 @@ export function modelFileName(datasetName: string, date?: Date): string {
 // --- Validar (import) — ANTES de deserializar ------------------------------
 
 export type ModelFileErrorKind =
-  "invalid-json" | "invalid-format" | "unsupported-version" | "hash-mismatch";
+  | "file-too-large"
+  | "invalid-json"
+  | "invalid-format"
+  | "unsupported-version"
+  | "hash-mismatch";
 
 export type VersionWarning = {
   component: "pyodide" | "sklearn";

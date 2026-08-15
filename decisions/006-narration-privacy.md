@@ -42,3 +42,36 @@ experiment can travel. This ADR fixes exactly what, when, and what never.
   not opt in and lose nothing but the AI phrasing (template always available).
 - If a future sprint adds narration of EDA or per-row explanations, this ADR must be revisited
   BEFORE any new field enters the payload schema.
+
+## Amendment (2026-07-20) — the S4 `eda` block, revisited as this ADR requires
+
+S4 extended the payload with an optional `eda` block before this ADR was formally revisited (the
+closing audit flagged the missing trail; the design itself honored this ADR). Recorded now:
+
+- `eda` carries **aggregates and column names only** — alert kind, minority rate, or the flagged
+  column's name — never cell values; it enters the same Zod `.strict()` schema.
+- A clean dataset **omits the key entirely**, so the payload is byte-identical to S3's (locked by
+  a unit test): zero privacy regression for the common case.
+- Same consent gate, same three-layer enforcement. Column names remain user-controlled text that
+  reaches the provider **only after opt-in** — and are treated as untrusted data by the prompt
+  (see ADR-005 amendment 2026-07-20).
+
+## Amendment (2026-07-20) — consent becomes a per-request action (gate ⭐ S4, block C)
+
+The original design stored an opt-in toggle in `localStorage`: once ON, every experiment's
+narration fired automatically. User feedback during the closing gate: *"queda activo
+indefinidamente y de ahora en adelante todas las respuestas son con IA … debería ser un botón y
+pedido a demanda"*.
+
+The toggle is replaced by an explicit **"Narrar con IA" button** in its own block:
+
+- **Nothing is sent without a press.** The press IS the consent, for THAT experiment, once. A new
+  experiment resets the block to idle — a previous decision can no longer leak into a dataset the
+  user never meant to share. This is **stricter** than the remembered opt-in it replaces, so the
+  ADR's guarantee ("rows never leave; names and aggregates only if you say yes") is strengthened,
+  not relaxed; the three enforcement layers (payload builder, `.strict()` schema, e2e traffic
+  assertion) are unchanged.
+- **Consent persistence is gone** (`useConsent` + `CONSENT_STORAGE_KEY` deleted): the app no
+  longer stores any decision about the user in the browser.
+- The deterministic template moves to a **separate, always-present block**, so the AI text never
+  replaces the honest local one — they are read side by side, each labelled.

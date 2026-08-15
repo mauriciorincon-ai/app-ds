@@ -1,3 +1,16 @@
+# Parches de seguridad forzados sobre dependencias TRANSITIVAS (avisos publicados
+# el 2026-08-15, que tumbaron `pnpm audit --audit-level high` en CI sin que nada
+# nuestro cambiara). El selector acota el override AL RANGO VULNERABLE: solo se
+# reescriben las dependencias que piden una versión afectada, y el reemplazo se
+# queda dentro del mismo major (^) para no cruzar una ruptura de API.
+# Se retiran cuando los paquetes aguas arriba (next, @tailwindcss/postcss,
+# @sentry/nextjs) publiquen versiones que ya resuelvan a las parcheadas.
+overrides:
+  fast-uri@<3.1.4: ^3.1.4
+  nanoid@<3.3.18: ^3.3.18
+  postcss@<8.5.18: ^8.5.18
+  sharp@<0.35.0: ^0.35.0
+
 allowBuilds:
   sharp: true
   unrs-resolver: true

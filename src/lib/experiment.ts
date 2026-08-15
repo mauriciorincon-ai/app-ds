@@ -82,6 +82,15 @@ export function prepareRun(
   if (numeric.length + categorical.length === 0)
     return { ok: false, error: "no-features" };
 
+  // Métrica primaria: la regla vive SOLO en verdict.ts. pickPrimaryMetric es
+  // simétrica en p↔1−p ⇒ la calculamos con la tasa de cualquier clase fija sin
+  // conocer cuál será la "positiva" (minoritaria) de Python. El split estratificado
+  // preserva el balance ⇒ coincide con la que el veredicto usará post-split.
+  const allClasses = targetClasses(labels).sort();
+  const posRate =
+    labels.filter((l) => l.trim() === allClasses[1]).length / labels.length;
+  const primaryMetric = pickPrimaryMetric(posRate);
+
   const { trainIdx, testIdx } = stratifiedSplit(labels, TEST_SIZE, seed);
 
   // Fuga: sobre las features y solo las filas de train (honesto).
@@ -116,6 +125,7 @@ export function prepareRun(
     train_idx: trainIdx,
     test_idx: testIdx,
     seed,
+    primary_metric: primaryMetric,
   };
   return { ok: true, payload, leakage };
 }
@@ -137,6 +147,9 @@ export function assembleResult(
     nTest: py.n_test,
     baselines: py.baselines,
     model: py.model,
+    modelName: py.model_name,
+    candidates: py.candidates,
+    rareCategories: py.preprocessing?.rare_categories,
     confusionMatrix: py.confusion_matrix,
     verdict,
     leakage,

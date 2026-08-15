@@ -12,7 +12,10 @@ test("del inicio al veredicto con un dataset de ejemplo", async ({ page }) => {
   // Pantalla de inicio: elegir el ejemplo de marketing.
   await page.getByRole("button", { name: /Campaña de marketing/i }).click();
 
-  // Configuración: elegir el objetivo binario y entrenar.
+  // Configuración: un dataset limpio DICE de frente que no hubo nada que sanear.
+  await expect(page.getByText(/nada que sanear/i)).toBeVisible();
+
+  // Elegir el objetivo binario y entrenar.
   await expect(page.getByLabel(/¿Qué quieres predecir\?/i)).toBeVisible();
   await page.selectOption("#target", "convirtio");
   await page.getByRole("button", { name: /Entrenar modelo/i }).click();
@@ -23,7 +26,23 @@ test("del inicio al veredicto con un dataset de ejemplo", async ({ page }) => {
   ).toBeVisible({
     timeout: 150_000,
   });
-  await expect(page.getByText(/Métrica principal/i)).toBeVisible();
+  // ^: la plantilla de narración también dice "la métrica principal aquí es…".
+  await expect(page.getByText(/^Métrica principal:/)).toBeVisible();
+
+  // Gate ⭐ S4 (bloque B): el veredicto NOMBRA al modelo ganador.
+  await expect(
+    page.getByRole("heading", { name: /«.+» supera al baseline/ }),
+  ).toBeVisible();
+
+  // S4: los candidatos compitieron y se marcó al ganador (símbolo + texto).
+  // exact:true — el nombre del ganador también aparece en el titular del
+  // veredicto; aquí se afirma la celda de la tabla comparativa.
+  await expect(page.getByText(/Modelos que compitieron/i)).toBeVisible();
+  await expect(
+    page.getByText("HistGradientBoosting", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Random Forest", { exact: true })).toBeVisible();
+  await expect(page.getByText("elegido")).toBeVisible();
 
   // A11y: sin violaciones en la pantalla de resultados.
   const results = await new AxeBuilder({ page }).analyze();

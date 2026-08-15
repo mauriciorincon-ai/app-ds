@@ -32,6 +32,10 @@
       "credito": {
         "name": "Credit default",
         "desc": "Ships with a planted leak: watch it get caught."
+      },
+      "clientes": {
+        "name": "Customers (messy data)",
+        "desc": "Nulls, junk, an ID and duplicates: see the cleanup in action."
       }
     },
     "import": {
@@ -48,9 +52,11 @@
         "noLeakage": "No leak warnings recorded during training",
         "versionWarning": "This file was created with versions different from this app's ({list}). It will load anyway; if it fails, retrain and export again.",
         "use": "Use this model",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "model": "Chosen model: {model}."
       },
       "errors": {
+        "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
         "invalid-json": "That file isn't valid JSON.",
         "invalid-format": "That file doesn't look like a model exported by Probeta.",
         "unsupported-version": "That file comes from a Probeta format version this app doesn't support.",
@@ -80,7 +86,24 @@
       "date": "We found columns that look like dates ({cols}). This version doesn't split by time; they're ignored as predictors."
     },
     "train": "Train model",
-    "back": "Change dataset"
+    "back": "Change dataset",
+    "sanitation": {
+      "clean": "Nothing to clean up: the dataset was already tidy.",
+      "title": "We cleaned up the dataset before training:",
+      "duplicates": "Removed {count} exact duplicate rows (keeps the same row out of both training and test).",
+      "exclusion": {
+        "id-column": "Dropped «{column}»: a distinct value per row (an identifier or free text), no signal to generalize from.",
+        "constant-column": "Dropped «{column}»: a single value, it carries no information."
+      },
+      "coercion": "In «{column}» we set {count} non-numeric cells to empty (the rest are numbers)."
+    },
+    "eda": {
+      "clean": "No alerts for this target.",
+      "title": "Before training, look at these signals:",
+      "possible-leak": "«{column}» predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again.",
+      "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
+      "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
+    }
   },
   "training": {
     "title": "Training…",
@@ -93,12 +116,12 @@
     "title": "Verdict",
     "dataset": "{name} · {rows} rows",
     "verdict": {
-      "beats": "The model beats the baseline",
-      "ties": "The model ties the baseline",
-      "loses": "The model does NOT beat the baseline",
+      "beats": "{name} beats the baseline",
+      "ties": "{name} ties the baseline",
+      "loses": "{name} does NOT beat the baseline",
       "beatsDetail": "by {delta} in {metric} — {model} vs the best baseline's {baseline}",
-      "tiesDetail": "a simple model does just as well: {model} vs {baseline}",
-      "losesDetail": "a simple model does better: {model} vs {baseline}. Review your features.",
+      "tiesDetail": "a simple model does just as well: {model} vs {baseline}. There is no extra signal to learn from these columns — adding variables related to the target usually helps more than switching models.",
+      "losesDetail": "a simple model does better: {model} vs {baseline}. Your current columns don't carry enough signal about the target — try variables more related to what you want to predict.",
       "suspicious": "Almost perfect metrics — suspicious",
       "suspiciousDetail": "A perfect result almost always hides a leak, not a great model."
     },
@@ -139,6 +162,21 @@
       "exporting": "Exporting…",
       "error": "The model could not be exported. Try again.",
       "contents": "The file contains what the model learned from your data (parameters, categories, medians) — not your raw rows. Still, treat it as a sensitive file."
+    },
+    "candidates": {
+      "title": "Models that competed",
+      "model": {
+        "forest": "Random Forest (200 trees)",
+        "hgb": "HistGradientBoosting"
+      },
+      "short": {
+        "forest": "Random Forest",
+        "hgb": "HistGradientBoosting"
+      },
+      "winner": "chosen",
+      "metricCol": "Metric",
+      "primary": "primary",
+      "note": "Both use the same preprocessing and compete under the same verdict. We pick the best on the primary metric; no tricks."
     }
   },
   "score": {
@@ -204,27 +242,29 @@
     "empty": "There are no importances to show for this experiment.",
     "barLabel": "Importance of {name}: {value}",
     "direction": {
-      "positive": "▲ higher values make “{positive}” more likely",
-      "negative": "▼ higher values make “{positive}” less likely",
-      "categorical": "· the effect varies by category",
-      "unclear": "· no clear direction"
+      "positive": "▲ higher values make “{target}” = “{positive}” more likely",
+      "negative": "▼ higher values make “{target}” = “{positive}” less likely",
+      "categorical": "· the effect varies by category (there is no single direction)",
+      "unclear": "· no clear direction (it doesn't push consistently one way)"
     },
     "narration": {
       "title": "In words",
+      "templateTitle": "Standard text",
+      "templateBadge": "no AI · always available",
+      "aiTitle": "AI narration",
+      "aiIntro": "Generates a plain-language explanation. Column names and aggregate figures are sent to an AI provider —NEVER your rows— and only when you press the button.",
+      "request": "Narrate with AI",
+      "again": "Narrate again",
       "loading": "Generating the narrative and verifying it against the numbers…",
       "verifiedBadge": "verified against the numbers",
-      "templateBadge": "Standard text",
       "fallback": {
-        "unavailable": "AI narration is not configured on this deployment; the standard text is shown.",
-        "provider": "The AI provider did not respond; the standard text is shown. Toggle “Narrate with AI” off and on to retry.",
-        "rejected": "The AI narrative failed verification against the numbers; for honesty, the standard text is shown. Toggle “Narrate with AI” off and on to retry."
+        "unavailable": "AI narration isn't configured in this deployment.",
+        "provider": "The AI provider didn't respond. You can try again.",
+        "rejected": "The AI narrative didn't pass verification against the numbers; for honesty it isn't shown. You can try again."
       }
-    }
-  },
-  "consent": {
-    "toggle": "Narrate with AI (optional)",
-    "explain": "If you turn this on, your column names and aggregate statistics (metrics, importances) are sent to an AI provider. Your data rows are NEVER sent.",
-    "verifiedNote": "Every narrative is verified against the numbers before display; if it fails, you'll see the standard text."
+    },
+    "legend": "The bar measures how much each variable MATTERS; the line below says which way it PUSHES. A variable can matter a lot and still have no single direction — that doesn't make it irrelevant.",
+    "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”."
   },
   "card": {
     "title": "Model card",
@@ -247,7 +287,17 @@
         "unclear": "no clear direction"
       },
       "method": "Importance was measured by permutation on the test set (data the model never saw during training).",
-      "leakage": "Warning: {columns} could contain the answer (possible leak); these figures may be inflated."
+      "leakage": "Warning: {columns} could contain the answer (possible leak); these figures may be inflated.",
+      "idLike": "Also, {columns} looks like an identifier: it adds little for generalizing.",
+      "imbalance": "The target is imbalanced (the minority class is {rate}%); that's why the primary metric is AUC.",
+      "metricHelp": {
+        "accuracy": "share of correct calls out of the total, from 0 to 1",
+        "precision": "of the cases it flagged as positive, how many really were, from 0 to 1",
+        "recall": "of the real positive cases, how many it managed to catch, from 0 to 1",
+        "f1": "balance between precision and recall, from 0 to 1",
+        "auc": "how well it separates the two classes: 0.50 would be chance and 1.00 perfect"
+      },
+      "metricNote": "The primary metric here is {metric} ({help})."
     }
   },
   "modelcard": {
@@ -262,7 +312,8 @@
       "leakage": "Leakage check",
       "explainability": "Why does it predict this way?",
       "narrative": "Verified narrative",
-      "limits": "Limits"
+      "limits": "Limits",
+      "sanitation": "Sanitization"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -274,8 +325,9 @@
       "rule": "Preprocessing was fitted ONLY on the training set (anti-leakage by construction)."
     },
     "method": {
-      "pipeline": "Imputation (median / most frequent), scaling and one-hot inside a scikit-learn Pipeline.",
-      "models": "Baselines: majority class and logistic regression. Model: Random Forest (200 trees)."
+      "pipeline": "Imputation (median / most frequent), rare-category grouping, scaling and one-hot inside a scikit-learn Pipeline.",
+      "models": "Baselines: majority class and logistic regression. Candidates compared: {candidates}. Chosen model: {model}.",
+      "rareCategories": "Rare categories grouped (learned from training only): {cols}."
     },
     "metrics": {
       "metric": "Metric",
@@ -301,6 +353,15 @@
       "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
       "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
       "dates": "Date columns are detected but not used yet (no temporal split)."
+    },
+    "sanitation": {
+      "duplicates": "Removed {count} exact duplicate rows (prevents leakage by duplication).",
+      "exclusion": {
+        "id-column": "Dropped «{column}» (identifier: one value per row).",
+        "constant-column": "Dropped «{column}» (constant: a single value)."
+      },
+      "coercion": "In «{column}», {count} non-numeric cells were set to empty.",
+      "none": "The dataset needed no sanitization."
     }
   },
   "errors": {
@@ -309,9 +370,13 @@
     "csv-too-large": "The file exceeds the 5 MB limit.",
     "csv-too-many-rows": "The file exceeds 50,000 rows.",
     "csv-ragged": "Some rows have a different number of columns than the header.",
+    "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
+    "csv-tab": "Your file separates columns with tabs rather than commas, so no column is recognised. Save it again as “CSV (comma delimited)” and upload it once more.",
     "target-not-binary": "The target must have exactly two categories.",
     "no-features": "There are no usable columns as predictors.",
     "runtime": "Something went wrong while processing. Please try again.",
-    "retry": "Start over"
+    "worker-dead": "The compute engine stopped unexpectedly (it may have run out of memory, or its components failed to load). Try again; if it persists, try a smaller file.",
+    "retry": "Start over",
+    "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file."
   }
 }

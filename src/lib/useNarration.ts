@@ -1,14 +1,19 @@
 "use client";
 
-// Estado de la narración del "¿por qué?": sin consentimiento ⇒ plantilla local
-// (cero red); con consentimiento ⇒ POST /api/narrate y, pase lo que pase
-// (kill-switch, proveedor caído, verificación fallida), SIEMPRE hay texto —
-// nunca sección vacía ni spinner infinito.
+// Estado de la narración del "¿por qué?". Dos textos SEPARADOS y explícitos:
 //
-// "Cargando" es estado DERIVADO (hay consentimiento y aún no hay respuesta
-// para ESTE payload): el efecto solo dispara el fetch y guarda la respuesta en
-// el callback — sin setState síncrono en el cuerpo (regla set-state-in-effect).
+//   · `template` — plantilla determinista local, SIEMPRE disponible, cero red.
+//   · `ai`       — narración del LLM, **a demanda**: solo se pide cuando el
+//                  usuario pulsa el botón (gate ⭐ S4, bloque C). No hay
+//                  interruptor persistente: el consentimiento es el gesto de
+//                  pulsar, para ESTE experimento y una vez. Es más estricto que
+//                  el opt-in recordado que reemplaza (ADR-006 enmendado).
+//
+// Cambiar de experimento (payload nuevo) devuelve `ai` a "idle": nada viaja sin
+// una pulsación nueva. Pase lo que pase (kill-switch, proveedor caído,
+// verificación fallida) SIEMPRE hay texto: la plantilla nunca desaparece.
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { EdaAlert } from "@/engine/eda";
 import { useI18n } from "@/i18n/provider";
 // SOLO tipos: importar el schema Zod aquí metería zod al bundle del cliente
 // (reventó el presupuesto de script de la landing por 48 bytes en CI). El
@@ -18,10 +23,12 @@ import { buildNarrationPayload } from "@/lib/narration/payload";
 import { buildTemplateNarrative } from "@/lib/narration/templates";
 import type { ExperimentResult } from "@/workers/protocol";
 
-export type NarrationState =
+/** Estado del bloque de IA (el bloque de plantilla no tiene estados: existe). */
+export type AiNarrationState =
+  | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "verified"; text: string }
-  | { kind: "template"; text: string; reason: FallbackReason | "no-consent" };
+  | { kind: "failed"; reason: FallbackReason };
 
 type RemoteOutcome =
   | { kind: "verified"; text: string }
@@ -62,29 +69,38 @@ export function useNarration(input: {
   result: ExperimentResult;
   target: string;
   cols: number;
-  consent: boolean;
-}): { narration: NarrationState; retryNarration: () => void } {
-  const { result, target, cols, consent } = input;
+  /** Alertas EDA del objetivo (S4). Referencia estable ⇒ no re-dispara el fetch. */
+  edaAlerts?: EdaAlert[] | null;
+}): {
+  template: string;
+  ai: AiNarrationState;
+  requestNarration: () => void;
+} {
+  const { result, target, cols, edaAlerts } = input;
   const { locale } = useI18n();
 
   const payload = useMemo(
-    () => buildNarrationPayload({ result, target, cols, locale }),
-    [result, target, cols, locale],
+    () => buildNarrationPayload({ result, target, cols, locale, edaAlerts }),
+    [result, target, cols, locale, edaAlerts],
   );
   const template = useMemo(() => buildTemplateNarrative(payload), [payload]);
 
+  // `request` guarda PARA QUÉ payload se pidió: si el experimento cambia, la
+  // petición vieja deja de aplicar y el bloque vuelve a "idle" solo.
+  const [request, setRequest] = useState<NarrationPayload | null>(null);
   const [response, setResponse] = useState<RemoteResponse | null>(null);
 
-  // Reintento manual (p. ej. al re-activar el consentimiento): descarta la
-  // respuesta previa; el efecto vuelve a pedir. Iniciado por el usuario y
-  // protegido por el rate limit del route — no es un retry automático.
-  const retryNarration = useCallback(() => setResponse(null), []);
+  // Iniciado SIEMPRE por el usuario (botón), nunca automático. Descarta la
+  // respuesta previa para que "Narrar de nuevo" vuelva a pedir de verdad;
+  // el rate limit del route acota los reintentos.
+  const requestNarration = useCallback(() => {
+    setResponse(null);
+    setRequest(payload);
+  }, [payload]);
 
   useEffect(() => {
-    if (!consent) return;
-    // Ya hay respuesta para este payload exacto (p. ej. toggle off→on): no
-    // repetir. Al setearse `response`, el efecto re-corre y sale por aquí.
-    if (response?.for === payload) return;
+    if (request !== payload) return; // nadie lo pidió para ESTE experimento
+    if (response?.for === payload) return; // ya hay respuesta
 
     let cancelled = false;
     const done = (outcome: RemoteOutcome) => {
@@ -103,21 +119,18 @@ export function useNarration(input: {
     return () => {
       cancelled = true;
     };
-  }, [consent, payload, response]);
+  }, [request, payload, response]);
 
-  let narration: NarrationState;
-  if (!consent) {
-    narration = { kind: "template", text: template, reason: "no-consent" };
+  let ai: AiNarrationState;
+  if (request !== payload) {
+    ai = { kind: "idle" };
   } else if (response === null || response.for !== payload) {
-    narration = { kind: "loading" };
+    ai = { kind: "loading" };
   } else if (response.outcome.kind === "verified") {
-    narration = { kind: "verified", text: response.outcome.text };
+    ai = { kind: "verified", text: response.outcome.text };
   } else {
-    narration = {
-      kind: "template",
-      text: template,
-      reason: response.outcome.reason,
-    };
+    ai = { kind: "failed", reason: response.outcome.reason };
   }
-  return { narration, retryNarration };
+
+  return { template, ai, requestNarration };
 }

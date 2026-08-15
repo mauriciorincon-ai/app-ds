@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { EdaAlert } from "@/engine/eda";
 import type { Metrics } from "@/engine/verdict";
 import { narrationPayloadSchema } from "@/lib/ia/schemas";
 import {
@@ -53,6 +54,8 @@ function experimentResult(
     nTest: 50,
     baselines: { majority: metrics({ auc: 0.5 }), logistic: metrics() },
     model: metrics({ auc: 0.812345 }),
+    modelName: "forest",
+    candidates: [{ name: "forest", metrics: metrics({ auc: 0.812345 }) }],
     confusionMatrix: [
       [30, 5],
       [7, 8],
@@ -83,12 +86,16 @@ function experimentResult(
   };
 }
 
-function build(overrides: Partial<ExperimentResult> = {}) {
+function build(
+  overrides: Partial<ExperimentResult> = {},
+  edaAlerts?: EdaAlert[] | null,
+) {
   return buildNarrationPayload({
     result: experimentResult(overrides),
     target: "convirtio",
     cols: 7,
     locale: "es",
+    edaAlerts,
   });
 }
 
@@ -117,7 +124,9 @@ describe("buildNarrationPayload", () => {
     expect(narrationPayloadSchema.safeParse(build()).success).toBe(true);
   });
 
-  it("recorta al top-N de features y redondea a 4 decimales", () => {
+  // Gate ⭐ S4 (E2): la importancia viaja con los MISMOS 3 decimales que muestra el
+  // gráfico. Con 4, el LLM copiaba "0.1235" mientras la pantalla decía "0.123".
+  it("recorta al top-N; importancia a 3 decimales (como el gráfico), resto a 4", () => {
     const many = Array.from({ length: 12 }, (_, i) =>
       feature(`col_${i}`, { importance: 0.123456 - i * 0.001 }),
     );
@@ -132,7 +141,7 @@ describe("buildNarrationPayload", () => {
     expect(payload.explainability.features).toHaveLength(
       NARRATION_TOP_FEATURES,
     );
-    expect(payload.explainability.features[0]?.importance).toBe(0.1235);
+    expect(payload.explainability.features[0]?.importance).toBe(0.123);
     expect(payload.verdict.delta).toBe(0.0423);
   });
 
@@ -147,5 +156,37 @@ describe("buildNarrationPayload", () => {
       ],
     });
     expect(payload.leakage).toEqual(["monto_recuperado"]);
+  });
+});
+
+describe("buildNarrationPayload — bloque EDA opcional (S4)", () => {
+  it("dataset limpio (sin alertas) ⇒ NO añade la clave 'eda' (byte-idéntico a S3)", () => {
+    const clean = build();
+    // La clave no existe: el payload es idéntico al de S3 (no-regresión de
+    // privacidad; el e2e why-modelcard usa un dataset limpio).
+    expect(Object.prototype.hasOwnProperty.call(clean, "eda")).toBe(false);
+    // Pasar una lista VACÍA equivale a no pasar nada (misma omisión).
+    expect(build({}, [])).toEqual(build({}, undefined));
+    expect(build({}, [])).toEqual(clean);
+  });
+
+  it("dataset sucio ⇒ 'eda' con agregados (tipo + columna/tasa), sin valores de celda", () => {
+    const alerts: EdaAlert[] = [
+      { kind: "possible-leak", column: "proxy_col", score: 0.99 },
+      { kind: "id-like", column: "ref_id", score: 0.98 },
+      { kind: "class-imbalance", minorityRate: 0.12 },
+    ];
+    const payload = build({}, alerts);
+    // Solo agregados: el `score` interno NO viaja; sí el tipo + columna/tasa.
+    expect(payload.eda).toEqual([
+      { kind: "possible-leak", column: "proxy_col" },
+      { kind: "id-like", column: "ref_id" },
+      { kind: "class-imbalance", minorityRate: 0.12 },
+    ]);
+    // Sigue validando contra el schema Zod del route (contrato cerrado).
+    expect(narrationPayloadSchema.safeParse(payload).success).toBe(true);
+    // Y sin ningún valor de celda del dataset.
+    const serialized = JSON.stringify(payload);
+    for (const value of CELL_VALUES) expect(serialized).not.toContain(value);
   });
 });

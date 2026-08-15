@@ -1,14 +1,15 @@
 "use client";
 
+import type { EdaAlert } from "@/engine/eda";
+import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
-import { useConsent } from "@/lib/useConsent";
 import { useNarration } from "@/lib/useNarration";
 import type { ExportState, RunMeta } from "@/lib/useExperiment";
 import type { ExperimentResult } from "@/workers/protocol";
 import { ModelCardView } from "./ModelCardView";
 import { WhySection } from "./WhySection";
-import { Button, Card, MetricTile } from "./ui";
+import { Badge, Button, Card, MetricTile } from "./ui";
 
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
@@ -38,6 +39,8 @@ export function ResultsScreen({
   datasetName,
   cols,
   runMeta,
+  sanitation,
+  edaAlerts,
   onAgain,
   onUseModel,
   onExportModel,
@@ -47,6 +50,8 @@ export function ResultsScreen({
   datasetName: string | null;
   cols: number;
   runMeta: RunMeta;
+  sanitation: SanitationReport | null;
+  edaAlerts: EdaAlert[] | null;
   onAgain: () => void;
   onUseModel: () => void;
   onExportModel: () => void;
@@ -54,22 +59,21 @@ export function ResultsScreen({
 }) {
   const t = useT();
   const { verdict, model, leakage, confusionMatrix } = result;
-  const { consent, setConsent } = useConsent();
-  const { narration, retryNarration } = useNarration({
+  // Narración a demanda (gate ⭐ S4, bloque C): la plantilla existe siempre;
+  // la IA solo se pide cuando el usuario pulsa el botón de WhySection.
+  const { template, ai, requestNarration } = useNarration({
     result,
     target: runMeta.target,
     cols,
-    consent,
+    edaAlerts,
   });
-  // Re-activar el consentimiento reintenta la narración (si la anterior falló,
-  // el toggle no puede sentirse "muerto": siempre se ve cargar → resultado).
-  const handleConsentChange = (next: boolean) => {
-    if (next && !consent) retryNarration();
-    setConsent(next);
-  };
   const hasLeak = leakage.length > 0;
   const fmt = (value: number) => value.toFixed(2);
   const metricLabel = (metric: MetricName) => t(`results.metrics.${metric}`);
+
+  // Gate ⭐ S4 (bloque B): el veredicto nombra al modelo ganador — "el modelo"
+  // a secas dejaba la duda de CUÁL superó al baseline.
+  const winnerName = t(`results.candidates.short.${result.modelName}`);
 
   const banner = hasLeak
     ? {
@@ -80,7 +84,7 @@ export function ResultsScreen({
       }
     : {
         ...LEVEL_MARK[verdict.level],
-        headline: t(`results.verdict.${verdict.level}`),
+        headline: t(`results.verdict.${verdict.level}`, { name: winnerName }),
         detail: t(`results.verdict.${verdict.level}Detail`, {
           delta: `+${fmt(verdict.delta)}`,
           metric: metricLabel(verdict.primaryMetric),
@@ -158,6 +162,110 @@ export function ResultsScreen({
         </div>
       </section>
 
+      {/* S4: los candidatos compitieron con el MISMO veredicto — sin selector del
+          usuario: el veredicto habla. Gate ⭐ (bloque B): caja destacada con las
+          MÉTRICAS COMPLETAS de ambos candidatos (no solo la primaria del ganador)
+          y la nota en tamaño normal. Ganador con ▶ + badge (símbolo + texto). */}
+      <Card className="border-accent/40 bg-accent/5 p-5">
+        <h2 className="text-base font-semibold">
+          {t("results.candidates.title")}
+        </h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          {t("results.candidates.note")}
+        </p>
+        <div
+          className="mt-3 overflow-x-auto"
+          role="region"
+          tabIndex={0}
+          aria-label={t("results.candidates.title")}
+        >
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr>
+                <th
+                  scope="col"
+                  className="border-b border-hairline px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted"
+                >
+                  {t("results.candidates.metricCol")}
+                </th>
+                {result.candidates.map((candidate) => {
+                  const isWinner = candidate.name === result.modelName;
+                  return (
+                    <th
+                      key={candidate.name}
+                      scope="col"
+                      className="border-b border-hairline px-2 py-2 text-left"
+                    >
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span
+                          aria-hidden
+                          className={
+                            isWinner ? "text-positive" : "text-ink-muted"
+                          }
+                        >
+                          {isWinner ? "▶" : "·"}
+                        </span>
+                        <span
+                          className={
+                            isWinner
+                              ? "font-semibold"
+                              : "font-medium text-ink-muted"
+                          }
+                        >
+                          {t(`results.candidates.short.${candidate.name}`)}
+                        </span>
+                        {isWinner && (
+                          <Badge tone="positive">
+                            {t("results.candidates.winner")}
+                          </Badge>
+                        )}
+                      </span>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {METRIC_KEYS.map((metric) => {
+                const isPrimary = metric === verdict.primaryMetric;
+                return (
+                  <tr key={metric} className={isPrimary ? "bg-sunken" : ""}>
+                    <th
+                      scope="row"
+                      className={`px-2 py-1.5 text-left ${
+                        isPrimary
+                          ? "font-semibold"
+                          : "font-normal text-ink-muted"
+                      }`}
+                    >
+                      {metricLabel(metric)}
+                      {isPrimary && (
+                        <span className="ml-1 text-xs">
+                          ({t("results.candidates.primary")})
+                        </span>
+                      )}
+                    </th>
+                    {result.candidates.map((candidate) => {
+                      const isWinner = candidate.name === result.modelName;
+                      return (
+                        <td
+                          key={candidate.name}
+                          className={`px-2 py-1.5 font-mono tabular-nums ${
+                            isWinner ? "font-semibold" : "text-ink-muted"
+                          }`}
+                        >
+                          {fmt(candidate.metrics[metric])}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
       <section className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
         <Card className="w-fit p-4">
           <table className="border-collapse font-mono text-sm tabular-nums">
@@ -219,13 +327,14 @@ export function ResultsScreen({
         </div>
       </section>
 
-      {/* S2: el porqué — gráfico siempre visible + narración verificada/plantilla. */}
+      {/* S2: el porqué — gráfico siempre visible + texto estándar + IA a demanda. */}
       <WhySection
         explain={result.explainability}
+        target={runMeta.target}
         positiveClass={result.positiveClass}
-        narration={narration}
-        consent={consent}
-        onConsentChange={handleConsentChange}
+        template={template}
+        ai={ai}
+        onRequestNarration={requestNarration}
       />
 
       {/* S3: el modelo se usa — puntuar datos nuevos y exportar como archivo. */}
@@ -236,9 +345,12 @@ export function ResultsScreen({
           </h2>
           <p className="mt-1 text-sm text-ink-muted">{t("results.use.desc")}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <Button onClick={onUseModel}>{t("results.use.button")}</Button>
+            <Button icon="table" onClick={onUseModel}>
+              {t("results.use.button")}
+            </Button>
             <Button
               variant="secondary"
+              icon="download"
               onClick={onExportModel}
               disabled={exportState === "exporting"}
             >
@@ -272,13 +384,12 @@ export function ResultsScreen({
           target: runMeta.target,
           seed: runMeta.seed,
         }}
-        verifiedNarrative={
-          narration.kind === "verified" ? narration.text : null
-        }
+        sanitation={sanitation}
+        verifiedNarrative={ai.kind === "verified" ? ai.text : null}
       />
 
       <div>
-        <Button variant="secondary" onClick={onAgain}>
+        <Button variant="secondary" icon="plus" onClick={onAgain}>
           {t("results.again")}
         </Button>
       </div>

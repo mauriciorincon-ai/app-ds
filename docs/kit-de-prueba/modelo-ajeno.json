@@ -1,0 +1,15 @@
+{
+  "generator": "otra-herramienta-de-ml",
+  "version": "2.4.0",
+  "model": {
+    "type": "xgboost",
+    "trees": 300,
+    "objective": "binary:logistic"
+  },
+  "features": [
+    "age",
+    "income",
+    "channel"
+  ],
+  "exported_at": "2026-08-12T12:00:00Z"
+}

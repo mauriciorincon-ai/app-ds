@@ -24,6 +24,23 @@ export const narrationFeatureSchema = z.object({
   direction: z.enum(["positive", "negative"]).nullable(),
 });
 
+// S4 — alerta EDA como agregado (tipo + columna o tasa; JAMÁS un valor de celda).
+// Vocabulario cerrado: cada variante lleva SOLO sus campos (strict).
+export const edaAlertSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("possible-leak"),
+      column: z.string().min(1).max(120),
+    })
+    .strict(),
+  z
+    .object({ kind: z.literal("id-like"), column: z.string().min(1).max(120) })
+    .strict(),
+  z
+    .object({ kind: z.literal("class-imbalance"), minorityRate: score01 })
+    .strict(),
+]);
+
 // Lo que la app envía al route (y el route, tras validar, al Narrator).
 // strict(): una clave desconocida (p. ej. filas coladas) RECHAZA la petición
 // entera — vocabulario cerrado de verdad, no "se ignora lo demás".
@@ -66,6 +83,9 @@ export const narrationPayloadSchema = z
       .strict(),
     /** Nombres de columnas marcadas por la heurística de fuga (puede ser vacío). */
     leakage: z.array(z.string().min(1).max(120)).max(8),
+    /** S4: alertas EDA (agregados). Se OMITE si el dataset está limpio ⇒ el
+     *  payload queda BYTE-IDÉNTICO al de S3 (no-regresión + privacidad). */
+    eda: z.array(edaAlertSchema).max(20).optional(),
   })
   .strict();
 
@@ -82,7 +102,9 @@ export const narratorClaimSchema = z.object({
 
 export const narratorOutputSchema = z.object({
   verdictLevel: z.enum(["beats", "ties", "loses"]),
-  narrative: z.string().min(40).max(900),
+  // 1200: la narrativa del gate ⭐ S4 explica la métrica, las direcciones en
+  // llano y las señales EDA — 900 la truncaba y el esquema la rechazaba entera.
+  narrative: z.string().min(40).max(1200),
   claims: z.array(narratorClaimSchema).min(1).max(5),
 });
 
@@ -119,7 +141,7 @@ export type FallbackReason = z.infer<typeof fallbackReasonSchema>;
 export const narrateResponseSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("verified"),
-    narrative: z.string().min(1).max(900),
+    narrative: z.string().min(1).max(1200),
     grader: graderOutputSchema,
   }),
   z.object({

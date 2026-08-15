@@ -15,6 +15,7 @@ export default function Home() {
   const {
     state,
     loadCsv,
+    selectTarget,
     run,
     reset,
     goToScoring,
@@ -32,7 +33,14 @@ export default function Home() {
       )}
 
       {state.phase === "configuring" && state.dataset && (
-        <ConfigScreen dataset={state.dataset} onRun={run} onBack={reset} />
+        <ConfigScreen
+          dataset={state.dataset}
+          sanitation={state.sanitation}
+          edaAlerts={state.edaAlerts}
+          onSelectTarget={selectTarget}
+          onRun={run}
+          onBack={reset}
+        />
       )}
 
       {state.phase === "running" && <TrainingScreen stage={state.progress} />}
@@ -43,6 +51,8 @@ export default function Home() {
           datasetName={state.datasetName}
           cols={state.dataset?.headers.length ?? 0}
           runMeta={state.runMeta}
+          sanitation={state.sanitation}
+          edaAlerts={state.edaAlerts}
           onAgain={reset}
           onUseModel={goToScoring}
           onExportModel={exportModel}

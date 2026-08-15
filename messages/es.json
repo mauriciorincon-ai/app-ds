@@ -32,6 +32,10 @@
       "credito": {
         "name": "Incumplimiento de crédito",
         "desc": "Trae una fuga plantada: mira cómo se detecta."
+      },
+      "clientes": {
+        "name": "Clientes (datos sucios)",
+        "desc": "Nulos, basura, un ID y duplicados: mira el saneamiento en acción."
       }
     },
     "import": {
@@ -48,9 +52,11 @@
         "noLeakage": "Sin advertencias de fuga registradas en el entrenamiento",
         "versionWarning": "Este archivo se creó con versiones distintas a las de esta app ({list}). Se cargará igual; si falla, re-entrena y exporta de nuevo.",
         "use": "Usar este modelo",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "model": "Modelo elegido: {model}."
       },
       "errors": {
+        "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
         "invalid-json": "Ese archivo no es un JSON válido.",
         "invalid-format": "Ese archivo no parece un modelo exportado por Probeta.",
         "unsupported-version": "Ese archivo viene de una versión del formato de Probeta que esta app no soporta.",
@@ -80,7 +86,24 @@
       "date": "Detectamos columnas que parecen fecha ({cols}). En esta versión no se usan para dividir por tiempo; se ignoran como predictores."
     },
     "train": "Entrenar modelo",
-    "back": "Cambiar de dataset"
+    "back": "Cambiar de dataset",
+    "sanitation": {
+      "clean": "No hubo nada que sanear: el dataset venía limpio.",
+      "title": "Saneamos el dataset antes de entrenar:",
+      "duplicates": "Quitamos {count} filas duplicadas exactas (evita que la misma fila caiga en entrenamiento y prueba).",
+      "exclusion": {
+        "id-column": "Excluimos «{column}»: un valor distinto por fila (identificador o texto libre), sin señal para generalizar.",
+        "constant-column": "Excluimos «{column}»: tiene un solo valor, no aporta información."
+      },
+      "coercion": "En «{column}» convertimos {count} celdas no numéricas a vacío (el resto son números)."
+    },
+    "eda": {
+      "clean": "Sin alertas para este objetivo.",
+      "title": "Antes de entrenar, revisa estas señales:",
+      "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo.",
+      "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
+      "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
+    }
   },
   "training": {
     "title": "Entrenando…",
@@ -93,12 +116,12 @@
     "title": "Veredicto",
     "dataset": "{name} · {rows} filas",
     "verdict": {
-      "beats": "El modelo supera al baseline",
-      "ties": "El modelo empata con el baseline",
-      "loses": "El modelo NO supera al baseline",
+      "beats": "«{name}» supera al baseline",
+      "ties": "«{name}» empata con el baseline",
+      "loses": "«{name}» NO supera al baseline",
       "beatsDetail": "por {delta} en {metric} — {model} frente a {baseline} del mejor baseline",
-      "tiesDetail": "un modelo simple rinde igual: {model} frente a {baseline}",
-      "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Revisa tus features.",
+      "tiesDetail": "un modelo simple rinde igual: {model} frente a {baseline}. Con estas columnas no hay señal extra que aprender — suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.",
+      "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Tus columnas actuales no aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con lo que quieres predecir.",
       "suspicious": "Métricas casi perfectas — sospechoso",
       "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo."
     },
@@ -139,6 +162,21 @@
       "exporting": "Exportando…",
       "error": "No se pudo exportar el modelo. Inténtalo de nuevo.",
       "contents": "El archivo contiene lo que el modelo aprendió de tus datos (parámetros, categorías, medianas) — no tus filas crudas. Aun así, trátalo como un archivo sensible."
+    },
+    "candidates": {
+      "title": "Modelos que compitieron",
+      "model": {
+        "forest": "Random Forest (200 árboles)",
+        "hgb": "HistGradientBoosting"
+      },
+      "short": {
+        "forest": "Random Forest",
+        "hgb": "HistGradientBoosting"
+      },
+      "winner": "elegido",
+      "metricCol": "Métrica",
+      "primary": "primaria",
+      "note": "Ambos usan el mismo preprocesamiento y compiten con el mismo veredicto. Elegimos el mejor en la métrica primaria; sin trucos."
     }
   },
   "score": {
@@ -204,27 +242,29 @@
     "empty": "No hay importancias que mostrar para este experimento.",
     "barLabel": "Importancia de {name}: {value}",
     "direction": {
-      "positive": "▲ a mayor valor, más probable «{positive}»",
-      "negative": "▼ a mayor valor, menos probable «{positive}»",
-      "categorical": "· el efecto varía por categoría",
-      "unclear": "· sin dirección clara"
+      "positive": "▲ a mayor valor, más probable que «{target}» sea «{positive}»",
+      "negative": "▼ a mayor valor, menos probable que «{target}» sea «{positive}»",
+      "categorical": "· el efecto varía según la categoría (no hay una sola dirección)",
+      "unclear": "· sin dirección clara (no empuja de forma consistente hacia un lado)"
     },
     "narration": {
       "title": "En palabras",
+      "templateTitle": "Texto estándar",
+      "templateBadge": "sin IA · siempre disponible",
+      "aiTitle": "Narración con IA",
+      "aiIntro": "Genera una explicación en lenguaje natural. Se envían nombres de columnas y cifras agregadas a un proveedor de IA —JAMÁS tus filas— y solo cuando pulsas el botón.",
+      "request": "Narrar con IA",
+      "again": "Narrar de nuevo",
       "loading": "Generando la narración y verificándola contra los números…",
       "verifiedBadge": "verificada con los números",
-      "templateBadge": "Texto estándar",
       "fallback": {
-        "unavailable": "La narración con IA no está configurada en este despliegue; se muestra el texto estándar.",
-        "provider": "El proveedor de IA no respondió; se muestra el texto estándar. Apaga y vuelve a encender «Narrar con IA» para reintentar.",
-        "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad se muestra el texto estándar. Apaga y enciende «Narrar con IA» para reintentar."
+        "unavailable": "La narración con IA no está configurada en este despliegue.",
+        "provider": "El proveedor de IA no respondió. Puedes volver a intentarlo.",
+        "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad no se muestra. Puedes volver a intentarlo."
       }
-    }
-  },
-  "consent": {
-    "toggle": "Narrar con IA (opcional)",
-    "explain": "Si lo activas, se envían a un proveedor de IA los nombres de tus columnas y estadísticas agregadas (métricas, importancias). NUNCA se envían tus filas de datos.",
-    "verifiedNote": "Toda narración se verifica contra los números antes de mostrarse; si no pasa, verás el texto estándar."
+    },
+    "legend": "La barra mide cuánto IMPORTA cada variable; la línea de abajo dice hacia dónde EMPUJA. Una variable puede pesar mucho y no tener una sola dirección: eso no la hace irrelevante.",
+    "positiveClass": "El modelo predice la columna «{target}». La clase que intenta detectar (la menos frecuente) es «{positive}»."
   },
   "card": {
     "title": "Model card",
@@ -247,7 +287,17 @@
         "unclear": "sin dirección clara"
       },
       "method": "La importancia se midió por permutación sobre el conjunto de prueba (datos que el modelo no vio al entrenar).",
-      "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas."
+      "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas.",
+      "idLike": "Además, {columns} parece un identificador: aporta poco para generalizar.",
+      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate}%); por eso la métrica principal es el AUC.",
+      "metricHelp": {
+        "accuracy": "proporción de aciertos sobre el total, de 0 a 1",
+        "precision": "de los casos que marcó como positivos, cuántos lo eran de verdad, de 0 a 1",
+        "recall": "de los casos positivos reales, cuántos logró detectar, de 0 a 1",
+        "f1": "equilibrio entre precisión y sensibilidad, de 0 a 1",
+        "auc": "qué tan bien separa las dos clases: 0.50 sería azar y 1.00 perfecto"
+      },
+      "metricNote": "La métrica principal aquí es {metric} ({help})."
     }
   },
   "modelcard": {
@@ -262,7 +312,8 @@
       "leakage": "Chequeo de fuga",
       "explainability": "¿Por qué predice así?",
       "narrative": "Narración verificada",
-      "limits": "Límites"
+      "limits": "Límites",
+      "sanitation": "Saneamiento"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -274,8 +325,9 @@
       "rule": "El preprocesamiento se ajustó SOLO con el entrenamiento (anti-fuga por construcción)."
     },
     "method": {
-      "pipeline": "Imputación (mediana / más frecuente), escalado y one-hot dentro de un Pipeline de scikit-learn.",
-      "models": "Baselines: clase mayoritaria y regresión logística. Modelo: Random Forest (200 árboles)."
+      "pipeline": "Imputación (mediana / más frecuente), agrupación de categorías raras, escalado y one-hot dentro de un Pipeline de scikit-learn.",
+      "models": "Baselines: clase mayoritaria y regresión logística. Candidatos comparados: {candidates}. Modelo elegido: {model}.",
+      "rareCategories": "Categorías raras agrupadas (aprendido solo de entrenamiento): {cols}."
     },
     "metrics": {
       "metric": "Métrica",
@@ -301,6 +353,15 @@
       "leakage": "El chequeo de fuga atrapa casos evidentes; no es una garantía.",
       "explainability": "La importancia por permutación es global (no por predicción) y puede repartirse entre variables correlacionadas; la dirección es univariada y no captura interacciones.",
       "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal)."
+    },
+    "sanitation": {
+      "duplicates": "Se quitaron {count} filas duplicadas exactas (previene fuga por duplicación).",
+      "exclusion": {
+        "id-column": "Se excluyó «{column}» (identificador: un valor por fila).",
+        "constant-column": "Se excluyó «{column}» (constante: un solo valor)."
+      },
+      "coercion": "En «{column}» se convirtieron {count} celdas no numéricas a vacío.",
+      "none": "El dataset no requirió saneamiento."
     }
   },
   "errors": {
@@ -309,9 +370,13 @@
     "csv-too-large": "El archivo supera el límite de 5 MB.",
     "csv-too-many-rows": "El archivo supera las 50 000 filas.",
     "csv-ragged": "Hay filas con distinto número de columnas que la cabecera.",
+    "csv-semicolon": "Tu archivo separa las columnas con punto y coma (;), no con comas, así que no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
+    "csv-tab": "Tu archivo separa las columnas con tabulaciones, no con comas, así que no se reconoce ninguna columna. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
     "no-features": "No hay columnas utilizables como predictores.",
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
-    "retry": "Volver a empezar"
+    "worker-dead": "El motor de cómputo se detuvo de forma inesperada (pudo quedarse sin memoria, o falló la carga de sus componentes). Intenta de nuevo; si persiste, prueba con un archivo más pequeño.",
+    "retry": "Volver a empezar",
+    "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo."
   }
 }

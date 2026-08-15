@@ -125,7 +125,25 @@ describe("explicabilidad (integración Pyodide)", () => {
       expect(["numeric", "categorical"]).toContain(feature.kind);
       // Dirección solo puede existir en numéricas (categóricas: varía por categoría).
       if (feature.kind === "categorical") expect(feature.direction).toBeNull();
+      // Gate ⭐ S4 (E2): si la importancia no llega ni a mostrarse (0.000 con los 3
+      // decimales de la UI) o es negativa, el modelo no usa esa variable ⇒ NUNCA se
+      // le atribuye dirección. Este test falla si alguien vuelve a desacoplarlas.
+      if (Math.round(feature.importance * 1000) / 1000 <= 0) {
+        expect(feature.direction).toBeNull();
+      }
     }
+  });
+
+  it("una variable con importancia 0 no lleva dirección (fuga plantada)", () => {
+    // En el dataset de fuga, `monto_recuperado` es un proxy casi perfecto: el modelo
+    // se apoya solo en él y deja a las demás en importancia ~0, aunque univariadamente
+    // sí correlacionen. Es el caso exacto que produjo la frase deshonesta en el gate.
+    const explain = runDataset("credito-fuga-plantada.csv", "incumplio");
+    const mudas = explain.features.filter(
+      (f) => Math.round(f.importance * 1000) / 1000 <= 0,
+    );
+    expect(mudas.length).toBeGreaterThan(0);
+    for (const feature of mudas) expect(feature.direction).toBeNull();
   });
 
   it("sanity empírico: la señal real de marketing queda arriba", () => {

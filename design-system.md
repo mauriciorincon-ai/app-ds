@@ -72,7 +72,10 @@ Escala (rem, base 16): `display` 2.25/600 · `h1` 1.75/600 · `h2` 1.25/600 · `
 shadcn/ui **personalizados** con estos tokens (nunca el default):
 
 - **Button** — `primary` (acento sólido), `secondary` (hairline + ink), `ghost`. Alto 44px (táctil),
-  radio `md`, foco con ring de `accent`.
+  radio `md`, foco con ring de `accent`. **Todo botón de acción lleva icono de trazo a la
+  izquierda del texto** (gate ⭐ S4): SVG inline propio (`Icon` en `ui.tsx`), `currentColor`,
+  stroke ~1.8, `aria-hidden`, ~16px — jamás emojis; el texto siempre permanece (el icono
+  refuerza, no reemplaza).
 - **Card** — `surface`, hairline, radio `lg`, sombra `sm`.
 - **Dropzone** — carga de CSV: borde punteado hairline, estado hover/drag con acento; microcopy
   honesto del límite (5 MB / 50k filas).
@@ -80,7 +83,9 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   `surface-sunken`.
 - **MetricTile** — una métrica (valor mono grande + etiqueta caption); en fila para el panel de test.
 - **VerdictBanner** — **la pieza jerárquica del producto**: enuncia el veredicto (símbolo + texto +
-  color semántico) y el delta vs baseline. Es lo más importante de la pantalla de resultados.
+  color semántico) y el delta vs baseline, **nombrando al modelo ganador** («Random Forest» supera
+  al baseline — gate ⭐ S4: "el modelo" a secas dejaba la duda de cuál). Es lo más importante de la
+  pantalla de resultados.
 - **LeakageAlert** — advertencia de fuga (`caution`, icono ⚠ + texto): "esta columna podría ser un
   proxy del objetivo", sin prometer exhaustividad.
 - **ProgressStepper** — etapas honestas del entrenamiento (preparando motor → cargando datos →
@@ -92,10 +97,18 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
 
 - **ImportanceChart** (en WhySection) — barras CSS puras: relleno `accent` sobre `surface-sunken`,
   cifras en mono/tabular-nums, dirección SIEMPRE con símbolo + texto (▲/▼/·), nunca solo color.
+  La dirección **nombra la columna objetivo del usuario** ("más probable que «convirtio» sea «1»"),
+  jamás una etiqueta huérfana; al pie, una nota fija explica **qué clase se intenta detectar** y que
+  la barra mide *importancia* mientras la línea dice *dirección* — una variable puede pesar mucho y
+  no tener una sola dirección (gate ⭐ S4, bloque C).
 - **VerifiedBadge** — variante `positive` del Badge: "✓ verificada con los números"; su contraparte
   neutral "Texto estándar" distingue la plantilla. La diferencia es informativa, no decorativa.
-- **ConsentPanel** — panel `surface-sunken` con checkbox nativo (accent, táctil ≥44px) y explicación
-  honesta en llano; sin tono legalista, sin modal interruptor.
+- **NarrationBlocks** — DOS tarjetas hermanas y rotuladas (gate ⭐ S4): **"Texto estándar"**
+  (determinista, local, SIEMPRE presente, con Badge neutro "sin IA · siempre disponible") y
+  **"Narración con IA"** (a demanda, con botón `secondary` + icono `sparkle`, explicación honesta
+  de qué viaja y Badge `positive` "✓ verificada con los números" al llegar). La IA jamás reemplaza
+  al texto local: se leen uno al lado del otro. Sin interruptor persistente — la pulsación ES el
+  consentimiento, para ese experimento y una vez (ADR-006 enmendado).
 - **ModelCardView** — tarjeta sobria con acción primaria (descarga) y vista previa plegable en mono
   (`details`, sin JS extra). El documento es el protagonista, no la tarjeta.
 
@@ -117,10 +130,38 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   también vive en la barra inferior de ScoreScreen — SOLO para modelos entrenados en la sesión
   (un modelo importado ya es el archivo).
 
+### Añadidos Sprint 004 (mismos tokens, cero valores nuevos)
+
+- **SanitationBlock** (en ConfigScreen) — informe de saneamiento ANTES de entrenar, con dos caras
+  honestas: dataset limpio ⇒ franja `positive` con ✓ "nada que sanear" (el usuario merece saber
+  que no se tocó nada); dataset sucio ⇒ tarjeta con ⚙ + lista de acciones con **conteos exactos**
+  en llano (filas duplicadas quitadas, columnas excluidas por ID/constante, celdas basura→nulo por
+  columna). Nada silencioso. `role="status"`. **Estados positivos con verde EVIDENTE** (gate ⭐
+  S4, daltonismo leve del usuario): tinte 15% + borde sólido + barra izquierda + ✓ en **círculo
+  relleno** `positive` con texto `--bg` — la tranquilidad jamás depende de percibir un tinte
+  sutil.
+- **EdaBlock** (en ConfigScreen) — alertas exploratorias del objetivo elegido: posible fuga /
+  casi-identificador / desbalance, en `caution` con ⚠ + texto (nunca solo color); silencio activo
+  ✓ "sin señales" si el objetivo está sano. `role="status"` (no `alert`: informa, no interrumpe —
+  Next reserva `alert` para el anuncio de ruta, regla 7). Distinto visual y semánticamente de
+  **LeakageAlert** (aquel es el hallazgo del veredicto, este es un aviso pre-entrenamiento).
+- **CandidatesList** (en ResultsScreen) — la competencia franca de modelos (Random Forest vs
+  HistGradientBoosting) bajo el MISMO veredicto, en **caja destacada** (`accent` al 5% + borde
+  `accent/40`, título `text-base` — gate ⭐ S4: merece protagonismo): tabla comparativa con las
+  **métricas completas de AMBOS candidatos** (columna por candidato, fila por métrica; la primaria
+  resaltada con fondo `sunken` + sufijo "(primaria)"), el ganador marcado con símbolo **▶**
+  (`positive`) + peso tipográfico + Badge `positive` "elegido"; los demás con **·** en `ink-muted`.
+  La nota metodológica ("mismo preprocesamiento, mismo veredicto; sin trucos") en `text-sm`, nunca
+  letra pequeña. Sin selector de usuario: el veredicto habla, la tabla solo muestra por qué. Símbolo + texto, nunca solo color.
+- **SanitationSection** (en ModelCardView) — el saneamiento aplicado se registra también en la
+  model card exportable (qué se limpió y con qué conteos), coherente con el informe de config; el
+  nombre del modelo ganador queda parametrizado (ya no hardcodea "Random Forest").
+
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).
-2. **Configuración** → seleccionar el objetivo; perfilado y avisos alrededor.
+2. **Configuración** → seleccionar el objetivo; el **SanitationBlock** (qué se saneó, con conteos)
+   y las alertas del **EdaBlock** lo enmarcan, con el perfilado de la preview alrededor.
 3. **Entrenamiento** → el progreso honesto (qué está pasando ahora).
 4. **Resultados** → el **VerdictBanner**; métricas, matriz y advertencias lo sostienen.
 5. **Error** → el mensaje llano + la acción de recuperación.
