@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Probeta DS — Conócela</title>
+<!--
+  BROCHURE VIVO DE PROBETA DS — producido desde el molde v2 del kit (regla CERO: guion primero).
+  Guion aprobado por el usuario el 2026-08-15: sprints/ENTREGA-brochure-storyboard.md.
+
+  Identidad de la pieza (storyboard §1):
+    "La página se comporta como el instrumento que describe: nada se mueve para adornar —
+     todo lo que se mueve, mide."
+  Dial MOTION_INTENSITY = «instrumento calibrado» — un punto por debajo del "cine sereno" del
+  piloto (app-habla), porque el design system de Probeta manda "preciso · confiable · sobrio,
+  nunca lúdico". Vocabulario: asentar · calibrar · medir · cortar · contar.
+
+  DOBLE VIDA: este archivo es el canónico (abre con doble clic, sin internet) y scripts/
+  copy-brochure.mjs lo copia a public/conoce.html en predev/prebuild para servir /conoce.
+  Editar SIEMPRE aquí; public/conoce.html es un derivado gitignored.
+
+  EXCEPCIONES DECLARADAS a "solo transform/opacity" (storyboard §1, las tres comentadas en su
+  sitio): 1) grid-template-rows en la apertura de tarjeta · 2) stroke-dashoffset para calibrar
+  los iconos · 3) filter:blur en la apertura del titular, con opacidad SIEMPRE 1 (LCP honesto).
+
+  CONTEO: 33 funcionalidades (10 + 7 + 5 + 9 en las cuatro tarjetas + 2 en "lo fino"), cuadrado
+  contra docs/MANUAL-DE-USO.md. La tabla de mapeo vive en sprints/ENTREGA-brochure-summary.md.
+
+  NOTA data-tema (regla 8 del molde): el brochure vive FUERA del storage de la app, así que no
+  persigue su selector de tema — solo el del sistema (prefers-color-scheme). Se declara y ya.
+
+  DALTONISMO LEVE (restricción permanente del pipeline): el color JAMÁS es el único portador.
+  Todo estado lleva símbolo + texto; el clímax se lee por ALTURA + ▼ + palabras.
+-->
+<style>
+  /* ── Tokens: los MISMOS del design system de la app (design-sync/styles.css). ─────────── */
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-sunken: #f2f2ec;
+    --ink: #14181f;
+    --ink-muted: #586172;
+    --hairline: #e4e4dc;
+    --accent: #0e6e6b;
+    --accent-ink: #ffffff;
+    --positive: #1c7c4a;
+    --caution: #8a5a0c;
+    --negative: #a5372f;
+    --positive-tint: #1c7c4a1f;
+    --caution-tint: #8a5a0c1f;
+    --negative-tint: #a5372f1f;
+    --accent-tint: #0e6e6b14;
+
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+    --shadow-sm: 0 1px 2px rgb(20 24 31 / 0.06);
+    --shadow-md: 0 2px 10px rgb(20 24 31 / 0.08);
+
+    /* Tipografía: trade-off declarado del molde — las webfonts Geist no viajan en un
+       autocontenido. Serif del sistema para display, system-ui de cuerpo. Las CIFRAS sí
+       van en mono con tabular-nums: es la firma del instrumento y cuesta 0 bytes. */
+    --font-display: Georgia, "Times New Roman", serif;
+    --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    /* Motion-system derivado del DS (--motion-fast/base/--easing) + la escala de escena. */
+    --motion-fast: 150ms;
+    --motion-base: 220ms;
+    --easing: cubic-bezier(0.2, 0, 0, 1);
+    --ease-asentar: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur-escena: 520ms;
+    --dur-medir: 900ms;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1116;
+      --surface: #161a21;
+      --surface-sunken: #1c222b;
+      --ink: #e7e9ec;
+      --ink-muted: #9aa4b2;
+      --hairline: #28303b;
+      --accent: #2fa6a0;
+      --accent-ink: #08201f;
+      --positive: #54b885;
+      --caution: #d69b4a;
+      --negative: #e0776e;
+      --positive-tint: #54b8851f;
+      --caution-tint: #d69b4a1f;
+      --negative-tint: #e0776e1f;
+      --accent-tint: #2fa6a014;
+      --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+      --shadow-md: 0 2px 10px rgb(0 0 0 / 0.45);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .env {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap; /* "652 B" no se parte en dos líneas */
+  }
+
+  .oculto-visual {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  a { color: var(--accent); }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── E02 · La probeta del margen (G1 serena) ─────────────────────────────────────────────
+     El nombre de la app hecho navegación: el avance del lector se MIDE. Solo transform. */
+  .probeta {
+    position: fixed;
+    /* Pegada a la columna de lectura, no al borde de la pantalla: en escritorio, suelta a la
+       izquierda, se leía como un artefacto del navegador (pasada de capturas). */
+    left: max(6px, calc(50% - 386px));
+    top: 22vh;
+    height: 56vh;
+    width: 12px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .probeta-tubo {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    border: 1px solid var(--hairline);
+    border-top-width: 0;
+    border-radius: 0 0 6px 6px;
+    background: var(--surface-sunken);
+    overflow: hidden;
+  }
+  /* Las graduaciones del instrumento: cada 20% del recorrido. */
+  .probeta-tubo::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to top,
+      transparent 0 calc(20% - 1px),
+      var(--hairline) calc(20% - 1px) 20%
+    );
+  }
+  .probeta-liquido {
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0.55;
+    transform-origin: bottom;
+    transform: scaleY(var(--avance, 0));
+  }
+  @media (max-width: 700px) {
+    .probeta { left: 3px; width: 8px; top: 26vh; height: 48vh; }
+  }
+
+  /* ── E01 · Portada ───────────────────────────────────────────────────────────────────── */
+  .portada {
+    padding: clamp(56px, 14vh, 120px) 0 clamp(40px, 8vh, 72px);
+  }
+  .marca {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 20px;
+  }
+  .marca b { color: var(--accent); font-weight: 600; }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(32px, 8.5vw, 54px);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    margin: 0 0 20px;
+    /* CANDIDATO LCP: nace con opacidad 1 y solo se DESENFOCA. Jamás opacity:0 (regla 7). */
+  }
+  h1 .pal {
+    display: inline-block;
+    filter: blur(4px);
+    transition: filter var(--dur-escena) var(--ease-asentar);
+    transition-delay: calc(var(--i) * 90ms);
+  }
+  body.listo h1 .pal { filter: blur(0); }
+
+  .promesa-apoyo {
+    font-size: clamp(17px, 4.2vw, 20px);
+    color: var(--ink-muted);
+    margin: 0 0 26px;
+    max-width: 34ch;
+  }
+  .sello-privacidad {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--accent-tint);
+    border: 1px solid var(--hairline);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    font-size: 14.5px;
+    max-width: 46ch;
+  }
+  .sello-privacidad svg { width: 18px; height: 18px; flex: none; margin-top: 3px; color: var(--accent); }
+  .sello-privacidad b { font-weight: 600; }
+
+  /* ── Reveal común (G3: asentar, con stagger jerárquico) ──────────────────────────────── */
+  [data-sube] {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+      opacity var(--dur-escena) var(--ease-asentar),
+      transform var(--dur-escena) var(--ease-asentar);
+    transition-delay: calc(var(--i, 0) * 70ms);
+  }
+  .dentro [data-sube],
+  [data-sube].dentro { opacity: 1; transform: none; }
+
+  /* ── Secciones ───────────────────────────────────────────────────────────────────────── */
+  section { padding: clamp(44px, 9vh, 76px) 0; }
+
+  .rotulo-seccion {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 8px;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(24px, 6vw, 32px);
+    line-height: 1.2;
+    margin: 0 0 10px;
+  }
+  .entradilla {
+    color: var(--ink-muted);
+    margin: 0 0 28px;
+    max-width: 54ch;
+  }
+
+  /* ── E03/E04 · Las cuatro puertas ────────────────────────────────────────────────────── */
+  .tarjeta {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .tarjeta.estrella { border-color: color-mix(in srgb, var(--accent) 45%, var(--hairline)); }
+
+  .tarjeta h3 { margin: 0; font-size: inherit; font-weight: inherit; }
+
+  /* Patrón canónico <h3><button> — JAMÁS <button><h3>. */
+  .tarjeta h3 > button {
+    width: 100%;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform var(--motion-fast) var(--easing);
+  }
+  .tarjeta h3 > button:active { transform: scale(0.99); }
+
+  .tarjeta-icono {
+    width: 34px; height: 34px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-md);
+    background: var(--accent-tint);
+    color: var(--accent);
+  }
+  .tarjeta-icono svg { width: 20px; height: 20px; }
+  /* EXCEPCIÓN DECLARADA 2/3: stroke-dashoffset para "calibrar" el trazo del icono.
+     SVG decorativo (aria-hidden), UN disparo al entrar. Las formas llevan pathLength="1",
+     así el trazo se dibuja en el mismo tiempo sin importar cuánto mida.
+     El estado se pasa por PROPIEDAD HEREDADA (--trazo), no por un selector de atributo:
+     `.puertas.dentro … [pathLength]` casa en querySelectorAll pero el motor de estilo NO lo
+     aplica sobre contenido SVG (medido en la pasada de capturas: la regla ganadora salía en
+     el CSSOM y el valor calculado seguía en 1px, con los cuatro iconos en blanco). */
+  .tarjeta-icono svg > * {
+    stroke-dasharray: 1;
+    stroke-dashoffset: var(--trazo, 1);
+    transition: stroke-dashoffset 620ms var(--easing);
+    transition-delay: calc(var(--i, 0) * 70ms + 160ms);
+  }
+  .puertas.dentro { --trazo: 0; }
+
+  .tarjeta-titulo {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 19px;
+    line-height: 1.25;
+  }
+  .tarjeta-n {
+    flex: none;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--ink-muted);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    padding: 2px 7px;
+  }
+  .chevron {
+    flex: none;
+    width: 18px; height: 18px;
+    color: var(--ink-muted);
+    transition: transform var(--motion-base) var(--easing);
+  }
+  .tarjeta[data-abierta="true"] .chevron { transform: rotate(180deg); }
+
+  .tarjeta-resumen {
+    margin: -4px 0 0;
+    padding: 0 16px 14px 62px;
+    color: var(--ink-muted);
+    font-size: 14.5px;
+  }
+
+  /* EXCEPCIÓN DECLARADA 1/3: grid-template-rows en la apertura (un disparo por clic).
+     `visibility` viaja en la misma transición: con un extremo en `visible` el contenido
+     permanece visible durante todo el colapso y, cerrado, queda FUERA del árbol de
+     accesibilidad (sin esto un lector de pantalla recita las 31 features "cerradas"). */
+  .detalle {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--dur-escena) var(--ease-asentar),
+      visibility var(--dur-escena) var(--ease-asentar);
+  }
+  .tarjeta[data-abierta="true"] .detalle {
+    grid-template-rows: 1fr;
+    visibility: visible;
+  }
+  .detalle > .detalle-caja { overflow: hidden; }
+
+  .features {
+    list-style: none;
+    margin: 0;
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--hairline);
+  }
+  .features li {
+    display: flex;
+    gap: 10px;
+    padding: 11px 0;
+    font-size: 15px;
+    border-bottom: 1px solid var(--hairline);
+    /* Coreografía interior: las features asientan en fila (stagger 40 ms). */
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity var(--motion-base) var(--ease-asentar),
+      transform var(--motion-base) var(--ease-asentar);
+  }
+  .features li:last-child { border-bottom: 0; }
+  .tarjeta[data-abierta="true"] .features li {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(var(--i) * 40ms + 120ms);
+  }
+  .features .marca-f {
+    flex: none;
+    width: 20px; height: 20px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    display: grid;
+    place-items: center;
+  }
+  .features .marca-f svg { width: 12px; height: 12px; }
+  .features b { font-weight: 600; }
+  .features span { display: block; }
+  .features em { font-style: normal; color: var(--ink-muted); }
+
+  /* ── E05 · El respiro: el corte honesto ──────────────────────────────────────────────── */
+  .corte { background: var(--surface-sunken); border-block: 1px solid var(--hairline); }
+  .corte-caja {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    max-width: 420px;
+  }
+  .mitad-rotulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .mitad-rotulo .sig {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
+  }
+  .mitad-train .sig { background: var(--positive-tint); color: var(--positive); }
+  .mitad-test .sig { background: var(--caution-tint); color: var(--caution); }
+
+  .fila {
+    height: 9px;
+    border-radius: 2px;
+    background: var(--surface-sunken);
+    border: 1px solid var(--hairline);
+    margin-bottom: 4px;
+  }
+  .mitad-test .fila { border-style: dashed; }
+
+  .mitad-test {
+    margin-top: 22px;
+    transform: translateY(-22px);
+    transition: transform var(--dur-medir) var(--ease-asentar);
+  }
+  .corte.dentro .mitad-test { transform: none; }
+  .mitad-rotulo { opacity: 0; transition: opacity var(--motion-base) var(--easing) 700ms; }
+  .corte.dentro .mitad-rotulo { opacity: 1; }
+
+  .corte-leyenda {
+    margin: 16px 0 0;
+    font-size: 14.5px;
+    color: var(--ink-muted);
+    max-width: 44ch;
+  }
+  .corte-leyenda b { color: var(--ink); font-weight: 600; }
+
+  /* ── E06 · CLÍMAX: la vara que no se mueve ───────────────────────────────────────────── */
+  .climax { background: var(--surface); border-bottom: 1px solid var(--hairline); }
+  .climax .rotulo-seccion { color: var(--accent); }
+
+  .med {
+    position: relative;
+    height: 320px;
+    max-width: 380px;
+    margin: 28px 0 24px;
+    padding-left: 44px;
+  }
+  .med-eje {
+    position: absolute;
+    left: 40px; top: 20px; bottom: 48px;
+    width: 1px;
+    background: var(--hairline);
+  }
+  .med-tick {
+    position: absolute;
+    left: 0;
+    width: 40px;
+    text-align: right;
+    padding-right: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    transform: translateY(50%);
+  }
+  /* La pista mide 252px = el rango 0.00 → 1.00 del eje, SIN truncar: una página sobre
+     honestidad no puede dibujar un eje que empieza en 0.5 para agrandar la diferencia. */
+  .med-pista { position: absolute; left: 44px; right: 0; top: 20px; bottom: 48px; }
+
+  .med-barra {
+    position: absolute;
+    left: 26px;
+    bottom: 0;
+    width: 92px;
+    height: 52%; /* 0.52 en la escala 0→1 del eje */
+    background: color-mix(in srgb, var(--negative) 26%, transparent);
+    border: 1px solid var(--negative);
+    /* El borde superior más grueso: lo que cuenta la escena es DÓNDE se detuvo. */
+    border-top-width: 3px;
+    border-radius: 3px 3px 0 0;
+    transform-origin: bottom;
+    transform: scaleY(0);
+    transition: transform var(--dur-medir) var(--ease-asentar);
+  }
+  .climax.dentro .med-barra { transform: scaleY(1); }
+
+  .med-vara {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 64%; /* 0.64 — el mejor baseline */
+    border-top: 2px dashed var(--ink);
+    opacity: 0;
+    transition: opacity var(--motion-base) var(--easing);
+  }
+  .climax.dentro .med-vara { opacity: 1; }
+
+  .med-tag {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.35;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity var(--motion-base) var(--easing);
+  }
+  .climax.dentro .med-tag { opacity: 1; }
+  .med-tag-vara { bottom: calc(64% + 6px); right: 0; color: var(--ink); }
+  /* El rótulo del modelo va DEBAJO de su barra, como pie de columna: colgado a la derecha
+     flotaba en el vacío y se leía a la altura del tick 0.50 (defecto visto en la pasada de
+     capturas del clímax — la barra parecía marcar 0.50). */
+  .med-tag-barra {
+    bottom: -30px; left: 26px;
+    width: 92px;
+    text-align: center;
+    color: var(--negative);
+    transition-delay: var(--dur-medir);
+  }
+  .med-brecha {
+    position: absolute;
+    left: 126px;
+    bottom: 52%;
+    height: 12%;
+    border-left: 2px solid var(--negative);
+    opacity: 0;
+    transition: opacity var(--motion-base) var(--easing) var(--dur-medir);
+  }
+  .climax.dentro .med-brecha { opacity: 1; }
+  /* Los topes de la brecha: sin ellos la línea suelta no se lee como una medida. */
+  .med-brecha::before, .med-brecha::after {
+    content: "";
+    position: absolute;
+    left: -5px;
+    width: 10px;
+    border-top: 2px solid var(--negative);
+  }
+  .med-brecha::before { top: -1px; }
+  .med-brecha::after { bottom: -1px; }
+  .med-brecha span {
+    position: absolute;
+    left: 10px; top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--negative);
+    white-space: nowrap;
+  }
+
+  /* El veredicto tal como sale en la app: símbolo + texto, nunca solo color. */
+  .veredicto {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--negative-tint);
+    border: 1px solid var(--negative);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    max-width: 46ch;
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity var(--dur-escena) var(--ease-asentar) calc(var(--dur-medir) + 500ms),
+      transform var(--dur-escena) var(--ease-asentar) calc(var(--dur-medir) + 500ms);
+  }
+  .climax.dentro .veredicto { opacity: 1; transform: none; }
+  .veredicto .sig {
+    font-size: 20px;
+    line-height: 1.2;
+    color: var(--negative);
+  }
+  .veredicto p { margin: 0; }
+  .veredicto strong { display: block; font-size: 17px; font-weight: 600; }
+  .veredicto small { display: block; margin-top: 4px; font-size: 14px; color: var(--ink); }
+
+  .remate {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 5.2vw, 26px);
+    line-height: 1.3;
+    margin: 24px 0 0;
+    max-width: 26ch;
+  }
+  .remate-apoyo { color: var(--ink-muted); max-width: 52ch; margin: 10px 0 0; }
+
+  /* ── E07 · Lo fino ───────────────────────────────────────────────────────────────────── */
+  details {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    margin-bottom: 10px;
+  }
+  summary {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary .chevron { margin-left: auto; }
+  details[open] summary .chevron { transform: rotate(180deg); }
+  .fino-cuerpo { padding: 0 16px 16px; border-top: 1px solid var(--hairline); }
+  .fino-cuerpo > *:first-child { margin-top: 14px; }
+  .fino-cuerpo p, .fino-cuerpo li { font-size: 15px; }
+  details[open] .fino-cuerpo {
+    animation: asentar var(--dur-escena) var(--ease-asentar) both;
+  }
+  @keyframes asentar {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .fino-cuerpo table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .fino-cuerpo th, .fino-cuerpo td {
+    text-align: left;
+    vertical-align: top;
+    padding: 8px 10px 8px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .fino-cuerpo th { width: 38%; font-weight: 600; }
+  .ruta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    margin: 14px 0 0;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  .ruta li {
+    background: var(--surface-sunken);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+  }
+  .ruta li[aria-hidden] { background: none; border: 0; padding: 0; color: var(--ink-muted); }
+
+  /* ── E08 · El cierre ─────────────────────────────────────────────────────────────────── */
+  footer { border-top: 1px solid var(--hairline); padding: 44px 0 60px; }
+  /* flex-start, no center: con la glosa en tres líneas el número quedaba a media altura y
+     "33 funcionalidades" dejaba de leerse como una sola frase (pasada de capturas). */
+  .conteo { display: flex; align-items: flex-start; gap: 16px; margin: 0 0 28px; }
+  .conteo-cifra {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(46px, 13vw, 68px);
+    line-height: 0.82;
+    font-weight: 600;
+    color: var(--accent);
+    width: 2.2ch;           /* ancho fijo: el contador no provoca layout thrash */
+    text-align: right;
+    flex: none;
+  }
+  .conteo-glosa { font-size: 15.5px; color: var(--ink-muted); max-width: 30ch; }
+  .conteo-glosa b { color: var(--ink); font-weight: 600; }
+
+  .historial { font-size: 14px; color: var(--ink-muted); }
+  .historial table { width: 100%; border-collapse: collapse; }
+  .historial th, .historial td {
+    text-align: left;
+    padding: 7px 10px 7px 0;
+    border-bottom: 1px solid var(--hairline);
+    vertical-align: top;
+  }
+  .historial th { width: 90px; font-family: var(--font-mono); font-weight: 400; }
+  .pie-nota { margin: 22px 0 0; font-size: 13.5px; color: var(--ink-muted); }
+
+  /* ── prefers-reduced-motion: EXPERIENCIA ALTERNA COMPLETA ─────────────────────────────
+     Corte editorial por escena (storyboard §4): todo llega a su pose FINAL sin un frame.
+     Nada desaparece, nada queda a medias — es el mismo mensaje, contado sin movimiento. */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      transition-delay: 0ms !important;
+    }
+    h1 .pal { filter: none; }                       /* E01: nítido desde el primer frame */
+    [data-sube] { opacity: 1; transform: none; }    /* E03/E07: en su sitio */
+    .tarjeta-icono svg > * { stroke-dashoffset: 0; }  /* E03: trazo completo */
+    .tarjeta[data-abierta="true"] .features li { opacity: 1; transform: none; }
+    .mitad-test { transform: none; }                /* E05: ya cortado */
+    .mitad-rotulo { opacity: 1; }
+    .med-barra { transform: scaleY(1); }            /* E06: la medición, ya detenida */
+    .med-vara, .med-tag, .med-brecha { opacity: 1; }
+    .veredicto { opacity: 1; transform: none; }
+    .probeta-liquido { transform: scaleY(1); }      /* E02: llena y quieta, decorativa */
+  }
+</style>
+</head>
+<body>
+
+<!-- E02 · La probeta del margen: el avance del lector, medido. Decorativa por completo. -->
+<div class="probeta" aria-hidden="true">
+  <div class="probeta-tubo"><div class="probeta-liquido"></div></div>
+</div>
+
+<!-- ══ E01 · PORTADA — la promesa ══════════════════════════════════════════════════════ -->
+<header class="portada">
+  <div class="env">
+    <p class="marca"><b>Probeta DS</b> · ciencia de datos honesta</p>
+    <h1 aria-label="Construye un modelo que puedas defender">
+      <span class="pal" style="--i:0" aria-hidden="true">Construye</span>
+      <span class="pal" style="--i:1" aria-hidden="true">un</span>
+      <span class="pal" style="--i:2" aria-hidden="true">modelo</span>
+      <span class="pal" style="--i:3" aria-hidden="true">que</span>
+      <span class="pal" style="--i:4" aria-hidden="true">puedas</span>
+      <span class="pal" style="--i:5" aria-hidden="true">defender.</span>
+    </h1>
+    <p class="promesa-apoyo">
+      Sin ser científico de datos, sin escribir código, sin una sola tarjeta gráfica.
+    </p>
+    <p class="sello-privacidad">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3 5 6v6c0 4.2 2.9 7.7 7 9 4.1-1.3 7-4.8 7-9V6z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span><b>Todo el cálculo ocurre dentro de tu navegador.</b> Tu tabla no se sube a ningún
+      servidor: no hay a dónde subirla.</span>
+    </p>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ E03 + E04 · LAS CUATRO PUERTAS (capa 1) y su detalle (capa 2) ════════════════ -->
+  <section class="puertas" id="que-hace">
+    <div class="env">
+      <p class="rotulo-seccion">Qué hace</p>
+      <h2>Cuatro cosas, y las cuatro de frente</h2>
+      <p class="entradilla">
+        Toca la que te interese. Nada se abre solo: nadie tiene por qué leer lo que no pidió.
+      </p>
+
+      <!-- Tarjeta 1 — LA ESTRELLA. Entra sola, un beat antes que las demás. -->
+      <article class="tarjeta estrella" data-sube style="--i:0">
+        <h3>
+          <button type="button" aria-expanded="false" aria-controls="d-veredicto">
+            <span class="tarjeta-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path pathLength="1" d="m4 12.5 5.5 5.5L20 7"/>
+              </svg>
+            </span>
+            <span class="tarjeta-titulo">El veredicto honesto</span>
+            <span class="tarjeta-n">10</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+        </h3>
+        <p class="tarjeta-resumen">
+          Entrena un modelo real con tu tabla y te dice, sin rodeos, si sirve o no.
+        </p>
+        <div class="detalle" id="d-veredicto">
+          <div class="detalle-caja">
+            <ul class="features">
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Eliges qué predecir.</b> <em>Una columna de dos opciones: sí/no, 0/1, aprobado/rechazado.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Entrena con el progreso a la vista.</b> <em>Paso a paso, sin pantallas en blanco.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>El veredicto, en grande.</b> <em>▲ supera al baseline · ＝ empata · ▼ NO supera. Con el número exacto de la diferencia.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Aviso de métricas casi perfectas.</b> <em>Un resultado redondo casi siempre esconde una trampa, no un gran modelo. Te lo dice.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Advertencia de fuga con la columna nombrada.</b> <em>«La columna X podría ser un proxy del objetivo». Con nombre y apellido.</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Cinco métricas, todas sobre datos que el modelo no vio.</b> <em>Exactitud, precisión, sensibilidad, F1 y AUC.</em></span></li>
+              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Matriz de confusión.</b> <em>En qué se equivoca, no solo cuánto.</em></span></li>
+              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Los baselines, a la vista.</b> <em>Clase mayoritaria y regresión logística: los rivales que hay que batir.</em></span></li>
+              <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Dos modelos compiten y se dice cuál ganó.</b> <em>Random Forest y HistGradientBoosting, con el mismo veredicto. No eliges tú: habla el resultado.</em></span></li>
+              <li style="--i:9"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Nuevo experimento cuando quieras.</b> <em>Un botón y vuelves a empezar.</em></span></li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 2 -->
+      <article class="tarjeta" data-sube style="--i:2">
+        <h3>
+          <button type="button" aria-expanded="false" aria-controls="d-datos">
+            <span class="tarjeta-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect pathLength="1" x="3" y="4" width="18" height="16" rx="2"/>
+                <path pathLength="1" d="M3 10h18"/>
+                <path pathLength="1" d="M9 10v10"/>
+              </svg>
+            </span>
+            <span class="tarjeta-titulo">Datos reales, tratados de frente</span>
+            <span class="tarjeta-n">7</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+        </h3>
+        <p class="tarjeta-resumen">
+          Tus tablas vienen con huecos, basura y filas repetidas. Se limpian contándote cada paso.
+        </p>
+        <div class="detalle" id="d-datos">
+          <div class="detalle-caja">
+            <ul class="features">
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Sube tu propio CSV.</b> <em>Arrástralo o elígelo. Se queda en tu equipo.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>O prueba con tres ejemplos incluidos.</b> <em>Datos sintéticos, listos para que veas la app funcionando entera.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Vista previa con el perfil de cada columna.</b> <em>Tipo, valores vacíos y aviso si algo parece una fecha.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Límites dichos de frente.</b> <em>5 MB o 50 000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Saneamiento con el conteo exacto.</b> <em>Filas repetidas eliminadas, columnas identificadoras o constantes apartadas, celdas basura vaciadas. Y si venías limpio, un franco «nada que sanear».</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Tres alertas antes de entrenar.</b> <em>Una columna que huele a fuga, una que parece un código de cliente, un objetivo desbalanceado. Con símbolo y texto, nunca solo color.</em></span></li>
+              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Si tu CSV separa con punto y coma, se bloquea y se te dice.</b> <em>El caso típico de Excel en español. Adivinar el separador sería convertir tus números en categorías en silencio.</em></span></li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 3 -->
+      <article class="tarjeta" data-sube style="--i:3">
+        <h3>
+          <button type="button" aria-expanded="false" aria-controls="d-porque">
+            <span class="tarjeta-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path pathLength="1" d="M12 3v6"/><path pathLength="1" d="M12 15v6"/>
+                <path pathLength="1" d="M3 12h6"/><path pathLength="1" d="M15 12h6"/>
+                <path pathLength="1" d="m6.3 6.3 3 3"/><path pathLength="1" d="m14.7 14.7 3 3"/>
+                <path pathLength="1" d="m17.7 6.3-3 3"/><path pathLength="1" d="m9.3 14.7-3 3"/>
+              </svg>
+            </span>
+            <span class="tarjeta-titulo">El porqué, contado honesto</span>
+            <span class="tarjeta-n">5</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+        </h3>
+        <p class="tarjeta-resumen">
+          Qué variables pesan, hacia dónde empujan, y una explicación en palabras llanas.
+        </p>
+        <div class="detalle" id="d-porque">
+          <div class="detalle-caja">
+            <ul class="features">
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Gráfico de importancia con dirección.</b> <em>Cuánto pesa cada variable y hacia dónde empuja. Si el modelo no se apoya en una, se dice así — no se le inventa una flecha.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Un texto explicativo sin IA y sin internet.</b> <em>Lo escribe la propia app con tus números. Siempre está ahí.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Narración con IA, solo si la pides.</b> <em>Y marcada «✓ verificada con los números»: si cita una cifra o una variable que no existe, se descarta antes de que la veas.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Si la narración falla, te dice por qué.</b> <em>El proveedor no respondió · no pasó la verificación · no está configurada. Y puedes reintentar.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Model card descargable.</b> <em>La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites. Tu constancia ante quien pregunte.</em></span></li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 4 -->
+      <article class="tarjeta" data-sube style="--i:4">
+        <h3>
+          <button type="button" aria-expanded="false" aria-controls="d-usar">
+            <span class="tarjeta-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path pathLength="1" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+                <path pathLength="1" d="M12 4v11"/>
+                <path pathLength="1" d="m7 10 5 5 5-5"/>
+              </svg>
+            </span>
+            <span class="tarjeta-titulo">El modelo se usa</span>
+            <span class="tarjeta-n">9</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+        </h3>
+        <p class="tarjeta-resumen">
+          Deja de ser un experimento: puntúa datos nuevos y guarda el modelo para otro día.
+        </p>
+        <div class="detalle" id="d-usar">
+          <div class="detalle-caja">
+            <ul class="features">
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Puntúa datos nuevos.</b> <em>Subes otra tabla y obtienes la predicción de cada fila.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Si falta una columna, se niega a puntuar.</b> <em>Y te dice exactamente cuáles faltan. Nunca rellena en silencio.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Aviso de novedad con el porcentaje.</b> <em>«El modelo está adivinando en el N % de tus filas» — valores que nunca vio al entrenar.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Distribución de las predicciones y vista previa.</b> <em>Antes de descargar nada.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>CSV puntuado sin pisar nada tuyo.</b> <em>Tu tabla completa más predicción y probabilidad. Si ya tenías una columna con ese nombre, la nueva sale con sufijo.</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Exporta el modelo a un archivo.</b> <em>Lo que aprendió y su constancia — no tus filas. Aun así, trátalo como sensible.</em></span></li>
+              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Al importarlo, se valida antes de abrirlo.</b> <em>Un archivo ajeno, corrupto o manipulado se rechaza con la razón exacta.</em></span></li>
+              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Resumen honesto antes de usarlo.</b> <em>Con qué datos nació, qué métrica sacó, qué advertencias trae. Decides con la información delante.</em></span></li>
+              <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Puntúa sin volver a entrenar.</b> <em>Otro día, otro computador, el mismo modelo.</em></span></li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══ E05 · EL RESPIRO — el corte honesto ═════════════════════════════════════════════
+       La mecánica madre en dos segundos, sin un párrafo. Prepara el clímax: sin este
+       corte, el veredicto no valdría nada. -->
+  <section class="corte">
+    <div class="env">
+      <p class="rotulo-seccion">Por qué el número es real</p>
+      <h2>Tu tabla se parte en dos</h2>
+
+      <div class="corte-caja" aria-hidden="true">
+        <div class="mitad mitad-train">
+          <p class="mitad-rotulo"><span class="sig">✓</span> Con esta mitad aprende</p>
+          <div class="fila"></div><div class="fila"></div><div class="fila"></div>
+          <div class="fila"></div><div class="fila"></div>
+        </div>
+        <div class="mitad mitad-test">
+          <p class="mitad-rotulo"><span class="sig">⊘</span> Esta no la ve jamás al aprender</p>
+          <div class="fila"></div><div class="fila"></div><div class="fila"></div>
+        </div>
+      </div>
+
+      <p class="corte-leyenda">
+        El modelo aprende con una mitad y se examina con la otra, que nunca vio. Toda cifra que
+        te muestre la app sale de esa segunda mitad. <b>Por eso el número es real</b> — y por eso
+        no hay forma de que la limpieza de datos contamine el examen: se ajusta solo con la parte
+        de aprender.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ E06 · CLÍMAX — la vara que no se mueve ══════════════════════════════════════════
+       LA promesa de la app, y va en escena propia con texto VISIBLE: jamás en un acordeón.
+       Decisión valiente registrada en el guion: el clímax muestra el caso NEGATIVO. -->
+  <section class="climax" id="el-veredicto">
+    <div class="env">
+      <p class="rotulo-seccion">El veredicto</p>
+      <h2>Ninguna herramienta enseña esta pantalla. Nosotros empezamos por ella.</h2>
+      <p class="entradilla">
+        El rival a batir es el <b>baseline</b>: la regla más tonta que podría funcionar. Si tu
+        modelo no le gana, no sirve — por sofisticado que suene su nombre.
+      </p>
+
+      <div class="med" aria-hidden="true">
+        <div class="med-eje"></div>
+        <!-- Solo los extremos del eje: la marca intermedia caía a 2 px del tope de la barra
+             (0.50 contra 0.52) y se leía como si la barra marcara 0.50 — visto en la pasada
+             de capturas. Con 0.00 y 1.00 queda probado que la escala no está truncada. -->
+        <span class="med-tick" style="bottom: 300px">1.00</span>
+        <span class="med-tick" style="bottom: 48px">0.00</span>
+        <div class="med-pista">
+          <div class="med-barra"></div>
+          <div class="med-vara"></div>
+          <span class="med-tag med-tag-vara">baseline · 0.64</span>
+          <span class="med-tag med-tag-barra">tu modelo · 0.52</span>
+          <div class="med-brecha"><span>−0.12</span></div>
+        </div>
+      </div>
+
+      <div class="veredicto">
+        <span class="sig" aria-hidden="true">▼</span>
+        <p>
+          <strong>«Random Forest» NO supera al baseline</strong>
+          <small>un modelo simple rinde mejor: 0.52 frente a 0.64 en F1. Tus columnas actuales no
+          aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con
+          lo que quieres predecir.</small>
+        </p>
+      </div>
+
+      <p class="remate">Esto también te lo decimos.</p>
+      <p class="remate-apoyo">
+        Que un modelo no sirva no es un fallo de la app: es el resultado. Un número inflado te
+        deja quedar mal ante tu jefe seis meses después; este te lo dice hoy, con la columna
+        sospechosa señalada y una idea de qué probar.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ E07 · LO FINO — la página baja la voz ══════════════════════════════════════════ -->
+  <section class="fino" id="lo-fino">
+    <div class="env">
+      <p class="rotulo-seccion">Lo fino</p>
+      <h2>Lo que casi nadie cuenta</h2>
+      <p class="entradilla">Está aquí abierto, no en una nota al pie.</p>
+
+      <details data-sube style="--i:0">
+        <summary>
+          Privacidad: no es una promesa, es la arquitectura
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </summary>
+        <div class="fino-cuerpo">
+          <p>
+            El motor de análisis —el mismo Python con pandas y scikit-learn que usaría un
+            científico de datos— se descarga <b>a tu navegador</b> y corre ahí. No existe un
+            servidor al que mandar tu tabla: tus filas nunca cruzan la red porque no hay a dónde.
+          </p>
+          <p>
+            La <b>única</b> cosa que sale de tu equipo es la narración con IA, y solo cuando
+            pulsas su botón. Lo que viaja son <b>nombres de columnas y cifras agregadas</b>
+            —métricas, importancias, alertas—, jamás tus filas. En una medición real de la app
+            ese envío pesó <span class="num">652 B</span>: el dataset completo ocuparía miles de
+            veces más. Si nunca tocas ese botón, no sale nada.
+          </p>
+          <p>
+            Tampoco se guarda ninguna decisión tuya sobre esto en el navegador, y los registros
+            técnicos de la app no contienen valores de tus datos.
+          </p>
+        </div>
+      </details>
+
+      <details data-sube style="--i:1">
+        <summary>
+          Qué mide, y qué no finge medir
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </summary>
+        <div class="fino-cuerpo">
+          <ul>
+            <li>Predice <b>dos categorías</b> (sí/no, aprobado/rechazado). Ni tres, ni un número
+              continuo, todavía.</li>
+            <li>El chequeo de fuga es una <b>ayuda honesta, no una garantía</b>: atrapa los casos
+              evidentes, no todos.</li>
+            <li>La importancia de variables es <b>global</b>, no caso por caso, y puede repartirse
+              entre columnas que se parecen.</li>
+            <li>La dirección de una variable es una asociación simple: no captura interacciones.</li>
+            <li>El saneamiento arregla lo estructural; <b>no adivina</b> el valor correcto de un
+              dato que falta — lo rellena con la mediana o la categoría más común de la parte de
+              aprender, y lo dice.</li>
+            <li>Las columnas de fecha se detectan y se avisan, pero aún no se usan en el análisis.</li>
+            <li>El aviso de novedad detecta valores nunca vistos; no detecta que el mundo haya
+              cambiado de forma más sutil.</li>
+            <li>El archivo del modelo <b>solo lo entiende Probeta</b>. No está cifrado ni firmado:
+              carga solo archivos que salieron de aquí.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details data-sube style="--i:2">
+        <summary>
+          Qué necesitas para usarla
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </summary>
+        <div class="fino-cuerpo">
+          <table>
+            <tbody>
+              <tr><th>Instalación</th><td>Ninguna. Tampoco hay que crear una cuenta.</td></tr>
+              <tr><th>Equipo</th><td>El procesador normal de tu computador. <b>Sin tarjeta gráfica</b>: la app está construida a propósito para no necesitarla.</td></tr>
+              <tr><th>Navegador</th><td>Uno moderno de escritorio o móvil. La primera vez tarda unos segundos en traerse el motor de análisis; después va suelto.</td></tr>
+              <tr><th>Tus datos</th><td>Un CSV con cabecera, hasta 5 MB o 50 000 filas, separado por comas.</td></tr>
+              <tr><th>Idioma</th><td>Español e inglés, con el conmutador arriba a la derecha.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <details data-sube style="--i:3">
+        <summary>
+          Por dónde se pasa
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </summary>
+        <div class="fino-cuerpo">
+          <p>
+            Probeta DS no es un sitio con menú: es <b>un solo espacio de trabajo</b> que avanza
+            contigo. Estas son sus pantallas, en orden.
+          </p>
+          <ul class="ruta">
+            <li>Inicio</li><li aria-hidden="true">→</li>
+            <li>Configuración</li><li aria-hidden="true">→</li>
+            <li>Entrenamiento</li><li aria-hidden="true">→</li>
+            <li>Resultados</li><li aria-hidden="true">→</li>
+            <li>Usar el modelo</li>
+          </ul>
+          <p style="margin-top:14px">
+            En <b>Inicio</b> eliges datos o cargas un modelo guardado. En <b>Configuración</b>
+            ves tu tabla saneada, sus alertas, y eliges qué predecir. <b>Entrenamiento</b> te
+            enseña el progreso. <b>Resultados</b> es donde vive el veredicto, las métricas y el
+            porqué. Y <b>Usar el modelo</b> es donde puntúas datos nuevos.
+          </p>
+        </div>
+      </details>
+
+      <details data-sube style="--i:4">
+        <summary>
+          Las palabras, en una línea cada una
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </summary>
+        <div class="fino-cuerpo">
+          <table>
+            <tbody>
+              <tr><th>Baseline</th><td>La regla más tonta que podría funcionar: responder siempre lo más frecuente. Si tu modelo no la supera, no sirve.</td></tr>
+              <tr><th>Veredicto</th><td>La comparación franca entre tu modelo y ese baseline: lo supera, empata o pierde.</td></tr>
+              <tr><th>Entrenamiento y prueba</th><td>Las dos mitades de tu tabla: con una aprende, con la otra se examina.</td></tr>
+              <tr><th>Fuga de datos</th><td>Una columna que ya contiene la respuesta disfrazada. Infla las métricas y vuelve inútil el modelo en la vida real.</td></tr>
+              <tr><th>Desbalance</th><td>Una de las dos respuestas es mucho más rara que la otra. Obliga a mirar AUC en vez de aciertos.</td></tr>
+              <tr><th>Importancia</th><td>Cuánto empeora el modelo si se desordena esa columna. Mide cuánto <b>pesa</b>, no hacia dónde empuja.</td></tr>
+              <tr><th>Novedad</th><td>Al puntuar datos nuevos: valores que el modelo nunca vio. En esas filas está adivinando, y te lo dice.</td></tr>
+              <tr><th>Model card</th><td>La ficha del modelo, para que otro pueda juzgarlo sin creerte a ti.</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:14px">
+            La lista completa, con las cinco métricas explicadas una a una, vive dentro de la app.
+          </p>
+        </div>
+      </details>
+    </div>
+  </section>
+</main>
+
+<!-- ══ E08 · EL CIERRE — el número que se cuenta solo ═══════════════════════════════════ -->
+<footer>
+  <div class="env">
+    <p class="conteo">
+      <span class="conteo-cifra" data-contador="33" aria-hidden="true">33</span>
+      <span class="conteo-glosa">
+        <b><span class="oculto-visual">33 </span>funcionalidades</b>, todas las que Probeta DS
+        tiene hoy. Ninguna se quedó fuera de esta página.
+      </span>
+    </p>
+
+    <div class="historial">
+      <table>
+        <caption class="oculto-visual">Cómo creció la app, por etapas</caption>
+        <tbody>
+          <tr><th scope="row">Etapa 1</th><td>El veredicto honesto: cargar datos, elegir el objetivo, entrenar y comparar contra el baseline.</td></tr>
+          <tr><th scope="row">Etapa 2</th><td>El porqué: importancia de variables, texto sin IA, narración verificada y model card.</td></tr>
+          <tr><th scope="row">Etapa 3</th><td>El modelo se usa: puntuar datos nuevos, exportar e importar sin re-entrenar.</td></tr>
+          <tr><th scope="row">Etapa 4</th><td>Sobrevive datos reales: saneamiento con conteos, alertas antes de entrenar y un segundo modelo compitiendo.</td></tr>
+        </tbody>
+      </table>
+      <p class="pie-nota">
+        Probeta DS · <i>ciencia de datos honesta, de principio a fin</i>. Esta página se actualiza
+        con la app: cuando una funcionalidad cambia, cambia aquí en el mismo paso.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+  const menosMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // ── E01 · la portada se enfoca al primer cuadro disponible (el h1 nunca nace invisible).
+  requestAnimationFrame(() => document.body.classList.add("listo"));
+
+  // ── G3 · entradas dirigidas por IntersectionObserver. Un disparo por elemento.
+  const observador = new IntersectionObserver((entradas) => {
+    for (const entrada of entradas) {
+      if (!entrada.isIntersecting) continue;
+      entrada.target.classList.add("dentro");
+      observador.unobserve(entrada.target);
+    }
+  }, { rootMargin: "0px 0px -12% 0px", threshold: 0.15 });
+
+  for (const el of document.querySelectorAll(".puertas, .corte, .climax, .fino [data-sube]")) {
+    observador.observe(el);
+  }
+
+  // ── G2 · las tarjetas. Llegan CERRADAS y solo el toque las abre.
+  for (const boton of document.querySelectorAll(".tarjeta h3 > button")) {
+    boton.addEventListener("click", () => {
+      const tarjeta = boton.closest(".tarjeta");
+      const abierta = boton.getAttribute("aria-expanded") === "true";
+      boton.setAttribute("aria-expanded", String(!abierta));
+      tarjeta.dataset.abierta = String(!abierta);
+    });
+  }
+
+  // ── E02 · la probeta del margen (G1 serena): mapeo puro scroll→progreso, con inercia.
+  // Sin pin, sin secuestro de rueda. UN rAF que escribe una variable CSS y SE APAGA al
+  // asentarse. Cero lectura de layout en el tick: el recorrido se cachea en resize.
+  const liquido = document.querySelector(".probeta-liquido");
+  if (liquido && !menosMovimiento.matches) {
+    let recorrido = 1;
+    let actual = 0;
+    let pedido = 0;
+
+    const medir = () => {
+      recorrido = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    };
+
+    const cuadro = () => {
+      pedido = 0;
+      const meta = Math.min(1, Math.max(0, window.scrollY / recorrido));
+      actual += (meta - actual) * 0.14;
+      liquido.style.setProperty("--avance", actual.toFixed(4));
+      // Seguir pidiendo cuadros SOLO mientras la inercia no llegó.
+      if (Math.abs(meta - actual) > 0.001) pedido = requestAnimationFrame(cuadro);
+      else liquido.style.setProperty("--avance", meta.toFixed(4));
+    };
+
+    const despertar = () => { if (!pedido) pedido = requestAnimationFrame(cuadro); };
+
+    medir();
+    despertar();
+    window.addEventListener("scroll", despertar, { passive: true });
+    window.addEventListener("resize", () => { medir(); despertar(); }, { passive: true });
+  }
+
+  // ── E08 · el contador. El texto accesible ya dice 33 desde el primer byte; esto solo
+  // dramatiza la cifra decorativa (aria-hidden), así que ningún e2e depende de él.
+  const cifra = document.querySelector(".conteo-cifra");
+  if (cifra && !menosMovimiento.matches) {
+    const hasta = Number(cifra.dataset.contador);
+    const contador = new IntersectionObserver((entradas) => {
+      for (const entrada of entradas) {
+        if (!entrada.isIntersecting) continue;
+        contador.unobserve(entrada.target);
+        const inicio = performance.now();
+        const duracion = 700;
+        const paso = (ahora) => {
+          const t = Math.min(1, (ahora - inicio) / duracion);
+          cifra.textContent = String(Math.round(hasta * (1 - Math.pow(1 - t, 3))));
+          if (t < 1) requestAnimationFrame(paso);
+          else cifra.textContent = String(hasta);
+        };
+        cifra.textContent = "0";
+        requestAnimationFrame(paso);
+      }
+    }, { threshold: 0.9 });
+    contador.observe(cifra);
+  }
+})();
+</script>
+</body>
+</html>
