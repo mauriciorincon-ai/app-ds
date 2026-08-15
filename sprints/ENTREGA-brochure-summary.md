@@ -1,7 +1,7 @@
 ---
 entrega: brochure
 app: ds
-status: gate visual aprobado — revisión detallada diferida
+status: closed — última milla verificada sin sesión (revisión detallada diferida por el usuario)
 opened: 2026-08-15
 branch: entrega/brochure-conoce
 pr: https://github.com/mauriciorincon-ai/app-ds/pull/10
@@ -154,9 +154,37 @@ Vercel: SUCCESS       Vercel Preview Comments: SUCCESS
 Ninguno `skipped`. **`lighthouse` corrió de verdad** — vale decirlo porque durante todo el ciclo H1
 estuvo saltado por colgar de un `quality` en rojo, y el DoD lo daba por cumplido.
 
-## Qué falta para cerrar
+## Última milla — CUMPLIDA (2026-08-15)
 
-1. **Decisión sobre la protección de deployment** — sin ella la acceptance #10 no puede pasar.
-2. Merge con CI verde.
-3. Probar `/conoce` de producción **sin sesión**.
-4. (Opcional, cuando el usuario quiera) la ronda de corrección en frío del gate visual.
+El usuario quitó la protección de deployment y el link se verificó **desde afuera, sin sesión**
+(`curl` limpio, sin cookies):
+
+| Comprobación                                       | Resultado                                                                                                       |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `https://app-ds-mauricio-rincon.vercel.app/conoce` | **200** (antes 302 → `vercel.com/sso-api`)                                                                      |
+| Cabeceras                                          | `text/html` · CSP intacta · `nosniff`                                                                           |
+| Peso servido                                       | 61 571 B — idéntico al canónico                                                                                 |
+| Contenido clave en el HTML                         | titular · «33 funcionalidades» · «NO supera al baseline» · «Esto también te lo decimos» · «Matriz de confusión» |
+| Progressive disclosure                             | 4 × `aria-expanded="false"` — las tarjetas llegan cerradas también en producción                                |
+| Enlaces externos en el HTML servido                | **cero** (autocontenido de verdad, no solo en local)                                                            |
+| Landing de la app                                  | 200, pública                                                                                                    |
+
+**Con ello la acceptance #10 pasa y la entrega queda completa.**
+
+### Desviación registrada: la protección quedó DESACTIVADA, no en «solo previews»
+
+La recomendación era `Only Preview Deployments`. Medido después del cambio, la preview
+`app-ds-git-entrega-brochure-conoce-…` **también responde 200 y sirve el contenido**, así que
+Vercel Authentication quedó **apagada para todo**, no restringida a previews.
+
+Consecuencia real: **toda preview de PR futura será públicamente alcanzable** — es decir, trabajo
+sin revisar, visible antes de su gate. Para esta app el riesgo es bajo (el repo es público y **no
+hay datos de usuario en el servidor**: todo corre en el navegador), pero es una decisión de
+producto que conviene tomar a propósito y no por omisión. Queda anotada aquí y en el BLUEPRINT.
+
+## Pendiente, por decisión del usuario
+
+- La **ronda de corrección en frío** del gate visual (revisión detallada escena por escena), que él
+  difirió explícitamente.
+- Opcionalmente, volver la protección a `Only Preview Deployments` si se prefiere que las previews
+  sigan cerradas.
