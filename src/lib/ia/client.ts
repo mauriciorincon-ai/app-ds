@@ -86,12 +86,17 @@ function narratorPrompt(payload: NarrationPayload): string {
     // Los números de la prosa deben COINCIDIR con lo que el usuario ve en
     // pantalla: métricas con 2 decimales (MetricTile) e importancias con 3
     // (ImportanceChart). Cifras distintas para el mismo dato confunden.
-    "- Number formatting in the PROSE (the CLAIMS keep full precision): metric scores with exactly 2 decimals (0.69), importance values with exactly 3 decimals (0.136, never 0.1364), percentages with 1 decimal computed exactly from the payload value (0.135 → 13.5%).",
+    "- Number formatting in the PROSE: metric scores with exactly 2 decimals (0.69); importance values EXACTLY as the payload gives them (it already carries the same 3 decimals the on-screen chart shows — never add digits); percentages with 1 decimal computed exactly from the payload value (0.135 → 13.5%).",
     `- The primary metric is ${metricName}. The FIRST time you name it, add this explanation verbatim, in parentheses: "${metricHelp}"`,
     "",
     "CONTENT — cover ALL of it:",
     "- The verdict in plain words (did it beat the simple baseline?), with both scores. Never soften an unfavorable verdict.",
     "- The 2-3 most important variables with their importance values, and what each direction MEANS: a positive association = the class being detected becomes more likely as that variable grows; a negative one = less likely; a null direction on a numeric variable = no clear, consistent direction; a categorical variable = the effect varies by category. Always phrase it against 'the class being detected' — you do NOT know its real-world label.",
+    // Gate ⭐ S4, hallazgo en E2: el LLM escribió "importancia de 0 y una asociación
+    // negativa: valores mayores reducen la probabilidad". Con importancia 0 el modelo
+    // NO usa la variable, así que atribuirle un efecto es una afirmación que la
+    // medición no respalda — justo lo que esta app existe para no hacer.
+    "- A variable whose importance is 0 contributes NOTHING to the model: say plainly that the model does not rely on it, and NEVER attribute a direction or an effect to it. Do not pair 'importance of 0' with any claim about what its values do.",
     "- If the leakage list is non-empty: warn that those columns look like proxies of the target, so the figures may be inflated.",
     "- If an 'eda' array is present: say what it flags — for 'class-imbalance', give the minority rate as a percentage and note the metric accounts for it; for 'id-like', name the column as a likely identifier that adds little.",
     "",
@@ -114,7 +119,10 @@ function graderPrompt(payload: NarrationPayload, narrative: string): string {
     "The narrative ALREADY passed deterministic numeric verification against the payload; grade only the writing.",
     "Score 1-5 (integers) with this rubric:",
     "- accuracy: 5 = every number/direction mentioned matches the payload; subtract only for misleading phrasing.",
-    "- completeness: 4-5 = states the verdict with both scores AND names at least the top 2 variables; 3 = one of those is thin; 1-2 = verdict or top variables missing.",
+    // Gate ⭐ S4 (E2): pedir "al menos 2 variables" penalizaba la respuesta CORRECTA
+    // en datasets con fuga, donde una sola variable tiene importancia y el resto vale
+    // 0. La rúbrica no debe empujar a rellenar con variables que no aportan.
+    "- completeness: 4-5 = states the verdict with both scores AND names the variables that actually carry weight; when only ONE has non-zero importance, naming it and stating that the rest contribute nothing IS complete — do not demand padding; 3 = one of those is thin; 1-2 = verdict or top variables missing.",
     "- clarity: plain language a non-expert follows; 5 = no jargon left unexplained.",
     `Payload: ${JSON.stringify(payload)}`,
     `Narrative: ${narrative}`,

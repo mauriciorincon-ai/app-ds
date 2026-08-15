@@ -486,3 +486,43 @@ de ese mensaje.
 
 Tests: 222 → **227** (5 nuevos en `csv.test.ts`: `;`, tabulador, conservador con `;` en campos,
 una sola columna, BOM). Typecheck y lint limpios.
+
+### Bloque E — Privacidad, honestidad y diseño (E2 en curso)
+
+**E2 pasa.** La inspección de red del usuario mostró exactamente DOS peticiones salientes, ambas
+esperadas: `POST /api/narrate` (**652 B** — el payload de nombres + agregados; un dataset de 200×6
+ocuparía kilobytes, así que el propio tamaño es evidencia de que no viajan filas) y un `envelope`
+de **56 B** a Sentry (observabilidad; `sendDefaultPii: false`, `tracesSampleRate: 0`, `beforeSend`
+elimina `request` y los breadcrumbs de console/fetch/http — `instrumentation-client.ts`). Con
+archivo propio, cargar y entrenar no genera NINGUNA petición.
+
+**🐛 Hallazgo colateral de E2 (honestidad, el más serio del gate).** La narrativa mostrada decía:
+«Puntaje_credito muestra una **importancia de 0** y una **asociación negativa**, lo que indica que
+valores mayores **reducen la probabilidad** de la clase detectada». Con importancia 0 el modelo NO
+usa esa variable: atribuirle un efecto es una afirmación que la medición no respalda — exactamente
+lo que esta app existe para no hacer. Causa raíz: `_feature_directions` calcula la dirección por
+correlación univariada, **independiente** de la importancia por permutación; en el dataset de fuga
+`monto_recuperado` acapara todo y las demás quedan en ~0 aunque correlacionen por su cuenta.
+
+**Arreglo en el ORIGEN** ([pipeline.py](../src/lib/ds/pipeline.py)): si la importancia redondea a
+0.000 (los 3 decimales que muestra la UI) o es negativa, `direction` sale como `null`. Una sola
+línea arregla a la vez el gráfico, la plantilla determinista y la narración IA. Test de integración
+nuevo que FALLA si alguien vuelve a desacoplarlas + aserción de propiedad sobre todas las features.
+
+**🐛 Decimales inconsistentes (regresión del bloque C).** La narrativa decía `0.4408` mientras el
+gráfico decía `0.441`. Causa: `payload.ts` redondeaba a 4 decimales y el LLM copiaba fielmente.
+Arreglo determinista (no depender del prompt): el payload viaja con **3 decimales**, los mismos de
+`ImportanceChart`. Desvío máximo 0.0005, muy por debajo de `IMPORTANCE_TOLERANCE = 0.005`.
+
+**🐛 Rúbrica del Grader con incentivo perverso.** Pedía «nombrar al menos las 2 variables
+principales»; en un dataset con fuga solo UNA tiene importancia, así que la respuesta correcta
+sacaba completitud **3 — justo el umbral de fallback**. La rúbrica ahora acepta que nombrar la
+única que pesa y declarar que el resto no aporta ES completo. Verificado con Groq real: de 3
+(al borde) a **5/5/5 en dos corridas seguidas**.
+
+Verificación en real del conjunto (Groq, dataset de fuga): «…La variable más influyente es
+monto_recuperado, con una importancia de **0.441**… Las variables puntaje_credito, monto_prestamo,
+empleo e ingreso_mensual tienen una importancia de 0, **por lo que el modelo no depende de
+ellas**… monto_recuperado parece un proxy del objetivo, lo que podría inflar las métricas.»
+
+Tests: 227 unit + **28** integración (uno nuevo). Typecheck y lint limpios.

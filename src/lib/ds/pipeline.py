@@ -169,7 +169,17 @@ def _explainability(pipe, X_test, y_test, features, numeric, seed):
                 "kind": "numeric" if features[i] in numeric_set else "categorical",
                 "importance": float(pi.importances_mean[i]),
                 "std": float(pi.importances_std[i]),
-                "direction": directions.get(features[i]),
+                # Honestidad (gate ⭐ S4, hallazgo en E2): la dirección se calcula
+                # univariadamente, INDEPENDIENTE de la importancia. Si la importancia
+                # no llega ni a mostrarse (redondea a 0.000 con los 3 decimales de la
+                # UI) o es negativa, el modelo NO obtiene nada de esa variable:
+                # afirmar entonces "a mayor valor, menos probable la clase" describiría
+                # un comportamiento del modelo que la medición no respalda.
+                "direction": (
+                    directions.get(features[i])
+                    if round(float(pi.importances_mean[i]), 3) > 0
+                    else None
+                ),
             }
             for i in order
         ],

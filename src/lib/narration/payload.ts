@@ -11,6 +11,11 @@ import type { ExperimentResult } from "@/workers/protocol";
 export const NARRATION_TOP_FEATURES = 8;
 
 const round4 = (value: number) => Math.round(value * 10_000) / 10_000;
+// Las importancias viajan con los MISMOS 3 decimales que muestra el gráfico
+// (ImportanceChart usa toFixed(3)). Con 4 el LLM copiaba fielmente "0.4408"
+// mientras la pantalla decía "0.441" — dos cifras para el mismo dato. Tolerancia
+// de verificación: 0.005, así que redondear a 3 (≤0.0005 de desvío) es seguro.
+const round3 = (value: number) => Math.round(value * 1_000) / 1_000;
 const clamp01 = (value: number) => Math.min(1, Math.max(0, round4(value)));
 
 // Alertas EDA → agregados del payload (tipo + columna o tasa; nunca un valor de
@@ -63,7 +68,7 @@ export function buildNarrationPayload(input: {
         .map((feature) => ({
           name: feature.name,
           kind: feature.kind,
-          importance: round4(feature.importance),
+          importance: round3(feature.importance),
           direction: feature.direction,
         })),
     },

@@ -124,7 +124,9 @@ describe("buildNarrationPayload", () => {
     expect(narrationPayloadSchema.safeParse(build()).success).toBe(true);
   });
 
-  it("recorta al top-N de features y redondea a 4 decimales", () => {
+  // Gate ⭐ S4 (E2): la importancia viaja con los MISMOS 3 decimales que muestra el
+  // gráfico. Con 4, el LLM copiaba "0.1235" mientras la pantalla decía "0.123".
+  it("recorta al top-N; importancia a 3 decimales (como el gráfico), resto a 4", () => {
     const many = Array.from({ length: 12 }, (_, i) =>
       feature(`col_${i}`, { importance: 0.123456 - i * 0.001 }),
     );
@@ -139,7 +141,7 @@ describe("buildNarrationPayload", () => {
     expect(payload.explainability.features).toHaveLength(
       NARRATION_TOP_FEATURES,
     );
-    expect(payload.explainability.features[0]?.importance).toBe(0.1235);
+    expect(payload.explainability.features[0]?.importance).toBe(0.123);
     expect(payload.verdict.delta).toBe(0.0423);
   });
 
