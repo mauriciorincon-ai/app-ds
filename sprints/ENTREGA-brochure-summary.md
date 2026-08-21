@@ -114,14 +114,16 @@ termine antes de auditar; en ningún estado real de la página existe ese color.
 
 ## El bloqueo que decide el usuario
 
-**La acceptance #10 no puede pasar hoy.** Producción (`app-ds-mauricio-rincon.vercel.app`) responde
+**La acceptance #10 no puede pasar hoy.** Producción (URL — registro privado en la planeadora) responde
 **302 → `vercel.com/sso-api`**: Vercel Deployment Protection está activa, así que ni la app ni
 `/conoce` son alcanzables sin la sesión del dueño. No lo puede cambiar ninguna sesión de
 construcción — es una opción de la cuenta (`Settings → Deployment Protection`); la recomendación
 registrada es dejarla **solo para previews**.
 
-**Aviso para no cantar victoria por error:** `app-ds.vercel.app` **sí** responde 200, pero es un
-proyecto **ajeno** («Quarksuite App: Design Tokens»). Comprobado y anotado en el BLUEPRINT.
+**Aviso para no cantar victoria por error:** existe un dominio de nombre parecido al nuestro que
+**sí** responde 200 y es un proyecto **ajeno** («Quarksuite App: Design Tokens»). Al verificar hay
+que usar exactamente la URL que registra la planeadora, no una deducida del nombre del repo.
+Comprobado y anotado en el BLUEPRINT.
 
 ## Decisiones y desviaciones
 
@@ -161,7 +163,7 @@ El usuario quitó la protección de deployment y el link se verificó **desde af
 
 | Comprobación                                       | Resultado                                                                                                       |
 | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `https://app-ds-mauricio-rincon.vercel.app/conoce` | **200** (antes 302 → `vercel.com/sso-api`)                                                                      |
+| `/conoce` de producción (URL — registro privado en la planeadora) | **200** (antes 302 → SSO de Vercel)                                                                      |
 | Cabeceras                                          | `text/html` · CSP intacta · `nosniff`                                                                           |
 | Peso servido                                       | 61 571 B — idéntico al canónico                                                                                 |
 | Contenido clave en el HTML                         | titular · «33 funcionalidades» · «NO supera al baseline» · «Esto también te lo decimos» · «Matriz de confusión» |
