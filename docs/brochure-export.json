@@ -1,0 +1,407 @@
+{
+  "_schema": {
+    "_lee_esto_primero": "Este bloque documenta el formato y no es dato de la app. Se conserva en cada export para que el esquema viaje con el archivo: quien lo consuma no necesita buscar otro documento. Las apps que adopten este formato copian este bloque tal cual y rellenan el resto.",
+    "_origen": "Definido por app-dash-agent-ai en su entrega de brochure (2026-08-19). Es el PRIMER export del portafolio; las demás apps lo adoptan.",
+    "_consumidor": "La vitrina de hoja-de-vida. Renderiza la ficha de cada app sin abrir su repositorio.",
+    "_regla_madre": "Toda cifra de `metricas[]` lleva su etiqueta de `fuente`. Es la regla dura 3 de Dash Agent AI aplicada a su propia ficha: una app que exige procedencia a cada número de su pantalla no puede publicar cifras sueltas sobre sí misma. Se recomienda al resto del portafolio.",
+    "schema_version": "semver del FORMATO, no de la app. Cambio mayor = campo eliminado o con significado distinto; menor = campo nuevo opcional; parche = documentación.",
+    "app.estado": "\"inicial\" mientras el brochure describe la construcción cerrada; \"sellado\" cuando el gate de pruebas del usuario terminó. `sellado_en` es null hasta entonces.",
+    "funcionalidades.total": "El número que el brochure declara en su pie. `fuente_del_conteo` dice contra qué documento se cuadró — sin eso, el total es una afirmación.",
+    "funcionalidades.descartadas": "Las que se construyeron o se planearon y NO existen. Van aquí con su razón y su fecha para que nadie las cuente como pendientes ni como entregadas.",
+    "metricas[].fuente": "Una de cuatro: \"medido\" (salió de un contador o un comando), \"calculada\" (medido operado con una tarifa o una regla, y se dice cuál), \"declarado\" (lo fijó una persona), \"estimacion\" (deducido). Una cifra sin fuente no entra.",
+    "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
+  },
+  "schema_version": "1.0.0",
+  "actualizado": "2026-08-20",
+  "app": {
+    "slug": "ds",
+    "nombre": "Probeta DS",
+    "ciclo": "H1",
+    "estado": "inicial",
+    "sellado_en": null,
+    "sprints_cerrados": 4,
+    "version_repo": "0.1.0"
+  },
+  "promesa": {
+    "tagline": "Construye un modelo que puedas defender.",
+    "intro": "Traes una tabla, eliges qué quieres predecir, y la app entrena un modelo de verdad dentro de tu navegador — y te dice con franqueza si sirve o no. Sin ser científico de datos, sin escribir código y sin una sola tarjeta gráfica.",
+    "para_quien": "Para el profesional que no es científico de datos —analistas, financieros, investigadores aplicados— y que tiene que defender un modelo ante su jefe o su comité, no ganar un leaderboard.",
+    "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la mitad de entrenamiento y la UI no ofrece otro camino), y toda cifra sale del conjunto de prueba. El incentivo del mercado es el optimismo; aquí es la honestidad."
+  },
+  "funcionalidades": {
+    "total": 33,
+    "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
+    "descartadas": [],
+    "grupos": [
+      {
+        "orden": 1,
+        "estrella": true,
+        "nombre": "El veredicto honesto",
+        "linea": "Entrena un modelo real con tu tabla y te dice, sin rodeos, si sirve o no.",
+        "features": [
+          {
+            "id": "V1",
+            "nombre": "Eliges qué predecir",
+            "que_hace": "Seleccionas la columna objetivo, que debe tener exactamente dos categorías (sí/no, 0/1, aprobado/rechazado).",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V2",
+            "nombre": "Entrenamiento con el progreso a la vista",
+            "que_hace": "El motor corre en el navegador y muestra el avance paso a paso, sin pantallas en blanco.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V3",
+            "nombre": "El veredicto contra el baseline",
+            "que_hace": "▲ supera · ＝ empata · ▼ NO supera, con el número exacto de la diferencia. Si el modelo no aporta, se dice de frente.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V4",
+            "nombre": "Aviso de métricas casi perfectas",
+            "que_hace": "Un resultado redondo casi siempre esconde una fuga, no un gran modelo. La app lo marca como sospechoso en vez de celebrarlo.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V5",
+            "nombre": "Advertencia de fuga con la columna nombrada",
+            "que_hace": "Señala por nombre la columna que podría ser un proxy del objetivo, y qué hacer con ella.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V6",
+            "nombre": "Cinco métricas, todas sobre datos no vistos",
+            "que_hace": "Exactitud, precisión, sensibilidad, F1 y AUC, calculadas siempre sobre el conjunto de prueba.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V7",
+            "nombre": "Matriz de confusión",
+            "que_hace": "En qué se equivoca el modelo, no solo cuánto.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V8",
+            "nombre": "Los baselines, a la vista",
+            "que_hace": "Clase mayoritaria y regresión logística: los rivales que hay que batir, con sus cifras.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V9",
+            "nombre": "Dos modelos compiten y se dice cuál ganó",
+            "que_hace": "Random Forest y HistGradientBoosting, mismo preprocesamiento y mismo veredicto. No elige el usuario: habla el resultado.",
+            "seccion_manual": "Sobrevive datos reales"
+          },
+          {
+            "id": "V10",
+            "nombre": "Nuevo experimento",
+            "que_hace": "Un botón devuelve la app al inicio para volver a empezar.",
+            "seccion_manual": "El veredicto honesto"
+          }
+        ]
+      },
+      {
+        "orden": 2,
+        "estrella": false,
+        "nombre": "Datos reales, tratados de frente",
+        "linea": "Tus tablas vienen con huecos, basura y filas repetidas. Se limpian contándote cada paso.",
+        "features": [
+          {
+            "id": "D1",
+            "nombre": "Subir tu propio CSV",
+            "que_hace": "Arrastrando o eligiendo el archivo. El dataset se queda en el equipo de quien lo sube.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "D2",
+            "nombre": "Tres ejemplos incluidos",
+            "que_hace": "Datos sintéticos empaquetados para recorrer la app entera sin traer nada propio.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "D3",
+            "nombre": "Vista previa con el perfil de cada columna",
+            "que_hace": "Tipo, valores vacíos y aviso cuando algo parece una fecha.",
+            "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "D4",
+            "nombre": "Límites dichos de frente",
+            "que_hace": "5 MB o 50 000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.",
+            "seccion_manual": "Limitaciones conocidas (Sprint 001)"
+          },
+          {
+            "id": "D5",
+            "nombre": "Saneamiento transparente con el conteo exacto",
+            "que_hace": "Filas duplicadas eliminadas, columnas identificadoras o constantes apartadas, celdas basura vaciadas. Y si el dataset venía limpio, un franco «nada que sanear».",
+            "seccion_manual": "Sobrevive datos reales"
+          },
+          {
+            "id": "D6",
+            "nombre": "Tres alertas antes de entrenar",
+            "que_hace": "Columna que huele a fuga, columna que parece un identificador y objetivo desbalanceado. Con símbolo y texto, nunca solo color.",
+            "seccion_manual": "Sobrevive datos reales"
+          },
+          {
+            "id": "D7",
+            "nombre": "Bloqueo del CSV con separador equivocado",
+            "que_hace": "El caso típico de Excel en español: se nombra el separador real en vez de adivinarlo, porque una lectura adivinada convertiría columnas numéricas en categorías en silencio.",
+            "seccion_manual": "Historial · Sprint 004"
+          }
+        ]
+      },
+      {
+        "orden": 3,
+        "estrella": false,
+        "nombre": "El porqué, contado honesto",
+        "linea": "Qué variables pesan, hacia dónde empujan, y una explicación en palabras llanas.",
+        "features": [
+          {
+            "id": "P1",
+            "nombre": "Gráfico de importancia con dirección",
+            "que_hace": "Importancia por permutación sobre el conjunto de prueba. Si el modelo no se apoya en una variable, se dice así: no se le pinta una flecha que la medición no respalda.",
+            "seccion_manual": "El porqué, contado honesto"
+          },
+          {
+            "id": "P2",
+            "nombre": "Texto explicativo sin IA y sin internet",
+            "que_hace": "Lo genera la propia app con los números del experimento. Siempre está disponible.",
+            "seccion_manual": "El porqué, contado honesto"
+          },
+          {
+            "id": "P3",
+            "nombre": "Narración con IA, solo a petición",
+            "que_hace": "Marcada «✓ verificada con los números»: si cita una cifra o una variable que no existe, se descarta antes de mostrarse.",
+            "seccion_manual": "El porqué, contado honesto"
+          },
+          {
+            "id": "P4",
+            "nombre": "Aviso honesto si la narración falla, con reintento",
+            "que_hace": "Dice cuál de los motivos ocurrió: el proveedor no respondió, no pasó la verificación, o no está configurada.",
+            "seccion_manual": "El porqué, contado honesto"
+          },
+          {
+            "id": "P5",
+            "nombre": "Model card descargable",
+            "que_hace": "La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites.",
+            "seccion_manual": "El porqué, contado honesto"
+          }
+        ]
+      },
+      {
+        "orden": 4,
+        "estrella": false,
+        "nombre": "El modelo se usa",
+        "linea": "Deja de ser un experimento: puntúa datos nuevos y guarda el modelo para otro día.",
+        "features": [
+          {
+            "id": "U1",
+            "nombre": "Puntuar datos nuevos",
+            "que_hace": "Se sube otra tabla y se obtiene la predicción de cada fila.",
+            "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U2",
+            "nombre": "Bloqueo honesto por columnas faltantes",
+            "que_hace": "Si falta alguna columna del modelo, se niega a puntuar y dice exactamente cuáles. Nunca rellena en silencio.",
+            "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U3",
+            "nombre": "Aviso de novedad con el porcentaje de filas",
+            "que_hace": "Valores que el modelo nunca vio al entrenar: se declara en cuántas filas está adivinando.",
+            "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U4",
+            "nombre": "Distribución de predicciones y vista previa",
+            "que_hace": "Antes de descargar nada.",
+            "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U5",
+            "nombre": "CSV puntuado sin pisar columnas",
+            "que_hace": "La tabla completa más predicción y probabilidad; si ya existía una columna con ese nombre, la nueva sale con sufijo.",
+            "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U6",
+            "nombre": "Exportar el modelo a un archivo",
+            "que_hace": "Lo que aprendió y su constancia, no las filas del usuario.",
+            "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U7",
+            "nombre": "Importar validando la integridad",
+            "que_hace": "Un archivo ajeno, corrupto o manipulado se rechaza con la razón exacta, sin llegar a abrirse.",
+            "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U8",
+            "nombre": "Resumen honesto antes de usar un modelo importado",
+            "que_hace": "Con qué datos nació, qué métrica sacó y qué advertencias trae.",
+            "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U9",
+            "nombre": "Puntuar sin volver a entrenar",
+            "que_hace": "Otro día, otro computador, el mismo modelo.",
+            "seccion_manual": "El modelo se usa"
+          }
+        ]
+      },
+      {
+        "orden": 5,
+        "estrella": false,
+        "nombre": "Transversales",
+        "linea": "Lo que acompaña a toda la app, no a una pantalla.",
+        "features": [
+          {
+            "id": "T1",
+            "nombre": "Bilingüe español e inglés",
+            "que_hace": "Toda la interfaz, con conmutador de idioma; hay pruebas que fallan si una clave existe en un idioma y no en el otro.",
+            "seccion_manual": "Primeros pasos"
+          },
+          {
+            "id": "T2",
+            "nombre": "Diccionario de términos",
+            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y las cinco métricas.",
+            "seccion_manual": "Diccionario de términos"
+          }
+        ]
+      }
+    ]
+  },
+  "metricas": [
+    {
+      "clave": "funcionalidades",
+      "etiqueta": "Funcionalidades del H1",
+      "valor": 33,
+      "unidad": "funcionalidades",
+      "fuente": "medido",
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad se descartó en H1."
+    },
+    {
+      "clave": "pantallas",
+      "etiqueta": "Pantallas del recorrido",
+      "valor": 5,
+      "unidad": "pantallas",
+      "fuente": "medido",
+      "detalle": "StartScreen, ConfigScreen, TrainingScreen, ResultsScreen y ScoreScreen en src/components/. ErrorScreen no cuenta: es un estado de error, no un paso. La app es un solo espacio de trabajo — hay un único page.tsx. La ruta /conoce sirve el brochure y no es una pantalla del producto."
+    },
+    {
+      "clave": "pruebas_unitarias",
+      "etiqueta": "Pruebas unitarias y de integración",
+      "valor": 267,
+      "unidad": "pruebas",
+      "fuente": "medido",
+      "detalle": "Salida del 2026-08-20: `pnpm test` 239 pruebas en 29 archivos + `pnpm test:integration` 28 pruebas en 5 archivos (estas últimas ejecutan Pyodide real)."
+    },
+    {
+      "clave": "pruebas_e2e",
+      "etiqueta": "Pruebas end-to-end",
+      "valor": 24,
+      "unidad": "pruebas",
+      "fuente": "medido",
+      "detalle": "Salida de `pnpm test:e2e` el 2026-08-20: 7 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe incluido. Cero flaky."
+    },
+    {
+      "clave": "cobertura_lineas",
+      "etiqueta": "Cobertura de líneas",
+      "valor": 90.69,
+      "unidad": "%",
+      "fuente": "medido",
+      "detalle": "v8 sobre engine, lib y components; 984 de 1085 líneas. Los motores puros de engine/ llevan umbral propio más alto."
+    },
+    {
+      "clave": "dependencias_runtime",
+      "etiqueta": "Dependencias en tiempo de ejecución",
+      "valor": 8,
+      "unidad": "paquetes",
+      "fuente": "medido",
+      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador."
+    },
+    {
+      "clave": "filas_del_usuario_en_la_red",
+      "etiqueta": "Filas de datos del usuario que salen del navegador",
+      "valor": 0,
+      "unidad": "filas",
+      "fuente": "medido",
+      "detalle": "Cuatro pruebas e2e inspeccionan cada petición de red durante el recorrido completo y fallan si alguna contiene valores del dataset. La única salida posible es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real."
+    },
+    {
+      "clave": "gpu_requerida",
+      "etiqueta": "GPU requerida",
+      "valor": 0,
+      "unidad": "GPU",
+      "fuente": "declarado",
+      "detalle": "Regla dura del producto: 100 % CPU. Árboles y boosting sobre scikit-learn en WebAssembly; prohibidos los modelos fundacionales tabulares, el backend WebGPU y el entrenamiento pesado de deep learning."
+    },
+    {
+      "clave": "costo_operacion_mensual",
+      "etiqueta": "Costo de operación mensual",
+      "valor": 0,
+      "unidad": "USD",
+      "fuente": "calculada",
+      "detalle": "Suma de los servicios contratados: Vercel Hobby (US$0), GitHub repo público (US$0), Sentry free tier (US$0) y Groq dentro de su cuota gratuita (la narración es opt-in y cuesta ~US$0.0005 por uso, registrado por Pino). No hay base de datos que facturar."
+    },
+    {
+      "clave": "peso_brochure",
+      "etiqueta": "Peso de este brochure",
+      "valor": 61572,
+      "unidad": "bytes",
+      "fuente": "medido",
+      "detalle": "`wc -c docs/BROCHURE.html`. Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
+    },
+    {
+      "clave": "decisiones_registradas",
+      "etiqueta": "Decisiones de arquitectura registradas",
+      "valor": 8,
+      "unidad": "ADR",
+      "fuente": "medido",
+      "detalle": "Archivos de decisions/."
+    }
+  ],
+  "stack": [
+    {
+      "nombre": "Next.js + TypeScript",
+      "papel": "la app, en modo estricto y bilingüe desde el primer día"
+    },
+    {
+      "nombre": "Pyodide (WebAssembly)",
+      "papel": "pandas y scikit-learn corriendo dentro del navegador, en un Web Worker, self-hosteados"
+    },
+    {
+      "nombre": "scikit-learn",
+      "papel": "el pipeline anti-fuga, los dos modelos candidatos y los baselines contra los que se juzga"
+    },
+    {
+      "nombre": "Vitest y Playwright",
+      "papel": "las pruebas, incluidas las que fallan si alguien ajusta el preprocesamiento fuera de la mitad de entrenamiento"
+    },
+    {
+      "nombre": "Groq",
+      "papel": "la narración del porqué: opt-in, con guardrails y fallback determinista si falla"
+    },
+    {
+      "nombre": "Sentry y Pino",
+      "papel": "observabilidad de metadatos — nunca contenido del dataset"
+    }
+  ],
+  "privacidad": {
+    "local_only": false,
+    "red_saliente": true,
+    "escribe_en_las_fuentes": false,
+    "usa_ia": true,
+    "detalle": "La app se sirve desde la web y tiene UNA ruta de servidor, así que no es una app local — pero los datos sí lo son: el perfilado, el saneamiento, el entrenamiento y el scoring corren en el navegador con Pyodide, y el dataset nunca se sube a ningún servidor porque no existe uno al que subirlo. La única salida es la narración con IA, y solo cuando el usuario pulsa su botón: viajan nombres de columnas y cifras agregadas —652 B en una medición real—, jamás filas. Los registros técnicos llevan metadatos (número de filas y columnas, tipos), nunca valores."
+  },
+  "enlaces": {
+    "produccion": null,
+    "razon": "El acceso a la app es por lista de espera, sin promesa de otorgamiento. La producción existe y se muestra en este brochure; el enlace no se publica.",
+    "repositorio": null,
+    "razon_repositorio": "Ningún enlace de acceso viaja en este export: es la regla de cero enlaces del portafolio, no una cuestión de visibilidad del repositorio.",
+    "brochure_archivo": "docs/BROCHURE.html",
+    "brochure_ruta_local": "/conoce"
+  }
+}

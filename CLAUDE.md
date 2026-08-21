@@ -134,6 +134,33 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     `/deploy-check` §11. _(Origen: esta app, S4 — el job `lighthouse` estuvo `skipped` las 12
     corridas de la rama porque `quality` llevaba en rojo; el gate de performance no corrió ni una
     vez en un ciclo de 4 sprints mientras el DoD lo daba por verde con corridas locales.)_
+12. **Brochure vivo + su export** (regla 13 del kit, molde v2). `docs/BROCHURE.html` + la ruta
+    pública `/conoce` son el entregable de PRESENTACIÓN de la app — el anti-manual, para usuarios
+    finales y clientes. **REGLA CERO: no se estampa, se PRODUCE** — antes de una línea de HTML, un
+    **storyboard aprobado por el usuario**: escenas con mensaje/gramática/técnica justificada,
+    **clímax explícito** (la promesa mayor tiene escena propia, JAMÁS un acordeón del pie), ritmo,
+    variante reduced-motion POR escena, dial `MOTION_INTENSITY` fijado con el usuario, identidad en
+    una frase y un riesgo registrado. **Tiene DOS estados:** nace **INICIAL** en el cierre de
+    construcción del ciclo y pasa a **SELLADO (MVP)** cuando termina el gate ⭐⭐ de pruebas; el
+    sello NO lo congela — **todo sprint que cambie features ajusta brochure y export en su MISMO
+    PR**. Junto al HTML vive **`docs/brochure-export.json`** (contrato versionado del portafolio:
+    tagline, intro, funcionalidades con el conteo del MANUAL, métricas **con su `fuente`**, stack),
+    que es lo que la vitrina de hoja-de-vida consume sin abrir este repo. Estructura de 4 capas +
+    regla de conteo con **tabla de mapeo en el summary**; el brochure no se documenta a sí mismo.
+    A11y estructural (`<h3><button>` · lo cerrado FUERA del árbol de accesibilidad · el LCP jamás
+    nace de `opacity: 0`) y **gates que la CI no ve**: pasada de capturas por bloque leídas como
+    imagen antes de presentar · sala de proyección con el usuario · **e2e obligatorio de
+    reduced-motion** · lo medible se corrige MIDIENDO · última milla del link **sin sesión**.
+13. **CERO ENLACES: la producción se MUESTRA, jamás se ENTREGA** (regla 17 del kit, regla dura del
+    pipeline). Ningún archivo de este repo público ni campo de GitHub publica la URL de producción
+    o de previews: ni el `README.md`, ni el campo About/website del repo, ni el `BLUEPRINT.html`
+    (documenta dominio y protección como «qué ve quién sin sesión» **sin escribir la URL** — el
+    registro exacto vive en la planeadora, que es privada), ni el manual, ni la guía de prueba (su
+    campo de URL se llena **EN USO**, desde la orden), ni `package.json`, ni el export. El CTA
+    público es la **lista de espera**, sin promesa de otorgamiento. Verificación:
+    `grep -rn "vercel\.app\|workers\.dev" --include="*.md" --include="*.html" --include="*.json" .`
+    vacío **y** `gh repo view --json homepageUrl` en `""`. _(La vitrina de hoja-de-vida muestra QUÉ
+    construyó el usuario, nunca POR DÓNDE entrar.)_
 
 ## Estándares (los 6+1, gates en CI)
 
