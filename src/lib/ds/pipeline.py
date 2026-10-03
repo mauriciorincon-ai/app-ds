@@ -5,7 +5,8 @@ filas de train (`train_idx`). Es el único camino: no existe función que
 preprocese antes del split. Todas las funciones públicas reciben y devuelven
 JSON (interop simple y robusta con el worker de TS).
 
-Todas las métricas se calculan sobre TEST, nunca sobre train.
+Las métricas del veredicto se calculan sobre TEST, nunca sobre train; los
+puntajes con que la liga ELIGE (S5) son de validación cruzada dentro de train.
 
 S3 — el modelo se usa: `run_experiment` retiene el pipeline fitted y el perfil
 de train en `_MODEL` (nivel de módulo, vive lo que viva el worker);
@@ -13,25 +14,38 @@ de train en `_MODEL` (nivel de módulo, vive lo que viva el worker);
 `export_model`/`import_model` serializan/restauran el modelo (pickle+zlib+
 base64 — ADR-007; el manifiesto y su hash se validan en TS ANTES de llamar
 a import_model).
+
+S5 — la liga (ADR-009): `run_experiment` hace competir a todos los miembros del
+roster que TS envía, con validación cruzada DENTRO de train (el preprocesador
+se reajusta en cada fold), elige por la regla de un error estándar y RECIÉN
+ENTONCES abre el test (una vez, para todos). `fit_member` ajusta otro miembro
+cuando el usuario elige a mano. El payload se valida al entrar
+(`_validate_payload`, el lado que LEE del contrato TS → Python).
 """
 
 import base64
 import json
+import math
 import pickle
 import sys
+import time
+import warnings
 import zlib
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import (
+    ExtraTreesClassifier,
     HistGradientBoostingClassifier,
     RandomForestClassifier,
 )
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, RidgeClassifier
 from sklearn.metrics import (
     accuracy_score,
     confusion_matrix,
@@ -40,8 +54,22 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
+from sklearn.model_selection import StratifiedKFold, cross_validate
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+
+
+# LightGBM 4.6 registra nombres genéricos de columnas al ajustar; sklearn avisa
+# entonces en cada predict que la matriz (numpy, salida del ColumnTransformer) no
+# los trae. Es benigno y llenaba la consola del usuario: se silencia SOLO ese aviso.
+warnings.filterwarnings(
+    "ignore", message="X does not have valid feature names", category=UserWarning
+)
 
 
 # Modelo fitted retenido tras run_experiment/import_model (S3). Vive a nivel de
@@ -110,15 +138,20 @@ def _metrics(y_true, y_pred, y_score):
     }
 
 
+def _scores(pipe, X):
+    """Puntaje continuo para el AUC: probabilidad de la clase positiva si el
+    modelo la da; si no (ridge, SVM lineal), su función de decisión — el AUC
+    solo necesita ORDENAR, no una probabilidad."""
+    if hasattr(pipe, "predict_proba"):
+        return pipe.predict_proba(X)[:, 1]
+    return pipe.decision_function(X)
+
+
 def _fit_score(estimator, preprocessor, X_train, y_train, X_test):
     pipe = Pipeline([("prep", preprocessor), ("model", estimator)])
     pipe.fit(X_train, y_train)  # <-- ajuste SOLO sobre train (garantía anti-fuga)
     y_pred = pipe.predict(X_test)
-    if hasattr(pipe, "predict_proba"):
-        y_score = pipe.predict_proba(X_test)[:, 1]
-    else:
-        y_score = y_pred
-    return pipe, y_pred, y_score
+    return pipe, y_pred, _scores(pipe, X_test)
 
 
 def _feature_directions(X_test, y_test, numeric):
@@ -208,24 +241,133 @@ def _training_profile(X_train, numeric, categorical):
 
 
 def _runtime_versions():
+    import lightgbm
     import pyodide
     import sklearn
+    import xgboost
 
     return {
         "pyodide": pyodide.__version__,
         "sklearn": sklearn.__version__,
         "python": sys.version.split()[0],
+        # S5: el pickle de un booster exige su paquete (y versión) al importar.
+        "xgboost": xgboost.__version__,
+        "lightgbm": lightgbm.__version__,
     }
 
 
-def run_experiment(payload_json):
-    global _MODEL
-    p = json.loads(payload_json)
+# --- S5: la liga (ADR-009) ---------------------------------------------------
+
+# Métrica primaria (la decide TS, verdict.ts) → scorer de sklearn para la CV.
+SCORER = {
+    "auc": "roc_auc",
+    "f1": "f1",
+    "accuracy": "accuracy",
+    "precision": "precision",
+    "recall": "recall",
+}
+
+
+def _xgboost(seed):
+    from xgboost import XGBClassifier
+
+    return XGBClassifier(
+        n_estimators=200, max_depth=6, learning_rate=0.1, tree_method="hist",
+        n_jobs=1, random_state=seed, verbosity=0,
+    )
+
+
+def _lightgbm(seed):
+    from lightgbm import LGBMClassifier
+
+    return LGBMClassifier(n_estimators=200, n_jobs=1, random_state=seed, verbose=-1)
+
+
+# El roster: id → fábrica con hiperparámetros FIJOS, semilla y un solo hilo
+# (determinismo entre navegadores, medido en la F0). El ORDEN de la liga no vive
+# aquí: lo manda TS (engine/roster.ts, del más simple al más caro) y Python no lo
+# re-deriva. Paridad de ids TS↔Python: tests/unit/roster.test.ts.
+_FACTORIES = {
+    "logistic": lambda seed: LogisticRegression(max_iter=1000, random_state=seed),
+    "logistic_balanced": lambda seed: LogisticRegression(
+        max_iter=1000, random_state=seed, class_weight="balanced"
+    ),
+    "ridge": lambda seed: RidgeClassifier(random_state=seed),
+    "naive_bayes": lambda seed: GaussianNB(),
+    "linear_svc": lambda seed: LinearSVC(random_state=seed),
+    "decision_tree": lambda seed: DecisionTreeClassifier(
+        random_state=seed, min_samples_leaf=5
+    ),
+    "knn": lambda seed: KNeighborsClassifier(),
+    "hgb": lambda seed: HistGradientBoostingClassifier(random_state=seed),
+    "lightgbm": _lightgbm,
+    "xgboost": _xgboost,
+    "extra_trees": lambda seed: ExtraTreesClassifier(
+        n_estimators=200, random_state=seed, n_jobs=1
+    ),
+    "forest": lambda seed: RandomForestClassifier(
+        n_estimators=200, random_state=seed, n_jobs=1
+    ),
+    "forest_balanced": lambda seed: RandomForestClassifier(
+        n_estimators=200, random_state=seed, n_jobs=1, class_weight="balanced"
+    ),
+    # F0-4: con max_iter=300 no convergía en NINGÚN dataset medido; con parada
+    # temprana converge siempre y cuesta ~8× menos.
+    "mlp": lambda seed: MLPClassifier(
+        hidden_layer_sizes=(64,), max_iter=500, early_stopping=True,
+        n_iter_no_change=10, random_state=seed,
+    ),
+}
+
+
+def roster_ids(payload_json="{}"):
+    """Ids del roster (ordenados) — para la paridad TS↔Python."""
+    return json.dumps(sorted(_FACTORIES))
+
+
+def _contract(field):
+    # El lado que LEE del contrato rechaza NOMBRANDO el campo (regla 15). Nunca
+    # lleva valores del payload: solo el nombre del campo, que es de la app.
+    raise ValueError(f"contract:{field}")
+
+
+def _is_int(value):
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _validate_payload(p, *, league=True):
+    """Valida el payload TS → Python antes de tocar los datos."""
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in ("headers", "rows", "numeric", "categorical", "train_idx", "test_idx"):
+        if not isinstance(p.get(key), list):
+            _contract(key)
+    if not isinstance(p.get("target"), str) or p["target"] not in p["headers"]:
+        _contract("target")
+    if not _is_int(p.get("seed")):
+        _contract("seed")
+    if p.get("primary_metric") not in SCORER:
+        _contract("primary_metric")
+    if league:
+        roster = p.get("roster")
+        if (
+            not isinstance(roster, list)
+            or len(roster) == 0
+            or len(set(roster)) != len(roster)
+            or any(name not in _FACTORIES for name in roster)
+        ):
+            _contract("roster")
+        if not _is_int(p.get("cv_k")) or p["cv_k"] < 2:
+            _contract("cv_k")
+    elif p.get("member") not in _FACTORIES:
+        _contract("member")
+
+
+def _prepare(p):
+    """Frame, objetivo 0/1 y partición — compartido por la liga y fit_member."""
     numeric = list(p["numeric"])
     categorical = list(p["categorical"])
     features = numeric + categorical
-    seed = int(p.get("seed", 42))
-
     df = _build_frame(p["headers"], p["rows"], numeric)
 
     # Objetivo binario → 0/1. Positiva = la clase MINORITARIA (el evento de interés);
@@ -239,109 +381,253 @@ def run_experiment(payload_json):
     X = df[features]
     train_idx = np.array(p["train_idx"], dtype=int)
     test_idx = np.array(p["test_idx"], dtype=int)
-    X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-    y_train, y_test = y[train_idx], y[test_idx]
-
-    preprocessor = _make_preprocessor(numeric, categorical)
-
-    from sklearn.base import clone
-
-    # Baselines (rivales honestos) + candidatos reales. TODOS comparten el MISMO
-    # preprocesador (clonado) ⇒ comparabilidad justa y un solo camino de
-    # export/scoring. HGB corre dentro del pipeline: el imputer ya llenó los NaN,
-    # así que NO usa su modo NaN-nativo (decisión H1 — ADR-008).
-    baseline_estimators = {
-        "majority": DummyClassifier(strategy="most_frequent"),
-        "logistic": LogisticRegression(max_iter=1000, random_state=seed),
-    }
-    candidate_estimators = {
-        "forest": RandomForestClassifier(n_estimators=200, random_state=seed, n_jobs=1),
-        "hgb": HistGradientBoostingClassifier(random_state=seed),
+    return {
+        "numeric": numeric,
+        "categorical": categorical,
+        "features": features,
+        "classes": classes,
+        "positive": positive,
+        "y": y,
+        "train_idx": train_idx,
+        "test_idx": test_idx,
+        "X_train": X.iloc[train_idx],
+        "X_test": X.iloc[test_idx],
+        "y_train": y[train_idx],
+        "y_test": y[test_idx],
+        "seed": int(p["seed"]),
+        "metric": p["primary_metric"],
+        "preprocessor": _make_preprocessor(numeric, categorical),
     }
 
-    baselines = {}
-    for name, estimator in baseline_estimators.items():
-        _, y_pred, y_score = _fit_score(
-            clone(estimator), clone(preprocessor), X_train, y_train, X_test
-        )
-        baselines[name] = _metrics(y_test, y_pred, y_score)
 
-    fitted = {}  # name -> (pipe, y_pred, metrics)
-    candidate_order = ["forest", "hgb"]
-    for name in candidate_order:
-        pipe, y_pred, y_score = _fit_score(
-            clone(candidate_estimators[name]), clone(preprocessor), X_train, y_train, X_test
-        )
-        fitted[name] = (pipe, y_pred, _metrics(y_test, y_pred, y_score))
-
-    # Ganador: argmax de la métrica primaria; empate → forest (orden estable). La
-    # REGLA de métrica vive en TS (verdict.ts, pickPrimaryMetric); aquí solo se
-    # recibe CUÁL es (payload). Default "auc" si un caller directo no la manda.
-    primary_metric = p.get("primary_metric", "auc")
-    winner = max(
-        candidate_order,
-        key=lambda n: (fitted[n][2][primary_metric], n == "forest"),
+def _member_pipe(name, ctx):
+    return Pipeline(
+        [("prep", clone(ctx["preprocessor"])), ("model", _FACTORIES[name](ctx["seed"]))]
     )
-    winner_pipe, winner_pred, winner_metrics = fitted[winner]
-    candidates = [{"name": n, "metrics": fitted[n][2]} for n in candidate_order]
 
-    cm = confusion_matrix(y_test, winner_pred, labels=[0, 1]).tolist()
-    explainability = _explainability(winner_pipe, X_test, y_test, features, numeric, seed)
 
-    # Medianas del imputer numérico del GANADOR (para el test anti-fuga: deben
-    # provenir SOLO de train — son idénticas entre candidatos, mismo preprocesador).
-    num_imputer = (
-        winner_pipe.named_steps["prep"].named_transformers_["num"].named_steps["imputer"]
+def _cross_validate(name, ctx, k):
+    """CV estratificada DENTRO de train. El preprocesador va DENTRO del Pipeline
+    que se valida ⇒ se reajusta en cada fold y jamás ve las filas de validación
+    de su fold (el test anti-fuga de la CV lo vigila con un espía)."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        cv = cross_validate(
+            _member_pipe(name, ctx),
+            ctx["X_train"],
+            ctx["y_train"],
+            cv=StratifiedKFold(k, shuffle=True, random_state=ctx["seed"]),
+            scoring=SCORER[ctx["metric"]],
+            error_score="raise",
+        )
+    folds = [float(v) for v in cv["test_score"]]
+    if not all(math.isfinite(v) for v in folds):
+        raise ArithmeticError("non-finite-cv-score")
+    converged = not any(issubclass(w.category, ConvergenceWarning) for w in caught)
+    return {"mean": float(np.mean(folds)), "std": float(np.std(folds)), "folds": folds}, converged
+
+
+def select_one_se(league, k):
+    """Regla de un error estándar (ESL §7.10; desviación D8 del plan, medida en la
+    F0): entre los miembros `ok` que quedan a menos de un error estándar del mejor
+    puntaje de CV, gana el PRIMERO del orden recibido (el más simple). `league`
+    viene en el orden de TS. Espejo exacto: engine/roster.ts `selectOneSe` (TS
+    rechaza el resultado si su cálculo no coincide). Devuelve (mejor, ganador, ee).
+    """
+    eligible = [row for row in league if row["status"] == "ok"]
+    if not eligible:
+        raise RuntimeError("league-empty")
+    best = max(eligible, key=lambda row: row["cv"]["mean"])  # empate → el primero
+    se = best["cv"]["std"] / math.sqrt(k)
+    threshold = best["cv"]["mean"] - se
+    winner = next(row for row in eligible if row["cv"]["mean"] >= threshold)
+    return best["name"], winner["name"], se
+
+
+def _selected_details(pipe, y_pred, ctx):
+    """Lo que solo se calcula para el modelo SELECCIONADO: matriz de confusión,
+    explicabilidad y lo que el preprocesamiento aprendió (de train)."""
+    numeric, categorical = ctx["numeric"], ctx["categorical"]
+    cm = confusion_matrix(ctx["y_test"], y_pred, labels=[0, 1]).tolist()
+    explainability = _explainability(
+        pipe, ctx["X_test"], ctx["y_test"], ctx["features"], numeric, ctx["seed"]
     )
-    learned_medians = {
-        col: float(val) for col, val in zip(numeric, num_imputer.statistics_)
-    }
+
+    # Medianas del imputer numérico (para el test anti-fuga: deben provenir SOLO
+    # de train — son idénticas entre miembros, mismo preprocesador).
+    num_imputer = pipe.named_steps["prep"].named_transformers_["num"].named_steps["imputer"]
+    learned_medians = {col: float(val) for col, val in zip(numeric, num_imputer.statistics_)}
 
     # Categorías raras agrupadas por el OneHotEncoder (min_frequency, train-only).
     rare_categories = {}
     if categorical:
-        cat_oh = (
-            winner_pipe.named_steps["prep"]
-            .named_transformers_["cat"]
-            .named_steps["onehot"]
-        )
+        cat_oh = pipe.named_steps["prep"].named_transformers_["cat"].named_steps["onehot"]
         infreq = getattr(cat_oh, "infrequent_categories_", None)
         if infreq is not None:
             for col, cats in zip(categorical, infreq):
                 if cats is not None and len(cats) > 0:
                     rare_categories[col] = sorted(str(c) for c in cats)
 
-    # S3/S4: retener el GANADOR (el que recibe el veredicto) + esquema + perfil de
-    # train — lo que score_new_data y export_model necesitan.
-    _MODEL = {
-        "pipe": winner_pipe,
-        "schema": {
-            "numeric": numeric,
-            "categorical": categorical,
-            "target": p["target"],
-            "classes": classes,
-            "positive_class": positive,
+    return {
+        "confusion_matrix": cm,
+        "explainability": explainability,
+        "preprocessing": {
+            "numeric_medians": learned_medians,
+            "rare_categories": rare_categories,
         },
-        "training_profile": _training_profile(X_train, numeric, categorical),
     }
+
+
+def _retain(pipe, ctx, target):
+    """S3/S4: retener el modelo SELECCIONADO (el que recibe el veredicto) + esquema
+    + perfil de train — lo que score_new_data y export_model necesitan."""
+    global _MODEL
+    _MODEL = {
+        "pipe": pipe,
+        "schema": {
+            "numeric": ctx["numeric"],
+            "categorical": ctx["categorical"],
+            "target": target,
+            "classes": ctx["classes"],
+            "positive_class": ctx["positive"],
+        },
+        "training_profile": _training_profile(
+            ctx["X_train"], ctx["numeric"], ctx["categorical"]
+        ),
+    }
+
+
+def _elapsed_ms(start):
+    return int(round((time.perf_counter() - start) * 1000))
+
+
+def run_experiment(payload_json, on_progress=None):
+    """La liga: CV de cada miembro (en el orden de TS) → selección por un error
+    estándar → recién entonces se abre el test, UNA vez, para todos (F0-5: el
+    test de los perdedores se calcula en la misma corrida, etiquetado «no sirve
+    para elegir»). `on_progress(json)` se llama antes de cada paso (worker → UI).
+    """
+    started = time.perf_counter()
+    p = json.loads(payload_json)
+    _validate_payload(p)
+    ctx = _prepare(p)
+    k = int(p["cv_k"])
+    # k > clase minoritaria de train ⇒ hay folds sin positivos (TS ya lo acota).
+    if k > int(np.bincount(ctx["y_train"], minlength=2).min()):
+        _contract("cv_k")
+    order = list(p["roster"])
+    total = len(order)
+
+    def progress(phase, index, name):
+        if on_progress is not None:
+            on_progress(
+                json.dumps({"phase": phase, "member": name, "index": index, "total": total})
+            )
+
+    # 1) Validación cruzada DENTRO de train. Un miembro que falla no tumba la
+    #    liga: queda «error» con SOLO el tipo de la excepción (el mensaje puede
+    #    traer valores del dataset — regla dura 2).
+    league = []
+    for index, name in enumerate(order):
+        progress("cv", index, name)
+        t = time.perf_counter()
+        row = {"name": name, "status": "ok", "cv": None, "test": None, "error_type": None}
+        try:
+            row["cv"], converged = _cross_validate(name, ctx, k)
+            if not converged:
+                row["status"] = "no-converge"
+        except Exception as error:  # noqa: BLE001 — se registra el TIPO, nunca el mensaje
+            row["status"] = "error"
+            row["error_type"] = type(error).__name__
+        row["elapsed_ms"] = _elapsed_ms(t)
+        league.append(row)
+
+    # 2) Selección: solo con los puntajes de CV. El test todavía no se abrió.
+    best, winner, se = select_one_se(league, k)
+
+    # 3) Recién ahora se abre el test: baselines (rivales honestos) y cada miembro
+    #    ajustado en train completo. Solo el pipeline del ganador queda en memoria.
+    X_train, y_train, X_test, y_test = ctx["X_train"], ctx["y_train"], ctx["X_test"], ctx["y_test"]
+    baselines = {}
+    for name, estimator in (
+        ("majority", DummyClassifier(strategy="most_frequent")),
+        ("logistic", LogisticRegression(max_iter=1000, random_state=ctx["seed"])),
+    ):
+        _, y_pred, y_score = _fit_score(
+            estimator, clone(ctx["preprocessor"]), X_train, y_train, X_test
+        )
+        baselines[name] = _metrics(y_test, y_pred, y_score)
+
+    winner_pipe = winner_pred = None
+    for index, row in enumerate(league):
+        if row["status"] == "error":
+            continue
+        progress("test", index, row["name"])
+        t = time.perf_counter()
+        try:
+            pipe = _member_pipe(row["name"], ctx).fit(X_train, y_train)
+            y_pred = pipe.predict(X_test)
+            row["test"] = _metrics(y_test, y_pred, _scores(pipe, X_test))
+            if row["name"] == winner:
+                winner_pipe, winner_pred = pipe, y_pred
+        except Exception as error:  # noqa: BLE001
+            if row["name"] == winner:
+                raise RuntimeError("winner-fit-failed") from None
+            # El estado de la CV NO cambia (la selección ya se hizo con él y TS la
+            # recalcula); queda sin test y con el tipo del error.
+            row["error_type"] = type(error).__name__
+            row["test"] = None
+        row["elapsed_ms"] += _elapsed_ms(t)
+
+    winner_row = next(row for row in league if row["name"] == winner)
+    _retain(winner_pipe, ctx, p["target"])
 
     return json.dumps(
         {
-            "n_train": int(len(train_idx)),
-            "n_test": int(len(test_idx)),
-            "classes": classes,
-            "positive_class": positive,
-            "positive_rate": float(y.mean()),
-            "baselines": {"majority": baselines["majority"], "logistic": baselines["logistic"]},
-            "model": winner_metrics,
+            "n_train": int(len(ctx["train_idx"])),
+            "n_test": int(len(ctx["test_idx"])),
+            "classes": ctx["classes"],
+            "positive_class": ctx["positive"],
+            "positive_rate": float(ctx["y"].mean()),
+            "baselines": baselines,
+            "model": winner_row["test"],
+            # Compat S4 (manifiesto y UI): el modelo que `model` representa.
             "model_name": winner,
-            "candidates": candidates,
-            "confusion_matrix": cm,
-            "explainability": explainability,
-            "preprocessing": {
-                "numeric_medians": learned_medians,
-                "rare_categories": rare_categories,
+            "winner": winner,
+            "league": league,
+            "cv": {
+                "k": k,
+                "scoring": SCORER[ctx["metric"]],
+                "rule": "one-se",
+                "best": best,
+                "se": se,
             },
+            "elapsed_ms": _elapsed_ms(started),
+            **_selected_details(winner_pipe, winner_pred, ctx),
+        }
+    )
+
+
+def fit_member(payload_json):
+    """Elección manual (U1): ajusta UN miembro en train completo y lo retiene en
+    lugar del ganador. Mismo split, misma semilla ⇒ reproduce exactamente su fila
+    de la liga (determinismo, vigilado por un test). No hay CV: la elección ya la
+    hizo el usuario y TS la registra como «elegido por ti»."""
+    started = time.perf_counter()
+    p = json.loads(payload_json)
+    _validate_payload(p, league=False)
+    ctx = _prepare(p)
+    name = p["member"]
+    pipe = _member_pipe(name, ctx).fit(ctx["X_train"], ctx["y_train"])
+    y_pred = pipe.predict(ctx["X_test"])
+    metrics = _metrics(ctx["y_test"], y_pred, _scores(pipe, ctx["X_test"]))
+    _retain(pipe, ctx, p["target"])
+    return json.dumps(
+        {
+            "model": metrics,
+            "model_name": name,
+            "elapsed_ms": _elapsed_ms(started),
+            **_selected_details(pipe, y_pred, ctx),
         }
     )
 
@@ -391,14 +677,16 @@ def score_new_data(payload_json):
 
     pipe = _MODEL["pipe"]
     pred01 = pipe.predict(X)
-    proba = pipe.predict_proba(X)[:, 1]
+    # S5: ridge y el SVM lineal deciden la clase sin dar una probabilidad. No se
+    # inventa una (honestidad): `probabilities` viaja null y la UI lo dice.
+    proba = pipe.predict_proba(X)[:, 1] if hasattr(pipe, "predict_proba") else None
     positive = schema["positive_class"]
     negative = next(c for c in schema["classes"] if c != positive)
 
     return json.dumps(
         {
             "predictions": [positive if v == 1 else negative for v in pred01],
-            "probabilities": [float(v) for v in proba],
+            "probabilities": None if proba is None else [float(v) for v in proba],
             "positive_class": positive,
             "novelty": {
                 "columns": novelty_columns,

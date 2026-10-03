@@ -4,8 +4,11 @@
 // entrenar, puntuar, exportar e importar el modelo; la orquestación pura
 // (split/veredicto/fuga/esquema/manifiesto) vive en el hilo principal.
 //
-// Mensajes:  in  { id, type: "train"|"score"|"export-model"|"import-model", payload? }
+// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"export-model"|"import-model", payload? }
 //            out { id, type: "progress"|"result"|"error", ... }  (result lleva command)
+// S5: durante "train" (la liga), pipeline.py llama a un callback JS antes de cada
+// paso y el runner lo reenvía como progress con `detail` {phase, member, index,
+// total}; el hilo principal lo valida con src/workers/contract.ts.
 //
 // El estado Python (_MODEL en pipeline.py) vive lo que viva este worker: tras
 // entrenar o importar, score/export operan sin re-entrenar.
@@ -20,6 +23,7 @@ const PACKAGES_WITHOUT_DEPS = ["xgboost"];
 // Etapa de progreso que se anuncia antes de ejecutar cada comando.
 const STAGE = {
   train: "training",
+  "fit-member": "training",
   score: "scoring",
   "export-model": "exporting",
   "import-model": "importing",
@@ -49,6 +53,7 @@ function ensureRuntime(post, id) {
       pyodide.runPython(source);
       return {
         train: pyodide.globals.get("run_experiment"),
+        "fit-member": pyodide.globals.get("fit_member"),
         score: pyodide.globals.get("score_new_data"),
         "export-model": pyodide.globals.get("export_model"),
         "import-model": pyodide.globals.get("import_model"),
@@ -70,8 +75,15 @@ self.onmessage = async (event) => {
     const run = commands[type];
     if (!run) throw new Error(`unknown-command:${type}`);
     post({ id, type: "progress", stage: STAGE[type] });
-    // Interop uniforme: toda función Python recibe y devuelve string JSON.
-    const result = JSON.parse(run(JSON.stringify(payload ?? {})));
+    // Interop uniforme: toda función Python recibe y devuelve string JSON. La liga
+    // recibe además el callback de progreso (Python → JS, string JSON por paso).
+    const args = [JSON.stringify(payload ?? {})];
+    if (type === "train") {
+      args.push((detailJson) =>
+        post({ id, type: "progress", stage: "training", detail: JSON.parse(detailJson) }),
+      );
+    }
+    const result = JSON.parse(run(...args));
     post({ id, type: "result", command: type, result });
   } catch (error) {
     post({

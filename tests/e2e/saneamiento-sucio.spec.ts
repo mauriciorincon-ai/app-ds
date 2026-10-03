@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { MEMBER_IDS } from "../../src/engine/roster";
 
 // S4 — "sobrevive datos reales": cargar el CSV sucio del kit → informe de
 // saneamiento con conteos → alerta de desbalance al elegir objetivo → entrenar →
@@ -54,7 +55,12 @@ test("cargar sucio → informe → alerta → entrenar → veredicto → exporta
   expect(download.suggestedFilename()).toMatch(/\.probeta\.json$/);
   const file = JSON.parse(readFileSync((await download.path())!, "utf8"));
   expect(file.format_version).toBe(1);
-  expect(file.manifest.model_name).toMatch(/^(forest|hgb)$/);
+  // S5 (R4, cambio esperado): ya no compiten solo forest y hgb — el modelo es
+  // un miembro de la liga, y el manifiesto registra la liga y cómo se eligió.
+  expect(MEMBER_IDS).toContain(file.manifest.model_name);
+  expect(file.manifest.selection).toMatchObject({ by: "cv", rule: "one-se" });
+  expect(file.manifest.selection.cv_winner).toBe(file.manifest.model_name);
+  expect(file.manifest.league.length).toBeGreaterThan(1);
   expect(file.manifest.sanitation.duplicateRowsRemoved).toBe(10);
   expect(
     file.manifest.sanitation.exclusions.map(

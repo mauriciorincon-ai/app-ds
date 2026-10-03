@@ -7,7 +7,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
-import { loadPyodide, type PyodideInterface } from "pyodide";
+import type { PyodideInterface } from "pyodide";
+import { loadRuntime, withLeague } from "./runtime";
 import { parseCsvWithLimits } from "@/lib/ds/csv";
 import { prepareRun } from "@/lib/experiment";
 
@@ -16,18 +17,16 @@ let pyodide: PyodideInterface;
 let runExperiment: (payloadJson: string) => string;
 
 beforeAll(async () => {
-  pyodide = await loadPyodide();
-  await pyodide.loadPackage(["pandas", "scikit-learn"]);
-  pyodide.runPython(
-    readFileSync(resolve(process.cwd(), "src/lib/ds/pipeline.py"), "utf8"),
-  );
+  pyodide = await loadRuntime();
   runExperiment = pyodide.globals.get("run_experiment") as unknown as (
     payloadJson: string,
   ) => string;
 }, 180_000);
 
-function run(payload: unknown): Record<string, unknown> {
-  return JSON.parse(runExperiment(JSON.stringify(payload)));
+// Payloads S1/S2 armados a mano: liga chica (withLeague). runDataset usa el
+// prepareRun real, que ya trae el roster del encarrilador y su k.
+function run(payload: object): Record<string, unknown> {
+  return JSON.parse(runExperiment(JSON.stringify(withLeague(payload))));
 }
 
 describe("pipeline anti-fuga (integración Pyodide)", () => {

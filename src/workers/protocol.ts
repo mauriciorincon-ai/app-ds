@@ -2,6 +2,8 @@
 // runner de Pyodide (public/pyodide-runner.js), que solo entrena y devuelve
 // métricas. La UI no habla WASM: lee el estado de useExperiment.
 import type { LeakageFinding } from "@/engine/leakage";
+import type { MemberId } from "@/engine/roster";
+import type { TaskDetection } from "@/engine/tarea";
 import type { MetricName, Metrics, Verdict } from "@/engine/verdict";
 import type { ColumnProfile } from "@/lib/ds/csv";
 
@@ -24,6 +26,12 @@ export type WorkerErrorKind =
   | "csv-tab"
   | "target-not-binary"
   | "no-features"
+  // S5: la clase minoritaria de train no alcanza para 2 pliegues de validación
+  // cruzada (hay que tener al menos 2 ejemplos de cada clase en train).
+  | "too-few-rows"
+  // S5 (regla 15): el resultado del motor no tiene la forma del contrato; se
+  // nombra el campo y no se muestra nada que no se pueda verificar.
+  | "contract"
   // S4: tras el saneamiento no queda estructura modelable (todo eran IDs/constantes,
   // o no quedan filas/columnas suficientes) — irrecuperable, con reporte honesto.
   | "csv-unusable"
@@ -39,6 +47,8 @@ export type DatasetSummary = {
   previewRows: string[][];
   /** Columnas elegibles como objetivo binario. */
   targetCandidates: string[];
+  /** S5 (E1): la tarea que cada columna plantearía como objetivo, con su razón. */
+  targetTasks: Record<string, TaskDetection>;
   /** Columnas que parecen fecha (aviso S1: no se usa split temporal aún). */
   dateColumns: string[];
 };
@@ -55,8 +65,17 @@ export type PipelinePayload = {
   seed: number;
   // S4: la regla de métrica primaria vive SOLO en verdict.ts (pickPrimaryMetric es
   // simétrica en p↔1−p ⇒ TS la resuelve sin conocer cuál clase es la positiva de
-  // Python). Python la usa para elegir el candidato ganador — no la re-deriva.
+  // Python). S5: es también el scorer de la validación cruzada — no la re-deriva.
   primary_metric: MetricName;
+  /** S5 (E2): quiénes compiten, en orden de prioridad (Python no lo re-deriva). */
+  roster: MemberId[];
+  /** S5: pliegues de la validación cruzada (≤ minoritaria de train, ≥ 2). */
+  cv_k: number;
+};
+
+/** S5 (U1): ajustar UN miembro elegido por el usuario (sin CV: ya eligió). */
+export type FitMemberPayload = Omit<PipelinePayload, "roster" | "cv_k"> & {
+  member: MemberId;
 };
 
 // Explicabilidad global (S2): permutation importance sobre TEST, calculada por
@@ -78,11 +97,55 @@ export type Explainability = {
 };
 
 // S4: cada candidato entrenado (mismo preprocesador) con sus métricas sobre test.
-// El ganador (argmax de la métrica primaria) es el que se retiene y exporta.
+// S5: derivado de la liga (filas con test) mientras la UI de la F2 no la reemplace.
 export type ModelCandidate = {
   /** Clave estable e independiente de idioma; la UI la traduce por i18n. */
-  name: "forest" | "hgb";
+  name: MemberId;
   metrics: Metrics;
+};
+
+// --- S5: la liga ------------------------------------------------------------
+
+/** ok = compite · no-converge = puntaje visible y etiquetado, no gana solo ·
+ *  error = no concluyó (solo el TIPO de error viaja: regla dura 2). */
+export type MemberStatus = "ok" | "no-converge" | "error";
+
+export type CvScore = {
+  mean: number;
+  /** Desviación estándar de los folds (np.std, ddof=0). */
+  std: number;
+  folds: number[];
+};
+
+export type LeagueRow = {
+  name: MemberId;
+  status: MemberStatus;
+  /** null ⇔ status "error". «Sirve para elegir.» */
+  cv: CvScore | null;
+  /** Métricas en test («no sirve para elegir»); null ⇔ status "error". */
+  test: Metrics | null;
+  /** CV + ajuste en train + test, en ms (calibra la estimación del Nivel 2). */
+  elapsed_ms: number;
+  error_type: string | null;
+};
+
+export type CvSummary = {
+  k: number;
+  scoring: string;
+  rule: "one-se";
+  /** Máximo puntaje de CV. */
+  best: MemberId;
+  /** Error estándar del mejor (std/√k). */
+  se: number;
+};
+
+/** Progreso modelo a modelo (worker → UI): primero la CV de todos, luego el test. */
+export type ProgressDetail = {
+  phase: "cv" | "test";
+  member: MemberId;
+  /** Base 0. */
+  index: number;
+  total: number;
 };
 
 // Lo que devuelve pipeline.py (JSON).
@@ -95,17 +158,48 @@ export type PipelineResult = {
   n_test: number;
   baselines: { majority: Metrics; logistic: Metrics };
   model: Metrics;
-  /** S4: clave del candidato ganador (el que `model` representa). */
-  model_name: ModelCandidate["name"];
-  /** S4: todos los candidatos entrenados, para mostrar la competencia franca. */
-  candidates: ModelCandidate[];
+  /** Compat S4: el miembro que `model` representa (= winner en la liga). */
+  model_name: MemberId;
+  /** S5: ganador de la CV por la regla de un error estándar. */
+  winner: MemberId;
+  /** S5: todos los que compitieron, en el orden del roster enviado. */
+  league: LeagueRow[];
+  cv: CvSummary;
+  elapsed_ms: number;
   confusion_matrix: number[][];
   explainability: Explainability;
-  preprocessing?: {
-    numeric_medians: Record<string, number>;
-    /** S4: categorías raras agrupadas por columna (min_frequency, aprendido de train). */
-    rare_categories?: Record<string, string[]>;
-  };
+  preprocessing: Preprocessing;
+};
+
+export type Preprocessing = {
+  numeric_medians: Record<string, number>;
+  /** S4: categorías raras agrupadas por columna (min_frequency, aprendido de train). */
+  rare_categories: Record<string, string[]>;
+};
+
+/** S5 (U1): el miembro elegido a mano, ajustado en train completo. */
+export type MemberFitResult = {
+  model: Metrics;
+  model_name: MemberId;
+  elapsed_ms: number;
+  confusion_matrix: number[][];
+  explainability: Explainability;
+  preprocessing: Preprocessing;
+};
+
+/** S5: cómo se eligió el modelo activo (lo registran la model card y el manifiesto). */
+export type Selection = {
+  /** "cv" = ganador de la validación cruzada · "user" = «elegido por ti» (U1). */
+  by: "cv" | "user";
+  cvWinner: MemberId;
+  best: MemberId;
+  k: number;
+  metric: MetricName;
+  rule: "one-se";
+  se: number;
+  /** Cuántos compitieron. */
+  competitors: number;
+  elapsedMs: number;
 };
 
 export type ExperimentResult = {
@@ -115,9 +209,15 @@ export type ExperimentResult = {
   nTest: number;
   baselines: { majority: Metrics; logistic: Metrics };
   model: Metrics;
-  /** S4: candidato ganador retenido + toda la competencia (para el veredicto franco). */
-  modelName: ModelCandidate["name"];
+  /** El modelo activo (el ganador de la CV o el elegido por el usuario). */
+  modelName: MemberId;
+  /** Interino S5 F1: la liga con test, hasta que la F2 la muestre como tabla. */
   candidates: ModelCandidate[];
+  /** S5: la liga completa y cómo se eligió. */
+  league: LeagueRow[];
+  selection: Selection;
+  /** S5: n < SMALL_SAMPLE_ROWS ⇒ la CV varía mucho (aviso honesto). */
+  smallSample: boolean;
   rareCategories?: Record<string, string[]>;
   confusionMatrix: number[][];
   verdict: Verdict;
@@ -169,8 +269,9 @@ export type NoveltyReport = {
 export type ScoreResult = {
   /** Etiqueta ORIGINAL de la clase por fila (jamás 0/1). */
   predictions: string[];
-  /** Probabilidad de la clase positiva por fila. */
-  probabilities: number[];
+  /** Probabilidad de la clase positiva por fila; null si el modelo no la da
+   *  (S5: ridge y SVM lineal deciden la clase sin probabilidad — no se inventa). */
+  probabilities: number[] | null;
   positive_class: string;
   novelty: NoveltyReport;
 };
@@ -179,6 +280,10 @@ export type RuntimeVersions = {
   pyodide: string;
   sklearn: string;
   python: string;
+  /** S5: opcionales en el manifiesto (archivos S3/S4 no los traen); el runtime
+   *  actual los emite siempre (contract.ts los exige en el export). */
+  xgboost?: string;
+  lightgbm?: string;
 };
 
 export type ExportResult = {
@@ -193,6 +298,7 @@ export type ImportResult = { ok: true };
 
 export type RunnerRequest =
   | { id: number; type: "train"; payload: PipelinePayload }
+  | { id: number; type: "fit-member"; payload: FitMemberPayload }
   | { id: number; type: "score"; payload: ScorePayload }
   | { id: number; type: "export-model" }
   | {
@@ -207,14 +313,23 @@ export type RunnerRequest =
 export type RunnerCommand = RunnerRequest["type"];
 
 export type RunnerResponse =
-  | { id: number; type: "progress"; stage: ProgressStage }
-  | { id: number; type: "result"; command: "train"; result: PipelineResult }
-  | { id: number; type: "result"; command: "score"; result: ScoreResult }
+  | {
+      id: number;
+      type: "progress";
+      stage: ProgressStage;
+      /** S5: modelo a modelo durante `training` (validado con contract.ts). */
+      detail?: unknown;
+    }
+  // Los resultados llegan como `unknown`: contract.ts los valida ANTES de usarlos
+  // (el lado que LEE del contrato Python → TS, en producción).
+  | { id: number; type: "result"; command: "train"; result: unknown }
+  | { id: number; type: "result"; command: "fit-member"; result: unknown }
+  | { id: number; type: "result"; command: "score"; result: unknown }
   | {
       id: number;
       type: "result";
       command: "export-model";
-      result: ExportResult;
+      result: unknown;
     }
   | {
       id: number;

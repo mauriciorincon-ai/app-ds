@@ -24,11 +24,20 @@ import {
   reportImportError,
   reportScoringError,
 } from "@/lib/observability";
+import type { MemberId } from "@/engine/roster";
+import {
+  pythonContractField,
+  validateExportResult,
+  validateProgressDetail,
+  validateScoreResult,
+  validateTrainResult,
+} from "@/workers/contract";
 import type {
   DatasetSummary,
   ExperimentResult,
   ExportResult,
   ModelSchema,
+  ProgressDetail,
   ProgressStage,
   RunnerResponse,
   ScorePayload,
@@ -89,6 +98,8 @@ export type ExperimentState = {
   datasetName: string | null;
   dataset: DatasetSummary | null;
   progress: ProgressStage | null;
+  /** S5: modelo a modelo durante la liga (validado por contract.ts). */
+  progressDetail: ProgressDetail | null;
   result: ExperimentResult | null;
   runMeta: RunMeta | null;
   error: { kind: WorkerErrorKind; message: string } | null;
@@ -108,6 +119,7 @@ const INITIAL: ExperimentState = {
   datasetName: null,
   dataset: null,
   progress: null,
+  progressDetail: null,
   result: null,
   runMeta: null,
   error: null,
@@ -137,6 +149,9 @@ type Pending =
       kind: "train";
       leakage: LeakageFinding[];
       schema: Pick<ModelSchema, "numeric" | "categorical" | "target">;
+      // S5: lo enviado, para que el lector del contrato lo coteje.
+      sent: { roster: MemberId[]; cv_k: number };
+      smallSample: boolean;
     }
   | { kind: "score"; check: SchemaCheck; fileName: string; table: CsvTable }
   | { kind: "export-model"; datasetName: string; result: ExperimentResult }
@@ -183,6 +198,24 @@ export function useExperiment() {
       }
     };
 
+    // Falla honesta del entrenamiento: a Sentry van SOLO el tipo y el tamaño (el
+    // campo del contrato es un nombre de la app, nunca un valor del dataset).
+    const failTrain = (kind: WorkerErrorKind, message: string) => {
+      const table = tableRef.current;
+      reportExperimentError(
+        kind === "contract" ? `contract:${message}` : kind,
+        table
+          ? { rows: table.rows.length, cols: table.headers.length }
+          : undefined,
+      );
+      setState((s) => ({
+        ...s,
+        phase: "error",
+        progressDetail: null,
+        error: { kind, message },
+      }));
+    };
+
     const handleMessage = (event: MessageEvent<RunnerResponse>) => {
       const message = event.data;
       const pending = pendingRef.current.get(message.id);
@@ -190,10 +223,17 @@ export function useExperiment() {
 
       if (message.type === "progress") {
         if (pending.kind === "train") {
+          // Un detalle que no cuadra con el contrato no se pinta (se ignora: el
+          // progreso es informativo; el resultado sí se rechaza).
+          const detail =
+            message.detail === undefined
+              ? null
+              : validateProgressDetail(message.detail);
           setState((s) => ({
             ...s,
             phase: "running",
             progress: message.stage,
+            progressDetail: detail?.ok ? detail.value : s.progressDetail,
           }));
         } else if (pending.kind === "score") {
           setState((s) => ({
@@ -211,18 +251,12 @@ export function useExperiment() {
       if (message.type === "error") {
         console.error("[experiment] runtime", message.message);
         if (pending.kind === "train") {
-          const table = tableRef.current;
-          reportExperimentError(
-            "runtime",
-            table
-              ? { rows: table.rows.length, cols: table.headers.length }
-              : undefined,
+          // S5: Python rechazó el payload nombrando el campo (contract:<campo>).
+          const field = pythonContractField(message.message);
+          failTrain(
+            field ? "contract" : "runtime",
+            field ? `payload.${field}` : message.message,
           );
-          setState((s) => ({
-            ...s,
-            phase: "error",
-            error: { kind: "runtime", message: message.message },
-          }));
         } else if (pending.kind === "score") {
           reportScoringError("runtime", {
             rows: pending.table.rows.length,
@@ -246,15 +280,26 @@ export function useExperiment() {
         return;
       }
 
-      // result — cada comando actualiza SOLO su tajada del estado.
+      // result — cada comando actualiza SOLO su tajada del estado, y solo
+      // después de que contract.ts valide la forma (regla 15).
       if (message.command === "train" && pending.kind === "train") {
-        const assembled = assembleResult(message.result, pending.leakage);
+        const checked = validateTrainResult(message.result, pending.sent);
+        if (!checked.ok) {
+          console.error("[experiment] contract", checked.field);
+          failTrain("contract", checked.field);
+          return;
+        }
+        const assembled = assembleResult(
+          checked.value,
+          pending.leakage,
+          pending.smallSample,
+        );
         const meta: ModelMeta = {
           source: "trained",
           schema: {
             ...pending.schema,
-            classes: message.result.classes,
-            positive_class: message.result.positive_class,
+            classes: checked.value.classes,
+            positive_class: checked.value.positive_class,
           },
           datasetName: datasetNameRef.current ?? "dataset",
           manifest: null,
@@ -264,11 +309,22 @@ export function useExperiment() {
         setState((s) => ({
           ...s,
           phase: "results",
+          progressDetail: null,
           result: assembled,
           modelMeta: meta,
           modelReady: true,
         }));
       } else if (message.command === "score" && pending.kind === "score") {
+        const checked = validateScoreResult(message.result);
+        if (!checked.ok) {
+          console.error("[experiment] contract", checked.field);
+          reportScoringError(`contract:${checked.field}`);
+          setState((s) => ({
+            ...s,
+            scoring: { status: "error", kind: "runtime" },
+          }));
+          return;
+        }
         setState((s) => ({
           ...s,
           scoring: {
@@ -276,14 +332,21 @@ export function useExperiment() {
             check: pending.check,
             fileName: pending.fileName,
             table: pending.table,
-            score: message.result,
+            score: checked.value,
           },
         }));
       } else if (
         message.command === "export-model" &&
         pending.kind === "export-model"
       ) {
-        void finishExport(pending, message.result);
+        const checked = validateExportResult(message.result);
+        if (!checked.ok) {
+          console.error("[experiment] contract", checked.field);
+          reportExportError(`contract:${checked.field}`);
+          setState((s) => ({ ...s, exportState: "error" }));
+          return;
+        }
+        void finishExport(pending, checked.value);
       } else if (
         message.command === "import-model" &&
         pending.kind === "import-model"
@@ -434,6 +497,8 @@ export function useExperiment() {
         categorical: prepared.payload.categorical,
         target: targetColumn,
       },
+      sent: { roster: prepared.payload.roster, cv_k: prepared.payload.cv_k },
+      smallSample: prepared.smallSample,
     });
     modelRef.current = null;
     resultRef.current = null;
@@ -441,6 +506,7 @@ export function useExperiment() {
       ...s,
       phase: "running",
       progress: null,
+      progressDetail: null,
       error: null,
       result: null,
       modelMeta: null,

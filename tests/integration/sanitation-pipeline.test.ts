@@ -3,12 +3,11 @@
 // Integración S4 (Pyodide/WASM) — el saneamiento ESTADÍSTICO vive dentro del
 // pipeline retenido y se ajusta SOLO en train (extensión del ADR-002). Este es el
 // test que la DoD exige: FALLA si la agrupación de categorías raras (min_frequency)
-// se aprende de algo que no sea train. Más: HGB entrena y compite; el ganador es
-// el argmax de la métrica primaria.
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+// se aprende de algo que no sea train. Más: HGB entrena y compite en la liga (S5).
 import { beforeAll, describe, expect, it } from "vitest";
-import { loadPyodide, type PyodideInterface } from "pyodide";
+import type { PyodideInterface } from "pyodide";
+import { loadRuntime, withLeague } from "./runtime";
+import { selectOneSe } from "@/engine/roster";
 import type { PipelineResult } from "@/workers/protocol";
 
 let pyodide: PyodideInterface;
@@ -18,18 +17,16 @@ let exportModel: PyFn;
 let importModel: PyFn;
 
 beforeAll(async () => {
-  pyodide = await loadPyodide();
-  await pyodide.loadPackage(["pandas", "scikit-learn"]);
-  pyodide.runPython(
-    readFileSync(resolve(process.cwd(), "src/lib/ds/pipeline.py"), "utf8"),
-  );
+  pyodide = await loadRuntime();
   runExperiment = pyodide.globals.get("run_experiment") as unknown as PyFn;
   exportModel = pyodide.globals.get("export_model") as unknown as PyFn;
   importModel = pyodide.globals.get("import_model") as unknown as PyFn;
 }, 180_000);
 
-const run = (payload: unknown): PipelineResult =>
-  JSON.parse(runExperiment(JSON.stringify(payload))) as PipelineResult;
+const run = (payload: object): PipelineResult =>
+  JSON.parse(
+    runExperiment(JSON.stringify(withLeague(payload))),
+  ) as PipelineResult;
 
 describe("saneamiento estadístico dentro del pipeline (integración Pyodide)", () => {
   it("agrupa categorías raras aprendiendo SOLO de train (min_frequency)", () => {
@@ -92,9 +89,13 @@ describe("saneamiento estadístico dentro del pipeline (integración Pyodide)", 
   });
 });
 
-describe("multi-candidato con boosting (integración Pyodide)", () => {
+// S5: la competencia H1 (forest vs hgb, argmax sobre TEST) pasó a la liga
+// (ADR-009): CV dentro de train + regla de un error estándar. Cambio ESPERADO
+// (R4 del plan): el ganador ya no es el argmax del test. Lo fino de la liga vive
+// en liga.test.ts; aquí, que el boosting sigue entrenando y compitiendo.
+describe("la liga con boosting (integración Pyodide)", () => {
   function balancedRun(primaryMetric: "auc" | "f1"): PipelineResult {
-    // Señal aprendible (x alto ⇒ clase 1) para que ambos candidatos entrenen bien.
+    // Señal aprendible (x alto ⇒ clase 1) para que todos entrenen bien.
     const rows = Array.from({ length: 40 }, (_, i) => [
       String(i),
       i >= 20 ? "1" : "0",
@@ -109,29 +110,33 @@ describe("multi-candidato con boosting (integración Pyodide)", () => {
       test_idx: Array.from({ length: 10 }, (_, i) => i + 30),
       seed: 42,
       primary_metric: primaryMetric,
+      roster: ["logistic", "hgb", "forest"],
+      cv_k: 3,
     });
   }
 
-  it("entrena forest y hgb como candidatos y retorna ambos", () => {
+  it("cada miembro del roster compite (una fila por miembro, en su orden)", () => {
     const result = balancedRun("f1");
-    expect(result.candidates.map((c) => c.name).sort()).toEqual([
-      "forest",
+    expect(result.league.map((row) => row.name)).toEqual([
+      "logistic",
       "hgb",
+      "forest",
     ]);
-    for (const c of result.candidates) {
-      expect(c.metrics.auc).toBeGreaterThanOrEqual(0);
-      expect(c.metrics.auc).toBeLessThanOrEqual(1);
+    for (const row of result.league) {
+      expect(row.status).not.toBe("error");
+      expect(row.cv!.folds).toHaveLength(3);
+      expect(row.test!.auc).toBeGreaterThanOrEqual(0);
+      expect(row.test!.auc).toBeLessThanOrEqual(1);
     }
   });
 
-  it("el ganador (model_name) es el argmax de la métrica primaria; model = sus métricas", () => {
+  it("el ganador es la regla de un error estándar sobre la CV; model = su test", () => {
     const result = balancedRun("auc");
-    const byName = Object.fromEntries(
-      result.candidates.map((c) => [c.name, c.metrics.auc]),
-    );
-    const expectedWinner = byName.hgb > byName.forest ? "hgb" : "forest"; // empate → forest
-    expect(result.model_name).toBe(expectedWinner);
-    expect(result.model.auc).toBe(byName[expectedWinner]);
+    const selection = selectOneSe(result.league, result.cv.k)!;
+    expect(result.winner).toBe(selection.winner);
+    expect(result.model_name).toBe(result.winner);
+    const winnerRow = result.league.find((row) => row.name === result.winner)!;
+    expect(result.model).toEqual(winnerRow.test);
   });
 });
 
@@ -143,28 +148,30 @@ describe("paridad de nulos/trim TS↔Python (integración Pyodide)", () => {
   const dirtyRun = () =>
     JSON.parse(
       runExperiment(
-        JSON.stringify({
-          headers: ["x", "color", "y"],
-          rows: [
-            ["1.0", "azul", "no"],
-            ["2.0", "None", "si "], // target con espacio + nulo disfrazado
-            [" 3.5 ", "rojo", "si"], // numérica con espacios
-            ["4.0", "azul", "no "],
-            ["NULL", "rojo", "si"], // token de nulo en mayúsculas
-            ["6.0", "azul", "no"],
-            ["7.0", "rojo", "si"],
-            ["8.0", "azul", "no"],
-            ["9.0", "rojo", "si"],
-            ["10.0", "azul", "no"],
-          ],
-          target: "y",
-          numeric: ["x"],
-          categorical: ["color"],
-          train_idx: [0, 1, 2, 3, 4, 5, 6, 7],
-          test_idx: [8, 9],
-          seed: 42,
-          primary_metric: "f1",
-        }),
+        JSON.stringify(
+          withLeague({
+            headers: ["x", "color", "y"],
+            rows: [
+              ["1.0", "azul", "no"],
+              ["2.0", "None", "si "], // target con espacio + nulo disfrazado
+              [" 3.5 ", "rojo", "si"], // numérica con espacios
+              ["4.0", "azul", "no "],
+              ["NULL", "rojo", "si"], // token de nulo en mayúsculas
+              ["6.0", "azul", "no"],
+              ["7.0", "rojo", "si"],
+              ["8.0", "azul", "no"],
+              ["9.0", "rojo", "si"],
+              ["10.0", "azul", "no"],
+            ],
+            target: "y",
+            numeric: ["x"],
+            categorical: ["color"],
+            train_idx: [0, 1, 2, 3, 4, 5, 6, 7],
+            test_idx: [8, 9],
+            seed: 42,
+            primary_metric: "f1",
+          }),
+        ),
       ),
     ) as PipelineResult;
 

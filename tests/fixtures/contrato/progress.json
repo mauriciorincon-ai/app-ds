@@ -1,0 +1,134 @@
+[
+  {
+    "phase": "cv",
+    "member": "logistic",
+    "index": 0,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "ridge",
+    "index": 1,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "naive_bayes",
+    "index": 2,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "linear_svc",
+    "index": 3,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "decision_tree",
+    "index": 4,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "knn",
+    "index": 5,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "hgb",
+    "index": 6,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "lightgbm",
+    "index": 7,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "xgboost",
+    "index": 8,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "extra_trees",
+    "index": 9,
+    "total": 11
+  },
+  {
+    "phase": "cv",
+    "member": "forest",
+    "index": 10,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "logistic",
+    "index": 0,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "ridge",
+    "index": 1,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "naive_bayes",
+    "index": 2,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "linear_svc",
+    "index": 3,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "decision_tree",
+    "index": 4,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "knn",
+    "index": 5,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "hgb",
+    "index": 6,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "lightgbm",
+    "index": 7,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "xgboost",
+    "index": 8,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "extra_trees",
+    "index": 9,
+    "total": 11
+  },
+  {
+    "phase": "test",
+    "member": "forest",
+    "index": 10,
+    "total": 11
+  }
+]

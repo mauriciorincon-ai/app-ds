@@ -43,12 +43,13 @@ function escapeField(value: string): string {
 /**
  * Serializa la tabla original + predicción + probabilidad como CSV RFC-4180.
  * Preserva TODAS las columnas y filas del usuario (incluidas las que el modelo
- * ignoró: el archivo descargado es su tabla completa, puntuada).
+ * ignoró: el archivo descargado es su tabla completa, puntuada). S5: si el modelo
+ * no da probabilidad (`null`), la columna no se agrega — no se inventa.
  */
 export function buildScoredCsv(
   table: CsvTable,
   predictions: readonly string[],
-  probabilities: readonly number[],
+  probabilities: readonly number[] | null,
   names: ScoredColumnNames,
 ): string {
   const { rows } = table;
@@ -57,18 +58,28 @@ export function buildScoredCsv(
       `buildScoredCsv: ${predictions.length} predicciones para ${rows.length} filas`,
     );
   }
-  if (probabilities.length !== rows.length) {
+  if (probabilities && probabilities.length !== rows.length) {
     throw new Error(
       `buildScoredCsv: ${probabilities.length} probabilidades para ${rows.length} filas`,
     );
   }
 
   const resolved = resolveScoredColumnNames(table.headers, names);
-  const header = [...table.headers, resolved.prediction, resolved.probability]
+  const header = [
+    ...table.headers,
+    resolved.prediction,
+    ...(probabilities ? [resolved.probability] : []),
+  ]
     .map(escapeField)
     .join(",");
   const lines = rows.map((row, i) =>
-    [...row, predictions[i], probabilities[i].toFixed(PROBABILITY_DECIMALS)]
+    [
+      ...row,
+      predictions[i]!,
+      ...(probabilities
+        ? [probabilities[i]!.toFixed(PROBABILITY_DECIMALS)]
+        : []),
+    ]
       .map(escapeField)
       .join(","),
   );

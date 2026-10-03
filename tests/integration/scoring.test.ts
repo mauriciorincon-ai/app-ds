@@ -10,10 +10,9 @@
 //  - las versiones que declara model-file.ts (RUNTIME_VERSIONS) son las del
 //    runtime real (si actualizas Pyodide/sklearn y no la constante, esto falla).
 // pipeline.test.ts (S1/S2) no se modifica: sus garantías siguen aparte.
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
-import { loadPyodide, type PyodideInterface } from "pyodide";
+import type { PyodideInterface } from "pyodide";
+import { loadRuntime, withLeague } from "./runtime";
 import { assembleResult } from "@/lib/experiment";
 import {
   RUNTIME_VERSIONS,
@@ -38,11 +37,7 @@ let fns: Record<
 >;
 
 beforeAll(async () => {
-  pyodide = await loadPyodide();
-  await pyodide.loadPackage(["pandas", "scikit-learn"]);
-  pyodide.runPython(
-    readFileSync(resolve(process.cwd(), "src/lib/ds/pipeline.py"), "utf8"),
-  );
+  pyodide = await loadRuntime();
   const grab = (name: string) => pyodide.globals.get(name) as unknown as PyFn;
   fns = {
     run_experiment: grab("run_experiment"),
@@ -53,8 +48,13 @@ beforeAll(async () => {
   };
 }, 180_000);
 
-const call = <T>(fn: PyFn, payload: unknown = {}): T =>
-  JSON.parse(fn(JSON.stringify(payload))) as T;
+// run_experiment recibe payloads S3 armados a mano: liga chica (withLeague).
+const call = <T>(fn: PyFn, payload: object = {}): T =>
+  JSON.parse(
+    fn(
+      JSON.stringify(fn === fns.run_experiment ? withLeague(payload) : payload),
+    ),
+  ) as T;
 
 // Dataset de entrenamiento plantado:
 //  - x en TRAIN cubre [1, 10]; en TEST hay x=100 (fuera del rango de train).
@@ -157,7 +157,9 @@ describe("score_new_data (integración Pyodide)", () => {
     for (const label of score.predictions) {
       expect(["si", "no"]).toContain(label); // jamás 0/1
     }
-    for (const p of score.probabilities) {
+    // Logística, bosque y HGB dan probabilidad (ridge/SVM lineal no: liga.test.ts).
+    expect(score.probabilities).not.toBeNull();
+    for (const p of score.probabilities!) {
       expect(p).toBeGreaterThanOrEqual(0);
       expect(p).toBeLessThanOrEqual(1);
     }
@@ -226,6 +228,9 @@ describe("export_model / import_model (integración Pyodide)", () => {
     const exported = call<ExportResult>(fns.export_model);
     expect(exported.versions.pyodide).toBe(RUNTIME_VERSIONS.pyodide);
     expect(exported.versions.sklearn).toBe(RUNTIME_VERSIONS.sklearn);
+    // S5: el pickle de un booster exige su paquete al importar (R10).
+    expect(exported.versions.xgboost).toBe(RUNTIME_VERSIONS.xgboost);
+    expect(exported.versions.lightgbm).toBe(RUNTIME_VERSIONS.lightgbm);
   });
 
   it("payload manipulado ⇒ import_model falla (defensa Python, tras la TS)", () => {

@@ -6,6 +6,7 @@
 // narración IA SOLO si quedó verificada. Strings en messages/{es,en}.json.
 import type { Locale } from "@/i18n/config";
 import { translate, type TParams } from "@/i18n/translate";
+import { SMALL_SAMPLE_ROWS } from "@/engine/encarrilador";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { datasetSlug } from "@/lib/files";
@@ -101,6 +102,36 @@ export function buildModelCard(input: ModelCardInput): string {
     .map((c) => modelLabel(c.name))
     .join(" · ");
 
+  // S5 — la liga: cuántos compitieron, cómo se eligió y si lo eligió el usuario.
+  const sel = result.selection;
+  const short = (name: ExperimentResult["modelName"]) =>
+    t(`results.candidates.short.${name}`);
+  const selectionSection = [
+    section("selection"),
+    "",
+    `- ${t("modelcard.selection.league", {
+      count: sel.competitors,
+      k: sel.k,
+      metric: t(`results.metrics.${sel.metric}`),
+    })}`,
+    `- ${t("modelcard.selection.rule", { best: short(sel.best) })}`,
+    `- ${t(`modelcard.selection.${sel.by}`, {
+      model: modelLabel(result.modelName),
+      winner: modelLabel(sel.cvWinner),
+    })}`,
+    `- ${t("modelcard.selection.time", {
+      seconds: (sel.elapsedMs / 1000).toFixed(1),
+    })}`,
+    ...(result.smallSample
+      ? [
+          `- ${t("modelcard.selection.smallSample", {
+            rows: SMALL_SAMPLE_ROWS,
+          })}`,
+        ]
+      : []),
+    "",
+  ];
+
   // S4 — categorías raras agrupadas por el pipeline (si las hubo).
   const rareEntries = Object.entries(result.rareCategories ?? {});
   const rareLine =
@@ -183,6 +214,7 @@ export function buildModelCard(input: ModelCardInput): string {
     })}`,
     ...rareLine,
     "",
+    ...selectionSection,
     section("metrics"),
     "",
     metricsTable,

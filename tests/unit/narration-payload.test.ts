@@ -7,6 +7,7 @@ import {
   NARRATION_TOP_FEATURES,
 } from "@/lib/narration/payload";
 import type { ExperimentResult, FeatureImportance } from "@/workers/protocol";
+import { leagueFields } from "./factories";
 
 // Valores de celda DISTINTIVOS: si alguno aparece en el payload serializado,
 // la garantía de privacidad está rota (regla dura 2 / ADR de privacidad).
@@ -56,6 +57,7 @@ function experimentResult(
     model: metrics({ auc: 0.812345 }),
     modelName: "forest",
     candidates: [{ name: "forest", metrics: metrics({ auc: 0.812345 }) }],
+    ...leagueFields("forest"),
     confusionMatrix: [
       [30, 5],
       [7, 8],

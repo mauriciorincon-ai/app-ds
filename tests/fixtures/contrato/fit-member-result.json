@@ -1,0 +1,72 @@
+{
+  "model": {
+    "accuracy": 1,
+    "precision": 1,
+    "recall": 1,
+    "f1": 1,
+    "auc": 1
+  },
+  "model_name": "logistic",
+  "elapsed_ms": 13,
+  "confusion_matrix": [
+    [
+      28,
+      0
+    ],
+    [
+      0,
+      23
+    ]
+  ],
+  "explainability": {
+    "method": "permutation_importance",
+    "scoring": "roc_auc",
+    "n_repeats": 10,
+    "features": [
+      {
+        "name": "monto_recuperado",
+        "kind": "numeric",
+        "importance": 0.43711180124223603,
+        "std": 0.06373746019738996,
+        "direction": "positive"
+      },
+      {
+        "name": "empleo",
+        "kind": "categorical",
+        "importance": 0,
+        "std": 0,
+        "direction": null
+      },
+      {
+        "name": "puntaje_credito",
+        "kind": "numeric",
+        "importance": 0,
+        "std": 0,
+        "direction": null
+      },
+      {
+        "name": "monto_prestamo",
+        "kind": "numeric",
+        "importance": 0,
+        "std": 0,
+        "direction": null
+      },
+      {
+        "name": "ingreso_mensual",
+        "kind": "numeric",
+        "importance": 0,
+        "std": 0,
+        "direction": null
+      }
+    ]
+  },
+  "preprocessing": {
+    "numeric_medians": {
+      "ingreso_mensual": 3625,
+      "monto_prestamo": 12677,
+      "puntaje_credito": 607,
+      "monto_recuperado": 0
+    },
+    "rare_categories": {}
+  }
+}

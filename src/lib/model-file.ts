@@ -6,12 +6,28 @@
 // ANTES de que el payload (pickle) toque Pyodide. Un archivo ajeno o corrupto
 // se rechaza aquí, en TS puro, sin deserializar nada.
 import type { LeakageFinding } from "@/engine/leakage";
+import { isMemberId, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
-import type { Metrics, Verdict } from "@/engine/verdict";
+import type { MetricName, Metrics, Verdict } from "@/engine/verdict";
+import {
+  arr,
+  check,
+  int,
+  isRecord,
+  nullable,
+  num,
+  obj,
+  oneOf,
+  optional,
+  refine,
+  str,
+  type Validator,
+} from "@/lib/validate";
+import { metricsV, trainingProfileV } from "@/workers/contract";
 import type {
   ExperimentResult,
   ExportResult,
-  ModelCandidate,
+  MemberStatus,
   ModelSchema,
   RuntimeVersions,
   TrainingProfile,
@@ -37,7 +53,28 @@ export const MAX_MODEL_FILE_BYTES = 100 * 1024 * 1024;
 export const RUNTIME_VERSIONS = {
   pyodide: "314.0.2",
   sklearn: "1.8.0",
+  // S5: el pickle de un booster exige su paquete al importar (R10).
+  xgboost: "2.1.4",
+  lightgbm: "4.6.0",
 } as const;
+
+/** S5: una fila de la liga tal como queda en el manifiesto (snake_case). */
+export type ManifestLeagueRow = {
+  name: MemberId;
+  status: MemberStatus;
+  cv_mean: number | null;
+  cv_std: number | null;
+  test: Metrics | null;
+};
+
+/** S5: cómo se eligió el modelo del archivo (U1: «elegido por ti»). */
+export type ManifestSelection = {
+  by: "cv" | "user";
+  cv_winner: MemberId;
+  k: number;
+  metric: MetricName;
+  rule: "one-se";
+};
 
 export type ModelManifest = {
   app: { name: typeof APP_NAME; version: string };
@@ -57,13 +94,17 @@ export type ModelManifest = {
   payload_encoding: typeof PAYLOAD_ENCODING;
   // S4 — campos ADITIVOS OPCIONALES (ADR-007 revisado): un archivo S3 (sin
   // ellos) importa en S4 y viceversa; la validación estructural tolera extras ⇒
-  // aditivo-opcional NO sube format_version. `model_name` nombra al candidato
-  // ganador; `sanitation` deja constancia honesta de qué se saneó al entrenar.
-  model_name?: ModelCandidate["name"];
+  // aditivo-opcional NO sube format_version. `model_name` nombra al modelo del
+  // archivo; `sanitation` deja constancia honesta de qué se saneó al entrenar.
+  model_name?: MemberId;
   sanitation?: Pick<
     SanitationReport,
     "duplicateRowsRemoved" | "exclusions" | "coercions"
   >;
+  // S5 — también aditivos-opcionales (los archivos S3/S4 siguen importando):
+  // la liga que compitió y cómo se eligió el modelo. Si vienen, se validan.
+  league?: ManifestLeagueRow[];
+  selection?: ManifestSelection;
 };
 
 export type ModelFile = {
@@ -73,118 +114,88 @@ export type ModelFile = {
 };
 
 // --- Validación estructural (rechazo claro de archivos ajenos/corruptos) ----
-// A mano, en TS puro: zod vive del lado servidor (lección S2 de bundle — aquí
-// rompía el budget de script de 300KB). La forma es fija y pequeña; los tests
-// de model-file cubren cada rechazo.
+// A mano, en TS puro (src/lib/validate.ts): zod vive del lado servidor (lección
+// S2 de bundle — aquí rompía el budget de script de 300KB). S5: el validador
+// devuelve la RUTA del campo que no cuadra (carnadas del contrato, regla 15).
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null && !Array.isArray(v);
-const isString = (v: unknown): v is string => typeof v === "string";
-const isNumber = (v: unknown): v is number =>
-  typeof v === "number" && Number.isFinite(v);
-const isStringArray = (v: unknown): v is string[] =>
-  Array.isArray(v) && v.every(isString);
+const member: Validator = (v, path) => (isMemberId(v) ? null : path);
+const METRIC_NAMES = ["accuracy", "precision", "recall", "f1", "auc"];
 
-const isMetrics = (v: unknown): v is Metrics =>
-  isRecord(v) &&
-  (["accuracy", "precision", "recall", "f1", "auc"] as const).every((k) =>
-    isNumber(v[k]),
-  );
+const schemaV = obj({
+  numeric: arr(str),
+  categorical: arr(str),
+  target: str,
+  classes: refine(arr(str), (v) => (v as string[]).length === 2),
+  positive_class: str,
+});
 
-function isModelSchema(v: unknown): v is ModelSchema {
-  return (
-    isRecord(v) &&
-    isStringArray(v.numeric) &&
-    isStringArray(v.categorical) &&
-    isString(v.target) &&
-    isStringArray(v.classes) &&
-    v.classes.length === 2 &&
-    isString(v.positive_class)
-  );
-}
+const verdictV = obj({
+  level: oneOf(["beats", "ties", "loses"]),
+  primaryMetric: oneOf(METRIC_NAMES),
+  modelScore: num,
+  baselineScore: num,
+  delta: num,
+});
 
-function isTrainingProfile(v: unknown): v is TrainingProfile {
-  if (!isRecord(v) || !isRecord(v.numeric) || !isRecord(v.categorical)) {
-    return false;
-  }
-  return (
-    Object.values(v.numeric).every(
-      (bounds) =>
-        isRecord(bounds) &&
-        (bounds.min === null || isNumber(bounds.min)) &&
-        (bounds.max === null || isNumber(bounds.max)),
-    ) && Object.values(v.categorical).every(isStringArray)
-  );
-}
+const leakageV = arr(
+  obj({
+    column: str,
+    score: num,
+    reason: oneOf(["near-perfect-separation", "category-purity"]),
+  }),
+);
 
-function isVerdict(v: unknown): v is Verdict {
-  return (
-    isRecord(v) &&
-    isString(v.level) &&
-    ["beats", "ties", "loses"].includes(v.level) &&
-    isString(v.primaryMetric) &&
-    ["accuracy", "precision", "recall", "f1", "auc"].includes(
-      v.primaryMetric,
-    ) &&
-    isNumber(v.modelScore) &&
-    isNumber(v.baselineScore) &&
-    isNumber(v.delta)
-  );
-}
+const manifestV = obj({
+  app: obj({ name: oneOf([APP_NAME]), version: str }),
+  created_at: str,
+  dataset: obj({ name: str, n_train: num, n_test: num }),
+  schema: schemaV,
+  training_profile: trainingProfileV,
+  metrics: obj({
+    model: metricsV,
+    baselines: obj({ majority: metricsV, logistic: metricsV }),
+  }),
+  positive_rate: num,
+  verdict: verdictV,
+  leakage: leakageV,
+  versions: obj({
+    pyodide: str,
+    sklearn: str,
+    python: str,
+    xgboost: optional(str),
+    lightgbm: optional(str),
+  }),
+  payload_sha256: str,
+  payload_encoding: oneOf([PAYLOAD_ENCODING]),
+  model_name: optional(member),
+  league: optional(
+    arr(
+      obj({
+        name: member,
+        status: oneOf(["ok", "no-converge", "error"]),
+        cv_mean: nullable(num),
+        cv_std: nullable(num),
+        test: nullable(metricsV),
+      }),
+      1,
+    ),
+  ),
+  selection: optional(
+    obj({
+      by: oneOf(["cv", "user"]),
+      cv_winner: member,
+      k: refine(int, (v) => (v as number) >= 2),
+      metric: oneOf(METRIC_NAMES),
+      rule: oneOf(["one-se"]),
+    }),
+  ),
+});
 
-function isLeakage(v: unknown): v is LeakageFinding[] {
-  return (
-    Array.isArray(v) &&
-    v.every(
-      (finding) =>
-        isRecord(finding) &&
-        isString(finding.column) &&
-        isNumber(finding.score) &&
-        isString(finding.reason) &&
-        ["near-perfect-separation", "category-purity"].includes(finding.reason),
-    )
-  );
-}
-
-function isManifest(v: unknown): v is ModelManifest {
-  return (
-    isRecord(v) &&
-    isRecord(v.app) &&
-    v.app.name === APP_NAME &&
-    isString(v.app.version) &&
-    isString(v.created_at) &&
-    isRecord(v.dataset) &&
-    isString(v.dataset.name) &&
-    isNumber(v.dataset.n_train) &&
-    isNumber(v.dataset.n_test) &&
-    isModelSchema(v.schema) &&
-    isTrainingProfile(v.training_profile) &&
-    isRecord(v.metrics) &&
-    isMetrics(v.metrics.model) &&
-    isRecord(v.metrics.baselines) &&
-    isMetrics(v.metrics.baselines.majority) &&
-    isMetrics(v.metrics.baselines.logistic) &&
-    isNumber(v.positive_rate) &&
-    isVerdict(v.verdict) &&
-    isLeakage(v.leakage) &&
-    isRecord(v.versions) &&
-    isString(v.versions.pyodide) &&
-    isString(v.versions.sklearn) &&
-    isString(v.versions.python) &&
-    isString(v.payload_sha256) &&
-    v.payload_encoding === PAYLOAD_ENCODING
-  );
-}
-
-function isModelFile(v: unknown): v is ModelFile {
-  return (
-    isRecord(v) &&
-    v.format_version === MODEL_FILE_FORMAT_VERSION &&
-    isManifest(v.manifest) &&
-    isString(v.payload) &&
-    v.payload.length > 0
-  );
-}
+const modelFileV = obj({
+  format_version: oneOf([MODEL_FILE_FORMAT_VERSION]),
+  manifest: manifestV,
+  payload: refine(str, (v) => (v as string).length > 0),
+});
 
 // --- Hash ---------------------------------------------------------------
 
@@ -248,6 +259,20 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
       payload_encoding: PAYLOAD_ENCODING,
       model_name: result.modelName,
       ...(sanitationSummary ? { sanitation: sanitationSummary } : {}),
+      league: result.league.map((row) => ({
+        name: row.name,
+        status: row.status,
+        cv_mean: row.cv?.mean ?? null,
+        cv_std: row.cv?.std ?? null,
+        test: row.test,
+      })),
+      selection: {
+        by: result.selection.by,
+        cv_winner: result.selection.cvWinner,
+        k: result.selection.k,
+        metric: result.selection.metric,
+        rule: result.selection.rule,
+      },
     },
     payload: exported.payload_b64,
   };
@@ -269,22 +294,34 @@ export type ModelFileErrorKind =
   | "hash-mismatch";
 
 export type VersionWarning = {
-  component: "pyodide" | "sklearn";
+  component: "pyodide" | "sklearn" | "xgboost" | "lightgbm";
   file: string;
   runtime: string;
 };
 
 export type ModelFileValidation =
   | { ok: true; file: ModelFile; warnings: VersionWarning[] }
-  | { ok: false; error: ModelFileErrorKind };
+  | {
+      ok: false;
+      error: ModelFileErrorKind;
+      /** S5: con invalid-format estructural, el campo que no cuadra (diagnóstico). */
+      field?: string;
+    };
 
 function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
   const warnings: VersionWarning[] = [];
-  for (const component of ["pyodide", "sklearn"] as const) {
-    if (versions[component] !== RUNTIME_VERSIONS[component]) {
+  for (const component of [
+    "pyodide",
+    "sklearn",
+    "xgboost",
+    "lightgbm",
+  ] as const) {
+    // Los boosters solo se cotejan si el archivo los declara (S3/S4 no).
+    const declared = versions[component];
+    if (declared !== undefined && declared !== RUNTIME_VERSIONS[component]) {
       warnings.push({
         component,
-        file: versions[component],
+        file: declared,
         runtime: RUNTIME_VERSIONS[component],
       });
     }
@@ -311,15 +348,18 @@ export async function validateModelFile(
 
   // La versión de formato se mira ANTES de exigir la forma completa: un
   // archivo de un formato futuro merece "versión no soportada", no "corrupto".
-  if (!isRecord(raw) || !isNumber(raw.format_version)) {
+  if (!isRecord(raw) || num(raw.format_version, "") !== null) {
     return { ok: false, error: "invalid-format" };
   }
   if (raw.format_version !== MODEL_FILE_FORMAT_VERSION) {
     return { ok: false, error: "unsupported-version" };
   }
 
-  if (!isModelFile(raw)) return { ok: false, error: "invalid-format" };
-  const file = raw;
+  const shaped = check<ModelFile>(modelFileV, raw);
+  if (!shaped.ok) {
+    return { ok: false, error: "invalid-format", field: shaped.field };
+  }
+  const file = shaped.value;
 
   let payloadBytes: Uint8Array;
   try {

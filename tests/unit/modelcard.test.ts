@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Metrics } from "@/engine/verdict";
 import { buildModelCard, modelCardFileName } from "@/lib/modelcard";
 import type { ExperimentResult } from "@/workers/protocol";
+import { leagueFields } from "./factories";
 
 function metrics(overrides: Partial<Metrics> = {}): Metrics {
   return {
@@ -27,6 +28,7 @@ function result(overrides: Partial<ExperimentResult> = {}): ExperimentResult {
     model: metrics(),
     modelName: "forest",
     candidates: [{ name: "forest", metrics: metrics() }],
+    ...leagueFields("forest"),
     confusionMatrix: [
       [30, 5],
       [7, 8],
@@ -139,6 +141,39 @@ describe("buildModelCard", () => {
     for (const locale of ["es", "en"] as const) {
       expect(build({ locale })).not.toMatch(/modelcard\.|results\.metrics/);
     }
+  });
+
+  it("S5: sección «Selección del modelo» — liga, k, criterio, tiempo", () => {
+    const card = build();
+    expect(card).toContain("## Selección del modelo");
+    expect(card).toContain(
+      "Compitieron 1 modelos con validación cruzada de 5 pliegues",
+    );
+    expect(card).toContain("regla de un error estándar");
+    expect(card).toContain(
+      "Modelo elegido por la validación cruzada: Random Forest (200 árboles)",
+    );
+    expect(card).toContain("Tiempo de la liga en este equipo: 1.2 s");
+    expect(card).not.toContain("Muestra pequeña");
+    const en = build({ locale: "en" });
+    expect(en).toContain("## Model selection");
+    expect(en).toContain("one standard error");
+  });
+
+  it("S5 (U1): «elegido por ti» queda registrado, con el ganador de la CV, y la muestra pequeña se avisa", () => {
+    const base = result();
+    const card = build({
+      result: result({
+        modelName: "knn",
+        smallSample: true,
+        selection: { ...base.selection, by: "user", cvWinner: "forest" },
+      }),
+    });
+    expect(card).toContain("◆ Elegido por ti: Vecinos más cercanos (k = 5)");
+    expect(card).toContain(
+      "El ganador de la validación cruzada era Random Forest (200 árboles)",
+    );
+    expect(card).toContain("Muestra pequeña: con menos de 200 filas");
   });
 
   it("modelCardFileName genera un slug seguro", () => {

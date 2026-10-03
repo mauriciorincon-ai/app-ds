@@ -108,7 +108,7 @@
   "training": {
     "title": "Training…",
     "loading-runtime": "Warming up the analysis engine…",
-    "loading-packages": "Loading pandas and scikit-learn…",
+    "loading-packages": "Loading pandas, scikit-learn, XGBoost and LightGBM…",
     "training": "Training and evaluating on test data…",
     "wait": "The first run takes a few seconds: the engine downloads only once."
   },
@@ -166,17 +166,41 @@
     "candidates": {
       "title": "Models that competed",
       "model": {
+        "logistic": "Logistic regression",
+        "logistic_balanced": "Logistic regression (balanced classes)",
+        "ridge": "Ridge classifier",
+        "naive_bayes": "Naive Bayes (Gaussian)",
+        "linear_svc": "Linear support vector machine",
+        "decision_tree": "Decision tree",
+        "knn": "Nearest neighbors (k = 5)",
+        "hgb": "HistGradientBoosting",
+        "lightgbm": "LightGBM (200 trees)",
+        "xgboost": "XGBoost (200 trees)",
+        "extra_trees": "Extra Trees (200 trees)",
         "forest": "Random Forest (200 trees)",
-        "hgb": "HistGradientBoosting"
+        "forest_balanced": "Balanced Random Forest (200 trees)",
+        "mlp": "Neural network (MLP, 64 units)"
       },
       "short": {
+        "logistic": "Logistic regression",
+        "logistic_balanced": "Balanced logistic",
+        "ridge": "Ridge",
+        "naive_bayes": "Naive Bayes",
+        "linear_svc": "Linear SVM",
+        "decision_tree": "Decision tree",
+        "knn": "Nearest neighbors",
+        "hgb": "HistGradientBoosting",
+        "lightgbm": "LightGBM",
+        "xgboost": "XGBoost",
+        "extra_trees": "Extra Trees",
         "forest": "Random Forest",
-        "hgb": "HistGradientBoosting"
+        "forest_balanced": "Balanced Random Forest",
+        "mlp": "Neural network"
       },
       "winner": "chosen",
       "metricCol": "Metric",
       "primary": "primary",
-      "note": "Both use the same preprocessing and compete under the same verdict. We pick the best on the primary metric; no tricks."
+      "note": "All of them use the same preprocessing. The winner was chosen with cross-validation inside the training set; these scores come from the test set: they are for believing, not for choosing."
     }
   },
   "score": {
@@ -234,7 +258,8 @@
     "errors": {
       "runtime": "Scoring failed. Check that the columns hold the same kind of data as in training and try again.",
       "import-failed": "The saved model could not be restored. The file may come from an incompatible version; retrain and export again."
-    }
+    },
+    "noProbabilities": "This model decides the class but does not give a probability, so the probability column is left out. If you need to rank rows by risk, choose a model that gives one."
   },
   "why": {
     "title": "Why does it predict this way?",
@@ -315,7 +340,8 @@
       "explainability": "Why does it predict this way?",
       "narrative": "Verified narrative",
       "limits": "Limits",
-      "sanitation": "Sanitization"
+      "sanitation": "Sanitization",
+      "selection": "Model selection"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -364,6 +390,14 @@
       },
       "coercion": "In «{column}», {count} non-numeric cells were set to empty.",
       "none": "The dataset needed no sanitization."
+    },
+    "selection": {
+      "league": "{count} models competed with {k}-fold cross-validation inside the training set (preprocessing was refit in every fold). Metric: {metric}.",
+      "rule": "Rule: one standard error — among the models within one standard error of the best cross-validation score ({best}), the simplest one wins.",
+      "cv": "Model chosen by cross-validation: {model}. The test set was opened only once, after choosing.",
+      "user": "◆ Chosen by you: {model}. The cross-validation winner was {winner}. If you chose it by looking at the test scores, the verdict may be optimistic.",
+      "time": "League time on this device: {seconds} s.",
+      "smallSample": "Small sample: with fewer than {rows} rows, cross-validation scores vary a lot from one fold to another."
     }
   },
   "errors": {
@@ -379,6 +413,8 @@
     "runtime": "Something went wrong while processing. Please try again.",
     "worker-dead": "The compute engine stopped unexpectedly (it may have run out of memory, or its components failed to load). Try again; if it persists, try a smaller file.",
     "retry": "Start over",
-    "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file."
+    "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file.",
+    "too-few-rows": "There are too few examples of one of the two classes to compare models honestly: cross-validation needs at least 2 of each class in the training set. Try with more rows.",
+    "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file."
   }
 }

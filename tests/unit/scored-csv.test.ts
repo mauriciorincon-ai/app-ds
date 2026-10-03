@@ -95,6 +95,16 @@ describe("buildScoredCsv", () => {
     ]);
   });
 
+  it("S5: modelo sin probabilidad (null) ⇒ la columna no se agrega (no se inventa)", () => {
+    const csv = buildScoredCsv(TABLE, ["si", "no"], null, NAMES);
+    const [header, ...rows] = parseRows(csv);
+    expect(header).toEqual(["edad", "region", "prediccion"]);
+    expect(rows).toEqual([
+      ["34", "norte", "si"],
+      ["51", "sur", "no"],
+    ]);
+  });
+
   it("longitudes inconsistentes ⇒ error (jamás puntúa a medias)", () => {
     expect(() => buildScoredCsv(TABLE, ["si"], [0.5, 0.5], NAMES)).toThrow();
     expect(() => buildScoredCsv(TABLE, ["si", "no"], [0.5], NAMES)).toThrow();

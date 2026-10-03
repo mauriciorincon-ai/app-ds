@@ -12,6 +12,7 @@ import {
 } from "@/lib/model-file";
 import type { ExperimentResult, RuntimeVersions } from "@/workers/protocol";
 import { StartScreen } from "@/components/StartScreen";
+import { leagueFields } from "./factories";
 
 const METRICS = {
   accuracy: 0.71,
@@ -33,6 +34,7 @@ const RESULT: ExperimentResult = {
   model: METRICS,
   modelName: "forest",
   candidates: [{ name: "forest", metrics: METRICS }],
+  ...leagueFields("forest"),
   confusionMatrix: [
     [30, 5],
     [7, 8],

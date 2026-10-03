@@ -41,6 +41,48 @@ Registradas al aprobar el plan (2026-10-02); la planeadora las lee aquí (no se 
 - **D7 — Delta «comandos»:** se re-estampan `deploy-check.md`, `plan-sprint.md`, `run-tests.md` y
   `design-sync.md` desde el kit v1.33.0 (además de estampar `audita-sprint.md`).
 
+Registradas en el STOP de la Fase 0 (aprobadas por el usuario el 2026-10-02):
+
+- **D8 — Selección por la regla de un error estándar, no por el máximo de la CV.** El plan decía
+  «argmax de la media entre los que concluyeron». El spike midió que, con 150 filas de train, el
+  máximo entre 14 premia la suerte (rotación y clientes-sucio pasaban de «supera» a «NO supera»). La
+  regla de libro (ESL §7.10) elige, entre los que quedan a menos de un error estándar del mejor, el
+  primero del orden de prioridad que TS envía (del más simple/barato al más caro). Nunca eligió peor
+  que el máximo en los 8 datasets medidos.
+- **D9 — Reglas «fuera» solo con respaldo medido.** El plan traía `KNN_MAX_ROWS`, `KNN_MAX_COLS` y
+  `NB_MAX_CAT_SHARE`; el spike midió que KNN cuesta 1,5 s de CV con 20.000 filas y que NB con
+  categóricas GANA en rotación. Quedan solo `MLP_MIN_ROWS = 500` y `BALANCED_MIN_MINORITY = 0.40`.
+  Cambia la aceptación 4 de la orden («KNN fuera con 20.000 filas» → «MLP fuera con 100 filas;
+  balanceada fuera con clases equilibradas; KNN y NB compiten con su advertencia en la ficha»). Con
+  el reparto por costo (D3), un KNN caro en el equipo del usuario igual cae al Nivel 2 por costo.
+
+Registradas durante la Fase 1 (se reportan en el STOP de la F1):
+
+- **D10 — `chosen_by_user` no viaja desde Python.** El plan lo listaba en el contrato Python → TS.
+  Quién eligió el modelo es estado de la app, no del cómputo: vive en TS (`Selection.by`: `cv` |
+  `user`) y llega al manifiesto como `selection.by`. Python solo dice qué miembro ajustó
+  (`model_name`); TS coteja que sea el pedido. Una fuente de verdad en vez de dos.
+- **D11 — Tres estados por fila, no dos.** El plan decía `no-concluyo` para excepción y para falta
+  de convergencia. Quedan `ok` · `no-converge` (puntaje de CV visible y etiquetado; se puede elegir
+  a mano, pero no gana solo) · `error` (sin puntaje, solo el TIPO de la excepción). Es la regla dura
+  3 aplicada: un puntaje que existe no se esconde, se etiqueta.
+- **D12 — Ridge y el SVM lineal no inventan probabilidades.** Deciden la clase sin dar una
+  probabilidad: la puntuación devuelve `probabilities: null`, el CSV puntuado omite esa columna y
+  la pantalla lo dice («este modelo decide la clase pero no da una probabilidad»). Alternativas
+  descartadas: una sigmoide sobre la función de decisión (sería una probabilidad falsa) y
+  `CalibratedClassifierCV` (cambia el modelo y el costo que midió la F0). El AUC sí se calcula, con
+  la función de decisión (el AUC solo necesita ordenar).
+- **D13 — El progreso tiene dos fases** (`detail.phase`: `cv` | `test`, además de
+  member/index/total): primero la CV de todos, después el test. La UI puede mostrar que el test se
+  abre recién al final.
+- **D14 — Los baselines se evalúan DESPUÉS de la selección** (en H1 iban primero). Así ningún
+  ajuste sobre train completo ni ninguna mirada al test ocurre antes de elegir; el test anti-fuga
+  de la CV lo verifica con un espía.
+- **D15 — TS recalcula la selección.** Además de validar la forma, `contract.ts` recalcula la regla
+  de un error estándar sobre la liga recibida y rechaza el resultado si Python eligió otra cosa
+  (`winner`, `cv.best`, `cv.se`). Es un cruce entre lenguajes, no una segunda regla: Python elige y
+  TS comprueba.
+
 ## Fase 0 — delta del kit + constitución + spike en el navegador
 
 ### Delta del kit v1.16.0 → v1.33.0 (por nombre)
@@ -272,8 +314,122 @@ filas) + sintéticos con categóricas y nulos (2.000 · ancho 2.000 · 5.000 · 
 - Chromium y WebKit dan **puntajes idénticos** (determinismo entre motores); los tiempos varían
   ~±40 % → calibración del Nivel 2 con el Nivel 1 del propio equipo.
 
-**STOP de la Fase 0 — decisiones del usuario pendientes:** F0-1 techo del Nivel 1 · F0-2 regla de
-selección · F0-3 reglas «fuera» · F0-4 MLP · F0-5 test de los perdedores · F0-6 k.
+**CI del cierre de la F0:** `03b1c17` — `quality`, `integration`, `e2e` y `lighthouse` con
+conclusión propia `success` (primera corrida en CI de: peers check, regla 18, gate de peso de
+Pyodide, Lighthouse mediana de 3 y e2e sin `--pass-with-no-tests`).
+
+**STOP de la Fase 0 — decisiones del usuario (2026-10-02, «De acuerdo con tus recomendaciones
+continúa»):**
+
+| #    | Decisión                     | Fijado                                                                                                                                 |
+| ---- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| F0-1 | Techo del Nivel 1            | **5 s** (`LEVEL1_CEILING_S = 5`): la liga completa cabe en los 4 datasets del kit; con 20.000 filas entran 7 y el resto va al Nivel 2. |
+| F0-2 | Regla de selección           | **Un error estándar** (ESL §7.10): entre los que quedan a < 1 EE del mejor, el primero del orden de prioridad (D8).                    |
+| F0-3 | Reglas «fuera»               | Solo las medidas: **MLP con < 500 filas** y **balanceadas con minoritaria ≥ 0,40**. KNN y NB compiten siempre, con advertencia (D9).   |
+| F0-4 | MLP                          | `early_stopping=True`, `max_iter=500`, `n_iter_no_change=10`.                                                                          |
+| F0-5 | Test de los perdedores       | **Eager**: en la misma corrida (13–20 % de la CV).                                                                                     |
+| F0-6 | k de la CV                   | Como el plan: **5** hasta 20.000 filas, **3** por encima; acotado a la minoritaria de train (mínimo 2).                                |
+| 7    | Aviso de `braces` sin parche | **Se mantiene** aceptado por nombre (`auditConfig.ignoreGhsas`), solo desarrollo, deuda explícita en el summary.                       |
+
+## Fase 1 — motor (Python + contrato)
+
+«continúa» recibido el 2026-10-02 con las decisiones F0-1…F0-6 y la 7 (ver STOP de la F0).
+
+### Qué se construyó
+
+- **`src/lib/ds/pipeline.py`:**
+  - `_FACTORIES`: los 14 del roster, con hiperparámetros fijos, semilla y `n_jobs=1`. Los boosters
+    se importan en su fábrica y el MLP lleva parada temprana (F0-4).
+  - `_validate_payload` es el lector TS → Python y lanza `contract:<campo>`.
+  - `run_experiment(payload, on_progress)`: CV dentro de train con el preprocesador DENTRO del
+    Pipeline validado → `select_one_se` → recién entonces baselines y test de todos (eager, F0-5).
+    Solo el ganador queda en `_MODEL`.
+  - `fit_member` (U1), `roster_ids` (paridad) y `_runtime_versions` con xgboost y lightgbm.
+  - La puntuación devuelve `null` para los que no dan probabilidad (D12).
+  - Se silencia un solo aviso benigno de LightGBM que llenaba la consola.
+- **Motores TS puros en `src/engine/`:**
+  - `roster.ts`: `MEMBER_IDS` en orden de prioridad, `MEMBERS` y `selectOneSe`, espejo de Python.
+  - `tarea.ts` (E1): binaria · multiclase · numérica · sin objetivo · ambigua, con su razón.
+  - `costos.ts`: coeficientes de la F0 + `calibrationFactor`.
+  - `encarrilador.ts` (E2): las constantes fijadas en la F0, `routeModels` por costo contra el
+    techo (D3), «fuera» solo con respaldo medido (D9), forzados al Nivel 2 (U3), `rosterFor`
+    con la unión (D5) y `chooseCvK`.
+- **Contrato:**
+  - `src/lib/validate.ts`: validadores a mano que nombran la ruta del campo.
+  - `src/workers/contract.ts`: el lector Python → TS en producción. Valida train, fit-member,
+    progreso, export y score, y recalcula la selección (D15).
+  - `useExperiment` valida cada resultado antes de tocar el estado. Error nuevo `contract` con
+    copy ES/EN; a Sentry va solo `contract:<campo>`, sin valores.
+- **App:**
+  - `experiment.ts`:
+    - `summarizeDataset` da la tarea de cada columna.
+    - `prepareRun` manda `roster` + `cv_k`, `routing`, `profile` y `smallSample`, con el error
+      honesto `too-few-rows`.
+    - `estimateEncodedWidth`, `assembleResult` con `league`/`selection` y `applyMemberFit` (U1).
+  - Runner: comando `fit-member` y el callback de progreso Python → JS → `postMessage`.
+  - Manifiesto con `league`, `selection` y `versions.{xgboost,lightgbm}` (aditivos-opcionales).
+    `model_name` ahora se valida contra el roster (R9) y hay aviso si la versión de un booster no
+    coincide (R10).
+  - Model card con la sección «Selección del modelo» («◆ Elegido por ti», muestra pequeña).
+  - Nombres de los 14 modelos en ES/EN.
+- **Interino hasta la F2:**
+  - `ExperimentResult.candidates` se deriva de la liga, así la tabla H1 sigue funcionando (14
+    columnas desplazables).
+  - La nota de esa tabla se corrigió para que no mienta: «se eligió con validación cruzada…
+    estos puntajes son del conjunto de prueba».
+
+### Gates nuevos — cada uno visto en ROJO (2026-10-02)
+
+| #   | Gate                                                            | Demo (cambio deliberado)                                            | Rojo → verde                                                                                                                                                        |
+| --- | --------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1  | Anti-fuga de la CV (espía en el preprocesador, `liga.test.ts`)  | El preprocesador se ajusta una vez sobre todo train, FUERA de la CV | «expected [ …(8) ] to have a length of 15 but got 8» → restaurado: verde                                                                                            |
+| G2  | La selección no mira el test (etiquetas de test permutadas)     | El ganador se elige por la métrica de test                          | «expected 'hgb' to be 'forest'» + el cruce de punta a punta falla porque `contract.ts` rechaza el ganador (D15 visto en rojo también) → restaurado: verde           |
+| G3  | Paridad del roster TS ↔ Python (texto en unit + runtime real)   | `"knn"` renombrado a `"kneighbors"` en `_FACTORIES`                 | Fallan los dos: `roster.test.ts` y la paridad en Pyodide → restaurado: verde                                                                                        |
+| G4  | Forma de los fixtures del contrato (el emisor real los escribe) | Python agrega `campo_nuevo_sin_avisar` al resultado                 | «la forma de train-result cambió: regenera con CONTRATO_ACTUALIZAR=1…» → restaurado: verde                                                                          |
+| G5  | Carnadas TS → Python (`_validate_payload`)                      | Las 16 carnadas SON la demo                                         | 16 de 16 rechazadas nombrando su campo; el payload real pasa                                                                                                        |
+| G6  | Carnadas Python → TS (`contract.ts`) y del manifiesto           | Las carnadas SON la demo                                            | train 26/26 · fit-member 6/6 · progreso 5/5 · export 6/6 · score 5/5 · manifiesto 16/16                                                                             |
+| G7  | El hook rechaza una liga que no es el roster enviado            | `use-hooks.test.tsx`: FakeWorker devuelve la liga invertida         | Error `contract` con campo `league`; el resultado no llega al estado                                                                                                |
+| G8  | `fit_member` reproduce exactamente su fila de la liga           | `fit_member` con la semilla + 1                                     | ⚠ **La primera demo NO se puso roja**: KNN, LightGBM y XGBoost (por defecto) no usan azar. «¿Puede fallar?» = no. Se sumaron los bosques (bootstrap) → rojo → verde |
+
+**Carnadas — detectó k de n:**
+
+| Dirección                 | Lector                       | Resultado | Campos                                                                                                                                                                                                                                                |
+| ------------------------- | ---------------------------- | --------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TS → Python               | `_validate_payload`          |  16 de 16 | `roster` (desconocido · vacío · repetido · ausente) · `cv_k` (1 · > minoritaria · texto · ausente) · `primary_metric` (×2) · `seed` · `target` · `train_idx` · `member` (desconocido · ausente) · `primary_metric` de fit-member                      |
+| Python → TS: liga         | `validateTrainResult`        |  26 de 26 | `league` (×3) · `league[].{name,status,cv,cv.mean,cv.std,cv.folds,test,test.auc,elapsed_ms,error_type}` · `cv.{k,scoring,rule,best,se}` · `winner` · `model_name` · `model` · `elapsed_ms` · `confusion_matrix` · `preprocessing.rare_categories` · … |
+| Python → TS: elección     | `validateMemberFit`          |    6 de 6 | `model_name` · `model.f1` · `elapsed_ms` · `confusion_matrix` · `explainability.method` · `preprocessing.numeric_medians`                                                                                                                             |
+| worker → UI: progreso     | `validateProgressDetail`     |    5 de 5 | `phase` · `member` · `index` (≥ total · ausente) · `total`                                                                                                                                                                                            |
+| Python → TS: export/score | `validateExport/ScoreResult` |     6 + 5 | `versions.{xgboost,lightgbm,sklearn}` · `payload_b64` · `schema.classes` · `training_profile.categorical` · `probabilities` (×2) · `predictions[0]` · `novelty.affected_rows` · `positive_class`                                                      |
+| archivo → import          | `validateModelFile`          |  16 de 16 | `league` (×2) · `league[0].{name,status,cv_mean,cv_std,test}` · `selection` · `selection.{by,cv_winner,k,metric,rule}` · `versions.{xgboost,lightgbm}` · `model_name`                                                                                 |
+
+**Cruces de punta a punta (integración, Pyodide real):** `prepareRun` real → `run_experiment` →
+`validateTrainResult` → `assembleResult` → `fit_member` → `validateMemberFit` → `applyMemberFit` ·
+callback de progreso Python → JS validado paso a paso · export → import → puntuar con XGBoost y
+con LightGBM (predicciones y probabilidades idénticas).
+
+### Cambios esperados en tests heredados (R4)
+
+- **Integración (S1–S4):** los payloads armados a mano pasan por `withLeague` (liga chica, k = 2).
+  El runtime carga los 4 paquetes como el navegador (`tests/integration/runtime.ts`).
+  - `sanitation-pipeline`: «el ganador es el argmax del test» pasa a «el ganador es la regla de un
+    error estándar sobre la CV».
+  - `scoring`: `RUNTIME_VERSIONS` suma xgboost y lightgbm.
+- **Unit:**
+  - Los fixtures de `ExperimentResult` se arman con `tests/unit/factories.ts`, con formas que
+    `contract.ts` acepta.
+  - `prepareRun` con 2 positivos en 10 filas ahora da `too-few-rows` (R7); el test usa 20 filas.
+  - El rechazo del manifiesto ahora nombra el campo.
+  - El texto de carga nombra los 4 paquetes.
+- **e2e:** `saneamiento-sucio` ya no exige `/^(forest|hgb)$/`. Ahora exige que sea un miembro de la
+  liga, y que el manifiesto traiga la liga y `selection.by = cv`.
+
+### Corridas locales (2026-10-02)
+
+- `pnpm typecheck` y `pnpm lint` limpios.
+- `pnpm test`: 37 archivos, 310 pruebas. Cobertura total 90 % de líneas; `engine/` 98 % de líneas
+  y 95 % de ramas.
+- `pnpm test:integration`: 6 archivos, 46 pruebas, Pyodide real con los 4 paquetes.
+- `CI=1 pnpm test:e2e`: 24 de 24, build de producción, móvil y escritorio.
 
 ## Fricciones del kit (SEPARADAS del producto)
 
@@ -296,3 +452,7 @@ selección · F0-3 reglas «fuera» · F0-4 MLP · F0-5 test de los perdedores �
 - **K-S5-6 — «Una carnada por campo» no está en el wiki**: `gate-de-contrato-entre-lenguajes.md`
   prescribe fixture del emisor + tipo del lector + un test de punta a punta, pero no carnadas. La
   mecánica «detectó k de n» se toma de `reusables/diagramador/CONTRATO.md`.
+- **K-S5-8 — Fricción del constructor: una demo en rojo que no se puso roja.** El test de
+  determinismo de `fit_member` probaba solo miembros que no usan azar; con otra semilla seguía
+  verde. La tercera pregunta de la regla 15 («¿puede fallar siquiera?») lo cazó en el acto. Se
+  reforzó con los bosques. Lección: un test de determinismo tiene que incluir algo aleatorio.

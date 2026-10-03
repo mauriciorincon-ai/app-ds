@@ -108,7 +108,7 @@
   "training": {
     "title": "Entrenando…",
     "loading-runtime": "Preparando el motor de análisis…",
-    "loading-packages": "Cargando pandas y scikit-learn…",
+    "loading-packages": "Cargando pandas, scikit-learn, XGBoost y LightGBM…",
     "training": "Entrenando y evaluando sobre datos de prueba…",
     "wait": "La primera vez tarda unos segundos: el motor se descarga una sola vez."
   },
@@ -166,17 +166,41 @@
     "candidates": {
       "title": "Modelos que compitieron",
       "model": {
+        "logistic": "Regresión logística",
+        "logistic_balanced": "Regresión logística (clases balanceadas)",
+        "ridge": "Clasificador Ridge",
+        "naive_bayes": "Naive Bayes (gaussiano)",
+        "linear_svc": "Máquina de vectores de soporte lineal",
+        "decision_tree": "Árbol de decisión",
+        "knn": "Vecinos más cercanos (k = 5)",
+        "hgb": "HistGradientBoosting",
+        "lightgbm": "LightGBM (200 árboles)",
+        "xgboost": "XGBoost (200 árboles)",
+        "extra_trees": "Extra Trees (200 árboles)",
         "forest": "Random Forest (200 árboles)",
-        "hgb": "HistGradientBoosting"
+        "forest_balanced": "Random Forest balanceado (200 árboles)",
+        "mlp": "Red neuronal (MLP, 64 neuronas)"
       },
       "short": {
+        "logistic": "Regresión logística",
+        "logistic_balanced": "Logística balanceada",
+        "ridge": "Ridge",
+        "naive_bayes": "Naive Bayes",
+        "linear_svc": "SVM lineal",
+        "decision_tree": "Árbol de decisión",
+        "knn": "Vecinos más cercanos",
+        "hgb": "HistGradientBoosting",
+        "lightgbm": "LightGBM",
+        "xgboost": "XGBoost",
+        "extra_trees": "Extra Trees",
         "forest": "Random Forest",
-        "hgb": "HistGradientBoosting"
+        "forest_balanced": "Random Forest balanceado",
+        "mlp": "Red neuronal"
       },
       "winner": "elegido",
       "metricCol": "Métrica",
       "primary": "primaria",
-      "note": "Ambos usan el mismo preprocesamiento y compiten con el mismo veredicto. Elegimos el mejor en la métrica primaria; sin trucos."
+      "note": "Todos usan el mismo preprocesamiento. El ganador se eligió con validación cruzada dentro del entrenamiento; estos puntajes son del conjunto de prueba: sirven para creer, no para elegir."
     }
   },
   "score": {
@@ -234,7 +258,8 @@
     "errors": {
       "runtime": "No se pudo puntuar. Revisa que las columnas tengan el mismo tipo de datos que en el entrenamiento e inténtalo de nuevo.",
       "import-failed": "No se pudo restaurar el modelo guardado. El archivo puede venir de una versión incompatible; re-entrena y exporta de nuevo."
-    }
+    },
+    "noProbabilities": "Este modelo decide la clase pero no da una probabilidad, así que la columna de probabilidad no se incluye. Si necesitas ordenar las filas por riesgo, elige un modelo que sí la dé."
   },
   "why": {
     "title": "¿Por qué predice así?",
@@ -315,7 +340,8 @@
       "explainability": "¿Por qué predice así?",
       "narrative": "Narración verificada",
       "limits": "Límites",
-      "sanitation": "Saneamiento"
+      "sanitation": "Saneamiento",
+      "selection": "Selección del modelo"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -364,6 +390,14 @@
       },
       "coercion": "En «{column}» se convirtieron {count} celdas no numéricas a vacío.",
       "none": "El dataset no requirió saneamiento."
+    },
+    "selection": {
+      "league": "Compitieron {count} modelos con validación cruzada de {k} pliegues dentro del entrenamiento (el preprocesamiento se reajustó en cada pliegue). Métrica: {metric}.",
+      "rule": "Criterio: regla de un error estándar — entre los que quedaron a menos de un error estándar del mejor puntaje de validación cruzada ({best}), gana el más simple.",
+      "cv": "Modelo elegido por la validación cruzada: {model}. El conjunto de prueba se abrió una sola vez, después de elegir.",
+      "user": "◆ Elegido por ti: {model}. El ganador de la validación cruzada era {winner}. Si lo elegiste mirando los puntajes de prueba, el veredicto puede ser optimista.",
+      "time": "Tiempo de la liga en este equipo: {seconds} s.",
+      "smallSample": "Muestra pequeña: con menos de {rows} filas, los puntajes de validación cruzada varían mucho de un pliegue a otro."
     }
   },
   "errors": {
@@ -379,6 +413,8 @@
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
     "worker-dead": "El motor de cómputo se detuvo de forma inesperada (pudo quedarse sin memoria, o falló la carga de sus componentes). Intenta de nuevo; si persiste, prueba con un archivo más pequeño.",
     "retry": "Volver a empezar",
-    "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo."
+    "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo.",
+    "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
+    "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo."
   }
 }

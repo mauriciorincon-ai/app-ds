@@ -15,8 +15,9 @@ import {
 } from "@/lib/model-file";
 import { useExperiment } from "@/lib/useExperiment";
 import { useNarration } from "@/lib/useNarration";
-import type { ExperimentResult, PipelineResult } from "@/workers/protocol";
+import type { ExperimentResult, PipelinePayload } from "@/workers/protocol";
 import type { Metrics } from "@/engine/verdict";
+import { leagueFields, pipelineResult } from "./factories";
 
 // La descarga real (Blob + anchor) se prueba en files.test.ts; aquí solo
 // importa QUE el hook la dispare con el archivo empaquetado correcto.
@@ -53,6 +54,7 @@ function experimentResult(): ExperimentResult {
     model: metrics(),
     modelName: "forest",
     candidates: [{ name: "forest", metrics: metrics() }],
+    ...leagueFields("forest"),
     confusionMatrix: [
       [30, 5],
       [7, 8],
@@ -185,41 +187,10 @@ describe("useExperiment", () => {
     "8,b,1",
   ].join("\n");
 
-  function pipelineResult(): PipelineResult {
-    return {
-      classes: ["0", "1"],
-      positive_class: "1",
-      // Desbalanceado ⇒ métrica primaria AUC (0.8 vs 0.6 ⇒ supera).
-      positive_rate: 0.3,
-      n_train: 6,
-      n_test: 2,
-      baselines: {
-        majority: metrics({ auc: 0.5 }),
-        logistic: metrics({ auc: 0.6 }),
-      },
-      model: metrics({ auc: 0.8 }),
-      model_name: "forest",
-      candidates: [{ name: "forest", metrics: metrics({ auc: 0.8 }) }],
-      confusion_matrix: [
-        [1, 0],
-        [0, 1],
-      ],
-      explainability: {
-        method: "permutation_importance",
-        scoring: "roc_auc",
-        n_repeats: 10,
-        features: [
-          {
-            name: "x",
-            kind: "numeric",
-            importance: 0.2,
-            std: 0.01,
-            direction: "positive",
-          },
-        ],
-      },
-    };
-  }
+  // S5: el FakeWorker responde una liga coherente con lo que el hook envió (el
+  // lector del contrato rechaza una liga que no sea el roster enviado).
+  const respondTo = (posted: { payload?: unknown }) =>
+    pipelineResult(posted.payload as PipelinePayload);
 
   beforeEach(() => {
     vi.stubGlobal("Worker", FakeWorker);
@@ -254,7 +225,7 @@ describe("useExperiment", () => {
           id: worker.posted[0]!.id,
           type: "result",
           command: "train",
-          result: pipelineResult(),
+          result: respondTo(worker.posted[0]!),
         },
       } as MessageEvent);
     });
@@ -288,6 +259,91 @@ describe("useExperiment", () => {
     expect(result.current.state.error?.kind).toBe("runtime");
   });
 
+  // --- S5: el lector del contrato en producción ------------------------------
+
+  it("S5: una liga que no es el roster enviado se rechaza («contract», nombra el campo)", () => {
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(CSV, "test.csv"));
+    act(() => result.current.run("y"));
+    const worker = FakeWorker.last!;
+    const posted = worker.posted[0]!;
+    const forged = respondTo(posted);
+    forged.league = [...forged.league].reverse();
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id: posted.id,
+          type: "result",
+          command: "train",
+          result: forged,
+        },
+      } as MessageEvent);
+    });
+    expect(result.current.state.phase).toBe("error");
+    expect(result.current.state.error).toEqual({
+      kind: "contract",
+      message: "league",
+    });
+    expect(result.current.state.result).toBeNull();
+  });
+
+  it("S5: Python rechaza el payload (contract:<campo>) ⇒ error «contract» con ese campo", () => {
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(CSV, "test.csv"));
+    act(() => result.current.run("y"));
+    const worker = FakeWorker.last!;
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id: worker.posted[0]!.id,
+          type: "error",
+          message:
+            "Traceback (most recent call last):\nValueError: contract:roster",
+        },
+      } as MessageEvent);
+    });
+    expect(result.current.state.error).toEqual({
+      kind: "contract",
+      message: "payload.roster",
+    });
+  });
+
+  it("S5: el progreso modelo a modelo llega validado al estado; uno que no cuadra se ignora", () => {
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(CSV, "test.csv"));
+    act(() => result.current.run("y"));
+    const worker = FakeWorker.last!;
+    const id = worker.posted[0]!.id;
+    const progress = (detail: unknown) =>
+      act(() => {
+        worker.onmessage?.({
+          data: { id, type: "progress", stage: "training", detail },
+        } as MessageEvent);
+      });
+    progress({ phase: "cv", member: "hgb", index: 2, total: 9 });
+    expect(result.current.state.progressDetail).toEqual({
+      phase: "cv",
+      member: "hgb",
+      index: 2,
+      total: 9,
+    });
+    progress({ phase: "cv", member: "no_existe", index: 3, total: 9 });
+    expect(result.current.state.progressDetail?.member).toBe("hgb");
+    // Al llegar el resultado, el detalle se limpia.
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id,
+          type: "result",
+          command: "train",
+          result: respondTo(worker.posted[0]!),
+        },
+      } as MessageEvent);
+    });
+    expect(result.current.state.progressDetail).toBeNull();
+    expect(result.current.state.phase).toBe("results");
+  });
+
   // --- S3: usar el modelo (scoring + export/import) -------------------------
 
   type Hook = ReturnType<
@@ -306,7 +362,7 @@ describe("useExperiment", () => {
           id: worker.posted[0]!.id,
           type: "result",
           command: "train",
-          result: pipelineResult(),
+          result: respondTo(worker.posted[0]!),
         },
       } as MessageEvent);
     });

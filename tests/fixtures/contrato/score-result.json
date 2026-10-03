@@ -1,0 +1,18 @@
+{
+  "predictions": [
+    "0",
+    "1",
+    "0"
+  ],
+  "probabilities": [
+    0.05504171532081853,
+    0.9982875873764386,
+    0.023827865572653022
+  ],
+  "positive_class": "1",
+  "novelty": {
+    "columns": [],
+    "affected_rows": 0,
+    "n_rows": 3
+  }
+}
