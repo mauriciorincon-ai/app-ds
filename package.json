@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage --passWithNoTests",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:e2e": "playwright test --pass-with-no-tests"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ai-sdk/groq": "^4.0.28",
@@ -43,6 +43,7 @@
     "pyodide": "314.0.2",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "yaml": "^2.9.1"
   }
 }

@@ -77,6 +77,43 @@ divergían — `xhr` en una, `http` en la otra). Gate: `tests/unit/sentry-scrub.
 - De paso: `tests/integration/gitleaks-hook.test.ts` no pasaba `pnpm typecheck` (el `env` mínimo no
   cumple `ProcessEnv` de los tipos de Next) — cazado por el typecheck antes del push; cast comentado.
 
+**K4 · Regla 18 mecánica: `pnpm peers check` + `scripts/verificar-dependencias.mjs` (v1.24/v1.32)**
+— pasos nuevos en `quality` (el segundo solo en `pull_request`, tras `git fetch origin main`).
+**Adaptación propia (fricción K-S5-4):** en CI (`process.env.CI`) una base ilegible es ROJO, no
+«se omite» — el paso hace el fetch, así que una base ilegible significa que el gate no comparó nada.
+
+- 🟢 Verde: «681 paquetes, ninguno por debajo de origin/main» · «No peer dependency issues found».
+- 🔴 **Rojo verificar-dependencias (2026-10-02):** ref temporal `refs/demo/regla-18` con el lockfile
+  de `main` y `react@99.0.0` → «react: 99.0.0 (refs/demo/regla-18) → 19.2.4 (este árbol)», exit 1;
+  ref borrada.
+- 🔴 **Rojo base ilegible:** `CI=1 … refs/no-existe` → «el gate NO comparó nada», exit 1 (en local
+  sin `CI`: «se omite», exit 0 — comportamiento del kit conservado fuera de CI).
+- 🔴 **Rojo peers check:** `pnpm add -D react-test-renderer@17.0.2` (peer `react@17` frente a
+  19.2.4) → «✕ unmet peer react», exit 1; revertido (`package.json` + lockfile restaurados, verde).
+
+**K5 · `.github/dependabot.yml` + `tests/unit/dependabot-config.test.ts` + devDep `yaml`
+(v1.23→v1.32.1)** — estampados del kit.
+
+- 🔴 **Rojo:** `open-pull-requests-limit: 5` en npm → «npm: expected 5 to be 1», 1 falla; 🟢 3/3.
+- ⚠️ **Demo que no demostraba (cazada por la propia regla):** el primer intento usó `sed
+  '0,/…/s//…/'`, que el `sed` BSD de macOS no soporta: el archivo no cambió y el test siguió
+  verde. Un «rojo» sin verificar que el cambio se aplicó habría certificado un gate sin verlo
+  fallar. Se repitió editando con Python y comprobando el archivo antes de correr el test.
+
+**K6 · e2e falla con cero pruebas (v1.28.0) + evidencia al fallar (v1.26.0) + Lighthouse con
+mediana de 3 (v1.26.0)** — `test:e2e` = `playwright test` (sin `--pass-with-no-tests`);
+`upload-artifact` de `test-results/` con `if: failure()`; Lighthouse pasa de `lhci autorun` (1
+corrida) a `collect --numberOfRuns=3` + `assert --aggregationMethod=median-run`; `.gitignore`
+suma `.lh-*.json`.
+
+- 🔴 **Rojo e2e:** `--grep "zzz-no-casa-con-nada"` → antes (con `--pass-with-no-tests`) exit 0;
+  ahora «Error: No tests found», exit 1.
+- 🟢/🔴 **Lighthouse en local, build de producción (`pnpm build && lhci collect` ×3):** budget real
+  → exit 0 (LCP mediano **2.613 ms** frente a 3.500); budget con LCP 500 ms (copia temporal fuera del
+  repo) → «largest-contentful-paint failure… expected ≤500 found 2612.68», exit 1.
+- Que el job `lighthouse` y el `e2e` corran de verdad en la CI se verifica con `gh pr checks` tras
+  el primer push (regla 11 — hermana).
+
 ### Constitución
 
 2026-10-02 — `CLAUDE.md`: el párrafo del diferenciador y la regla dura 3 «Honestidad por diseño»

@@ -24,6 +24,12 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - run: pnpm peers check     # único gate que ve un peer insatisfecho (kit v1.24.0, regla 18)
+      - name: Regla 18 — ningún paquete por debajo de main (kit v1.32.0)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin main --depth=1
+          node scripts/verificar-dependencias.mjs origin/main
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test            # vitest run --coverage (umbral 70% en vitest.config)
@@ -55,7 +61,16 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e        # incluye scans axe (@axe-core/playwright)
+      - run: pnpm test:e2e        # incluye scans axe (@axe-core/playwright); falla con CERO pruebas (kit v1.28.0)
+      # El primer reintento graba trace (playwright.config `trace: on-first-retry`) con
+      # consola, errores y DOM — se sube SOLO cuando algo falla (kit v1.26.0).
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
   lighthouse:
     runs-on: ubuntu-latest
@@ -85,7 +100,11 @@ jobs:
         # existe para atrapar (que Pyodide entre al camino del LCP sería un salto de varios
         # segundos, no de un 15%). Deuda H2: medir el LCP OBSERVADO con PerformanceObserver
         # en un e2e, que es lo que de verdad experimenta el usuario.
+        #
+        # S5 (kit v1.26.0): UNA corrida NO es una medición — tres corridas por URL y se asevera
+        # sobre la MEDIANA (median-run), nunca sobre la optimista.
         run: |
           npm i -g @lhci/cli
-          URLS=$(node -e "console.log(require('./lighthouse-urls.json').map(u=>'--collect.url=http://localhost:3000'+u).join(' '))")
-          lhci autorun --collect.startServerCommand="pnpm start" $URLS --assert.budgetsFile=./perf-budget.json
+          URLS=$(node -e "console.log(require('./lighthouse-urls.json').map(u=>'--url=http://localhost:3000'+u).join(' '))")
+          lhci collect --startServerCommand="pnpm start" --numberOfRuns=3 $URLS
+          lhci assert --budgetsFile=./perf-budget.json --aggregationMethod=median-run

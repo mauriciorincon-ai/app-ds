@@ -1,0 +1,34 @@
+# kit-app (se estampa en cada app) — kit v1.26.0
+# REGLA DEL USUARIO (2026-08-22, fijada en Innmobiliaria): máximo DOS PRs de dependencias
+# abiertos a la vez — jamás una lista de merges pendientes. Un PR agrupado por ecosistema.
+# (La v1.23.0 traía limit 5 POR ecosistema = hasta 10 abiertos, y la primera activación
+# vuelca el atraso entero de golpe: produjo una cola de 6 en Innmobiliaria.)
+# Y EL LOTE SEMANAL JAMÁS ARRASTRA UN MAYOR (kit v1.26.0, hoja-de-vida PRs #10/#14): un major
+# sin soporte metido en el lote ponía rojo el PR entero y bloqueaba 35 bumps sanos semana tras
+# semana. `update-types` deja los mayores fuera del grupo (llegan sueltos, uno a uno, bajo el
+# mismo techo). Un `ignore` por paquete NO es gate: nadie lo ve operar — la invariante la vigila
+# `tests/unit/dependabot-config.test.ts` (regla 15: se demostró en rojo al nacer).
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      todo-npm:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    # kit v1.32.1 (planlang S1, PR #6): @types/node sigue al Node de la CI (22 LTS); un mayor suelto
+    # lo desalinea del runtime sin que nada lo vigile. Sube por decisión, con la CI, no por bump.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      todo-actions:
+        patterns: ["*"]
