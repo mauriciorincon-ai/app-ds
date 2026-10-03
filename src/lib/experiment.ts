@@ -93,6 +93,16 @@ export type PreparedRun =
     }
   | { ok: false; error: WorkerErrorKind };
 
+/** El payload de fit-member: el de la liga sin roster ni k (ya no hay CV). */
+export function withoutLeague(
+  payload: PipelinePayload,
+): Omit<PipelinePayload, "roster" | "cv_k"> {
+  const copy: Partial<PipelinePayload> = { ...payload };
+  delete copy.roster;
+  delete copy.cv_k;
+  return copy as Omit<PipelinePayload, "roster" | "cv_k">;
+}
+
 /**
  * Columnas tras el one-hot, estimadas SIN ajustar nada (para el modelo de
  * costos): numéricas + por categórica, sus categorías con ≥ 2 apariciones en train

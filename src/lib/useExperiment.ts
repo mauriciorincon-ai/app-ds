@@ -10,7 +10,15 @@ import {
   modelFeatures,
   type SchemaCheck,
 } from "@/lib/ds/schema-check";
-import { assembleResult, prepareRun, summarizeDataset } from "@/lib/experiment";
+import type { RouteProfile, Routing } from "@/engine/encarrilador";
+import type { TaskDetection } from "@/engine/tarea";
+import {
+  applyMemberFit,
+  assembleResult,
+  prepareRun,
+  summarizeDataset,
+  withoutLeague,
+} from "@/lib/experiment";
 import { downloadTextFile } from "@/lib/files";
 import {
   modelFileName,
@@ -28,6 +36,7 @@ import type { MemberId } from "@/engine/roster";
 import {
   pythonContractField,
   validateExportResult,
+  validateMemberFit,
   validateProgressDetail,
   validateScoreResult,
   validateTrainResult,
@@ -37,6 +46,7 @@ import type {
   ExperimentResult,
   ExportResult,
   ModelSchema,
+  PipelinePayload,
   ProgressDetail,
   ProgressStage,
   RunnerResponse,
@@ -93,6 +103,25 @@ export type ScoringState =
 
 export type ExportState = "idle" | "exporting" | "error";
 
+/** S5: lo que la app sabe del objetivo ANTES de entrenar (E1 + E2). */
+export type TargetPlan = {
+  target: string;
+  task: TaskDetection;
+  /** Solo binaria y preparable: quién compite y en qué nivel. */
+  routing: Routing | null;
+  /** Forma del dataset para E2 (filas, ancho, minoritaria, k). */
+  profile: RouteProfile | null;
+  smallSample: boolean;
+  /** Binaria pero sin CV honesta posible u otro rechazo de prepareRun. */
+  blocked: WorkerErrorKind | null;
+};
+
+/** S5 (U1): elección manual de un miembro de la liga. */
+export type ChoiceState =
+  | { status: "idle" }
+  | { status: "fitting"; member: MemberId }
+  | { status: "error"; member: MemberId };
+
 export type ExperimentState = {
   phase: ExperimentPhase;
   datasetName: string | null;
@@ -106,6 +135,11 @@ export type ExperimentState = {
   // S4 — saneamiento (fijado UNA vez en loadCsv) + alertas EDA por objetivo elegido.
   sanitation: SanitationReport | null;
   edaAlerts: EdaAlert[] | null;
+  // S5 — la liga: el plan del objetivo elegido, el reparto con que se entrenó y
+  // la elección manual en curso.
+  plan: TargetPlan | null;
+  routing: Routing | null;
+  choice: ChoiceState;
   // S3 — el modelo se usa:
   modelMeta: ModelMeta | null;
   /** false mientras un import está deserializando en el worker. */
@@ -125,6 +159,9 @@ const INITIAL: ExperimentState = {
   error: null,
   sanitation: null,
   edaAlerts: null,
+  plan: null,
+  routing: null,
+  choice: { status: "idle" },
   modelMeta: null,
   modelReady: false,
   scoring: { status: "idle" },
@@ -155,7 +192,46 @@ type Pending =
     }
   | { kind: "score"; check: SchemaCheck; fileName: string; table: CsvTable }
   | { kind: "export-model"; datasetName: string; result: ExperimentResult }
-  | { kind: "import-model" };
+  | { kind: "import-model" }
+  | { kind: "fit-member"; member: MemberId };
+
+/** S5: E1 (tarea) y, si es binaria, E2 (quién compite) para el objetivo elegido. */
+function planTarget(
+  table: CsvTable,
+  target: string,
+  dataset: DatasetSummary,
+): TargetPlan | null {
+  const task = dataset.targetTasks[target];
+  if (!task) return null;
+  if (task.task !== "binaria") {
+    return {
+      target,
+      task,
+      routing: null,
+      profile: null,
+      smallSample: false,
+      blocked: null,
+    };
+  }
+  const prepared = prepareRun(table, target, SEED);
+  return prepared.ok
+    ? {
+        target,
+        task,
+        routing: prepared.routing,
+        profile: prepared.profile,
+        smallSample: prepared.smallSample,
+        blocked: null,
+      }
+    : {
+        target,
+        task,
+        routing: null,
+        profile: null,
+        smallSample: false,
+        blocked: prepared.error,
+      };
+}
 
 // Gestiona el runner de Pyodide y la máquina de estados del experimento. El
 // parseo/perfilado/split/veredicto/fuga/esquema/manifiesto corren aquí (puro,
@@ -172,6 +248,8 @@ export function useExperiment() {
   const modelRef = useRef<ModelMeta | null>(null);
   const resultRef = useRef<ExperimentResult | null>(null);
   const datasetNameRef = useRef<string | null>(null);
+  // S5: el último payload de la liga (para fit-member y el Nivel 2).
+  const payloadRef = useRef<PipelinePayload | null>(null);
   const [state, setState] = useState<ExperimentState>(INITIAL);
 
   useEffect(() => {
@@ -269,6 +347,14 @@ export function useExperiment() {
         } else if (pending.kind === "export-model") {
           reportExportError("runtime");
           setState((s) => ({ ...s, exportState: "error" }));
+        } else if (pending.kind === "fit-member") {
+          // Python falló ANTES de retener: el modelo activo sigue siendo el de antes.
+          reportExperimentError("fit-member");
+          setState((s) => ({
+            ...s,
+            modelReady: true,
+            choice: { status: "error", member: pending.member },
+          }));
         } else {
           reportImportError("runtime");
           setState((s) => ({
@@ -352,6 +438,30 @@ export function useExperiment() {
         pending.kind === "import-model"
       ) {
         setState((s) => ({ ...s, progress: null, modelReady: true }));
+      } else if (
+        message.command === "fit-member" &&
+        pending.kind === "fit-member"
+      ) {
+        const checked = validateMemberFit(message.result, {
+          member: pending.member,
+        });
+        const current = resultRef.current;
+        if (!checked.ok || !current) {
+          console.error(
+            "[experiment] contract",
+            checked.ok ? "result" : checked.field,
+          );
+          failTrain("contract", checked.ok ? "result" : checked.field);
+          return;
+        }
+        const chosen = applyMemberFit(current, checked.value);
+        resultRef.current = chosen;
+        setState((s) => ({
+          ...s,
+          result: chosen,
+          modelReady: true,
+          choice: { status: "idle" },
+        }));
       }
     };
 
@@ -392,6 +502,14 @@ export function useExperiment() {
         } else if (pending.kind === "export-model") {
           reportExportError("worker-dead");
           setState((s) => ({ ...s, exportState: "error" }));
+        } else if (pending.kind === "fit-member") {
+          // El worker murió: el modelo retenido se perdió con él.
+          reportExperimentError("worker-dead");
+          setState((s) => ({
+            ...s,
+            phase: "error",
+            error: { kind: "worker-dead", message: detail },
+          }));
         } else {
           reportImportError("worker-dead");
           setState((s) => ({
@@ -471,6 +589,10 @@ export function useExperiment() {
       ...s,
       edaAlerts:
         table && targetColumn ? computeEdaAlerts(table, targetColumn) : null,
+      plan:
+        table && targetColumn && s.dataset
+          ? planTarget(table, targetColumn, s.dataset)
+          : null,
     }));
   }, []);
 
@@ -502,6 +624,7 @@ export function useExperiment() {
     });
     modelRef.current = null;
     resultRef.current = null;
+    payloadRef.current = prepared.payload;
     setState((s) => ({
       ...s,
       phase: "running",
@@ -509,6 +632,8 @@ export function useExperiment() {
       progressDetail: null,
       error: null,
       result: null,
+      routing: prepared.routing,
+      choice: { status: "idle" },
       modelMeta: null,
       modelReady: false,
       scoring: { status: "idle" },
@@ -524,6 +649,29 @@ export function useExperiment() {
       id,
       type: "train",
       payload: prepared.payload,
+    });
+  }, []);
+
+  /**
+   * S5 (U1): elegir a mano un miembro de la liga. El worker lo ajusta en train
+   * completo (mismo split y semilla ⇒ su fila de la liga, exacta) y lo retiene
+   * en lugar del ganador; el veredicto pasa a hablar de él, etiquetado «elegido
+   * por ti». Elegir al ganador de la CV devuelve la selección a «cv».
+   */
+  const chooseMember = useCallback((member: MemberId) => {
+    const payload = payloadRef.current;
+    if (!payload || !resultRef.current) return;
+    const id = nextId.current++;
+    pendingRef.current.set(id, { kind: "fit-member", member });
+    setState((s) => ({
+      ...s,
+      modelReady: false,
+      choice: { status: "fitting", member },
+    }));
+    workerRef.current?.postMessage({
+      id,
+      type: "fit-member",
+      payload: { ...withoutLeague(payload), member },
     });
   }, []);
 
@@ -630,6 +778,7 @@ export function useExperiment() {
 
   const reset = useCallback(() => {
     tableRef.current = null;
+    payloadRef.current = null;
     modelRef.current = null;
     resultRef.current = null;
     datasetNameRef.current = null;
@@ -649,5 +798,6 @@ export function useExperiment() {
     scoreCsv,
     exportModel,
     activateImportedModel,
+    chooseMember,
   };
 }

@@ -431,6 +431,67 @@ con LightGBM (predicciones y probabilidades idénticas).
 - `pnpm test:integration`: 6 archivos, 46 pruebas, Pyodide real con los 4 paquetes.
 - `CI=1 pnpm test:e2e`: 24 de 24, build de producción, móvil y escritorio.
 
+## Fase 2 — UI, fichas, honestidad explícita
+
+«continúa» recibido el 2026-10-02 tras el STOP de la F1; D10–D15 aceptadas sin cambios.
+
+### Antes de la parada de mirada de FORMA (lo que la mirada juzga)
+
+- **`ConfigScreen`:**
+  - El selector ofrece TODAS las columnas, cada una con su tarea (E1).
+  - `TaskCard`: la razón («2 valores distintos → clasificación binaria»); si la tarea aún no se
+    entrena, lo dice, sin esconder la columna.
+  - `RosterCard` (E2): Nivel 1 con estimación, Nivel 2 con el costo de cada uno, y «fuera» con su
+    razón y la nota «nada se esconde».
+  - «Entrenar modelos» con la estimación debajo.
+  - **Cambio de forma:** la acción sube antes de la vista previa. En 360 px el botón quedaba a
+    varias pantallas del objetivo; lo juzga la mirada.
+- **`LeagueTable` (reemplaza a la tabla de H1):**
+  - Filas = modelos, ordenadas por validación cruzada (media y ± desviación).
+  - Marcas con texto:
+    - ★ rellena + «Ganador (validación cruzada)»
+    - ◆ + «Elegido por ti»
+    - ▲ «mejor puntaje»
+    - ≈ «empata con el mejor» (la banda del error estándar)
+    - ⚠ «no convergió»
+    - ✕ «no concluyó (tipo)»
+  - Pendientes del Nivel 2 y «fuera» como filas, con su razón.
+  - Prueba a pedido («Ver puntajes de prueba (no sirven para elegir)»), con advertencia; en móvil
+    va como una línea propia en ámbar y desde `sm` como columna.
+  - «Elegir» / «Volver al ganador» / «En uso».
+- **Veredicto:**
+  - Con elección manual lleva «◆ Elegido por ti, no por la validación cruzada…» (U1).
+  - Si gana la logística: «La liga no encontró nada mejor que la regresión de referencia» (R2).
+  - «Usar el modelo» y «Exportar» esperan mientras el worker ajusta el elegido.
+- **`TrainingScreen`:** progreso modelo a modelo, «Validación cruzada · modelo 8 de 10:
+  HistGradientBoosting», con barra accesible.
+- **Hook:** `plan` (E1 + E2 al elegir el objetivo), `routing`, `chooseMember` → `fit-member` →
+  `validateMemberFit` → `applyMemberFit`.
+- **Kit de prueba (D6):** `docs/kit-de-prueba/liga-mediana.csv`, 5.000 filas y determinista
+  (`scripts/kit-de-prueba-liga-mediana.mjs`). En Chromium, Nivel 1 = 10 modelos y 4 pendientes.
+
+**Pasada de capturas previa a la mirada:**
+
+- Build de producción, 360 px claro/oscuro y 1280 px, `scrollWidth ≤ clientWidth` medido en cada
+  encuadre, leídas como imagen.
+- Hallazgos pagados antes de presentar:
+  1. **La página desbordaba a 403 px** con la prueba abierta: un `sr-only` absoluto escapaba de la
+     región desplazable sin posición. Se arregló con `relative`, diagnosticado midiendo cada
+     elemento.
+  2. En 360 px la columna de prueba y los botones quedaban fuera de la vista. La acción va bajo
+     el nombre en móvil y la prueba como línea propia.
+  3. En escritorio las filas eran altas; la acción pasa a su columna desde `sm`.
+  4. Pendientes y «fuera» comprimidos en la columna angosta; ahora ocupan la fila entera.
+  5. «Volver al ganador» sin poder partirse fijaba el ancho; ahora se parte en móvil.
+  6. Los círculos de las etapas se deformaban con textos largos (`shrink-0`).
+  7. El copy «con pocos datos…» no valía para 5.000 filas; ahora es genérico.
+- Un aparente botón pálido era la transición de opacidad a medio camino: el arnés ahora espera
+  400 ms antes de cada captura.
+
+**Tests:** `tests/unit/league-ui.test.tsx` (19). Cambios esperados en e2e (R4): `happy-path` y
+`saneamiento-sucio` afirman la liga en vez de «Modelos que compitieron / elegido». Local: unit 329
+de 329, e2e 24 de 24 en build de producción.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S5-1 — `audita-sprint.md` tiene dos casillas numeradas «6»** (líneas 73 y 93 del kit): en la

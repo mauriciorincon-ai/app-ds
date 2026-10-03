@@ -1,0 +1,360 @@
+"use client";
+
+import { useState } from "react";
+import {
+  MLP_MIN_ROWS,
+  type Placement,
+  type Routing,
+} from "@/engine/encarrilador";
+import { selectOneSe, type MemberId } from "@/engine/roster";
+import { useT } from "@/i18n/use-translation";
+import { formatEstimate } from "@/lib/duration";
+import type { ChoiceState } from "@/lib/useExperiment";
+import type { ExperimentResult, LeagueRow } from "@/workers/protocol";
+import { Badge, Button, Card } from "./ui";
+
+// La liga (S5, ADR-009): filas = modelos. La columna que se ve es la de
+// validación cruzada («sirve para elegir»); la de prueba existe pero se abre a
+// pedido, etiquetada «no sirve para elegir» (regla dura 3: acompaña y etiqueta,
+// no esconde). El ganador lleva marca RELLENA ★ + texto (daltonismo leve del
+// usuario: nunca solo color); el elegido a mano, ◆ + «elegido por ti».
+
+type Entry =
+  | { kind: "ran"; row: LeagueRow }
+  | { kind: "pending"; placement: Placement }
+  | { kind: "out"; placement: Placement };
+
+export function LeagueTable({
+  result,
+  routing,
+  choice,
+  onChoose,
+}: {
+  result: ExperimentResult;
+  routing: Routing | null;
+  choice: ChoiceState;
+  onChoose: (member: MemberId) => void;
+}) {
+  const t = useT();
+  const [showTest, setShowTest] = useState(false);
+  const { selection, league } = result;
+  const metric = selection.metric;
+  const metricName = t(`results.metrics.${metric}`);
+  const short = (id: MemberId) => t(`results.candidates.short.${id}`);
+  const fmt = (v: number) => v.toFixed(3);
+
+  // La banda del error estándar: los que «empatan» con el mejor.
+  const oneSe = selectOneSe(league, selection.k);
+  const bestMean = league.find((r) => r.name === selection.best)?.cv?.mean;
+  const threshold =
+    bestMean !== undefined ? bestMean - selection.se : Number.POSITIVE_INFINITY;
+
+  // Corrieron (por puntaje de CV, de mayor a menor; sin puntaje al final) →
+  // pendientes del Nivel 2 → fuera. Ninguno se omite.
+  const ran = league.map((row) => row.name);
+  const entries: Entry[] = [
+    ...[...league]
+      .sort((a, b) => (b.cv?.mean ?? -Infinity) - (a.cv?.mean ?? -Infinity))
+      .map((row): Entry => ({ kind: "ran", row })),
+    ...(routing?.placements ?? [])
+      .filter((p) => !ran.includes(p.id) && p.level === 2)
+      .map((placement): Entry => ({ kind: "pending", placement })),
+    ...(routing?.placements ?? [])
+      .filter((p) => !ran.includes(p.id) && p.level === "out")
+      .map((placement): Entry => ({ kind: "out", placement })),
+  ];
+
+  const rows = result.nTrain + result.nTest;
+  const minorityShare = Math.min(result.positiveRate, 1 - result.positiveRate);
+  const outReason = (p: Placement) =>
+    t(`roster.reason.${p.outReason ?? p.reason}`, {
+      rows,
+      min: MLP_MIN_ROWS,
+      share: Math.round(minorityShare * 100),
+    });
+
+  const fitting = choice.status === "fitting";
+  // Columnas extra desde sm (prueba y «usar») para el colSpan de pendientes/fuera.
+  const testCols = showTest ? 1 : 0;
+
+  return (
+    <Card className="flex flex-col gap-3 p-5">
+      <div className="flex flex-col gap-1">
+        <h2 id="league-title" className="text-base font-semibold">
+          {t("league.title", { count: league.length })}
+        </h2>
+        <p className="text-sm">{t("league.rule")}</p>
+      </div>
+
+      <div>
+        <Button
+          variant="ghost"
+          icon="eye"
+          aria-expanded={showTest}
+          aria-controls="league-table"
+          onClick={() => setShowTest((v) => !v)}
+          className="-ml-4 justify-start text-left"
+        >
+          {showTest ? t("league.hideTest") : t("league.showTest")}
+        </Button>
+        {showTest && (
+          <p className="rounded-md border border-caution/40 bg-caution/10 p-3 text-sm">
+            <span aria-hidden className="mr-1 text-caution">
+              ⚠
+            </span>
+            {t("league.testWarning")}
+          </p>
+        )}
+      </div>
+
+      {/* Región desplazable accesible por teclado (axe: scrollable-region-focusable). */}
+      {/* relative: un descendiente absoluto (p. ej. un sr-only) sin bloque
+          contenedor posicionado escapa del recorte y estira la página (estiró
+          a 403 px un móvil de 360 — pasada de capturas, S5 F2). */}
+      <div
+        className="relative overflow-x-auto"
+        role="region"
+        tabIndex={0}
+        aria-labelledby="league-title"
+      >
+        <table id="league-table" className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-ink-muted">
+              <th
+                scope="col"
+                className="border-b border-hairline px-2 py-2 font-semibold"
+              >
+                {t("league.cols.model")}
+              </th>
+              <th
+                scope="col"
+                className="border-b border-hairline px-2 py-2 font-semibold"
+              >
+                {t("league.cols.cv", { metric: metricName })}
+              </th>
+              {showTest && (
+                <th
+                  scope="col"
+                  className="hidden border-b border-hairline bg-caution/10 px-2 py-2 font-semibold text-caution sm:table-cell"
+                >
+                  {t("league.cols.test", { metric: metricName })}
+                </th>
+              )}
+              <th
+                scope="col"
+                className="hidden border-b border-hairline px-2 py-2 font-semibold sm:table-cell"
+              >
+                {t("league.cols.use")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry) => {
+              if (entry.kind !== "ran") {
+                const p = entry.placement;
+                return (
+                  <tr
+                    key={p.id}
+                    className="border-b border-hairline text-ink-muted"
+                  >
+                    <th
+                      scope="row"
+                      colSpan={3 + testCols}
+                      className="px-2 py-2 text-left font-normal"
+                    >
+                      <div>{short(p.id)}</div>
+                      <div className="mt-0.5 text-xs">
+                        {entry.kind === "pending"
+                          ? t("league.status.pending", {
+                              time: formatEstimate(p.estimateS),
+                            })
+                          : t("league.status.out", { reason: outReason(p) })}
+                      </div>
+                    </th>
+                  </tr>
+                );
+              }
+
+              const row = entry.row;
+              const isWinner = row.name === selection.cvWinner;
+              const isActive = row.name === result.modelName;
+              const isChosen = isActive && selection.by === "user";
+              const isBest = row.name === selection.best && !isWinner;
+              const withinSe =
+                row.status === "ok" &&
+                row.cv !== null &&
+                row.cv.mean >= threshold &&
+                !isWinner &&
+                !isBest;
+              const canChoose = row.test !== null && !isActive;
+              const thisFitting =
+                choice.status === "fitting" && choice.member === row.name;
+              const action = isActive ? (
+                <Badge tone="positive">
+                  <span aria-hidden>✓</span> {t("league.inUse")}
+                </Badge>
+              ) : canChoose ? (
+                <Button
+                  variant="secondary"
+                  icon={isWinner ? "back" : "check"}
+                  disabled={fitting}
+                  aria-label={
+                    isWinner
+                      ? t("league.backToWinner")
+                      : t("league.chooseAria", { model: short(row.name) })
+                  }
+                  onClick={() => onChoose(row.name)}
+                  className="text-left sm:whitespace-nowrap"
+                >
+                  {thisFitting
+                    ? t("league.fitting")
+                    : isWinner
+                      ? t("league.backToWinner")
+                      : t("league.choose")}
+                </Button>
+              ) : null;
+
+              return (
+                <tr
+                  key={row.name}
+                  className={`border-b border-hairline ${
+                    isWinner
+                      ? "border-l-4 border-l-accent bg-accent/5"
+                      : isChosen
+                        ? "border-l-4 border-l-ink bg-sunken"
+                        : ""
+                  }`}
+                >
+                  {/* La acción vive bajo el nombre: en 360 px no hay ancho para
+                      una columna aparte sin desplazar la tabla. */}
+                  <th
+                    scope="row"
+                    className="px-2 py-2 text-left align-top font-normal"
+                  >
+                    <div
+                      className={
+                        isWinner || isChosen ? "font-semibold" : "font-medium"
+                      }
+                    >
+                      {short(row.name)}
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs">
+                      {isWinner && (
+                        <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                          <span
+                            aria-hidden
+                            className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[0.625rem] text-accent-ink"
+                          >
+                            ★
+                          </span>
+                          {t("league.mark.winner")}
+                        </span>
+                      )}
+                      {isChosen && (
+                        <span className="inline-flex items-center gap-1 font-semibold">
+                          <span
+                            aria-hidden
+                            className="flex h-4 w-4 items-center justify-center rounded-full bg-ink text-[0.625rem] text-bg"
+                          >
+                            ◆
+                          </span>
+                          {t("league.mark.chosen")}
+                        </span>
+                      )}
+                      {isBest && (
+                        <span className="text-ink-muted">
+                          <span aria-hidden>▲ </span>
+                          {t("league.mark.best")}
+                        </span>
+                      )}
+                      {withinSe && (
+                        <span className="text-ink-muted">
+                          {t("league.mark.withinSe")}
+                        </span>
+                      )}
+                      {row.status === "no-converge" && (
+                        <span className="text-caution">
+                          {t("league.status.no-converge")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1.5 sm:hidden">{action}</div>
+                  </th>
+                  <td className="px-2 py-2 align-top font-mono tabular-nums">
+                    {row.cv ? (
+                      <>
+                        <div>{fmt(row.cv.mean)}</div>
+                        <div className="text-xs text-ink-muted">
+                          ± {fmt(row.cv.std)}
+                        </div>
+                        {/* Móvil: sin ancho para una tercera columna, la prueba
+                            va en su propia línea, rotulada y en ámbar. */}
+                        {showTest && row.test && (
+                          <div className="mt-1 rounded-sm bg-caution/10 px-1 text-xs text-caution sm:hidden">
+                            {t("league.testShort")} {fmt(row.test[metric])}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="font-sans text-xs text-negative">
+                        {t("league.status.error", {
+                          type: row.error_type ?? "",
+                        })}
+                      </span>
+                    )}
+                  </td>
+                  {showTest && (
+                    <td className="hidden bg-caution/5 px-2 py-2 align-top font-mono tabular-nums text-ink-muted sm:table-cell">
+                      {row.test ? (
+                        fmt(row.test[metric])
+                      ) : row.cv ? (
+                        <span className="font-sans text-xs text-negative">
+                          {t("league.status.testError", {
+                            type: row.error_type ?? "",
+                          })}
+                        </span>
+                      ) : null}
+                    </td>
+                  )}
+                  <td className="hidden px-2 py-2 text-right align-top sm:table-cell">
+                    {action}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {choice.status === "error" && (
+        <p role="alert" className="text-sm text-negative">
+          <span aria-hidden className="mr-1">
+            ✕
+          </span>
+          {t("league.chooseError", { model: short(choice.member) })}
+        </p>
+      )}
+
+      <p className="text-sm text-ink-muted">
+        <span aria-hidden className="mr-1 text-accent">
+          ★
+        </span>
+        {t("league.howWinner", {
+          se: fmt(selection.se),
+          best: short(oneSe?.best ?? selection.best),
+        })}
+      </p>
+      {result.smallSample && (
+        <p className="text-sm text-caution">
+          <span aria-hidden className="mr-1">
+            ⚠
+          </span>
+          {t("roster.smallSample", { rows })}
+        </p>
+      )}
+      <p className="font-mono text-xs tabular-nums text-ink-muted">
+        {t("league.time", { seconds: (selection.elapsedMs / 1000).toFixed(1) })}
+      </p>
+    </Card>
+  );
+}

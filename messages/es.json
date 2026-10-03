@@ -73,7 +73,8 @@
     "target": {
       "label": "¿Qué quieres predecir?",
       "placeholder": "Elige una columna…",
-      "help": "Debe ser una columna con dos categorías (sí/no, 0/1)."
+      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. Esta versión entrena las de dos categorías (sí/no, 0/1).",
+      "option": "{column} · {task}"
     },
     "profile": {
       "numeric": "numérica",
@@ -85,7 +86,7 @@
     "warnings": {
       "date": "Detectamos columnas que parecen fecha ({cols}). En esta versión no se usan para dividir por tiempo; se ignoran como predictores."
     },
-    "train": "Entrenar modelo",
+    "train": "Entrenar modelos",
     "back": "Cambiar de dataset",
     "sanitation": {
       "clean": "No hubo nada que sanear: el dataset venía limpio.",
@@ -103,14 +104,19 @@
       "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo.",
       "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
       "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
-    }
+    },
+    "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor)."
   },
   "training": {
     "title": "Entrenando…",
     "loading-runtime": "Preparando el motor de análisis…",
     "loading-packages": "Cargando pandas, scikit-learn, XGBoost y LightGBM…",
-    "training": "Entrenando y evaluando sobre datos de prueba…",
-    "wait": "La primera vez tarda unos segundos: el motor se descarga una sola vez."
+    "training": "Compitiendo con validación cruzada; al final se abre el conjunto de prueba…",
+    "wait": "La primera vez tarda unos segundos: el motor se descarga una sola vez.",
+    "member": {
+      "cv": "Validación cruzada · modelo {index} de {total}: {model}",
+      "test": "Conjunto de prueba · modelo {index} de {total}: {model}"
+    }
   },
   "results": {
     "title": "Veredicto",
@@ -123,7 +129,10 @@
       "tiesDetail": "un modelo simple rinde igual: {model} frente a {baseline}. Con estas columnas no hay señal extra que aprender — suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.",
       "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Tus columnas actuales no aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con lo que quieres predecir.",
       "suspicious": "Métricas casi perfectas — sospechoso",
-      "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo."
+      "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo.",
+      "chosenNote": "◆ Elegido por ti, no por la validación cruzada. Si lo elegiste mirando la prueba, este número puede ser optimista.",
+      "logisticTie": "La liga no encontró nada mejor que la regresión de referencia",
+      "logisticTieDetail": "Ningún modelo superó en validación cruzada, por más de un error estándar, a la regresión logística, que también es el baseline. Con estas columnas no hay señal extra que aprender: suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo."
     },
     "primaryMetric": "Métrica principal: {metric}",
     "metrics": {
@@ -416,5 +425,79 @@
     "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo.",
     "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
     "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo."
+  },
+  "task": {
+    "title": "Tipo de predicción",
+    "name": {
+      "binaria": "clasificación binaria",
+      "multiclase": "clasificación en varias categorías",
+      "numerica": "predicción de una cantidad",
+      "sin-objetivo": "no sirve como objetivo",
+      "ambigua": "categorías o cantidad"
+    },
+    "reason": {
+      "two-values": "{distinct} valores distintos → {task}.",
+      "few-categories": "{distinct} categorías distintas → {task}.",
+      "many-numbers": "{distinct} números distintos → {task}.",
+      "few-numbers": "Solo {distinct} números distintos: pueden ser categorías (como una nota del 1 al 5) o una cantidad.",
+      "too-many-categories": "{distinct} valores distintos: parece un identificador o texto libre, no algo que predecir.",
+      "constant": "Tiene un solo valor: no hay nada que predecir.",
+      "empty": "La columna está vacía."
+    },
+    "suggested": "Lo más probable: {task}.",
+    "trainable": "Se puede entrenar.",
+    "notYet": "Esta versión todavía no entrena este tipo de predicción: llega en una próxima versión. Por ahora, elige una columna con dos categorías."
+  },
+  "roster": {
+    "title": "Quién compite",
+    "level1": "Nivel 1 · ahora · {count} modelos · unos {time}",
+    "level2": "Nivel 2 · después, si quieres · {count} modelos más",
+    "level2Hint": "No caben en el primer paso. Cuando veas los resultados podrás correr la liga completa (unos {time} en total en un computador de escritorio).",
+    "out": "Fuera · recomendación · {count}",
+    "reason": {
+      "always-first": "entra siempre: es el más simple",
+      "over-ceiling": "unos {time}",
+      "mlp-few-rows": "tu dataset tiene {rows} filas; una red neuronal necesita al menos {min} para aprender algo estable",
+      "balanced-not-needed": "tus clases ya están equilibradas (la menor es el {share} %): repetiría a su versión normal",
+      "forced": "lo incluiste tú; el encarrilador lo dejaba fuera porque {why}"
+    },
+    "cv": "Compiten con validación cruzada de {k} pliegues dentro del entrenamiento; el conjunto de prueba se abre una sola vez, al final.",
+    "smallSample": "Muestra pequeña ({rows} filas): los puntajes de validación cruzada varían bastante. Por eso, si varios quedan prácticamente empatados, gana el más simple.",
+    "note": "Nada se esconde: «fuera» es una recomendación con su razón, y podrás incluirlo de todos modos en el Nivel 2."
+  },
+  "league": {
+    "title": "La liga: {count} modelos",
+    "rule": "La tabla se calcula con validación cruzada: sirve para elegir. El veredicto se calcula con el conjunto de prueba: sirve para creer.",
+    "cols": {
+      "model": "Modelo",
+      "cv": "Validación cruzada · {metric}",
+      "test": "Prueba · {metric} · no sirve para elegir",
+      "use": "Usar"
+    },
+    "mark": {
+      "winner": "Ganador (validación cruzada)",
+      "chosen": "Elegido por ti",
+      "withinSe": "≈ empata con el mejor",
+      "best": "mejor puntaje"
+    },
+    "status": {
+      "no-converge": "⚠ no convergió: su puntaje puede no ser estable",
+      "error": "✕ no concluyó ({type})",
+      "testError": "✕ sin puntaje de prueba ({type})",
+      "pending": "Nivel 2 · pendiente · unos {time}",
+      "out": "Fuera: {reason}"
+    },
+    "inUse": "En uso",
+    "choose": "Elegir",
+    "chooseAria": "Elegir {model}",
+    "fitting": "Ajustando…",
+    "backToWinner": "Volver al ganador",
+    "chooseError": "No se pudo ajustar «{model}». Sigue activo el modelo anterior.",
+    "showTest": "Ver puntajes de prueba (no sirven para elegir)",
+    "hideTest": "Ocultar puntajes de prueba",
+    "testWarning": "Estos puntajes son del conjunto de prueba. Sirven para creer en el modelo que ya se eligió; si eliges mirándolos, el número del veredicto puede ser optimista.",
+    "howWinner": "Gana el más simple de los que quedaron a menos de un error estándar (±{se}) del mejor puntaje de validación cruzada, que fue el de «{best}». Entre puntajes prácticamente empatados, quedarse con el máximo premia la suerte.",
+    "time": "La liga tardó {seconds} s en este equipo.",
+    "testShort": "prueba"
   }
 }

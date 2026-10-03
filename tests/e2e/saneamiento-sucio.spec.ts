@@ -39,13 +39,16 @@ test("cargar sucio → informe → alerta → entrenar → veredicto → exporta
   await page.selectOption("#target", "contrato");
   await expect(page.getByText(/desbalanceado/i)).toBeVisible();
 
-  // Entrenar → veredicto con candidatos.
+  // Entrenar → veredicto con la liga.
   await page.getByRole("button", { name: /Entrenar modelo/i }).click();
   await expect(
     page.getByRole("button", { name: /Nuevo experimento/i }),
   ).toBeVisible({ timeout: 180_000 });
-  await expect(page.getByText(/Modelos que compitieron/i)).toBeVisible();
-  await expect(page.getByText("elegido")).toBeVisible();
+  // S5 (R4): la liga reemplaza a los candidatos de H1.
+  await expect(
+    page.getByRole("heading", { name: /La liga: \d+ modelos/ }),
+  ).toBeVisible();
+  await expect(page.getByText("Ganador (validación cruzada)")).toBeVisible();
 
   // Exportar el modelo: archivo .probeta.json con format_version 1 y el
   // saneamiento registrado en el manifiesto (campo aditivo opcional).

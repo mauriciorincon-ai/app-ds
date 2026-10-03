@@ -13,6 +13,12 @@ en la app.
 | `credito-fuga-plantada.csv` | Trae una **fuga plantada** (`monto_recuperado`): mira cómo se detecta.                                                                               |
 | `clientes-sucio.csv`        | Datos "reales" sucios: nulos, basura, un ID, una constante y filas duplicadas → mira el **saneamiento transparente** y la alerta de desbalance (S4). |
 
+## La liga (Sprint 005)
+
+| Archivo            | Qué demuestra                                                                                                                                                                                                                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `liga-mediana.csv` | 5 000 filas sintéticas (objetivo `objetivo`, con categóricas y nulos). Es el tamaño en que la liga completa **ya no cabe** en el primer paso: verás modelos «pendientes» del Nivel 2 y podrás correrlos (y cancelar). Sin nombres reales: `x1…x8` son números, `c1…c3` categorías. Se regenera con `node scripts/kit-de-prueba-liga-mediana.mjs`. |
+
 ## Datos nuevos para puntuar
 
 | Archivo               | Cómo se usa                                                                                                                                                                                                                                                                                                                                                                |

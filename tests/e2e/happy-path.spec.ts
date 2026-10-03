@@ -34,15 +34,25 @@ test("del inicio al veredicto con un dataset de ejemplo", async ({ page }) => {
     page.getByRole("heading", { name: /«.+» supera al baseline/ }),
   ).toBeVisible();
 
-  // S4: los candidatos compitieron y se marcó al ganador (símbolo + texto).
-  // exact:true — el nombre del ganador también aparece en el titular del
-  // veredicto; aquí se afirma la celda de la tabla comparativa.
-  await expect(page.getByText(/Modelos que compitieron/i)).toBeVisible();
+  // S5 (R4, cambio esperado): la liga reemplaza a los dos candidatos de H1.
+  // El ganador lleva marca + TEXTO (no solo color) y la regla está a la vista.
   await expect(
-    page.getByText("HistGradientBoosting", { exact: true }),
+    page.getByRole("heading", { name: /La liga: \d+ modelos/ }),
   ).toBeVisible();
-  await expect(page.getByText("Random Forest", { exact: true })).toBeVisible();
-  await expect(page.getByText("elegido")).toBeVisible();
+  await expect(page.getByText("Ganador (validación cruzada)")).toBeVisible();
+  await expect(
+    page.getByText(
+      /La tabla se calcula con validación cruzada: sirve para elegir/,
+    ),
+  ).toBeVisible();
+  // Los puntajes de prueba existen, pero se abren a pedido y etiquetados.
+  await expect(page.getByText(/Prueba · .* no sirve para elegir/i)).toHaveCount(
+    0,
+  );
+  await page.getByRole("button", { name: /Ver puntajes de prueba/i }).click();
+  await expect(
+    page.getByText(/Estos puntajes son del conjunto de prueba/),
+  ).toBeVisible();
 
   // A11y: sin violaciones en la pantalla de resultados.
   const results = await new AxeBuilder({ page }).analyze();

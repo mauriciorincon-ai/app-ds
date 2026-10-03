@@ -24,6 +24,7 @@ export default function Home() {
     scoreCsv,
     exportModel,
     activateImportedModel,
+    chooseMember,
   } = useExperiment();
 
   return (
@@ -37,13 +38,16 @@ export default function Home() {
           dataset={state.dataset}
           sanitation={state.sanitation}
           edaAlerts={state.edaAlerts}
+          plan={state.plan}
           onSelectTarget={selectTarget}
           onRun={run}
           onBack={reset}
         />
       )}
 
-      {state.phase === "running" && <TrainingScreen stage={state.progress} />}
+      {state.phase === "running" && (
+        <TrainingScreen stage={state.progress} detail={state.progressDetail} />
+      )}
 
       {state.phase === "results" && state.result && state.runMeta && (
         <ResultsScreen
@@ -57,6 +61,10 @@ export default function Home() {
           onUseModel={goToScoring}
           onExportModel={exportModel}
           exportState={state.exportState}
+          routing={state.routing}
+          choice={state.choice}
+          onChoose={chooseMember}
+          modelReady={state.modelReady}
         />
       )}
 

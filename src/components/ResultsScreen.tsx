@@ -1,15 +1,18 @@
 "use client";
 
 import type { EdaAlert } from "@/engine/eda";
+import type { Routing } from "@/engine/encarrilador";
+import type { MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { useNarration } from "@/lib/useNarration";
-import type { ExportState, RunMeta } from "@/lib/useExperiment";
+import type { ChoiceState, ExportState, RunMeta } from "@/lib/useExperiment";
 import type { ExperimentResult } from "@/workers/protocol";
+import { LeagueTable } from "./LeagueTable";
 import { ModelCardView } from "./ModelCardView";
 import { WhySection } from "./WhySection";
-import { Badge, Button, Card, MetricTile } from "./ui";
+import { Button, Card, MetricTile } from "./ui";
 
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
@@ -45,6 +48,10 @@ export function ResultsScreen({
   onUseModel,
   onExportModel,
   exportState,
+  routing,
+  choice,
+  onChoose,
+  modelReady = true,
 }: {
   result: ExperimentResult;
   datasetName: string | null;
@@ -56,6 +63,12 @@ export function ResultsScreen({
   onUseModel: () => void;
   onExportModel: () => void;
   exportState: ExportState;
+  /** S5: el reparto con que se entrenó (pendientes del Nivel 2 y «fuera»). */
+  routing: Routing | null;
+  choice: ChoiceState;
+  onChoose: (member: MemberId) => void;
+  /** false mientras el worker ajusta un modelo elegido a mano. */
+  modelReady?: boolean;
 }) {
   const t = useT();
   const { verdict, model, leakage, confusionMatrix } = result;
@@ -75,6 +88,12 @@ export function ResultsScreen({
   // a secas dejaba la duda de CUÁL superó al baseline.
   const winnerName = t(`results.candidates.short.${result.modelName}`);
 
+  // S5 (R2): la logística es baseline Y miembro — si gana la liga, empata
+  // consigo misma. Se dice lo que de verdad pasó, no «empata con el baseline».
+  const logisticWon =
+    result.modelName === "logistic" &&
+    result.selection.by === "cv" &&
+    verdict.level !== "beats";
   const banner = hasLeak
     ? {
         tone: "caution" as BannerTone,
@@ -82,16 +101,22 @@ export function ResultsScreen({
         headline: t("results.verdict.suspicious"),
         detail: t("results.verdict.suspiciousDetail"),
       }
-    : {
-        ...LEVEL_MARK[verdict.level],
-        headline: t(`results.verdict.${verdict.level}`, { name: winnerName }),
-        detail: t(`results.verdict.${verdict.level}Detail`, {
-          delta: `+${fmt(verdict.delta)}`,
-          metric: metricLabel(verdict.primaryMetric),
-          model: fmt(verdict.modelScore),
-          baseline: fmt(verdict.baselineScore),
-        }),
-      };
+    : logisticWon
+      ? {
+          ...LEVEL_MARK.ties,
+          headline: t("results.verdict.logisticTie"),
+          detail: t("results.verdict.logisticTieDetail"),
+        }
+      : {
+          ...LEVEL_MARK[verdict.level],
+          headline: t(`results.verdict.${verdict.level}`, { name: winnerName }),
+          detail: t(`results.verdict.${verdict.level}Detail`, {
+            delta: `+${fmt(verdict.delta)}`,
+            metric: metricLabel(verdict.primaryMetric),
+            model: fmt(verdict.modelScore),
+            baseline: fmt(verdict.baselineScore),
+          }),
+        };
 
   return (
     <div className="flex flex-col gap-6">
@@ -120,6 +145,12 @@ export function ResultsScreen({
               {banner.headline}
             </h1>
             <p className="mt-1 text-sm text-ink-muted">{banner.detail}</p>
+            {/* S5 (U1): el veredicto habla del elegido, etiquetado. */}
+            {result.selection.by === "user" && (
+              <p className="mt-2 text-sm font-medium">
+                {t("results.verdict.chosenNote")}
+              </p>
+            )}
           </div>
         </div>
       </Card>
@@ -162,109 +193,13 @@ export function ResultsScreen({
         </div>
       </section>
 
-      {/* S4: los candidatos compitieron con el MISMO veredicto — sin selector del
-          usuario: el veredicto habla. Gate ⭐ (bloque B): caja destacada con las
-          MÉTRICAS COMPLETAS de ambos candidatos (no solo la primaria del ganador)
-          y la nota en tamaño normal. Ganador con ▶ + badge (símbolo + texto). */}
-      <Card className="border-accent/40 bg-accent/5 p-5">
-        <h2 className="text-base font-semibold">
-          {t("results.candidates.title")}
-        </h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          {t("results.candidates.note")}
-        </p>
-        <div
-          className="mt-3 overflow-x-auto"
-          role="region"
-          tabIndex={0}
-          aria-label={t("results.candidates.title")}
-        >
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th
-                  scope="col"
-                  className="border-b border-hairline px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted"
-                >
-                  {t("results.candidates.metricCol")}
-                </th>
-                {result.candidates.map((candidate) => {
-                  const isWinner = candidate.name === result.modelName;
-                  return (
-                    <th
-                      key={candidate.name}
-                      scope="col"
-                      className="border-b border-hairline px-2 py-2 text-left"
-                    >
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span
-                          aria-hidden
-                          className={
-                            isWinner ? "text-positive" : "text-ink-muted"
-                          }
-                        >
-                          {isWinner ? "▶" : "·"}
-                        </span>
-                        <span
-                          className={
-                            isWinner
-                              ? "font-semibold"
-                              : "font-medium text-ink-muted"
-                          }
-                        >
-                          {t(`results.candidates.short.${candidate.name}`)}
-                        </span>
-                        {isWinner && (
-                          <Badge tone="positive">
-                            {t("results.candidates.winner")}
-                          </Badge>
-                        )}
-                      </span>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {METRIC_KEYS.map((metric) => {
-                const isPrimary = metric === verdict.primaryMetric;
-                return (
-                  <tr key={metric} className={isPrimary ? "bg-sunken" : ""}>
-                    <th
-                      scope="row"
-                      className={`px-2 py-1.5 text-left ${
-                        isPrimary
-                          ? "font-semibold"
-                          : "font-normal text-ink-muted"
-                      }`}
-                    >
-                      {metricLabel(metric)}
-                      {isPrimary && (
-                        <span className="ml-1 text-xs">
-                          ({t("results.candidates.primary")})
-                        </span>
-                      )}
-                    </th>
-                    {result.candidates.map((candidate) => {
-                      const isWinner = candidate.name === result.modelName;
-                      return (
-                        <td
-                          key={candidate.name}
-                          className={`px-2 py-1.5 font-mono tabular-nums ${
-                            isWinner ? "font-semibold" : "text-ink-muted"
-                          }`}
-                        >
-                          {fmt(candidate.metrics[metric])}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      {/* S5: la liga — filas = modelos, CV para elegir, prueba para creer. */}
+      <LeagueTable
+        result={result}
+        routing={routing}
+        choice={choice}
+        onChoose={onChoose}
+      />
 
       <section className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
         <Card className="w-fit p-4">
@@ -345,14 +280,14 @@ export function ResultsScreen({
           </h2>
           <p className="mt-1 text-sm text-ink-muted">{t("results.use.desc")}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <Button icon="table" onClick={onUseModel}>
+            <Button icon="table" onClick={onUseModel} disabled={!modelReady}>
               {t("results.use.button")}
             </Button>
             <Button
               variant="secondary"
               icon="download"
               onClick={onExportModel}
-              disabled={exportState === "exporting"}
+              disabled={exportState === "exporting" || !modelReady}
             >
               {exportState === "exporting"
                 ? t("results.export.exporting")

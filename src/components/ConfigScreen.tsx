@@ -3,14 +3,20 @@
 import { useState } from "react";
 import type { EdaAlert } from "@/engine/eda";
 import type { SanitationReport } from "@/engine/sanitize";
+import { isTrainable } from "@/engine/tarea";
 import { useT } from "@/i18n/use-translation";
+import { formatEstimate } from "@/lib/duration";
+import type { TargetPlan } from "@/lib/useExperiment";
 import type { DatasetSummary } from "@/workers/protocol";
+import { RosterCard } from "./RosterCard";
+import { TaskCard } from "./TaskCard";
 import { Badge, Button, Card } from "./ui";
 
 export function ConfigScreen({
   dataset,
   sanitation,
   edaAlerts,
+  plan,
   onSelectTarget,
   onRun,
   onBack,
@@ -18,6 +24,8 @@ export function ConfigScreen({
   dataset: DatasetSummary;
   sanitation: SanitationReport | null;
   edaAlerts: EdaAlert[] | null;
+  /** S5: E1 + E2 del objetivo elegido (null mientras no hay objetivo). */
+  plan: TargetPlan | null;
   onSelectTarget: (target: string) => void;
   onRun: (target: string) => void;
   onBack: () => void;
@@ -25,6 +33,13 @@ export function ConfigScreen({
   const t = useT();
   const [target, setTarget] = useState("");
   const profileByName = new Map(dataset.profiles.map((p) => [p.name, p]));
+
+  // Solo se entrena lo que E1 reconoce como binaria y prepareRun pudo armar.
+  const trainable =
+    plan !== null &&
+    plan.target === target &&
+    isTrainable(plan.task) &&
+    plan.routing !== null;
 
   const handleTargetChange = (value: string) => {
     setTarget(value);
@@ -67,19 +82,79 @@ export function ConfigScreen({
           <option value="" disabled>
             {t("config.target.placeholder")}
           </option>
-          {dataset.targetCandidates.map((column) => (
-            <option key={column} value={column}>
-              {column}
-            </option>
-          ))}
+          {/* S5 (E1): TODAS las columnas, cada una con la tarea que plantearía —
+              ninguna se esconde; la tarjeta de tarea dice si ya se entrena. */}
+          {dataset.headers.map((column) => {
+            const detection = dataset.targetTasks[column];
+            return (
+              <option key={column} value={column}>
+                {detection
+                  ? t("config.target.option", {
+                      column,
+                      task: t(`task.name.${detection.task}`),
+                    })
+                  : column}
+              </option>
+            );
+          })}
         </select>
         <p className="text-sm text-ink-muted">{t("config.target.help")}</p>
       </div>
 
+      {/* S5 (E1): qué tarea plantea el objetivo elegido, con su razón. */}
+      {target !== "" && plan && <TaskCard detection={plan.task} />}
+
       {/* Alertas EDA del objetivo elegido — role="status" (no "alert": no
           interrumpe; el route announcer de Next reserva alert — regla 7). */}
-      {target !== "" && edaAlerts && <EdaBlock alerts={edaAlerts} />}
+      {target !== "" &&
+        edaAlerts &&
+        (plan === null || isTrainable(plan.task)) && (
+          <EdaBlock alerts={edaAlerts} />
+        )}
 
+      {/* S5: binaria pero sin validación cruzada honesta posible (o sin features). */}
+      {target !== "" && plan?.blocked && (
+        <p
+          role="status"
+          className="rounded-md border border-negative/40 bg-negative/10 p-3 text-sm"
+        >
+          <span aria-hidden className="mr-1 text-negative">
+            ✕
+          </span>
+          {t(`errors.${plan.blocked}`)}
+        </p>
+      )}
+
+      {/* S5 (E2): quién compite y en qué nivel, con su razón. */}
+      {target !== "" && plan?.routing && plan.profile && (
+        <RosterCard
+          routing={plan.routing}
+          rows={plan.profile.rows}
+          minorityShare={plan.profile.minorityShare}
+          k={plan.profile.k}
+          smallSample={plan.smallSample}
+        />
+      )}
+
+      {trainable && plan?.routing && (
+        <p className="text-sm text-ink-muted">
+          {t("config.trainHint", {
+            count: plan.routing.level1.length,
+            time: formatEstimate(plan.routing.level1EstimateS),
+          })}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-3">
+        <Button icon="play" onClick={() => onRun(target)} disabled={!trainable}>
+          {t("config.train")}
+        </Button>
+        <Button variant="secondary" icon="back" onClick={onBack}>
+          {t("config.back")}
+        </Button>
+      </div>
+
+      {/* S5: la acción va antes de la vista previa — con la tarjeta de quién
+          compite, en un móvil el botón quedaba a varias pantallas del objetivo. */}
       <Card className="overflow-hidden">
         <div className="border-b border-hairline px-4 py-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
           {t("config.preview")}
@@ -141,19 +216,6 @@ export function ConfigScreen({
           </table>
         </div>
       </Card>
-
-      <div className="flex flex-wrap gap-3">
-        <Button
-          icon="play"
-          onClick={() => onRun(target)}
-          disabled={target === ""}
-        >
-          {t("config.train")}
-        </Button>
-        <Button variant="secondary" icon="back" onClick={onBack}>
-          {t("config.back")}
-        </Button>
-      </div>
     </div>
   );
 }
