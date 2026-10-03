@@ -1,6 +1,6 @@
 # ADR 008 — Multi-candidate model selection (RandomForest vs HistGradientBoosting) + two-layer sanitization (structural pre-split in TS, statistical inside the retained pipeline)
 
-- **Status:** accepted
+- **Status:** accepted — **§2 superseded by [ADR 009](009-league-cross-validated-selection.md)** (Sprint 005: the league selects by cross-validation inside train; the user may choose a model, labelled — [ADR 011](011-honesty-that-accompanies.md))
 - **Date:** 2026-07-19
 - **Sprint:** 004 (cierre del ciclo H1)
 
@@ -25,7 +25,7 @@ already filled NaNs before HGB sees the data. This is deliberate — one preproc
 candidates are compared fairly and the export/scoring path stays single. (`sparse_output=False` on
 the OneHotEncoder is required because HGB rejects sparse matrices.)
 
-### 2. Multi-candidate, one verdict, no user selector
+### 2. Multi-candidate, one verdict, no user selector — _superseded by ADR 009_
 
 `RandomForest` and `HistGradientBoosting` are trained as **candidates** with the SAME cloned
 preprocessor; `majority` and `logistic` remain the honest baselines. The winner is the argmax of

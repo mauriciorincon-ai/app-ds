@@ -533,7 +533,7 @@
     "forceTitle": "Include anyway",
     "forceReason": "The router leaves it out because {reason}.",
     "dropsChoice": "The full league picks again by cross-validation: your current manual pick is not kept.",
-    "estimate": "{count} models · about {time} on this device (calibrated against how long the previous run took)",
+    "estimate": "{count} models · about {time} on this device",
     "nothingToAdd": "Tick a model to include it; there is nothing else to add.",
     "run": "Run Level 2 (+{count})",
     "cancelHint": "You can cancel while it runs: you come back to this result without losing anything.",
@@ -546,8 +546,9 @@
       "restore-failed": "The previous model could not be restored. The table is still here, but to use or export the model you need to train again."
     },
     "desc_one": "Adds 1 model that did not fit in the first step ({models}) and reruns the whole league with the same cross-validation.",
-    "estimate_one": "1 model · about {time} on this device (calibrated against how long the previous run took)",
+    "estimate_one": "1 model · about {time} on this device",
     "running_one": "Level 2 · 1 model · about {time} on this device",
-    "runNothing": "Run Level 2"
+    "runNothing": "Run Level 2",
+    "estimateNote": "Calibrated against how long the previous run took."
   }
 }

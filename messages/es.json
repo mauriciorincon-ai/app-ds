@@ -533,7 +533,7 @@
     "forceTitle": "Incluir de todos modos",
     "forceReason": "El encarrilador lo deja fuera porque {reason}.",
     "dropsChoice": "La liga completa vuelve a elegir por validación cruzada: tu elección manual de ahora no se conserva.",
-    "estimate": "{count} modelos · unos {time} en este equipo (calibrado con lo que tardó la corrida anterior)",
+    "estimate": "{count} modelos · unos {time} en este equipo",
     "nothingToAdd": "Marca un modelo para incluirlo; no hay nada más que sumar.",
     "run": "Correr el Nivel 2 (+{count})",
     "cancelHint": "Puedes cancelar mientras corre: vuelves a este resultado sin perder nada.",
@@ -546,8 +546,9 @@
       "restore-failed": "No se pudo recuperar el modelo anterior. La tabla sigue a la vista, pero para usar o exportar el modelo tienes que volver a entrenar."
     },
     "desc_one": "Suma 1 modelo que no cupo en el primer paso ({models}) y vuelve a correr la liga entera con la misma validación cruzada.",
-    "estimate_one": "1 modelo · unos {time} en este equipo (calibrado con lo que tardó la corrida anterior)",
+    "estimate_one": "1 modelo · unos {time} en este equipo",
     "running_one": "Nivel 2 · 1 modelo · unos {time} en este equipo",
-    "runNothing": "Correr el Nivel 2"
+    "runNothing": "Correr el Nivel 2",
+    "estimateNote": "Calibrado con lo que tardó la corrida anterior."
   }
 }

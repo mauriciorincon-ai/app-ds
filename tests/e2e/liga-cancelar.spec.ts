@@ -36,7 +36,7 @@ test("Nivel 2: estimar → arrancar → cancelar → el Nivel 1 vuelve y exporta
   await expect(
     page.getByRole("heading", { name: "Nivel 2: la liga completa" }),
   ).toBeVisible();
-  await expect(page.getByText(/en este equipo \(calibrado/)).toBeVisible();
+  await expect(page.getByText("Calibrado con lo que tardó la corrida anterior.")).toBeVisible();
   const axe = await new AxeBuilder({ page }).analyze();
   expect(axe.violations).toEqual([]);
 

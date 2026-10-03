@@ -152,7 +152,9 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   resaltada con fondo `sunken` + sufijo "(primaria)"), el ganador marcado con símbolo **▶**
   (`positive`) + peso tipográfico + Badge `positive` "elegido"; los demás con **·** en `ink-muted`.
   La nota metodológica ("mismo preprocesamiento, mismo veredicto; sin trucos") en `text-sm`, nunca
-  letra pequeña. Sin selector de usuario: el veredicto habla, la tabla solo muestra por qué. Símbolo + texto, nunca solo color.
+  letra pequeña. Símbolo + texto, nunca solo color. _Reemplazada en el Sprint 005 por la
+  **LeagueTable** (abajo): «sin selector de usuario» dejó de ser la regla — la honestidad acompaña
+  y etiqueta, no bloquea ni esconde (ADR 011)._
 - **SanitationSection** (en ModelCardView) — el saneamiento aplicado se registra también en la
   model card exportable (qué se limpió y con qué conteos), coherente con el informe de config; el
   nombre del modelo ganador queda parametrizado (ya no hardcodea "Random Forest").
@@ -175,13 +177,71 @@ shadcn/ui **personalizados** con estos tokens (nunca el default):
   Bloquear con diagnóstico es preferible a leer mal en silencio: una lectura adivinada convertiría
   columnas numéricas en categorías sin avisar.
 
+### Añadidos Sprint 005 — la liga (mismos tokens, cero valores nuevos)
+
+Regla madre (ADR 011): **la honestidad acompaña y etiqueta; no bloquea ni esconde.** Todo puntaje
+se muestra con su etiqueta, toda marca lleva símbolo **relleno** + texto (daltonismo leve del
+usuario: un tinte sutil no comunica), y todo botón de acción lleva su icono de trazo a la izquierda.
+
+- **TaskCard** (en ConfigScreen, E1) — el tipo de predicción del objetivo elegido con su razón en
+  números (_«2 valores distintos → clasificación binaria»_); si la tarea aún no se entrena, lo dice
+  en `ink-muted` y deshabilita «Entrenar modelos» sin esconder la columna. El selector ofrece TODAS
+  las columnas como «columna · tarea».
+- **RosterCard** (en ConfigScreen, E2) — «Quién compite»: **Nivel 1** (chips `sunken` + estimación),
+  **Nivel 2** (uno por línea con su costo y el total de la liga completa) y **Fuera ·
+  recomendación** (uno por línea con su razón medida), más la nota «nada se esconde». La acción
+  «Entrenar modelos» vive ARRIBA de la vista previa (mirada de forma S5: en 360 px quedaba a varias
+  pantallas del objetivo) con la estimación debajo.
+- **LeagueTable** (en ResultsScreen) — reemplaza a CandidatesList. **Filas = modelos** (escala a 14),
+  ordenadas por validación cruzada: media en mono + «± desviación» en `ink-muted`.
+  - Encima, la regla fija: _«La tabla se calcula con validación cruzada: sirve para elegir. El
+    veredicto se calcula con el conjunto de prueba: sirve para creer.»_
+  - Marcas (bajo el nombre, `text-xs`): **★ en disco relleno `accent` + «Ganador (validación
+    cruzada)»** con fila `border-l-4 accent` + `accent/5`; **◆ en disco relleno `ink` + «Elegido por
+    ti»** con fila `border-l-4 ink` + `sunken`; ▲ «mejor puntaje»; ≈ «empata con el mejor»; ⚠ «no
+    convergió» en `caution`; ✕ «no concluyó (tipo)» en `negative`; «lo incluiste tú».
+  - Prueba **a pedido**: botón ghost con icono `eye` y `aria-expanded`; al abrir, advertencia en
+    franja `caution/10` y la columna «Prueba · métrica · no sirve para elegir» en banda ámbar. En
+    móvil la prueba va como línea propia ámbar dentro de la celda de CV («prueba 0.761»).
+  - Acción por fila: Badge `positive` «✓ En uso» · «Elegir» (`secondary` + `check`) · «Volver al
+    ganador» (`secondary` + `back`). En móvil vive bajo el nombre; desde `sm`, en su columna «Usar».
+  - Pendientes del Nivel 2 y «fuera» como filas de ancho completo en `ink-muted`, con su razón.
+  - Región desplazable `relative overflow-x-auto` enfocable por teclado (un `sr-only` absoluto sin
+    bloque contenedor posicionado estiraba la página a 403 px en 360 — pasada de capturas S5).
+  - Al pie: cómo se eligió el ganador (regla de un error estándar, con la cifra) y el tiempo.
+- **VerdictBanner — elegido por ti (U1):** con elección manual, el veredicto habla del elegido y
+  suma la línea _«◆ Elegido por ti, no por la validación cruzada. Si lo elegiste mirando la prueba,
+  este número puede ser optimista.»_ Si gana la logística (también baseline) el titular es propio:
+  _«La liga no encontró nada mejor que la regresión de referencia»_ (＝, `ink`).
+- **FichaButton + FichaModelo** (E3) — el nombre de cada modelo (y de cada baseline) es un botón
+  subrayado sutil (`decoration-hairline`) con icono `info` a la izquierda, 44 px. Abre un
+  `<dialog>` nativo modal (`surface`, radio `lg`, `backdrop: black/50`, máx. 85 dvh con scroll):
+  eyebrow «Ficha del modelo», nombre, **línea de estado en esta liga** (★/◆ + texto, puesto k de n,
+  pendiente, fuera porque…, baseline), y cinco apartados en `dl` (qué es · cuándo sirve · cuándo no
+  · qué mirar · cuánto cuesta); las variantes balanceadas suman su párrafo en caja `sunken`.
+  «Cerrar» (`secondary` + `x`), Esc o clic en el fondo; el foco vuelve al botón. Llega por
+  `import()` dinámico.
+- **Level2Card** (en ResultsScreen) — «Nivel 2: la liga completa»: qué suma (con nombres),
+  `fieldset` «Incluir de todos modos» con checkbox de 20 px y fila táctil de 44 px por cada «fuera»
+  con la razón del encarrilador, estimación con las cifras en mono «N modelos · unos T en este equipo» y la nota en prosa `ink-muted` «Calibrado con lo que tardó la corrida anterior.»,
+  acción primaria «Correr el Nivel 2 (+n)» con icono `play` y la promesa de cancelación debajo.
+  Avisos tras cancelar/fallar con icono `info` (`role="status"`); restauración fallida en `negative`
+  con ✕ (`role="alert"`).
+- **TrainingScreen — liga:** línea mono «Validación cruzada · modelo k de N: nombre» (y luego
+  «Conjunto de prueba · …») + barra `progressbar` accesible (`sunken` con relleno `accent`); en el
+  Nivel 2, encabezado mono con conteo y estimación + «Cancelar el Nivel 2» (`secondary` + `stop`).
+- **Motion:** `motion-reduce:transition-none` en botones, zonas de carga y tarjetas de ejemplo — la
+  regla «respeta prefers-reduced-motion» ahora la vigila un e2e con opacidad efectiva medida.
+
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).
-2. **Configuración** → seleccionar el objetivo; el **SanitationBlock** (qué se saneó, con conteos)
-   y las alertas del **EdaBlock** lo enmarcan, con el perfilado de la preview alrededor.
-3. **Entrenamiento** → el progreso honesto (qué está pasando ahora).
-4. **Resultados** → el **VerdictBanner**; métricas, matriz y advertencias lo sostienen.
+2. **Configuración** → seleccionar el objetivo; desde S5 la **TaskCard** y la **RosterCard** dicen
+   qué se entrenaría y quién compite, y «Entrenar modelos» queda arriba de la vista previa. El
+   **SanitationBlock** y el **EdaBlock** lo enmarcan.
+3. **Entrenamiento** → el progreso honesto (qué modelo, en qué fase); en el Nivel 2, cancelar.
+4. **Resultados** → el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
+   métricas, matriz y advertencias lo sostienen.
 5. **Error** → el mensaje llano + la acción de recuperación.
 6. **Usar el modelo (S3)** → el **NoveltyPanel** antes de descargar; la descarga lo sostiene.
    Encabezado estático (candidato LCP, patrón lcp-nace-estatico).

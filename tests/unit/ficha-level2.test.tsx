@@ -249,8 +249,11 @@ describe("Level2Card (D5 + U3)", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        `${plan.roster.length} modelos · unos ${formatEstimate(plan.estimateS)} en este equipo (calibrado con lo que tardó la corrida anterior)`,
+        `${plan.roster.length} modelos · unos ${formatEstimate(plan.estimateS)} en este equipo`,
       ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Calibrado con lo que tardó la corrida anterior."),
     ).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", {

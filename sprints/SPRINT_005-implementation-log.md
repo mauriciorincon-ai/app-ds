@@ -587,6 +587,61 @@ botón habilitado tenga opacidad 1.
 
 **Corridas locales:** unit 368/368 (41 archivos, líneas 90,9 %); e2e 32/32 en build de producción.
 
+### Documentos, brochure y pasada de capturas (cierre de la F2)
+
+- **ADR:**
+  - **009** «la liga + selección por CV»: reemplaza el §2 del ADR 008 y recoge D8, D10–D15.
+  - **010** «encarriladores deterministas + modelo de costos»: D3, D5, D9, U3, la calibración y la
+    cancelación (R1, R15).
+  - **011** «la honestidad que acompaña»: tabla antes/ahora y las tres etiquetas.
+  - El ADR 008 queda marcado: su §2 lo reemplaza el 009.
+- **Manual:**
+  - Sección «La liga honesta · desde Sprint 005» y diccionario «Sobre la liga».
+  - FAQ: «¿por qué bajó mi puntaje?», «¿por qué no ganó el del puntaje más alto?», la prueba
+    etiquetada y «fuera».
+  - Frases corregidas: «tres ejemplos», «exactamente dos categorías», «Entrenar modelo»,
+    «sin que tengas que elegir a mano», la probabilidad en el CSV y «Candidatos» en el diccionario.
+- **Guía v2 acumulativa (38 pruebas):**
+  - Hereda las 27 del H1 con sus chips de origen; las ⭐ del H1 pasan a «⭐ H1 · corrida».
+  - Mejoradas en S5: B1, B2, B4 y C6. B1 y B2 se reescribieron con el resultado REAL medido en el
+    build: marketing → HistGradientBoosting supera por +0.21 en F1; rotación → «La liga no encontró
+    nada mejor que la regresión de referencia».
+  - Bloque F nuevo (11 pruebas).
+  - **⭐ gate H2: 4** (F3, F4, F6, F8), diferidas al acumulado del cierre del H2 (S5: 4).
+  - `CLAVE = "guia-ds:s5:"`.
+- **design-system.md:**
+  - Se retira «sin selector de usuario».
+  - «Añadidos Sprint 005» (TaskCard, RosterCard, LeagueTable, el veredicto «elegido por ti»,
+    FichaButton y FichaModelo, Level2Card, la liga en TrainingScreen, motion).
+  - Jerarquía por pantalla actualizada.
+- **design-sync/ (en el mismo PR, sin publicar; se publica al cerrar el H2):**
+  - Tarjetas nuevas `liga.html`, `encarriladores.html` y `ficha-modelo.html`.
+  - Se retira `candidatos.html`: la feature ya no existe.
+  - README con ★/◆ y la regla «acompaña y etiqueta».
+- **Brochure (D1/U2, solo lo falso):**
+  - La tarjeta V9 «Dos modelos compiten… No eliges tú» pasa a «Una liga de modelos, elegida sin
+    mirar la prueba… Puedes elegir otro: queda registrado como «elegido por ti»».
+  - En el export cambian V9 (`seccion_manual` → «La liga honesta») y el papel de scikit-learn («la
+    liga de modelos candidatos»).
+  - El conteo sigue en 33; el test del export queda en 7/7.
+
+**Pasada de capturas — contrapeso del ⭐ diferido (2026-10-02, `scripts/capturas-s5.mjs`):**
+
+- Build de producción, 360 px y 1280 px, ambos temas, más la guía v2 a 360 claro y 1280 oscuro.
+- **36 mediciones OK:** `scrollWidth ≤ clientWidth` en cada encuadre; la ficha cabe en la ventana
+  (663 ≤ 780 en móvil, con scroll interno; 528 ≤ 900 en escritorio); «Exportar» vuelve después de
+  cancelar.
+- Pasada de interacción: desplegable de prueba, ficha abierta, «incluir de todos modos», elegir a
+  mano, Nivel 2 corriendo, cancelar con «Recuperando el modelo anterior…» y listo.
+- Leídas como imagen. **Hallazgo pagado:** la estimación de la tarjeta del Nivel 2 y «Marca un
+  modelo…» salían en monoespaciada. Ahora las cifras van en mono y la nota en prosa, según el
+  design system.
+- **Fricción del arnés:** la espera de estabilidad se colgó porque el cursor quedó sobre un botón
+  primario (`hover:opacity-90`). El arnés ahora saca el cursor antes de medir.
+
+**Barrido de cero enlaces:** después del último `git add`, con el patrón de la regla 13, vacío (ver
+el commit del cierre de la F2).
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S5-1 — `audita-sprint.md` tiene dos casillas numeradas «6»** (líneas 73 y 93 del kit): en la

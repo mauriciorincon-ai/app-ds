@@ -89,9 +89,9 @@
           },
           {
             "id": "V9",
-            "nombre": "Dos modelos compiten y se dice cuál ganó",
-            "que_hace": "Random Forest y HistGradientBoosting, mismo preprocesamiento y mismo veredicto. No elige el usuario: habla el resultado.",
-            "seccion_manual": "Sobrevive datos reales"
+            "nombre": "Una liga de modelos, elegida sin mirar la prueba",
+            "que_hace": "Compiten todos los modelos que el navegador puede entrenar, con validación cruzada dentro del entrenamiento; la prueba se abre una sola vez. El usuario puede elegir otro, etiquetado «elegido por ti».",
+            "seccion_manual": "La liga honesta"
           },
           {
             "id": "V10",
@@ -374,7 +374,7 @@
     },
     {
       "nombre": "scikit-learn",
-      "papel": "el pipeline anti-fuga, los dos modelos candidatos y los baselines contra los que se juzga"
+      "papel": "el pipeline anti-fuga, la liga de modelos candidatos y los baselines contra los que se juzga"
     },
     {
       "nombre": "Vitest y Playwright",

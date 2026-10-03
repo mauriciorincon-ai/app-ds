@@ -115,14 +115,22 @@ export function Level2Card({
           <p className="text-sm text-ink-muted">{t("level2.dropsChoice")}</p>
         )}
 
-        <p className="font-mono text-sm tabular-nums">
-          {plan.added.length > 0
-            ? t("level2.estimate", {
+        {/* Mono solo para las cifras; la frase que las explica, en prosa. */}
+        {plan.added.length > 0 ? (
+          <p className="text-sm">
+            <span className="font-mono tabular-nums">
+              {t("level2.estimate", {
                 count: plan.roster.length,
                 time: formatEstimate(plan.estimateS),
-              })
-            : t("level2.nothingToAdd")}
-        </p>
+              })}
+            </span>
+            <span className="block text-ink-muted">
+              {t("level2.estimateNote")}
+            </span>
+          </p>
+        ) : (
+          <p className="text-sm text-ink-muted">{t("level2.nothingToAdd")}</p>
+        )}
         <div>
           <Button
             icon="play"
