@@ -212,6 +212,29 @@ encarriladores + contenido `{es,en}` — regla 20 del kit), workflow con gates d
 `/audita-sprint` y summary EN el PR, y plantilla del summary con «Auditoría» y la sección fija
 «Gate ⭐ — diferimiento y contrapesos».
 
+### Tercer push (`8ba4d9a`) — `quality` rojo otra vez por el calendario: un aviso SIN parche
+
+`gh pr checks 13`: **`quality` fail** · `e2e` / `integration` / `lighthouse` **skipping**. Único paso
+rojo: `pnpm audit`. Aviso nuevo en la base de la auditoría entre el push anterior (verde) y este:
+**GHSA-vfj7-8cjw-p6xm / CVE-2026-93687** — `braces` ≤3.0.3, DoS por desbordamiento de pila con
+patrones de llaves anidados. **No hay versión parcheada** (`first_patched_version: null`; la última
+en npm es 3.0.3), así que la receta del wiki (parche → `pnpm update` → override) no tiene a dónde ir:
+`pnpm update braces` no cambia nada.
+
+- **Alcance verificado:** solo la cadena de DESARROLLO `eslint-config-next → @next/eslint-plugin-next
+→ fast-glob → micromatch → braces` (corre en el lint, sobre los globs fijos del repo, jamás con
+  entrada del usuario). `pnpm audit --prod` → «No known vulnerabilities found»: no llega al bundle.
+- **Decisión (reversible, para veto del usuario en el STOP):** `auditConfig.ignoreGhsas` con ESE
+  único GHSA en `pnpm-workspace.yaml`, comentado con su razón y su condición de retiro (en cuanto se
+  publique `braces` ≥3.0.4). Se descartó `--ignore-unfixable` (taparía en silencio cualquier aviso
+  futuro sin parche) y `--prod` en CI (dejaría sin auditar todo el árbol de desarrollo).
+- 🔴 **El gate sigue vivo para todo lo demás:** con `lodash@4.17.20` agregado temporalmente →
+  «Command Injection in lodash», exit 1; restaurado → exit 0. (Un primer intento de demo —quitar el
+  override de fast-uri— NO demostró nada: el lockfile ya tenía 3.1.8 resuelto y el aviso no volvió;
+  se descartó y se repitió con un paquete vulnerable real.)
+- Deuda explícita para el summary: aviso aceptado con nombre, sin parche publicado; revisar en cada
+  sprint hasta que exista `braces` ≥3.0.4.
+
 ### Spike del roster EN EL NAVEGADOR — informe completo en `sprints/SPRINT_005-spike-costos.md`
 
 Arnés en `scripts/spike-liga/` (evidencia, no se despliega): payloads por el `prepareRun` REAL →
