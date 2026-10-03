@@ -13,6 +13,10 @@ Checklist exhaustivo antes de mergear a `main` (que dispara deploy a producción
 > umbrales); `pnpm typecheck` ≠ `tsc --noEmit` (falta `next typegen`). Y **lee lo que viene
 > DESPUÉS del resumen**: el verde de las pruebas no es el verde del job. *(Origen: Velo S2 —
 > 502 pruebas verdes con `vitest run`, CI rojo por el umbral de `src/lib/**`.)*
+> **Y la inversa (kit v1.28.0): todo comando que aparezca en una casilla VIVE en un job del
+> `ci.yml`, o la casilla dice `manual` y por qué.** Un comando que solo existe en el checklist
+> es un gate que depende de que alguien lo recuerde *(Angel Ghost S1: `clippy` vivió en el
+> checklist sin job y estaba en rojo mientras la CI daba verde)*.
 
 Corre cada verificación en orden y reporta estado:
 
@@ -24,12 +28,29 @@ Corre cada verificación en orden y reporta estado:
       líneas posteriores al resumen.
 
 ### 2. Type safety
+- [ ] **(perfil `--python`, kit v1.30.0)** desde `agents/`: `ruff check .` · `ruff format --check .` · `pytest` verdes
+      con EL comando del CI (cobertura ≥ umbral del `pyproject.toml`); `pip-audit --skip-editable` limpio.
 - [ ] `pnpm typecheck` sin errores.
 - [ ] Sin `@ts-ignore` nuevos sin justificación en comentario.
 
 ### 3. Lint y formato
 - [ ] `pnpm lint` sin warnings nuevos.
-- [ ] `prefers-reduced-motion` respetado si hay animaciones nuevas.
+- [ ] **La pasada de capturas mide el ÁREA DE DESPLAZAMIENTO (kit v1.31.0):** por cada encuadre,
+      `scrollHeight`/`scrollWidth` contra el alto/ancho visible del contenedor (test o script de
+      fidelidad); un desborde es un rojo aunque la comparación por píxel pase *(Angel Ghost: 15 px
+      de desborde sobrevivieron a 60 encuadres comparados al 0,15 %)*.
+- [ ] **La pasada de capturas incluye una pasada de INTERACCIÓN (kit v1.32.0, regla 22):** por cada
+      control dibujado (botón, panel, ficha, conmutador de tema/idioma, siguiente paso) el arnés lo
+      activa y comprueba que algo cambió (DOM o captura); el gate `controladores-maqueta` está en verde
+      *(Big-D: la ficha del nivel 2 sin script sobrevivió a cuatro miradas con capturas de un panel cerrado)*.
+- [ ] `prefers-reduced-motion` respetado si hay animaciones nuevas — **y la FORMA del árbol no
+      depende de `useReducedMotion()`** (kit v1.26.0): test unitario «mismo HTML con `null` /
+      `true` / `false`» sobre cada componente de motion nuevo o tocado + axe bajo emulación de
+      reduced-motion. Un árbol que ramifica por el hook rompe la hidratación (React #418) para
+      exactamente los usuarios que el cinturón cuida.
+- [ ] **Tokens de tinta VETADOS como texto (kit v1.26.0):** el barrido de clases prohibidas
+      declaradas en `design-system.md` (p. ej. `ink-3`) pasa en `pnpm lint`/`pnpm test` — no se
+      espera a que axe lo cace al final.
 
 ### 4. Build
 - [ ] `pnpm build` exitoso.
@@ -74,10 +95,30 @@ Corre cada verificación en orden y reporta estado:
       **Si lo corres a mano: `npx @lhci/cli`** — `npx lhci` A SECAS resuelve a un paquete
       impostor del registry (imprime "Hello, this is AnupamAS01!"); el CI del kit ya usa el
       correcto (K-habla S2).
+      **UNA corrida NO es una medición (kit v1.26.0):** performance = **mediana de ≥3 corridas**
+      por URL (`--numberOfRuns=3` + `--aggregationMethod=median-run`, como el `ci.yml`). Un
+      servidor recién levantado dio un falso rojo reproducible en hoja-de-vida S7 y casi se pagó
+      con optimización a ciegas; y al revés, una corrida buena tampoco prueba nada.
 - [ ] No hay queries N+1.
 - [ ] Imágenes usan `next/image`.
 
 ### 9. Documentación
+- [ ] **CERO ENLACES publicados** (kit v1.19.0, regla 17 — regla dura F0 #8): barre que NINGÚN
+      archivo del repo ni campo de GitHub contenga la URL de producción o de previews:
+      ```
+      git grep -nE "vercel[.]app|workers[.]dev|pages[.]dev" -- ':!pnpm-lock.yaml'   # TODOS los archivos versionados — jamás include-list (kit v1.23.0: wrangler.jsonc pasó un gate con lista); suma el host real del stack si difiere
+      gh repo view --json homepageUrl -q .homepageUrl   # el campo About/website APUNTA AL PROPIO REPO (kit v1.32.1); si está vacío, Vercel lo reescribe
+      ```
+      README, BLUEPRINT ("qué ve quién" sin la URL), manual, guía (su campo de URL se llena EN
+      USO), CTAs. *La producción se muestra (brochure), jamás se entrega (link).* Si este sprint
+      es anterior a la regla y encuentras enlaces heredados: se limpian en este mismo PR.
+      **El barrido corre sobre el árbol que se va a subir — DESPUÉS del último `git add`, y
+      cubre código y comentarios de tests (kit v1.26.0):** correrlo antes deja ciega la ventana
+      hasta el push (así entraron los artefactos de `.lighthouseci/` al PR del S5 de
+      hoja-de-vida), y un comentario de spec que cita el dominio de preview es una fuga igual.
+- [ ] (post-MVP) **Si este sprint cambió features y la app tiene brochure: el brochure se ajustó
+      EN ESTE SPRINT** (regla 13 — el sello MVP no lo congela; un brochure que describe el sprint
+      pasado es una frase caducada de página entera).
 - [ ] **¿Qué frases caducaron?** (v1.15.0) — este sprint volvió FALSAS afirmaciones viejas:
       revisa portada/landing, `docs/MANUAL-DE-USO.md`, `README.md`, `docs/GUIA-DE-PRUEBA.html`,
       copy de estados vacíos y brochure. **Busca por PROMESA APLAZADA, no por la palabra de la
@@ -87,6 +128,12 @@ Corre cada verificación en orden y reporta estado:
       describir el sprint pasado.*
 - [ ] README actualizado si cambió el setup.
 - [ ] **`docs/MANUAL-DE-USO.md` actualizado con las features de este sprint** (qué hace, cómo se usa, limitaciones — en lenguaje de usuario final). Feature sin manual = sprint no cierra.
+- [ ] **IA de construcción por suscripción (7-S, kit v1.33.0 — regla 21):** si la app tiene una skill que
+      corre con la suscripción de la persona, **antes de cada release** se releen los términos vigentes y la
+      fecha y lo leído quedan en su ADR de cumplimiento. Sin relectura fechada, el release no sale. *(Big-D
+      S1, M-4: el ADR remitía a esta casilla y no existía.)*
+- [ ] **Matriz de envejecimiento (kit v1.33.0 — regla 23):** si la app tiene datos con fecha de cambio de
+      estado, el gate que construye la página en cada una de esas fechas está en verde (y nació en rojo).
 - [ ] CHANGELOG entry (si el proyecto lo usa).
 - [ ] Si hay decisión arquitectónica: ADR en `decisions/` de este repo.
 
@@ -123,13 +170,35 @@ Corre cada verificación en orden y reporta estado:
 > esta pregunta *¿lo has visto **correr**, alguna vez?*. Verde sin haber fallado nunca es una
 > promesa; verde sin haber corrido nunca ni siquiera es eso.
 
+### 12. El disco en runtime — lo que la app PRODUCE al correr (kit v1.21.0)
+
+> Las 11 secciones anteriores auditan el REPO; esta mira la MÁQUINA. Origen: dash S2 — el
+> índice nacía world-readable (dir 755 / archivo 644) con texto real de prompts, y todas las
+> casillas habrían dado verde porque ninguna miraba el estado en disco.
+
+- [ ] **Inventario de derivados:** ¿qué archivos/directorios crea la app al correr (índices,
+      caches, configs, reportes, logs)? Cada uno listado con su ubicación real.
+- [ ] **Un derivado JAMÁS nace menos privado que su fuente:** si la fuente es privada del
+      usuario, el derivado nace con permisos restrictivos (700/600 o equivalente) — verificado
+      con test que nace en rojo, y reparación al abrir si el derivado ya existía mal.
+- [ ] **El modo real de arranque CORRIÓ EN VIVO** (tercer filo de la regla «un gate se
+      demuestra fallando»): el modo/perfil con el que el usuario usará la app (p. ej.
+      `start:seguro`) arrancó de verdad al menos una vez en este sprint si el sprint lo
+      introdujo o lo tocó — pasar sus tests no cuenta como haber corrido.
+- [ ] **Arneses con candado:** todo script del repo que pueda tocar fuentes (capturas,
+      fixtures, seeds) demuestra al arrancar contra qué árbol corre y aborta ante datos
+      reales sin confirmación explícita.
+
+*(En apps cloud, esta sección aplica a lo que el runtime escribe donde corre — storage,
+tmp, logs con datos — con la misma pregunta: ¿con qué permisos/alcance nace?)*
+
 ## Output esperado
 
 ```
-### ✅ Pasa (N/11)
+### ✅ Pasa (N/12)
 - ...
 
-### ❌ Falla (N/11) — bloquea merge
+### ❌ Falla (N/12) — bloquea merge
 - tipo: descripción
 - fix: ...
 
