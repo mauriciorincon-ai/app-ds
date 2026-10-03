@@ -114,6 +114,41 @@ suma `.lh-*.json`.
 - Que el job `lighthouse` y el `e2e` corran de verdad en la CI se verifica con `gh pr checks` tras
   el primer push (regla 11 — hermana).
 
+### Runtime: xgboost + lightgbm, y el gate de peso que nació en rojo SOLO
+
+**R1 · `scripts/pyodide-paquetes.mjs` (fuente única)** — `REQUIRED = [pandas, scikit-learn,
+xgboost, lightgbm]`, `CORE_FILES`, `resolveWheels`; lo leen `copy-pyodide.mjs` (self-host) y el
+gate de peso. El runner (`public/pyodide-runner.js`, sin bundler) repite la lista y
+`tests/unit/pyodide-paquetes.test.ts` coteja ambas (🔴 sin `lightgbm` en el runner → «el runner carga
+EXACTAMENTE los paquetes que el self-host copia» falla; 🟢 3/3).
+
+**R2 · Gate nuevo `scripts/verificar-peso-pyodide.mjs` + `pyodide-budget.json`** (paso en `quality`
+tras el build). Mide lo que el navegador DESCARGA (núcleo `pyodide.asm.mjs/.wasm`,
+`python_stdlib.zip`, `pyodide.mjs`, `pyodide-lock.json` + el cierre de wheels), no el directorio
+entero (que trae `.d.ts`, mapas y consolas que nadie pide). **Línea base medida: 40.033.012 bytes
+(38,18 MiB)** con pandas + scikit-learn (9 wheels) — no los «39 MB» del spike, que contaban el
+directorio. Tope: + 2 MiB (DoD).
+
+- 🔴 **ROJO NATURAL en su primera corrida (2026-10-02):** con la carga estándar (`loadPackage` con
+  el cierre del lock) el crecimiento fue **2,24 MiB > 2,00** → exit 1. Desglose: xgboost 704.277 +
+  lightgbm 760.436 + **setuptools 756.856** + pyparsing 122.781 bytes. La estimación del plan
+  («xgboost 0,7 + lightgbm 0,76 + pyparsing + setuptools ≤ 2 MB») no midió setuptools. **Sin el
+  gate, la DoD se habría dado por cumplida a ojo.**
+- **Diagnóstico:** setuptools (→ pyparsing) llega solo porque el lock de Pyodide 314.0.2 lo declara
+  como dependencia de xgboost. `grep` sobre el wheel de xgboost: **cero** referencias a
+  `setuptools`, `pkg_resources`, `distutils` o `pyparsing`; su `METADATA` solo exige numpy y scipy.
+- **Verificación en el runtime real (Node + Pyodide 314.0.2, wheels de `public/pyodide/`):**
+  `loadPackage([pandas, scikit-learn, lightgbm])` + `loadPackage(<url del wheel de xgboost>)` →
+  paquetes cargados sin setuptools ni pyparsing; `XGBClassifier` entrena, `pickle` de ida y vuelta
+  reproduce las predicciones, y `setuptools`/`pyparsing` **no están en `sys.modules`**.
+- **Decisión:** xgboost se carga por la URL de su wheel, sin su cierre declarado
+  (`LOAD_WITHOUT_DEPS`). Crecimiento final **1,40 MiB** (39,58 MiB total) → 🟢. Ahorra 0,84 MiB a
+  cada usuario. Un test unit avisa si el lock deja de declarar setuptools (para retirar la
+  excepción) y el test de integración del runtime (F1) carga xgboost igual que el navegador.
+- 🔴 **Rojos deliberados:** tope de 1 MiB (copia temporal del budget) → exit 1; una wheel faltante
+  (`lightgbm` renombrada) → «faltan 1 archivo(s)», exit 1 (una wheel faltante es rojo, no «se
+  omite»: el navegador fallaría); restaurado → exit 0.
+
 ### Constitución
 
 2026-10-02 — `CLAUDE.md`: el párrafo del diferenciador y la regla dura 3 «Honestidad por diseño»

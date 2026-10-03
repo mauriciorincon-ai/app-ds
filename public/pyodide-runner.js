@@ -12,6 +12,11 @@
 
 let runtimePromise = null;
 
+// Paquetes del runtime (espejo de scripts/pyodide-paquetes.mjs — REQUIRED = la unión de ambas
+// listas; LOAD_WITHOUT_DEPS = la segunda). tests/unit/pyodide-paquetes.test.ts falla si divergen.
+const PACKAGES = ["pandas", "scikit-learn", "lightgbm"];
+const PACKAGES_WITHOUT_DEPS = ["xgboost"];
+
 // Etapa de progreso que se anuncia antes de ejecutar cada comando.
 const STAGE = {
   train: "training",
@@ -31,7 +36,14 @@ function ensureRuntime(post, id) {
       const pyodide = await loadPyodide({ indexURL: base });
 
       post({ id, type: "progress", stage: "loading-packages" });
-      await pyodide.loadPackage(["pandas", "scikit-learn"]);
+      await pyodide.loadPackage(PACKAGES);
+      // Cargados por la URL de su wheel, SIN su cierre declarado en el lock (S5): xgboost
+      // declara setuptools/pyparsing pero no los importa (0,84 MiB menos por usuario). La
+      // fuente única de estas dos listas es scripts/pyodide-paquetes.mjs; un test unit las coteja.
+      const lock = await (await fetch(`${base}pyodide-lock.json`)).json();
+      for (const name of PACKAGES_WITHOUT_DEPS) {
+        await pyodide.loadPackage(`${base}${lock.packages[name].file_name}`);
+      }
 
       const source = await (await fetch(`${base}pipeline.py`)).text();
       pyodide.runPython(source);

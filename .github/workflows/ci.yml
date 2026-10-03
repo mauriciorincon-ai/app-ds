@@ -34,6 +34,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm test            # vitest run --coverage (umbral 70% en vitest.config)
       - run: pnpm build
+      # S5: peso del runtime Pyodide que descarga el navegador (núcleo + cierre de wheels) contra
+      # pyodide-budget.json — la DoD «crece ≤ 2 MB» medida en cada PR, no a mano (nació en rojo).
+      - run: node scripts/verificar-peso-pyodide.mjs
       - run: pnpm audit --audit-level high
 
   integration:

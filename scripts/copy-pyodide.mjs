@@ -3,8 +3,9 @@
 // runtime, CSP simple del tipo `'self'`). Se ejecuta en "prebuild" y "predev".
 // public/pyodide/ está gitignored (se regenera en cada build).
 //
-// Copia el runtime core + las wheels de pandas + scikit-learn y sus
-// dependencias (cierre resuelto desde pyodide-lock.json). Las wheels ya
+// Copia el runtime core + las wheels de los paquetes de scripts/pyodide-paquetes.mjs
+// (pandas, scikit-learn y, desde S5, xgboost + lightgbm) y sus dependencias
+// (cierre resuelto desde pyodide-lock.json). Las wheels ya
 // cacheadas en node_modules se copian; las que falten (CI fresco) se descargan
 // del CDN de Pyodide. Decisión registrada en el ADR del motor de cómputo.
 import { cp, mkdir, readFile, writeFile, access } from "node:fs/promises";
@@ -12,13 +13,11 @@ import { constants } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveWheels } from "./pyodide-paquetes.mjs";
 
 const require = createRequire(import.meta.url);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dest = resolve(root, "public", "pyodide");
-
-// Paquetes que la app carga en el worker; sus dependencias se resuelven solas.
-const REQUIRED = ["pandas", "scikit-learn"];
 
 async function exists(path) {
   try {
@@ -27,29 +26,6 @@ async function exists(path) {
   } catch {
     return false;
   }
-}
-
-function normalize(name) {
-  return name.toLowerCase().replace(/[-_.]+/g, "-");
-}
-
-// Cierre de dependencias: los file_name de todas las wheels necesarias.
-function resolveWheels(lock) {
-  const index = new Map();
-  for (const key of Object.keys(lock.packages)) {
-    index.set(normalize(key), lock.packages[key]);
-  }
-  const needed = new Map();
-  const stack = REQUIRED.map(normalize);
-  while (stack.length > 0) {
-    const name = stack.pop();
-    if (needed.has(name)) continue;
-    const pkg = index.get(name);
-    if (!pkg) throw new Error(`[copy-pyodide] paquete no encontrado en el lock: ${name}`);
-    needed.set(name, pkg.file_name);
-    for (const dep of pkg.depends ?? []) stack.push(normalize(dep));
-  }
-  return [...needed.values()];
 }
 
 async function main() {
