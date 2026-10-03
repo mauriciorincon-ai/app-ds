@@ -149,6 +149,29 @@ directorio. Tope: + 2 MiB (DoD).
   (`lightgbm` renombrada) → «faltan 1 archivo(s)», exit 1 (una wheel faltante es rojo, no «se
   omite»: el navegador fallaría); restaurado → exit 0.
 
+**K7 · Regla 17 «cero enlaces» (v1.23 / v1.26 / v1.32.1)** — regla 13 de la app reescrita (barrido
+`git grep` sobre TODOS los archivos versionados, después del último `git add`; homepage = el repo).
+
+- **Homepage (2026-10-02):** `gh repo view` daba `homepageUrl: ""` (la regla vieja de la app lo pedía
+  vacío, justo lo que la GitHub App de Vercel reescribe). `gh repo edit --homepage <url del repo>` →
+  verificado: apunta al propio repo.
+- **README verificado:** sin URL de producción ni de previews (es aún la plantilla de
+  `create-next-app`: enlaza a la documentación de Next.js, no a la app). Que siga siendo plantilla se
+  anota como hueco anterior al delta (K-S5-5), no se reescribe en este sprint.
+- 🟢 Barrido `git grep -nE "vercel[.]app|workers[.]dev|pages[.]dev" -- ':!pnpm-lock.yaml'` → vacío.
+- 🔴 **Rojo:** carnada temporal en el COMENTARIO de un spec e2e (`tests/e2e/zz-carnada-enlaces.spec.ts`,
+  en stage) → el barrido la encontró (exit 0 = hallazgo); retirada → vacío.
+
+**Declarados «no aplica»** (orden § Delta del kit): matriz de envejecimiento (regla 23 — la app no
+tiene datos con fecha de cambio de estado) · 7-S (regla 21) · perfiles escritorio / estático /
+python, `/release-check`, `verify-ephemeral` · controladores de maqueta (regla 22: la app es
+anterior a v1.14 y no tiene maqueta; el test pasaría vacío, que no es un gate) · ADR código-primero e
+`ia-embebida` §9 (cero IA nueva) · banco del brochure y ⭐⭐ corto (cierre H2, S7) · LCP 3,0 s por
+ADR (aquí el budget es 3.500 ms, documentado en `ci.yml` desde el S4 — mediana local medida hoy:
+2.613 ms) · `/deploy-check` §12 (disco en runtime): aplica poco — todo derivado (`.probeta.json`,
+CSV puntuado, model card) nace en el navegador como descarga del usuario; se declara su inventario
+en el `/deploy-check` del cierre.
+
 ### Constitución
 
 2026-10-02 — `CLAUDE.md`: el párrafo del diferenciador y la regla dura 3 «Honestidad por diseño»
