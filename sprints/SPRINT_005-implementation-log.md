@@ -96,7 +96,7 @@ divergían — `xhr` en una, `http` en la otra). Gate: `tests/unit/sentry-scrub.
 
 - 🔴 **Rojo:** `open-pull-requests-limit: 5` en npm → «npm: expected 5 to be 1», 1 falla; 🟢 3/3.
 - ⚠️ **Demo que no demostraba (cazada por la propia regla):** el primer intento usó `sed
-  '0,/…/s//…/'`, que el `sed` BSD de macOS no soporta: el archivo no cambió y el test siguió
+'0,/…/s//…/'`, que el `sed` BSD de macOS no soporta: el archivo no cambió y el test siguió
   verde. Un «rojo» sin verificar que el cambio se aplicó habría certificado un gate sin verlo
   fallar. Se repitió editando con Python y comprobando el archivo antes de correr el test.
 
@@ -185,12 +185,18 @@ S4, ninguno introducido por este diff (el «corolario del calendario» del patr�
 2. **`pnpm update`** dentro de los rangos declarados → de 29 avisos a 6 (resolvió undici, sharp,
    js-yaml y brace-expansion transitivos).
 3. **Override existente reajustado, ninguno nuevo:** `fast-uri@<3.1.4: ^3.1.4` (S4) → `fast-uri@<3.1.8:
-   ^3.1.8` en `pnpm-workspace.yaml` (los 5 altos + 1 moderado restantes eran fast-uri 3.1.5).
+^3.1.8` en `pnpm-workspace.yaml` (los 5 altos + 1 moderado restantes eran fast-uri 3.1.5).
 
 Resultado local: `pnpm audit` → «No known vulnerabilities found» · `pnpm peers check` limpio ·
 `verificar-dependencias` → 675 paquetes, ninguno por debajo de `origin/main` · typecheck + lint +
 unit (248/248) verdes con next 16.3.8. El build, la integración, el e2e y Lighthouse con la nueva
 minor de Next los valida la CI de este push (`gh pr checks` a continuación).
+
+`gh pr checks 13` tras el segundo push (`f11171f`): **`quality` pass (1m15s) · `integration` pass
+(1m3s) · `e2e` pass (3m40s) · `lighthouse` pass (1m42s)** — cada uno con conclusión PROPIA, ninguno
+saltado. **Primeras corridas en CI** (sin histórico: no se afirma regresión ni no-regresión):
+`pnpm peers check`, `verificar-dependencias` (regla 18), `verificar-peso-pyodide`, Lighthouse con
+mediana de 3, e2e sin `--pass-with-no-tests` y con `upload-artifact`.
 
 ### Constitución
 
@@ -206,6 +212,46 @@ encarriladores + contenido `{es,en}` — regla 20 del kit), workflow con gates d
 `/audita-sprint` y summary EN el PR, y plantilla del summary con «Auditoría» y la sección fija
 «Gate ⭐ — diferimiento y contrapesos».
 
+### Spike del roster EN EL NAVEGADOR — informe completo en `sprints/SPRINT_005-spike-costos.md`
+
+Arnés en `scripts/spike-liga/` (evidencia, no se despliega): payloads por el `prepareRun` REAL →
+Playwright sobre el build de producción → module worker que carga `/pyodide/` como el runner y corre
+el `pipeline.py` real. Chromium 151 (referencia) + WebKit 26.6. 8 datasets: los 4 del kit (200
+filas) + sintéticos con categóricas y nulos (2.000 · ancho 2.000 · 5.000 · 20.000).
+
+**Incidentes del arnés (registrados, no del producto):**
+
+1. **Cuelgue silencioso de 10 min (primer intento).** La app sirve CSP `worker-src 'self'`, que
+   bloquea (bien) los workers desde Blob; el arnés no escuchaba `onerror` ni tenía timeout, así que
+   esperó para siempre sin imprimir nada. Diagnóstico con un script mínimo («violates the following
+   Content Security Policy directive: worker-src 'self'»). Arreglo SIN tocar la CSP del producto:
+   Playwright intercepta una página y un worker del mismo origen; todo mensaje con timeout y todo
+   error reportado. Lección: un arnés que puede colgarse en silencio es un gate que no ejecutó.
+2. **Doble corrida de las variantes del MLP.** El primer intento falló (el paso de explicabilidad
+   buscaba al ganador en el roster equivocado) pero su proceso siguió vivo con los datasets restantes
+   y el `spike.py` viejo en memoria, compitiendo por CPU con el relanzamiento y escribiendo en el
+   mismo log. Detectado por un `KeyError` imposible para el código nuevo; ambos procesos detenidos y
+   relanzados en UNA cadena secuencial. Al revisar la línea de tiempo apareció otra posible
+   contaminación (la suite unit corrió en paralelo con dos puntos de Chromium): **se repitieron solos
+   y la sospecha no se confirmó** (+5–7 %, variación natural, puntajes idénticos).
+
+**Resultados que cambian el plan** (detalle y tablas en el informe):
+
+- La liga completa (14) tarda **3,4–4,5 s** con los datasets del kit (Chromium) → cabe en el techo
+  propuesto de ~5 s. 20.000 filas: 140–170 s (k=5); heap 557 MB.
+- **KNN no es caro** (1,5 s de CV con 20.000 filas) y **NB con categóricas gana en rotación** → las
+  reglas «fuera» del plan para ellos no tienen respaldo medido (propuesta F0-3 / desviación D9).
+- **MLP (`max_iter=300`) no converge en ningún dataset**; con `early_stopping` converge, cuesta ~8×
+  menos y es el mejor en 20.000 filas (propuesta F0-4).
+- ⚠ **El máximo de la CV elige mal con muestras chicas** (rotación y clientes-sucio pasan de
+  «supera» a «NO supera»); la **regla de un error estándar** lo corrige y nunca empeora en la muestra
+  (propuesta F0-2 / desviación D8).
+- Chromium y WebKit dan **puntajes idénticos** (determinismo entre motores); los tiempos varían
+  ~±40 % → calibración del Nivel 2 con el Nivel 1 del propio equipo.
+
+**STOP de la Fase 0 — decisiones del usuario pendientes:** F0-1 techo del Nivel 1 · F0-2 regla de
+selección · F0-3 reglas «fuera» · F0-4 MLP · F0-5 test de los perdedores · F0-6 k.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S5-1 — `audita-sprint.md` tiene dos casillas numeradas «6»** (líneas 73 y 93 del kit): en la
@@ -219,6 +265,11 @@ encarriladores + contenido `{es,en}` — regla 20 del kit), workflow con gates d
   adoptados: sin `packageManager` en `package.json` (v1.10.2), sin `lighthouse-categorias.json`
   (v1.12.0), sin las reglas 12 (no entregar por artifacts) y 14 (código primero) del kit en el
   `CLAUDE.md`. Se reportan para que la planeadora decida.
+- **K-S5-7 — Fricción del constructor (no del kit):** un heredoc SIN comillas (`<<EOF`) al armar el
+  informe dejó que zsh interpretara los backticks del texto como comandos (`engine/costos.ts`,
+  `scripts/spike-liga/tabla.mjs`…). No hubo daño (comandos inexistentes o sin permiso), pero el
+  informe salió mutilado; regenerado con `<<'EOF'` y la ruta por variable de entorno. Regla para el
+  resto del sprint: todo heredoc con texto markdown va entre comillas.
 - **K-S5-6 — «Una carnada por campo» no está en el wiki**: `gate-de-contrato-entre-lenguajes.md`
   prescribe fixture del emisor + tipo del lector + un test de punta a punta, pero no carnadas. La
   mecánica «detectó k de n» se toma de `reusables/diagramador/CONTRATO.md`.
