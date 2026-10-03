@@ -45,7 +45,25 @@ Registradas al aprobar el plan (2026-10-02); la planeadora las lee aquí (no se 
 
 ### Delta del kit v1.16.0 → v1.33.0 (por nombre)
 
-(se completa a medida que cada ítem entra, con su demo en rojo)
+Cada gate nace en rojo en su MISMO commit (regla 11 — «rojo en el mismo commit», kit v1.25.0).
+
+**K1 · `/audita-sprint` + comandos re-estampados (v1.8→v1.31)** — commit `8c514d0`. Comandos, no
+gates: sin demo. `run-tests.md` lleva además el paso propio `pnpm test:integration` (el job
+`integration` de esta app; el kit no lo trae).
+
+**K2 · Hooks gitleaks B-8 (v1.32.1)** — `.claude/settings.json` (PreToolUse escanea
+`tool_input.content`/`new_string` con `jq` + `gitleaks detect --pipe`) y `githooks/pre-commit`
+(falla CERRADO; solo `KIT_SIN_GITLEAKS=1` pasa, a sabiendas). Gate permanente en
+`tests/integration/gitleaks-hook.test.ts` (5 pruebas nuevas, comando REAL leído del settings).
+
+- 🔴 **Rojo (2026-10-02):** con los hooks de `main` restaurados → **4 fallan**: «BLOQUEA (exit 2)
+  un Write…», «…un Edit…», «BLOQUEA el commit (exit 1) si gitleaks no está instalado», «solo
+  KIT_SIN_GITLEAKS=1…» (el hook viejo avisaba y dejaba pasar con exit 0).
+- 🟢 **Verde:** con los nuevos → 7/7.
+- **Modo real (tercer filo):** un `Write` de la carnada canónica armada al scratchpad (FUERA del
+  repo) fue **bloqueado por el hook en vivo** («SECRET DETECTADO en el contenido a escribir») y el
+  archivo no llegó a existir; `env PATH=/usr/bin:/bin sh githooks/pre-commit` → «commit BLOQUEADO»,
+  exit 1.
 
 ### Constitución
 
