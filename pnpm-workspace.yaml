@@ -5,8 +5,11 @@
 # queda dentro del mismo major (^) para no cruzar una ruptura de API.
 # Se retiran cuando los paquetes aguas arriba (next, @tailwindcss/postcss,
 # @sentry/nextjs) publiquen versiones que ya resuelvan a las parcheadas.
+# S5 (2026-10-02): nuevos avisos de fast-uri (≤3.1.7) → el piso sube a ^3.1.8; el resto de
+# avisos nuevos (next crítico, undici, sharp, js-yaml, brace-expansion) se pagaron con el
+# parche directo de next 16.3.8 + `pnpm update`, sin overrides nuevos.
 overrides:
-  fast-uri@<3.1.4: ^3.1.4
+  fast-uri@<3.1.8: ^3.1.8
   nanoid@<3.3.18: ^3.3.18
   postcss@<8.5.18: ^8.5.18
   sharp@<0.35.0: ^0.35.0

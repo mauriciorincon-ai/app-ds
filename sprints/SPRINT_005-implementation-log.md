@@ -172,6 +172,26 @@ ADR (aquí el budget es 3.500 ms, documentado en `ci.yml` desde el S4 — median
 CSV puntuado, model card) nace en el navegador como descarga del usuario; se declara su inventario
 en el `/deploy-check` del cierre.
 
+### Primer push (PR #13) — `quality` rojo por el calendario, no por el diff
+
+2026-10-02 — `gh pr checks 13` tras el primer push: **`quality` fail** y `e2e` / `integration` /
+`lighthouse` **`skipping`** (saltados no son verdes — regla 11, hermana). El único paso rojo fue
+`pnpm audit --audit-level high`: 29 avisos (13 altos, 3 críticos) publicados DESPUÉS del merge del
+S4, ninguno introducido por este diff (el «corolario del calendario» del patrón
+`un-gate-saltado-se-ve-igual-que-uno-verde`). Pagado con la receta de menor a mayor intrusión:
+
+1. **Parche directo que pide el aviso crítico:** `next` y `eslint-config-next` 16.2.11 → **16.3.8**
+   (el aviso exige ≥16.3.6; misma major).
+2. **`pnpm update`** dentro de los rangos declarados → de 29 avisos a 6 (resolvió undici, sharp,
+   js-yaml y brace-expansion transitivos).
+3. **Override existente reajustado, ninguno nuevo:** `fast-uri@<3.1.4: ^3.1.4` (S4) → `fast-uri@<3.1.8:
+   ^3.1.8` en `pnpm-workspace.yaml` (los 5 altos + 1 moderado restantes eran fast-uri 3.1.5).
+
+Resultado local: `pnpm audit` → «No known vulnerabilities found» · `pnpm peers check` limpio ·
+`verificar-dependencias` → 675 paquetes, ninguno por debajo de `origin/main` · typecheck + lint +
+unit (248/248) verdes con next 16.3.8. El build, la integración, el e2e y Lighthouse con la nueva
+minor de Next los valida la CI de este push (`gh pr checks` a continuación).
+
 ### Constitución
 
 2026-10-02 — `CLAUDE.md`: el párrafo del diferenciador y la regla dura 3 «Honestidad por diseño»
