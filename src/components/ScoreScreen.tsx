@@ -104,7 +104,7 @@ export function ScoreScreen({
               const file = event.dataTransfer.files[0];
               if (file) void handleFile(file);
             }}
-            className={`flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10 text-center transition-colors ${
+            className={`flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10 text-center transition-colors motion-reduce:transition-none ${
               dragging
                 ? "border-accent bg-accent/5"
                 : "border-hairline bg-surface"

@@ -11,6 +11,8 @@ import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
 import type { ChoiceState } from "@/lib/useExperiment";
 import type { ExperimentResult, LeagueRow } from "@/workers/protocol";
+import { FichaButton } from "./FichaButton";
+import type { FichaStatus } from "./FichaModelo";
 import { Badge, Button, Card } from "./ui";
 
 // La liga (S5, ADR-009): filas = modelos. La columna que se ve es la de
@@ -74,6 +76,15 @@ export function LeagueTable({
     });
 
   const fitting = choice.status === "fitting";
+  const ficha = (id: MemberId, status: FichaStatus, emphasis: string) => (
+    <FichaButton
+      target={{ id, status }}
+      label={t("league.fichaAria", { model: short(id) })}
+      className={emphasis}
+    >
+      {short(id)}
+    </FichaButton>
+  );
   // Columnas extra desde sm (prueba y «usar») para el colSpan de pendientes/fuera.
   const testCols = showTest ? 1 : 0;
 
@@ -149,7 +160,7 @@ export function LeagueTable({
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => {
+            {entries.map((entry, index) => {
               if (entry.kind !== "ran") {
                 const p = entry.placement;
                 return (
@@ -162,8 +173,14 @@ export function LeagueTable({
                       colSpan={3 + testCols}
                       className="px-2 py-2 text-left font-normal"
                     >
-                      <div>{short(p.id)}</div>
-                      <div className="mt-0.5 text-xs">
+                      {ficha(
+                        p.id,
+                        entry.kind === "pending"
+                          ? { kind: "pending" }
+                          : { kind: "out", reason: outReason(p) },
+                        "",
+                      )}
+                      <div className="text-xs">
                         {entry.kind === "pending"
                           ? t("league.status.pending", {
                               time: formatEstimate(p.estimateS),
@@ -176,6 +193,8 @@ export function LeagueTable({
               }
 
               const row = entry.row;
+              // Las filas que corrieron van primero, ya ordenadas por CV.
+              const rank = index + 1;
               const isWinner = row.name === selection.cvWinner;
               const isActive = row.name === result.modelName;
               const isChosen = isActive && selection.by === "user";
@@ -186,6 +205,10 @@ export function LeagueTable({
                 row.cv.mean >= threshold &&
                 !isWinner &&
                 !isBest;
+              // U3: compitió porque el usuario lo incluyó de todos modos.
+              const isForced = routing?.placements.some(
+                (p) => p.id === row.name && p.reason === "forced",
+              );
               const canChoose = row.test !== null && !isActive;
               const thisFitting =
                 choice.status === "fitting" && choice.member === row.name;
@@ -231,14 +254,22 @@ export function LeagueTable({
                     scope="row"
                     className="px-2 py-2 text-left align-top font-normal"
                   >
-                    <div
-                      className={
-                        isWinner || isChosen ? "font-semibold" : "font-medium"
-                      }
-                    >
-                      {short(row.name)}
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs">
+                    {ficha(
+                      row.name,
+                      isWinner
+                        ? { kind: "winner" }
+                        : isChosen
+                          ? { kind: "chosen" }
+                          : row.cv === null
+                            ? { kind: "failed" }
+                            : {
+                                kind: "competitor",
+                                rank,
+                                total: league.length,
+                              },
+                      isWinner || isChosen ? "font-semibold" : "font-medium",
+                    )}
+                    <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs">
                       {isWinner && (
                         <span className="inline-flex items-center gap-1 font-semibold text-accent">
                           <span
@@ -270,6 +301,11 @@ export function LeagueTable({
                       {withinSe && (
                         <span className="text-ink-muted">
                           {t("league.mark.withinSe")}
+                        </span>
+                      )}
+                      {isForced && (
+                        <span className="text-ink-muted">
+                          {t("league.mark.forced")}
                         </span>
                       )}
                       {row.status === "no-converge" && (

@@ -1,15 +1,22 @@
 "use client";
 
 import type { EdaAlert } from "@/engine/eda";
-import type { Routing } from "@/engine/encarrilador";
+import type { RouteProfile, Routing } from "@/engine/encarrilador";
 import type { MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { useNarration } from "@/lib/useNarration";
-import type { ChoiceState, ExportState, RunMeta } from "@/lib/useExperiment";
+import type {
+  ChoiceState,
+  ExportState,
+  Level2State,
+  RunMeta,
+} from "@/lib/useExperiment";
 import type { ExperimentResult } from "@/workers/protocol";
+import { FichaButton } from "./FichaButton";
 import { LeagueTable } from "./LeagueTable";
+import { Level2Card } from "./Level2Card";
 import { ModelCardView } from "./ModelCardView";
 import { WhySection } from "./WhySection";
 import { Button, Card, MetricTile } from "./ui";
@@ -52,6 +59,10 @@ export function ResultsScreen({
   choice,
   onChoose,
   modelReady = true,
+  profile = null,
+  forced = [],
+  level2 = { status: "idle" },
+  onRunLevel2,
 }: {
   result: ExperimentResult;
   datasetName: string | null;
@@ -67,8 +78,13 @@ export function ResultsScreen({
   routing: Routing | null;
   choice: ChoiceState;
   onChoose: (member: MemberId) => void;
-  /** false mientras el worker ajusta un modelo elegido a mano. */
+  /** false mientras el worker ajusta un modelo elegido a mano o lo restaura. */
   modelReady?: boolean;
+  /** S5: para planear el Nivel 2 (sin perfil no se ofrece). */
+  profile?: RouteProfile | null;
+  forced?: readonly MemberId[];
+  level2?: Level2State;
+  onRunLevel2?: (extraForced: MemberId[]) => void;
 }) {
   const t = useT();
   const { verdict, model, leakage, confusionMatrix } = result;
@@ -200,6 +216,16 @@ export function ResultsScreen({
         choice={choice}
         onChoose={onChoose}
       />
+      {profile && onRunLevel2 && (
+        <Level2Card
+          result={result}
+          profile={profile}
+          forced={forced}
+          level2={level2}
+          busy={!modelReady || choice.status === "fitting"}
+          onRun={onRunLevel2}
+        />
+      )}
 
       <section className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
         <Card className="w-fit p-4">
@@ -250,13 +276,24 @@ export function ResultsScreen({
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
               {t("results.baselines.title")}
             </p>
-            <p className="mt-1 font-mono tabular-nums">
-              {t("results.baselines.majority")}:{" "}
-              {fmt(result.baselines.majority[verdict.primaryMetric])}
-              {" · "}
-              {t("results.baselines.logistic")}:{" "}
-              {fmt(result.baselines.logistic[verdict.primaryMetric])}
-            </p>
+            {/* S5 (E3): cada baseline abre su ficha — juzgan la liga, no compiten. */}
+            <ul className="mt-1 flex flex-col">
+              {(["majority", "logistic"] as const).map((id) => (
+                <li key={id} className="flex flex-wrap items-center gap-x-2">
+                  <FichaButton
+                    target={{ id, status: { kind: "baseline" } }}
+                    label={t("league.fichaAria", {
+                      model: t(`results.baselines.${id}`),
+                    })}
+                  >
+                    {t(`results.baselines.${id}`)}
+                  </FichaButton>
+                  <span className="font-mono tabular-nums">
+                    {fmt(result.baselines[id][verdict.primaryMetric])}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
           <p className="text-ink-muted">{t("results.testNote")}</p>
         </div>

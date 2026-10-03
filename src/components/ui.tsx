@@ -147,7 +147,7 @@ export function Button({
 }) {
   return (
     <button
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-opacity disabled:pointer-events-none disabled:opacity-50 ${buttonVariants[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-opacity motion-reduce:transition-none disabled:pointer-events-none disabled:opacity-50 ${buttonVariants[variant]} ${className}`}
       {...props}
     >
       {icon && <Icon name={icon} />}

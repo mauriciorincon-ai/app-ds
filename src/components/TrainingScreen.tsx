@@ -1,7 +1,9 @@
 "use client";
 
 import { useT } from "@/i18n/use-translation";
+import { formatEstimate } from "@/lib/duration";
 import type { ProgressDetail, ProgressStage } from "@/workers/protocol";
+import { Button } from "./ui";
 
 const STAGES: ProgressStage[] = [
   "loading-runtime",
@@ -12,10 +14,15 @@ const STAGES: ProgressStage[] = [
 export function TrainingScreen({
   stage,
   detail = null,
+  level2 = null,
+  onCancel,
 }: {
   stage: ProgressStage | null;
   /** S5: modelo a modelo durante la liga (CV de todos, luego el test). */
   detail?: ProgressDetail | null;
+  /** S5: corriendo el Nivel 2 (se puede cancelar: vuelve el Nivel 1). */
+  level2?: { count: number; estimateS: number } | null;
+  onCancel?: () => void;
 }) {
   const t = useT();
   const activeIndex = stage ? STAGES.indexOf(stage) : 0;
@@ -28,6 +35,14 @@ export function TrainingScreen({
   return (
     <div className="flex flex-col gap-6" role="status" aria-live="polite">
       <h1 className="text-2xl font-semibold">{t("training.title")}</h1>
+      {level2 && (
+        <p className="font-mono text-sm tabular-nums">
+          {t("level2.running", {
+            count: level2.count,
+            time: formatEstimate(level2.estimateS),
+          })}
+        </p>
+      )}
       <ol className="flex flex-col gap-3">
         {STAGES.map((s, index) => {
           const done = index < activeIndex;
@@ -79,7 +94,16 @@ export function TrainingScreen({
           </div>
         </div>
       )}
-      <p className="text-sm text-ink-muted">{t("training.wait")}</p>
+      {level2 && onCancel ? (
+        <div className="flex flex-col items-start gap-2">
+          <Button variant="secondary" icon="stop" onClick={onCancel}>
+            {t("level2.cancel")}
+          </Button>
+          <p className="text-sm text-ink-muted">{t("level2.cancelHint")}</p>
+        </div>
+      ) : (
+        <p className="text-sm text-ink-muted">{t("training.wait")}</p>
+      )}
     </div>
   );
 }

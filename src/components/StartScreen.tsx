@@ -63,7 +63,7 @@ export function StartScreen({
           const file = event.dataTransfer.files[0];
           if (file) void handleFile(file);
         }}
-        className={`flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10 text-center transition-colors ${
+        className={`flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10 text-center transition-colors motion-reduce:transition-none ${
           dragging ? "border-accent bg-accent/5" : "border-hairline bg-surface"
         }`}
       >
@@ -99,7 +99,7 @@ export function StartScreen({
               key={key}
               type="button"
               onClick={() => void pickExample(file)}
-              className="flex flex-col gap-1 rounded-lg border border-hairline bg-surface p-4 text-left shadow-sm transition-colors hover:border-accent"
+              className="flex flex-col gap-1 rounded-lg border border-hairline bg-surface p-4 text-left shadow-sm transition-colors hover:border-accent motion-reduce:transition-none"
             >
               <span className="flex items-center gap-2 font-medium">
                 <Icon name="table" className="text-accent" />

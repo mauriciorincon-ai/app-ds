@@ -7,7 +7,11 @@
 // La honestidad acompaña y etiqueta; no bloquea ni esconde (regla dura 3):
 // «fuera» es una RECOMENDACIÓN con su razón, forzable en el Nivel 2 (U3), y solo
 // existe donde el spike de la F0 la respaldó con números (D9).
-import { estimateMemberSeconds, type CostInput } from "@/engine/costos";
+import {
+  calibrationFactor,
+  estimateMemberSeconds,
+  type CostInput,
+} from "@/engine/costos";
 import {
   byPriority,
   MEMBER_IDS,
@@ -165,4 +169,50 @@ export function rosterFor(routing: Routing, level: 1 | 2): MemberId[] {
   return level === 1
     ? byPriority(routing.level1)
     : byPriority([...routing.level1, ...routing.level2]);
+}
+
+export type Level2Plan = {
+  /** Lo que correría: la unión Nivel 1 ∪ Nivel 2 ∪ forzados, en orden (D5). */
+  roster: MemberId[];
+  /** Los que se SUMAN a la liga que ya corrió. */
+  added: MemberId[];
+  /**
+   * Los «fuera» que todavía no corrieron (incluidos los ya forzados en `forced`):
+   * se pueden incluir de todos modos (U3) — o volver a dejar fuera.
+   */
+  forceable: Placement[];
+  /** Cuánto más lento (o rápido) que la referencia resultó este equipo. */
+  factor: number;
+  /** Segundos estimados EN ESTE EQUIPO para correr `roster` entero. */
+  estimateS: number;
+};
+
+/**
+ * El Nivel 2 tras una corrida (D5 + U3 + ADR-010): re-corre la unión, así que la
+ * estimación es la del roster entero, corregida con lo que la corrida anterior
+ * tardó DE VERDAD frente a lo que se estimó para lo que corrió.
+ */
+export function planLevel2(
+  profile: RouteProfile,
+  ran: readonly MemberId[],
+  measuredMs: number,
+  forced: readonly MemberId[] = [],
+  ceilingS: number = LEVEL1_CEILING_S,
+): Level2Plan {
+  const routing = routeModels(profile, ceilingS, forced);
+  const estimateOf = (id: MemberId) =>
+    routing.placements.find((p) => p.id === id)!.estimateS;
+  const ranSet = new Set(ran);
+  const ranEstimateS = [...ranSet].reduce((acc, id) => acc + estimateOf(id), 0);
+  const factor = calibrationFactor(measuredMs, ranEstimateS);
+  const roster = rosterFor(routing, 2);
+  return {
+    roster,
+    added: roster.filter((id) => !ranSet.has(id)),
+    forceable: routing.placements.filter(
+      (p) => (p.level === "out" || p.reason === "forced") && !ranSet.has(p.id),
+    ),
+    factor,
+    estimateS: factor * roster.reduce((acc, id) => acc + estimateOf(id), 0),
+  };
 }

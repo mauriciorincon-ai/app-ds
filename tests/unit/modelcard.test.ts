@@ -147,7 +147,7 @@ describe("buildModelCard", () => {
     const card = build();
     expect(card).toContain("## Selección del modelo");
     expect(card).toContain(
-      "Compitieron 1 modelos con validación cruzada de 5 pliegues",
+      "Compitió 1 modelo con validación cruzada de 5 pliegues",
     );
     expect(card).toContain("regla de un error estándar");
     expect(card).toContain(

@@ -165,14 +165,18 @@ describe("useExperiment", () => {
   class FakeWorker {
     static last: FakeWorker | null = null;
     onmessage: ((event: MessageEvent) => void) | null = null;
+    onerror: ((event: { message: string }) => void) | null = null;
     posted: Array<{ id: number; type: string; payload?: unknown }> = [];
+    terminated = false;
     constructor() {
       FakeWorker.last = this;
     }
     postMessage(message: { id: number; type: string; payload?: unknown }) {
       this.posted.push(message);
     }
-    terminate() {}
+    terminate() {
+      this.terminated = true;
+    }
   }
 
   const CSV = [
@@ -600,5 +604,187 @@ describe("useExperiment", () => {
       kind: "import-failed",
     });
     expect(result.current.state.modelReady).toBe(false);
+  });
+
+  // --- S5: el Nivel 2 (D5 + U3) y su cancelación (R1) -----------------------
+
+  const SNAPSHOT = {
+    payload_b64: btoa("modelo-del-nivel-1"),
+    versions: { ...RUNTIME_VERSIONS, python: "3.14.2" },
+    schema: {
+      numeric: ["x"],
+      categorical: ["cat"],
+      target: "y",
+      classes: ["0", "1"],
+      positive_class: "1",
+    },
+    training_profile: {
+      numeric: { x: { min: 1, max: 8 } },
+      categorical: { cat: ["a", "b"] },
+    },
+  };
+
+  const reply = (
+    worker: FakeWorker,
+    index: number,
+    data: Record<string, unknown>,
+  ) =>
+    act(() => {
+      worker.onmessage?.({
+        data: { id: worker.posted[index]!.id, ...data },
+      } as MessageEvent);
+    });
+
+  /** Resultados del Nivel 1 → pide el Nivel 2 con MLP forzada → instantánea. */
+  function startLevel2(withSnapshot = true) {
+    const rendered = trainToResults();
+    const worker = FakeWorker.last!;
+    act(() => rendered.result.current.runLevel2(["mlp"]));
+    if (withSnapshot) {
+      reply(worker, 1, {
+        type: "result",
+        command: "export-model",
+        result: SNAPSHOT,
+      });
+    }
+    return { ...rendered, worker };
+  }
+
+  it("Nivel 2: primero la instantánea, DESPUÉS la unión con el forzado; al terminar la liga crece", () => {
+    const { result, worker } = startLevel2(false);
+    const level1 = result.current.state.result!;
+    expect(result.current.state.phase).toBe("running");
+    expect(result.current.state.level2.status).toBe("running");
+    // R1: lo primero que viaja es la instantánea del modelo vigente.
+    expect(worker.posted[1]).toMatchObject({ type: "export-model" });
+    expect(worker.posted).toHaveLength(2);
+
+    reply(worker, 1, {
+      type: "result",
+      command: "export-model",
+      result: SNAPSHOT,
+    });
+    const train = worker.posted[2]!;
+    expect(train.type).toBe("train");
+    const roster = (train.payload as PipelinePayload).roster;
+    expect(roster).toContain("mlp");
+    expect(roster).toEqual(
+      expect.arrayContaining(level1.league.map((r) => r.name)),
+    );
+
+    reply(worker, 2, {
+      type: "result",
+      command: "train",
+      result: respondTo(train),
+    });
+    const state = result.current.state;
+    expect(state.phase).toBe("results");
+    expect(state.level2).toEqual({ status: "idle" });
+    expect(state.forced).toEqual(["mlp"]);
+    expect(state.result!.league.map((r) => r.name)).toContain("mlp");
+    expect(state.routing!.placements.find((p) => p.id === "mlp")).toMatchObject(
+      { level: 2, reason: "forced" },
+    );
+  });
+
+  it("cancelar a media liga: termina el worker, crea otro y restaura la instantánea del Nivel 1", () => {
+    const { result, worker } = startLevel2();
+    const level1 = result.current.state.result!;
+    act(() => result.current.cancelLevel2());
+
+    expect(worker.terminated).toBe(true);
+    const fresh = FakeWorker.last!;
+    expect(fresh).not.toBe(worker);
+    expect(fresh.posted[0]).toMatchObject({
+      type: "import-model",
+      payload: {
+        payload_b64: SNAPSHOT.payload_b64,
+        expected_schema: SNAPSHOT.schema,
+      },
+    });
+    const state = result.current.state;
+    expect(state.phase).toBe("results");
+    expect(state.result).toBe(level1);
+    expect(state.forced).toEqual([]);
+    expect(state.level2).toEqual({ status: "cancelled" });
+    // Usar y exportar esperan a que el modelo vuelva.
+    expect(state.modelReady).toBe(false);
+
+    reply(fresh, 0, {
+      type: "result",
+      command: "import-model",
+      result: { ok: true },
+    });
+    expect(result.current.state.modelReady).toBe(true);
+  });
+
+  it("cancelar ANTES de la instantánea: no se termina nada y el modelo sigue listo", () => {
+    const { result, worker } = startLevel2(false);
+    act(() => result.current.cancelLevel2());
+    expect(worker.terminated).toBe(false);
+    expect(FakeWorker.last).toBe(worker);
+    expect(result.current.state.modelReady).toBe(true);
+    expect(result.current.state.level2).toEqual({ status: "cancelled" });
+    // La instantánea que llega tarde se ignora: el Nivel 2 no arranca.
+    reply(worker, 1, {
+      type: "result",
+      command: "export-model",
+      result: SNAPSHOT,
+    });
+    expect(worker.posted).toHaveLength(2);
+    expect(result.current.state.phase).toBe("results");
+  });
+
+  it("si el Nivel 2 falla en Python vuelve el Nivel 1 (restaurado), no la pantalla de error", () => {
+    const { result, worker } = startLevel2();
+    reply(worker, 2, { type: "error", message: "MemoryError" });
+    const state = result.current.state;
+    expect(state.phase).toBe("results");
+    expect(state.level2).toEqual({ status: "failed" });
+    expect(worker.posted[3]).toMatchObject({ type: "import-model" });
+    expect(state.modelReady).toBe(false);
+  });
+
+  it("si el worker MUERE en el Nivel 2, el nuevo restaura la instantánea", () => {
+    const { result, worker } = startLevel2();
+    act(() => worker.onerror?.({ message: "out of memory" }));
+    const fresh = FakeWorker.last!;
+    expect(fresh).not.toBe(worker);
+    expect(fresh.posted[0]).toMatchObject({ type: "import-model" });
+    expect(result.current.state.phase).toBe("results");
+    expect(result.current.state.level2).toEqual({ status: "failed" });
+  });
+
+  it("si muere ANTES de la instantánea, se dice que el modelo no se pudo recuperar", () => {
+    const { result, worker } = startLevel2(false);
+    act(() => worker.onerror?.({ message: "out of memory" }));
+    expect(result.current.state.phase).toBe("results");
+    expect(result.current.state.level2).toEqual({ status: "restore-failed" });
+    expect(result.current.state.modelReady).toBe(false);
+  });
+
+  it("si la restauración falla: restore-failed y el modelo NO queda listo", () => {
+    const { result } = startLevel2();
+    act(() => result.current.cancelLevel2());
+    const fresh = FakeWorker.last!;
+    reply(fresh, 0, { type: "error", message: "unpickle boom" });
+    expect(result.current.state.level2).toEqual({ status: "restore-failed" });
+    expect(result.current.state.modelReady).toBe(false);
+  });
+
+  it("R15: reset con cómputo en vuelo corta el worker (el experimento nuevo no espera detrás)", () => {
+    const { result, worker } = startLevel2();
+    act(() => result.current.reset());
+    expect(worker.terminated).toBe(true);
+    expect(FakeWorker.last).not.toBe(worker);
+    expect(result.current.state.phase).toBe("empty");
+  });
+
+  it("reset sin nada en vuelo NO reinicia el worker (Pyodide sigue cargado)", () => {
+    const { result } = trainToResults();
+    const worker = FakeWorker.last!;
+    act(() => result.current.reset());
+    expect(worker.terminated).toBe(false);
+    expect(FakeWorker.last).toBe(worker);
   });
 });

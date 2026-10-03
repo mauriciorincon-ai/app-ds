@@ -105,7 +105,8 @@
       "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
       "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
     },
-    "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor)."
+    "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
+    "trainHint_one": "Nivel 1: 1 modelo · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor)."
   },
   "training": {
     "title": "Entrenando…",
@@ -305,7 +306,8 @@
     "title": "Model card",
     "desc": "La constancia de tu experimento: datos, método, métricas, veredicto y límites — lista para guardar o compartir.",
     "download": "Descargar model card (.md)",
-    "preview": "Ver el contenido"
+    "preview": "Ver el contenido",
+    "content": "Contenido de la model card"
   },
   "narration": {
     "template": {
@@ -406,7 +408,8 @@
       "cv": "Modelo elegido por la validación cruzada: {model}. El conjunto de prueba se abrió una sola vez, después de elegir.",
       "user": "◆ Elegido por ti: {model}. El ganador de la validación cruzada era {winner}. Si lo elegiste mirando los puntajes de prueba, el veredicto puede ser optimista.",
       "time": "Tiempo de la liga en este equipo: {seconds} s.",
-      "smallSample": "Muestra pequeña: con menos de {rows} filas, los puntajes de validación cruzada varían mucho de un pliegue a otro."
+      "smallSample": "Muestra pequeña: con menos de {rows} filas, los puntajes de validación cruzada varían mucho de un pliegue a otro.",
+      "league_one": "Compitió 1 modelo con validación cruzada de {k} pliegues dentro del entrenamiento (el preprocesamiento se reajustó en cada pliegue). Métrica: {metric}."
     }
   },
   "errors": {
@@ -463,7 +466,9 @@
     },
     "cv": "Compiten con validación cruzada de {k} pliegues dentro del entrenamiento; el conjunto de prueba se abre una sola vez, al final.",
     "smallSample": "Muestra pequeña ({rows} filas): los puntajes de validación cruzada varían bastante. Por eso, si varios quedan prácticamente empatados, gana el más simple.",
-    "note": "Nada se esconde: «fuera» es una recomendación con su razón, y podrás incluirlo de todos modos en el Nivel 2."
+    "note": "Nada se esconde: «fuera» es una recomendación con su razón, y podrás incluirlo de todos modos en el Nivel 2.",
+    "level1_one": "Nivel 1 · ahora · 1 modelo · unos {time}",
+    "level2_one": "Nivel 2 · después, si quieres · 1 modelo más"
   },
   "league": {
     "title": "La liga: {count} modelos",
@@ -478,7 +483,8 @@
       "winner": "Ganador (validación cruzada)",
       "chosen": "Elegido por ti",
       "withinSe": "≈ empata con el mejor",
-      "best": "mejor puntaje"
+      "best": "mejor puntaje",
+      "forced": "lo incluiste tú (el encarrilador lo dejaba fuera)"
     },
     "status": {
       "no-converge": "⚠ no convergió: su puntaje puede no ser estable",
@@ -498,6 +504,50 @@
     "testWarning": "Estos puntajes son del conjunto de prueba. Sirven para creer en el modelo que ya se eligió; si eliges mirándolos, el número del veredicto puede ser optimista.",
     "howWinner": "Gana el más simple de los que quedaron a menos de un error estándar (±{se}) del mejor puntaje de validación cruzada, que fue el de «{best}». Entre puntajes prácticamente empatados, quedarse con el máximo premia la suerte.",
     "time": "La liga tardó {seconds} s en este equipo.",
-    "testShort": "prueba"
+    "testShort": "prueba",
+    "fichaAria": "Ficha de {model}",
+    "title_one": "La liga: 1 modelo"
+  },
+  "ficha": {
+    "eyebrow": "Ficha del modelo",
+    "what": "Qué es",
+    "goodFor": "Cuándo sirve",
+    "notFor": "Cuándo no",
+    "watch": "Qué mirar",
+    "cost": "Cuánto cuesta",
+    "close": "Cerrar",
+    "status": {
+      "winner": "En esta liga: ganador por validación cruzada.",
+      "chosen": "En esta liga: elegido por ti.",
+      "competitor": "En esta liga: puesto {rank} de {total} por validación cruzada.",
+      "failed": "En esta liga: no concluyó, así que no tiene puntaje.",
+      "pending": "En esta liga: pendiente del Nivel 2.",
+      "out": "En esta liga: fuera, porque {reason}.",
+      "baseline": "Baseline del veredicto: no compite en la liga, la juzga."
+    }
+  },
+  "level2": {
+    "title": "Nivel 2: la liga completa",
+    "desc": "Suma {count} modelos que no cupieron en el primer paso ({models}) y vuelve a correr la liga entera con la misma validación cruzada.",
+    "descAllRan": "Todos los modelos recomendados ya compitieron. Si quieres, puedes incluir los que el encarrilador dejó fuera.",
+    "forceTitle": "Incluir de todos modos",
+    "forceReason": "El encarrilador lo deja fuera porque {reason}.",
+    "dropsChoice": "La liga completa vuelve a elegir por validación cruzada: tu elección manual de ahora no se conserva.",
+    "estimate": "{count} modelos · unos {time} en este equipo (calibrado con lo que tardó la corrida anterior)",
+    "nothingToAdd": "Marca un modelo para incluirlo; no hay nada más que sumar.",
+    "run": "Correr el Nivel 2 (+{count})",
+    "cancelHint": "Puedes cancelar mientras corre: vuelves a este resultado sin perder nada.",
+    "running": "Nivel 2 · {count} modelos · unos {time} en este equipo",
+    "cancel": "Cancelar el Nivel 2",
+    "restoring": "Recuperando el modelo anterior…",
+    "notice": {
+      "cancelled": "Cancelaste el Nivel 2. Sigue vigente el resultado anterior.",
+      "failed": "El Nivel 2 no pudo terminar. Sigue vigente el resultado anterior.",
+      "restore-failed": "No se pudo recuperar el modelo anterior. La tabla sigue a la vista, pero para usar o exportar el modelo tienes que volver a entrenar."
+    },
+    "desc_one": "Suma 1 modelo que no cupo en el primer paso ({models}) y vuelve a correr la liga entera con la misma validación cruzada.",
+    "estimate_one": "1 modelo · unos {time} en este equipo (calibrado con lo que tardó la corrida anterior)",
+    "running_one": "Nivel 2 · 1 modelo · unos {time} en este equipo",
+    "runNothing": "Correr el Nivel 2"
   }
 }

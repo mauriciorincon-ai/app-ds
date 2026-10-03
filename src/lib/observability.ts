@@ -52,3 +52,32 @@ export function reportImportError(kind: string): void {
     tags: { area: "model-import", kind },
   });
 }
+
+// S5 — la liga: un breadcrumb por corrida (o cancelación) con SOLO metadatos:
+// filas, columnas, cuántos compitieron, nivel, tiempo y si se canceló. Jamás
+// valores ni nombres de columnas del usuario (regla dura 2). Viaja adjunto al
+// próximo error que se reporte, si lo hay; por sí solo no genera un evento.
+export type LeagueRunMeta = {
+  rows?: number;
+  cols?: number;
+  competitors: number;
+  level: 1 | 2;
+  elapsedMs: number | null;
+  cancelled: boolean;
+};
+
+export function recordLeagueRun(meta: LeagueRunMeta): void {
+  Sentry.addBreadcrumb({
+    category: "league",
+    level: "info",
+    message: meta.cancelled ? "league-cancelled" : "league-run",
+    data: {
+      rows: meta.rows ?? null,
+      cols: meta.cols ?? null,
+      competitors: meta.competitors,
+      level: meta.level,
+      elapsedMs: meta.elapsedMs,
+      cancelled: meta.cancelled,
+    },
+  });
+}

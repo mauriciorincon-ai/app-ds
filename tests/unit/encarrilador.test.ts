@@ -10,6 +10,7 @@ import {
   CV_LARGE_FROM_ROWS,
   LEVEL1_CEILING_S,
   MLP_MIN_ROWS,
+  planLevel2,
   rosterFor,
   routeModels,
   type RouteProfile,
@@ -125,6 +126,61 @@ describe("routeModels (E2)", () => {
         (id) => routing.level1.includes(id) || routing.level2.includes(id),
       ),
     );
+  });
+});
+
+describe("planLevel2 (D5 + U3, ADR-010)", () => {
+  const level1Of = (profile: RouteProfile) => routeModels(profile).level1;
+
+  it("suma los pendientes; re-corre la unión y la estima entera", () => {
+    const routing = routeModels(BIG);
+    const plan = planLevel2(
+      BIG,
+      routing.level1,
+      routing.level1EstimateS * 1000,
+    );
+    expect(plan.roster).toEqual(rosterFor(routing, 2));
+    expect(plan.added).toEqual(routing.level2);
+    expect(plan.factor).toBeCloseTo(1, 6);
+    expect(plan.estimateS).toBeCloseTo(routing.unionEstimateS, 6);
+  });
+
+  it("calibra con lo que tardó DE VERDAD lo que corrió (equipo el doble de lento)", () => {
+    const routing = routeModels(BIG);
+    const plan = planLevel2(
+      BIG,
+      routing.level1,
+      2 * routing.level1EstimateS * 1000,
+    );
+    expect(plan.factor).toBeCloseTo(2, 6);
+    expect(plan.estimateS).toBeCloseTo(2 * routing.unionEstimateS, 6);
+  });
+
+  it("U3: un «fuera» forzado se suma a la liga y a la estimación; sigue en `forceable` para poder soltarlo", () => {
+    const tiny = { ...KIT, rows: 100 };
+    const ran = level1Of(tiny);
+    const without = planLevel2(tiny, ran, 1000);
+    expect(without.added).toEqual([]);
+    expect(without.forceable.map((p) => p.id)).toEqual(["mlp"]);
+
+    const withMlp = planLevel2(tiny, ran, 1000, ["mlp"]);
+    expect(withMlp.added).toEqual(["mlp"]);
+    expect(withMlp.roster).toContain("mlp");
+    expect(withMlp.forceable.map((p) => p.id)).toEqual(["mlp"]);
+    expect(withMlp.estimateS).toBeGreaterThan(without.estimateS);
+  });
+
+  it("lo forzado que YA corrió no se ofrece otra vez (y la unión lo conserva)", () => {
+    const tiny = { ...KIT, rows: 100 };
+    const ran = [...level1Of(tiny), "mlp" as const];
+    const plan = planLevel2(tiny, ran, 1000, ["mlp"]);
+    expect(plan.forceable).toEqual([]);
+    expect(plan.added).toEqual([]);
+    expect(plan.roster).toContain("mlp");
+  });
+
+  it("medición inválida ⇒ factor 1 (no se promete ni se amenaza de más)", () => {
+    expect(planLevel2(BIG, level1Of(BIG), 0).factor).toBe(1);
   });
 });
 

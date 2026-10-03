@@ -10,7 +10,11 @@ import {
   modelFeatures,
   type SchemaCheck,
 } from "@/lib/ds/schema-check";
-import type { RouteProfile, Routing } from "@/engine/encarrilador";
+import {
+  planLevel2,
+  type RouteProfile,
+  type Routing,
+} from "@/engine/encarrilador";
 import type { TaskDetection } from "@/engine/tarea";
 import {
   applyMemberFit,
@@ -27,12 +31,13 @@ import {
   type ModelManifest,
 } from "@/lib/model-file";
 import {
+  recordLeagueRun,
   reportExperimentError,
   reportExportError,
   reportImportError,
   reportScoringError,
 } from "@/lib/observability";
-import type { MemberId } from "@/engine/roster";
+import { byPriority, type MemberId } from "@/engine/roster";
 import {
   pythonContractField,
   validateExportResult,
@@ -122,6 +127,18 @@ export type ChoiceState =
   | { status: "fitting"; member: MemberId }
   | { status: "error"; member: MemberId };
 
+/**
+ * S5: el Nivel 2 (D5 + U3 + R1). Mientras corre se puede cancelar; si se cancela
+ * o falla, vuelve el resultado del Nivel 1 y su modelo se restaura desde la
+ * instantánea exportada ANTES de arrancar.
+ */
+export type Level2State =
+  | { status: "idle" }
+  | { status: "running"; count: number; estimateS: number }
+  | { status: "cancelled" }
+  | { status: "failed" }
+  | { status: "restore-failed" };
+
 export type ExperimentState = {
   phase: ExperimentPhase;
   datasetName: string | null;
@@ -139,6 +156,11 @@ export type ExperimentState = {
   // la elección manual en curso.
   plan: TargetPlan | null;
   routing: Routing | null;
+  /** Forma del dataset con que se entrenó (para planear el Nivel 2). */
+  profile: RouteProfile | null;
+  /** «Fuera» que el usuario incluyó de todos modos en la liga vigente (U3). */
+  forced: MemberId[];
+  level2: Level2State;
   choice: ChoiceState;
   // S3 — el modelo se usa:
   modelMeta: ModelMeta | null;
@@ -161,6 +183,9 @@ const INITIAL: ExperimentState = {
   edaAlerts: null,
   plan: null,
   routing: null,
+  profile: null,
+  forced: [],
+  level2: { status: "idle" },
   choice: { status: "idle" },
   modelMeta: null,
   modelReady: false,
@@ -189,7 +214,19 @@ type Pending =
       // S5: lo enviado, para que el lector del contrato lo coteje.
       sent: { roster: MemberId[]; cv_k: number };
       smallSample: boolean;
+      // S5: el reparto y los forzados de ESTA corrida (se fijan solo si termina).
+      level: 1 | 2;
+      routing: Routing;
+      forced: MemberId[];
     }
+  // S5 (R1): la instantánea del modelo del Nivel 1, antes de arrancar el Nivel 2.
+  | {
+      kind: "snapshot";
+      next: Extract<ReturnType<typeof prepareRun>, { ok: true }>;
+      forced: MemberId[];
+    }
+  // S5 (R1): restaurar esa instantánea tras cancelar o fallar el Nivel 2.
+  | { kind: "restore" }
   | { kind: "score"; check: SchemaCheck; fileName: string; table: CsvTable }
   | { kind: "export-model"; datasetName: string; result: ExperimentResult }
   | { kind: "import-model" }
@@ -250,7 +287,67 @@ export function useExperiment() {
   const datasetNameRef = useRef<string | null>(null);
   // S5: el último payload de la liga (para fit-member y el Nivel 2).
   const payloadRef = useRef<PipelinePayload | null>(null);
+  // S5 (R1): lo que vuelve si el Nivel 2 se cancela o falla.
+  const level1Ref = useRef<{
+    result: ExperimentResult;
+    routing: Routing | null;
+    forced: MemberId[];
+    payload: PipelinePayload;
+    meta: ModelMeta;
+    snapshot: ExportResult | null;
+  } | null>(null);
+  const routingRef = useRef<Routing | null>(null);
+  const forcedRef = useRef<MemberId[]>([]);
+  // El spawn vive dentro del efecto; cancelar lo necesita desde fuera.
+  const respawnRef = useRef<(() => void) | null>(null);
   const [state, setState] = useState<ExperimentState>(INITIAL);
+
+  /**
+   * S5 (R1): vuelve al resultado del Nivel 1. Si hay instantánea, el modelo se
+   * re-importa (el worker pudo morir, ser terminado o quedar con el ganador del
+   * Nivel 2); sin instantánea, el worker conserva el del Nivel 1 — salvo que
+   * haya muerto (`modelLost`), y entonces se dice que no se pudo recuperar.
+   */
+  const restoreLevel1 = useCallback(
+    (notice: "cancelled" | "failed", modelLost: boolean) => {
+      const l1 = level1Ref.current;
+      level1Ref.current = null;
+      if (!l1) return;
+      payloadRef.current = l1.payload;
+      resultRef.current = l1.result;
+      modelRef.current = l1.meta;
+      routingRef.current = l1.routing;
+      forcedRef.current = l1.forced;
+      if (l1.snapshot) {
+        const id = nextId.current++;
+        pendingRef.current.set(id, { kind: "restore" });
+        workerRef.current?.postMessage({
+          id,
+          type: "import-model",
+          payload: {
+            payload_b64: l1.snapshot.payload_b64,
+            expected_schema: l1.snapshot.schema,
+          },
+        });
+      }
+      setState((s) => ({
+        ...s,
+        phase: "results",
+        progress: null,
+        progressDetail: null,
+        error: null,
+        result: l1.result,
+        routing: l1.routing,
+        forced: l1.forced,
+        modelMeta: l1.meta,
+        modelReady: !l1.snapshot && !modelLost,
+        level2: {
+          status: !l1.snapshot && modelLost ? "restore-failed" : notice,
+        },
+      }));
+    },
+    [],
+  );
 
   useEffect(() => {
     const finishExport = async (
@@ -276,15 +373,20 @@ export function useExperiment() {
       }
     };
 
+    // Solo conteos (regla dura 2).
+    const tableSize = () => {
+      const table = tableRef.current;
+      return table
+        ? { rows: table.rows.length, cols: table.headers.length }
+        : undefined;
+    };
+
     // Falla honesta del entrenamiento: a Sentry van SOLO el tipo y el tamaño (el
     // campo del contrato es un nombre de la app, nunca un valor del dataset).
     const failTrain = (kind: WorkerErrorKind, message: string) => {
-      const table = tableRef.current;
       reportExperimentError(
         kind === "contract" ? `contract:${message}` : kind,
-        table
-          ? { rows: table.rows.length, cols: table.headers.length }
-          : undefined,
+        tableSize(),
       );
       setState((s) => ({
         ...s,
@@ -328,7 +430,22 @@ export function useExperiment() {
 
       if (message.type === "error") {
         console.error("[experiment] runtime", message.message);
-        if (pending.kind === "train") {
+        if (pending.kind === "train" && pending.level === 2) {
+          // El Nivel 2 falló: vuelve el Nivel 1, no la pantalla de error.
+          reportExperimentError("level2-runtime", tableSize());
+          restoreLevel1("failed", false);
+        } else if (pending.kind === "snapshot") {
+          // Sin instantánea no se arranca: el worker conserva el modelo.
+          reportExportError("snapshot");
+          restoreLevel1("failed", false);
+        } else if (pending.kind === "restore") {
+          reportImportError("restore");
+          setState((s) => ({
+            ...s,
+            modelReady: false,
+            level2: { status: "restore-failed" },
+          }));
+        } else if (pending.kind === "train") {
           // S5: Python rechazó el payload nombrando el campo (contract:<campo>).
           const field = pythonContractField(message.message);
           failTrain(
@@ -372,7 +489,12 @@ export function useExperiment() {
         const checked = validateTrainResult(message.result, pending.sent);
         if (!checked.ok) {
           console.error("[experiment] contract", checked.field);
-          failTrain("contract", checked.field);
+          if (pending.level === 2) {
+            reportExperimentError(`contract:${checked.field}`, tableSize());
+            restoreLevel1("failed", false);
+          } else {
+            failTrain("contract", checked.field);
+          }
           return;
         }
         const assembled = assembleResult(
@@ -392,14 +514,70 @@ export function useExperiment() {
         };
         modelRef.current = meta;
         resultRef.current = assembled;
+        // El reparto y los forzados quedan fijos solo cuando la corrida termina.
+        routingRef.current = pending.routing;
+        forcedRef.current = pending.forced;
+        level1Ref.current = null;
+        recordLeagueRun({
+          ...tableSize(),
+          competitors: assembled.league.length,
+          level: pending.level,
+          elapsedMs: checked.value.elapsed_ms,
+          cancelled: false,
+        });
         setState((s) => ({
           ...s,
           phase: "results",
           progressDetail: null,
           result: assembled,
+          routing: pending.routing,
+          forced: pending.forced,
+          level2: { status: "idle" },
           modelMeta: meta,
           modelReady: true,
         }));
+      } else if (
+        message.command === "export-model" &&
+        pending.kind === "snapshot"
+      ) {
+        // R1: con la instantánea en mano, recién ahora arranca el Nivel 2.
+        const checked = validateExportResult(message.result);
+        const l1 = level1Ref.current;
+        if (!checked.ok || !l1) {
+          reportExportError(
+            checked.ok ? "snapshot" : `contract:${checked.field}`,
+          );
+          restoreLevel1("failed", false);
+          return;
+        }
+        l1.snapshot = checked.value;
+        const { next, forced } = pending;
+        const trainId = nextId.current++;
+        pendingRef.current.set(trainId, {
+          kind: "train",
+          leakage: next.leakage,
+          schema: {
+            numeric: next.payload.numeric,
+            categorical: next.payload.categorical,
+            target: next.payload.target,
+          },
+          sent: { roster: next.payload.roster, cv_k: next.payload.cv_k },
+          smallSample: next.smallSample,
+          level: 2,
+          routing: next.routing,
+          forced,
+        });
+        payloadRef.current = next.payload;
+        workerRef.current?.postMessage({
+          id: trainId,
+          type: "train",
+          payload: next.payload,
+        });
+      } else if (
+        message.command === "import-model" &&
+        pending.kind === "restore"
+      ) {
+        setState((s) => ({ ...s, modelReady: true }));
       } else if (message.command === "score" && pending.kind === "score") {
         const checked = validateScoreResult(message.result);
         if (!checked.ok) {
@@ -477,7 +655,22 @@ export function useExperiment() {
       workerRef.current?.terminate();
       spawnWorker();
       for (const pending of pendings) {
-        if (pending.kind === "train") {
+        if (pending.kind === "train" && pending.level === 2) {
+          // Se llevó al Nivel 2; la instantánea trae de vuelta al Nivel 1.
+          reportExperimentError("level2-worker-dead", tableSize());
+          restoreLevel1("failed", false);
+        } else if (pending.kind === "snapshot") {
+          // Murió antes de la instantánea: el modelo del Nivel 1 se perdió.
+          reportExportError("snapshot-worker-dead");
+          restoreLevel1("failed", true);
+        } else if (pending.kind === "restore") {
+          reportImportError("restore-worker-dead");
+          setState((s) => ({
+            ...s,
+            modelReady: false,
+            level2: { status: "restore-failed" },
+          }));
+        } else if (pending.kind === "train") {
           const table = tableRef.current;
           reportExperimentError(
             "worker-dead",
@@ -534,12 +727,17 @@ export function useExperiment() {
     }
 
     spawnWorker();
+    respawnRef.current = () => {
+      workerRef.current?.terminate();
+      spawnWorker();
+    };
 
     return () => {
       workerRef.current?.terminate();
       workerRef.current = null;
+      respawnRef.current = null;
     };
-  }, []);
+  }, [restoreLevel1]);
 
   const loadCsv = useCallback((csvText: string, name: string) => {
     const parsed = parseCsvWithLimits(csvText);
@@ -621,10 +819,16 @@ export function useExperiment() {
       },
       sent: { roster: prepared.payload.roster, cv_k: prepared.payload.cv_k },
       smallSample: prepared.smallSample,
+      level: 1,
+      routing: prepared.routing,
+      forced: [],
     });
     modelRef.current = null;
     resultRef.current = null;
     payloadRef.current = prepared.payload;
+    routingRef.current = prepared.routing;
+    forcedRef.current = [];
+    level1Ref.current = null;
     setState((s) => ({
       ...s,
       phase: "running",
@@ -633,6 +837,9 @@ export function useExperiment() {
       error: null,
       result: null,
       routing: prepared.routing,
+      profile: prepared.profile,
+      forced: [],
+      level2: { status: "idle" },
       choice: { status: "idle" },
       modelMeta: null,
       modelReady: false,
@@ -674,6 +881,85 @@ export function useExperiment() {
       payload: { ...withoutLeague(payload), member },
     });
   }, []);
+
+  /**
+   * S5 (D5 + U3): el Nivel 2 re-corre la unión (Nivel 1 ∪ Nivel 2 ∪ los «fuera»
+   * que el usuario incluye de todos modos). R1: ANTES de arrancar se exporta una
+   * instantánea del modelo vigente — cancelar termina el worker, y sin ella no
+   * quedaría modelo que usar ni exportar.
+   */
+  const runLevel2 = useCallback((extraForced: readonly MemberId[] = []) => {
+    const table = tableRef.current;
+    const payload = payloadRef.current;
+    const result = resultRef.current;
+    const meta = modelRef.current;
+    if (!table || !payload || !result || !meta) return;
+    const forced = byPriority([
+      ...new Set([...forcedRef.current, ...extraForced]),
+    ]);
+    const next = prepareRun(table, payload.target, SEED, { level: 2, forced });
+    if (!next.ok) return;
+    const plan = planLevel2(
+      next.profile,
+      result.league.map((row) => row.name),
+      result.selection.elapsedMs,
+      forced,
+    );
+    level1Ref.current = {
+      result,
+      routing: routingRef.current,
+      forced: forcedRef.current,
+      payload,
+      meta,
+      snapshot: null,
+    };
+    const id = nextId.current++;
+    pendingRef.current.set(id, { kind: "snapshot", next, forced });
+    setState((s) => ({
+      ...s,
+      phase: "running",
+      // El runtime ya está cargado: se entra directo a la etapa de la liga.
+      progress: "training",
+      progressDetail: null,
+      choice: { status: "idle" },
+      level2: {
+        status: "running",
+        count: next.payload.roster.length,
+        estimateS: plan.estimateS,
+      },
+    }));
+    workerRef.current?.postMessage({ id, type: "export-model" });
+  }, []);
+
+  /**
+   * S5 (R1): cancelar el Nivel 2. Una llamada síncrona de Python no se puede
+   * interrumpir: se termina el worker, se crea otro y se restaura la
+   * instantánea. Si la instantánea aún no llegó, el Nivel 2 no arrancó: basta
+   * con olvidar el pedido (el worker conserva el modelo).
+   */
+  const cancelLevel2 = useCallback(() => {
+    if (!level1Ref.current) return;
+    const competitors = level1Ref.current.result.league.length;
+    const snapshotPending = [...pendingRef.current.entries()].find(
+      ([, pending]) => pending.kind === "snapshot",
+    );
+    if (snapshotPending) {
+      pendingRef.current.delete(snapshotPending[0]);
+    } else {
+      pendingRef.current.clear();
+      respawnRef.current?.();
+    }
+    const table = tableRef.current;
+    recordLeagueRun({
+      rows: table?.rows.length,
+      cols: table?.headers.length,
+      competitors,
+      level: 2,
+      elapsedMs: null,
+      cancelled: true,
+    });
+    restoreLevel1("cancelled", false);
+  }, [restoreLevel1]);
 
   // --- S3: usar el modelo ---------------------------------------------------
 
@@ -777,11 +1063,17 @@ export function useExperiment() {
   }, []);
 
   const reset = useCallback(() => {
+    // R15: si quedaba cómputo en vuelo (p. ej. un Nivel 2), se corta de verdad
+    // — antes seguía corriendo y el experimento nuevo esperaba detrás de él.
+    if (pendingRef.current.size > 0) respawnRef.current?.();
     tableRef.current = null;
     payloadRef.current = null;
     modelRef.current = null;
     resultRef.current = null;
     datasetNameRef.current = null;
+    routingRef.current = null;
+    forcedRef.current = [];
+    level1Ref.current = null;
     pendingRef.current.clear();
     setState(INITIAL);
   }, []);
@@ -799,5 +1091,7 @@ export function useExperiment() {
     exportModel,
     activateImportedModel,
     chooseMember,
+    runLevel2,
+    cancelLevel2,
   };
 }

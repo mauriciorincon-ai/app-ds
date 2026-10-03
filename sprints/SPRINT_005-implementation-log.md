@@ -492,6 +492,101 @@ con LightGBM (predicciones y probabilidades idénticas).
 `saneamiento-sucio` afirman la liga en vez de «Modelos que compitieron / elegido». Local: unit 329
 de 329, e2e 24 de 24 en build de producción.
 
+**CI de `92f366a`:** `quality`, `integration`, `e2e`, `lighthouse`, Vercel y Vercel Preview Comments,
+cada uno con conclusión propia `success` (`gh pr checks 13`).
+
+### Parada de mirada de FORMA — presentada y APROBADA el 2026-10-02
+
+Sobre la preview del commit `92f366a` (la URL va solo en la conversación — regla de cero enlaces).
+
+| #   | Archivo / lugar                                                                                  | Botón / estado                                                                                   | Qué mirar                                                                                                | Respuesta esperada              |
+| --- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| M1  | Preview → «Rotación de empleados» → objetivo `renuncio`, luego `edad`                            | tarjeta de tarea + «Quién compite» + «Entrenar modelos» (ahora arriba de la vista previa)        | ¿se entiende qué tarea detectó y por qué compite o no cada modelo? ¿sirve el botón arriba?               | «lo abrí y apruebo» o el ajuste |
+| M2  | Preview → entrenar `renuncio`; luego «Nuevo experimento» → `docs/kit-de-prueba/liga-mediana.csv` | tabla de la liga · «Ver puntajes de prueba» · «Elegir» · «Volver al ganador» · filas del Nivel 2 | ¿el ganador se distingue sin color (★ + texto)? ¿se entiende la etiqueta de prueba? ¿y «elegido por ti»? | «lo abrí y apruebo» o el ajuste |
+
+**Veredicto (evidencia de que se vio, literal del usuario):** «M1 lo abrí y apruebo M2 lo abrí y
+apruebo, excelente muy buen trabajo cambia muchisimo ahora si es super funcional». Sin ajustes. Con
+esto se construye encima: ficha de cada modelo, Nivel 2 (estimación, «incluir de todos modos»,
+correr la unión) y cancelar. Son segundas vueltas: no abren otra parada.
+
+### Después de la mirada: ficha, Nivel 2 y cancelar (segundas vueltas, sin parada)
+
+- **Ficha de lectura (E3):**
+  - `src/content/modelos.ts`: 12 fichas base + la de clase mayoritaria, cada una con cinco
+    apartados (qué es · cuándo sirve · cuándo no · qué mirar · cuánto cuesta) como dato `{es, en}`
+    redactado en cada idioma; las dos balanceadas suman un párrafo propio (D4).
+  - `FichaModelo`: `<dialog>` nativo (foco atrapado, Esc, clic en el fondo) con la línea de estado
+    de ESA liga: ★ ganador · ◆ elegido · puesto k de n · no concluyó · pendiente · fuera porque… ·
+    baseline. El foco vuelve a quien la abrió.
+  - `FichaButton`: el nombre del modelo es el botón (icono `info` a la izquierda, 44 px). Llega por
+    `next/dynamic`: ficha y contenido viajan en su propio chunk (R12).
+  - También los dos baselines del resultado abren su ficha.
+- **Nivel 2 (D5 + U3 + ADR-010):**
+  - `planLevel2()` (motor puro): la unión que correría, lo que se suma, los «fuera» que se pueden
+    incluir y la estimación EN ESTE EQUIPO, calibrada con lo que tardó la corrida anterior frente a
+    lo que se estimó para lo que corrió.
+  - `Level2Card`: qué suma (con nombres), «Incluir de todos modos» con la razón del encarrilador
+    por modelo, la estimación calibrada y «Correr el Nivel 2 (+n)». Si elegiste a mano, avisa que
+    la liga completa vuelve a elegir por validación cruzada.
+  - En la tabla, lo incluido por el usuario lleva «lo incluiste tú (el encarrilador lo dejaba
+    fuera)».
+- **Cancelar (R1) y R15:**
+  - Antes de arrancar el Nivel 2 se exporta una instantánea del modelo vigente. Cancelar termina el
+    worker, crea otro y la restaura con `import-model`; usar y exportar esperan a `modelReady`.
+  - Si la instantánea aún no llegó, no se termina nada: el pedido se olvida y el worker conserva el
+    modelo.
+  - Si el Nivel 2 falla (error de Python, contrato o worker muerto), vuelve el resultado anterior
+    con su aviso, no la pantalla de error. Si el worker muere antes de la instantánea, se dice que
+    el modelo no se pudo recuperar.
+  - `reset()` con cómputo en vuelo corta el worker (R15).
+- **Observabilidad:** `recordLeagueRun` deja un breadcrumb de Sentry por corrida o cancelación con
+  filas, columnas, cuántos compitieron, nivel, tiempo y si se canceló. Nada más: el test fija la
+  forma cerrada.
+- **Plural mínimo:** `<clave>_one` con `count === 1` («Compitió 1 modelo»). Se pagó «Compitieron 1
+  modelos» (el test de la model card lo tenía fijado: cambio esperado).
+- **Reduced-motion:** `motion-reduce:transition-none` en botones, zonas de carga y tarjetas de
+  ejemplo.
+- **Hallazgo anterior al sprint, pagado:** el `<pre>` de la vista previa de la model card era una
+  región desplazable sin foco de teclado (axe `scrollable-region-focusable`). Lo cazó el e2e nuevo
+  al abrir «Ver el contenido»; ahora es una región enfocable con nombre propio.
+- **Detalle de forma (segunda vuelta):** el botón deshabilitado decía «Correr el Nivel 2 (+0)»;
+  ahora, sin nada que sumar, dice «Correr el Nivel 2».
+
+**Tests nuevos:**
+
+- Unit:
+  - `modelos.test.ts` (5): paridad de fichas con el roster y de idiomas.
+  - `ficha-level2.test.tsx` (15).
+  - `use-hooks.test.tsx` (+9: Nivel 2, cancelar, restaurar, fallar, morir, R15).
+  - `encarrilador.test.ts` (+5, `planLevel2`).
+  - `observability.test.ts` (+3).
+  - `i18n-parity.test.ts` (+2, plural).
+- e2e, en móvil y escritorio sobre el build de producción:
+  - `liga.spec.ts`: ficha (foco, Esc, axe del diálogo en ambos temas), prueba, elegir, model card,
+    volver; axe de la página en ambos temas.
+  - `liga-cancelar.spec.ts`: `liga-mediana.csv` → estimar → arrancar → cancelar → exporta el
+    Nivel 1.
+  - `liga-booster-export.spec.ts`: LightGBM → exportar → recargar → importar → puntuar.
+  - `reduced-motion-app.spec.ts`: opacidad efectiva 1 contando ancestros, sin transiciones ni
+    animaciones en curso.
+
+**Rojos demostrados (2026-10-02):**
+
+| Gate                                     | Cambio deliberado                          | Rojo (quién lo nombró)                       | Verde al revertir |
+| ---------------------------------------- | ------------------------------------------ | -------------------------------------------- | ----------------- |
+| Paridad de fichas                        | renombrar `knn` y copiar un texto ES en EN | `knn_x` vs `knn`; `logistic.cost` copiado    | 5/5               |
+| R1 en el hook                            | no re-importar la instantánea              | 4 tests: cancelar, fallar, morir, restaurar  | 26/26             |
+| e2e reduced-motion (build de producción) | quitar `motion-reduce` del botón           | «Entrenar modelos» a opacidad efectiva 0,588 | 2/2               |
+| e2e cancelar (build de producción)       | no postear el import de la instantánea     | «Exportar modelo» deshabilitado para siempre | 2/2               |
+
+**Falso rojo de axe (aprendido):** con la ficha abierta, axe mide el contenido inerte detrás del
+modal; ahora se audita el diálogo con el modal abierto y la página entera al cerrarlo. Después de
+«Volver al ganador», axe medía los botones a mitad del fundido de 0,5 a 1. `getAnimations()` todavía
+no lo veía, porque la transición arranca en el cuadro siguiente. El test ahora espera a que todo
+botón habilitado tenga opacidad 1.
+
+**Corridas locales:** unit 368/368 (41 archivos, líneas 90,9 %); e2e 32/32 en build de producción.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S5-1 — `audita-sprint.md` tiene dos casillas numeradas «6»** (líneas 73 y 93 del kit): en la

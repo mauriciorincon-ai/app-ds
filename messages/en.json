@@ -105,7 +105,8 @@
       "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
       "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
     },
-    "trainHint": "Level 1: {count} models · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine)."
+    "trainHint": "Level 1: {count} models · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
+    "trainHint_one": "Level 1: 1 model · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine)."
   },
   "training": {
     "title": "Training…",
@@ -305,7 +306,8 @@
     "title": "Model card",
     "desc": "The record of your experiment: data, method, metrics, verdict and limits — ready to save or share.",
     "download": "Download model card (.md)",
-    "preview": "View content"
+    "preview": "View content",
+    "content": "Model card content"
   },
   "narration": {
     "template": {
@@ -406,7 +408,8 @@
       "cv": "Model chosen by cross-validation: {model}. The test set was opened only once, after choosing.",
       "user": "◆ Chosen by you: {model}. The cross-validation winner was {winner}. If you chose it by looking at the test scores, the verdict may be optimistic.",
       "time": "League time on this device: {seconds} s.",
-      "smallSample": "Small sample: with fewer than {rows} rows, cross-validation scores vary a lot from one fold to another."
+      "smallSample": "Small sample: with fewer than {rows} rows, cross-validation scores vary a lot from one fold to another.",
+      "league_one": "1 model competed with {k}-fold cross-validation inside the training set (preprocessing was refit in every fold). Metric: {metric}."
     }
   },
   "errors": {
@@ -463,7 +466,9 @@
     },
     "cv": "They compete with {k}-fold cross-validation inside the training set; the test set is opened only once, at the end.",
     "smallSample": "Small sample ({rows} rows): cross-validation scores vary quite a bit. That is why, when several are practically tied, the simplest one wins.",
-    "note": "Nothing is hidden: «left out» is a recommendation with its reason, and you can include it anyway in Level 2."
+    "note": "Nothing is hidden: «left out» is a recommendation with its reason, and you can include it anyway in Level 2.",
+    "level1_one": "Level 1 · now · 1 model · about {time}",
+    "level2_one": "Level 2 · later, if you want · 1 more model"
   },
   "league": {
     "title": "The league: {count} models",
@@ -478,7 +483,8 @@
       "winner": "Winner (cross-validation)",
       "chosen": "Chosen by you",
       "withinSe": "≈ tied with the best",
-      "best": "best score"
+      "best": "best score",
+      "forced": "you included it (the router was leaving it out)"
     },
     "status": {
       "no-converge": "⚠ did not converge: its score may not be stable",
@@ -498,6 +504,50 @@
     "testWarning": "These scores come from the test set. They are for believing in the model already chosen; if you choose by looking at them, the verdict number may be optimistic.",
     "howWinner": "The simplest of the models within one standard error (±{se}) of the best cross-validation score wins; the best score was «{best}»'s. Among practically tied scores, keeping the maximum rewards luck.",
     "time": "The league took {seconds} s on this device.",
-    "testShort": "test"
+    "testShort": "test",
+    "fichaAria": "About {model}",
+    "title_one": "The league: 1 model"
+  },
+  "ficha": {
+    "eyebrow": "Model sheet",
+    "what": "What it is",
+    "goodFor": "When it works",
+    "notFor": "When it does not",
+    "watch": "What to watch",
+    "cost": "What it costs",
+    "close": "Close",
+    "status": {
+      "winner": "In this league: the cross-validation winner.",
+      "chosen": "In this league: your pick.",
+      "competitor": "In this league: ranked {rank} of {total} by cross-validation.",
+      "failed": "In this league: it did not finish, so it has no score.",
+      "pending": "In this league: waiting for Level 2.",
+      "out": "In this league: left out, because {reason}.",
+      "baseline": "Verdict baseline: it does not compete in the league — it judges it."
+    }
+  },
+  "level2": {
+    "title": "Level 2: the full league",
+    "desc": "Adds {count} models that did not fit in the first step ({models}) and reruns the whole league with the same cross-validation.",
+    "descAllRan": "Every recommended model has already competed. If you like, you can add the ones the router left out.",
+    "forceTitle": "Include anyway",
+    "forceReason": "The router leaves it out because {reason}.",
+    "dropsChoice": "The full league picks again by cross-validation: your current manual pick is not kept.",
+    "estimate": "{count} models · about {time} on this device (calibrated against how long the previous run took)",
+    "nothingToAdd": "Tick a model to include it; there is nothing else to add.",
+    "run": "Run Level 2 (+{count})",
+    "cancelHint": "You can cancel while it runs: you come back to this result without losing anything.",
+    "running": "Level 2 · {count} models · about {time} on this device",
+    "cancel": "Cancel Level 2",
+    "restoring": "Restoring the previous model…",
+    "notice": {
+      "cancelled": "You cancelled Level 2. The previous result still stands.",
+      "failed": "Level 2 could not finish. The previous result still stands.",
+      "restore-failed": "The previous model could not be restored. The table is still here, but to use or export the model you need to train again."
+    },
+    "desc_one": "Adds 1 model that did not fit in the first step ({models}) and reruns the whole league with the same cross-validation.",
+    "estimate_one": "1 model · about {time} on this device (calibrated against how long the previous run took)",
+    "running_one": "Level 2 · 1 model · about {time} on this device",
+    "runNothing": "Run Level 2"
   }
 }
