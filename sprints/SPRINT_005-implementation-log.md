@@ -65,6 +65,18 @@ gates: sin demo. `run-tests.md` lleva además el paso propio `pnpm test:integrat
   archivo no llegó a existir; `env PATH=/usr/bin:/bin sh githooks/pre-commit` → «commit BLOQUEADO»,
   exit 1.
 
+**K3 · Sentry `beforeSend` sin el mensaje de la excepción (v1.33.0)** — pesa doble aquí: un
+traceback de pandas/sklearn cita el valor de celda que no pudo convertir (regla dura 2). La
+limpieza pasa a una función pura compartida, `src/lib/sentry-scrub.ts`, usada por
+`instrumentation-client.ts` y `sentry.server.config.ts` (antes: dos copias a mano que ya
+divergían — `xhr` en una, `http` en la otra). Gate: `tests/unit/sentry-scrub.test.ts`.
+
+- 🔴 **Rojo (2026-10-02):** sin la línea `v.value = v.type` → **1 falla**: «reemplaza el mensaje de
+  la excepción por su tipo (nunca el valor de celda)».
+- 🟢 **Verde:** restaurada → 3/3.
+- De paso: `tests/integration/gitleaks-hook.test.ts` no pasaba `pnpm typecheck` (el `env` mínimo no
+  cumple `ProcessEnv` de los tipos de Next) — cazado por el typecheck antes del push; cast comentado.
+
 ### Constitución
 
 2026-10-02 — `CLAUDE.md`: el párrafo del diferenciador y la regla dura 3 «Honestidad por diseño»

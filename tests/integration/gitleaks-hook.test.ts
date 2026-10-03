@@ -140,7 +140,8 @@ describe("pre-commit: falla CERRADO sin gitleaks (kit v1.32.1)", () => {
   // PATH mínimo del sistema: ahí no vive gitleaks (Homebrew/winget lo ponen en otro lado,
   // y la CI no lo instala en el PATH). Así se reproduce «máquina sin gitleaks».
   const hook = join(process.cwd(), "githooks/pre-commit");
-  const bareEnv = { PATH: "/usr/bin:/bin" };
+  // Cast: ProcessEnv exige NODE_ENV en los tipos de Next; aquí queremos un env MÍNIMO.
+  const bareEnv = { PATH: "/usr/bin:/bin" } as unknown as NodeJS.ProcessEnv;
 
   it("BLOQUEA el commit (exit 1) si gitleaks no está instalado", () => {
     const result = spawnSync("sh", [hook], { env: bareEnv, encoding: "utf8" });
@@ -150,7 +151,7 @@ describe("pre-commit: falla CERRADO sin gitleaks (kit v1.32.1)", () => {
 
   it("solo KIT_SIN_GITLEAKS=1 lo deja pasar, a sabiendas (exit 0)", () => {
     const result = spawnSync("sh", [hook], {
-      env: { ...bareEnv, KIT_SIN_GITLEAKS: "1" },
+      env: { ...bareEnv, KIT_SIN_GITLEAKS: "1" } as NodeJS.ProcessEnv,
       encoding: "utf8",
     });
     expect(result.stdout).toMatch(/a sabiendas/);
