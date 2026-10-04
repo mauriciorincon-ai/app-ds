@@ -45,7 +45,20 @@ const num = (v) => v.split(/[-+]/)[0].split(".").map((x) => parseInt(x, 10) || 0
 const cmp = (a, b) => { const A = num(a), B = num(b); for (let i = 0; i < Math.max(A.length, B.length); i++) { const d = (A[i] ?? 0) - (B[i] ?? 0); if (d) return d; } return 0; };
 const mayor = (vs) => vs.reduce((m, v) => (cmp(v, m) > 0 ? v : m));
 
+// Falla CERRADO también ante un lockfile que no sabe leer (ds S6, AU-S6-13): si el formato cambia
+// (otra lockfileVersion, otra sangría), los nombres dejan de coincidir y cada paquete de la base pasaría
+// por «quitado a propósito» — un verde sin haber comparado nada.
+const lockfileVersion = (t) => (t.match(/^lockfileVersion:\s*'?([^'\n]+)'?/m) ?? [])[1];
+if (lockfileVersion(lockBase) !== lockfileVersion(lockPR)) {
+  console.error(`✗ verificar-dependencias: lockfileVersion ${lockfileVersion(lockBase)} (${base}) ≠ ${lockfileVersion(lockPR)} (este árbol). No sé comparar formatos distintos: compara a mano y registra la decisión.`);
+  process.exit(1);
+}
 const enBase = versiones(lockBase), enPR = versiones(lockPR);
+const faltan = [...enBase.keys()].filter((n) => !enPR.has(n));
+if (enPR.size === 0 || faltan.length > Math.max(5, enBase.size * 0.2)) {
+  console.error(`✗ verificar-dependencias: ${faltan.length} de ${enBase.size} paquetes de ${base} no aparecen en este lockfile. Un gate que no puede comparar no está verde.`);
+  process.exit(1);
+}
 const degradados = [];
 for (const [nombre, vsBase] of enBase) {
   const vsPR = enPR.get(nombre);
