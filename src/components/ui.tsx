@@ -15,7 +15,10 @@ export type IconName =
   | "check"
   | "x"
   | "table"
-  | "sparkle";
+  | "sparkle"
+  | "eye"
+  | "info"
+  | "stop";
 
 const ICON_PATHS: Record<IconName, ReactNode> = {
   upload: (
@@ -66,6 +69,25 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <path d="M3 10h18" />
       <path d="M9 10v10" />
+    </>
+  ),
+  eye: (
+    <>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v6" />
+      <path d="M12 7.5v.01" />
+    </>
+  ),
+  stop: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <rect x="9" y="9" width="6" height="6" rx="1" />
     </>
   ),
   sparkle: (
@@ -125,7 +147,7 @@ export function Button({
 }) {
   return (
     <button
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-opacity disabled:pointer-events-none disabled:opacity-50 ${buttonVariants[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-opacity motion-reduce:transition-none disabled:pointer-events-none disabled:opacity-50 ${buttonVariants[variant]} ${className}`}
       {...props}
     >
       {icon && <Icon name={icon} />}

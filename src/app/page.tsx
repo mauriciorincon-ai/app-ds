@@ -24,6 +24,9 @@ export default function Home() {
     scoreCsv,
     exportModel,
     activateImportedModel,
+    chooseMember,
+    runLevel2,
+    cancelLevel2,
   } = useExperiment();
 
   return (
@@ -37,13 +40,22 @@ export default function Home() {
           dataset={state.dataset}
           sanitation={state.sanitation}
           edaAlerts={state.edaAlerts}
+          plan={state.plan}
           onSelectTarget={selectTarget}
           onRun={run}
           onBack={reset}
         />
       )}
 
-      {state.phase === "running" && <TrainingScreen stage={state.progress} />}
+      {state.phase === "running" && (
+        <TrainingScreen
+          stage={state.progress}
+          detail={state.progressDetail}
+          level2={state.level2.status === "running" ? state.level2 : null}
+          estimateS={state.routing?.level1EstimateS ?? null}
+          onCancel={cancelLevel2}
+        />
+      )}
 
       {state.phase === "results" && state.result && state.runMeta && (
         <ResultsScreen
@@ -57,6 +69,14 @@ export default function Home() {
           onUseModel={goToScoring}
           onExportModel={exportModel}
           exportState={state.exportState}
+          routing={state.routing}
+          choice={state.choice}
+          onChoose={chooseMember}
+          modelReady={state.modelReady}
+          profile={state.profile}
+          forced={state.forced}
+          level2={state.level2}
+          onRunLevel2={runLevel2}
         />
       )}
 

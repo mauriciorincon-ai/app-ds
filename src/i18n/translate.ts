@@ -29,10 +29,18 @@ export function interpolate(template: string, params?: TParams): string {
   );
 }
 
+// Plural mínimo (S5): con count === 1 se usa la variante `<clave>_one` si existe
+// («Compitieron 1 modelos» → «Compitió 1 modelo»). Español e inglés solo
+// distinguen uno / otros; la paridad de claves cubre también las `_one`.
 export function translate(
   locale: Locale,
   key: string,
   params?: TParams,
 ): string {
-  return interpolate(resolve(dictionaries[locale], key), params);
+  const dictionary = dictionaries[locale];
+  if (params?.count === 1) {
+    const one = resolve(dictionary, `${key}_one`);
+    if (one !== `${key}_one`) return interpolate(one, params);
+  }
+  return interpolate(resolve(dictionary, key), params);
 }

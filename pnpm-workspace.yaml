@@ -5,11 +5,26 @@
 # queda dentro del mismo major (^) para no cruzar una ruptura de API.
 # Se retiran cuando los paquetes aguas arriba (next, @tailwindcss/postcss,
 # @sentry/nextjs) publiquen versiones que ya resuelvan a las parcheadas.
+# S5 (2026-10-02): nuevos avisos de fast-uri (≤3.1.7) → el piso sube a ^3.1.8; el resto de
+# avisos nuevos (next crítico, undici, sharp, js-yaml, brace-expansion) se pagaron con el
+# parche directo de next 16.3.8 + `pnpm update`, sin overrides nuevos.
 overrides:
-  fast-uri@<3.1.4: ^3.1.4
+  fast-uri@<3.1.8: ^3.1.8
   nanoid@<3.3.18: ^3.3.18
   postcss@<8.5.18: ^8.5.18
   sharp@<0.35.0: ^0.35.0
+
+# Aviso ACEPTADO, uno solo y con nombre (S5, 2026-10-02 — deuda explícita del summary):
+# GHSA-vfj7-8cjw-p6xm / CVE-2026-93687 — braces ≤3.0.3, DoS por desbordamiento de pila con
+# patrones de llaves anidados que controla un atacante. NO HAY VERSIÓN PARCHEADA publicada
+# (first_patched_version: null; la última en npm es 3.0.3). Solo llega por la cadena de DESARROLLO
+# eslint-config-next → @next/eslint-plugin-next → fast-glob → micromatch → braces: corre en el lint,
+# sobre los globs fijos de este repo, nunca con entrada de un usuario; `pnpm audit --prod` está
+# limpio (no llega al bundle). Se RETIRA en cuanto se publique braces ≥3.0.4 (`pnpm update` +
+# borrar esta línea). Cualquier OTRO aviso alto sigue poniendo rojo `quality` (demostrado).
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
 
 allowBuilds:
   sharp: true

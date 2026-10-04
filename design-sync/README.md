@@ -13,7 +13,10 @@ patrones reales de la app**.
 **Honestidad metodológica como diseño.** El diferenciador no es el AutoML (commodity) sino que la
 app **no maquilla**: la fuga de datos es imposible por construcción, el veredicto contra baseline
 es franco ("supera por +N" / "NO supera — revisa tus features"), y todo cómputo corre en el
-navegador (los datos del usuario nunca salen). **La sobriedad visual refleja esa honestidad — los
+navegador (los datos del usuario nunca salen). **Desde el Sprint 005 la honestidad acompaña:
+etiqueta, no bloquea ni esconde** — compiten todos los modelos que el navegador puede entrenar, la
+selección vive en validación cruzada y cada puntaje lleva su etiqueta («sirve para elegir» /
+«sirve para creer» / «no sirve para elegir»). **La sobriedad visual refleja esa honestidad — los
 números no se maquillan, el diseño tampoco.** La metáfora es un **instrumento de laboratorio**:
 legible, calibrado, franco. Nunca pedagógico, nunca lúdico, nunca genérico-corporativo (sin el
 degradado violeta/azul de IA, sin hero de plantilla).
@@ -39,8 +42,9 @@ solo aparecen en veredicto/estados, cada uno con un tinte de fondo al 8–12% pa
 ## Reglas de composición
 
 - **Nada comunica solo con color.** El veredicto y las métricas SIEMPRE llevan símbolo + texto:
-  **▲** supera · **＝** empata · **▼** no supera · **⚠** fuga/aviso · **▶** modelo elegido ·
-  **✓** verificado/limpio · **⚙** saneamiento aplicado.
+  **▲** supera · **＝** empata · **▼** no supera · **⚠** fuga/aviso · **★** ganador de la
+  validación cruzada (disco relleno + texto) · **◆** elegido por ti (disco relleno + texto) · **≈**
+  empata con el mejor · **✓** verificado/limpio · **⚙** saneamiento aplicado.
 - **Todas las cifras en Geist Mono con `tabular-nums`** (métricas, %, matriz de confusión, tamaños
   de dataset). El mono es la firma del instrumento; la prosa va en Geist Sans.
 - **A11y desde el inicio:** táctil ≥44px, foco visible con ring de acento, contraste AA
@@ -54,7 +58,8 @@ solo aparecen en veredicto/estados, cada uno con un tinte de fondo al 8–12% pa
 `styles.css` (los tokens, con sus capas: claro por defecto, oscuro por `@media dark` /
 `[data-theme]`). Las tarjetas de preview muestran los patrones reales: paleta, tipografía, y los
 componentes canon — con el **VerdictBanner** como pieza jerárquica — más los añadidos de cada
-sprint (narración con importancia, scoring con novedad, saneamiento y candidatos).
+sprint (narración con importancia, scoring con novedad, saneamiento y, desde S5, la liga, los
+encarriladores y la ficha de cada modelo).
 
 ## Snippet idiomático
 

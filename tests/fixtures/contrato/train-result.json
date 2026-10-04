@@ -1,0 +1,370 @@
+{
+  "n_train": 149,
+  "n_test": 51,
+  "classes": [
+    "0",
+    "1"
+  ],
+  "positive_class": "1",
+  "positive_rate": 0.45,
+  "baselines": {
+    "majority": {
+      "accuracy": 0.5490196078431373,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "auc": 0.5
+    },
+    "logistic": {
+      "accuracy": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "auc": 1
+    }
+  },
+  "model": {
+    "accuracy": 1,
+    "precision": 1,
+    "recall": 1,
+    "f1": 1,
+    "auc": 1
+  },
+  "model_name": "naive_bayes",
+  "winner": "naive_bayes",
+  "league": [
+    {
+      "name": "logistic",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9691851851851851,
+        "std": 0.015464282489718404,
+        "folds": [
+          0.96,
+          0.96,
+          0.9629629629629629,
+          0.9629629629629629,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 51
+    },
+    {
+      "name": "ridge",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9013333333333333,
+        "std": 0.04240545038343797,
+        "folds": [
+          0.96,
+          0.9166666666666666,
+          0.88,
+          0.8333333333333334,
+          0.9166666666666666
+        ]
+      },
+      "test": {
+        "accuracy": 0.9215686274509803,
+        "precision": 1,
+        "recall": 0.8260869565217391,
+        "f1": 0.9047619047619048,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 46
+    },
+    {
+      "name": "naive_bayes",
+      "status": "ok",
+      "cv": {
+        "mean": 1,
+        "std": 0,
+        "folds": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 44
+    },
+    {
+      "name": "linear_svc",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9925925925925926,
+        "std": 0.014814814814814836,
+        "folds": [
+          1,
+          1,
+          0.9629629629629629,
+          1,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 45
+    },
+    {
+      "name": "decision_tree",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9925925925925926,
+        "std": 0.014814814814814836,
+        "folds": [
+          1,
+          1,
+          0.9629629629629629,
+          1,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 45
+    },
+    {
+      "name": "knn",
+      "status": "ok",
+      "cv": {
+        "mean": 0.8272993672993673,
+        "std": 0.05350623983872295,
+        "folds": [
+          0.8333333333333334,
+          0.7619047619047619,
+          0.9230769230769231,
+          0.8,
+          0.8181818181818182
+        ]
+      },
+      "test": {
+        "accuracy": 0.9019607843137255,
+        "precision": 0.95,
+        "recall": 0.8260869565217391,
+        "f1": 0.8837209302325582,
+        "auc": 0.96972049689441
+      },
+      "error_type": null,
+      "elapsed_ms": 47
+    },
+    {
+      "name": "hgb",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9925925925925926,
+        "std": 0.014814814814814836,
+        "folds": [
+          1,
+          1,
+          0.9629629629629629,
+          1,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 112
+    },
+    {
+      "name": "lightgbm",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9925925925925926,
+        "std": 0.014814814814814836,
+        "folds": [
+          1,
+          1,
+          0.9629629629629629,
+          1,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 0.9999999999999999
+      },
+      "error_type": null,
+      "elapsed_ms": 82
+    },
+    {
+      "name": "xgboost",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9925925925925926,
+        "std": 0.014814814814814836,
+        "folds": [
+          1,
+          1,
+          0.9629629629629629,
+          1,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 90
+    },
+    {
+      "name": "extra_trees",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9845925925925926,
+        "std": 0.018893390894139113,
+        "folds": [
+          1,
+          0.96,
+          0.9629629629629629,
+          1,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 636
+    },
+    {
+      "name": "forest",
+      "status": "ok",
+      "cv": {
+        "mean": 0.9925925925925926,
+        "std": 0.014814814814814836,
+        "folds": [
+          1,
+          1,
+          0.9629629629629629,
+          1,
+          1
+        ]
+      },
+      "test": {
+        "accuracy": 1,
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "auc": 1
+      },
+      "error_type": null,
+      "elapsed_ms": 877
+    }
+  ],
+  "cv": {
+    "k": 5,
+    "scoring": "f1",
+    "rule": "one-se",
+    "best": "naive_bayes",
+    "se": 0
+  },
+  "elapsed_ms": 2100,
+  "confusion_matrix": [
+    [
+      28,
+      0
+    ],
+    [
+      0,
+      23
+    ]
+  ],
+  "explainability": {
+    "method": "permutation_importance",
+    "scoring": "roc_auc",
+    "n_repeats": 10,
+    "features": [
+      {
+        "name": "monto_recuperado",
+        "kind": "numeric",
+        "importance": 0.4687888198757764,
+        "std": 0.05292935961901873,
+        "direction": "positive"
+      },
+      {
+        "name": "empleo",
+        "kind": "categorical",
+        "importance": 0,
+        "std": 0,
+        "direction": null
+      },
+      {
+        "name": "puntaje_credito",
+        "kind": "numeric",
+        "importance": 0,
+        "std": 0,
+        "direction": null
+      },
+      {
+        "name": "monto_prestamo",
+        "kind": "numeric",
+        "importance": 0,
+        "std": 0,
+        "direction": null
+      },
+      {
+        "name": "ingreso_mensual",
+        "kind": "numeric",
+        "importance": 0,
+        "std": 0,
+        "direction": null
+      }
+    ]
+  },
+  "preprocessing": {
+    "numeric_medians": {
+      "ingreso_mensual": 3625,
+      "monto_prestamo": 12677,
+      "puntaje_credito": 607,
+      "monto_recuperado": 0
+    },
+    "rare_categories": {}
+  }
+}

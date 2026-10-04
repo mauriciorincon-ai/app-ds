@@ -1,0 +1,58 @@
+<!-- @dsCard group="Componentes · S5" name="FichaModelo — la ficha de lectura" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ficha del modelo — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: rgb(0 0 0 / .5); color: #14181f;
+    font-family: "Geist", system-ui, sans-serif; min-height: 100vh; box-sizing: border-box;
+  }
+  .lead { color: #fafaf7; max-width: 64ch; font-size: 14px; margin: 0 0 20px; }
+  .lead h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .dialog {
+    max-width: 512px; background: #ffffff; border: 1px solid #e4e4dc; border-radius: 10px;
+    padding: 20px; box-shadow: 0 2px 10px rgb(20 24 31 / .08);
+  }
+  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #586172; margin: 0; }
+  h2 { font-size: 18px; font-weight: 600; margin: 4px 0; }
+  .status { font-size: 14px; margin: 0 0 16px; }
+  dl { margin: 0; display: grid; gap: 12px; font-size: 14px; }
+  dt { font-weight: 600; }
+  dd { margin: 2px 0 0; color: #586172; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; margin-top: 16px;
+    border: 1px solid #e4e4dc; background: #fff; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 500;
+  }
+  svg { width: 16px; height: 16px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+  <div class="lead">
+    <h1>FichaModelo <span class="mono" style="font-size:13px">· S5</span></h1>
+    El nombre de cada modelo es un botón (icono ⓘ a la izquierda) que abre un <b>&lt;dialog&gt;
+    nativo</b>: foco atrapado, Esc y clic en el fondo cierran, el foco vuelve al botón. Cinco
+    apartados redactados en cada idioma y la línea de estado de <b>esta</b> liga, con símbolo + texto.
+  </div>
+
+  <div class="dialog" role="dialog" aria-labelledby="t">
+    <p class="eyebrow">Ficha del modelo</p>
+    <h2 id="t">Naive Bayes (gaussiano)</h2>
+    <p class="status">En esta liga: puesto 1 de 13 por validación cruzada.</p>
+    <dl>
+      <div><dt>Qué es</dt><dd>Calcula la probabilidad de cada clase suponiendo que tus columnas no se influyen entre sí (de ahí lo de «ingenuo»).</dd></div>
+      <div><dt>Cuándo sirve</dt><dd>Pocos datos y muchas columnas; como punto de comparación rápido.</dd></div>
+      <div><dt>Cuándo no</dt><dd>Columnas muy relacionadas entre sí (cuenta dos veces la misma evidencia) o categóricas que se abren en muchas columnas de 0 y 1.</dd></div>
+      <div><dt>Qué mirar</dt><dd>Sus probabilidades suelen ser extremas, muy cerca de 0 o de 1, aunque acierte en el orden: no las leas como certeza.</dd></div>
+      <div><dt>Cuánto cuesta</dt><dd>Casi nada.</dd></div>
+    </dl>
+    <button class="btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      Cerrar
+    </button>
+  </div>
+</body>
+</html>

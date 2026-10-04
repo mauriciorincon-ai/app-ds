@@ -79,7 +79,14 @@ export function ModelCardView({
             {t("card.preview")}
           </summary>
           {previewOpen && (
-            <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-sunken p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+            // Región desplazable alcanzable por teclado (axe:
+            // scrollable-region-focusable; lo cazó el e2e de la liga, S5).
+            <pre
+              tabIndex={0}
+              role="region"
+              aria-label={t("card.content")}
+              className="mt-2 max-h-80 overflow-auto rounded-md bg-sunken p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
+            >
               {markdown}
             </pre>
           )}

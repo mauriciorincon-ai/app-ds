@@ -28,13 +28,14 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Cómo se usa:**
   1. **Inicio → elige un dataset.** Puedes **subir tu propio CSV** (arrástralo o haz clic en _Elegir
-     archivo_) o probar con uno de los **tres ejemplos** incluidos.
+     archivo_) o probar con uno de los **ejemplos** incluidos.
   2. **Configuración → elige qué predecir.** Verás una vista previa de tu tabla y, en el menú _¿Qué
-     quieres predecir?_, seleccionas la columna objetivo. Debe tener **exactamente dos categorías**
-     (sí/no, 0/1, aprobado/rechazado…). Si alguna columna parece una fecha, la app te avisa (en esta
-     versión no se usa para el análisis).
-  3. **Pulsa _Entrenar modelo_.** La primera vez tarda unos segundos mientras se prepara el motor de
-     análisis; verás el progreso paso a paso.
+     quieres predecir?_, seleccionas la columna objetivo. Desde el Sprint 005 puedes elegir
+     **cualquier columna**: la app te dice qué tipo de predicción sería. Esta versión entrena las de
+     **dos categorías** (sí/no, 0/1, aprobado/rechazado…). Si alguna columna parece una fecha, la app
+     te avisa (en esta versión no se usa para el análisis).
+  3. **Pulsa _Entrenar modelos_.** La primera vez tarda unos segundos mientras se prepara el motor
+     de análisis; verás el progreso paso a paso.
   4. **Resultados → lee el veredicto.** Arriba, en grande, aparece el veredicto:
      - **▲ El modelo supera al baseline** — tu modelo predice mejor que una regla simple. Se indica
        por cuánto.
@@ -139,7 +140,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   5. Revisa la **distribución** de predicciones y la **vista previa**, y pulsa **"Descargar CSV
      puntuado"**: tu tabla completa + dos columnas nuevas — la **predicción** (con las etiquetas
      originales de tus datos: sí/no, 0/1…) y la **probabilidad**. Si ya tenías una columna con ese
-     nombre, la nueva sale con un sufijo (`_2`) — nunca se pisa nada tuyo.
+     nombre, la nueva sale con un sufijo (`_2`) — nunca se pisa nada tuyo. Desde el Sprint 005, si
+     el modelo es uno de los que **deciden la clase sin dar una probabilidad** (Ridge, SVM lineal),
+     la columna de probabilidad no se incluye y la pantalla te lo dice: la app no inventa una.
 
 - **Guardar el modelo (exportar):**
   - En Resultados, pulsa **"Exportar modelo"**. Se descarga un único archivo `.probeta.json`.
@@ -154,7 +157,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      contenido está íntegro (una huella digital debe coincidir). Un archivo ajeno, corrupto o
      manipulado se **rechaza con la razón exacta**, sin llegar a abrirse.
   3. Si es válido, verás un **resumen honesto** de lo que trae (dataset, fecha, métrica, veredicto,
-     advertencias de fuga) para que decidas con conocimiento. Si el archivo se creó con **otra
+     advertencias de fuga, cómo se eligió el modelo y, si lo elegiste a mano, la etiqueta
+     **◆ Elegido por ti**) para que decidas con conocimiento. Si el archivo se creó con **otra
      versión** del motor, la app te lo advierte: se carga igual, pero si falla, re-entrena y
      exporta de nuevo.
   4. Confirma con **"Usar este modelo"** y puntúa datos nuevos directamente — sin re-entrenar.
@@ -190,10 +194,10 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - una columna que **parece un identificador** (aporta poco para generalizar),
   - un **objetivo desbalanceado** (una clase es rara) — por eso el veredicto usa AUC.
 
-- **Boosting que compite:** además del Random Forest, la app entrena un **HistGradientBoosting**.
-  Ambos usan el mismo preprocesamiento y compiten con el **mismo veredicto**; se queda el mejor en
-  la métrica principal. En Resultados verás los dos y cuál **ganó** — sin que tengas que elegir a
-  mano: el veredicto habla.
+- **Boosting que compite:** además del Random Forest, la app entrenaba un **HistGradientBoosting**,
+  con el mismo preprocesamiento y el mismo veredicto. _Desde el Sprint 005 esto cambió:_ compiten
+  todos los modelos que el navegador puede entrenar, se elige con validación cruzada y puedes elegir
+  otro a mano — ver **«La liga honesta»**.
 
 - **Limitaciones conocidas (Sprint 004):**
   - El saneamiento es **honesto, no mágico**: arregla lo estructural (duplicados, basura,
@@ -202,6 +206,86 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Las alertas son una **ayuda, no una garantía**: la de fuga marca los casos evidentes, no todos.
   - El boosting corre en CPU (como toda la app): entrenar un dataset grande puede tardar un poco.
 
+### La liga honesta · desde Sprint 005
+
+- **Qué hace:** en vez de dos modelos, la liga reúne **todos los que tu navegador puede entrenar**
+  (14: modelos lineales, árboles, vecinos, boosting como XGBoost y LightGBM, bosques y una red
+  neuronal pequeña). Primero compiten los que caben en unos segundos (**Nivel 1**); el resto, si
+  quieres, en el **Nivel 2**, y algunos quedan «fuera» con su razón, como recomendación. La app
+  elige al ganador **sin mirar el conjunto de prueba**, y solo después lo abre para darte el
+  veredicto. Así puede ofrecerte muchos modelos sin inflar el resultado.
+
+- **Antes de entrenar (Configuración):**
+  - **Tipo de predicción:** al elegir la columna, una tarjeta te dice qué tipo de predicción sería y
+    por qué (por ejemplo, _«2 valores distintos → clasificación binaria»_). Si es de otro tipo
+    (varias categorías, una cantidad), te lo dice: esta versión todavía no la entrena, pero la
+    columna no se esconde.
+  - **Quién compite:** otra tarjeta reparte los modelos en tres grupos, cada uno con su razón:
+    - **Nivel 1 · ahora:** los que caben en unos 5 segundos de cálculo en un computador de
+      escritorio (en un móvil puede tardar el doble o más).
+    - **Nivel 2 · después, si quieres:** los que no caben en ese primer paso, con lo que costaría
+      cada uno.
+    - **Fuera · recomendación:** los que la app recomienda no correr con tus datos, con la razón
+      medida (por ejemplo, una red neuronal con menos de 500 filas no aprende nada estable). **Es
+      una recomendación, no una prohibición**: puedes incluirlos en el Nivel 2.
+
+- **Mientras entrena:** la pantalla te dice cuánto debería tardar (la misma estimación de
+  Configuración) y qué modelo está compitiendo en cada momento, con una barra de avance: primero la
+  validación cruzada de todos y, al final, el conjunto de prueba.
+
+- **La tabla de la liga (Resultados):** una fila por modelo, ordenada por su puntaje de **validación
+  cruzada** (media ± variación entre pliegues).
+  - **★ Ganador (validación cruzada)** — el que eligió la app. Entre los que quedan prácticamente
+    empatados con el mejor puntaje (a menos de un _error estándar_), gana **el más simple**: entre
+    empatados, quedarse con el máximo premia la suerte. Por eso a veces gana uno que no tiene el
+    número más alto, y la tabla te lo explica.
+  - **▲ mejor puntaje** y **≈ empata con el mejor** te muestran quiénes estaban en ese empate.
+  - **⚠ no convergió** / **✕ no concluyó** — el modelo tuvo problemas; se dice, no se esconde.
+  - Los modelos del **Nivel 2** pendientes y los **fuera** también aparecen, con su razón.
+  - Arriba de la tabla, la regla en una frase: _«La tabla se calcula con validación cruzada: sirve
+    para elegir. El veredicto se calcula con el conjunto de prueba: sirve para creer.»_
+
+- **Ver puntajes de prueba (no sirven para elegir):** el botón abre una columna en ámbar con el
+  puntaje de cada modelo en el conjunto de prueba. Existen y puedes verlos, pero **no para elegir**:
+  si eliges el modelo mirando la prueba, el número del veredicto puede ser optimista. La app te lo
+  advierte al abrirla.
+
+- **Elegir otro modelo a mano:** cada fila tiene **«Elegir»**. Al elegir, la app ajusta ese modelo
+  (unos segundos) y el veredicto pasa a hablar de él con la etiqueta **«◆ Elegido por ti, no por la
+  validación cruzada»**. El ganador sigue marcado con ★, y **«Volver al ganador»** lo restituye. La
+  model card y el archivo exportado registran que lo elegiste tú.
+
+- **La ficha de cada modelo:** el nombre de cada modelo (y de los dos baselines) es un botón con el
+  icono ⓘ. Abre su ficha: **qué es · cuándo sirve · cuándo no · qué mirar · cuánto cuesta**, y qué
+  pasó con él en esta liga (ganador, puesto, pendiente o fuera y por qué). Se cierra con **Cerrar**
+  o con la tecla Esc.
+
+- **El Nivel 2 (la liga completa):** si quedaron modelos pendientes, o quieres incluir alguno de los
+  que estaban fuera, la tarjeta **«Nivel 2: la liga completa»** te dice cuáles se suman y **cuánto
+  tardaría en tu equipo** (la app lo estima con lo que tardó el primer paso). Al pulsar **«Correr el
+  Nivel 2»** vuelve a correr la liga entera con la misma validación cruzada.
+  - **Puedes cancelar mientras corre** («Cancelar el Nivel 2»): vuelves al resultado anterior sin
+    perder nada. La app tarda unos segundos en recuperar el modelo; mientras tanto, _Usar el
+    modelo_ y _Exportar_ esperan.
+  - Si el Nivel 2 no pudiera terminar (por ejemplo, por falta de memoria en un móvil), también
+    vuelve el resultado anterior y te lo dice.
+
+- **Cuando no se puede comparar con honestidad, la app lo dice con su razón:**
+  - Si tu objetivo tiene dos valores escritos de dos formas (por ejemplo «1» y «1.0»), te pide
+    unificarlos en tu CSV: para entrenar, cada clase tiene que escribirse igual en todas las filas.
+  - Si hay muy pocos ejemplos de una de las clases, la tarjeta del tipo de predicción no muestra ✓:
+    remite al motivo, que aparece debajo, y el botón de entrenar espera.
+  - Si ningún modelo termina la validación cruzada sin problemas, la app no inventa un ganador: te
+    lo dice y te sugiere más filas u otras columnas.
+
+- **Limitaciones conocidas (Sprint 005):**
+  - Solo se entrenan objetivos de **dos categorías**; varias categorías y cantidades llegan en una
+    próxima versión.
+  - Con **muestras pequeñas** (menos de 200 filas) los puntajes de validación cruzada varían mucho;
+    la app lo avisa.
+  - Los tiempos son **estimaciones**: tu equipo puede tardar distinto, sobre todo un móvil.
+  - Con datos grandes (decenas de miles de filas) el Nivel 2 puede tardar minutos.
+
 ## Diccionario de términos
 
 Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
@@ -209,13 +293,26 @@ cuando una te frene.
 
 **Sobre el resultado**
 
-| Término                    | Qué significa                                                                                                                      |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Baseline** (línea base)  | La regla más tonta que podría funcionar: responder siempre lo más frecuente. Si tu modelo no la supera, no sirve.                  |
-| **Veredicto**              | La comparación franca entre tu modelo y ese baseline: lo supera, empata o pierde.                                                  |
-| **Entrenamiento y prueba** | La app parte tus datos en dos. Aprende con la primera mitad y se examina con la segunda, que nunca vio. Por eso el número es real. |
-| **Candidatos**             | Los modelos que compiten entre sí (Random Forest y HistGradientBoosting). Gana el que puntúa más alto, sin que tú elijas.          |
-| **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                               |
+| Término                    | Qué significa                                                                                                                                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Baseline** (línea base)  | Las reglas simples contra las que se mide tu modelo: responder siempre lo más frecuente (clase mayoritaria) y una regresión logística. Si tu modelo no supera a la mejor de las dos, no sirve. |
+| **Veredicto**              | La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.                                                                                                |
+| **Entrenamiento y prueba** | La app parte tus datos en dos: con tres cuartas partes aprende y con la cuarta parte restante, que nunca vio, se examina. Por eso el número del veredicto es real.                             |
+| **Liga**                   | Todos los modelos que compiten entre sí. Se elige al ganador sin mirar la prueba; puedes elegir otro, y queda registrado.                                                                      |
+| **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                                                                                           |
+
+**Sobre la liga** (desde Sprint 005)
+
+| Término                | Qué significa                                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Validación cruzada** | Dentro del entrenamiento, la app parte los datos en 5 trozos (3 si son muy grandes; menos si una de las clases tiene muy pocos ejemplos) y examina cada modelo con cada trozo. Sirve para elegir. |
+| **Ganador (★)**        | El modelo que eligió la validación cruzada: el más simple entre los prácticamente empatados con el mejor puntaje.                                                                                 |
+| **Error estándar (≈)** | Cuánto podría moverse un puntaje por azar. Los que quedan a menos de eso del mejor «empatan con el mejor».                                                                                        |
+| **Elegido por ti (◆)** | Un modelo que elegiste a mano en lugar del ganador. El veredicto habla de él, con esa etiqueta.                                                                                                   |
+| **Nivel 1 / Nivel 2**  | El primer paso (lo que cabe en unos segundos) y la liga completa (lo que falta, si quieres correrlo).                                                                                             |
+| **Encarrilador**       | La regla fija de la app que decide qué tipo de predicción es una columna y qué modelos corren en cada nivel, con su razón.                                                                        |
+| **Fuera**              | Un modelo que la app recomienda no correr con tus datos, con su razón. Puedes incluirlo de todos modos en el Nivel 2.                                                                             |
+| **Ficha del modelo**   | La explicación corta de cada modelo: qué es, cuándo sirve, cuándo no, qué mirar y cuánto cuesta.                                                                                                  |
 
 **Sobre las métricas** — la app siempre te dice cuál es la principal y por qué
 
@@ -262,13 +359,28 @@ cuando una te frene.
 - **¿Qué se envía exactamente si activo la narración con IA?** Los nombres de tus columnas y
   estadísticas agregadas (métricas, importancias, el veredicto). Nunca tus filas de datos, nunca
   valores individuales.
+- **¿Por qué bajó mi puntaje desde la versión anterior?** Antes, la app elegía entre sus modelos
+  mirando el conjunto de prueba, y el número que te mostraba era el del que tuvo más suerte en esa
+  prueba. Ahora elige con validación cruzada y abre la prueba una sola vez, al final. El número
+  puede ser un poco más bajo, pero es **el que puedes esperar con datos nuevos**. No es que el
+  modelo empeorara: dejó de estar inflado.
+- **¿Por qué no ganó el modelo con el puntaje más alto?** Porque entre puntajes prácticamente
+  empatados la diferencia es azar, y la app se queda con el más simple. La tabla marca con ▲ el de
+  mejor puntaje y con ≈ los empatados. Si quieres otro, **elígelo**: queda registrado como «elegido
+  por ti».
+- **¿Puedo ver cómo le fue a cada modelo en la prueba?** Sí: «Ver puntajes de prueba». Están
+  etiquetados «no sirven para elegir» porque elegir mirándolos hace optimista el veredicto.
+- **Un modelo dice «Fuera», ¿no puedo usarlo?** Sí puedes: en la tarjeta del Nivel 2 marca
+  «Incluir de todos modos». La app te dice por qué lo dejaba fuera y lo marca en la tabla como
+  «lo incluiste tú».
 
 ## Historial
 
-| Sprint | Features añadidas a este manual                                                                                                                                                |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                                 |
-| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable).                |
-| 003    | El modelo se usa (puntuar datos nuevos con aviso de novedad, exportar el modelo como archivo `.probeta.json`, volver a importarlo y puntuar sin re-entrenar).                  |
-| 004    | Sobrevive datos reales (saneamiento transparente con conteos, alertas EDA de fuga/identificador/desbalance, boosting HistGradientBoosting compitiendo con el mismo veredicto). |
-| 004    | **Diccionario de términos** (pedido en el gate ⭐, prueba E3) + aviso de CSV con punto y coma.                                                                                 |
+| Sprint | Features añadidas a este manual                                                                                                                                                                                                                                        |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                                                                                                                         |
+| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable).                                                                                                        |
+| 003    | El modelo se usa (puntuar datos nuevos con aviso de novedad, exportar el modelo como archivo `.probeta.json`, volver a importarlo y puntuar sin re-entrenar).                                                                                                          |
+| 004    | Sobrevive datos reales (saneamiento transparente con conteos, alertas EDA de fuga/identificador/desbalance, boosting HistGradientBoosting compitiendo con el mismo veredicto).                                                                                         |
+| 004    | **Diccionario de términos** (pedido en el gate ⭐, prueba E3) + aviso de CSV con punto y coma.                                                                                                                                                                         |
+| 005    | La liga honesta (14 modelos con validación cruzada, ganador por la regla de un error estándar, prueba a pedido y etiquetada, elección manual «elegido por ti», tipo de predicción de cada columna, quién compite por nivel, ficha de cada modelo, Nivel 2 cancelable). |

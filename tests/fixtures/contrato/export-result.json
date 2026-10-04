@@ -1,0 +1,54 @@
+{
+  "payload_b64": "eJytV2tsHFcV3vXueteO14+YVgltk0BBCdBu7SZto4rKG6zUKdNOiuMooOJe3Z25",
+  "versions": {
+    "pyodide": "314.0.2",
+    "sklearn": "1.8.0",
+    "python": "3.14.2",
+    "xgboost": "2.1.4",
+    "lightgbm": "4.6.0"
+  },
+  "schema": {
+    "numeric": [
+      "ingreso_mensual",
+      "monto_prestamo",
+      "puntaje_credito",
+      "monto_recuperado"
+    ],
+    "categorical": [
+      "empleo"
+    ],
+    "target": "incumplio",
+    "classes": [
+      "0",
+      "1"
+    ],
+    "positive_class": "1"
+  },
+  "training_profile": {
+    "numeric": {
+      "ingreso_mensual": {
+        "min": 1212,
+        "max": 6160
+      },
+      "monto_prestamo": {
+        "min": 2022,
+        "max": 21924
+      },
+      "puntaje_credito": {
+        "min": 300,
+        "max": 848
+      },
+      "monto_recuperado": {
+        "min": 0,
+        "max": 10381
+      }
+    },
+    "categorical": {
+      "empleo": [
+        "formal",
+        "independiente",
+        "informal"
+      ]
+    }
+  }
+}

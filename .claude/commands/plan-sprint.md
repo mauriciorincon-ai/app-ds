@@ -21,7 +21,10 @@ indique (o la más reciente en `portafolio/<slug>/ordenes/` de la planeadora,
    describe el QUÉ; los riesgos nº 1 suelen vivir en el CÓMO-choca-con-lo-que-ya-existe
    (precedente: el bucle parlante→micrófono de habla S3, ausente de la orden).
 5. Propón un plan de ejecución por fases:
-   - **Fase 0 — Setup:** deps, config, scaffolding si falta.
+   - **Fase 0 — Setup:** deps, config, scaffolding si falta — y el **humo de credenciales**
+     si la orden trae aprovisionamiento (kit v1.7.4): validar cada credencial con su comando
+     de humo ANTES de la fase 1. Una credencial aprovisionada no es una credencial válida
+     (el 401 de Groq en hoja-de-vida S3 se descubrió en la integración).
    - **Fase 1 — Motor/núcleo:** lógica pura con tests (y `lib/ia/` si el sprint toca LLM — skill `ia-embebida`).
    - **Fase 2 — UI:** integración visual (paleta/microcopy del prototipo, construido desde cero).
    - **Fase 3 — Integración + e2e:** tests end-to-end + axe.
@@ -39,6 +42,43 @@ indique (o la más reciente en `portafolio/<slug>/ordenes/` de la planeadora,
    - (c) Espera la palabra explícita **«construye»** del usuario. Si responde con ajustes,
      incorpóralos y vuelve a esperar.
    **Prohibido crear o editar archivos antes del «construye».**
+9. **Gates de FASE (obligatorio, kit v1.8.0):** durante la construcción, al terminar CADA
+   fase del plan:
+   - (a) **DETENTE** — prohibido arrancar la fase siguiente.
+   - (b) Entrega el **resumen completo de la fase**: qué se construyó, archivos
+     creados/modificados, tests corridos y su resultado, el criterio observable de "fase
+     completa" verificado, y cualquier desviación del plan.
+   - (c) Recuerda al usuario: *"valida el resumen y, si quieres, cambia modelo/esfuerzo con
+     `/model` para la siguiente fase"*.
+   - (d) Espera el **«continúa»** explícito. Ajustes del usuario se incorporan antes de
+     seguir.
+   **9-bis. Gate de MIRADA (kit v1.20.0) — si la fase produjo un artefacto visual** (pantalla,
+   design system, kit de componentes, maqueta, brochure), su gate es ADEMÁS un gate de mirada:
+   - (a) La **PRIMERA línea** de tu mensaje de gate es una pregunta simple en español llano +
+     el lugar: *«¿Apruebas [la pantalla X / el design system]? Ábrelo aquí: [ruta o URL]
+     (doble clic / cómo abrirlo)»* — **sin jerga del método, sin códigos, sin listas de
+     verificación antes de la pregunta**. El resumen técnico de la fase va DESPUÉS.
+   - (b) El gate solo pasa con un comentario del usuario que delate el archivo abierto, o su
+     **«lo abrí y apruebo»** textual. **«Continúa» avanza el PROCESO pero JAMÁS aprueba lo
+     visual**: si llega sin comentario del artefacto, DETENTE y repregunta *«¿qué viste al
+     abrirlo?»* antes de construir encima.
+   - (c) AskUserQuestion/previews ASCII **no sustituyen la mirada** — si preguntas por chat
+     sobre un artefacto visual, pide la respuesta con el archivo abierto y dilo explícito.
+   - (d) **Registra la mirada** (bitácora o README de diseño): la línea de feedback del
+     usuario, o su «lo abrí y apruebo», con fecha, ANTES de la construcción siguiente. La
+     planeadora audita este registro al cierre — sin él, el cierre queda condicionado.
+   - (e) **El PLAN de miradas —número, agrupación y ORDEN— es parte del gate (kit v1.21.0):**
+     cualquier cambio (agrupar, reordenar, posponer) se propone y se aprueba ANTES de construir
+     el segundo artefacto — jamás lo decidas sobre la marcha. Que ninguna mirada pida ajustes
+     después no valida el desvío: es suerte, no proceso.
+   - (f) **Dos clases de mirada (kit v1.31.0):** el plan de miradas separa las de **FORMA**
+     (qué se construye — abren parada) de las de **TEXTO** (si se entiende — no bloquean:
+     «maquetado, no visto», veredicto al gate del MVP). Cada mirada en **matriz de una fila**
+     (archivo · botón/estado · qué mirar · respuesta esperada); **segundas vueltas sin parada**
+     (se ven al cierre de fase). Y **`gh pr checks` tras CADA push** de la fase, no al final.
+10. **Al concluir la construcción** (todas las fases aprobadas): corre **`/audita-sprint`**
+   (auditoría final de dos fases — OBLIGATORIA, método v1.10.0) ANTES del summary definitivo
+   y de entregar la guía/gate ⭐ al usuario.
 
 ## Output esperado
 

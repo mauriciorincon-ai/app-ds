@@ -15,6 +15,7 @@ import { ResultsScreen } from "@/components/ResultsScreen";
 import { StartScreen } from "@/components/StartScreen";
 import { TrainingScreen } from "@/components/TrainingScreen";
 import { WhySection } from "@/components/WhySection";
+import { leagueFields } from "./factories";
 
 function ui(children: ReactNode) {
   return render(<I18nProvider>{children}</I18nProvider>);
@@ -44,6 +45,7 @@ function result(overrides: Partial<ExperimentResult> = {}): ExperimentResult {
     model: metrics(),
     modelName: "forest",
     candidates: [{ name: "forest", metrics: metrics() }],
+    ...leagueFields("forest"),
     confusionMatrix: [
       [30, 5],
       [7, 8],
@@ -108,9 +110,7 @@ describe("WhySection", () => {
     // Gate ⭐ S4 (bloque C): la dirección nombra la COLUMNA objetivo, no un
     // «0» huérfano que no le dice nada a nadie.
     expect(
-      screen.getByText(
-        "▲ a mayor valor, más probable que «convirtio» sea «1»",
-      ),
+      screen.getByText("▲ a mayor valor, más probable que «convirtio» sea «1»"),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/el efecto varía según la categoría/),
@@ -144,7 +144,12 @@ describe("WhySection", () => {
   });
 
   it("fallo del proveedor: dice qué pasó y deja volver a pedirla", () => {
-    ui(<WhySection {...base} ai={{ kind: "failed", reason: "provider-error" }} />);
+    ui(
+      <WhySection
+        {...base}
+        ai={{ kind: "failed", reason: "provider-error" }}
+      />,
+    );
     expect(
       screen.getByText(/El proveedor de IA no respondió/),
     ).toBeInTheDocument();
@@ -162,7 +167,12 @@ describe("WhySection", () => {
   });
 
   it("estado verificado: badge con símbolo + texto, junto al texto estándar", () => {
-    ui(<WhySection {...base} ai={{ kind: "verified", text: "narrativa verificada" }} />);
+    ui(
+      <WhySection
+        {...base}
+        ai={{ kind: "verified", text: "narrativa verificada" }}
+      />,
+    );
     expect(screen.getByText(/verificada con los números/)).toBeInTheDocument();
     expect(screen.getByText("narrativa verificada")).toBeInTheDocument();
     expect(screen.getByText("texto estándar aquí")).toBeInTheDocument();
@@ -217,6 +227,9 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         onUseModel={() => {}}
         onExportModel={() => {}}
         exportState="idle"
+        routing={null}
+        choice={{ status: "idle" }}
+        onChoose={() => {}}
       />,
     );
     // Gate ⭐ S4 (bloque B): el veredicto NOMBRA al modelo ganador.
@@ -252,6 +265,9 @@ describe("ResultsScreen (integración de la pantalla)", () => {
         onUseModel={() => {}}
         onExportModel={() => {}}
         exportState="idle"
+        routing={null}
+        choice={{ status: "idle" }}
+        onChoose={() => {}}
       />,
     );
     expect(
@@ -284,6 +300,7 @@ describe("pantallas S1 (smoke)", () => {
         dataset={dataset}
         sanitation={null}
         edaAlerts={null}
+        plan={null}
         onSelectTarget={() => {}}
         onRun={() => {}}
         onBack={() => {}}
@@ -295,7 +312,9 @@ describe("pantallas S1 (smoke)", () => {
 
   it("TrainingScreen: progreso honesto", () => {
     ui(<TrainingScreen stage="loading-packages" />);
-    expect(screen.getByText(/pandas y scikit-learn/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/scikit-learn, XGBoost y LightGBM/),
+    ).toBeInTheDocument();
   });
 
   it("ErrorScreen: mensaje llano + acción de recuperación", () => {
@@ -340,6 +359,7 @@ describe("ConfigScreen — informe de saneamiento", () => {
           usable: true,
         }}
         edaAlerts={null}
+        plan={null}
         onSelectTarget={() => {}}
         onRun={() => {}}
         onBack={() => {}}
@@ -364,6 +384,7 @@ describe("ConfigScreen — informe de saneamiento", () => {
           usable: true,
         }}
         edaAlerts={null}
+        plan={null}
         onSelectTarget={() => {}}
         onRun={() => {}}
         onBack={() => {}}
@@ -385,6 +406,7 @@ describe("ConfigScreen — alertas EDA + accesibilidad", () => {
         dataset={DATASET}
         sanitation={null}
         edaAlerts={[{ kind: "class-imbalance", minorityRate: 0.1 }]}
+        plan={null}
         onSelectTarget={onSelectTarget}
         onRun={() => {}}
         onBack={() => {}}
@@ -403,6 +425,7 @@ describe("ConfigScreen — alertas EDA + accesibilidad", () => {
         dataset={DATASET}
         sanitation={null}
         edaAlerts={null}
+        plan={null}
         onSelectTarget={() => {}}
         onRun={() => {}}
         onBack={() => {}}
@@ -411,38 +434,5 @@ describe("ConfigScreen — alertas EDA + accesibilidad", () => {
     const region = container.querySelector('[role="region"]');
     expect(region).not.toBeNull();
     expect(region).toHaveAttribute("tabindex", "0");
-  });
-});
-
-describe("ResultsScreen — candidatos", () => {
-  it("muestra los candidatos y marca al ganador (símbolo + texto)", () => {
-    ui(
-      <ResultsScreen
-        result={result({
-          modelName: "hgb",
-          candidates: [
-            { name: "forest", metrics: metrics({ auc: 0.79 }) },
-            { name: "hgb", metrics: metrics({ auc: 0.83 }) },
-          ],
-        })}
-        datasetName="marketing.csv"
-        cols={7}
-        runMeta={RUN_META}
-        sanitation={null}
-        edaAlerts={null}
-        onAgain={() => {}}
-        onUseModel={() => {}}
-        onExportModel={() => {}}
-        exportState="idle"
-      />,
-    );
-    expect(screen.getByText("Random Forest")).toBeInTheDocument();
-    expect(screen.getByText("HistGradientBoosting")).toBeInTheDocument();
-    // El ganador (hgb) lleva la etiqueta "elegido" (no solo color).
-    expect(screen.getByText("elegido")).toBeInTheDocument();
-    // Gate ⭐ S4 (bloque B): la tabla trae las métricas de AMBOS candidatos
-    // (la primaria de cada uno visible, no solo la del ganador).
-    expect(screen.getByText("0.79")).toBeInTheDocument();
-    expect(screen.getByText("0.83")).toBeInTheDocument();
   });
 });

@@ -53,7 +53,15 @@
         "versionWarning": "This file was created with versions different from this app's ({list}). It will load anyway; if it fails, retrain and export again.",
         "use": "Use this model",
         "cancel": "Cancel",
-        "model": "Chosen model: {model}."
+        "model": "Chosen model: {model}.",
+        "verdict": {
+          "beats": "beats the baseline",
+          "ties": "ties the baseline",
+          "loses": "does NOT beat the baseline"
+        },
+        "chosen": "◆ Chosen by you, not by cross-validation (the cross-validation winner was {winner}). If it was chosen by looking at the test set, the metric may be optimistic.",
+        "cv": "Chosen by {k}-fold cross-validation among {count} models.",
+        "cv_one": "Chosen by {k}-fold cross-validation (1 model competed)."
       },
       "errors": {
         "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
@@ -73,7 +81,8 @@
     "target": {
       "label": "What do you want to predict?",
       "placeholder": "Pick a column…",
-      "help": "It must be a column with two categories (yes/no, 0/1)."
+      "help": "You can pick any column: we tell you what kind of prediction it would be. This version trains two-category columns (yes/no, 0/1).",
+      "option": "{column} · {task}"
     },
     "profile": {
       "numeric": "numeric",
@@ -85,7 +94,7 @@
     "warnings": {
       "date": "We found columns that look like dates ({cols}). This version doesn't split by time; they're ignored as predictors."
     },
-    "train": "Train model",
+    "train": "Train models",
     "back": "Change dataset",
     "sanitation": {
       "clean": "Nothing to clean up: the dataset was already tidy.",
@@ -103,14 +112,21 @@
       "possible-leak": "«{column}» predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again.",
       "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
       "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
-    }
+    },
+    "trainHint": "Level 1: {count} models · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
+    "trainHint_one": "Level 1: 1 model · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine)."
   },
   "training": {
     "title": "Training…",
     "loading-runtime": "Warming up the analysis engine…",
-    "loading-packages": "Loading pandas and scikit-learn…",
-    "training": "Training and evaluating on test data…",
-    "wait": "The first run takes a few seconds: the engine downloads only once."
+    "loading-packages": "Loading pandas, scikit-learn, XGBoost and LightGBM…",
+    "training": "Competing with cross-validation; the test set opens at the end…",
+    "wait": "The first run takes a few seconds: the engine downloads only once.",
+    "estimate": "About {time} of computing on a desktop computer (on a phone, twice as long or more).",
+    "member": {
+      "cv": "Cross-validation · model {index} of {total}: {model}",
+      "test": "Test set · model {index} of {total}: {model}"
+    }
   },
   "results": {
     "title": "Verdict",
@@ -123,7 +139,10 @@
       "tiesDetail": "a simple model does just as well: {model} vs {baseline}. There is no extra signal to learn from these columns — adding variables related to the target usually helps more than switching models.",
       "losesDetail": "a simple model does better: {model} vs {baseline}. Your current columns don't carry enough signal about the target — try variables more related to what you want to predict.",
       "suspicious": "Almost perfect metrics — suspicious",
-      "suspiciousDetail": "A perfect result almost always hides a leak, not a great model."
+      "suspiciousDetail": "A perfect result almost always hides a leak, not a great model.",
+      "chosenNote": "◆ Chosen by you, not by cross-validation. If you chose it by looking at the test, this number may be optimistic.",
+      "logisticTie": "The league found nothing better than the reference regression",
+      "logisticTieDetail": "No model beat logistic regression in cross-validation by more than one standard error, and logistic regression is also the baseline. With these columns there is no extra signal to learn: adding variables related to the target usually helps more than changing the model."
     },
     "primaryMetric": "Primary metric: {metric}",
     "metrics": {
@@ -144,7 +163,7 @@
       "majority": "Majority class",
       "logistic": "Logistic regression"
     },
-    "testNote": "All metrics are computed on the test set, never on the training set.",
+    "testNote": "The verdict metrics, the confusion matrix and the baselines are computed on the test set, never on the training set. The league table uses cross-validation inside the training set: it is for choosing.",
     "leakage": {
       "title": "Possible data leakage",
       "finding": "The column “{column}” could be a proxy for the target.",
@@ -164,19 +183,38 @@
       "contents": "The file contains what the model learned from your data (parameters, categories, medians) — not your raw rows. Still, treat it as a sensitive file."
     },
     "candidates": {
-      "title": "Models that competed",
       "model": {
+        "logistic": "Logistic regression",
+        "logistic_balanced": "Logistic regression (balanced classes)",
+        "ridge": "Ridge classifier",
+        "naive_bayes": "Naive Bayes (Gaussian)",
+        "linear_svc": "Linear support vector machine",
+        "decision_tree": "Decision tree",
+        "knn": "Nearest neighbors (k = 5)",
+        "hgb": "HistGradientBoosting",
+        "lightgbm": "LightGBM (200 trees)",
+        "xgboost": "XGBoost (200 trees)",
+        "extra_trees": "Extra Trees (200 trees)",
         "forest": "Random Forest (200 trees)",
-        "hgb": "HistGradientBoosting"
+        "forest_balanced": "Balanced Random Forest (200 trees)",
+        "mlp": "Neural network (MLP, 64 units)"
       },
       "short": {
+        "logistic": "Logistic regression",
+        "logistic_balanced": "Balanced logistic",
+        "ridge": "Ridge",
+        "naive_bayes": "Naive Bayes",
+        "linear_svc": "Linear SVM",
+        "decision_tree": "Decision tree",
+        "knn": "Nearest neighbors",
+        "hgb": "HistGradientBoosting",
+        "lightgbm": "LightGBM",
+        "xgboost": "XGBoost",
+        "extra_trees": "Extra Trees",
         "forest": "Random Forest",
-        "hgb": "HistGradientBoosting"
-      },
-      "winner": "chosen",
-      "metricCol": "Metric",
-      "primary": "primary",
-      "note": "Both use the same preprocessing and compete under the same verdict. We pick the best on the primary metric; no tricks."
+        "forest_balanced": "Balanced Random Forest",
+        "mlp": "Neural network"
+      }
     }
   },
   "score": {
@@ -234,7 +272,8 @@
     "errors": {
       "runtime": "Scoring failed. Check that the columns hold the same kind of data as in training and try again.",
       "import-failed": "The saved model could not be restored. The file may come from an incompatible version; retrain and export again."
-    }
+    },
+    "noProbabilities": "This model decides the class but does not give a probability, so the probability column is left out. If you need to rank rows by risk, choose a model that gives one."
   },
   "why": {
     "title": "Why does it predict this way?",
@@ -271,7 +310,8 @@
     "title": "Model card",
     "desc": "The record of your experiment: data, method, metrics, verdict and limits — ready to save or share.",
     "download": "Download model card (.md)",
-    "preview": "View content"
+    "preview": "View content",
+    "content": "Model card content"
   },
   "narration": {
     "template": {
@@ -315,7 +355,8 @@
       "explainability": "Why does it predict this way?",
       "narrative": "Verified narrative",
       "limits": "Limits",
-      "sanitation": "Sanitization"
+      "sanitation": "Sanitization",
+      "selection": "Model selection"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -364,6 +405,15 @@
       },
       "coercion": "In «{column}», {count} non-numeric cells were set to empty.",
       "none": "The dataset needed no sanitization."
+    },
+    "selection": {
+      "league": "{count} models competed with {k}-fold cross-validation inside the training set (preprocessing was refit in every fold). Metric: {metric}.",
+      "rule": "Rule: one standard error — among the models within one standard error of the best cross-validation score ({best}), the simplest one wins.",
+      "cv": "Model chosen by cross-validation: {model}. The test set was opened only once, after choosing.",
+      "user": "◆ Chosen by you: {model}. The cross-validation winner was {winner}. If you chose it by looking at the test scores, the verdict may be optimistic.",
+      "time": "League time on this device: {seconds} s.",
+      "smallSample": "Small sample: with fewer than {rows} rows, cross-validation scores vary a lot from one fold to another.",
+      "league_one": "1 model competed with {k}-fold cross-validation inside the training set (preprocessing was refit in every fold). Metric: {metric}."
     }
   },
   "errors": {
@@ -379,6 +429,133 @@
     "runtime": "Something went wrong while processing. Please try again.",
     "worker-dead": "The compute engine stopped unexpectedly (it may have run out of memory, or its components failed to load). Try again; if it persists, try a smaller file.",
     "retry": "Start over",
-    "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file."
+    "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file.",
+    "too-few-rows": "There are too few examples of one of the two classes to compare models honestly: cross-validation needs at least 2 of each class in the training set. Try with more rows.",
+    "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file.",
+    "target-mixed-notation": "Your target has 2 values, but written in more than one way (for example «1» and «1.0»): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
+    "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns."
+  },
+  "task": {
+    "title": "Kind of prediction",
+    "name": {
+      "binaria": "binary classification",
+      "multiclase": "classification into several categories",
+      "numerica": "predicting a quantity",
+      "sin-objetivo": "not usable as a target",
+      "ambigua": "categories or quantity"
+    },
+    "reason": {
+      "two-values": "{distinct} distinct values → {task}.",
+      "few-categories": "{distinct} distinct categories → {task}.",
+      "many-numbers": "{distinct} distinct numbers → {task}.",
+      "few-numbers": "Only {distinct} distinct numbers: they can be categories (like a 1-to-5 rating) or a quantity.",
+      "too-many-categories": "{distinct} distinct values: it looks like an identifier or free text, not something to predict.",
+      "constant": "It has a single value: there is nothing to predict.",
+      "empty": "The column is empty."
+    },
+    "suggested": "Most likely: {task}.",
+    "blocked": "The app trains this kind of prediction, but with this data models cannot be compared honestly (the reason is below).",
+    "trainable": "Ready to train.",
+    "notYet": "This version does not train this kind of prediction yet: it comes in a later version. For now, pick a column with two categories."
+  },
+  "roster": {
+    "title": "Who competes",
+    "level1": "Level 1 · now · {count} models · about {time}",
+    "level2": "Level 2 · later, if you want · {count} more models",
+    "level2Hint": "They do not fit in the first step. Once you see the results you can run the full league (about {time} in total on a desktop computer).",
+    "out": "Left out · recommendation · {count}",
+    "reason": {
+      "always-first": "always in: it is the simplest",
+      "over-ceiling": "about {time}",
+      "mlp-few-rows": "your dataset has {rows} rows; a neural network needs at least {min} to learn something stable",
+      "balanced-not-needed": "your classes are already balanced (the smaller one is {share} %): it would repeat its normal version",
+      "forced": "you included it; the router was leaving it out because {why}"
+    },
+    "cv": "They compete with {k}-fold cross-validation inside the training set; the test set is opened only once, at the end.",
+    "smallSample": "Small sample ({rows} rows): cross-validation scores vary quite a bit. That is why, when several are practically tied, the simplest one wins.",
+    "note": "Nothing is hidden: «left out» is a recommendation with its reason, and you can include it anyway in Level 2.",
+    "level1_one": "Level 1 · now · 1 model · about {time}",
+    "level2_one": "Level 2 · later, if you want · 1 more model"
+  },
+  "league": {
+    "title": "The league: {count} models",
+    "rule": "The table is computed with cross-validation: it is for choosing. The verdict is computed with the test set: it is for believing.",
+    "cols": {
+      "model": "Model",
+      "cv": "Cross-validation · {metric}",
+      "test": "Test · {metric} · not for choosing",
+      "use": "Use"
+    },
+    "mark": {
+      "winner": "Winner (cross-validation)",
+      "chosen": "Chosen by you",
+      "withinSe": "≈ tied with the best",
+      "best": "best score",
+      "forced": "you included it (the router was leaving it out)"
+    },
+    "status": {
+      "no-converge": "⚠ did not converge: its score may not be stable",
+      "error": "✕ did not finish ({type})",
+      "testError": "✕ no test score ({type})",
+      "pending": "Level 2 · pending · about {time}",
+      "out": "Left out: {reason}"
+    },
+    "inUse": "In use",
+    "choose": "Choose",
+    "chooseAria": "Choose {model}",
+    "fitting": "Fitting…",
+    "backToWinner": "Back to the winner",
+    "chooseError": "«{model}» could not be fitted. The previous model is still active.",
+    "showTest": "Show test scores (not for choosing)",
+    "hideTest": "Hide test scores",
+    "testWarning": "These scores come from the test set. They are for believing in the model already chosen; if you choose by looking at them, the verdict number may be optimistic.",
+    "howWinner": "The simplest of the models within one standard error (±{se}) of the best cross-validation score wins; the best score was «{best}»'s. Among practically tied scores, keeping the maximum rewards luck.",
+    "time": "The league took {seconds} s on this device.",
+    "testShort": "test",
+    "fichaAria": "About {model}",
+    "title_one": "The league: 1 model"
+  },
+  "ficha": {
+    "eyebrow": "Model sheet",
+    "what": "What it is",
+    "goodFor": "When it works",
+    "notFor": "When it does not",
+    "watch": "What to watch",
+    "cost": "What it costs",
+    "close": "Close",
+    "status": {
+      "winner": "In this league: the cross-validation winner.",
+      "chosen": "In this league: your pick.",
+      "competitor": "In this league: ranked {rank} of {total} by cross-validation.",
+      "failed": "In this league: it did not finish, so it has no score.",
+      "pending": "In this league: waiting for Level 2.",
+      "out": "In this league: left out, because {reason}.",
+      "baseline": "Verdict baseline: it does not compete in the league — it judges it."
+    }
+  },
+  "level2": {
+    "title": "Level 2: the full league",
+    "desc": "Adds {count} models that did not fit in the first step ({models}) and reruns the whole league with the same cross-validation.",
+    "descAllRan": "Every recommended model has already competed. If you like, you can add the ones the router left out.",
+    "forceTitle": "Include anyway",
+    "forceReason": "The router leaves it out because {reason}.",
+    "dropsChoice": "The full league picks again by cross-validation: your current manual pick is not kept.",
+    "estimate": "{count} models · about {time} on this device",
+    "nothingToAdd": "Tick a model to include it; there is nothing else to add.",
+    "run": "Run Level 2 (+{count})",
+    "cancelHint": "You can cancel while it runs: you come back to this result without losing anything.",
+    "running": "Level 2 · {count} models · about {time} on this device",
+    "cancel": "Cancel Level 2",
+    "restoring": "Restoring the previous model…",
+    "notice": {
+      "cancelled": "You cancelled Level 2. The previous result still stands.",
+      "failed": "Level 2 could not finish. The previous result still stands.",
+      "restore-failed": "The previous model could not be restored. The table is still here, but to use or export the model you need to train again."
+    },
+    "desc_one": "Adds 1 model that did not fit in the first step ({models}) and reruns the whole league with the same cross-validation.",
+    "estimate_one": "1 model · about {time} on this device",
+    "running_one": "Level 2 · 1 model · about {time} on this device",
+    "runNothing": "Run Level 2",
+    "estimateNote": "Calibrated against how long the previous run took."
   }
 }

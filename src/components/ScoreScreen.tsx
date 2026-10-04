@@ -104,7 +104,7 @@ export function ScoreScreen({
               const file = event.dataTransfer.files[0];
               if (file) void handleFile(file);
             }}
-            className={`flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10 text-center transition-colors ${
+            className={`flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10 text-center transition-colors motion-reduce:transition-none ${
               dragging
                 ? "border-accent bg-accent/5"
                 : "border-hairline bg-surface"
@@ -416,6 +416,10 @@ function ScoredResults({
             total: table.rows.length,
           })}
         </h2>
+        {/* S5: ridge y el SVM lineal no dan probabilidad — se dice, no se inventa. */}
+        {!probabilities && (
+          <p className="text-sm text-ink-muted">{t("score.noProbabilities")}</p>
+        )}
         {/* Región scrolleable accesible por teclado (axe: scrollable-region-focusable). */}
         <div
           className="overflow-x-auto rounded-md border border-hairline"
@@ -432,9 +436,11 @@ function ScoredResults({
                 <th className="px-3 py-2 font-mono text-xs font-semibold">
                   {names.prediction}
                 </th>
-                <th className="px-3 py-2 font-mono text-xs font-semibold">
-                  {names.probability}
-                </th>
+                {probabilities && (
+                  <th className="px-3 py-2 font-mono text-xs font-semibold">
+                    {names.probability}
+                  </th>
+                )}
                 {table.headers.map((header) => (
                   <th
                     key={header}
@@ -451,9 +457,11 @@ function ScoredResults({
                   <td className="px-3 py-1.5 font-medium">
                     {predictions[index]}
                   </td>
-                  <td className="px-3 py-1.5 font-mono tabular-nums">
-                    {probabilities[index]!.toFixed(4)}
-                  </td>
+                  {probabilities && (
+                    <td className="px-3 py-1.5 font-mono tabular-nums">
+                      {probabilities[index]!.toFixed(4)}
+                    </td>
+                  )}
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}

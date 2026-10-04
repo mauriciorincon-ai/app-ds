@@ -12,6 +12,7 @@ import {
 } from "@/lib/model-file";
 import type { ExperimentResult, RuntimeVersions } from "@/workers/protocol";
 import { StartScreen } from "@/components/StartScreen";
+import { leagueFields } from "./factories";
 
 const METRICS = {
   accuracy: 0.71,
@@ -33,6 +34,7 @@ const RESULT: ExperimentResult = {
   model: METRICS,
   modelName: "forest",
   candidates: [{ name: "forest", metrics: METRICS }],
+  ...leagueFields("forest"),
   confusionMatrix: [
     [30, 5],
     [7, 8],
@@ -55,10 +57,11 @@ const RESULT: ExperimentResult = {
 
 function packFixture(
   versions: RuntimeVersions = { ...RUNTIME_VERSIONS, python: "3.14.2" },
+  result: ExperimentResult = RESULT,
 ) {
   return packModelFile({
     datasetName: "ventas.csv",
-    result: RESULT,
+    result,
     exported: {
       payload_b64: btoa("payload-de-mentira"),
       versions,
@@ -112,6 +115,16 @@ describe("StartScreen — cargar modelo guardado", () => {
     expect(screen.getByText(/«ventas.csv» \(200 filas\)/)).toBeInTheDocument();
     expect(screen.getByText(/Predice «convirtio»/)).toBeInTheDocument();
     expect(screen.getByText(/AUC en prueba: 0.81/)).toBeInTheDocument();
+    // El veredicto se lee entero: sin «{name}» crudo de la plantilla.
+    expect(screen.getByText(/— supera al baseline/)).toBeInTheDocument();
+    expect(screen.queryByText(/\{name\}/)).toBeNull();
+    // S5: cómo se eligió el modelo viaja con el archivo (AU-S5-06).
+    expect(
+      screen.getByText(
+        "Elegido por validación cruzada de 5 pliegues (compitió 1 modelo).",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Elegido por ti/)).toBeNull();
     expect(screen.getByText(/Sin advertencias de fuga/)).toBeInTheDocument();
     // Mismas versiones ⇒ SIN advertencia de versión.
     expect(screen.queryByText(/versiones distintas/i)).toBeNull();
@@ -120,6 +133,30 @@ describe("StartScreen — cargar modelo guardado", () => {
     expect(onImport).toHaveBeenCalledOnce();
     const imported = onImport.mock.calls[0]![0] as ModelFile;
     expect(imported.manifest.dataset.name).toBe("ventas.csv");
+  });
+
+  it("un modelo elegido a mano conserva su etiqueta «◆ Elegido por ti» al importarse (AU-S5-06)", async () => {
+    ui();
+    const chosen: ExperimentResult = {
+      ...RESULT,
+      modelName: "knn",
+      ...leagueFields("forest", ["knn"]),
+    };
+    chosen.selection = { ...chosen.selection, by: "user" };
+    uploadModelFile(
+      JSON.stringify(
+        await packFixture({ ...RUNTIME_VERSIONS, python: "3.14.2" }, chosen),
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/Modelo válido/)).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByText(
+        /◆ Elegido por ti, no por la validación cruzada \(el ganador de la validación cruzada era Random Forest\)/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Elegido por validación cruzada/)).toBeNull();
   });
 
   it("versiones distintas ⇒ advertencia honesta pero se puede continuar", async () => {

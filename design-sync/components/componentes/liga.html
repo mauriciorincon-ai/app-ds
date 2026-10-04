@@ -1,0 +1,104 @@
+<!-- @dsCard group="Componentes · S5" name="LeagueTable — la liga honesta" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>La liga — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 64ch; font-size: 14px; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .card {
+    border: 1px solid #e4e4dc; background: #ffffff; border-radius: 10px; padding: 20px;
+    max-width: 640px; box-shadow: 0 1px 2px rgb(20 24 31 / .06);
+  }
+  .card h2 { font-size: 16px; font-weight: 600; margin: 0; }
+  .rule { font-size: 14px; margin: 4px 0 10px; }
+  .ghost {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 0;
+    background: none; border: 0; font: inherit; font-size: 14px; font-weight: 500; color: #14181f;
+  }
+  .warn {
+    border: 1px solid #8a5a0c66; background: #8a5a0c1a; border-radius: 6px; padding: 10px 12px;
+    font-size: 14px; margin: 0 0 12px;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { padding: 8px; text-align: left; vertical-align: top; border-bottom: 1px solid #e4e4dc; }
+  thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #586172; font-weight: 600; }
+  thead th.test { background: #8a5a0c1a; color: #8a5a0c; }
+  td.test { background: #8a5a0c0d; color: #586172; }
+  tr.winner { box-shadow: inset 4px 0 0 #0e6e6b; background: #0e6e6b0d; }
+  tr.chosen { box-shadow: inset 4px 0 0 #14181f; background: #f2f2ec; }
+  .name { display: inline-flex; align-items: center; gap: 6px; text-decoration: underline; text-decoration-color: #e4e4dc; text-underline-offset: 4px; }
+  .marks { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 12px; margin-top: 2px; }
+  .disc {
+    display: inline-flex; width: 16px; height: 16px; border-radius: 999px; align-items: center;
+    justify-content: center; font-size: 10px; margin-right: 4px;
+  }
+  .m-win { color: #0e6e6b; font-weight: 600; }
+  .m-win .disc { background: #0e6e6b; color: #ffffff; }
+  .m-cho { font-weight: 600; }
+  .m-cho .disc { background: #14181f; color: #fafaf7; }
+  .muted { color: #586172; }
+  .sd { font-size: 12px; color: #586172; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+    border: 1px solid #e4e4dc; background: #fff; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 500;
+  }
+  .badge { display: inline-flex; gap: 4px; font-size: 12px; border: 1px solid #1c7c4a66; color: #1c7c4a; border-radius: 999px; padding: 2px 8px; }
+  tr.pending th { color: #586172; font-weight: 400; }
+  .foot { font-size: 14px; color: #586172; margin: 12px 0 0; }
+  svg { width: 16px; height: 16px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+  <h1>LeagueTable <span class="mono" style="font-size:13px;color:#586172">· S5</span></h1>
+  <p class="sub">
+    Filas = modelos (escala a 14), ordenadas por <b>validación cruzada</b>. La honestidad
+    <b>acompaña y etiqueta</b>: el ganador lleva <b>★ en disco relleno + texto</b>, el elegido a
+    mano <b>◆ + «Elegido por ti»</b>; la prueba existe, a pedido, en banda ámbar y rotulada «no
+    sirve para elegir». Pendientes y «fuera» nunca se omiten.
+  </p>
+
+  <div class="card">
+    <h2>La liga: 13 modelos</h2>
+    <p class="rule">La tabla se calcula con validación cruzada: sirve para elegir. El veredicto se calcula con el conjunto de prueba: sirve para creer.</p>
+    <button class="ghost" aria-expanded="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      Ocultar puntajes de prueba
+    </button>
+    <p class="warn"><span aria-hidden="true">⚠</span> Estos puntajes son del conjunto de prueba. Sirven para creer en el modelo que ya se eligió; si eliges mirándolos, el número del veredicto puede ser optimista.</p>
+    <table>
+      <thead>
+        <tr><th>Modelo</th><th>Validación cruzada · AUC</th><th class="test">Prueba · AUC · no sirve para elegir</th><th>Usar</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th><span class="name">ⓘ Naive Bayes</span><div class="marks"><span class="muted">▲ mejor puntaje</span></div></th>
+          <td class="mono">0.720<div class="sd">± 0.090</div></td><td class="mono test">0.642</td>
+          <td><button class="btn">✓ Elegir</button></td>
+        </tr>
+        <tr class="winner">
+          <th><span class="name" style="font-weight:600">ⓘ Regresión logística</span><div class="marks"><span class="m-win"><span class="disc" aria-hidden="true">★</span>Ganador (validación cruzada)</span></div></th>
+          <td class="mono">0.707<div class="sd">± 0.130</div></td><td class="mono test">0.756</td>
+          <td><button class="btn">↩ Volver al ganador</button></td>
+        </tr>
+        <tr class="chosen">
+          <th><span class="name" style="font-weight:600">ⓘ Random Forest</span><div class="marks"><span class="m-cho"><span class="disc" aria-hidden="true">◆</span>Elegido por ti</span><span class="muted">≈ empata con el mejor</span></div></th>
+          <td class="mono">0.701<div class="sd">± 0.077</div></td><td class="mono test">0.766</td>
+          <td><span class="badge">✓ En uso</span></td>
+        </tr>
+        <tr class="pending">
+          <th colspan="4"><span class="name">ⓘ Red neuronal</span><div class="sd">Fuera: tu dataset tiene 200 filas; una red neuronal necesita al menos 500 para aprender algo estable</div></th>
+        </tr>
+      </tbody>
+    </table>
+    <p class="foot"><span style="color:#0e6e6b" aria-hidden="true">★</span> Gana el más simple de los que quedaron a menos de un error estándar (±0.040) del mejor puntaje de validación cruzada, que fue el de «Naive Bayes». Entre puntajes prácticamente empatados, quedarse con el máximo premia la suerte.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "_comentario": "Presupuesto de PESO del runtime Pyodide que el navegador descarga al iniciar un experimento (núcleo + cierre de wheels de scripts/pyodide-paquetes.mjs). Lo vigila scripts/verificar-peso-pyodide.mjs en el job quality, tras el build. No está en el camino del LCP (se carga bajo demanda, en el worker): este budget cuida al usuario en red móvil, no a Lighthouse.",
+  "baseline": {
+    "bytes": 40033012,
+    "medido": "2026-10-02, S5 F0 — pandas + scikit-learn (9 wheels) + núcleo, Pyodide 314.0.2"
+  },
+  "maxGrowthBytes": 2097152,
+  "maxGrowthOrigen": "DoD del SPRINT_005: el bundle de Pyodide crece ≤ 2 MB al sumar xgboost + lightgbm"
+}

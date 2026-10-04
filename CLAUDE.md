@@ -21,9 +21,10 @@
 profesionales **no científicos de datos** por el ciclo completo (cargar → limpiar → entender →
 modelar → comprobar → publicar) para construir un **modelo defendible a nivel de investigación**:
 sin fuga de datos, validado correctamente, honesto contra un baseline, con incertidumbre y un
-pipeline reproducible. El diferenciador **no** es el AutoML (commodity) sino la **honestidad
-metodológica automática**. Contrato de alcance: `portafolio/ds/VISION.md` (planeadora, aprobada
-2026-07-08). Sprint 001: "El veredicto honesto".
+pipeline reproducible. El diferenciador es la **honestidad metodológica automática**:
+**la honestidad acompaña y etiqueta; no bloquea ni esconde** (texto completo aprobado en la regla dura 3).
+Contrato de alcance: `portafolio/ds/VISION.md` (planeadora, v1.1.0 aprobada 2026-10-02). Sprint 001:
+"El veredicto honesto" · Sprint 005: "La liga honesta" (ciclo H2 «El catálogo»).
 
 ## ⚠️ Reglas duras de esta app (producto, no estilo)
 
@@ -35,20 +36,26 @@ metodológica automática**. Contrato de alcance: `portafolio/ds/VISION.md` (pla
    entrenamiento) corre client-side con Pyodide/WASM. No se suben datasets a ningún servidor. Los
    logs/observabilidad **jamás** incluyen valores del dataset (solo metadatos: nº filas/columnas,
    tipos, forma — nunca contenido ni, idealmente, nombres de columnas del usuario).
-3. **Honestidad por diseño, no como opción.** La **fuga de datos es imposible por construcción**
-   (el preprocesamiento se ajusta SOLO en train; la UI no ofrece otro camino). El **veredicto
-   contra baseline es franco**: si el modelo no supera a una regresión/clase mayoritaria, se dice
-   de frente. Nunca inflar métricas ni ocultar que un modelo no sirve.
+3. **Honestidad por diseño** (texto aprobado por el usuario, F0 #13, 2026-10-02 — literal):
+   **El diferenciador es la honestidad metodológica automática, y la honestidad ACOMPAÑA: etiqueta,
+   no bloquea ni esconde.** Lo escaso no es el número de modelos sino **las decisiones tomadas sobre
+   el conjunto de prueba**: la selección vive en validación cruzada dentro de train y el test se abre
+   una vez. Con eso, la app ofrece **todos los modelos que el navegador pueda entrenar** (la liga), y
+   ningún modelo ni función se oculta o se impide «por honestidad»: todo puntaje se muestra con su
+   etiqueta («sirve para elegir» / «sirve para creer» / «no sirve para elegir»), el usuario puede
+   elegir un modelo distinto al ganador y la model card lo registra como «elegido por ti». La fuga de
+   datos sigue siendo imposible por construcción y el veredicto contra baseline sigue siendo franco:
+   franco no es restrictivo.
 4. **El LLM (desde S2) nunca ejecuta ni escribe datos.** Propone planes en vocabulario cerrado de
    operaciones; un motor determinista los ejecuta en sandbox; siempre hay fallback heurístico sin
    LLM. Toda narrativa (EDA/SHAP) se verifica contra los números antes de mostrarse.
 
 ## Stack
 
-- **Frontend:** Next.js 15 + TypeScript strict + Tailwind + shadcn/ui. Bilingüe ES/EN día 1
+- **Frontend:** Next.js 16 + TypeScript strict + Tailwind + shadcn/ui. Bilingüe ES/EN día 1
   (i18n approach → ADR). Responsive móvil (360–420px) + desktop (≥1024px).
-- **Cómputo:** **Pyodide** (pandas + scikit-learn en WASM) en un **Web Worker** (no bloquear el
-  hilo principal), single-thread en S1, **cargado bajo demanda** al iniciar el experimento.
+- **Cómputo:** **Pyodide** (pandas + scikit-learn, y desde S5 xgboost + lightgbm del propio lockfile
+  de Pyodide, en WASM) en un **Web Worker** (no bloquear el hilo principal), single-thread, **cargado bajo demanda** al iniciar el experimento.
   Assets de Pyodide **self-hosteados** en `public/pyodide/` (o CDN con excepción de CSP → ADR).
 - **Backend/BD/Auth:** **ninguno en Sprint 1** — todo client-side. Supabase entra más adelante
   **solo para metadata** (proyectos, planes de wrangling, métricas, model cards) con RLS desde la
@@ -118,7 +125,18 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     que esta app NO es; no tomarlo como referencia). El **Sprint 1 CREA** el `design-system.md`
     desde cero (tono: claro, confiable, de herramienta seria — no pedagógico, no lúdico). Cada
     sprint con UI cierra con el checklist `diseno-ui` + aprobación visual del usuario sobre la
-    preview. Claude Design es BAJO DEMANDA (solo si el gate no converge).
+    preview. Claude Design es BAJO DEMANDA (solo si el gate no converge); su publicación es
+    OBLIGATORIA al cerrar cada ciclo y siempre después del gate ⭐⭐ (regla única, kit v1.18.0); el
+    bundle `design-sync/` se actualiza en el MISMO PR de todo sprint que toque UI (kit v1.17.0).
+    **Gate de MIRADA (kit v1.20.0):** se pasa solo con evidencia de que el usuario VIO el artefacto
+    (un comentario que delate el archivo abierto o su «lo abrí y apruebo»); **«continúa» jamás
+    aprueba diseño**; la primera línea del mensaje es una pregunta en español llano + el lugar; cada
+    mirada se registra en la bitácora ANTES de construir encima, y el PLAN de miradas (número,
+    agrupación, orden) se aprueba antes. **Dos clases de mirada (kit v1.31.0):** la de **FORMA** (qué
+    se construye) abre parada; la de **TEXTO** (si un copy se entiende) no bloquea — se registra
+    «maquetado, no visto» y su veredicto viaja al gate humano del ciclo. Toda mirada va en **matriz
+    de una fila** (archivo · botón/estado · qué mirar · respuesta esperada), nunca preguntas sueltas;
+    las segundas vueltas no abren parada.
 11. **Un gate se demuestra FALLANDO — y se demuestra CORRIENDO** (regla 15 del kit + su hermana,
     kit v1.16.0; regla dura del pipeline). Todo gate nuevo que este repo agregue —job de CI, hook,
     aserción, umbral, script— nace con su **demo**: un cambio deliberado que lo pone en **rojo**,
@@ -134,6 +152,13 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     `/deploy-check` §11. _(Origen: esta app, S4 — el job `lighthouse` estuvo `skipped` las 12
     corridas de la rama porque `quality` llevaba en rojo; el gate de performance no corrió ni una
     vez en un ciclo de 4 sprints mientras el DoD lo daba por verde con corridas locales.)_
+    **El rojo nace en el MISMO commit que introduce el gate (kit v1.25.0)**, no al final de la fase.
+    **Tercera pregunta (kit v1.26.0): ¿puede FALLAR siquiera?** — si ninguna regla deja un estado del
+    repo que lo ponga en rojo, no es un gate: se retira y se anota qué lo cubría. **El modo (kit
+    v1.21.0/v1.28.0):** todo gate corre al menos una vez en el modo en que el usuario lo usa (aquí:
+    el build de producción y el runtime Pyodide real del navegador, no solo Node). **`gh pr checks`
+    DESPUÉS DE CADA PUSH (kit v1.31.0)**, no al cierre de la fase; y una métrica que la CI no puede
+    medir se declara **`manual`** con su corrida local registrada, o no se declara.
 12. **Brochure vivo + su export** (regla 13 del kit, molde v2). `docs/BROCHURE.html` + la ruta
     pública `/conoce` son el entregable de PRESENTACIÓN de la app — el anti-manual, para usuarios
     finales y clientes. **REGLA CERO: no se estampa, se PRODUCE** — antes de una línea de HTML, un
@@ -157,10 +182,31 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     (documenta dominio y protección como «qué ve quién sin sesión» **sin escribir la URL** — el
     registro exacto vive en la planeadora, que es privada), ni el manual, ni la guía de prueba (su
     campo de URL se llena **EN USO**, desde la orden), ni `package.json`, ni el export. El CTA
-    público es la **lista de espera**, sin promesa de otorgamiento. Verificación:
-    `grep -rn "vercel\.app\|workers\.dev" --include="*.md" --include="*.html" --include="*.json" .`
-    vacío **y** `gh repo view --json homepageUrl` en `""`. _(La vitrina de hoja-de-vida muestra QUÉ
-    construyó el usuario, nunca POR DÓNDE entrar.)_
+    público es la **lista de espera**, sin promesa de otorgamiento. Verificación sobre TODOS los
+    archivos versionados (kit v1.23.0 — jamás con lista de extensiones), DESPUÉS del último
+    `git add` y cubriendo también código y comentarios de tests (kit v1.26.0):
+    `git grep -nE "vercel[.]app|workers[.]dev|pages[.]dev" -- ':!pnpm-lock.yaml'` vacío **y**
+    `gh repo view --json homepageUrl -q .homepageUrl` = **la URL del propio repo** (kit v1.32.1: con
+    el campo vacío, la GitHub App de Vercel lo reescribe con la URL de producción). Los documentos
+    que narran el barrido escriben el patrón con clase de carácter, nunca el literal. _(La vitrina
+    de hoja-de-vida muestra QUÉ construyó el usuario, nunca POR DÓNDE entrar.)_
+14. **PRs de dependencias: máximo DOS abiertos y el lockfile NO se pelea** (regla 18 del kit,
+    v1.24.0/v1.32.0). `.github/dependabot.yml` con techo real de 2 (limit 1 por ecosistema, todo
+    agrupado, solo minor+patch en el lote; los mayores llegan sueltos) — la invariante la vigila
+    `tests/unit/dependabot-config.test.ts`. Se mergean **de a uno**, dejando que dependabot regenere.
+    Un conflicto de lockfile resuelto a mano parte del lado que trae los bumps. `pnpm peers check`
+    corre en `quality`, y **`scripts/verificar-dependencias.mjs`** compara el lockfile del PR contra
+    `origin/main` y falla si algún paquete quedó por debajo. Overrides: en `pnpm-workspace.yaml`,
+    jamás en `package.json`.
+15. **Gate de contrato entre lenguajes** (regla 19 del kit, v1.28.0). Donde un dato cambia de
+    lenguaje o de runtime —aquí: el payload TS → `pipeline.py`, el retorno Python → TS por
+    `postMessage`, el progreso worker → UI y el manifiesto `.probeta.json` archivo → import— la suite
+    atraviesa la costura: **el lado que EMITE escribe el fixture con su serializador real** (Pyodide
+    real, no un literal copiado a mano), **el lado que LEE lo valida** (validadores de
+    `src/workers/contract.ts`, en producción, y `_validate_payload` en Python), y **al menos un test
+    cruza de punta a punta**. Cada campo nuevo del contrato trae su **carnada**: una mutación de ese
+    solo campo que el lector debe rechazar NOMBRÁNDOLO; se reporta «detectó k de n». Un contrato
+    tipado en cada orilla y ninguna prueba entre ellas son dos suposiciones que coinciden hasta que no.
 
 ## Estándares (los 6+1, gates en CI)
 
@@ -181,15 +227,18 @@ para el sprint (por fase si difiere; el usuario los fija con `/model`) + espacio
 ajustes — y espera su **«construye»** explícito antes de tocar cualquier archivo.
 Branch `sprint-NNN/<tema>`.
 
-**Durante** — construye por fases (setup → motor → UI → integración → e2e). Mantén viva la bitácora
-`sprints/SPRINT_NNN-implementation-log.md`. ADRs en `decisions/` para decisiones no anticipadas.
-`/self-review` tras cada bloque; `/run-tests` frecuente. ⭐ Sprint 1: verifica temprano que
-`pandas` y `scikit-learn` cargan en Pyodide, y registra toda fricción del kit v1.2.0 en la
-bitácora, SEPARADA del trabajo del producto.
+**Durante** — construye por fases (setup → motor → UI → integración → e2e). **Gate de FASE (kit
+v1.8.0):** al terminar cada fase, DETENTE, entrega el resumen completo y espera el «continúa»
+explícito. Mantén viva la bitácora `sprints/SPRINT_NNN-implementation-log.md` (fricciones del kit
+SEPARADAS del trabajo del producto). ADRs en `decisions/` para decisiones no anticipadas.
+`/self-review` tras cada bloque; `/run-tests` frecuente; **`gh pr checks` tras cada push**.
 
-**Cierre — summary OBLIGATORIO.** Con la DoD completa: `/deploy-check` → genera
-`sprints/SPRINT_NNN-summary.md` (plantilla abajo) → PR → merge con CI verde. **Sin summary el
-sprint NO está cerrado** (es lo que la planeadora lee para la retrospectiva).
+**Cierre — summary OBLIGATORIO y DENTRO del PR (kit v1.24.0).** Con la construcción concluida:
+**`/audita-sprint`** (Fase 1 por un auditor independiente → `sprints/SPRINT_NNN-auditoria.md` con
+TODOS los hallazgos y su `archivo:línea`; Fase 2 paga TODOS, hasta los bajos) → `/deploy-check` →
+`sprints/SPRINT_NNN-summary.md` (plantilla abajo) commiteado EN el PR → merge con CI verde y
+conclusión propia `success` por check. **Sin summary el sprint NO está cerrado** (es lo que la
+planeadora lee para la retrospectiva).
 
 **Cierre de CICLO (método v1.8.0 — cuando este sprint es el ÚLTIMO de un ciclo H1/fase/MVP; la
 orden lo declara):** además de la DoD, el sprint entrega (1) **`docs/BLUEPRINT.html`** — as-built
@@ -237,6 +286,17 @@ pr: <link>
 
 ## Deuda técnica aceptada [qué, por qué, sprint de pago]
 
+## Auditoría [/audita-sprint: artefacto, hallazgos por severidad, todos pagados]
+
+## Gate ⭐ — diferimiento y contrapesos [kit v1.28.0 — sección FIJA; sin ella el diferimiento no es válido]
+
+| Contrapeso                     | Evidencia (archivo, cuenta medida, corrida)     |
+| ------------------------------ | ----------------------------------------------- |
+| Pasada de capturas del builder | [N encuadres leídos como imagen · ruta · fecha] |
+| e2e de `reduced-motion`        | [N pruebas · archivo del spec · corrida en CI]  |
+
+[+ «⭐ diferido: N pruebas al acumulado del ciclo (S1: n₁ · S2: n₂…)» o «⭐ OBLIGATORIO corrido: parada a parada»]
+
 ## Archivos clave (máx. 10) · ## Cómo probar
 ```
 
@@ -248,6 +308,17 @@ pr: <link>
 - **Veredicto modelo-vs-baseline:** `engine/verdict.ts` compara el modelo contra un baseline (clase
   mayoritaria + regresión) en la métrica primaria y emite un texto franco ("supera por +N" / "NO
   supera — revisa tus features"). Todas las métricas se calculan sobre **test**, jamás sobre train.
+- **La liga (desde S5):** todos los modelos que el navegador puede entrenar compiten con
+  **validación cruzada dentro de train** (el preprocesador se reajusta en cada fold); gana el mejor
+  en CV y **recién entonces se abre el test**. «La tabla se calcula con validación cruzada: sirve
+  para elegir. El veredicto se calcula con el conjunto de prueba: sirve para creer.» Los puntajes de
+  test de los perdedores existen bajo la etiqueta «no sirve para elegir»; la elección manual queda
+  registrada como «elegido por ti». Un test de integración falla si la selección mira el test.
+- **Encarriladores deterministas (desde S5):** E1 decide la tarea (binaria · multiclase · numérica ·
+  sin objetivo · ambigua), E2 decide quién compite y en qué nivel (reglas exportadas como
+  constantes, razón por modelo, Python recibe la lista y no re-deriva) y E3 da la ficha de lectura
+  de cada modelo. Ninguno se oculta: «fuera» es una recomendación con su razón, forzable en el
+  Nivel 2.
 - **Heurística de fuga honesta (no exhaustiva):** marca features con relación univariada
   sospechosamente alta con el target ("esta columna podría ser un proxy del objetivo") sin prometer
   atrapar todos los casos.
@@ -256,7 +327,9 @@ pr: <link>
 - **Ejemplos empaquetados:** la app funciona completa con `datasets/` (anonimizados; uno con fuga
   plantada para demostrar el chequeo). El CSV del usuario se carga en runtime y no se persiste fuera.
 - **Bilingüe estructural:** UI por i18n (es/en); tests de paridad de claves. Todo contenido nuevo
-  se escribe en ambos idiomas EN EL MISMO PASO.
+  se escribe en ambos idiomas EN EL MISMO PASO. **El contenido largo es dato `{es, en}`** (regla 20
+  del kit, v1.29.0 — p. ej. las fichas de modelo en `src/content/modelos.ts`), redactado en cada
+  idioma, no traducido, con su propio test de paridad.
 
 ## Idioma
 

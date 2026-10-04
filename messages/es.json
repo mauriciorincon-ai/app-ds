@@ -53,7 +53,15 @@
         "versionWarning": "Este archivo se creó con versiones distintas a las de esta app ({list}). Se cargará igual; si falla, re-entrena y exporta de nuevo.",
         "use": "Usar este modelo",
         "cancel": "Cancelar",
-        "model": "Modelo elegido: {model}."
+        "model": "Modelo elegido: {model}.",
+        "verdict": {
+          "beats": "supera al baseline",
+          "ties": "empata con el baseline",
+          "loses": "NO supera al baseline"
+        },
+        "chosen": "◆ Elegido por ti, no por la validación cruzada (el ganador de la validación cruzada era {winner}). Si se eligió mirando la prueba, la métrica puede ser optimista.",
+        "cv": "Elegido por validación cruzada de {k} pliegues entre {count} modelos.",
+        "cv_one": "Elegido por validación cruzada de {k} pliegues (compitió 1 modelo)."
       },
       "errors": {
         "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
@@ -73,7 +81,8 @@
     "target": {
       "label": "¿Qué quieres predecir?",
       "placeholder": "Elige una columna…",
-      "help": "Debe ser una columna con dos categorías (sí/no, 0/1)."
+      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. Esta versión entrena las de dos categorías (sí/no, 0/1).",
+      "option": "{column} · {task}"
     },
     "profile": {
       "numeric": "numérica",
@@ -85,7 +94,7 @@
     "warnings": {
       "date": "Detectamos columnas que parecen fecha ({cols}). En esta versión no se usan para dividir por tiempo; se ignoran como predictores."
     },
-    "train": "Entrenar modelo",
+    "train": "Entrenar modelos",
     "back": "Cambiar de dataset",
     "sanitation": {
       "clean": "No hubo nada que sanear: el dataset venía limpio.",
@@ -103,14 +112,21 @@
       "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo.",
       "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
       "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
-    }
+    },
+    "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
+    "trainHint_one": "Nivel 1: 1 modelo · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor)."
   },
   "training": {
     "title": "Entrenando…",
     "loading-runtime": "Preparando el motor de análisis…",
-    "loading-packages": "Cargando pandas y scikit-learn…",
-    "training": "Entrenando y evaluando sobre datos de prueba…",
-    "wait": "La primera vez tarda unos segundos: el motor se descarga una sola vez."
+    "loading-packages": "Cargando pandas, scikit-learn, XGBoost y LightGBM…",
+    "training": "Compitiendo con validación cruzada; al final se abre el conjunto de prueba…",
+    "wait": "La primera vez tarda unos segundos: el motor se descarga una sola vez.",
+    "estimate": "Unos {time} de cálculo en un computador de escritorio (en un móvil, el doble o más).",
+    "member": {
+      "cv": "Validación cruzada · modelo {index} de {total}: {model}",
+      "test": "Conjunto de prueba · modelo {index} de {total}: {model}"
+    }
   },
   "results": {
     "title": "Veredicto",
@@ -123,7 +139,10 @@
       "tiesDetail": "un modelo simple rinde igual: {model} frente a {baseline}. Con estas columnas no hay señal extra que aprender — suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.",
       "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Tus columnas actuales no aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con lo que quieres predecir.",
       "suspicious": "Métricas casi perfectas — sospechoso",
-      "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo."
+      "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo.",
+      "chosenNote": "◆ Elegido por ti, no por la validación cruzada. Si lo elegiste mirando la prueba, este número puede ser optimista.",
+      "logisticTie": "La liga no encontró nada mejor que la regresión de referencia",
+      "logisticTieDetail": "Ningún modelo superó en validación cruzada, por más de un error estándar, a la regresión logística, que también es el baseline. Con estas columnas no hay señal extra que aprender: suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo."
     },
     "primaryMetric": "Métrica principal: {metric}",
     "metrics": {
@@ -144,7 +163,7 @@
       "majority": "Clase mayoritaria",
       "logistic": "Regresión logística"
     },
-    "testNote": "Todas las métricas se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento.",
+    "testNote": "Las métricas del veredicto, la matriz de confusión y los baselines se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento. La tabla de la liga usa validación cruzada dentro del entrenamiento: sirve para elegir.",
     "leakage": {
       "title": "Posible fuga de datos",
       "finding": "La columna «{column}» podría ser un proxy del objetivo.",
@@ -164,19 +183,38 @@
       "contents": "El archivo contiene lo que el modelo aprendió de tus datos (parámetros, categorías, medianas) — no tus filas crudas. Aun así, trátalo como un archivo sensible."
     },
     "candidates": {
-      "title": "Modelos que compitieron",
       "model": {
+        "logistic": "Regresión logística",
+        "logistic_balanced": "Regresión logística (clases balanceadas)",
+        "ridge": "Clasificador Ridge",
+        "naive_bayes": "Naive Bayes (gaussiano)",
+        "linear_svc": "Máquina de vectores de soporte lineal",
+        "decision_tree": "Árbol de decisión",
+        "knn": "Vecinos más cercanos (k = 5)",
+        "hgb": "HistGradientBoosting",
+        "lightgbm": "LightGBM (200 árboles)",
+        "xgboost": "XGBoost (200 árboles)",
+        "extra_trees": "Extra Trees (200 árboles)",
         "forest": "Random Forest (200 árboles)",
-        "hgb": "HistGradientBoosting"
+        "forest_balanced": "Random Forest balanceado (200 árboles)",
+        "mlp": "Red neuronal (MLP, 64 neuronas)"
       },
       "short": {
+        "logistic": "Regresión logística",
+        "logistic_balanced": "Logística balanceada",
+        "ridge": "Ridge",
+        "naive_bayes": "Naive Bayes",
+        "linear_svc": "SVM lineal",
+        "decision_tree": "Árbol de decisión",
+        "knn": "Vecinos más cercanos",
+        "hgb": "HistGradientBoosting",
+        "lightgbm": "LightGBM",
+        "xgboost": "XGBoost",
+        "extra_trees": "Extra Trees",
         "forest": "Random Forest",
-        "hgb": "HistGradientBoosting"
-      },
-      "winner": "elegido",
-      "metricCol": "Métrica",
-      "primary": "primaria",
-      "note": "Ambos usan el mismo preprocesamiento y compiten con el mismo veredicto. Elegimos el mejor en la métrica primaria; sin trucos."
+        "forest_balanced": "Random Forest balanceado",
+        "mlp": "Red neuronal"
+      }
     }
   },
   "score": {
@@ -234,7 +272,8 @@
     "errors": {
       "runtime": "No se pudo puntuar. Revisa que las columnas tengan el mismo tipo de datos que en el entrenamiento e inténtalo de nuevo.",
       "import-failed": "No se pudo restaurar el modelo guardado. El archivo puede venir de una versión incompatible; re-entrena y exporta de nuevo."
-    }
+    },
+    "noProbabilities": "Este modelo decide la clase pero no da una probabilidad, así que la columna de probabilidad no se incluye. Si necesitas ordenar las filas por riesgo, elige un modelo que sí la dé."
   },
   "why": {
     "title": "¿Por qué predice así?",
@@ -271,7 +310,8 @@
     "title": "Model card",
     "desc": "La constancia de tu experimento: datos, método, métricas, veredicto y límites — lista para guardar o compartir.",
     "download": "Descargar model card (.md)",
-    "preview": "Ver el contenido"
+    "preview": "Ver el contenido",
+    "content": "Contenido de la model card"
   },
   "narration": {
     "template": {
@@ -315,7 +355,8 @@
       "explainability": "¿Por qué predice así?",
       "narrative": "Narración verificada",
       "limits": "Límites",
-      "sanitation": "Saneamiento"
+      "sanitation": "Saneamiento",
+      "selection": "Selección del modelo"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -364,6 +405,15 @@
       },
       "coercion": "En «{column}» se convirtieron {count} celdas no numéricas a vacío.",
       "none": "El dataset no requirió saneamiento."
+    },
+    "selection": {
+      "league": "Compitieron {count} modelos con validación cruzada de {k} pliegues dentro del entrenamiento (el preprocesamiento se reajustó en cada pliegue). Métrica: {metric}.",
+      "rule": "Criterio: regla de un error estándar — entre los que quedaron a menos de un error estándar del mejor puntaje de validación cruzada ({best}), gana el más simple.",
+      "cv": "Modelo elegido por la validación cruzada: {model}. El conjunto de prueba se abrió una sola vez, después de elegir.",
+      "user": "◆ Elegido por ti: {model}. El ganador de la validación cruzada era {winner}. Si lo elegiste mirando los puntajes de prueba, el veredicto puede ser optimista.",
+      "time": "Tiempo de la liga en este equipo: {seconds} s.",
+      "smallSample": "Muestra pequeña: con menos de {rows} filas, los puntajes de validación cruzada varían mucho de un pliegue a otro.",
+      "league_one": "Compitió 1 modelo con validación cruzada de {k} pliegues dentro del entrenamiento (el preprocesamiento se reajustó en cada pliegue). Métrica: {metric}."
     }
   },
   "errors": {
@@ -379,6 +429,133 @@
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
     "worker-dead": "El motor de cómputo se detuvo de forma inesperada (pudo quedarse sin memoria, o falló la carga de sus componentes). Intenta de nuevo; si persiste, prueba con un archivo más pequeño.",
     "retry": "Volver a empezar",
-    "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo."
+    "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo.",
+    "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
+    "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo.",
+    "target-mixed-notation": "Tu objetivo tiene 2 valores, pero escritos de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalos en tu CSV y vuelve a cargarlo.",
+    "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas."
+  },
+  "task": {
+    "title": "Tipo de predicción",
+    "name": {
+      "binaria": "clasificación binaria",
+      "multiclase": "clasificación en varias categorías",
+      "numerica": "predicción de una cantidad",
+      "sin-objetivo": "no sirve como objetivo",
+      "ambigua": "categorías o cantidad"
+    },
+    "reason": {
+      "two-values": "{distinct} valores distintos → {task}.",
+      "few-categories": "{distinct} categorías distintas → {task}.",
+      "many-numbers": "{distinct} números distintos → {task}.",
+      "few-numbers": "Solo {distinct} números distintos: pueden ser categorías (como una nota del 1 al 5) o una cantidad.",
+      "too-many-categories": "{distinct} valores distintos: parece un identificador o texto libre, no algo que predecir.",
+      "constant": "Tiene un solo valor: no hay nada que predecir.",
+      "empty": "La columna está vacía."
+    },
+    "suggested": "Lo más probable: {task}.",
+    "blocked": "Es un tipo de predicción que la app entrena, pero con estos datos no se pueden comparar modelos con honestidad (el motivo está abajo).",
+    "trainable": "Se puede entrenar.",
+    "notYet": "Esta versión todavía no entrena este tipo de predicción: llega en una próxima versión. Por ahora, elige una columna con dos categorías."
+  },
+  "roster": {
+    "title": "Quién compite",
+    "level1": "Nivel 1 · ahora · {count} modelos · unos {time}",
+    "level2": "Nivel 2 · después, si quieres · {count} modelos más",
+    "level2Hint": "No caben en el primer paso. Cuando veas los resultados podrás correr la liga completa (unos {time} en total en un computador de escritorio).",
+    "out": "Fuera · recomendación · {count}",
+    "reason": {
+      "always-first": "entra siempre: es el más simple",
+      "over-ceiling": "unos {time}",
+      "mlp-few-rows": "tu dataset tiene {rows} filas; una red neuronal necesita al menos {min} para aprender algo estable",
+      "balanced-not-needed": "tus clases ya están equilibradas (la menor es el {share} %): repetiría a su versión normal",
+      "forced": "lo incluiste tú; el encarrilador lo dejaba fuera porque {why}"
+    },
+    "cv": "Compiten con validación cruzada de {k} pliegues dentro del entrenamiento; el conjunto de prueba se abre una sola vez, al final.",
+    "smallSample": "Muestra pequeña ({rows} filas): los puntajes de validación cruzada varían bastante. Por eso, si varios quedan prácticamente empatados, gana el más simple.",
+    "note": "Nada se esconde: «fuera» es una recomendación con su razón, y podrás incluirlo de todos modos en el Nivel 2.",
+    "level1_one": "Nivel 1 · ahora · 1 modelo · unos {time}",
+    "level2_one": "Nivel 2 · después, si quieres · 1 modelo más"
+  },
+  "league": {
+    "title": "La liga: {count} modelos",
+    "rule": "La tabla se calcula con validación cruzada: sirve para elegir. El veredicto se calcula con el conjunto de prueba: sirve para creer.",
+    "cols": {
+      "model": "Modelo",
+      "cv": "Validación cruzada · {metric}",
+      "test": "Prueba · {metric} · no sirve para elegir",
+      "use": "Usar"
+    },
+    "mark": {
+      "winner": "Ganador (validación cruzada)",
+      "chosen": "Elegido por ti",
+      "withinSe": "≈ empata con el mejor",
+      "best": "mejor puntaje",
+      "forced": "lo incluiste tú (el encarrilador lo dejaba fuera)"
+    },
+    "status": {
+      "no-converge": "⚠ no convergió: su puntaje puede no ser estable",
+      "error": "✕ no concluyó ({type})",
+      "testError": "✕ sin puntaje de prueba ({type})",
+      "pending": "Nivel 2 · pendiente · unos {time}",
+      "out": "Fuera: {reason}"
+    },
+    "inUse": "En uso",
+    "choose": "Elegir",
+    "chooseAria": "Elegir {model}",
+    "fitting": "Ajustando…",
+    "backToWinner": "Volver al ganador",
+    "chooseError": "No se pudo ajustar «{model}». Sigue activo el modelo anterior.",
+    "showTest": "Ver puntajes de prueba (no sirven para elegir)",
+    "hideTest": "Ocultar puntajes de prueba",
+    "testWarning": "Estos puntajes son del conjunto de prueba. Sirven para creer en el modelo que ya se eligió; si eliges mirándolos, el número del veredicto puede ser optimista.",
+    "howWinner": "Gana el más simple de los que quedaron a menos de un error estándar (±{se}) del mejor puntaje de validación cruzada, que fue el de «{best}». Entre puntajes prácticamente empatados, quedarse con el máximo premia la suerte.",
+    "time": "La liga tardó {seconds} s en este equipo.",
+    "testShort": "prueba",
+    "fichaAria": "Ficha de {model}",
+    "title_one": "La liga: 1 modelo"
+  },
+  "ficha": {
+    "eyebrow": "Ficha del modelo",
+    "what": "Qué es",
+    "goodFor": "Cuándo sirve",
+    "notFor": "Cuándo no",
+    "watch": "Qué mirar",
+    "cost": "Cuánto cuesta",
+    "close": "Cerrar",
+    "status": {
+      "winner": "En esta liga: ganador por validación cruzada.",
+      "chosen": "En esta liga: elegido por ti.",
+      "competitor": "En esta liga: puesto {rank} de {total} por validación cruzada.",
+      "failed": "En esta liga: no concluyó, así que no tiene puntaje.",
+      "pending": "En esta liga: pendiente del Nivel 2.",
+      "out": "En esta liga: fuera, porque {reason}.",
+      "baseline": "Baseline del veredicto: no compite en la liga, la juzga."
+    }
+  },
+  "level2": {
+    "title": "Nivel 2: la liga completa",
+    "desc": "Suma {count} modelos que no cupieron en el primer paso ({models}) y vuelve a correr la liga entera con la misma validación cruzada.",
+    "descAllRan": "Todos los modelos recomendados ya compitieron. Si quieres, puedes incluir los que el encarrilador dejó fuera.",
+    "forceTitle": "Incluir de todos modos",
+    "forceReason": "El encarrilador lo deja fuera porque {reason}.",
+    "dropsChoice": "La liga completa vuelve a elegir por validación cruzada: tu elección manual de ahora no se conserva.",
+    "estimate": "{count} modelos · unos {time} en este equipo",
+    "nothingToAdd": "Marca un modelo para incluirlo; no hay nada más que sumar.",
+    "run": "Correr el Nivel 2 (+{count})",
+    "cancelHint": "Puedes cancelar mientras corre: vuelves a este resultado sin perder nada.",
+    "running": "Nivel 2 · {count} modelos · unos {time} en este equipo",
+    "cancel": "Cancelar el Nivel 2",
+    "restoring": "Recuperando el modelo anterior…",
+    "notice": {
+      "cancelled": "Cancelaste el Nivel 2. Sigue vigente el resultado anterior.",
+      "failed": "El Nivel 2 no pudo terminar. Sigue vigente el resultado anterior.",
+      "restore-failed": "No se pudo recuperar el modelo anterior. La tabla sigue a la vista, pero para usar o exportar el modelo tienes que volver a entrenar."
+    },
+    "desc_one": "Suma 1 modelo que no cupo en el primer paso ({models}) y vuelve a correr la liga entera con la misma validación cruzada.",
+    "estimate_one": "1 modelo · unos {time} en este equipo",
+    "running_one": "Nivel 2 · 1 modelo · unos {time} en este equipo",
+    "runNothing": "Correr el Nivel 2",
+    "estimateNote": "Calibrado con lo que tardó la corrida anterior."
   }
 }

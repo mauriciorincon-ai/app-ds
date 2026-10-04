@@ -9,8 +9,8 @@
 // La carnada viaja PARTIDA en el FUENTE (dos fragmentos que NUNCA forman una corrida
 // base32 de 20 chars en este archivo, para no dispararse a sí misma al comitear) y se
 // ARMA solo en runtime, en un archivo temporal FUERA del repo (jamás versionado).
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -81,3 +81,80 @@ describe.skipIf(!gitleaksAvailable)(
     });
   },
 );
+
+// --- Kit v1.32.1 (B-8 planlang) -------------------------------------------------
+// (1) El hook PreToolUse escanea el CONTENIDO que Claude Code va a escribir
+//     (tool_input.content / new_string vía jq + `gitleaks detect --pipe`), no solo lo
+//     staged: un secreto escrito en un archivo nuevo, aún sin `git add`, se bloquea ANTES
+//     de llegar al disco. Se ejercita el comando REAL leído de .claude/settings.json.
+// (2) El pre-commit FALLA CERRADO: sin gitleaks en el PATH, bloquea (exit 1) en vez de
+//     avisar y dejar pasar; solo KIT_SIN_GITLEAKS=1 lo deja pasar, a sabiendas.
+
+type HookEntry = { matcher: string; hooks: { command: string }[] };
+const settings = JSON.parse(
+  readFileSync(join(process.cwd(), ".claude/settings.json"), "utf8"),
+) as { hooks: { PreToolUse: HookEntry[] } };
+const writeHook = settings.hooks.PreToolUse.find(
+  (h) => h.matcher === "Write|Edit",
+)!.hooks[0].command;
+
+function runWriteHook(toolInput: Record<string, string>): number {
+  const result = spawnSync("sh", ["-c", writeHook], {
+    input: JSON.stringify({ tool_name: "Write", tool_input: toolInput }),
+    encoding: "utf8",
+  });
+  return result.status ?? -1;
+}
+
+function hasJq(): boolean {
+  return spawnSync("jq", ["--version"]).status === 0;
+}
+
+describe.skipIf(!gitleaksAvailable || !hasJq())(
+  "hook PreToolUse: escanea el contenido a escribir (kit v1.32.1)",
+  () => {
+    it("BLOQUEA (exit 2) un Write cuyo contenido trae la carnada armada", () => {
+      const content = `AWS_ACCESS_KEY_ID=${CARNADA_FRAG_A}${CARNADA_FRAG_B}\n`;
+      expect(runWriteHook({ file_path: "/tmp/x.env", content })).toBe(2);
+    });
+
+    it("BLOQUEA (exit 2) un Edit cuyo new_string trae la carnada armada", () => {
+      const new_string = `key = "${CARNADA_FRAG_A}${CARNADA_FRAG_B}"`;
+      expect(
+        runWriteHook({ file_path: "/tmp/x.ts", old_string: "a", new_string }),
+      ).toBe(2);
+    });
+
+    it("DEJA pasar (exit 0) contenido sin secretos", () => {
+      expect(
+        runWriteHook({
+          file_path: "/tmp/x.ts",
+          content: "export const a = 1;\n",
+        }),
+      ).toBe(0);
+    });
+  },
+);
+
+describe("pre-commit: falla CERRADO sin gitleaks (kit v1.32.1)", () => {
+  // PATH mínimo del sistema: ahí no vive gitleaks (Homebrew/winget lo ponen en otro lado,
+  // y la CI no lo instala en el PATH). Así se reproduce «máquina sin gitleaks».
+  const hook = join(process.cwd(), "githooks/pre-commit");
+  // Cast: ProcessEnv exige NODE_ENV en los tipos de Next; aquí queremos un env MÍNIMO.
+  const bareEnv = { PATH: "/usr/bin:/bin" } as unknown as NodeJS.ProcessEnv;
+
+  it("BLOQUEA el commit (exit 1) si gitleaks no está instalado", () => {
+    const result = spawnSync("sh", [hook], { env: bareEnv, encoding: "utf8" });
+    expect(result.stdout).toMatch(/BLOQUEADO/);
+    expect(result.status).toBe(1);
+  });
+
+  it("solo KIT_SIN_GITLEAKS=1 lo deja pasar, a sabiendas (exit 0)", () => {
+    const result = spawnSync("sh", [hook], {
+      env: { ...bareEnv, KIT_SIN_GITLEAKS: "1" } as NodeJS.ProcessEnv,
+      encoding: "utf8",
+    });
+    expect(result.stdout).toMatch(/a sabiendas/);
+    expect(result.status).toBe(0);
+  });
+});

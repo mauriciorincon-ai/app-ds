@@ -1,0 +1,88 @@
+<!-- @dsCard group="Componentes · S5" name="TaskCard + RosterCard + Level2Card — los encarriladores" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Encarriladores — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 64ch; font-size: 14px; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .grid { display: grid; gap: 16px; max-width: 560px; }
+  .card {
+    border: 1px solid #e4e4dc; background: #ffffff; border-radius: 10px; padding: 16px;
+    box-shadow: 0 1px 2px rgb(20 24 31 / .06);
+  }
+  .card h2 { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+  .card h3 { font-size: 14px; font-weight: 500; margin: 12px 0 6px; }
+  .muted { color: #586172; font-size: 14px; margin: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .chips li { font-size: 12px; background: #f2f2ec; border: 1px solid #e4e4dc; border-radius: 4px; padding: 2px 8px; }
+  ul.lines { margin: 0; padding: 0; list-style: none; font-size: 14px; color: #586172; }
+  ul.lines li { margin: 4px 0; }
+  ul.lines b { color: #14181f; font-weight: 500; }
+  .note { font-size: 12px; color: #586172; margin: 10px 0 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px;
+    border: 0; background: #0e6e6b; color: #ffffff; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 500;
+  }
+  label { display: flex; gap: 12px; align-items: flex-start; min-height: 44px; font-size: 14px; padding: 4px 0; }
+  input[type=checkbox] { width: 20px; height: 20px; accent-color: #0e6e6b; margin-top: 1px; }
+  svg { width: 16px; height: 16px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+  <h1>Encarriladores <span class="mono" style="font-size:13px;color:#586172">· S5</span></h1>
+  <p class="sub">
+    Tres reglas fijas que deciden ANTES de entrenar —qué tipo de predicción es la columna, quién
+    compite y en qué nivel— siempre con su razón. «Fuera» es una <b>recomendación</b>, forzable en el
+    Nivel 2; nada se esconde. Si el plan está bloqueado (muy pocas filas), la tarjeta de tipo no
+    muestra ✓: ⚠ y remite al motivo. El Nivel 2 estima el tiempo <b>en este equipo</b>.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Tipo de predicción</h2>
+      <p style="margin:0;font-size:14px">2 valores distintos → clasificación binaria.</p>
+      <p class="muted">Se puede entrenar.</p>
+    </div>
+
+    <div class="card" style="border-color:#8a5a0c66;background:#8a5a0c1a">
+      <h2>Tipo de predicción · bloqueada</h2>
+      <p style="margin:0;font-size:14px"><span aria-hidden="true" style="color:#8a5a0c;font-weight:700">⚠</span> 2 valores distintos → clasificación binaria.</p>
+      <p class="muted">Es un tipo de predicción que la app entrena, pero con estos datos no se pueden comparar modelos con honestidad (el motivo está abajo).</p>
+    </div>
+
+    <div class="card">
+      <h2>Quién compite</h2>
+      <h3 style="margin-top:0">Nivel 1 · ahora · 10 modelos · unos 4 s</h3>
+      <ul class="chips"><li>Regresión logística</li><li>Logística balanceada</li><li>Ridge</li><li>Naive Bayes</li><li>SVM lineal</li><li>Árbol de decisión</li><li>Vecinos más cercanos</li><li>HistGradientBoosting</li><li>LightGBM</li><li>XGBoost</li></ul>
+      <h3>Nivel 2 · después, si quieres · 4 modelos más</h3>
+      <ul class="lines"><li><b>Extra Trees</b> · unos 3 s</li><li><b>Random Forest</b> · unos 5 s</li></ul>
+      <h3>Fuera · recomendación · 1</h3>
+      <ul class="lines"><li><b>Red neuronal</b> · tu dataset tiene 200 filas; una red neuronal necesita al menos 500 para aprender algo estable</li></ul>
+      <p class="note">Nada se esconde: «fuera» es una recomendación con su razón, y podrás incluirlo de todos modos en el Nivel 2.</p>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:16px">Nivel 2: la liga completa</h2>
+      <p style="font-size:14px;margin:0 0 8px">Suma 4 modelos que no cupieron en el primer paso (Extra Trees, Random Forest, Random Forest balanceado, Red neuronal) y vuelve a correr la liga entera con la misma validación cruzada.</p>
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend style="font-size:14px;font-weight:500">Incluir de todos modos</legend>
+        <label><input type="checkbox" checked /><span><b style="font-weight:500">Red neuronal</b><span style="display:block;color:#586172">El encarrilador lo deja fuera porque tu dataset tiene 200 filas…</span></span></label>
+      </fieldset>
+      <p style="font-size:14px;margin:8px 0"><span class="mono">14 modelos · unos 38 s en este equipo</span><span style="display:block;color:#586172">Calibrado con lo que tardó la corrida anterior.</span></p>
+      <button class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 4 13 8-13 8z"/></svg>
+        Correr el Nivel 2 (+4)
+      </button>
+      <p class="note">Puedes cancelar mientras corre: vuelves a este resultado sin perder nada.</p>
+    </div>
+  </div>
+</body>
+</html>

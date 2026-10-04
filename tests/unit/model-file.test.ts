@@ -7,6 +7,7 @@ import {
   packModelFile,
   validateModelFile,
 } from "@/lib/model-file";
+import { leagueFields } from "./factories";
 
 // btoa está en jsdom: payload de juguete determinista.
 const PAYLOAD_B64 = btoa("payload-pickle-zlib-de-mentira");
@@ -31,6 +32,7 @@ const RESULT: ExperimentResult = {
   model: METRICS,
   modelName: "forest",
   candidates: [{ name: "forest", metrics: METRICS }],
+  ...leagueFields("forest"),
   confusionMatrix: [
     [20, 2],
     [1, 2],
@@ -195,6 +197,8 @@ describe("validateModelFile — rechazos ANTES de deserializar", () => {
     expect(await validateModelFile(JSON.stringify(raw))).toEqual({
       ok: false,
       error: "invalid-format",
+      // S5: el lector nombra el campo que no cuadra (regla 15).
+      field: "manifest.schema",
     });
   });
 
@@ -245,6 +249,121 @@ describe("validateModelFile — advertencia honesta de versiones", () => {
         runtime: RUNTIME_VERSIONS.sklearn,
       },
     ]);
+  });
+});
+
+describe("S5 — la liga y la selección en el manifiesto (aditivos-opcionales)", () => {
+  it("el archivo registra la liga, cómo se eligió y las versiones de los boosters", async () => {
+    const file = await pack();
+    expect(file.manifest.league?.map((row) => row.name)).toEqual(["forest"]);
+    expect(file.manifest.league?.[0]).toMatchObject({
+      status: "ok",
+      cv_std: 0.01,
+    });
+    expect(file.manifest.selection).toEqual({
+      by: "cv",
+      cv_winner: "forest",
+      k: 5,
+      metric: "auc",
+      rule: "one-se",
+    });
+    expect(file.manifest.versions.xgboost).toBe(RUNTIME_VERSIONS.xgboost);
+    expect(file.manifest.versions.lightgbm).toBe(RUNTIME_VERSIONS.lightgbm);
+  });
+
+  it("«elegido por ti» queda registrado como by: user", async () => {
+    const file = await packModelFile({
+      datasetName: "x.csv",
+      result: { ...RESULT, selection: { ...RESULT.selection, by: "user" } },
+      exported: EXPORTED,
+      date: DATE,
+    });
+    expect(file.manifest.selection?.by).toBe("user");
+    expect((await validateModelFile(JSON.stringify(file))).ok).toBe(true);
+  });
+
+  it("un archivo S4 (sin liga, sin selección, sin versiones de boosters) sigue importando", async () => {
+    const raw = JSON.parse(JSON.stringify(await pack())) as {
+      manifest: Record<string, unknown> & { versions: Record<string, unknown> };
+    };
+    delete raw.manifest.league;
+    delete raw.manifest.selection;
+    delete raw.manifest.versions.xgboost;
+    delete raw.manifest.versions.lightgbm;
+    raw.manifest.model_name = "hgb"; // los nombres S4 siguen siendo miembros válidos
+    const validation = await validateModelFile(JSON.stringify(raw));
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    expect(validation.warnings).toEqual([]); // sin versiones de boosters, no se cotejan
+  });
+
+  it("boosters de otra versión ⇒ advertencia honesta (no bloquea)", async () => {
+    const file = await packModelFile({
+      datasetName: "x.csv",
+      result: RESULT,
+      exported: {
+        ...EXPORTED,
+        versions: { ...EXPORTED.versions, xgboost: "1.0.0" },
+      },
+      date: DATE,
+    });
+    const validation = await validateModelFile(JSON.stringify(file));
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    expect(validation.warnings).toEqual([
+      {
+        component: "xgboost",
+        file: "1.0.0",
+        runtime: RUNTIME_VERSIONS.xgboost,
+      },
+    ]);
+  });
+
+  it("carnadas del manifiesto: cada campo nuevo mutado se rechaza NOMBRÁNDOLO — detectó k de n", async () => {
+    const file = await pack();
+    type Mutation = [field: string, mutate: (m: Record<string, any>) => void]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const baits: Mutation[] = [
+      ["manifest.league", (m) => (m.league = "liga")],
+      ["manifest.league", (m) => (m.league = [])],
+      ["manifest.league[0].name", (m) => (m.league[0].name = "no_existe")],
+      ["manifest.league[0].status", (m) => (m.league[0].status = "ganó")],
+      ["manifest.league[0].cv_mean", (m) => (m.league[0].cv_mean = "0.8")],
+      ["manifest.league[0].cv_std", (m) => delete m.league[0].cv_std],
+      ["manifest.league[0].test", (m) => (m.league[0].test = "0.9")],
+      ["manifest.selection", (m) => (m.selection = "cv")],
+      ["manifest.selection.by", (m) => (m.selection.by = "ia")],
+      [
+        "manifest.selection.cv_winner",
+        (m) => (m.selection.cv_winner = "no_existe"),
+      ],
+      ["manifest.selection.k", (m) => (m.selection.k = 1)],
+      ["manifest.selection.metric", (m) => (m.selection.metric = "rmse")],
+      ["manifest.selection.rule", (m) => (m.selection.rule = "max")],
+      ["manifest.versions.xgboost", (m) => (m.versions.xgboost = 2)],
+      ["manifest.versions.lightgbm", (m) => (m.versions.lightgbm = null)],
+      ["manifest.model_name", (m) => (m.model_name = "no_existe")],
+    ];
+    let detected = 0;
+    for (const [field, mutate] of baits) {
+      const raw = JSON.parse(JSON.stringify(file)) as {
+        manifest: Record<string, unknown>;
+      };
+      mutate(raw.manifest);
+      const validation = await validateModelFile(JSON.stringify(raw));
+      if (
+        !validation.ok &&
+        validation.error === "invalid-format" &&
+        validation.field === field
+      ) {
+        detected += 1;
+      } else {
+        console.log(`[manifiesto] carnada NO detectada: ${field}`, validation);
+      }
+    }
+    console.log(
+      `[contrato manifiesto] validateModelFile detectó ${detected} de ${baits.length} carnadas`,
+    );
+    expect(detected).toBe(baits.length);
   });
 });
 
