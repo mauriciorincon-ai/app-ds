@@ -52,8 +52,9 @@ ella.
     Así la preview de la F1 nunca muestra un resultado de regresión en una pantalla binaria.
   - **Regla nueva y permanente:** `validateModelFile` solo acepta archivos de tareas que la UI sabe
     usar (`TRAINABLE_TASKS`). Un archivo íntegro de otra tarea se rechaza nombrándola
-    (`unsupported-task`). Hoy rechaza los de regresión; el día del S7, uno multiclase abierto en una
-    versión vieja.
+    (`unsupported-task`). En la F1 rechazaba los de regresión; desde la F2 se aceptan las dos
+    tareas, y cualquier otra (p. ej. un archivo multiclase hecho por una versión futura) se rechaza
+    nombrándola (AU-S6-08).
 - **D5 · Las fichas de `linear` y `lasso` llegan en la F1.** `FICHAS` está tipado sobre todos los
   miembros, así que sumar los ids obliga a escribirlas. Se redactaron en ES y EN en el mismo paso.
   El párrafo de regresión de las fichas compartidas y la ficha de la mediana siguen en la F2.
@@ -70,6 +71,36 @@ ella.
   - Se siguió el criterio del S5: cambios de texto y de conteo, sin tocar el storyboard ni las
     escenas.
   - Suman dos funcionalidades (33 → 35), con su tabla de mapeo en el summary.
+- **D8 · Fuga con objetivo continuo: una columna se evalúa solo con al menos 10 pares con valor en
+  train (`LEAKAGE_MIN_PAIRS`, auditoría AU-S6-11).** Umbral delegado por el usuario y decidido
+  midiendo (probabilidad exacta de |Spearman| ≥ 0,98 por azar: 1/181 440 con 10 pares; detalle en
+  «Auditoría final — Fase 2»). La binaria no cambia en el S6: su regla necesita contar por clase y
+  queda como deuda declarada al S7.
+- **D9 · «Tiende a estimar de más/de menos» la decide una prueba de signo exacta con α = 5 %
+  (`RESIDUAL_LEAN_ALPHA`, AU-S6-15)**, no el 5 % del MAE que traía la F2. Umbral delegado por el
+  usuario y decidido con simulación (detalle en «Auditoría final — Fase 2»).
+- **D10 · La aceptación 2 («la fuga se bloquea antes de entrenar; sin ella, entrena») se cumple como
+  en la binaria: avisa y etiqueta, no bloquea (AU-S6-22).** Mandan la regla dura 3 (la honestidad
+  acompaña: etiqueta, no bloquea) y el ADR 002 (la fuga es una advertencia, no una garantía).
+  - La columna se nombra en Configuración antes de entrenar («predice el objetivo casi a la
+    perfección»).
+  - Si se entrena igual, el veredicto se reemplaza por «⚠ Métricas casi perfectas — sospechoso», con
+    la columna nombrada (`tests/e2e/regresion.spec.ts`).
+  - «Sin ella, entrena» lo cubre `tests/unit/regresion-motor.test.ts` («precio SIN la columna
+    plantada»).
+- **D11 · Desviaciones menores de implementación (registradas en la auditoría, AU-S6-25).**
+  - El ⭐ «ficha de regresor» de la orden se cambió por G10 (el Nivel 2 al estimar en un móvil
+    real). La ficha (G9) se verifica leyendo y la cubre una prueba automática
+    (`regresion-ui.test.tsx`, «la ficha al estimar»); el móvil real no lo cubre ninguna
+    automatización. El acumulado ⭐ de H2 sigue en 8.
+  - P2: `_FACTORIES` sigue siendo el roster binario (un test del S5 lo parchea por nombre), con
+    `_REGRESSORS` y `_FACTORIES_BY_TASK` al lado.
+  - El combinador de unión no se agregó a `validate.ts`: `contract.ts` despacha por la tarea
+    enviada.
+  - `TargetPlan.chosenTask` quedó como `choice` + `resolved`.
+  - El arnés del spike vive en `scripts/spike-regresion/` y reusa `scripts/spike-liga/correr.mjs`.
+  - Las pruebas de fuga continua y del veredicto viven en `tests/unit/regresion-motor.test.ts`, no
+    en archivos propios.
 
 ## Fase 0 — delta del kit + deuda del S5 + spike de regresores
 
@@ -499,8 +530,8 @@ en bruto → 43 consolidados: 1 Crítico, 6 Altos, 15 Medios, 21 Bajos).
 
 **Aprobación del usuario (2026-10-04), textual:** «En cuanto a los umbrales toma la mejor decision,
 piensalo bien y confio en que tomes la mejor decision y si apruebo la Fase 1». Los dos umbrales
-nuevos quedaron delegados; se decidieron midiendo (pasan a `## Desviación del plan` como D8 y D9 al
-cerrar la fase):
+nuevos quedaron delegados; se decidieron midiendo (registrados en `## Desviación del plan` como D8 y
+D9):
 
 - **D8 · `LEAKAGE_MIN_PAIRS = 10` (AU-S6-11), solo con objetivo continuo.** Probabilidad EXACTA de
   |Spearman| ≥ 0,98 por azar, enumerando permutaciones: 3 pares 1/3 · 4 1/12 · 5 1/60 · 6 1/360 ·

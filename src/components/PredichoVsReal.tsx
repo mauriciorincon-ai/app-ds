@@ -18,7 +18,7 @@ import type { PredVsReal, TargetUnit } from "@/workers/protocol";
 // sobre TODO el test) la pone RegressionDetail debajo del gráfico.
 
 const SIZE = { width: 340, height: 300 };
-const MARGIN = { top: 10, right: 12, bottom: 44, left: 58 };
+const MARGIN = { top: 10, right: 12, bottom: 44, left: 64 };
 const PLOT = {
   width: SIZE.width - MARGIN.left - MARGIN.right,
   height: SIZE.height - MARGIN.top - MARGIN.bottom,
@@ -95,15 +95,15 @@ export function PredichoVsReal({
               x={x(tick)}
               y={MARGIN.top + PLOT.height + 14}
               textAnchor="middle"
-              className="fill-current font-mono text-[10px]"
+              className="fill-current font-mono text-[12px]"
             >
               {formatQuantity(tick, tickDecimals)}
             </text>
             <text
               x={MARGIN.left - 6}
-              y={y(tick) + 3}
+              y={y(tick) + 4}
               textAnchor="end"
-              className="fill-current font-mono text-[10px]"
+              className="fill-current font-mono text-[12px]"
             >
               {formatQuantity(tick, tickDecimals)}
             </text>
@@ -171,14 +171,14 @@ export function PredichoVsReal({
           x={MARGIN.left + PLOT.width / 2}
           y={SIZE.height - 6}
           textAnchor="middle"
-          className="fill-current text-[11px] text-ink-muted"
+          className="fill-current text-[12px] text-ink-muted"
         >
           {t("results.regression.chart.axisReal")} ({axisUnit})
         </text>
         <text
           transform={`translate(13 ${MARGIN.top + PLOT.height / 2}) rotate(-90)`}
           textAnchor="middle"
-          className="fill-current text-[11px] text-ink-muted"
+          className="fill-current text-[12px] text-ink-muted"
         >
           {t("results.regression.chart.axisPredicted")} ({axisUnit})
         </text>

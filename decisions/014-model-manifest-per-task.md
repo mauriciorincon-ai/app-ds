@@ -24,9 +24,11 @@ S5 files already exist on users' disks, and they must keep importing and scoring
    - Regression files write `task: "numerica"`.
    - `format_version` stays at 1, because an additive optional field does not change the meaning
      of any existing field (ADR 007's rule since S4).
-2. **The validator dispatches on `task`, and each shape is closed.**
+2. **The validator dispatches on `task`; each shape requires its own fields.** Extra keys are
+   tolerated, as every reader does since S5 (`validate.ts`).
    - **Binary:** still requires `classes` (exactly two), `positive_class` and `positive_rate`.
-   - **Regression:** requires none of those, and rejects class metrics. It requires instead:
+   - **Regression:** requires none of the class fields and never reads them; a class-metrics block
+     in place of the regression metrics is rejected. It requires instead:
      - `schema.target_stats`, with an ordered refine: min ≤ median ≤ max, finite numbers, and
        decimals in [0, 6];
      - the five regression metrics, each finite; MAPE is `null` when the target has zeros;
@@ -34,6 +36,12 @@ S5 files already exist on users' disks, and they must keep importing and scoring
      - a `verdict` on MAE;
      - the league and the selection. These are required, because no regression file predates S5's
        league.
+   - **What the import reads.** It reads `task`, `schema`, `dataset`, `model_name`,
+     `verdict.level`, `verdict.primaryMetric` and `verdict.modelScore`, `selection.by`,
+     `cv_winner` and `k`, and how many rows the `league` has. The regression `metrics`, the
+     content of the `league` rows, `selection.metric` and `rule`, and the verdict's
+     `baselineScore` and `delta` are documentary: the file's human face (ADR 007). They are still
+     validated, so a damaged file is rejected whole instead of half-read.
 3. **Only usable tasks import (`unsupported-task`).** `validateModelFile(text, usable =
 TRAINABLE_TASKS)` rejects an otherwise intact file of a task the UI cannot use, and **names the
    task**.
@@ -46,7 +54,8 @@ TRAINABLE_TASKS)` rejects an otherwise intact file of a task the UI cannot use, 
    ADR 007 required, so a regression pickle under a binary manifest is rejected.
 5. **Scoring follows the task.**
    - The scorer returns numbers with `probabilities: null` (never invented).
-   - The CSV column is `<target>_estimado`, written with the target's own decimals.
+   - The CSV column is `<target>_estimado` (`<target>_estimate` with the English UI), written with
+     the target's own decimals.
    - The import summary says «Estima «target», una cantidad» and shows the MAE in units.
 
 ## Consequences
@@ -59,7 +68,11 @@ TRAINABLE_TASKS)` rejects an otherwise intact file of a task the UI cannot use, 
 - **Every new manifest field has its bait.** The reader rejects each mutation **naming the field**:
   12 of 12 for the regression manifest, and the binary 16 of 16 untouched.
 - **Export → reload → import → score** runs end to end in the production build, for a regression
-  model (`tests/e2e/regresion-score.spec.ts`) and for a booster (`liga-booster-export.spec.ts`).
-  Neither the payload nor the new CSV appears in network traffic.
+  model (`tests/e2e/regresion-score.spec.ts`, which also checks that neither the model payload nor
+  the new CSV appears in network traffic) and for a booster (`liga-booster-export.spec.ts`). The
+  binary network check lives in `export-import-rescore.spec.ts`.
+- **Unknown tasks are named.** A file whose `task` is a string the app does not know (a future
+  multiclass file, say) is rejected as `unsupported-task` with the name, truncated to 40
+  characters; a `task` that is not a string is `invalid-format` on `manifest.task`.
 - The manifest is still neither encrypted nor signed (ADR 007): load only files that came from
   Probeta.

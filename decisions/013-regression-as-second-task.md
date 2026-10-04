@@ -42,8 +42,8 @@ Regression enters **parametrised by task**, never as a fork of the binary path.
 4. **Baselines: the median and linear regression.** For MAE the optimal constant is the median, not
    the mean. Measured in 9 of 9 datasets, the mean baseline would hand the model an easier win.
    Linear regression is a baseline AND a member, like logistic regression in S5:
-   - its tie headline («La liga no encontró nada mejor que la regresión lineal de referencia")
-     appears **only** when it ties;
+   - its tie headline («La liga no encontró nada mejor que la regresión lineal de referencia»)
+     appears **only** when linear regression is the deciding baseline and the verdict ties;
    - «NO supera» is never covered (AU-S5-01).
 5. **Split by quantile bands.** Five range bands of the target, stratified, so 200 rows still get a
    test set across the whole range. CV uses `KFold(shuffle, seed)`, and `k` follows `n_train`.
@@ -51,6 +51,10 @@ Regression enters **parametrised by task**, never as a fork of the binary path.
    - **Continuous leakage:** |Spearman| ≥ 0.98 for numeric features, and η² ≥ 0.98 for categorical
      ones, with a **minimum support of 5 rows per category** (rarer categories are pooled, like
      `min_frequency`). The support rule is new: the binary check has none.
+   - A column is checked only with **at least 10 rows with a value in train**
+     (`LEAKAGE_MIN_PAIRS`, sprint log D8): with 10 pairs, a chance |Spearman| ≥ 0.98 has an exact
+     probability of 1/181 440; with 3 pairs it is 1/3. The binary check needs the same idea per
+     class, and that is S7's debt.
    - **Informative EDA:** `target-skewed` when |skew| ≥ 1, and `target-outliers` when ≥ 1 % of the
      target lies beyond 3·IQR.
 7. **The verdict in units.** «Se equivoca en promedio ±X; [baseline] ±Y».
@@ -65,6 +69,10 @@ Regression enters **parametrised by task**, never as a fork of the binary path.
      of the chart.
    - These values derive from the target, so they live only in the browser (hard rule 2). The
      league breadcrumb carries only `task`.
+   - Whether the model «tends to estimate over or under» is decided by an **exact sign test at
+     α = 5 %** on the chart's sample (`RESIDUAL_LEAN_ALPHA`, sprint log D9), and its side must
+     match the median error of the whole test set. A fixed share of the MAE called an unbiased
+     model «leaning» in 74–83 % of runs with 50 test rows.
 9. **No AI narration for regression (double lock).**
    - `useNarration` never builds a payload or calls the route for a regression result.
    - The route's schema accepts only `binary-classification`.
@@ -95,14 +103,16 @@ equivalent. It lives on Results, outside the landing's LCP and script budget. Th
 - The binary league kept working untouched. Its inherited tests and 49 Python→TS baits stayed
   green. The only changes to binary fixtures were the additive `task` field, regenerated with the
   real emitter.
-- Contract coverage per new field:
-  - TS→Python 8/8;
-  - league 30/30;
-  - manual choice 5/5;
+- Contract coverage per new field (after the sprint audit):
+  - TS→Python 9/9;
+  - league 36/36 (including the linear member scoring exactly as the linear baseline);
+  - manual choice 6/6;
   - export 4/4;
   - scoring 4/4;
   - the regression manifest 12/12.
-- Each new rule was seen red with `scripts/demo-rojo.sh` (sprint log, F1 #1–#14, F2 #15–#28).
-- Trees, forests and kNN do not extrapolate beyond the training range. The fichas say so.
+- Each new rule was seen red with `scripts/demo-rojo.sh` (sprint log, F1 #1–#14, F2 #15–#28, audit
+  #29–#69).
+- Trees, forests and kNN do not extrapolate beyond the training range; the kNN and Random Forest
+  fichas say so, and the manual's known limitations say it for all of them.
 - Multiclass (S7) will add a third rule set to `METRIC_RULES` and a third roster without touching
   this structure.

@@ -310,9 +310,11 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      - **Categorías** → es una predicción de varias clases, que esta versión todavía no entrena (y
        te lo dice).
      - Puedes **cambiar la respuesta** cuando quieras.
-  3. **Pulsa _Entrenar modelos_.** Compiten 11 modelos (los mismos árboles, boosting, vecinos y red
-     neuronal de la liga, más tres rectas: lineal, Ridge y Lasso), con la misma validación cruzada
-     y la misma regla del más simple entre empatados.
+  3. **Pulsa _Entrenar modelos_.** La liga de estimar reúne 11 modelos (los mismos árboles, boosting,
+     vecinos y red neuronal de la liga, más tres rectas: lineal, Ridge y Lasso). Como al clasificar,
+     primero compiten los que caben en el Nivel 1, y con menos de 500 filas la red neuronal queda
+     «fuera» con su razón (en el ejemplo de consumo compiten 10). Misma validación cruzada y misma
+     regla del más simple entre empatados.
 
 - **Cómo leer el resultado:**
   - **El veredicto, en unidades:** _«En promedio se equivoca por ±33.5 kWh; una regresión lineal se
@@ -333,7 +335,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     a estimar de más o de menos. Esto usa **todas** las filas de la prueba (el gráfico muestra hasta
     200).
   - **El porqué:** las barras de importancia y la dirección se leen contra tu cantidad («a mayor
-    valor, mayor consumo»). La **narración con IA no se ofrece al estimar**: por ahora solo cubre la
+    valor, mayor consumo»). La **narración con IA no se ofrece al estimar**: solo cubre la
     clasificación en dos categorías. El texto estándar, que sale de los mismos números, sí está.
 
 - **Antes de entrenar, la app te avisa si:**
@@ -361,13 +363,13 @@ cuando una te frene.
 
 **Sobre el resultado**
 
-| Término                    | Qué significa                                                                                                                                                                                  |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Baseline** (línea base)  | Las reglas simples contra las que se mide tu modelo: responder siempre lo más frecuente (clase mayoritaria) y una regresión logística. Si tu modelo no supera a la mejor de las dos, no sirve. |
-| **Veredicto**              | La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.                                                                                                |
-| **Entrenamiento y prueba** | La app parte tus datos en dos: con tres cuartas partes aprende y con la cuarta parte restante, que nunca vio, se examina. Por eso el número del veredicto es real.                             |
-| **Liga**                   | Todos los modelos que compiten entre sí. Se elige al ganador sin mirar la prueba; puedes elegir otro, y queda registrado.                                                                      |
-| **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                                                                                           |
+| Término                    | Qué significa                                                                                                                                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Baseline** (línea base)  | Las reglas simples contra las que se mide tu modelo. Al clasificar: responder siempre lo más frecuente (clase mayoritaria) y una regresión logística. Al estimar: adivinar siempre la mediana y una regresión lineal. Si tu modelo no supera a la mejor de las dos, no sirve. |
+| **Veredicto**              | La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.                                                                                                                                                                               |
+| **Entrenamiento y prueba** | La app parte tus datos en dos: con tres cuartas partes aprende y con la cuarta parte restante, que nunca vio, se examina. Por eso el número del veredicto es real.                                                                                                            |
+| **Liga**                   | Todos los modelos que compiten entre sí. Se elige al ganador sin mirar la prueba; puedes elegir otro, y queda registrado.                                                                                                                                                     |
+| **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                                                                                                                                                                          |
 
 **Sobre la liga** (desde Sprint 005)
 
