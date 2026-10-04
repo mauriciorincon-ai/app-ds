@@ -577,6 +577,33 @@ describe("ResultsScreen — el veredicto de la liga", () => {
     ).toBeInTheDocument();
   });
 
+  it("R2: si gana la logística y empata con la CLASE MAYORITARIA, el titular normal la nombra (AU-S6-18)", () => {
+    const result = rotationResult();
+    screenWith({
+      ...result,
+      // La logística de referencia rinde peor que el azar: decide la mayoritaria.
+      baselines: {
+        ...result.baselines,
+        logistic: { ...result.baselines.logistic, auc: 0.45 },
+      },
+      verdict: {
+        ...result.verdict,
+        level: "ties",
+        delta: -0.005,
+        modelScore: 0.495,
+        baselineScore: 0.5,
+      },
+    });
+    expect(
+      screen.queryByText(
+        "La liga no encontró nada mejor que la regresión de referencia",
+      ),
+    ).toBeNull();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /empata con el baseline/ }),
+    ).toBeInTheDocument();
+  });
+
   it("U1: elegido a mano ⇒ el veredicto habla de él, etiquetado; usar/exportar esperan al modelo", () => {
     const base = rotationResult();
     screenWith(

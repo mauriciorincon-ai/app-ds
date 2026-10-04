@@ -16,7 +16,7 @@ import {
   routeModels,
   type RouteProfile,
 } from "@/engine/encarrilador";
-import { MEMBER_IDS } from "@/engine/roster";
+import { isMemberOf, MEMBER_IDS } from "@/engine/roster";
 
 // Un dataset del kit (200 filas) y el sintético de 20.000 filas de la F0.
 const KIT: RouteProfile = {
@@ -146,6 +146,27 @@ describe("planLevel2 (D5 + U3, ADR-010)", () => {
     );
     expect(plan.roster).toEqual(rosterFor(routing, 2));
     expect(plan.added).toEqual(routing.level2);
+    expect(plan.estimateS).toBeCloseTo(routing.unionEstimateS, 6);
+  });
+
+  it("al estimar (S6): suma los regresores pendientes con los costos de regresión (AU-S6-16)", () => {
+    const ESTIMAR: RouteProfile = {
+      task: "numerica",
+      rows: 5000,
+      nTrain: 3750,
+      width: 33,
+      minorityShare: null,
+      k: 5,
+    };
+    const routing = routeModels(ESTIMAR);
+    expect(routing.level2.length).toBeGreaterThan(0);
+    const plan = planLevel2(
+      ESTIMAR,
+      routing.level1,
+      onlyMembers(routing.level1EstimateS * 1000),
+    );
+    expect(plan.added).toEqual(routing.level2);
+    expect(plan.roster.every((id) => isMemberOf("numerica", id))).toBe(true);
     expect(plan.estimateS).toBeCloseTo(routing.unionEstimateS, 6);
   });
 

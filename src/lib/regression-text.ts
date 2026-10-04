@@ -39,10 +39,15 @@ export function regressionVerdictText(
     verdict.modelScore,
     verdict.baselineScore,
   ]);
+  const baselineId = bestRegressionBaseline(result.baselines);
+  // R10: la lineal empata CONSIGO MISMA solo si el baseline que decide es la
+  // lineal. Si decide la mediana, el empate es con adivinar una constante: el
+  // titular normal la nombra (AU-S6-18).
   const linearTie =
     result.modelName === "linear" &&
     result.selection.by === "cv" &&
-    verdict.level === "ties";
+    verdict.level === "ties" &&
+    baselineId === "linear";
   if (linearTie) {
     return {
       linearTie,
@@ -52,7 +57,6 @@ export function regressionVerdictText(
       }),
     };
   }
-  const baselineId = bestRegressionBaseline(result.baselines);
   const median = result.targetStats.median;
   return {
     linearTie,

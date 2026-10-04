@@ -163,6 +163,32 @@ describe("el veredicto en unidades (P5, R10)", () => {
     ).toBeInTheDocument();
   });
 
+  it("la lineal gana y empata con la MEDIANA: titular normal que nombra a la mediana (AU-S6-18)", () => {
+    const py = regressionPipelineResult({ roster: ["linear"], cv_k: 5 });
+    const tie = regressionResult({
+      ...py,
+      model: regressionMetrics({ mae: 40.2 }),
+      baselines: {
+        median: regressionMetrics({ mae: 40, r2: 0 }),
+        linear: regressionMetrics({ mae: 40.2 }),
+      },
+    });
+    ui(<RegressionVerdict result={tie} target="consumo_kwh" hasLeak={false} />);
+    expect(
+      screen.getByRole("heading", {
+        name: "«Lineal» empata con el baseline",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /adivinar siempre la mediana .* se equivoca por ±40\.0 kWh: prácticamente lo mismo/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/no encontró nada mejor que la regresión lineal/),
+    ).toBeNull();
+  });
+
   it("la lineal gana pero la mediana rinde mejor: el «NO supera» franco no se reemplaza (AU-S5-01)", () => {
     const py = regressionPipelineResult({ roster: ["linear"], cv_k: 5 });
     const loses = regressionResult({
@@ -493,6 +519,63 @@ describe("useExperiment al estimar (S6)", () => {
     vi.mocked(recordLeagueRun).mockClear();
   });
   afterEach(() => vi.unstubAllGlobals());
+
+  it("ambigua respondida → el Nivel 2 conserva la respuesta; cancelar restaura y registra «numerica» (AU-S6-16)", () => {
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(CONSUMO, "consumo-energia.csv"));
+    act(() => result.current.selectTarget("ocupantes"));
+    act(() => result.current.answerTask("numerica"));
+    act(() => result.current.run("ocupantes"));
+    const worker = FakeWorker.last!;
+    const sent = worker.posted.at(-1)!.payload as PipelinePayload;
+    expect(sent.task).toBe("numerica");
+    reply(worker, "train", regressionPipelineResult(sent));
+    expect(result.current.state.result?.task).toBe("numerica");
+
+    // El Nivel 2 guarda primero el modelo vigente y después entrena, con la
+    // respuesta de la ambigua (sin ella, prepareRun diría «target-ambiguous»).
+    act(() => result.current.runLevel2([]));
+    expect(worker.posted.at(-1)!.type).toBe("export-model");
+    reply(worker, "export-model", {
+      payload_b64: "QUJD",
+      versions: {
+        pyodide: "0.27",
+        sklearn: "1.5",
+        python: "3.12",
+        xgboost: "2.1",
+        lightgbm: "4.5",
+      },
+      schema: {
+        numeric: sent.numeric,
+        categorical: sent.categorical,
+        target: "ocupantes",
+        task: "numerica",
+        target_stats: {
+          mean: 3,
+          std: 1,
+          min: 1,
+          max: 6,
+          median: 3,
+          decimals: 0,
+        },
+      },
+      training_profile: { numeric: {}, categorical: {} },
+    });
+    expect(worker.posted.at(-1)).toMatchObject({
+      type: "train",
+      payload: { task: "numerica", target: "ocupantes" },
+    });
+    expect(result.current.state.level2).toMatchObject({ status: "running" });
+
+    act(() => result.current.cancelLevel2());
+    expect(result.current.state.level2).toEqual({ status: "cancelled" });
+    expect(result.current.state.result?.task).toBe("numerica");
+    expect(vi.mocked(recordLeagueRun).mock.lastCall?.[0]).toMatchObject({
+      task: "numerica",
+      level: 2,
+      cancelled: true,
+    });
+  });
 
   it("cantidad: plan con unidad → liga → resultado en unidades → elegir otro → puntuar", () => {
     const { result } = renderHook(() => useExperiment());

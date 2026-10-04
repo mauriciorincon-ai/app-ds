@@ -4,7 +4,7 @@ import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
 import { BASELINE_IDS, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
-import type { MetricName } from "@/engine/verdict";
+import { pickBestBaseline, type MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { useNarration } from "@/lib/useNarration";
 import type {
@@ -260,11 +260,17 @@ function BinaryVerdict({
 
   // S5 (R2): la logística es baseline Y miembro — si gana la liga y EMPATA, empata
   // consigo misma y se dice así. Si PIERDE (la clase mayoritaria rinde mejor), el
-  // veredicto franco «NO supera» no se reemplaza (regla dura 3).
+  // veredicto franco «NO supera» no se reemplaza (regla dura 3). S6 (AU-S6-18):
+  // solo si el baseline que decide es la logística; si decide la clase
+  // mayoritaria, el titular normal la nombra.
   const logisticWon =
     (BASELINE_IDS as readonly string[]).includes(result.modelName) &&
     result.selection.by === "cv" &&
-    verdict.level === "ties";
+    verdict.level === "ties" &&
+    pickBestBaseline(
+      [result.baselines.majority, result.baselines.logistic],
+      verdict.primaryMetric,
+    ) === result.baselines.logistic;
   const banner: Banner = hasLeak
     ? {
         tone: "caution",

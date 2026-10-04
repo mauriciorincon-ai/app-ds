@@ -1014,7 +1014,12 @@ export function useExperiment() {
       forced,
       ambiguousChoice: choiceRef.current,
     });
-    if (!next.ok) return;
+    // Con los mismos datos esto no falla; si algún día falla, se dice: el botón
+    // no queda mudo (AU-S6-16). Sigue vigente el resultado del Nivel 1.
+    if (!next.ok) {
+      setState((s) => ({ ...s, level2: { status: "failed" } }));
+      return;
+    }
     const plan = planLevel2(
       next.profile,
       result.league.map((row) => row.name),
