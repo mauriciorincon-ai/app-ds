@@ -8,14 +8,19 @@
 #
 # Uso:
 #   scripts/demo-rojo.sh --archivo <ruta> --buscar '<texto exacto>' --reemplazar '<texto>' \
-#       --gate '<comando que debe FALLAR>' [--puerto 3000] [--esperar-verde '<comando tras restaurar>']
+#       --gate '<comando que debe FALLAR>' --debe-nombrar '<texto que el fallo debe decir>' \
+#       [--puerto 3000] [--esperar-verde '<comando tras restaurar>'] [--minimo-tests N]
 #
-# Salida: 0 si el gate falló con la mutación y volvió a pasar (o no se pidió) tras restaurar;
-#         1 si el gate NO falló (la demo no es demo), si la restauración dejó rastro, o si el
-#         puerto sigue ocupado por un proceso viejo.
+# Salida: 0 si el gate falló con la mutación NOMBRANDO lo esperado y volvió a pasar (o no se
+#         pidió) tras restaurar; 1 si el gate NO falló (la demo no es demo), si falló sin correr
+#         (126/127: comando inexistente) o sin nombrar lo esperado (un servidor que no arrancó,
+#         una mutación que no compila: K-S6-5), si el verde corrió menos de N pruebas (un filtro
+#         que no coincide con nada sale 0: K-S6-4), si la restauración dejó rastro, o si el puerto
+#         sigue ocupado por un proceso viejo. Una interrupción (Ctrl-C, SIGTERM) restaura antes de
+#         salir (ds S6, AU-S6-12).
 set -u
 
-archivo="" buscar="" reemplazar="" gate="" puerto="" verde=""
+archivo="" buscar="" reemplazar="" gate="" puerto="" verde="" debe="" minimo=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --archivo) archivo="$2"; shift 2;;
@@ -24,12 +29,15 @@ while [ $# -gt 0 ]; do
     --gate) gate="$2"; shift 2;;
     --puerto) puerto="$2"; shift 2;;
     --esperar-verde) verde="$2"; shift 2;;
+    --debe-nombrar) debe="$2"; shift 2;;
+    --minimo-tests) minimo="$2"; shift 2;;
     *) echo "demo-rojo: argumento desconocido $1" >&2; exit 1;;
   esac
 done
 [ -n "$archivo" ] && [ -n "$buscar" ] && [ -n "$gate" ] || { echo "demo-rojo: faltan --archivo, --buscar o --gate" >&2; exit 1; }
 [ -f "$archivo" ] || { echo "demo-rojo: no existe $archivo" >&2; exit 1; }
 grep -qF -- "$buscar" "$archivo" || { echo "demo-rojo: '$buscar' no está en $archivo — la mutación no aplica a nada" >&2; exit 1; }
+[ -z "$debe" ] && echo "demo-rojo: ⚠ sin --debe-nombrar, cualquier fallo cuenta como rojo (también uno que no vino de la aserción)" >&2
 
 # UNA sola carpeta de respaldo, nombrada aquí y solo aquí (K-S5-10).
 RESPALDO="${DEMO_ROJO_DIR:-.demo-rojo}"
@@ -43,9 +51,16 @@ restaurar() {
     echo "demo-rojo: ✗ la restauración dejó la mutación en $archivo" >&2; return 1
   fi
   cmp -s "$copia" "$archivo" || { echo "demo-rojo: ✗ $archivo no quedó idéntico al respaldo" >&2; return 1; }
-  rm -f "$copia"; rmdir "$RESPALDO" 2>/dev/null || true
+  rm -f "$copia" "$salida"; rmdir "$RESPALDO" 2>/dev/null || true
   return 0
 }
+salida="$RESPALDO/salida.log"
+# Una interrupción a mitad del gate no deja la mutación viva en el árbol.
+trap 'echo "demo-rojo: interrumpido — restaurando $archivo" >&2; restaurar; exit 130' INT TERM
+
+# Cuántas pruebas pasaron según la última línea de resumen (vitest «Tests  N passed»,
+# Playwright «N passed»). 0 si no hay resumen.
+pasaron() { grep -oE '[0-9]+ passed' "$1" | tail -n 1 | grep -oE '^[0-9]+' || echo 0; }
 
 # Server viejo en el puerto: se mata POR PUERTO, no por nombre de proceso (K-S5-11).
 if [ -n "$puerto" ]; then
@@ -63,18 +78,34 @@ pathlib.Path(p).write_text(s.replace(a, b, 1))
 PY
 
 echo "demo-rojo: mutación aplicada en $archivo; corriendo el gate (debe FALLAR)…"
-if bash -c "$gate"; then
+bash -c "$gate" 2>&1 | tee "$salida"; rc=${PIPESTATUS[0]}
+if [ "$rc" -eq 0 ]; then
   echo "demo-rojo: ✗ EL GATE PASÓ CON LA MUTACIÓN — no es una demo en rojo (regla 15, tercera pregunta: ¿puede fallar siquiera?)" >&2
   restaurar; exit 1
 fi
-echo "demo-rojo: ✓ el gate falló con la mutación"
+if [ "$rc" -eq 126 ] || [ "$rc" -eq 127 ]; then
+  echo "demo-rojo: ✗ el gate no corrió (exit $rc: comando inexistente o no ejecutable) — eso no es un rojo" >&2
+  restaurar; exit 1
+fi
+if [ -n "$debe" ] && ! grep -qF -- "$debe" "$salida"; then
+  echo "demo-rojo: ✗ el gate falló (exit $rc) pero no nombró '$debe' — el rojo no vino de la aserción (K-S6-5)" >&2
+  restaurar; exit 1
+fi
+echo "demo-rojo: ✓ el gate falló con la mutación${debe:+ y nombró '$debe'}"
 
+trap - INT TERM
 restaurar || exit 1
 echo "demo-rojo: ✓ restaurado y verificado (grep + cmp)"
 
 if [ -n "$verde" ]; then
   echo "demo-rojo: corriendo el gate restaurado (debe PASAR)…"
-  bash -c "$verde" || { echo "demo-rojo: ✗ el gate sigue en rojo tras restaurar" >&2; exit 1; }
-  echo "demo-rojo: ✓ verde tras restaurar"
+  mkdir -p "$RESPALDO"
+  bash -c "$verde" 2>&1 | tee "$salida"; rc=${PIPESTATUS[0]}
+  n=$(pasaron "$salida"); rm -f "$salida"; rmdir "$RESPALDO" 2>/dev/null || true
+  [ "$rc" -eq 0 ] || { echo "demo-rojo: ✗ el gate sigue en rojo tras restaurar" >&2; exit 1; }
+  if [ -n "$minimo" ] && [ "$n" -lt "$minimo" ]; then
+    echo "demo-rojo: ✗ el verde corrió $n prueba(s), menos de --minimo-tests $minimo — un filtro que no coincide sale 0 (K-S6-4)" >&2; exit 1
+  fi
+  echo "demo-rojo: ✓ verde tras restaurar${minimo:+ ($n pruebas)}"
 fi
 echo "demo-rojo: registra en la bitácora: archivo, mutación, a quién nombró el fallo."
