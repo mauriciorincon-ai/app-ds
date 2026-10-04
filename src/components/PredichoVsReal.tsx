@@ -131,7 +131,7 @@ export function PredichoVsReal({
               x2={x(hi)}
               y2={y(hi + offset)}
               strokeDasharray="4 3"
-              className="stroke-accent/60"
+              className="stroke-accent"
             />
           ))}
           <line
@@ -214,7 +214,7 @@ export function PredichoVsReal({
               x2="20"
               y2="1"
               strokeDasharray="3 2"
-              className="stroke-accent/60"
+              className="stroke-accent"
             />
             <line
               x1="0"
@@ -222,7 +222,7 @@ export function PredichoVsReal({
               x2="20"
               y2="9"
               strokeDasharray="3 2"
-              className="stroke-accent/60"
+              className="stroke-accent"
             />
           </svg>
           {t("results.regression.chart.band", { mae: maeText })}

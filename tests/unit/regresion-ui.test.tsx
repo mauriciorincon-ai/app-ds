@@ -252,6 +252,11 @@ describe("estimado frente a real: nada solo por color", () => {
     const rings = chart.querySelectorAll("circle.stroke-caution");
     expect(discs).toHaveLength(3);
     expect(rings).toHaveLength(2);
+    // Los bordes de la franja en `accent` pleno: con `accent/60` quedaban bajo
+    // 3:1 contra el fondo, en los dos temas (AU-S6-20).
+    expect(
+      chart.querySelectorAll('line[stroke-dasharray="4 3"].stroke-accent'),
+    ).toHaveLength(2);
     expect(screen.getByText("dentro de la franja")).toBeInTheDocument();
     expect(screen.getByText("fuera de la franja")).toBeInTheDocument();
     expect(
@@ -384,6 +389,13 @@ describe("Resultados completos al estimar (P7)", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText("▲ a mayor valor, mayor «consumo_kwh»"),
+    ).toBeInTheDocument();
+    // La importancia al estimar está en las unidades del objetivo (AU-S6-21).
+    expect(screen.getByText("61.1 kWh")).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", {
+        name: `Importancia de ocupantes: 61.1${NBSP}kWh`,
+      }),
     ).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -730,6 +742,10 @@ describe("la model card al estimar (sección «Estimación»)", () => {
     );
     expect(md).not.toContain("clase positiva");
     expect(md).not.toContain("Clase mayoritaria");
+    // Las importancias, en unidades (AU-S6-21).
+    expect(md).toMatch(
+      new RegExp(`\\| ocupantes \\| .* \\| 61\\.1${NBSP}kWh \\|`),
+    );
   });
 
   it("métricas en unidades contra mediana y lineal, y el MISMO veredicto que la pantalla", () => {

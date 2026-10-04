@@ -272,7 +272,7 @@ aprobadas por el usuario el 2026-10-04 con la preview abierta.
   - **Ejes:** real en horizontal, estimado en vertical, mismo rango en los dos. Rejilla `hairline`,
     marcas mono 10 px con paso redondo (1·2·5 × 10ⁿ), rótulo de eje con la unidad.
   - **La diagonal** y = x: línea continua `ink`, 1.5 px.
-  - **La franja ±MAE:** relleno `accent/10` con bordes punteados `accent/60` (4 3).
+  - **La franja ±MAE:** relleno `accent/10` con bordes punteados `accent` pleno (4 3): ≥ 3:1 contra el fondo en los dos temas (con `accent/60` daban 2,7:1 y 2,9:1; auditoría del S6, AU-S6-20).
   - **Los puntos cambian de FORMA, no solo de color:** disco relleno `accent` dentro de la franja;
     anillo `caution` sobre `surface` fuera.
   - **Leyenda** en HTML con una muestra dibujada de cada elemento.

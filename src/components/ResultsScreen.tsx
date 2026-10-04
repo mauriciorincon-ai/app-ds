@@ -179,6 +179,7 @@ export function ResultsScreen({
         ai={ai}
         aiAvailable={aiAvailable}
         onRequestNarration={requestNarration}
+        unit={regression?.unit ?? null}
       />
 
       {/* S3: el modelo se usa — puntuar datos nuevos y exportar como archivo. */}

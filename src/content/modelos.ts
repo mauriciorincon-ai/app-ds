@@ -452,8 +452,9 @@ export const REGRESSION_NOTES: Record<SharedId, Bilingual> = {
 /**
  * S6: los apartados de una ficha compartida que hablan SOLO de clasificar
  * (probabilidad, AUC, «decide la clase») se reemplazan al estimar — si no, la ficha
- * diría dos cosas que se contradicen. Hoy solo Ridge los tiene; el test de paridad
- * vigila que cada reemplazo traiga los dos idiomas.
+ * diría dos cosas que se contradicen. Hoy los tienen Ridge, kNN y Random Forest
+ * (los que «votan» al clasificar promedian al estimar); un test vigila que ninguna
+ * ficha compartida hable de clases, votos ni probabilidad al estimar (AU-S6-19).
  */
 export const REGRESSION_FICHA_FIELDS: Partial<
   Record<SharedId, Partial<Ficha>>
@@ -470,6 +471,18 @@ export const REGRESSION_FICHA_FIELDS: Partial<
     watch: {
       es: "Compárala con la regresión lineal: si quedan casi iguales, el freno no hacía falta; si Ridge gana, había columnas que se pisaban entre sí.",
       en: "Compare it with plain linear regression: if they come out nearly equal, the brake was not needed; if Ridge wins, some columns were stepping on each other.",
+    },
+  },
+  knn: {
+    what: {
+      es: "Para estimar una fila nueva, busca las 5 filas de entrenamiento más parecidas y promedia su valor del objetivo.",
+      en: "To estimate a new row it finds the 5 most similar training rows and averages their target values.",
+    },
+  },
+  forest: {
+    what: {
+      es: "200 árboles, cada uno entrenado con una muestra distinta de filas y columnas; la estimación es el promedio de lo que estiman.",
+      en: "200 trees, each trained on a different sample of rows and columns; the estimate is the average of theirs.",
     },
   },
 };

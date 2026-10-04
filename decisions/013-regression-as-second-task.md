@@ -81,7 +81,7 @@ Regression enters **parametrised by task**, never as a fork of the binary path.
 `PredichoVsReal` is a library-free SVG:
 
 - the diagonal y = x is a solid `ink` line;
-- the ±MAE band is `accent/10` with dashed `accent/60` edges;
+- the ±MAE band is `accent/10` with dashed full-`accent` edges (≥ 3:1 against the background in both themes);
 - points change **shape**, not only colour: a filled `accent` disc inside the band, a `caution` ring
   outside;
 - the legend draws a sample of each element.

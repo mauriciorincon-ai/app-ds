@@ -23,6 +23,21 @@ export function quantityFormatter(
   return (value) => withUnit(formatQuantity(value, decimals), result.unit);
 }
 
+/**
+ * Las importancias al estimar (cuánto SUBE el MAE al permutar la columna) están en
+ * las unidades del objetivo: se escriben como las demás cantidades (R9, AU-S6-21),
+ * con las cifras significativas de la MAYOR (una importancia diminuta no obliga a
+ * escribir todas con seis decimales).
+ */
+export function importanceFormatter(
+  result: Pick<RegressionResult, "unit">,
+  importances: readonly number[],
+): (value: number) => string {
+  const largest = Math.max(0, ...importances.map((v) => Math.abs(v)));
+  const decimals = quantityDecimals([largest]);
+  return (value) => withUnit(formatQuantity(value, decimals), result.unit);
+}
+
 export type RegressionVerdictText = {
   /** La lineal ganó la liga y empata consigo misma (titular propio, R10). */
   linearTie: boolean;

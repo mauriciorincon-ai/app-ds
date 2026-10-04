@@ -8,6 +8,8 @@ import {
   REGRESSION_FICHA_FIELDS,
   REGRESSION_NOTES,
   type Bilingual,
+  type FichaId,
+  type SharedId,
 } from "@/content/modelos";
 import { MLP_MIN_ROWS } from "@/engine/encarrilador";
 import {
@@ -95,6 +97,26 @@ describe("fichas bilingües", () => {
       expect(Object.keys(ficha).sort()).toEqual(
         ["cost", "goodFor", "notFor", "watch", "what"].sort(),
       );
+    }
+  });
+});
+
+describe("al estimar, las fichas compartidas hablan de estimar (AU-S6-19)", () => {
+  it("ninguna ficha compartida, con sus reemplazos y su párrafo, habla de clases, votos ni probabilidad", () => {
+    const CLASSIFY =
+      /\bclases?\b|probabilidad|\bAUC\b|\bvot(a|ar|ación|o|os)\b|frontera|\bclass(es)?\b|probabilit|\bvot(e|es|ing)\b|boundary/i;
+    for (const id of Object.keys(REGRESSION_NOTES) as SharedId[]) {
+      const ficha = {
+        ...FICHAS[MEMBERS[id].base as FichaId],
+        ...REGRESSION_FICHA_FIELDS[id],
+      };
+      const fields: [string, Bilingual][] = [
+        ...Object.entries(ficha),
+        ["nota", REGRESSION_NOTES[id]],
+      ];
+      for (const [field, value] of fields)
+        for (const text of texts(value))
+          expect(text, `${id}.${field}`).not.toMatch(CLASSIFY);
     }
   });
 });

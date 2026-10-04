@@ -10,8 +10,13 @@ import { isFeatureUsed } from "@/engine/explainability";
 import { useT } from "@/i18n/use-translation";
 // SOLO tipo (un import runtime de schemas.ts metería zod al bundle del cliente).
 import type { FallbackReason } from "@/lib/ia/schemas";
+import { importanceFormatter } from "@/lib/regression-text";
 import type { AiNarrationState } from "@/lib/useNarration";
-import type { Explainability, FeatureImportance } from "@/workers/protocol";
+import type {
+  Explainability,
+  FeatureImportance,
+  TargetUnit,
+} from "@/workers/protocol";
 import { Badge, Button, Card } from "./ui";
 
 const MAX_BARS = 8;
@@ -57,14 +62,23 @@ function ImportanceChart({
   explain,
   target,
   positiveClass,
+  unit,
 }: {
   explain: Explainability;
   target: string;
   positiveClass: string | null;
+  unit: TargetUnit | null;
 }) {
   const t = useT();
   const features = explain.features.slice(0, MAX_BARS);
   const max = Math.max(...features.map((f) => f.importance), 0);
+  // Al estimar, la importancia está en las unidades del objetivo (AU-S6-21).
+  const fmt = unit
+    ? importanceFormatter(
+        { unit },
+        features.map((f) => f.importance),
+      )
+    : (value: number) => value.toFixed(3);
 
   if (features.length === 0 || max <= 0) {
     return <p className="text-sm text-ink-muted">{t("why.empty")}</p>;
@@ -84,7 +98,7 @@ function ImportanceChart({
                 {feature.name}
               </span>
               <span className="shrink-0 font-mono text-xs tabular-nums text-ink-muted">
-                {feature.importance.toFixed(3)}
+                {fmt(feature.importance)}
               </span>
             </div>
             <div
@@ -92,7 +106,7 @@ function ImportanceChart({
               role="img"
               aria-label={t("why.barLabel", {
                 name: feature.name,
-                value: feature.importance.toFixed(3),
+                value: fmt(feature.importance),
               })}
             >
               <div
@@ -118,6 +132,7 @@ export function WhySection({
   ai,
   aiAvailable = true,
   onRequestNarration,
+  unit = null,
 }: {
   explain: Explainability;
   /** Columna objetivo — las direcciones se leen contra ella (no contra "«0»"). */
@@ -130,6 +145,8 @@ export function WhySection({
   ai: AiNarrationState;
   /** S6 (P7): false al estimar — la IA solo narra clasificación binaria. */
   aiAvailable?: boolean;
+  /** S6: al estimar, la unidad del objetivo (las importancias están en ella). */
+  unit?: TargetUnit | null;
   onRequestNarration: () => void;
 }) {
   const t = useT();
@@ -151,6 +168,7 @@ export function WhySection({
           explain={explain}
           target={target}
           positiveClass={positiveClass}
+          unit={unit}
         />
         {/* Qué es la clase detectada + qué significan barra y dirección: sin
             esto, «0» no le dice nada a nadie (gate ⭐ S4, bloque C). */}

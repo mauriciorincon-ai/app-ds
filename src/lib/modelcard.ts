@@ -18,6 +18,7 @@ import type { MetricName } from "@/engine/verdict";
 import { datasetSlug } from "@/lib/files";
 import { formatQuantity, withUnit } from "@/lib/quantity";
 import {
+  importanceFormatter,
   quantityFormatter,
   regressionVerdictText,
 } from "@/lib/regression-text";
@@ -66,6 +67,8 @@ type TaskBlocks = {
   verdict: string;
   estimate: string[];
   direction: (key: string) => string;
+  /** La importancia de una columna (al estimar, en las unidades del objetivo). */
+  importance: (value: number) => string;
   narrative: string;
 };
 
@@ -113,6 +116,7 @@ function binaryBlocks(
     ].join("\n"),
     estimate: [],
     direction: (key) => t(`narration.template.direction.${key}`),
+    importance: (value) => value.toFixed(4),
     narrative:
       input.verifiedNarrative !== null
         ? `> ${input.verifiedNarrative}`
@@ -201,6 +205,10 @@ function regressionBlocks(
       key === "positive" || key === "negative"
         ? t(`narration.template.regression.direction.${key}`)
         : t(`narration.template.direction.${key}`),
+    importance: importanceFormatter(
+      result,
+      result.explainability.features.map((f) => f.importance),
+    ),
     narrative: t("modelcard.estimate.noAi"),
   };
 }
@@ -230,7 +238,7 @@ export function buildModelCard(input: ModelCardInput): string {
           ? "categorical"
           : (DIRECTION_KEY[feature.direction ?? ""] ?? "unclear");
       const direction = blocks.direction(directionKey);
-      return `| ${feature.name} | ${kind} | ${feature.importance.toFixed(4)} | ${direction} |`;
+      return `| ${feature.name} | ${kind} | ${blocks.importance(feature.importance)} | ${direction} |`;
     }),
   ].join("\n");
 
