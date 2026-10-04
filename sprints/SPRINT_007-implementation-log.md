@@ -88,6 +88,121 @@ Si algo pidiera permiso, se enseña antes con su matriz y se espera el «sí».
 - `pnpm test`: 533 de 533 (49 archivos), con 3 del hook y 7 de dependencias nuevos
 - `gitleaks-hook.test.ts` (integración): 7 de 7
 
+### El archivo de modelo del S6 (D1), antes de tocar `pipeline.py`
+
+`git diff 6f50c43` estaba vacío en `pipeline.py` (fuente y copia pública), `model-file.ts`,
+`src/workers` y `experiment.ts`. Con ese código, `tests/integration/modelo-s6.test.ts` (emisor
+con `MODELO_S6_EMITIR=1`) recorrió el camino real de la app sobre `consumo-energia.csv`, con la liga
+de un solo miembro (`linear`, como el fixture del S5): prepareRun → liga → contrato →
+`assembleRegressionResult` → `export_model` → `packModelFile`.
+
+- `modelo-s6.probeta.json`: 5,8 KB, `task: numerica`, ganador `linear`, Pyodide 314.0.2,
+  sklearn 1.8.0.
+- `modelo-s6.esperado.json`: las 8 casas nuevas estimadas, con novedad en 2 de 8 filas.
+
+La prueba permanente (valida, restaura y puntúa exactamente igual) pasó 1 de 1.
+
+**Rojo** (`demo-rojo.sh`): las estimaciones de regresión ×1,0001 en `score_new_data` →
+«× valida, se restaura y puntúa las casas nuevas EXACTAMENTE como en el S6», con
+«expected [278.585…] to deeply equal [278.557…]». Restaurado: 1 de 1.
+
+### Datasets del kit (P13 del plan)
+
+Los genera `make-example-datasets.mjs` con semilla. Los seis heredados salieron **idénticos**: `git`
+solo vio archivos nuevos.
+
+| Archivo                          | Filas | Objetivo | Dónde         | Medido al generarlo                                                                                                                                                    |
+| -------------------------------- | ----: | -------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `planes-suscripcion.csv`         |   200 | `plan`   | público + kit | 5 clases: básico 77 · estándar 37 · premium 42 · empresa 25 · estudiante 19. El AUC uno-contra-resto más alto de una columna legítima es 0,944 (`uso_gb_mes` → básico) |
+| `planes-suscripcion-mediano.csv` | 5.000 | `plan`   | solo kit      | Nivel 2 multiclase                                                                                                                                                     |
+| `planes-fuga-plantada.csv`       |   200 | `plan`   | público + kit | `cargo_corporativo_usd` separa «empresa» con AUC 1,0. La legítima más alta: 0,969 (`uso_gb_mes` → empresa)                                                             |
+| `segmentos-clientes.csv`         |   300 | —        | público + kit | 3 grupos plantados (gasto y visitas); `cliente_id` es un identificador                                                                                                 |
+| `sin-grupos.csv`                 |   300 | —        | público + kit | Una sola nube de 4 numéricas y una categórica al azar                                                                                                                  |
+
+### CI de la Fase 0
+
+| Push      | Contenido                    | Checks                                                                                                                                                                                                                                                                                                                                                                    |
+| --------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `e9e084b` | constitución + delta del kit | 6 de 6 `success` (`quality`, `integration`, `e2e`, `lighthouse`, Vercel, Vercel Preview Comments). **Primera corrida** de `lighthouse-margen` y de `hook-secretos.test.ts` en `quality`. El margen **avisó**: «/ · largest-contentful-paint mediana 3168 vs presupuesto 3500 (margen 9.5 % < 10 %)». Es un aviso (exit 0), no un rojo, y queda como decisión para el STOP |
+| `77f4c0a` | fixture del S6 + datasets    | 6 de 6 `success`. El margen esta vez: «✓ ninguna mediana a menos del 10 %». Es la bimodalidad de Lighthouse sobre localhost que describe el kit                                                                                                                                                                                                                           |
+
+### Spike en el navegador
+
+Arneses nuevos, con el molde `docs/SPIKE-DE-COSTOS.plantilla.md`:
+
+- `scripts/spike-multiclase/` y `scripts/spike-agrupar/`, cada uno con `datos.mjs`,
+  `payloads.spike.ts`, `spike.py`, `tabla.mjs` y su config de vitest;
+- `scripts/spike-liga/correr.mjs` ampliado:
+  - repeticiones por celda (`SPIKE_REPS`, o `reps` por payload);
+  - la carga de la máquina (`os.loadavg`) antes y después de cada dataset y del lote;
+  - opciones por tarea (`SPIKE_OPTS`);
+  - Pyodide servido desde una carpeta local (`SPIKE_PYODIDE_DIR`) para medir otra versión sin
+    tocar `public/pyodide/`.
+
+**Corridas de humo (NO son medición: la máquina estaba sobre el umbral, carga 7,2–8,8 con umbral
+5).** Sirvieron para validar el código y ya cambiaron qué mide el spike de agrupar:
+
+- **El one-hot de las categóricas fabrica grupos.** En `segmentos` (3 grupos plantados), K-Means
+  eligió k = 12 y Agglomerative k = 11 con numéricas + one-hot; con solo numéricas, GMM, HDBSCAN y
+  Agglomerative dieron k = 3. El spike mide los dos preprocesamientos.
+- **Silueta + estabilidad no separan datos sin estructura.** En un uniforme de 1 dimensión, K-Means
+  dio k = 2, silueta 0,62 y ARI 0,98: la lectura «silueta ≥ 0,25 y ARI ≥ 0,8» diría «los grupos
+  existen». Con la **referencia nula** (el mismo agrupador sobre datos uniformes en la caja de la
+  muestra rotada por PCA, como el estadístico gap) la diferencia fue +0,004. Con los grupos
+  plantados fue de +0,22 a +0,35. El spike mide el gap por k y en el k elegido.
+- **La pureza cruda de una categórica no sirve uno contra el resto.** En la simulación de azar
+  (categoría y clase sin relación), con una clase del 2 % dio ≥ 0,98 en el 56–62 % de los sorteos,
+  con 150 o 600 filas: el soporte no lo arregla. La pureza normalizada dio 0 % en todas las celdas.
+- **La falsa alarma exacta de una numérica** (|AUC − ½| ≥ 0,48 por azar, sin empates) es de
+  1,587 % con soporte 4 y de 0,794 % con soporte 5, en el peor caso sobre el tamaño del otro lado.
+  Es matemática, no medición del navegador.
+
+**Pyodide 314.0.7 frente al pin 314.0.2** (`npm pack` en el scratchpad, sin tocar el repo; peso
+con la misma lógica de `verificar-peso-pyodide`):
+
+| Paquete / medida                  | 314.0.2 (pin)         | 314.0.7                                             |
+| --------------------------------- | --------------------- | --------------------------------------------------- |
+| scikit-learn · xgboost · lightgbm | 1.8.0 · 2.1.4 · 4.6.0 | 1.8.0 · 2.1.4 · 4.6.0                               |
+| pandas · scipy                    | 3.0.2 · 1.18.0        | 3.0.2 · 1.18.0                                      |
+| numpy                             | 2.4.3                 | **2.4.6**                                           |
+| Python (según el lock)            | 3.14.0                | 3.14.2                                              |
+| Peso (núcleo + 11 wheels)         | 41.497.725 bytes      | 41.563.579 bytes (**+64,3 KiB**, la wheel de numpy) |
+
+**Las corridas medidas (2026-10-04, 15:33–17:15).** Informe completo, con las tablas y los
+anexos: `sprints/SPRINT_007-spike-catalogo.md`. Lo que pasó, en orden:
+
+- **8 lotes con el envoltorio del molde** (espera load1 ≤ 5 durante 60 s, repite el lote una vez si
+  algún dataset pasó el umbral). Multiclase y agrupar en Chromium salieron con carga en los dos
+  intentos (10 de 17 y 10 de 17; 5 de 13 y 6 de 13); multiclase con 314.0.7 salió limpio al
+  segundo; los otros cinco lotes, limpios al primero.
+- **La carga.** Hasta las ~16:05, el proceso principal de Safari usaba un núcleo entero; el usuario lo
+  cerró. La máquina (16 GB) trabajaba con 18.406–20.070 M de swap, con otras ventanas de VS Code del
+  usuario trabajando en paralelo, que no se tocan. En Chromium, los datasets más pesados subieron la
+  carga durante su propia corrida; en WebKit, no.
+- **Tercer intento declarado** (`lotes-extra`, 17:06–17:15) solo para los 8 datasets de Chromium sin
+  ninguna corrida bajo el umbral: 6 salieron limpios; las nubes de 5.000 y 20.000 filas, con carga
+  otra vez (se marcan «con carga»; su lectura limpia de tiempo es la de WebKit).
+- **Qué corrida usa cada dataset:** `scripts/spike-liga/elegir-intento.mjs`, con una regla fijada antes
+  de mirar los tiempos (el intento más reciente bajo el umbral; si ninguno, el de menor carga
+  máxima, marcado). Nunca el más rápido.
+- **La carga no cambió los resultados:** `scripts/spike-liga/comparar-corridas.mjs`, sin los campos de
+  tiempo, memoria y carga → multiclase 17 de 17 datasets idénticos en 106 corridas; agrupar 13 de 13
+  en 82 (tres intentos de Chromium + WebKit). **Una primera versión de esta comprobación, hecha a
+  mano durante los lotes, comparaba solo las repeticiones y dejaba pasar sin comparar los datasets de
+  una sola corrida**; el script la reemplaza y es la cifra que vale.
+- **Pyodide:** el arnés ahora lee la versión CARGADA en el navegador (`pyodideVersion`, numpy,
+  scikit-learn en el `boot` de `correr.mjs`): 314.0.2 · numpy 2.4.3 y 314.0.7 · numpy 2.4.6, los dos
+  con scikit-learn 1.8.0. Resultados idénticos en los 5 datasets comparados (39 corridas); medianas
+  de tiempo a ≤ 0,3 s.
+- **D8 en la binaria** (`scripts/spike-multiclase/d8-binaria.spike.ts`, motor real, sin navegador):
+  con soporte 5 y pureza normalizada, 0 de los 11 objetivos binarios del kit cambian de veredicto, y
+  `monto_recuperado` sigue marcada.
+- `correr.mjs` sumó un `SPIKE_TAG` por intento y `tabla.mjs` de los dos spikes sumó secciones: el
+  veredicto con exactitud balanceada (multiclase) y «k en 2..10: el ganador por puntaje, por gap y
+  por consenso» (agrupar).
+
+El servidor de producción de la medición se apagó al terminar.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre
@@ -97,3 +212,12 @@ Si algo pidiera permiso, se enseña antes con su matriz y se espera el «sí».
   interruptor.** La primera demo del hook lo pasó sin argumento: `set -u` cortó con «$2: unbound
   variable» antes de mutar nada (exit 1, archivo intacto). Propuesta: que el script diga «falta el
   comando de --esperar-verde», o que lo tome del `--gate` por defecto.
+- **K-S7-3 · El molde del spike de costos no dice qué hacer si el lote repetido TAMBIÉN sale con
+  carga, ni ve la memoria.** «Se repite el lote; no se promedia con el sucio» deja abierto el segundo
+  sucio. Aquí: un tercer intento declarado, solo para los datasets sin ninguna corrida limpia, y una
+  regla para elegir la corrida fijada antes de mirar los tiempos (`elegir-intento.mjs`). Y el umbral
+  `load1 ≤ núcleos / 2` no mide la presión de memoria: con 16 GB y 18–20 GB de swap, los datasets
+  pesados subieron la carga durante su propia corrida, con la máquina quieta al arrancar.
+  Propuesta para el molde: (a) la regla del tercer intento y de elección de corrida, con su script;
+  (b) registrar el swap junto al `uptime`; (c) un paso «¿la carga cambió los resultados o solo los
+  tiempos?» con `comparar-corridas.mjs`, que separa lo que la carga puede tocar de lo que no.

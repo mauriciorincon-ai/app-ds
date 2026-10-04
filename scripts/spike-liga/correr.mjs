@@ -5,8 +5,15 @@
 // (motor de Safari/iPhone). Uso:
 //   SPIKE_OUT=<dir> node scripts/spike-liga/correr.mjs chromium|webkit [ids,separados,por,coma]
 //   SPIKE_PY=scripts/spike-regresion/spike.py SPIKE_OUT=<dir> node scripts/spike-liga/correr.mjs chromium   (S6)
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+// S7 (molde del spike de costos, kit v1.38.0):
+//   SPIKE_REPS=3 → cada celda se corre N veces (la tabla usa la mediana; un payload puede fijar `reps`).
+//   La CARGA de la máquina (os.loadavg) se registra antes y después de cada dataset y del lote.
+//   SPIKE_OPTS='{"k_max":12}' → opciones extra para run_spike (agrupar).
+//   SPIKE_PYODIDE_DIR=<dir> → Pyodide servido desde una carpeta local (p. ej. otra versión del
+//   runtime sacada con `npm pack`), sin tocar public/pyodide/; SPIKE_TAG nombra la salida.
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { cpus, loadavg } from "node:os";
+import { extname, join } from "node:path";
 import { chromium, webkit } from "@playwright/test";
 
 const BASE = process.env.SPIKE_BASE ?? "http://localhost:3000";
@@ -15,7 +22,16 @@ const browserName = process.argv[2] ?? "chromium";
 const onlyIds = process.argv[3]?.split(",");
 // SPIKE_VARIANTS=1 mide las variantes de spike_variants() en vez del roster (salida aparte).
 const variants = process.env.SPIKE_VARIANTS === "1";
-const tag = variants ? `${browserName}-variantes` : browserName;
+const tag =
+  process.env.SPIKE_TAG ?? (variants ? `${browserName}-variantes` : browserName);
+const REPS = Number(process.env.SPIKE_REPS ?? 1);
+const EXTRA_OPTS = JSON.parse(process.env.SPIKE_OPTS ?? "{}");
+const PYODIDE_DIR = process.env.SPIKE_PYODIDE_DIR;
+/** Carga de la máquina: load average de 1 minuto y el umbral del molde (núcleos / 2). */
+const machineLoad = () => ({
+  load1: Number(loadavg()[0].toFixed(2)),
+  threshold: cpus().length / 2,
+});
 const payloads = JSON.parse(
   readFileSync(join(out, "payloads.json"), "utf8"),
 ).filter((p) => !onlyIds || onlyIds.includes(p.id));
@@ -39,8 +55,10 @@ async function boot(base, full) {
     await py.loadPackage(base + lock.packages.xgboost.file_name);
   }
   const tPackages = performance.now();
+  // S7: la versión que se CARGÓ (no la carpeta de origen), para comparar runtimes sin deducirla.
+  const versions = JSON.parse(py.runPython("import json, numpy, sklearn; json.dumps({'numpy': numpy.__version__, 'sklearn': sklearn.__version__})"));
   return { runtimeMs: Math.round(tRuntime - t0), packagesMs: Math.round(tPackages - tRuntime), totalMs: Math.round(tPackages - t0),
-           loaded: Object.keys(py.loadedPackages).sort() };
+           pyodideVersion: py.version, ...versions, loaded: Object.keys(py.loadedPackages).sort() };
 }
 const heapMB = () => Math.round(py._module.HEAP8.buffer.byteLength / 1048576);
 self.onmessage = async (e) => {
@@ -83,6 +101,26 @@ async function freshWorkerPage() {
   await context.route(SPIKE_WORKER, (route) =>
     route.fulfill({ contentType: "text/javascript", body: WORKER }),
   );
+  if (PYODIDE_DIR) {
+    const TYPES = {
+      ".mjs": "text/javascript",
+      ".js": "text/javascript",
+      ".wasm": "application/wasm",
+      ".json": "application/json",
+      ".py": "text/plain",
+    };
+    await context.route(`${BASE}/__pyodide-alt/**`, (route) => {
+      const file = join(
+        PYODIDE_DIR,
+        new URL(route.request().url()).pathname.replace("/__pyodide-alt/", ""),
+      );
+      if (!existsSync(file)) return route.fulfill({ status: 404, body: "" });
+      return route.fulfill({
+        contentType: TYPES[extname(file)] ?? "application/octet-stream",
+        body: readFileSync(file),
+      });
+    });
+  }
   const page = await context.newPage();
   page.on("console", (m) => {
     if (m.type() === "error")
@@ -122,11 +160,13 @@ async function freshWorkerPage() {
   return { context, page, ask };
 }
 
-const pyBase = `${BASE}/pyodide/`;
+const pyBase = PYODIDE_DIR ? `${BASE}/__pyodide-alt/` : `${BASE}/pyodide/`;
 const result = {
   browser: browserName,
   version: browser.version(),
   when: new Date().toISOString(),
+  pyodide: PYODIDE_DIR ?? "public/pyodide",
+  machine: { before: machineLoad() },
   load: {},
   datasets: [],
 };
@@ -154,25 +194,49 @@ console.log(
 );
 for (const p of payloads) {
   const ks = p.rows >= 20_000 ? [5, 3] : [5];
-  const r = await w.ask({
-    type: "spike",
-    payload: JSON.stringify(p.payload),
-    options: JSON.stringify({ ks, variants }),
-  });
-  if (!r.ok) {
-    console.log(`[${browserName}] ${p.id}: ERROR ${r.error}`);
-    result.datasets.push({ id: p.id, error: r.error });
+  const reps = p.reps ?? REPS;
+  const before = machineLoad();
+  const runs = [];
+  let failed = null;
+  for (let rep = 0; rep < reps; rep++) {
+    const r = await w.ask({
+      type: "spike",
+      payload: JSON.stringify(p.payload),
+      options: JSON.stringify({ ks, variants, ...EXTRA_OPTS }),
+    });
+    if (!r.ok) {
+      failed = r.error;
+      break;
+    }
+    runs.push({ wallMs: r.wallMs, heapMB: r.heapMB, res: r.res });
+  }
+  const after = machineLoad();
+  if (failed !== null) {
+    console.log(`[${browserName}] ${p.id}: ERROR ${failed}`);
+    result.datasets.push({ id: p.id, error: failed, load: { before, after } });
+    // Un worker que murió (p. ej. sin memoria) no sirve para el resto: se levanta otro.
+    if (/timeout|onerror|memory|abort/i.test(String(failed))) {
+      await w.context.close();
+      Object.assign(w, await freshWorkerPage());
+      if (!(await w.ask({ type: "boot", base: pyBase, full: true })).ok) process.exit(1);
+      if (!(await w.ask({ type: "load-code", base: pyBase, spike: spikePy })).ok) process.exit(1);
+    }
     continue;
   }
+  const r = runs[0];
   result.datasets.push({
     id: p.id,
     rows: p.rows,
     wallMs: r.wallMs,
     heapMB: r.heapMB,
+    load: { before, after },
+    reps: runs.length,
+    wallMsRuns: runs.map((x) => x.wallMs),
+    resRuns: runs.slice(1).map((x) => x.res),
     ...r.res,
   });
   console.log(
-    `[${browserName}] ${p.id}: ${(r.wallMs / 1000).toFixed(1)} s · heap ${r.heapMB} MB · ganador ${r.res.winner ?? r.res.s5?.winner}${r.res.h1 ? ` (H1 ${r.res.h1.winner})` : ""}`,
+    `[${browserName}] ${p.id}: ${runs.map((x) => (x.wallMs / 1000).toFixed(1)).join(" / ")} s · heap ${r.heapMB} MB · carga ${before.load1} → ${after.load1}${r.res.winner ? ` · ganador ${r.res.winner}` : ""}`,
   );
   writeFileSync(
     join(out, `resultados-${tag}.json`),
@@ -181,6 +245,7 @@ for (const p of payloads) {
 }
 await w.context.close();
 await browser.close();
+result.machine.after = machineLoad();
 writeFileSync(
   join(out, `resultados-${tag}.json`),
   JSON.stringify(result, null, 2),
