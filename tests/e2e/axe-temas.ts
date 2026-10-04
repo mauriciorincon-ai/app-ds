@@ -23,6 +23,12 @@ export async function axeBothThemes(page: Page, scope?: string) {
   await settle(page);
   for (const colorScheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme });
+    // El cambio de tema dispara las `transition-colors` (fondo y borde funden 150 ms):
+    // medido a mitad, el texto del tema nuevo queda sobre el fondo del viejo y «falla»
+    // contraste (S6: Inicio vacío, primera pantalla con contenedores con transición).
+    await page.waitForFunction(() =>
+      document.getAnimations().every((a) => a.playState !== "running"),
+    );
     const builder = new AxeBuilder({ page });
     const axe = await (scope ? builder.include(scope) : builder).analyze();
     expect(axe.violations, `axe (${colorScheme})`).toEqual([]);

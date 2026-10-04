@@ -90,7 +90,11 @@ ejecutable**: archivo(s) y línea(s), cambio exacto propuesto, y el criterio obs
 "ajuste verificado" — el formato que un modelo de menor capacidad puede seguir sin pensar
 de más. Cierra recordando al usuario: *"aprueba la Fase 1 y fija el modelo de la Fase 2 con
 `/model` (un modelo menor basta si sigue este plan)"*.
-6. **NINGÚN NÚMERO DE ENTIDADES CABLEADO (kit v1.29.0 — comprobación mecánica).** Lee en el
+   **Todo copy que la Fase 1 PROPONGA pasa por su propia casilla 4 antes de entregarse (kit
+   v1.35.0):** los ajustes ejecutables fabrican texto (copies de estado, líneas de manual, pies de
+   brochure) y ese texto puede traer una promesa aplazada nueva *(ds S5: el arreglo propuesto para
+   el pie del brochure prometía «se suman cuando la página se re-arme» en una página pública)*.
+7. **NINGÚN NÚMERO DE ENTIDADES CABLEADO (kit v1.29.0 — comprobación mecánica).** Lee en el
    brief y la VISION de la planeadora qué entidades se declaran **extensibles solo con datos**
    (p. ej. «N plataformas», «N idiomas», «N capas»). Para cada una, busca en el núcleo y en las
    vistas literales y arreglos fijos que asuman la cardinalidad de hoy (`3`, `[a, b, c]`,
@@ -110,7 +114,11 @@ de más. Cierra recordando al usuario: *"aprueba la Fase 1 y fija el modelo de l
    no se puede reproducir, se re-audita su superficie hasta ubicarlo o descartarlo con evidencia.
 2. **Espera la validación del usuario** del plan.
 3. Solo entonces implementa — siguiendo el plan de la Fase 1 al pie; cualquier desviación se
-   declara antes de ejecutarla.
+   declara antes de ejecutarla. **Orden de pago (kit v1.35.0): primero los hallazgos que CREAN o
+   amplían gates (tests, axe, aserciones); después el resto; y los gates nuevos se corren AL FINAL
+   sobre el árbol completo**, no solo sobre el archivo que los motivó *(ds S5: el axe nuevo de un
+   pago atrapó una regresión introducida por otro pago)*. Toda demo en rojo de la Fase 2 va con
+   `scripts/demo-rojo.sh` (regla 15).
 4. **Repite la casilla 4 de la Fase 1 («¿qué frases caducaron?») DESPUÉS del último ajuste
    (kit v1.28.0):** los arreglos de la Fase 2 fabrican frases nuevas —un texto de estado, un
    copy de vacío, una línea del manual— y la casilla corrida antes de ellos no las vio. Es el

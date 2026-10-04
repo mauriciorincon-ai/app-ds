@@ -136,6 +136,29 @@ describe.skipIf(!gitleaksAvailable || !hasJq())(
   },
 );
 
+// --- Kit v1.35.0 (ds S5, K-S5-9) ---------------------------------------------------
+// El hook PreToolUse sigue fallando ABIERTO sin jq/gitleaks (no puede bloquear a quien no
+// los tiene), pero ya no en SILENCIO: avisa en stderr. Antes, una máquina sin gitleaks
+// escribía sin escanear y nadie se enteraba. Nació en rojo con el comando previo a v1.35.0.
+describe("hook PreToolUse: avisa cuando omite el escaneo (kit v1.35.0)", () => {
+  it("sin gitleaks en el PATH: deja pasar (exit 0) pero AVISA en stderr", () => {
+    const bareEnv = { PATH: "/usr/bin:/bin" } as unknown as NodeJS.ProcessEnv;
+    const result = spawnSync("sh", ["-c", writeHook], {
+      input: JSON.stringify({
+        tool_name: "Write",
+        tool_input: {
+          file_path: "/tmp/x.ts",
+          content: "export const a = 1;\n",
+        },
+      }),
+      env: bareEnv,
+      encoding: "utf8",
+    });
+    expect(result.stderr).toMatch(/AVISO kit B-8/);
+    expect(result.status).toBe(0);
+  });
+});
+
 describe("pre-commit: falla CERRADO sin gitleaks (kit v1.32.1)", () => {
   // PATH mínimo del sistema: ahí no vive gitleaks (Homebrew/winget lo ponen en otro lado,
   // y la CI no lo instala en el PATH). Así se reproduce «máquina sin gitleaks».

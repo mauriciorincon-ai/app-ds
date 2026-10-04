@@ -1,4 +1,4 @@
-# kit-app (se estampa en cada app) — kit v1.26.0
+# kit-app (se estampa en cada app) — kit v1.35.0 (regla fijada en v1.23.1 y v1.26.0; cabecera al día desde v1.35.0)
 # REGLA DEL USUARIO (2026-08-22, fijada en Innmobiliaria): máximo DOS PRs de dependencias
 # abiertos a la vez — jamás una lista de merges pendientes. Un PR agrupado por ecosistema.
 # (La v1.23.0 traía limit 5 POR ecosistema = hasta 10 abiertos, y la primera activación
@@ -24,6 +24,11 @@ updates:
     ignore:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # app-ds S6 (decisión del usuario, 2026-10-04, PR #15 cerrado): Pyodide viaja DENTRO de cada
+      # modelo exportado (RUNTIME_VERSIONS, src/lib/model-file.ts) y gobierna el aviso de versiones
+      # al importar: se mueve por DECISIÓN, con el runtime re-medido, nunca en el lote semanal. Lo
+      # vigila tests/unit/runtime-pin.test.ts (pin exacto = constante = este ignore).
+      - dependency-name: "pyodide"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

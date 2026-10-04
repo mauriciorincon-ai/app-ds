@@ -80,6 +80,11 @@ export function StartScreen({
         <input
           ref={inputRef}
           type="file"
+          // El control real es el botón visible; el input es solo el mecanismo
+          // del navegador: fuera del orden de tabulación y del árbol de
+          // accesibilidad (Lighthouse S6: «label» en un input sin nombre).
+          tabIndex={-1}
+          aria-hidden
           accept=".csv,text/csv"
           className="sr-only"
           onChange={(event) => {
@@ -220,6 +225,11 @@ function ImportModelSection({
         <input
           ref={inputRef}
           type="file"
+          // El control real es el botón visible; el input es solo el mecanismo
+          // del navegador: fuera del orden de tabulación y del árbol de
+          // accesibilidad (Lighthouse S6: «label» en un input sin nombre).
+          tabIndex={-1}
+          aria-hidden
           accept=".json,application/json"
           className="sr-only"
           onChange={(event) => {

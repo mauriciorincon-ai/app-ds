@@ -12,20 +12,17 @@ const base = process.argv[2] ?? "origin/main";
 const LOCK = "pnpm-lock.yaml";
 if (!existsSync(LOCK)) { console.log(`verificar-dependencias: no hay ${LOCK}; nada que comparar`); process.exit(0); }
 
+// Falla CERRADO (kit v1.35.0, ds S5 K-S5-4): una base ilegible NO es un verde — es la misma ilusión
+// que «un gate saltado se ve igual que uno verde». Solo pasa (con aviso) si la base EXISTE y no
+// tiene lockfile (repo nuevo).
+try { execSync(`git rev-parse --verify --quiet ${base}^{commit}`, { stdio: "ignore" }); }
+catch {
+  console.error(`✗ verificar-dependencias: no puedo leer la rama base ${base} (¿faltó \`git fetch origin main --depth=1\`?). Un gate que no puede mirar no está verde.`);
+  process.exit(1);
+}
 let lockBase;
 try { lockBase = execSync(`git show ${base}:${LOCK}`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); }
-catch {
-  // app-ds S5 (fricción K-S5-4 del kit): en CI la base SIEMPRE existe (el paso hace `git fetch
-  // origin main`), así que una base ilegible significa que el gate no comparó nada — y un gate
-  // que no corrió no puede salir verde («un gate saltado se ve igual que uno verde»). En local
-  // (repo nuevo, rama sin base) se sigue omitiendo con aviso.
-  if (process.env.CI) {
-    console.error(`✗ verificar-dependencias: no se pudo leer ${base}:${LOCK} en CI — el gate NO comparó nada (rojo, no «omitido»).`);
-    process.exit(1);
-  }
-  console.log(`verificar-dependencias: ${base} no tiene ${LOCK} (repo nuevo o rama sin base); se omite`);
-  process.exit(0);
-}
+catch { console.log(`⚠ verificar-dependencias: ${base} existe pero no tiene ${LOCK} (repo nuevo); nada que comparar`); process.exit(0); }
 const lockPR = readFileSync(LOCK, "utf8");
 
 /** Versiones por paquete en la sección `packages:` del lockfile (v6 y v9: claves `/nombre@ver` o `nombre@ver:`). */

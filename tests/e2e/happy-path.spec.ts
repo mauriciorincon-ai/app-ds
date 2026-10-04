@@ -1,5 +1,16 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { axeBothThemes } from "./axe-temas";
+
+// Inicio VACÍO (antes de cargar nada) no tenía ningún escaneo axe: Lighthouse lo
+// encontró en el S6 (dos `<input type="file">` sin nombre). Ambos temas.
+test("Inicio vacío pasa axe en ambos temas", async ({ page }) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: /Elegir archivo|Choose file/i }).first(),
+  ).toBeVisible();
+  await axeBothThemes(page);
+});
 
 // Happy path del veredicto honesto: elegir ejemplo → objetivo → entrenar → ver
 // veredicto. Ejercita el flujo real en navegador, incluido el worker de Pyodide
