@@ -10,7 +10,7 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Tercera red de secretos (auditoría de cierre H1): los hooks locales
       # dependen de core.hooksPath por máquina; CI escanea el working tree
       # siempre. Versión pineada = la validada localmente.
@@ -19,9 +19,9 @@ jobs:
           curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz | tar -xz gitleaks
           ./gitleaks dir . --no-banner --redact
           rm gitleaks
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with: { version: 11 }   # el scaffold estampa pnpm 11 (lockfile + allowBuilds); pnpm 11 exige Node >=22.13
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm peers check     # único gate que ve un peer insatisfecho (kit v1.24.0, regla 18)
@@ -43,10 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with: { version: 11 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       # Pipeline anti-fuga en Pyodide/WASM (fit-solo-en-train). Descarga las
@@ -57,17 +57,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with: { version: 11 }   # el scaffold estampa pnpm 11 (lockfile + allowBuilds); pnpm 11 exige Node >=22.13
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e        # incluye scans axe (@axe-core/playwright); falla con CERO pruebas (kit v1.28.0)
       # El primer reintento graba trace (playwright.config `trace: on-first-retry`) con
       # consola, errores y DOM — se sube SOLO cuando algo falla (kit v1.26.0).
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-test-results
@@ -79,10 +79,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with: { version: 11 }   # el scaffold estampa pnpm 11 (lockfile + allowBuilds); pnpm 11 exige Node >=22.13
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
