@@ -63,6 +63,14 @@ ella.
   menos filas se agrupan, igual que el `min_frequency` del preprocesador. El usuario lo aprobó en el
   STOP de la F0 con los umbrales.
 
+- **D7 · El brochure y su export entran en el S6 (Fase 2, 2026-10-04).** El plan no los listaba
+  entre los documentos de la F2. Pero la regla 12 de la constitución dice que todo sprint que cambie
+  features ajusta el brochure y su export en el mismo PR, y el brochure afirmaba «Ni tres, ni un
+  número continuo, todavía» y el export, «exactamente dos categorías».
+  - Se siguió el criterio del S5: cambios de texto y de conteo, sin tocar el storyboard ni las
+    escenas.
+  - Suman dos funcionalidades (33 → 35), con su tabla de mapeo en el summary.
+
 ## Fase 0 — delta del kit + deuda del S5 + spike de regresores
 
 ### Delta del kit v1.33.0 → v1.35.0 (por nombre)
@@ -388,6 +396,87 @@ pasada del S6 será `capturas-s6.mjs`.
 compilaba: el server del e2e no arrancó y el gate «falló» sin que la prueba corriera.
 `demo-rojo.sh` lo aceptó como rojo (K-S6-5). Se rehízo con una mutación que compila, y el fallo
 nombró el grupo de la pregunta.
+
+### Después de la mirada (construido encima de M1 y M2, ya registradas)
+
+- **Model card por tarea.**
+  - `buildModelCard` acepta las dos tareas. Al estimar trae la sección **«Estimación»**: la tarea,
+    la unidad, el objetivo en train con sus decimales, cómo se reparten los errores y «Narración con
+    IA: no aplica».
+  - Las métricas van en unidades contra la mediana y la lineal, con MAPE «—» si hay ceros, y el
+    veredicto es el mismo de la pantalla.
+  - El texto del veredicto vive en `src/lib/regression-text.ts`, que comparten la pantalla y la
+    model card; la demo #15 se rehízo ahí.
+  - La línea de límites binaria («Solo clasificación binaria») se reemplazó por `limits.tasks`.
+  - El resumen de métodos separa los baselines por tarea, y la salida binaria queda idéntica.
+- **Fichas al estimar.**
+  - Un párrafo de regresión por cada modelo compartido (`REGRESSION_NOTES`), como dato `{es, en}`
+    con paridad.
+  - **Hallazgo de la pasada de capturas:** la ficha de Ridge al estimar seguía diciendo «decide la
+    clase… sin columna de probabilidad» y «Su AUC se calcula…», y contradecía el párrafo de abajo.
+    Se agregaron reemplazos por tarea de los apartados que solo hablan de clasificar
+    (`REGRESSION_FICHA_FIELDS`); hoy solo Ridge los tiene, y se revisaron las nueve fichas
+    compartidas.
+- **Documentos:**
+  - el manual, con «Estimar una cantidad · desde Sprint 006», su diccionario, tres preguntas
+    frecuentes (R² negativo, por qué pregunta, por qué la mediana) y el historial; las líneas «solo
+    dos categorías» quedaron anotadas;
+  - el ADR 013 (regresión como segunda tarea, con la entrada del gráfico en el design system) y el
+    ADR 014 (el manifiesto por tarea);
+  - `design-system.md`, con «Añadidos Sprint 006»;
+  - el bundle `design-sync/`, con dos tarjetas S6 (`estimar.html`, `tarea-ambigua.html`) y su
+    README;
+  - la guía v3 acumulativa:
+    - 49 pruebas: las 38 heredadas, F1 y E4 «Mejoradas en S6» y el bloque G con 11;
+    - ⭐ de H2: 8 (4 del S5 + 4 del S6: G2, G4, G5, G10);
+    - el chip `.o-s6`, los filtros «Nuevo del S6», «Mejorado en S6» y «Regresión S5», y
+      `CLAVE = "guia-ds:s6:"`;
+    - las cifras de la guía salieron de la pasada de capturas, no a ojo;
+  - el kit gana `casas-nuevas.csv`, para puntuar con novedad plantada (2 de 8 filas).
+- **Brochure y su export (regla 12 de la constitución):** ver D7.
+  - Suman dos funcionalidades: «Estimar una cantidad, con el error en sus unidades» y «¿Categorías o
+    una cantidad? Te lo pregunta». Pasan de 33 a 35 en el pie, el export y el e2e del brochure.
+  - V1 dice «o una cantidad», y «tres ejemplos» pasa a «cinco».
+  - El límite «ni un número continuo» se corrige.
+  - El historial suma las etapas 5 y 6.
+- **e2e:**
+  - `regresion-score.spec` (exportar → recargar → importar → puntuar con `consumo_kwh_estimado` y
+    un decimal, sin payload ni CSV en la red, y axe);
+  - `reduced-motion` ampliado a estimar (la respuesta de la ambigua sin transición, y el veredicto
+    y el gráfico de verdad visibles).
+- **Pagado al pasar (era del S3):** «1 valores fuera del rango» → `score.novelty.*_one`, en los
+  dos idiomas, con sus dos pruebas.
+
+**Pasada de capturas del S6** (`scripts/capturas-s6.mjs`, build de producción, 2026-10-04):
+
+- 360 y 1280 px, en claro y en oscuro; 32 encuadres con `scrollWidth ≤ clientWidth` medido (28 de la app + 4 de la guía), todos
+  OK y sin `pageerror`.
+- La ficha de Ridge cabe en la ventana en los cuatro (663 ≤ 780 y 650 ≤ 900).
+- Se leyeron como imagen:
+  - Resultados completos 1280 claro y 360 oscuro;
+  - el veredicto, el gráfico (los dos temas), la liga con la prueba en 360, la ficha de Ridge
+    oscura, la model card, puntuar, la fuga de precio, Inicio y la guía v3.
+- Hallazgos pagados:
+  - la ficha de Ridge al estimar;
+  - las marcas del eje: con `niceTicks(…, 4)` salían 2 por eje en el consumo y ahora son 4;
+  - el número partido de su unidad a 360 px (espacio no separable, antes de la mirada).
+
+| Cifra que cita la guía | Medida                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| Quién compite, consumo | Nivel 1 · ahora · 10 modelos · unos 3 s                                               |
+| Veredicto, consumo     | ▲ «Extra Trees» supera · ±33.5 kWh frente a ±43.8 kWh de la lineal · 23 % menos error |
+| Errores, consumo       | 9 de cada 10 se equivocan por menos de ±62.7 kWh                                      |
+| Novedad, casas nuevas  | 2 de 8 filas (25 %)                                                                   |
+| Consumo mediano        | Nivel 1 · 9 modelos · unos 5 s · Nivel 2 · 2 modelos más                              |
+
+| #   | Gate                                                              | Mutación                                       | Qué dijo el fallo                                                   |
+| --- | ----------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
+| 15  | (rehecha en `regression-text.ts`) La lineal empata solo si empata | `verdict.level === "ties"` → `true`            | El «NO supera» de la lineal quedó tapado, y la model card lo heredó |
+| 24  | La model card al estimar trae «Estimación»                        | Sin `...blocks.estimate`                       | «tarea, unidad, el objetivo en train…»                              |
+| 25  | La ficha al estimar suma su párrafo de regresión                  | `false && id in REGRESSION_NOTES`              | «un modelo compartido suma su párrafo de regresión…»                |
+| 26  | e2e: puntuar al estimar escribe `<objetivo>_estimado`             | Nombre de columna de clasificación             | `getByText('consumo_kwh_estimado')`: element(s) not found           |
+| 27  | e2e: reduced-motion al estimar                                    | La respuesta de la ambigua sin `motion-reduce` | `transitionOff` → «Expected: true, Received: false»                 |
+| 28  | La ficha de Ridge al estimar no habla de clasificar               | Sin los reemplazos por tarea                   | El diálogo contenía «AUC / probabilidad / la clase»                 |
 
 ## Fricciones del kit (SEPARADAS del producto)
 
