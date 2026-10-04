@@ -25,6 +25,7 @@ import {
   detectLeakageContinuous,
   ETA_MIN_SUPPORT,
   etaSquared,
+  LEAKAGE_MIN_PAIRS,
   spearmanAbs,
 } from "@/engine/leakage";
 import {
@@ -172,6 +173,35 @@ describe("fuga con objetivo continuo (sobre train)", () => {
     expect(categorical.map((f) => [f.column, f.reason])).toEqual([
       ["nivel", "category-determines-target"],
     ]);
+  });
+
+  it("una columna casi vacía no se evalúa: con pocos pares, el azar da |ρ| = 1 (D8, AU-S6-11)", () => {
+    // 9 valores no nulos, ordenados IGUAL que el objetivo (ρ = 1 por construcción).
+    const sparse = (k: number) => y.map((v, i) => (i < k ? v : null));
+    const sparseCategory = (k: number) =>
+      y.map((v, i) => (i < k ? (v > 100 ? "alto" : "bajo") : null));
+    expect(
+      detectLeakageContinuous(
+        [
+          { name: "casi_vacia", kind: "numeric", values: sparse(9) },
+          {
+            name: "casi_vacia_cat",
+            kind: "categorical",
+            values: sparseCategory(9),
+          },
+        ],
+        y,
+      ),
+    ).toEqual([]);
+    // Con 10 pares, la misma relación perfecta ya se nombra.
+    expect(
+      detectLeakageContinuous(
+        [{ name: "diez", kind: "numeric", values: sparse(10) }],
+        y,
+      ).map((f) => f.column),
+    ).toEqual(["diez"]);
+    // El comportamiento primero (el rojo lo nombra él, no la constante).
+    expect(LEAKAGE_MIN_PAIRS).toBe(10);
   });
 
   it("los nulos se ignoran emparejados con su objetivo", () => {
@@ -438,6 +468,20 @@ describe("prepareRun por tarea", () => {
     expect(
       prepareRun(table, "ocupantes", 42, { ambiguousChoice: "multiclase" }),
     ).toEqual({ ok: false, error: "target-not-binary" });
+  });
+
+  it("precio SIN la columna plantada: entrena sin aviso de fuga (AC2, AU-S6-22)", () => {
+    const table = kit("precio-fuga-plantada.csv");
+    const drop = table.headers.indexOf("impuesto_transferencia_usd");
+    expect(drop).toBeGreaterThanOrEqual(0);
+    const withoutLeak: CsvTable = {
+      headers: table.headers.filter((_, i) => i !== drop),
+      rows: table.rows.map((row) => row.filter((_, i) => i !== drop)),
+    };
+    const run = prepareRun(withoutLeak, "precio_usd", 42);
+    expect(run.ok).toBe(true);
+    expect(run.ok && run.leakage).toEqual([]);
+    expect(run.ok && run.payload.task).toBe("numerica");
   });
 
   it("muy pocas filas: un rechazo honesto propio, no un error del motor (AU-S6-08)", () => {

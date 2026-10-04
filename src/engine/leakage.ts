@@ -35,6 +35,13 @@ export const CONTINUOUS_LEAKAGE_THRESHOLD = 0.98;
  *  construcción (una fila ⇒ η² = 1). Las que tienen menos filas que esto se
  *  agrupan en una sola, como el min_frequency del preprocesador. */
 export const ETA_MIN_SUPPORT = 5;
+/** S6 (D8, AU-S6-11): pares no nulos mínimos en train para evaluar la fuga de una
+ *  columna con objetivo continuo. Con pocos pares, un |Spearman| ≥ 0,98 sale por
+ *  AZAR: la probabilidad exacta (enumerando permutaciones) es 1/3 con 3 pares,
+ *  1/60 con 5, 1/20 160 con 8 y 1/181 440 con 10 — donde cae un orden más. Una
+ *  columna casi vacía ya no cambia el veredicto a «sospechoso» por nada. Decidido
+ *  por delegación del usuario (bitácora, D8). */
+export const LEAKAGE_MIN_PAIRS = 10;
 
 /**
  * AUC univariada por rangos (equivalente al estadístico de Mann-Whitney U
@@ -284,6 +291,7 @@ export function detectLeakageContinuous(
           ys.push(target[i]);
         }
       });
+      if (values.length < LEAKAGE_MIN_PAIRS) continue;
       const score = spearmanAbs(values, ys);
       if (score >= threshold) {
         findings.push({
@@ -301,6 +309,7 @@ export function detectLeakageContinuous(
           ys.push(target[i]);
         }
       });
+      if (values.length < LEAKAGE_MIN_PAIRS) continue;
       const score = etaSquared(values, ys);
       if (score >= threshold) {
         findings.push({

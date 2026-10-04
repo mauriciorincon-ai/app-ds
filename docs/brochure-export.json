@@ -71,8 +71,8 @@
           },
           {
             "id": "V6",
-            "nombre": "Cinco métricas, todas sobre datos no vistos",
-            "que_hace": "Exactitud, precisión, sensibilidad, F1 y AUC, calculadas siempre sobre el conjunto de prueba.",
+            "nombre": "Las métricas, todas sobre datos no vistos",
+            "que_hace": "Al clasificar: exactitud, precisión, sensibilidad, F1 y AUC. Al estimar: MAE, RMSE, R² y MedAE, en las unidades del objetivo. Calculadas siempre sobre el conjunto de prueba.",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -84,7 +84,7 @@
           {
             "id": "V8",
             "nombre": "Los baselines, a la vista",
-            "que_hace": "Clase mayoritaria y regresión logística: los rivales que hay que batir, con sus cifras.",
+            "que_hace": "Al clasificar, la clase mayoritaria y la regresión logística; al estimar, la mediana y la regresión lineal: los rivales que hay que batir, con sus cifras.",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -151,8 +151,8 @@
           },
           {
             "id": "D6",
-            "nombre": "Tres alertas antes de entrenar",
-            "que_hace": "Columna que huele a fuga, columna que parece un identificador y objetivo desbalanceado. Con símbolo y texto, nunca solo color.",
+            "nombre": "Cinco alertas antes de entrenar",
+            "que_hace": "Columna que huele a fuga, columna que parece un identificador, objetivo desbalanceado y, al estimar, objetivo muy sesgado u objetivo con valores muy lejos del resto. Con símbolo y texto, nunca solo color.",
             "seccion_manual": "Sobrevive datos reales"
           },
           {
@@ -234,7 +234,7 @@
           {
             "id": "U5",
             "nombre": "CSV puntuado sin pisar columnas",
-            "que_hace": "La tabla completa más predicción y probabilidad; si ya existía una columna con ese nombre, la nueva sale con sufijo.",
+            "que_hace": "La tabla completa más la predicción y, si el modelo la da, su probabilidad; al estimar, la cantidad estimada (<objetivo>_estimado). Si ya existía una columna con ese nombre, la nueva sale con sufijo.",
             "seccion_manual": "El modelo se usa"
           },
           {
@@ -278,7 +278,7 @@
           {
             "id": "T2",
             "nombre": "Diccionario de términos",
-            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y las cinco métricas.",
+            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y cada métrica, las de clasificar y las de estimar.",
             "seccion_manual": "Diccionario de términos"
           }
         ]
@@ -332,7 +332,7 @@
       "valor": 8,
       "unidad": "paquetes",
       "fuente": "medido",
-      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador."
+      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador. Lo recuenta tests/unit/brochure-export.test.ts contra package.json."
     },
     {
       "clave": "filas_del_usuario_en_la_red",
@@ -340,7 +340,7 @@
       "valor": 0,
       "unidad": "filas",
       "fuente": "medido",
-      "detalle": "Cuatro pruebas e2e inspeccionan cada petición de red durante el recorrido completo y fallan si alguna contiene valores del dataset. La única salida posible es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real."
+      "detalle": "Cinco pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard y, desde el S6, regresion-score) inspeccionan la red durante su recorrido y fallan si alguna petición contiene valores del dataset. La única salida posible es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real."
     },
     {
       "clave": "gpu_requerida",
@@ -361,18 +361,18 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 61572,
+      "valor": 63768,
       "unidad": "bytes",
       "fuente": "medido",
-      "detalle": "`wc -c docs/BROCHURE.html`. Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
+      "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
     },
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 8,
+      "valor": 14,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/."
+      "detalle": "Archivos de decisions/ (001–014). Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [
