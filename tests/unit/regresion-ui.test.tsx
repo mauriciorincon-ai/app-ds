@@ -16,7 +16,18 @@ import {
   within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+import FichaModelo from "@/components/FichaModelo";
+import { REGRESSION_NOTES } from "@/content/modelos";
+import { buildModelCard } from "@/lib/modelcard";
 import { LeagueTable } from "@/components/LeagueTable";
 import { PredichoVsReal } from "@/components/PredichoVsReal";
 import {
@@ -569,5 +580,119 @@ describe("useExperiment al estimar (S6)", () => {
     act(() => result.current.selectTarget("consumo_kwh"));
     act(() => result.current.selectTarget("ocupantes"));
     expect(result.current.state.plan?.choice).toBeNull();
+  });
+});
+
+describe("la model card al estimar (sección «Estimación»)", () => {
+  const card = (result: RegressionResult, target = "consumo_kwh") =>
+    buildModelCard({
+      locale: "es",
+      datasetName: "consumo-energia.csv",
+      cols: 7,
+      numericFeatures: 4,
+      categoricalFeatures: 2,
+      target,
+      seed: 42,
+      result,
+      verifiedNarrative: null,
+      date: new Date(2026, 9, 4),
+    });
+
+  it("tarea, unidad, el objetivo en train, errores y «la IA no aplica»; sin clases", () => {
+    const md = card(regressionResult());
+    expect(md).toContain("## Estimación");
+    expect(md).toContain("Objetivo: «consumo_kwh» (estimar una cantidad)");
+    expect(md).toContain(`Unidad: kWh, leída del nombre de la columna.`);
+    expect(md).toContain(
+      `media 374.7${NBSP}kWh, desviación 114.2${NBSP}kWh, mínimo 148.8${NBSP}kWh, mediana 365.4${NBSP}kWh, máximo 840.5${NBSP}kWh (escrito con 1 decimales)`,
+    );
+    expect(md).toContain("Narración con IA: no aplica a estimar una cantidad");
+    expect(md).toContain("estratificado por 5 bandas del objetivo");
+    expect(md).toContain(
+      "Baselines: la mediana del objetivo y la regresión lineal.",
+    );
+    expect(md).not.toContain("clase positiva");
+    expect(md).not.toContain("Clase mayoritaria");
+  });
+
+  it("métricas en unidades contra mediana y lineal, y el MISMO veredicto que la pantalla", () => {
+    const md = card(regressionResult());
+    expect(md).toContain("| Métrica | Modelo | Mediana | Regresión lineal |");
+    expect(md).toContain(
+      `| MAE | 33.5${NBSP}kWh | 80.9${NBSP}kWh | 43.8${NBSP}kWh |`,
+    );
+    expect(md).toContain("| R² | 0.80 | 0.00 | 0.73 |");
+    expect(md).toContain(
+      `**«Lineal» supera al baseline** — En promedio se equivoca por ±33.5${NBSP}kWh; una regresión lineal se equivoca por ±43.8${NBSP}kWh: un 24 % menos de error.`,
+    );
+  });
+
+  it("sin MAPE (objetivo con ceros) se escribe «—»; Ridge se llama como al estimar", () => {
+    const py = regressionPipelineResult({ roster: ["ridge"], cv_k: 5 });
+    const md = card(
+      regressionResult({ ...py, model: { ...py.model, mape: null } }),
+    );
+    expect(md).toMatch(/\| MAPE \| — \|/);
+    expect(md).toContain("Modelo elegido: Regresión Ridge.");
+  });
+});
+
+describe("la ficha al estimar", () => {
+  beforeAll(() => {
+    const proto = HTMLDialogElement.prototype as HTMLDialogElement & {
+      showModal: () => void;
+      close: () => void;
+    };
+    proto.showModal = function (this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    };
+    proto.close = function (this: HTMLDialogElement) {
+      this.removeAttribute("open");
+    };
+  });
+
+  it("un modelo compartido suma su párrafo de regresión y su nombre de esta tarea", () => {
+    ui(
+      <FichaModelo
+        target={{ id: "ridge", status: { kind: "winner" }, task: "numerica" }}
+        onClose={vi.fn()}
+      />,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).getByRole("heading", { name: "Regresión Ridge" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(REGRESSION_NOTES.ridge.es),
+    ).toBeInTheDocument();
+    // Nada de lo que solo vale al clasificar (probabilidad, AUC, «la clase»).
+    expect(dialog.textContent).not.toMatch(/AUC|probabilidad|la clase/);
+  });
+
+  it("al clasificar, la misma ficha no lo trae; la mediana tiene ficha propia", () => {
+    const { unmount } = ui(
+      <FichaModelo
+        target={{ id: "ridge", status: { kind: "winner" } }}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText(REGRESSION_NOTES.ridge.es)).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Clasificador Ridge" }),
+    ).toBeInTheDocument();
+    unmount();
+    ui(
+      <FichaModelo
+        target={{
+          id: "median",
+          status: { kind: "baseline" },
+          task: "numerica",
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole("heading", { name: "Mediana" }),
+    ).toBeInTheDocument();
   });
 });

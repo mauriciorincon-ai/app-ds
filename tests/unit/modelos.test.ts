@@ -2,9 +2,20 @@
 // base del roster + el baseline de clase mayoritaria; un párrafo propio por
 // variante balanceada; ambos idiomas completos y redactados (no copiados).
 import { describe, expect, it } from "vitest";
-import { BALANCED_NOTES, FICHAS, type Bilingual } from "@/content/modelos";
+import {
+  BALANCED_NOTES,
+  FICHAS,
+  REGRESSION_FICHA_FIELDS,
+  REGRESSION_NOTES,
+  type Bilingual,
+} from "@/content/modelos";
 import { MLP_MIN_ROWS } from "@/engine/encarrilador";
-import { ALL_MEMBER_IDS, MEMBER_IDS, MEMBERS } from "@/engine/roster";
+import {
+  ALL_MEMBER_IDS,
+  MEMBER_IDS,
+  MEMBERS,
+  REGRESSION_MEMBER_IDS,
+} from "@/engine/roster";
 import { translate } from "@/i18n/translate";
 
 const texts = (value: Bilingual) => [value.es, value.en];
@@ -37,6 +48,13 @@ describe("fichas ↔ roster", () => {
     expect(Object.keys(BALANCED_NOTES).sort()).toEqual([...balanced].sort());
     for (const id of balanced) expect(MEMBERS[id].base).not.toBe(id);
   });
+
+  it("S6: un párrafo de regresión por modelo que compite en las dos tareas, y solo por ellos", () => {
+    const shared = REGRESSION_MEMBER_IDS.filter((id) =>
+      (MEMBER_IDS as readonly string[]).includes(id),
+    );
+    expect(Object.keys(REGRESSION_NOTES).sort()).toEqual([...shared].sort());
+  });
 });
 
 describe("fichas bilingües", () => {
@@ -47,6 +65,15 @@ describe("fichas bilingües", () => {
       ),
     ),
     ...Object.entries(BALANCED_NOTES),
+    ...Object.entries(REGRESSION_NOTES).map(
+      ([id, value]) => [`regression.${id}`, value] as [string, Bilingual],
+    ),
+    ...Object.entries(REGRESSION_FICHA_FIELDS).flatMap(([id, fields]) =>
+      Object.entries(fields ?? {}).map(
+        ([field, value]) =>
+          [`regressionField.${id}.${field}`, value] as [string, Bilingual],
+      ),
+    ),
   ];
 
   it("todo campo trae es y en, no vacíos", () => {
