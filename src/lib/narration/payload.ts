@@ -19,13 +19,16 @@ const round3 = (value: number) => Math.round(value * 1_000) / 1_000;
 const clamp01 = (value: number) => Math.min(1, Math.max(0, round4(value)));
 
 // Alertas EDA → agregados del payload (tipo + columna o tasa; nunca un valor de
-// celda). Se mapea 1:1 desde EdaAlert.
+// celda). Se mapea 1:1 desde EdaAlert. S6: los avisos de la forma de un objetivo
+// numérico no viajan — la narración con IA no narra regresión (P7).
 function edaAggregates(alerts: EdaAlert[]): NarrationPayload["eda"] {
-  return alerts.map((alert) =>
-    alert.kind === "class-imbalance"
-      ? { kind: alert.kind, minorityRate: clamp01(alert.minorityRate) }
-      : { kind: alert.kind, column: alert.column },
-  );
+  return alerts.flatMap((alert): NonNullable<NarrationPayload["eda"]> => {
+    if (alert.kind === "class-imbalance")
+      return [{ kind: alert.kind, minorityRate: clamp01(alert.minorityRate) }];
+    if (alert.kind === "possible-leak" || alert.kind === "id-like")
+      return [{ kind: alert.kind, column: alert.column }];
+    return [];
+  });
 }
 
 export function buildNarrationPayload(input: {

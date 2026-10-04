@@ -403,11 +403,14 @@ const regressionSchemaV = obj({
   target_stats: targetStatsV,
 });
 
-/** S6: el esquema exportado dice su tarea; la binaria exige sus clases, la numérica su objetivo. */
-const exportSchemaV: Validator = (v, path) =>
-  isRecord(v) && v.task === "numerica"
-    ? regressionSchemaV(v, path)
-    : binarySchemaV(v, path);
+/** S6: el esquema exportado dice su tarea; la binaria exige sus clases, la
+ *  numérica su objetivo. Una tarea que no es ninguna se nombra como tal. */
+const exportSchemaV: Validator = (v, path) => {
+  if (!isRecord(v)) return path;
+  if (v.task === "numerica") return regressionSchemaV(v, path);
+  if (v.task === "binaria") return binarySchemaV(v, path);
+  return path ? `${path}.task` : "task";
+};
 
 export const trainingProfileV = obj({
   numeric: dict(obj({ min: nullable(num), max: nullable(num) })),

@@ -323,7 +323,13 @@ function EdaBlock({ alerts }: { alerts: EdaAlert[] }) {
               ? t("config.eda.imbalance", {
                   rate: (alert.minorityRate * 100).toFixed(0),
                 })
-              : t(`config.eda.${alert.kind}`, { column: alert.column })}
+              : alert.kind === "target-skewed"
+                ? t("config.eda.target-skewed", { skew: alert.skew.toFixed(1) })
+                : alert.kind === "target-outliers"
+                  ? t("config.eda.target-outliers", {
+                      share: (alert.share * 100).toFixed(1),
+                    })
+                  : t(`config.eda.${alert.kind}`, { column: alert.column })}
           </li>
         ))}
       </ul>

@@ -6,6 +6,7 @@
 // determinista (_2, _3, …) — jamás se pisa una columna existente.
 import type { CsvTable } from "@/lib/ds/csv";
 import { datasetSlug } from "@/lib/files";
+import { TARGET_DECIMALS_MAX } from "@/workers/contract";
 
 export type ScoredColumnNames = {
   prediction: string;
@@ -93,4 +94,17 @@ export function scoredCsvFileName(
 ): string {
   const slug = datasetSlug(datasetName) || "datos";
   return `${slug}-${localizedSuffix}.csv`;
+}
+
+/**
+ * S6: las cantidades estimadas, escritas con los decimales con que el usuario
+ * anotó su objetivo (TargetStats.decimals): un consumo anotado con 1 decimal se
+ * estima con 1, un precio entero sale entero. No se inventa precisión.
+ */
+export function formatEstimates(
+  predictions: readonly number[],
+  decimals: number,
+): string[] {
+  const d = Math.min(Math.max(Math.trunc(decimals), 0), TARGET_DECIMALS_MAX);
+  return predictions.map((value) => value.toFixed(d));
 }

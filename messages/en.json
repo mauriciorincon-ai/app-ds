@@ -112,6 +112,8 @@
       "title": "Before training, look at these signals:",
       "possible-leak": "«{column}» predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again.",
       "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
+      "target-skewed": "The target is heavily skewed (skewness {skew}): a few very large values carry a lot of weight. The mean absolute error (MAE) treats every miss alike; RMSE punishes misses on those large values harder.",
+      "target-outliers": "{share}% of the target's values sit far from the rest (beyond 3 interquartile ranges). Check whether they are data-entry mistakes before training: they can pull the model a long way.",
       "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
     },
     "trainHint": "Level 1: {count} models · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",

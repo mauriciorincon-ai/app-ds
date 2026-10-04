@@ -112,6 +112,8 @@
       "title": "Antes de entrenar, revisa estas señales:",
       "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo.",
       "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
+      "target-skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores muy grandes pesan mucho. El error medio (MAE) trata cada error igual; el RMSE castiga más los errores en esos valores grandes.",
+      "target-outliers": "{share}% de los valores del objetivo están muy lejos del resto (más de 3 rangos intercuartílicos). Revisa si son errores de captura antes de entrenar: pueden mover mucho al modelo.",
       "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
     },
     "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
