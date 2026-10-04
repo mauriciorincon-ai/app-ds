@@ -294,6 +294,95 @@ cubría el cálculo, no la comparación. Se agregó un objetivo con atípicos si
 - La #11 tenía un `-t` que no coincidía con el nombre del test, así que corrieron 0 tests y el gate
   «pasó» en vacío (K-S6-4).
 
+## Fase 2 — UI, lectura y documentos
+
+El usuario dio el «continúa» de la Fase 1 el 2026-10-04.
+
+### Plan de miradas (aprobado con el plan; sin cambios de número, agrupación ni orden)
+
+Una sola parada de **FORMA**, con dos filas. Las miradas de **TEXTO** (la línea «cuál mirar», la
+FAQ de R² negativo) no paran: quedan «maquetadas, no vistas» y viajan al gate ⭐ del ciclo.
+
+| #   | Archivo / lugar                                                                        | Botón / estado                                                     | Qué mirar                                                                                                                                                        | Respuesta esperada              | Registro                      |
+| --- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------- |
+| M1  | Preview del PR #17 → Inicio → «Consumo de energía» → objetivo `consumo_kwh` → Entrenar | Resultados: veredicto en unidades · tabla de la liga · gráfico     | ¿Se entiende cuánto se equivoca y contra qué se compara? ¿El gráfico se lee sin color?                                                                           | «lo abrí y apruebo» o el ajuste | pendiente (pedida 2026-10-04) |
+| M2  | Preview del PR #17 → Inicio → «Consumo de energía» → objetivo `ocupantes`              | La pregunta «¿categorías o una cantidad?», con la sugerida marcada | ¿Se entiende la pregunta y qué pasa con cada respuesta? (la sugerida es «Categorías»: la regla de E1 del S5 sugiere clases cuando todos los valores son enteros) | «lo abrí y apruebo» o el ajuste | pendiente (pedida 2026-10-04) |
+
+### Qué se construyó antes de la parada
+
+- **Hook (`useExperiment`):** las dos tareas de punta a punta.
+  - `TargetPlan` gana `choice`, `resolved` y `unit`.
+  - `answerTask` responde la ambigua; un objetivo nuevo vuelve a preguntar.
+  - La liga, la elección manual, el Nivel 2, puntuar, exportar e importar van por tarea, y el lector
+    del contrato exige la forma de la tarea en cada costura.
+  - El breadcrumb `probeta.league` lleva `task`: un nombre de la app, nunca un valor ni una columna.
+- **Configuración:**
+  - `TaskCard` dice «Vas a estimar una cantidad, en kWh», o franqueza si no hay unidad reconocible.
+  - Con una ambigua, pregunta con dos botones con icono (regla y etiqueta). La sugerida va marcada con
+    ★ + «Sugerida», y todo se maneja con teclado.
+  - Una vez respondida, dice la respuesta y deja cambiarla.
+- **Resultados de regresión:**
+  - `RegressionVerdict`, en unidades. La lineal tiene su titular de empate solo cuando empata (R10).
+  - Métricas MAE · RMSE · R² · MedAE con la línea «cuál mirar».
+  - `PredichoVsReal.tsx`: SVG sin librería, con la diagonal, la franja ±MAE de bordes punteados, y
+    disco dentro de la franja contra anillo fuera (forma, no solo color).
+  - Los cuantiles del error sobre todo el test, en texto y en tabla.
+  - Los baselines mediana y lineal con su ficha.
+  - `VerdictCard` es compartida con la binaria; la lógica binaria no cambió.
+- **La liga:** `LeagueTable` ordena según la dirección de la métrica, la banda del error estándar
+  suma con el MAE, las cifras van en unidades y dice «menor es mejor». `Level2Card` acepta las dos
+  tareas.
+- **P7, cerrojo del cliente:** con un resultado de estimar, `useNarration` no arma payload y jamás
+  llama al route. `WhySection` reemplaza el bloque de IA por una línea franca. La plantilla
+  determinista de regresión (`buildRegressionTemplate`) sale de los mismos números.
+- **Formato (R9):** `src/lib/quantity.ts` usa punto decimal y miles con coma, como el resto de la
+  app, con 3 cifras significativas del valor más chico del grupo. Entre el número y la unidad va un
+  espacio no separable: la primera pasada de capturas mostró «±33.5 / kWh» partido en dos líneas a
+  360 px.
+- **Adelantado de la lista «después de la mirada»** (no toca el plan de miradas):
+  - `ScoreScreen` con `<objetivo>_estimado` (decimales del objetivo) y resumen mín · mediana · máx.
+  - El resumen del import por tarea.
+  - La ficha de la mediana; `memberNameKey` («Regresión Ridge» al estimar).
+  - El botón de ejemplo «Consumo de energía».
+  - La razón: sin ellos la preview se rompía o mentía. Una regresión importada decía «clase
+    positiva: «»», y puntuar con un modelo de regresión no compilaba.
+- **Sigue pendiente:** la model card de regresión (Resultados de regresión todavía no la muestra),
+  los párrafos de regresión de las fichas compartidas, los documentos, `regresion-score.spec`,
+  reduced-motion y las capturas.
+
+### Cambios esperados en tests heredados (R19 y la habilitación)
+
+| Archivo                                      | Cambio                                                                                                                           |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/e2e/liga.spec.ts`                     | El caso «todavía no se entrena» pasa de `edad` (ahora estima una cantidad) a `departamento` (4 categorías → multiclase)          |
+| `tests/unit/league-ui.test.tsx`              | El TaskCard de «otras tareas» usa varias categorías; se suman la cantidad con y sin unidad y la ambigua con pregunta y respuesta |
+| `tests/unit/{tarea,regresion-motor}.test.ts` | `TRAINABLE_TASKS` = binaria + numérica                                                                                           |
+| `tests/unit/model-file.test.ts`              | `unsupported-task` se prueba con la lista explícita `["binaria"]`; por defecto el archivo de regresión ya se acepta (D4)         |
+| `tests/unit/observability.test.ts`           | El breadcrumb de la liga suma `task`, y es el único texto, de una lista cerrada                                                  |
+| `tests/unit/modelos.test.ts`                 | Las fichas = bases + `majority` + `median`                                                                                       |
+
+`scripts/capturas-s5.mjs` (no es gate de CI) sigue fotografiando `edad` como evidencia del S5; la
+pasada del S6 será `capturas-s6.mjs`.
+
+### Gates nuevos de la F2, cada uno visto en ROJO (`scripts/demo-rojo.sh`)
+
+| #   | Gate                                                  | Mutación                                                     | Qué dijo el fallo                                                         |
+| --- | ----------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| 15  | La lineal empata consigo misma SOLO si empata (R10)   | `verdict.level === "ties"` → `true`                          | «la lineal gana pero la mediana rinde mejor»: el «NO supera» quedó tapado |
+| 16  | Cerrojo del cliente de la narración (P7)              | Sin `if (!payload) return` en el efecto                      | «sin ninguna petición» y «cerrojo del cliente»: el fetch se llamó         |
+| 17  | El gráfico no comunica solo con color                 | Todo punto es disco                                          | «dentro = disco; fuera = anillo»: 0 anillos                               |
+| 18  | La liga ordena según la dirección (menor es mejor)    | Orden invertido                                              | «ordena del menor MAE al mayor»                                           |
+| 19  | Las estimaciones salen con los decimales del objetivo | 6 decimales fijos                                            | «columna nueva con los decimales del objetivo»                            |
+| 20  | El lector exige la forma de la tarea al puntuar       | Se valida como binaria                                       | Se rechaza la puntuación de regresión, y se acepta la de forma binaria    |
+| 21  | La respuesta de la ambigua llega a `prepareRun`       | `planTarget` sin `ambiguousChoice`                           | «ambigua: … «cantidad» planea la regresión»                               |
+| 22  | e2e: al estimar no hay botón de IA (`regresion.spec`) | `WhySection` ignora `aiAvailable`                            | `toHaveCount(0)` del botón «Narrar con IA», en el build de producción     |
+| 23  | e2e: la ambigua pregunta (`tarea-ambigua.spec`)       | La pregunta nunca se muestra (con una condición que compila) | `getByRole('group', …)`: element(s) not found                             |
+
+**La #23 se puso «roja» a la primera por la razón equivocada.** La mutación `if (false)` no
+compilaba: el server del e2e no arrancó y el gate «falló» sin que la prueba corriera.
+`demo-rojo.sh` lo aceptó como rojo (K-S6-5). Se rehízo con una mutación que compila, y el fallo
+nombró el grupo de la pregunta.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S6-1 · `README.md` dentro de `.claude/commands/` se carga como un comando `/README`.** El kit
@@ -315,3 +404,10 @@ cubría el cálculo, no la comparación. Se agregó un objetivo con atípicos si
   toda demo filtra con `grep "Tests "` y el resumen debe mostrar al menos 1 test que corrió.
   Propuesta para el kit: que `demo-rojo.sh` acepte `--minimo-tests N` y lo verifique en las dos
   corridas.
+- **K-S6-5 · `demo-rojo.sh` cuenta como rojo un gate que no llegó a correr.** En un e2e, una
+  mutación que rompe la compilación tumba el `webServer` («Process from config.webServer was not
+  able to start») y el gate sale con error. El script lo acepta: «✓ el gate falló con la
+  mutación». Es la hermana de K-S6-4: un rojo que no viene de la aserción. Aquí se notó leyendo la
+  salida. Propuesta: que el script exija en la salida del gate una marca de que la aserción corrió
+  (p. ej. `--debe-nombrar '<texto>'`), y que la guía de demos diga «la mutación tiene que
+  compilar».
