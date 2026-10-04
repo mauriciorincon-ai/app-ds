@@ -111,3 +111,8 @@ jobs:
           URLS=$(node -e "console.log(require('./lighthouse-urls.json').map(u=>'--url=http://localhost:3000'+u).join(' '))")
           lhci collect --startServerCommand="pnpm start" --numberOfRuns=3 $URLS
           lhci assert --budgetsFile=./perf-budget.json --aggregationMethod=median-run
+      # S6 (deuda del S5, kit v1.12.0): las 4 CATEGORÍAS ≥ 0.9 sobre la MISMA colección. Va en un
+      # segundo `lhci assert` porque LHCI declara budgetsFile y assertions mutuamente excluyentes;
+      # el job no cambia de nombre (no toca la ruleset). Nació en rojo con scripts/demo-rojo.sh.
+      - name: Lighthouse CI — categorías ≥ 0.9 (lighthouse-categorias.json)
+        run: lhci assert --config=./lighthouse-categorias.json --aggregationMethod=median-run
