@@ -529,7 +529,6 @@ describe("useExperiment", () => {
             predictions: ["1", "0"],
             probabilities: [0.9, 0.2],
             positive_class: "1",
-            task: "binaria",
             novelty: { columns: [], affected_rows: 0, n_rows: 2 },
           },
         },

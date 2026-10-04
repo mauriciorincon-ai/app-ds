@@ -128,6 +128,18 @@ describe("POST /api/narrate", () => {
     });
   });
 
+  // S6 (P7): la narración con IA no narra regresión. Cerrojo del servidor: el
+  // esquema solo admite «binary-classification». Se cambia SOLO `problem` (el
+  // resto es un payload válido) para que el rechazo dependa de ese cerrojo; con el
+  // proveedor «caído», llegar al modelo daría 200 + provider-error, no 400.
+  it("un payload que no es de clasificación binaria ⇒ 400, sin llegar al proveedor", async () => {
+    enableMock("down");
+    const response = await POST(
+      request({ payload: { ...payload(), problem: "regression" } }),
+    );
+    expect(response.status).toBe(400);
+  });
+
   it("body inválido ⇒ 400 'invalid-request' (Zod es la puerta)", async () => {
     enableMock();
     const bad = await POST(request({ payload: { hola: "mundo" } }));

@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { MemberId } from "@/engine/roster";
+import { isMemberOf, type MemberId } from "@/engine/roster";
 import { check, dict, num, obj, type Checked } from "@/lib/validate";
 import {
   pythonContractField,
@@ -256,5 +256,167 @@ describe("validate.ts — el lector nombra el primer campo que no cuadra", () =>
       ok: false,
       field: "m.*",
     });
+  });
+});
+
+// --- S6: estimar una cantidad — una carnada por campo nuevo del contrato --------
+
+describe("Python → TS: liga de REGRESIÓN (train)", () => {
+  const train = fixture("train-result-regresion");
+  const payload = fixture<PipelinePayload>("payload-regresion");
+  const sentReg = {
+    task: "numerica" as const,
+    roster: payload.roster,
+    cv_k: payload.cv_k,
+    primary_metric: payload.primary_metric,
+  };
+  // El miembro con el MAYOR MAE de CV: el que ganaría si «mayor fuera mejor».
+  const worst = (t: Json): MemberId =>
+    t.league
+      .filter((r: Json) => r.status === "ok")
+      .reduce((a: Json, b: Json) => (b.cv.mean > a.cv.mean ? b : a)).name;
+
+  it("el fixture real que emitió Pyodide valida (y una binaria no pasa por regresión)", () => {
+    expect(validateTrainResult(train, sentReg)).toMatchObject({ ok: true });
+    expect(
+      validateTrainResult(fixture("train-result"), {
+        ...sentReg,
+        task: "numerica",
+      }),
+    ).toEqual({ ok: false, field: "task" });
+  });
+
+  it("carnadas por campo: se rechazan NOMBRANDO el campo", () => {
+    runBaits("train-regresión", train, (v) => validateTrainResult(v, sentReg), [
+      ["task", (t) => (t.task = "binaria")],
+      ["task", (t) => delete t.task],
+      ["model.mae", (t) => (t.model.mae = -1)],
+      ["model.rmse", (t) => (t.model.rmse = "12")],
+      ["model.r2", (t) => delete t.model.r2],
+      ["model.medae", (t) => (t.model.medae = null)],
+      ["model.mape", (t) => (t.model.mape = "0.1")],
+      ["model", (t) => (t.model.mae = t.model.mae * 2)],
+      ["baselines.median.mae", (t) => delete t.baselines.median.mae],
+      ["baselines.linear.r2", (t) => (t.baselines.linear.r2 = "?")],
+      ["league[0].test.mae", (t) => (t.league[0].test.mae = -2)],
+      ["league[0].cv.mean", (t) => delete t.league[0].cv.mean],
+      ["league[0].name", (t) => (t.league[0].name = "logistic")],
+      ["cv.scoring", (t) => (t.cv.scoring = "roc_auc")],
+      // Elegir como si «mayor fuera mejor»: el lector recalcula CON la dirección del MAE.
+      ["cv.best", (t) => (t.cv.best = worst(t))],
+      ["winner", (t) => (t.winner = worst(t))],
+      ["target_stats.mean", (t) => (t.target_stats.mean = "380")],
+      ["target_stats.std", (t) => (t.target_stats.std = -1)],
+      ["target_stats.min", (t) => delete t.target_stats.min],
+      ["target_stats.max", (t) => (t.target_stats.max = null)],
+      ["target_stats.median", (t) => delete t.target_stats.median],
+      ["target_stats.decimals", (t) => (t.target_stats.decimals = 7)],
+      ["target_stats", (t) => (t.target_stats.min = t.target_stats.max + 1)],
+      ["pred_vs_real", (t) => t.pred_vs_real.predicted.pop()],
+      ["pred_vs_real", (t) => (t.pred_vs_real.n_total = 2)],
+      ["pred_vs_real.real[0]", (t) => (t.pred_vs_real.real[0] = "1")],
+      ["pred_vs_real.n_total", (t) => (t.pred_vs_real.n_total = 0)],
+      ["residuals.p50", (t) => (t.residuals.p50 = "x")],
+      ["residuals", (t) => (t.residuals.p05 = t.residuals.p95 + 1)],
+      ["residuals.abs_p90", (t) => (t.residuals.abs_p90 = -1)],
+    ]);
+  });
+});
+
+describe("Python → TS: elección manual en regresión (fit-member)", () => {
+  const fit = fixture("fit-member-result-regresion");
+  const sentFit = {
+    member: fit.model_name as MemberId,
+    task: "numerica" as const,
+  };
+
+  it("el fixture real valida (y tiene que ser el miembro pedido)", () => {
+    expect(validateMemberFit(fit, sentFit).ok).toBe(true);
+    expect(validateMemberFit(fit, { ...sentFit, member: "forest" })).toEqual({
+      ok: false,
+      field: "model_name",
+    });
+  });
+
+  it("carnadas por campo", () => {
+    runBaits(
+      "fit-member-regresión",
+      fit,
+      (v) => validateMemberFit(v, sentFit),
+      [
+        ["task", (f) => (f.task = "binaria")],
+        ["model.mae", (f) => (f.model.mae = -3)],
+        ["pred_vs_real", (f) => f.pred_vs_real.real.pop()],
+        ["residuals", (f) => (f.residuals.p25 = f.residuals.p75 + 1)],
+        ["model_name", (f) => (f.model_name = "logistic")],
+      ],
+    );
+  });
+});
+
+describe("Python → TS: export y puntuación de REGRESIÓN", () => {
+  const exported = fixture("export-result-regresion");
+  const score = fixture("score-result-regresion");
+
+  it("los fixtures reales validan", () => {
+    expect(validateExportResult(exported).ok).toBe(true);
+    expect(validateScoreResult(score, { task: "numerica" }).ok).toBe(true);
+  });
+
+  it("carnadas del export (schema.task, schema.target_stats)", () => {
+    runBaits("export-regresión", exported, validateExportResult, [
+      ["schema.task", (e) => (e.schema.task = "multiclase")],
+      ["schema.task", (e) => delete e.schema.task],
+      ["schema.target_stats", (e) => delete e.schema.target_stats],
+      [
+        "schema.target_stats.decimals",
+        (e) => (e.schema.target_stats.decimals = -1),
+      ],
+    ]);
+  });
+
+  it("carnadas de la puntuación (estimaciones numéricas, ninguna probabilidad)", () => {
+    runBaits(
+      "score-regresión",
+      score,
+      (v) => validateScoreResult(v, { task: "numerica" }),
+      [
+        ["task", (s) => (s.task = "binaria")],
+        ["predictions[0]", (s) => (s.predictions[0] = "123.4")],
+        ["probabilities", (s) => (s.probabilities = [0.5, 0.5, 0.5])],
+        ["predictions", (s) => s.predictions.pop()],
+      ],
+    );
+  });
+});
+
+describe("TS → Python: el payload de regresión lo emite el serializador real de TS", () => {
+  const payload = fixture<PipelinePayload>("payload-regresion");
+
+  it("trae la tarea, el MAE y solo ids del roster de regresión", () => {
+    expect(payload.task).toBe("numerica");
+    expect(payload.primary_metric).toBe("mae");
+    for (const id of payload.roster)
+      expect(isMemberOf("numerica", id)).toBe(true);
+  });
+
+  it("el payload binario es el del S5 + `task` (R1/R18: nada más cambió de forma)", () => {
+    expect(Object.keys(PAYLOAD).sort()).toEqual(
+      [
+        "categorical",
+        "cv_k",
+        "headers",
+        "numeric",
+        "primary_metric",
+        "roster",
+        "rows",
+        "seed",
+        "target",
+        "task",
+        "test_idx",
+        "train_idx",
+      ].sort(),
+    );
+    expect(PAYLOAD.task).toBe("binaria");
   });
 });

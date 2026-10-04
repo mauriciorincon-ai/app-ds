@@ -11,11 +11,17 @@ import {
   isMemberId,
   MEMBER_IDS,
   MEMBERS,
+  REGRESSION_MEMBER_IDS,
   selectOneSe,
   type CvRowLike,
   type MemberId,
 } from "@/engine/roster";
-import { SCORER } from "@/workers/contract";
+import { METRIC_RULES } from "@/engine/verdict";
+import {
+  PRED_VS_REAL_MAX,
+  SCORER,
+  TARGET_DECIMALS_MAX,
+} from "@/workers/contract";
 
 const PIPELINE_PY = readFileSync(
   resolve(__dirname, "../../src/lib/ds/pipeline.py"),
@@ -60,6 +66,41 @@ describe("paridad del roster TS ↔ Python", () => {
       ]),
     );
     expect(pairs).toEqual(SCORER);
+  });
+
+  // S6: tripwires de texto de la regresión (la paridad en el runtime real vive en
+  // tests/integration/regresion.test.ts).
+  it("pipeline.py declara EXACTAMENTE los ids de REGRESSION_MEMBER_IDS en _REGRESSORS", () => {
+    const start = PIPELINE_PY.indexOf("_REGRESSORS = {");
+    const block = PIPELINE_PY.slice(start, PIPELINE_PY.indexOf("\n}\n", start));
+    const pythonIds = [...block.matchAll(/^ {4}"([a-z_]+)":/gm)].map(
+      (m) => m[1],
+    );
+    expect(pythonIds).toEqual([...REGRESSION_MEMBER_IDS]);
+  });
+
+  it("METRIC_DIRECTION de pipeline.py es la dirección de METRIC_RULES", () => {
+    const start = PIPELINE_PY.indexOf("METRIC_DIRECTION = {");
+    const block = PIPELINE_PY.slice(start, PIPELINE_PY.indexOf("\n}\n", start));
+    const pairs = Object.fromEntries(
+      [...block.matchAll(/^ {4}"([a-z0-9]+)": "(higher|lower)",$/gm)].map(
+        (m) => [m[1], m[2]],
+      ),
+    );
+    expect(pairs).toEqual(
+      Object.fromEntries(
+        Object.entries(METRIC_RULES).map(([k, rule]) => [k, rule.direction]),
+      ),
+    );
+  });
+
+  it("los topes del contrato son los mismos en los dos lados", () => {
+    expect(PIPELINE_PY).toMatch(
+      new RegExp(`^PRED_VS_REAL_MAX = ${PRED_VS_REAL_MAX}$`, "m"),
+    );
+    expect(PIPELINE_PY).toMatch(
+      new RegExp(`^TARGET_DECIMALS_MAX = ${TARGET_DECIMALS_MAX}$`, "m"),
+    );
   });
 
   it("isMemberId y byPriority", () => {

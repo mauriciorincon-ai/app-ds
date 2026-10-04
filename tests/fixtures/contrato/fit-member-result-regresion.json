@@ -1,0 +1,94 @@
+{
+  "task": "numerica",
+  "model": {
+    "mae": 43.13537342955875,
+    "rmse": 50.977858931580364,
+    "r2": 0.7388985022330903,
+    "medae": 41.623976823244675,
+    "mape": 0.13177788809014454
+  },
+  "model_name": "ridge",
+  "pred_vs_real": {
+    "real": [
+      149.6,
+      165.9,
+      171,
+      210.2,
+      218.7
+    ],
+    "predicted": [
+      158.1424750033268,
+      227.83802581071757,
+      129.8794353907487,
+      194.99823480313094,
+      269.9922520010273
+    ],
+    "n_total": 50
+  },
+  "residuals": {
+    "p05": -69.61876646267939,
+    "p25": -18.16522307793079,
+    "p50": 18.392471952391503,
+    "p75": 51.64184530079994,
+    "p95": 89.17509796961028,
+    "abs_p90": 80.28918104162796
+  },
+  "explainability": {
+    "method": "permutation_importance",
+    "scoring": "neg_mean_absolute_error",
+    "n_repeats": 10,
+    "features": [
+      {
+        "name": "ocupantes",
+        "kind": "numeric",
+        "importance": 59.93781056701401,
+        "std": 10.23570336379698,
+        "direction": "positive"
+      },
+      {
+        "name": "superficie_m2",
+        "kind": "numeric",
+        "importance": 25.660650253490967,
+        "std": 6.107265073103328,
+        "direction": "positive"
+      },
+      {
+        "name": "temp_media_c",
+        "kind": "numeric",
+        "importance": 13.670523607960831,
+        "std": 4.005053737066796,
+        "direction": null
+      },
+      {
+        "name": "calefaccion",
+        "kind": "categorical",
+        "importance": 4.2509603255401585,
+        "std": 4.520828016130419,
+        "direction": null
+      },
+      {
+        "name": "anio_construccion",
+        "kind": "numeric",
+        "importance": -0.28031807987438667,
+        "std": 0.19640273879338885,
+        "direction": null
+      },
+      {
+        "name": "aislamiento",
+        "kind": "categorical",
+        "importance": -1.7020444215343695,
+        "std": 1.2000225796258512,
+        "direction": null
+      }
+    ]
+  },
+  "preprocessing": {
+    "numeric_medians": {
+      "superficie_m2": 129,
+      "ocupantes": 4,
+      "anio_construccion": 1991.5,
+      "temp_media_c": 13.2
+    },
+    "rare_categories": {}
+  }
+}
