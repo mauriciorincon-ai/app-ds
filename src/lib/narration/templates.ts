@@ -149,10 +149,16 @@ export function buildRegressionTemplate(input: {
       }),
     );
   }
+  // Las columnas con pinta de identificador, en UNA frase, como en la binaria
+  // (AU-S6-40).
+  const idLike = (edaAlerts ?? [])
+    .filter((alert) => alert.kind === "id-like")
+    .map((alert) => alert.column);
+  if (idLike.length > 0) {
+    parts.push(t("narration.template.idLike", { columns: idLike.join(", ") }));
+  }
   for (const alert of edaAlerts ?? []) {
-    if (alert.kind === "id-like") {
-      parts.push(t("narration.template.idLike", { columns: alert.column }));
-    } else if (alert.kind === "target-skewed") {
+    if (alert.kind === "target-skewed") {
       parts.push(
         t("narration.template.regression.skewed", {
           skew: alert.skew.toFixed(1),

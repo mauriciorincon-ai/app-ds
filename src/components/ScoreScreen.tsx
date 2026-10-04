@@ -13,6 +13,7 @@ import { inferUnit } from "@/lib/experiment";
 import { formatQuantity, withUnit } from "@/lib/quantity";
 import {
   buildScoredCsv,
+  estimateSummary,
   formatEstimates,
   resolveScoredColumnNames,
   scoredCsvFileName,
@@ -340,10 +341,13 @@ function ScoredResults({
   };
   const names = resolveScoredColumnNames(table.headers, desiredNames);
 
-  // Distribución de predicciones por clase (conteo simple, honesto).
+  // Distribución de predicciones por clase (conteo simple, honesto). Al estimar
+  // no hay clases: el resumen es mínimo · mediana · máximo.
   const counts = new Map<string, number>();
-  for (const label of predictions) {
-    counts.set(label, (counts.get(label) ?? 0) + 1);
+  if (!quantity) {
+    for (const label of predictions) {
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
   }
   const total = predictions.length;
   const percent = (n: number) => Math.round((100 * n) / Math.max(total, 1));
@@ -545,27 +549,23 @@ function QuantitySummary({
   target: string;
 }) {
   const t = useT();
-  const sorted = [...values].sort((a, b) => a - b);
-  const n = sorted.length;
-  const median =
-    n === 0
-      ? 0
-      : n % 2 === 1
-        ? sorted[(n - 1) / 2]
-        : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
-  const stats = n === 0 ? [] : [sorted[0], median, sorted[n - 1]];
+  const n = values.length;
+  const stats = estimateSummary(values);
   const unit = inferUnit(target);
   const q = (value: number) => withUnit(formatQuantity(value, decimals), unit);
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
-        {t("score.quantity.title", { rows: n })}
+        {t("score.quantity.title", { count: n })}
       </h2>
-      {n > 0 && (
+      {stats && (
         <div className="grid grid-cols-3 gap-2 sm:max-w-md">
-          <MetricTile label={t("score.quantity.min")} value={q(stats[0])} />
-          <MetricTile label={t("score.quantity.median")} value={q(stats[1])} />
-          <MetricTile label={t("score.quantity.max")} value={q(stats[2])} />
+          <MetricTile label={t("score.quantity.min")} value={q(stats.min)} />
+          <MetricTile
+            label={t("score.quantity.median")}
+            value={q(stats.median)}
+          />
+          <MetricTile label={t("score.quantity.max")} value={q(stats.max)} />
         </div>
       )}
     </section>

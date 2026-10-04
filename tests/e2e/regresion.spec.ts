@@ -64,9 +64,22 @@ test("estimar: veredicto en unidades, gráfico y cero peticiones de narración",
     page.getByRole("button", { name: /Narrar con IA/i }),
   ).toHaveCount(0);
   await expect(
-    page.getByText(/la narración con IA solo cubre la clasificación/),
+    page.getByText(/narración con IA solo cubre la clasificación/),
   ).toBeVisible();
   await axeBothThemes(page);
+
+  // AU-S6-17: axe en los dos temas también con la liga mostrando la prueba y con
+  // la ficha de un modelo compartido al estimar (el diálogo con su párrafo de
+  // regresión; con el modal abierto, lo de atrás es inerte).
+  await page.getByRole("button", { name: /Ver puntajes de prueba/i }).click();
+  await axeBothThemes(page);
+  await page.getByRole("button", { name: "Ficha de Ridge" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/Al estimar, Ridge compite/)).toBeVisible();
+  await axeBothThemes(page, "dialog");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
   expect(narrateRequests).toHaveLength(0);
 });
 
@@ -98,4 +111,6 @@ test("estimar con una fuga plantada: la nombra antes y después de entrenar", as
   await expect(
     page.getByText(/impuesto_transferencia_usd/).first(),
   ).toBeVisible();
+  // El veredicto con fuga, en los dos temas (AU-S6-17).
+  await axeBothThemes(page);
 });

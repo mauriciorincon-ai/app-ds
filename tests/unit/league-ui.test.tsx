@@ -117,7 +117,7 @@ describe("TaskCard (E1)", () => {
       <TaskCard
         detection={detectTask(values)}
         target="consumo_kwh"
-        unit={{ suffix: "kwh", symbol: "kWh" }}
+        unit={{ symbol: "kWh" }}
       />,
     );
     expect(
@@ -131,7 +131,7 @@ describe("TaskCard (E1)", () => {
       <TaskCard
         detection={detectTask(values)}
         target="edad"
-        unit={{ suffix: null, symbol: null }}
+        unit={{ symbol: null }}
       />,
     );
     expect(screen.getByText(/en las unidades de «edad»/)).toBeInTheDocument();
@@ -175,7 +175,7 @@ describe("TaskCard (E1)", () => {
           target="ocupantes"
           resolved={choice ?? "ambigua"}
           choice={choice}
-          unit={{ suffix: null, symbol: null }}
+          unit={{ symbol: null }}
           onAnswer={setChoice}
         />
       );
@@ -234,7 +234,7 @@ describe("TaskCard (E1)", () => {
         target="ocupantes"
         resolved="numerica"
         choice="numerica"
-        unit={{ suffix: null, symbol: null }}
+        unit={{ symbol: null }}
         onAnswer={onAnswer}
       />,
     );

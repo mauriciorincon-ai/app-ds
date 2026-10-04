@@ -176,11 +176,20 @@ const PREDICTED = [170, 240, 400, 445, 600];
  */
 export function regressionPipelineResult(
   sent: Pick<PipelinePayload, "roster" | "cv_k"> = {
-    roster: ["linear", "ridge", "extra_trees"],
+    roster: ["ridge", "linear", "extra_trees"],
     cv_k: 5,
   },
   cvMeans: Partial<Record<MemberId, number>> = {},
 ): RegressionPipelineResult {
+  const baselines = {
+    median: regressionMetrics({ mae: 80.9, rmse: 99.9, r2: 0, medae: 64 }),
+    linear: regressionMetrics({
+      mae: 43.8,
+      rmse: 51.8,
+      r2: 0.73,
+      medae: 42.3,
+    }),
+  };
   const league: LeagueRow<RegressionMetrics>[] = sent.roster.map((name, i) => {
     const mean = cvMeans[name] ?? 35 + 3 * i;
     return {
@@ -191,7 +200,13 @@ export function regressionPipelineResult(
         std: 1,
         folds: Array.from({ length: sent.cv_k }, () => mean),
       },
-      test: regressionMetrics({ mae: mean - 1.5, rmse: mean + 9 }),
+      // El miembro y el baseline lineales son el MISMO ajuste (pipeline.py):
+      // dan el mismo MAE de prueba; un fixture distinto fijaría un veredicto
+      // imposible (AU-S6-39).
+      test:
+        name === "linear"
+          ? baselines.linear
+          : regressionMetrics({ mae: mean - 1.5, rmse: mean + 9 }),
       elapsed_ms: 40 + i,
       error_type: null,
     };
@@ -210,15 +225,7 @@ export function regressionPipelineResult(
     },
     n_train: 150,
     n_test: 50,
-    baselines: {
-      median: regressionMetrics({ mae: 80.9, rmse: 99.9, r2: 0, medae: 64 }),
-      linear: regressionMetrics({
-        mae: 43.8,
-        rmse: 51.8,
-        r2: 0.73,
-        medae: 42.3,
-      }),
-    },
+    baselines,
     model: winner.test!,
     model_name: selection.winner,
     winner: selection.winner,

@@ -12,7 +12,12 @@ import type { RegressionResult } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import { PredichoVsReal } from "./PredichoVsReal";
 import { Card, MetricTile } from "./ui";
-import { LEVEL_MARK, VerdictCard, type Banner } from "./VerdictCard";
+import {
+  LEVEL_MARK,
+  suspiciousBanner,
+  VerdictCard,
+  type Banner,
+} from "./VerdictCard";
 
 // S6 (P5/P6): Resultados al estimar una cantidad. El veredicto habla en las
 // unidades del objetivo («se equivoca en promedio ±X; adivinar la mediana, ±Y»);
@@ -38,12 +43,7 @@ export function RegressionVerdict({
   // (lo comparte la model card).
   const text = regressionVerdictText(result, t);
   const banner: Banner = hasLeak
-    ? {
-        tone: "caution",
-        mark: "⚠",
-        headline: t("results.verdict.suspicious"),
-        detail: t("results.verdict.suspiciousDetail"),
-      }
+    ? suspiciousBanner(t)
     : {
         ...LEVEL_MARK[text.linearTie ? "ties" : result.verdict.level],
         headline: text.headline,

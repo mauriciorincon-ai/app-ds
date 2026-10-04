@@ -113,6 +113,23 @@ export function scoredCsvFileName(
 }
 
 /**
+ * S6 (AU-S6-41): el resumen de las estimaciones (mínimo · mediana · máximo), puro
+ * y probado, fuera del componente. null sin estimaciones.
+ */
+export function estimateSummary(
+  values: readonly number[],
+): { min: number; median: number; max: number } | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  const median =
+    n % 2 === 1
+      ? sorted[(n - 1) / 2]!
+      : (sorted[n / 2 - 1]! + sorted[n / 2]!) / 2;
+  return { min: sorted[0]!, median, max: sorted[n - 1]! };
+}
+
+/**
  * S6: las cantidades estimadas, escritas con los decimales con que el usuario
  * anotó su objetivo (TargetStats.decimals): un consumo anotado con 1 decimal se
  * estima con 1, un precio entero sale entero. No se inventa precisión.

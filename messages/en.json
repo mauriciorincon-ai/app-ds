@@ -345,7 +345,8 @@
     "subtitleQuantity": "Upload a new CSV with the columns the model knows (without the target column) and get the estimated quantity for each row. Everything happens in your browser.",
     "modelLineQuantity": "Model: {dataset} · estimates: {target}",
     "quantity": {
-      "title": "Estimates ({rows} rows)",
+      "title": "Estimates ({count} rows)",
+      "title_one": "Estimates (1 row)",
       "min": "Minimum",
       "median": "Median",
       "max": "Maximum"
@@ -379,7 +380,7 @@
         "provider": "The AI provider didn't respond. You can try again.",
         "rejected": "The AI narrative didn't pass verification against the numbers; for honesty it isn't shown. You can try again."
       },
-      "aiNotForQuantity": "For now, AI narration only covers classification into two categories. For estimating a quantity there is the standard text above, built from the same numbers."
+      "aiNotForQuantity": "AI narration only covers classification into two categories. When estimating a quantity, the reading is the standard text above, built from the same numbers."
     },
     "legend": "The bar measures how much each variable MATTERS; the line below says which way it PUSHES. A variable can matter a lot and still have no single direction — that doesn't make it irrelevant.",
     "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”.",
@@ -522,9 +523,10 @@
       "task": "Task: estimating a quantity (regression). It is compared against the baseline with the smallest error: the median or linear regression.",
       "unit": "Unit: {unit}, read from the column name.",
       "noUnit": "Unit: the column name carries none the app recognizes; figures are in the units of «{column}».",
-      "targetStats": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with {decimals} decimals).",
+      "targetStats": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with {count} decimals).",
+      "targetStats_one": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with 1 decimal).",
       "errors": "Errors over the {total} test rows (estimate − actual): half fall between {p25} and {p75}; 9 in 10 are off by less than ±{abs90}.",
-      "noAi": "AI narration: does not apply to estimating a quantity (for now it only covers classification into two categories)."
+      "noAi": "AI narration: does not apply to estimating a quantity (it only covers classification into two categories)."
     }
   },
   "errors": {

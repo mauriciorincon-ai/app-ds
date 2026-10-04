@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseRows, type CsvTable } from "@/lib/ds/csv";
 import {
   buildScoredCsv,
+  estimateSummary,
   neutralizeFormula,
   resolveScoredColumnNames,
   scoredCsvFileName,
@@ -145,5 +146,17 @@ describe("scoredCsvFileName", () => {
 
   it("nombre vacío ⇒ fallback 'datos'", () => {
     expect(scoredCsvFileName("···", "puntuado")).toBe("datos-puntuado.csv");
+  });
+});
+
+describe("estimateSummary (S6, AU-S6-41)", () => {
+  it("mínimo, mediana y máximo; mediana par = promedio de las dos centrales; vacío = null", () => {
+    expect(estimateSummary([3, 1, 2])).toEqual({ min: 1, median: 2, max: 3 });
+    expect(estimateSummary([4, 1, 3, 2])).toEqual({
+      min: 1,
+      median: 2.5,
+      max: 4,
+    });
+    expect(estimateSummary([])).toBeNull();
   });
 });

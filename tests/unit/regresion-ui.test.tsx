@@ -89,10 +89,8 @@ describe("cifras en unidades (R9)", () => {
   it("punto decimal y miles con coma; la unidad no se separa del número", () => {
     expect(formatQuantity(158_912.4, 0)).toBe("158,912");
     expect(formatQuantity(-0, 1)).toBe("0.0");
-    expect(withUnit("33.5", { suffix: "kwh", symbol: "kWh" })).toBe(
-      `33.5${NBSP}kWh`,
-    );
-    expect(withUnit("33.5", { suffix: null, symbol: null })).toBe("33.5");
+    expect(withUnit("33.5", { symbol: "kWh" })).toBe(`33.5${NBSP}kWh`);
+    expect(withUnit("33.5", { symbol: null })).toBe("33.5");
     expect(errorReductionPct(33.5, 43.8)).toBe(24);
     expect(errorReductionPct(1, 0)).toBe(0);
   });
@@ -128,7 +126,7 @@ describe("el veredicto en unidades (P5, R10)", () => {
       />,
     );
     expect(
-      screen.getByRole("heading", { name: "«Lineal» supera al baseline" }),
+      screen.getByRole("heading", { name: "«Ridge» supera al baseline" }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -240,7 +238,7 @@ describe("estimado frente a real: nada solo por color", () => {
       <PredichoVsReal
         points={points}
         mae={33.5}
-        unit={{ suffix: "kwh", symbol: "kWh" }}
+        unit={{ symbol: "kWh" }}
         column="consumo_kwh"
       />,
     );
@@ -382,7 +380,7 @@ describe("Resultados completos al estimar (P7)", () => {
     );
     expect(screen.queryByRole("button", { name: /Narrar con IA/ })).toBeNull();
     expect(
-      screen.getByText(/la narración con IA solo cubre la clasificación/),
+      screen.getByText(/narración con IA solo cubre la clasificación/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/El modelo se equivoca en promedio por ±33\.5/),
@@ -474,6 +472,7 @@ describe("puntuar al estimar: «<objetivo>_estimado»", () => {
     expect(
       screen.getByText("Modelo: consumo-energia.csv · estima: consumo_kwh"),
     ).toBeInTheDocument();
+    expect(screen.getByText("Estimaciones (3 filas)")).toBeInTheDocument();
     expect(screen.getByText("consumo_kwh_estimado")).toBeInTheDocument();
     expect(screen.getByText("412.3")).toBeInTheDocument();
     expect(screen.getByText(`7.0 kWh`)).toBeInTheDocument();
@@ -489,6 +488,34 @@ describe("puntuar al estimar: «<objetivo>_estimado»", () => {
     expect(csv).toBe(
       "superficie_m2,consumo_kwh_estimado\n80,412.3\n20,7.0\n60,300.0\n",
     );
+  });
+
+  it("una sola fila: «Estimaciones (1 fila)», en singular (AU-S6-36)", () => {
+    ui(
+      <ScoreScreen
+        meta={META}
+        ready
+        progress={null}
+        scoring={{
+          status: "scored",
+          fileName: "una.csv",
+          table: { headers: ["superficie_m2"], rows: [["80"]] },
+          check: { ok: true, missing: [], extra: [], targetPresent: false },
+          score: {
+            ...score,
+            predictions: [412.345],
+            novelty: { columns: [], affected_rows: 0, n_rows: 1 },
+          },
+        }}
+        exportState="idle"
+        onScoreFile={vi.fn()}
+        onScoreAnother={vi.fn()}
+        onBackToResults={vi.fn()}
+        onExit={vi.fn()}
+        onExportModel={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Estimaciones (1 fila)")).toBeInTheDocument();
   });
 
   it("el CSV puntuado de una cantidad no agrega columna de probabilidad", () => {
@@ -595,7 +622,7 @@ describe("useExperiment al estimar (S6)", () => {
     act(() => result.current.selectTarget("consumo_kwh"));
     const plan = result.current.state.plan!;
     expect(plan.resolved).toBe("numerica");
-    expect(plan.unit).toEqual({ suffix: "kwh", symbol: "kWh" });
+    expect(plan.unit).toEqual({ symbol: "kWh" });
     expect(plan.routing).not.toBeNull();
 
     act(() => result.current.run("consumo_kwh"));
@@ -692,7 +719,7 @@ describe("useExperiment al estimar (S6)", () => {
     expect(result.current.state.plan).toMatchObject({
       resolved: "numerica",
       choice: "numerica",
-      unit: { suffix: null, symbol: null },
+      unit: { symbol: null },
     });
     expect(result.current.state.plan?.routing).not.toBeNull();
     act(() => result.current.run("ocupantes"));
@@ -733,7 +760,7 @@ describe("la model card al estimar (sección «Estimación»)", () => {
     expect(md).toContain("Objetivo: «consumo_kwh» (estimar una cantidad)");
     expect(md).toContain(`Unidad: kWh, leída del nombre de la columna.`);
     expect(md).toContain(
-      `media 374.7${NBSP}kWh, desviación 114.2${NBSP}kWh, mínimo 148.8${NBSP}kWh, mediana 365.4${NBSP}kWh, máximo 840.5${NBSP}kWh (escrito con 1 decimales)`,
+      `media 374.7${NBSP}kWh, desviación 114.2${NBSP}kWh, mínimo 148.8${NBSP}kWh, mediana 365.4${NBSP}kWh, máximo 840.5${NBSP}kWh (escrito con 1 decimal)`,
     );
     expect(md).toContain("Narración con IA: no aplica a estimar una cantidad");
     expect(md).toContain("estratificado por 5 bandas del objetivo");
@@ -756,7 +783,7 @@ describe("la model card al estimar (sección «Estimación»)", () => {
     );
     expect(md).toContain("| R² | 0.80 | 0.00 | 0.73 |");
     expect(md).toContain(
-      `**«Lineal» supera al baseline** — En promedio se equivoca por ±33.5${NBSP}kWh; una regresión lineal se equivoca por ±43.8${NBSP}kWh: un 24 % menos de error.`,
+      `**«Ridge» supera al baseline** — En promedio se equivoca por ±33.5${NBSP}kWh; una regresión lineal se equivoca por ±43.8${NBSP}kWh: un 24${NBSP}% menos de error.`,
     );
   });
 

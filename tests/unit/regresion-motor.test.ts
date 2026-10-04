@@ -342,16 +342,18 @@ describe("la unidad sale del NOMBRE del objetivo (tabla cerrada, P5)", () => {
     ["precio_usd", "USD"],
     ["temp_media_c", "°C"],
     ["superficie_m2", "m²"],
-    ["duracion_dias", "días"],
+    ["duracion_dias", "d"],
     ["peso-kg", "kg"],
   ])("%s → %s", (column, symbol) => {
     expect(inferUnit(column).symbol).toBe(symbol);
   });
 
-  it.each(["edad", "total", "ventas_q3", "x"])(
+  // «meses» y «años» son palabras, no símbolos: con la UI en inglés se leerían en
+  // español (AU-S6-26); sin un símbolo neutro, no se inventa.
+  it.each(["edad", "total", "ventas_q3", "x", "plazo_meses", "edad_anios"])(
     "%s → sin unidad (no se inventa)",
     (column) => {
-      expect(inferUnit(column)).toEqual({ suffix: null, symbol: null });
+      expect(inferUnit(column)).toEqual({ symbol: null });
     },
   );
 });
@@ -546,7 +548,7 @@ describe("el resultado de regresión se ensambla con lo validado", () => {
     const best = Math.min(py.baselines.median.mae, py.baselines.linear.mae);
     expect(result.verdict.baselineScore).toBe(best);
     expect(result.verdict.modelScore).toBe(py.model.mae);
-    expect(result.unit).toEqual({ suffix: "kwh", symbol: "kWh" });
+    expect(result.unit).toEqual({ symbol: "kWh" });
     expect(result.selection).toMatchObject({ by: "cv", metric: "mae" });
   });
 

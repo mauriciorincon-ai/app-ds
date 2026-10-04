@@ -315,7 +315,7 @@ export type BinaryResult = {
 
 /** Unidad del objetivo inferida del NOMBRE de la columna (tabla cerrada de sufijos;
  *  sin sufijo conocido no se inventa: `symbol` null y la UI dice «en las unidades de…»). */
-export type TargetUnit = { suffix: string | null; symbol: string | null };
+export type TargetUnit = { symbol: string | null };
 
 /** S6: el resultado de estimar una cantidad. El veredicto habla en unidades. */
 export type RegressionResult = {

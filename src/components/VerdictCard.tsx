@@ -32,6 +32,17 @@ export const LEVEL_MARK: Record<
   loses: { tone: "negative", mark: "▼" },
 };
 
+/** Con una fuga sospechada, el titular es la sospecha — igual en las dos tareas
+ *  (un solo sitio: AU-S6-42). */
+export function suspiciousBanner(t: (key: string) => string): Banner {
+  return {
+    tone: "caution",
+    mark: "⚠",
+    headline: t("results.verdict.suspicious"),
+    detail: t("results.verdict.suspiciousDetail"),
+  };
+}
+
 export function VerdictCard({
   banner,
   children,

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { axeBothThemes } from "./axe-temas";
 
 // S6 — el modelo que estima sobrevive a la pestaña: entrenar con el ejemplo de
 // consumo → exportar (.probeta.json con `task: "numerica"` y el objetivo en
@@ -57,6 +57,8 @@ test("estimar: exportar → recargar → importar → puntuar con «_estimado»"
     page.getByText("Estima «consumo_kwh», una cantidad"),
   ).toBeVisible();
   await expect(page.getByText(/MAE en prueba: [\d.,]+\skWh/)).toBeVisible();
+  // El resumen del import de un modelo que estima, en los dos temas (AU-S6-17).
+  await axeBothThemes(page);
 
   await page.getByRole("button", { name: /Usar este modelo/i }).click();
   await expect(
@@ -94,6 +96,6 @@ test("estimar: exportar → recargar → importar → puntuar con «_estimado»"
   expect(traffic).not.toContain(payloadNeedle);
   expect(traffic).not.toContain("65,2,2010");
 
-  const axe = await new AxeBuilder({ page }).analyze();
-  expect(axe.violations).toEqual([]);
+  // Puntuar al estimar, en los dos temas (AU-S6-17).
+  await axeBothThemes(page);
 });

@@ -188,7 +188,7 @@ function regressionBlocks(
         min: stat(targetStats.min),
         median: stat(targetStats.median),
         max: stat(targetStats.max),
-        decimals: targetStats.decimals,
+        count: targetStats.decimals,
       })}`,
       `- ${t("modelcard.estimate.errors", {
         p25: err(residuals.p25),

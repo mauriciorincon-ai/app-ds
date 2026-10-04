@@ -2,7 +2,11 @@
 
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
-import { BASELINE_IDS, type MemberId } from "@/engine/roster";
+import {
+  BASELINE_IDS,
+  BASELINE_IDS_BY_TASK,
+  type MemberId,
+} from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import { pickBestBaseline, type MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
@@ -25,7 +29,12 @@ import {
 } from "./RegressionResults";
 import { WhySection } from "./WhySection";
 import { Button, Card, MetricTile } from "./ui";
-import { LEVEL_MARK, VerdictCard, type Banner } from "./VerdictCard";
+import {
+  LEVEL_MARK,
+  suspiciousBanner,
+  VerdictCard,
+  type Banner,
+} from "./VerdictCard";
 
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
@@ -269,16 +278,11 @@ function BinaryVerdict({
     result.selection.by === "cv" &&
     verdict.level === "ties" &&
     pickBestBaseline(
-      [result.baselines.majority, result.baselines.logistic],
+      BASELINE_IDS_BY_TASK.binaria.map((id) => result.baselines[id]),
       verdict.primaryMetric,
     ) === result.baselines.logistic;
   const banner: Banner = hasLeak
-    ? {
-        tone: "caution",
-        mark: "⚠",
-        headline: t("results.verdict.suspicious"),
-        detail: t("results.verdict.suspiciousDetail"),
-      }
+    ? suspiciousBanner(t)
     : logisticWon
       ? {
           ...LEVEL_MARK.ties,

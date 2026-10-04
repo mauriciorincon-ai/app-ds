@@ -306,6 +306,22 @@ export function validateTrainResult(
   if (r.task === "numerica") {
     const field = predVsRealField(r.pred_vs_real, r.n_test);
     if (field) return { ok: false, field };
+    // La lineal es baseline Y miembro: el MISMO ajuste sobre el mismo train, así
+    // que su puntaje de prueba como miembro es el del baseline (AU-S6-39). Si no
+    // coincide, uno de los dos no es lo que dice ser.
+    const linear = r.league.find((row) => row.name === "linear")?.test;
+    if (
+      linear &&
+      REGRESSION_METRIC_KEYS.some((k) => {
+        const a = linear[k];
+        const b = r.baselines.linear[k];
+        return a === null || b === null
+          ? a !== b
+          : Math.abs(a - b) > 1e-9 * Math.max(1, Math.abs(b));
+      })
+    ) {
+      return { ok: false, field: "baselines.linear" };
+    }
   }
   const names = r.league.map((row) => row.name);
   if (

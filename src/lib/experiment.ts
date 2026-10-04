@@ -17,7 +17,7 @@ import {
   type RouteProfile,
   type Routing,
 } from "@/engine/encarrilador";
-import type { MemberId } from "@/engine/roster";
+import { BASELINE_IDS_BY_TASK, type MemberId } from "@/engine/roster";
 import { quantileSplit, stratifiedSplit } from "@/engine/split";
 import { detectTask, resolveTask, type AmbiguousChoice } from "@/engine/tarea";
 import {
@@ -382,7 +382,7 @@ export function assembleResult(
 ): BinaryResult {
   const primaryMetric = pickPrimaryMetric(py.positive_rate);
   const bestBaseline = pickBestBaseline(
-    [py.baselines.majority, py.baselines.logistic],
+    BASELINE_IDS_BY_TASK.binaria.map((id) => py.baselines[id]),
     primaryMetric,
   );
   const verdict = computeVerdict(py.model, bestBaseline, primaryMetric);
@@ -428,7 +428,7 @@ export function applyMemberFit(
 ): BinaryResult {
   const primaryMetric = result.verdict.primaryMetric;
   const bestBaseline = pickBestBaseline(
-    [result.baselines.majority, result.baselines.logistic],
+    BASELINE_IDS_BY_TASK.binaria.map((id) => result.baselines[id]),
     primaryMetric,
   );
   return {
@@ -478,9 +478,10 @@ export const UNIT_SUFFIXES: Readonly<Record<string, string>> = {
   h: "h",
   min: "min",
   s: "s",
-  dias: "días",
-  meses: "meses",
-  anios: "años",
+  // Las unidades que son PALABRAS se leerían en español con la UI en inglés
+  // (AU-S6-26): los días van con su símbolo, «d», aceptado junto al SI; meses y
+  // años no tienen uno, así que no se inventa: «en las unidades de «columna»».
+  dias: "d",
   c: "°C",
   pct: "%",
 };
@@ -488,8 +489,7 @@ export const UNIT_SUFFIXES: Readonly<Record<string, string>> = {
 export function inferUnit(column: string): TargetUnit {
   const match = /[_\s-]([a-z0-9]+)$/i.exec(column.trim());
   const suffix = match ? match[1].toLowerCase() : null;
-  const symbol = suffix ? (UNIT_SUFFIXES[suffix] ?? null) : null;
-  return { suffix: symbol ? suffix : null, symbol };
+  return { symbol: suffix ? (UNIT_SUFFIXES[suffix] ?? null) : null };
 }
 
 /**
@@ -500,8 +500,10 @@ export function inferUnit(column: string): TargetUnit {
 export function bestRegressionBaseline(
   baselines: RegressionBaselines,
 ): keyof RegressionBaselines {
-  const best = pickBestBaseline([baselines.median, baselines.linear], "mae");
-  return best === baselines.median ? "median" : "linear";
+  // La lista de datos es la fuente (AU-S6-28): ningún par se nombra a mano.
+  const ids = BASELINE_IDS_BY_TASK.numerica;
+  const scored = ids.map((id) => baselines[id]);
+  return ids[scored.indexOf(pickBestBaseline(scored, "mae"))]!;
 }
 
 /**

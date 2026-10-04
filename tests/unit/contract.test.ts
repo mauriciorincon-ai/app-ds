@@ -298,6 +298,8 @@ describe("Python → TS: liga de REGRESIÓN (train)", () => {
       ["model", (t) => (t.model.mae = t.model.mae * 2)],
       ["baselines.median.mae", (t) => delete t.baselines.median.mae],
       ["baselines.linear.r2", (t) => (t.baselines.linear.r2 = "?")],
+      // El miembro lineal y el baseline lineal son el mismo ajuste (AU-S6-39).
+      ["baselines.linear", (t) => (t.baselines.linear.mae += 1)],
       ["league[0].test.mae", (t) => (t.league[0].test.mae = -2)],
       ["league[0].cv.mean", (t) => delete t.league[0].cv.mean],
       // El signo sin invertir (AU-S6-09): un MAE de CV negativo jamás pasa.

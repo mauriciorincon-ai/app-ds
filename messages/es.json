@@ -118,7 +118,7 @@
       "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo.",
       "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
       "target-skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores muy grandes pesan mucho. El error medio (MAE) trata cada error igual; el RMSE castiga más los errores en esos valores grandes.",
-      "target-outliers": "{share}% de los valores del objetivo están muy lejos del resto (más de 3 rangos intercuartílicos). Revisa si son errores de captura antes de entrenar: pueden mover mucho al modelo.",
+      "target-outliers": "{share} % de los valores del objetivo están muy lejos del resto (más de 3 rangos intercuartílicos). Revisa si son errores de captura antes de entrenar: pueden mover mucho al modelo.",
       "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
     },
     "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
@@ -240,7 +240,7 @@
     },
     "regression": {
       "verdict": {
-        "beatsDetail": "En promedio se equivoca por ±{model}; {baseline} se equivoca por ±{reference}: un {pct} % menos de error.",
+        "beatsDetail": "En promedio se equivoca por ±{model}; {baseline} se equivoca por ±{reference}: un {pct} % menos de error.",
         "tiesDetail": "En promedio se equivoca por ±{model}; {baseline} se equivoca por ±{reference}: prácticamente lo mismo. Con estas columnas no hay señal extra que aprender — suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.",
         "losesDetail": "En promedio se equivoca por ±{model}; {baseline} se equivoca menos: ±{reference}. Tus columnas actuales no aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con lo que quieres estimar.",
         "linearTie": "La liga no encontró nada mejor que la regresión lineal de referencia",
@@ -345,7 +345,8 @@
     "subtitleQuantity": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la cantidad estimada para cada fila. Todo ocurre en tu navegador.",
     "modelLineQuantity": "Modelo: {dataset} · estima: {target}",
     "quantity": {
-      "title": "Estimaciones ({rows} filas)",
+      "title": "Estimaciones ({count} filas)",
+      "title_one": "Estimaciones (1 fila)",
       "min": "Mínimo",
       "median": "Mediana",
       "max": "Máximo"
@@ -379,7 +380,7 @@
         "provider": "El proveedor de IA no respondió. Puedes volver a intentarlo.",
         "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad no se muestra. Puedes volver a intentarlo."
       },
-      "aiNotForQuantity": "Por ahora, la narración con IA solo cubre la clasificación en dos categorías. Para estimar una cantidad está el texto estándar de arriba, que sale de los mismos números."
+      "aiNotForQuantity": "La narración con IA solo cubre la clasificación en dos categorías. Al estimar una cantidad, la lectura es el texto estándar de arriba, que sale de los mismos números."
     },
     "legend": "La barra mide cuánto IMPORTA cada variable; la línea de abajo dice hacia dónde EMPUJA. Una variable puede pesar mucho y no tener una sola dirección: eso no la hace irrelevante.",
     "positiveClass": "El modelo predice la columna «{target}». La clase que intenta detectar (la menos frecuente) es «{positive}».",
@@ -425,7 +426,7 @@
       "metricNote": "La métrica principal aquí es {metric} ({help}).",
       "regression": {
         "verdict": {
-          "beats": "El modelo se equivoca en promedio por ±{model}, frente a ±{baseline} del mejor baseline: un {pct} % menos de error.",
+          "beats": "El modelo se equivoca en promedio por ±{model}, frente a ±{baseline} del mejor baseline: un {pct} % menos de error.",
           "ties": "El modelo se equivoca en promedio por ±{model}, prácticamente lo mismo que el mejor baseline (±{baseline}); una regla simple rinde igual.",
           "loses": "El modelo se equivoca en promedio por ±{model}, más que el mejor baseline (±{baseline}); con estas variables no aporta."
         },
@@ -435,7 +436,7 @@
           "negative": "a mayor valor, menor objetivo"
         },
         "skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores grandes pesan mucho en el error.",
-        "outliers": "El {share} % de los valores del objetivo están muy lejos del resto: el RMSE los castiga más que el MAE."
+        "outliers": "El {share} % de los valores del objetivo están muy lejos del resto: el RMSE los castiga más que el MAE."
       }
     }
   },
@@ -522,9 +523,10 @@
       "task": "Tarea: estimar una cantidad (regresión). Se compara contra el baseline que menos se equivoca: la mediana o la regresión lineal.",
       "unit": "Unidad: {unit}, leída del nombre de la columna.",
       "noUnit": "Unidad: el nombre de la columna no trae una que la app reconozca; las cifras están en las unidades de «{column}».",
-      "targetStats": "El objetivo en el entrenamiento: media {mean}, desviación {std}, mínimo {min}, mediana {median}, máximo {max} (escrito con {decimals} decimales).",
+      "targetStats": "El objetivo en el entrenamiento: media {mean}, desviación {std}, mínimo {min}, mediana {median}, máximo {max} (escrito con {count} decimales).",
+      "targetStats_one": "El objetivo en el entrenamiento: media {mean}, desviación {std}, mínimo {min}, mediana {median}, máximo {max} (escrito con 1 decimal).",
       "errors": "Errores en las {total} filas de prueba (estimado − real): la mitad queda entre {p25} y {p75}; 9 de cada 10 se equivocan por menos de ±{abs90}.",
-      "noAi": "Narración con IA: no aplica a estimar una cantidad (por ahora solo cubre la clasificación en dos categorías)."
+      "noAi": "Narración con IA: no aplica a estimar una cantidad (solo cubre la clasificación en dos categorías)."
     }
   },
   "errors": {
