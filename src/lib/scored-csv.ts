@@ -1,6 +1,7 @@
 // Ensamblador del CSV puntuado (motor puro, sin i18n): toma la tabla original
 // del usuario y le añade dos columnas — predicción (etiqueta original de la
-// clase) y probabilidad de la clase positiva. Los NOMBRES de esas columnas
+// clase) y probabilidad de la clase positiva. S6: al estimar, una sola columna
+// (`<objetivo>_estimado`, ya formateada con formatEstimates) y sin probabilidad. Los NOMBRES de esas columnas
 // llegan localizados por parámetro (el CSV descargado sale en el idioma
 // activo); si colisionan con columnas del usuario se les añade un sufijo
 // determinista (_2, _3, …) — jamás se pisa una columna existente.

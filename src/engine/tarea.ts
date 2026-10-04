@@ -43,8 +43,8 @@ export const MULTICLASS_MAX_CLASSES = 20;
 export type TrainTask = "binaria" | "numerica";
 export const TRAIN_TASKS: readonly TrainTask[] = ["binaria", "numerica"];
 
-/** Las tareas que la UI ofrece entrenar. */
-export const TRAINABLE_TASKS: readonly Task[] = ["binaria"];
+/** Las tareas que la UI ofrece entrenar (S6 F2: también estimar una cantidad). */
+export const TRAINABLE_TASKS: readonly Task[] = ["binaria", "numerica"];
 
 /** Respuesta del usuario a la pregunta de una columna ambigua (D2 del S6). */
 export type AmbiguousChoice = "multiclase" | "numerica";
@@ -100,7 +100,12 @@ export function detectTask(values: readonly string[]): TaskDetection {
 }
 
 export function isTrainable(detection: TaskDetection): boolean {
-  return TRAINABLE_TASKS.includes(detection.task);
+  return isTrainableTask(detection.task);
+}
+
+/** S6: lo mismo para una tarea ya resuelta (la ambigua, tras la respuesta del usuario). */
+export function isTrainableTask(task: Task): boolean {
+  return TRAINABLE_TASKS.includes(task);
 }
 
 /**

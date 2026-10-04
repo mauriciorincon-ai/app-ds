@@ -12,6 +12,11 @@
 // Cambiar de experimento (payload nuevo) devuelve `ai` a "idle": nada viaja sin
 // una pulsación nueva. Pase lo que pase (kill-switch, proveedor caído,
 // verificación fallida) SIEMPRE hay texto: la plantilla nunca desaparece.
+//
+// S6 (P7): la narración con IA NO narra regresión. Primer cerrojo (este): con un
+// resultado de estimar no se arma payload y el hook jamás llama al route
+// (`aiAvailable` false; pedirla no hace nada). Segundo cerrojo: el route rechaza
+// todo payload que no sea de clasificación binaria. La plantilla sí existe.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EdaAlert } from "@/engine/eda";
 import { useI18n } from "@/i18n/provider";
@@ -20,8 +25,11 @@ import { useI18n } from "@/i18n/provider";
 // guardián Zod es el route; en el cliente basta un type-guard defensivo.
 import type { FallbackReason, NarrationPayload } from "@/lib/ia/schemas";
 import { buildNarrationPayload } from "@/lib/narration/payload";
-import { buildTemplateNarrative } from "@/lib/narration/templates";
-import type { BinaryResult } from "@/workers/protocol";
+import {
+  buildRegressionTemplate,
+  buildTemplateNarrative,
+} from "@/lib/narration/templates";
+import type { ExperimentResult } from "@/workers/protocol";
 
 /** Estado del bloque de IA (el bloque de plantilla no tiene estados: existe). */
 export type AiNarrationState =
@@ -66,7 +74,7 @@ function toOutcome(json: unknown): RemoteOutcome {
 }
 
 export function useNarration(input: {
-  result: BinaryResult;
+  result: ExperimentResult;
   target: string;
   cols: number;
   /** Alertas EDA del objetivo (S4). Referencia estable ⇒ no re-dispara el fetch. */
@@ -74,16 +82,29 @@ export function useNarration(input: {
 }): {
   template: string;
   ai: AiNarrationState;
+  /** S6: false al estimar una cantidad (la IA solo narra clasificación binaria). */
+  aiAvailable: boolean;
   requestNarration: () => void;
 } {
   const { result, target, cols, edaAlerts } = input;
   const { locale } = useI18n();
 
   const payload = useMemo(
-    () => buildNarrationPayload({ result, target, cols, locale, edaAlerts }),
+    () =>
+      result.task === "numerica"
+        ? null
+        : buildNarrationPayload({ result, target, cols, locale, edaAlerts }),
     [result, target, cols, locale, edaAlerts],
   );
-  const template = useMemo(() => buildTemplateNarrative(payload), [payload]);
+  const template = useMemo(
+    () =>
+      payload
+        ? buildTemplateNarrative(payload)
+        : result.task === "numerica"
+          ? buildRegressionTemplate({ result, locale, edaAlerts })
+          : "",
+    [payload, result, locale, edaAlerts],
+  );
 
   // `request` guarda PARA QUÉ payload se pidió: si el experimento cambia, la
   // petición vieja deja de aplicar y el bloque vuelve a "idle" solo.
@@ -99,6 +120,7 @@ export function useNarration(input: {
   }, [payload]);
 
   useEffect(() => {
+    if (!payload) return; // P7: un resultado de estimar jamás llega al route
     if (request !== payload) return; // nadie lo pidió para ESTE experimento
     if (response?.for === payload) return; // ya hay respuesta
 
@@ -122,7 +144,7 @@ export function useNarration(input: {
   }, [request, payload, response]);
 
   let ai: AiNarrationState;
-  if (request !== payload) {
+  if (!payload || request !== payload) {
     ai = { kind: "idle" };
   } else if (response === null || response.for !== payload) {
     ai = { kind: "loading" };
@@ -132,5 +154,5 @@ export function useNarration(input: {
     ai = { kind: "failed", reason: response.outcome.reason };
   }
 
-  return { template, ai, requestNarration };
+  return { template, ai, aiAvailable: payload !== null, requestNarration };
 }

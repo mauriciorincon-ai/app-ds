@@ -25,7 +25,9 @@ export type Ficha = {
 /** Variantes con `class_weight="balanced"`: comparten la ficha de su base. */
 export type BalancedId = "logistic_balanced" | "forest_balanced";
 export type BaseId = Exclude<MemberId, BalancedId>;
-export type FichaId = BaseId | "majority";
+/** Los baselines que tienen ficha y no compiten: uno por tarea que no es miembro (S6). */
+export type BaselineFichaId = "majority" | "median";
+export type FichaId = BaseId | BaselineFichaId;
 
 export const FICHAS: Record<FichaId, Ficha> = {
   logistic: {
@@ -354,6 +356,29 @@ export const FICHAS: Record<FichaId, Ficha> = {
     watch: {
       es: "Con clases desequilibradas su exactitud parece alta (si el 90 % es «no», acierta el 90 %). Por eso el veredicto se mide con AUC o F1.",
       en: "With imbalanced classes its accuracy looks impressive (if 90 % are «no», it is right 90 % of the time). That is why the verdict uses AUC or F1.",
+    },
+    cost: {
+      es: "Ninguno.",
+      en: "None.",
+    },
+  },
+  // S6: el baseline constante de estimar una cantidad (decidido en el STOP de la F0).
+  median: {
+    what: {
+      es: "Predice siempre el mismo número: la mediana del objetivo en el entrenamiento, el valor que queda en el medio. No aprende nada de tus columnas.",
+      en: "Always predicts the same number: the target's median in training, the value right in the middle. It learns nothing from your columns.",
+    },
+    goodFor: {
+      es: "Como vara mínima: si la liga no se equivoca menos que adivinar siempre la mediana, tus columnas no aportan señal sobre el objetivo.",
+      en: "As the floor: if the league is not off by less than always guessing the median, your columns carry no signal about the target.",
+    },
+    notFor: {
+      es: "Usarla como modelo: da la misma respuesta para cada fila.",
+      en: "Actual use: it gives every row the same answer.",
+    },
+    watch: {
+      es: "Es la constante que menos se equivoca en promedio. Por eso se usa en vez del promedio: con un objetivo sesgado, adivinar el promedio se equivoca más y le regalaría al modelo una victoria fácil.",
+      en: "It is the constant with the smallest average error. That is why it is used instead of the mean: with a skewed target, guessing the mean is off by more and would hand the model an easy win.",
     },
     cost: {
       es: "Ninguno.",

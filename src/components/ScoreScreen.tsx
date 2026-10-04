@@ -9,8 +9,11 @@ import { useRef, useState } from "react";
 import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
 import { modelFeatures } from "@/lib/ds/schema-check";
+import { inferUnit } from "@/lib/experiment";
+import { formatQuantity, withUnit } from "@/lib/quantity";
 import {
   buildScoredCsv,
+  formatEstimates,
   resolveScoredColumnNames,
   scoredCsvFileName,
 } from "@/lib/scored-csv";
@@ -76,13 +79,22 @@ export function ScoreScreen({
         <h1 className="text-3xl font-semibold tracking-tight">
           {t("score.title")}
         </h1>
-        <p className="max-w-prose text-ink-muted">{t("score.subtitle")}</p>
+        <p className="max-w-prose text-ink-muted">
+          {meta.schema.task === "numerica"
+            ? t("score.subtitleQuantity")
+            : t("score.subtitle")}
+        </p>
         <p className="font-mono text-sm tabular-nums text-ink-muted">
-          {t("score.modelLine", {
-            dataset: meta.datasetName,
-            target: meta.schema.target,
-            positive: meta.schema.positive_class,
-          })}
+          {meta.schema.task === "numerica"
+            ? t("score.modelLineQuantity", {
+                dataset: meta.datasetName,
+                target: meta.schema.target,
+              })
+            : t("score.modelLine", {
+                dataset: meta.datasetName,
+                target: meta.schema.target,
+                positive: meta.schema.positive_class,
+              })}
         </p>
       </header>
 
@@ -302,13 +314,29 @@ function ScoredResults({
 }) {
   const t = useT();
   const { check, table, score, fileName } = scoring;
-  const { predictions, probabilities, novelty } = score;
+  const { probabilities, novelty } = score;
+  const { schema } = meta;
+
+  // S6: al estimar, la columna nueva es «<objetivo>_estimado» con los decimales
+  // con que el usuario escribió su objetivo; no hay probabilidad (no se inventa).
+  const quantity =
+    score.task === "numerica" && schema.task === "numerica"
+      ? { values: score.predictions, decimals: schema.target_stats.decimals }
+      : null;
+  const predictions =
+    score.task === "numerica"
+      ? formatEstimates(score.predictions, quantity?.decimals ?? 0)
+      : score.predictions;
 
   const desiredNames = {
-    prediction: t("score.columns.prediction"),
-    probability: t("score.columns.probability", {
-      label: meta.schema.positive_class,
-    }),
+    prediction:
+      schema.task === "numerica"
+        ? t("score.columns.estimate", { target: schema.target })
+        : t("score.columns.prediction"),
+    probability:
+      schema.task === "numerica"
+        ? ""
+        : t("score.columns.probability", { label: schema.positive_class }),
   };
   const names = resolveScoredColumnNames(table.headers, desiredNames);
 
@@ -399,20 +427,28 @@ function ScoredResults({
         )}
       </Card>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
-          {t("score.distribution.title", { rows: total })}
-        </h2>
-        <div className="grid grid-cols-2 gap-2 sm:max-w-md">
-          {[...counts.entries()].map(([label, count]) => (
-            <MetricTile
-              key={label}
-              label={label}
-              value={`${count} (${percent(count)}%)`}
-            />
-          ))}
-        </div>
-      </section>
+      {quantity ? (
+        <QuantitySummary
+          values={quantity.values}
+          decimals={quantity.decimals}
+          target={schema.target}
+        />
+      ) : (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
+            {t("score.distribution.title", { rows: total })}
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:max-w-md">
+            {[...counts.entries()].map(([label, count]) => (
+              <MetricTile
+                key={label}
+                label={label}
+                value={`${count} (${percent(count)}%)`}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
@@ -421,9 +457,12 @@ function ScoredResults({
             total: table.rows.length,
           })}
         </h2>
-        {/* S5: ridge y el SVM lineal no dan probabilidad — se dice, no se inventa. */}
+        {/* S5: ridge y el SVM lineal no dan probabilidad — se dice, no se inventa.
+            S6: estimar tampoco la da, por otra razón (no hay clases). */}
         {!probabilities && (
-          <p className="text-sm text-ink-muted">{t("score.noProbabilities")}</p>
+          <p className="text-sm text-ink-muted">
+            {quantity ? t("score.quantityNote") : t("score.noProbabilities")}
+          </p>
         )}
         {/* Región scrolleable accesible por teclado (axe: scrollable-region-focusable). */}
         <div
@@ -491,5 +530,44 @@ function ScoredResults({
         </Button>
       </div>
     </div>
+  );
+}
+
+/** S6 (R20): el resumen de las cantidades estimadas — mínimo, mediana y máximo,
+ *  con los mismos decimales que la columna descargada (los del objetivo). */
+function QuantitySummary({
+  values,
+  decimals,
+  target,
+}: {
+  values: readonly number[];
+  decimals: number;
+  target: string;
+}) {
+  const t = useT();
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  const median =
+    n === 0
+      ? 0
+      : n % 2 === 1
+        ? sorted[(n - 1) / 2]
+        : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+  const stats = n === 0 ? [] : [sorted[0], median, sorted[n - 1]];
+  const unit = inferUnit(target);
+  const q = (value: number) => withUnit(formatQuantity(value, decimals), unit);
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
+        {t("score.quantity.title", { rows: n })}
+      </h2>
+      {n > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:max-w-md">
+          <MetricTile label={t("score.quantity.min")} value={q(stats[0])} />
+          <MetricTile label={t("score.quantity.median")} value={q(stats[1])} />
+          <MetricTile label={t("score.quantity.max")} value={q(stats[2])} />
+        </div>
+      )}
+    </section>
   );
 }

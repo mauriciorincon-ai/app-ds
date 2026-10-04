@@ -3,17 +3,29 @@
 // está, falla o miente). Se construye desde el mismo payload estructurado que
 // vería el Narrator — mismos números, cero red. Los strings viven en
 // messages/{es,en}.json (test de paridad); aquí solo se ensamblan.
+import type { EdaAlert } from "@/engine/eda";
 import { isFeatureUsed } from "@/engine/explainability";
+import type { Locale } from "@/i18n/config";
 import { translate } from "@/i18n/translate";
 import type { NarrationPayload } from "@/lib/ia/schemas";
+import {
+  errorReductionPct,
+  formatQuantity,
+  quantityDecimals,
+  withUnit,
+} from "@/lib/quantity";
+import type { RegressionResult } from "@/workers/protocol";
 
 export const TEMPLATE_TOP_FEATURES = 3;
 
 const fmt = (value: number) => value.toFixed(2);
 
-function directionKey(
-  feature: NarrationPayload["explainability"]["features"][number],
-): string {
+type DirectedFeature = Pick<
+  NarrationPayload["explainability"]["features"][number],
+  "importance" | "kind" | "direction"
+>;
+
+function directionKey(feature: DirectedFeature): string {
   // Misma regla que el gráfico (engine/explainability.ts): importancia 0 ⇒ el
   // modelo no se apoya en ella, y no se le atribuye ningún efecto.
   if (!isFeatureUsed(feature.importance)) return "unused";
@@ -81,5 +93,78 @@ export function buildTemplateNarrative(payload: NarrationPayload): string {
     );
   }
 
+  return parts.join(" ");
+}
+
+/**
+ * S6 (P7): el texto estándar al ESTIMAR una cantidad. Sale del resultado (no hay
+ * payload de IA: la narración con IA no narra regresión), con los mismos números
+ * que la pantalla — en las unidades del objetivo — y cero red. Vive solo en el
+ * navegador: trae valores derivados del objetivo (regla dura 2).
+ */
+export function buildRegressionTemplate(input: {
+  result: RegressionResult;
+  locale: Locale;
+  edaAlerts?: EdaAlert[] | null;
+}): string {
+  const { result, locale, edaAlerts } = input;
+  const t = (key: string, params?: Record<string, string | number>) =>
+    translate(locale, key, params);
+  const { verdict } = result;
+  const decimals = quantityDecimals([
+    verdict.modelScore,
+    verdict.baselineScore,
+  ]);
+  const q = (value: number) =>
+    withUnit(formatQuantity(value, decimals), result.unit);
+
+  const direction = (feature: DirectedFeature) => {
+    const key = directionKey(feature);
+    return key === "positive" || key === "negative"
+      ? t(`narration.template.regression.direction.${key}`)
+      : t(`narration.template.direction.${key}`);
+  };
+  const list = result.explainability.features
+    .slice(0, TEMPLATE_TOP_FEATURES)
+    .map((feature) => `${feature.name} (${direction(feature)})`)
+    .join(" · ");
+
+  const parts = [
+    t(`narration.template.regression.verdict.${verdict.level}`, {
+      model: q(verdict.modelScore),
+      baseline: q(verdict.baselineScore),
+      pct: errorReductionPct(verdict.modelScore, verdict.baselineScore),
+    }),
+    t("narration.template.regression.metricNote", {
+      r2: result.model.r2.toFixed(2),
+    }),
+    t("narration.template.features", { list }),
+    t("narration.template.method"),
+  ];
+
+  if (result.leakage.length > 0) {
+    parts.push(
+      t("narration.template.leakage", {
+        columns: result.leakage.map((finding) => finding.column).join(", "),
+      }),
+    );
+  }
+  for (const alert of edaAlerts ?? []) {
+    if (alert.kind === "id-like") {
+      parts.push(t("narration.template.idLike", { columns: alert.column }));
+    } else if (alert.kind === "target-skewed") {
+      parts.push(
+        t("narration.template.regression.skewed", {
+          skew: alert.skew.toFixed(1),
+        }),
+      );
+    } else if (alert.kind === "target-outliers") {
+      parts.push(
+        t("narration.template.regression.outliers", {
+          share: (alert.share * 100).toFixed(1),
+        }),
+      );
+    }
+  }
   return parts.join(" ");
 }

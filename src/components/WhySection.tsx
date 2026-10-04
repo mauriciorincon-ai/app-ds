@@ -39,6 +39,20 @@ function directionKey(feature: FeatureImportance): string {
   return feature.direction;
 }
 
+/** S6: al estimar, la dirección se lee contra la cantidad («mayor consumo»). */
+function directionText(
+  t: (key: string, params?: Record<string, string | number>) => string,
+  feature: FeatureImportance,
+  target: string,
+  positiveClass: string | null,
+): string {
+  const key = directionKey(feature);
+  if (positiveClass === null && (key === "positive" || key === "negative")) {
+    return t(`why.directionQuantity.${key}`, { target });
+  }
+  return t(`why.direction.${key}`, { target, positive: positiveClass ?? "" });
+}
+
 function ImportanceChart({
   explain,
   target,
@@ -46,7 +60,7 @@ function ImportanceChart({
 }: {
   explain: Explainability;
   target: string;
-  positiveClass: string;
+  positiveClass: string | null;
 }) {
   const t = useT();
   const features = explain.features.slice(0, MAX_BARS);
@@ -87,10 +101,7 @@ function ImportanceChart({
               />
             </div>
             <p className="mt-0.5 text-xs text-ink-muted">
-              {t(`why.direction.${directionKey(feature)}`, {
-                target,
-                positive: positiveClass,
-              })}
+              {directionText(t, feature, target, positiveClass)}
             </p>
           </li>
         );
@@ -105,16 +116,20 @@ export function WhySection({
   positiveClass,
   template,
   ai,
+  aiAvailable = true,
   onRequestNarration,
 }: {
   explain: Explainability;
   /** Columna objetivo — las direcciones se leen contra ella (no contra "«0»"). */
   target: string;
-  /** Etiqueta real de la clase positiva — las direcciones se leen contra ella. */
-  positiveClass: string;
+  /** Etiqueta real de la clase positiva — las direcciones se leen contra ella.
+   *  S6: null al estimar una cantidad (no hay clases). */
+  positiveClass: string | null;
   /** Texto determinista local: siempre presente, jamás depende de la red. */
   template: string;
   ai: AiNarrationState;
+  /** S6 (P7): false al estimar — la IA solo narra clasificación binaria. */
+  aiAvailable?: boolean;
   onRequestNarration: () => void;
 }) {
   const t = useT();
@@ -140,7 +155,9 @@ export function WhySection({
         {/* Qué es la clase detectada + qué significan barra y dirección: sin
             esto, «0» no le dice nada a nadie (gate ⭐ S4, bloque C). */}
         <p className="mt-4 border-t border-hairline pt-3 text-xs text-ink-muted">
-          {t("why.positiveClass", { target, positive: positiveClass })}
+          {positiveClass === null
+            ? t("why.quantityNote", { target })
+            : t("why.positiveClass", { target, positive: positiveClass })}
         </p>
         <p className="mt-1 text-xs text-ink-muted">{t("why.legend")}</p>
       </Card>
@@ -156,54 +173,64 @@ export function WhySection({
         <p className="text-sm leading-relaxed">{template}</p>
       </Card>
 
-      {/* Bloque 2 — la IA, SEPARADA y a demanda. */}
-      <Card className="p-5">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold">
-            {t("why.narration.aiTitle")}
-          </h3>
-          {ai.kind === "verified" && (
-            <Badge tone="positive">
-              <span aria-hidden>✓</span> {t("why.narration.verifiedBadge")}
-            </Badge>
-          )}
-        </div>
-
-        <p className="text-sm text-ink-muted">{t("why.narration.aiIntro")}</p>
-
-        <div aria-live="polite">
-          {ai.kind === "loading" && (
-            <p className="mt-3 text-sm text-ink-muted">
-              {t("why.narration.loading")}
-            </p>
-          )}
-          {ai.kind === "verified" && (
-            <p className="mt-3 text-sm leading-relaxed">{ai.text}</p>
-          )}
-          {ai.kind === "failed" && (
-            <p className="mt-3 text-sm text-caution">
-              <span aria-hidden className="mr-1">
-                ⚠
-              </span>
-              {t(`why.narration.fallback.${FALLBACK_NOTICE[ai.reason]}`)}
-            </p>
-          )}
-        </div>
-
-        {ai.kind !== "loading" && (
-          <div className="mt-3">
-            <Button
-              variant="secondary"
-              icon="sparkle"
-              onClick={onRequestNarration}
-            >
-              {ai.kind === "idle"
-                ? t("why.narration.request")
-                : t("why.narration.again")}
-            </Button>
+      {/* Bloque 2 — la IA, SEPARADA y a demanda. S6 (P7): al estimar no hay IA, y
+          se dice de frente en vez de mostrar un botón que no haría nada. */}
+      {!aiAvailable ? (
+        <p className="rounded-md border border-hairline bg-sunken p-3 text-sm text-ink-muted">
+          <span aria-hidden className="mr-1">
+            ·
+          </span>
+          {t("why.narration.aiNotForQuantity")}
+        </p>
+      ) : (
+        <Card className="p-5">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold">
+              {t("why.narration.aiTitle")}
+            </h3>
+            {ai.kind === "verified" && (
+              <Badge tone="positive">
+                <span aria-hidden>✓</span> {t("why.narration.verifiedBadge")}
+              </Badge>
+            )}
           </div>
-        )}
-      </Card>
+
+          <p className="text-sm text-ink-muted">{t("why.narration.aiIntro")}</p>
+
+          <div aria-live="polite">
+            {ai.kind === "loading" && (
+              <p className="mt-3 text-sm text-ink-muted">
+                {t("why.narration.loading")}
+              </p>
+            )}
+            {ai.kind === "verified" && (
+              <p className="mt-3 text-sm leading-relaxed">{ai.text}</p>
+            )}
+            {ai.kind === "failed" && (
+              <p className="mt-3 text-sm text-caution">
+                <span aria-hidden className="mr-1">
+                  ⚠
+                </span>
+                {t(`why.narration.fallback.${FALLBACK_NOTICE[ai.reason]}`)}
+              </p>
+            )}
+          </div>
+
+          {ai.kind !== "loading" && (
+            <div className="mt-3">
+              <Button
+                variant="secondary"
+                icon="sparkle"
+                onClick={onRequestNarration}
+              >
+                {ai.kind === "idle"
+                  ? t("why.narration.request")
+                  : t("why.narration.again")}
+              </Button>
+            </div>
+          )}
+        </Card>
+      )}
     </section>
   );
 }

@@ -7,10 +7,17 @@ import {
   type Routing,
 } from "@/engine/encarrilador";
 import { selectOneSe, type MemberId } from "@/engine/roster";
+import {
+  METRIC_RULES,
+  type MetricName,
+  type Metrics,
+  type RegressionMetrics,
+} from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
+import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
 import type { ChoiceState } from "@/lib/useExperiment";
-import type { BinaryResult, LeagueRow } from "@/workers/protocol";
+import type { ExperimentResult, LeagueRow } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import type { FichaStatus } from "./FichaModelo";
 import { Badge, Button, Card } from "./ui";
@@ -20,9 +27,15 @@ import { Badge, Button, Card } from "./ui";
 // pedido, etiquetada «no sirve para elegir» (regla dura 3: acompaña y etiqueta,
 // no esconde). El ganador lleva marca RELLENA ★ + texto (daltonismo leve del
 // usuario: nunca solo color); el elegido a mano, ◆ + «elegido por ti».
+//
+// S6: la misma tabla para estimar una cantidad. La métrica es el MAE («menor es
+// mejor», METRIC_RULES): el orden, la banda del error estándar y la marca del
+// mejor siguen esa dirección, y las cifras van en las unidades del objetivo.
+
+type AnyRow = LeagueRow<Metrics> | LeagueRow<RegressionMetrics>;
 
 type Entry =
-  | { kind: "ran"; row: LeagueRow }
+  | { kind: "ran"; row: AnyRow }
   | { kind: "pending"; placement: Placement }
   | { kind: "out"; placement: Placement };
 
@@ -32,33 +45,57 @@ export function LeagueTable({
   choice,
   onChoose,
 }: {
-  result: BinaryResult;
+  result: ExperimentResult;
   routing: Routing | null;
   choice: ChoiceState;
   onChoose: (member: MemberId) => void;
 }) {
   const t = useT();
   const [showTest, setShowTest] = useState(false);
-  const { selection, league } = result;
+  const { selection } = result;
+  const league: readonly AnyRow[] = result.league;
+  const task = result.task ?? "binaria";
   const metric = selection.metric;
   const metricName = t(`results.metrics.${metric}`);
+  const lower = METRIC_RULES[metric].direction === "lower";
   const short = (id: MemberId) => t(`results.candidates.short.${id}`);
-  const fmt = (v: number) => v.toFixed(3);
+  // El puntaje de prueba de una fila en la métrica de la liga.
+  const testScore = (m: Metrics | RegressionMetrics): number =>
+    "mae" in m ? m.mae : m[metric as MetricName];
+  // Clasificación: 3 decimales (de 0 a 1). Estimar: unidades del objetivo, con
+  // los decimales que pide el puntaje más chico de la tabla (R9).
+  const unitDecimals =
+    result.task === "numerica"
+      ? quantityDecimals(
+          league.flatMap((row) => (row.cv ? [row.cv.mean, row.cv.std] : [])),
+        )
+      : 0;
+  const fmt = (v: number) =>
+    result.task === "numerica"
+      ? withUnit(formatQuantity(v, unitDecimals), result.unit)
+      : v.toFixed(3);
 
   // La banda del error estándar: los que «empatan» con el mejor.
-  const oneSe = selectOneSe(league, selection.k);
+  const oneSe = selectOneSe(
+    league,
+    selection.k,
+    METRIC_RULES[metric].direction,
+  );
   const bestMean = league.find((r) => r.name === selection.best)?.cv?.mean;
-  const threshold =
-    bestMean !== undefined ? bestMean - selection.se : Number.POSITIVE_INFINITY;
+  const withinBand = (mean: number) =>
+    bestMean !== undefined &&
+    (lower ? mean <= bestMean + selection.se : mean >= bestMean - selection.se);
 
-  // Corrieron (por puntaje de CV, de mayor a menor; sin puntaje al final) →
-  // pendientes del Nivel 2 → fuera. Ninguno se omite.
+  // Corrieron (por puntaje de CV, del mejor al peor según la dirección; sin
+  // puntaje al final) → pendientes del Nivel 2 → fuera. Ninguno se omite.
   const ran = league.map((row) => row.name);
+  const worst = lower ? Infinity : -Infinity;
+  const cvKey = (row: AnyRow) => row.cv?.mean ?? worst;
   const placementOf = (id: MemberId) =>
     routing!.placements.find((p) => p.id === id)!;
   const entries: Entry[] = [
     ...[...league]
-      .sort((a, b) => (b.cv?.mean ?? -Infinity) - (a.cv?.mean ?? -Infinity))
+      .sort((a, b) => (lower ? cvKey(a) - cvKey(b) : cvKey(b) - cvKey(a)))
       .map((row): Entry => ({ kind: "ran", row })),
     ...(routing?.level2 ?? [])
       .filter((id) => !ran.includes(id))
@@ -69,7 +106,10 @@ export function LeagueTable({
   ];
 
   const rows = result.nTrain + result.nTest;
-  const minorityShare = Math.min(result.positiveRate, 1 - result.positiveRate);
+  const minorityShare =
+    result.task === "numerica"
+      ? 0
+      : Math.min(result.positiveRate, 1 - result.positiveRate);
   const outReason = (p: Placement) =>
     t(`roster.reason.${p.outReason ?? p.reason}`, {
       rows,
@@ -80,7 +120,7 @@ export function LeagueTable({
   const fitting = choice.status === "fitting";
   const ficha = (id: MemberId, status: FichaStatus, emphasis: string) => (
     <FichaButton
-      target={{ id, status }}
+      target={{ id, status, task }}
       label={t("league.fichaAria", { model: short(id) })}
       className={emphasis}
     >
@@ -97,6 +137,14 @@ export function LeagueTable({
           {t("league.title", { count: league.length })}
         </h2>
         <p className="text-sm">{t("league.rule")}</p>
+        {lower && (
+          <p className="text-sm text-ink-muted">
+            <span aria-hidden className="mr-1">
+              ▼
+            </span>
+            {t("league.lowerIsBetter")}
+          </p>
+        )}
       </div>
 
       <div>
@@ -204,7 +252,7 @@ export function LeagueTable({
               const withinSe =
                 row.status === "ok" &&
                 row.cv !== null &&
-                row.cv.mean >= threshold &&
+                withinBand(row.cv.mean) &&
                 !isWinner &&
                 !isBest;
               // U3: compitió porque el usuario lo incluyó de todos modos.
@@ -329,7 +377,7 @@ export function LeagueTable({
                             va en su propia línea, rotulada y en ámbar. */}
                         {showTest && row.test && (
                           <div className="mt-1 rounded-sm bg-caution/10 px-1 text-xs text-caution sm:hidden">
-                            {t("league.testShort")} {fmt(row.test[metric])}
+                            {t("league.testShort")} {fmt(testScore(row.test))}
                           </div>
                         )}
                       </>
@@ -344,7 +392,7 @@ export function LeagueTable({
                   {showTest && (
                     <td className="hidden bg-caution/5 px-2 py-2 align-top font-mono tabular-nums text-ink-muted sm:table-cell">
                       {row.test ? (
-                        fmt(row.test[metric])
+                        fmt(testScore(row.test))
                       ) : row.cv ? (
                         <span className="font-sans text-xs text-negative">
                           {t("league.status.testError", {

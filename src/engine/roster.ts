@@ -209,6 +209,23 @@ export function isMemberOf(task: TrainTask, value: unknown): value is MemberId {
   return (ROSTER_BY_TASK[task] as readonly unknown[]).includes(value);
 }
 
+/**
+ * S6: los ids compartidos cuyo nombre largo cambia al estimar una cantidad (el
+ * mismo Ridge es «Clasificador Ridge» al clasificar y «Regresión Ridge» al
+ * estimar). Los demás se llaman igual en las dos tareas.
+ */
+export const REGRESSION_NAMED_IDS = [
+  "ridge",
+] as const satisfies readonly MemberId[];
+
+/** La clave i18n del nombre largo de un miembro en esa tarea. */
+export function memberNameKey(id: MemberId, task: TrainTask): string {
+  return task === "numerica" &&
+    (REGRESSION_NAMED_IDS as readonly MemberId[]).includes(id)
+    ? `results.candidates.regressionModel.${id}`
+    : `results.candidates.model.${id}`;
+}
+
 /** Ordena (sin duplicados) por prioridad: el orden que Python recibe y no re-deriva. */
 export function byPriority(ids: Iterable<MemberId>): MemberId[] {
   return [...new Set(ids)].sort((a, b) => PRIORITY.get(a)! - PRIORITY.get(b)!);

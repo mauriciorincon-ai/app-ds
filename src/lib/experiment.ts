@@ -42,6 +42,7 @@ import type {
   ModelCandidate,
   PipelinePayload,
   PipelineResult,
+  RegressionBaselines,
   RegressionMemberFitResult,
   RegressionPipelineResult,
   RegressionResult,
@@ -484,6 +485,18 @@ export function inferUnit(column: string): TargetUnit {
 }
 
 /**
+ * El baseline de regresión a batir: el de menor MAE (la regla de METRIC_RULES vía
+ * pickBestBaseline; en empate, la mediana, que es la primera). La UI lo nombra en
+ * el veredicto («adivinar siempre la mediana» o «una regresión lineal»).
+ */
+export function bestRegressionBaseline(
+  baselines: RegressionBaselines,
+): keyof RegressionBaselines {
+  const best = pickBestBaseline([baselines.median, baselines.linear], "mae");
+  return best === baselines.median ? "median" : "linear";
+}
+
+/**
  * Ensambla el resultado de REGRESIÓN con lo que el lector (contract.ts) validó:
  * veredicto en MAE contra el mejor baseline (mediana o lineal) con la regla de
  * METRIC_RULES, y la unidad inferida del nombre del objetivo.
@@ -494,10 +507,7 @@ export function assembleRegressionResult(
   target: string,
   smallSample = false,
 ): RegressionResult {
-  const bestBaseline = pickBestBaseline(
-    [py.baselines.median, py.baselines.linear],
-    "mae",
-  );
+  const bestBaseline = py.baselines[bestRegressionBaseline(py.baselines)];
   return {
     task: "numerica",
     nTrain: py.n_train,
@@ -535,10 +545,8 @@ export function applyRegressionMemberFit(
   result: RegressionResult,
   fit: RegressionMemberFitResult,
 ): RegressionResult {
-  const bestBaseline = pickBestBaseline(
-    [result.baselines.median, result.baselines.linear],
-    "mae",
-  );
+  const bestBaseline =
+    result.baselines[bestRegressionBaseline(result.baselines)];
   return {
     ...result,
     model: fit.model,

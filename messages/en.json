@@ -36,6 +36,10 @@
       "clientes": {
         "name": "Customers (messy data)",
         "desc": "Nulls, junk, an ID and duplicates: see the cleanup in action."
+      },
+      "consumo": {
+        "name": "Energy use",
+        "desc": "How many kWh does a home use? Estimate a quantity and see how far off it is."
       }
     },
     "import": {
@@ -61,7 +65,8 @@
         },
         "chosen": "◆ Chosen by you, not by cross-validation (the cross-validation winner was {winner}). If it was chosen by looking at the test set, the metric may be optimistic.",
         "cv": "Chosen by {k}-fold cross-validation among {count} models.",
-        "cv_one": "Chosen by {k}-fold cross-validation (1 model competed)."
+        "cv_one": "Chosen by {k}-fold cross-validation (1 model competed).",
+        "targetQuantity": "Estimates «{target}», a quantity"
       },
       "errors": {
         "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
@@ -82,7 +87,7 @@
     "target": {
       "label": "What do you want to predict?",
       "placeholder": "Pick a column…",
-      "help": "You can pick any column: we tell you what kind of prediction it would be. This version trains two-category columns (yes/no, 0/1).",
+      "help": "You can pick any column: we tell you what kind of prediction it would be. This version trains two-category columns (yes/no, 0/1) and quantities (a price, a consumption, a duration).",
       "option": "{column} · {task}"
     },
     "profile": {
@@ -153,7 +158,12 @@
       "precision": "Precision",
       "recall": "Recall",
       "f1": "F1",
-      "auc": "AUC"
+      "auc": "AUC",
+      "mae": "MAE",
+      "rmse": "RMSE",
+      "r2": "R²",
+      "medae": "MedAE",
+      "mape": "MAPE"
     },
     "confusion": {
       "title": "Confusion matrix (test)",
@@ -164,7 +174,9 @@
     "baselines": {
       "title": "Baselines",
       "majority": "Majority class",
-      "logistic": "Logistic regression"
+      "logistic": "Logistic regression",
+      "median": "Median",
+      "linear": "Linear regression"
     },
     "testNote": "The verdict metrics, the confusion matrix and the baselines are computed on the test set, never on the training set. The league table uses cross-validation inside the training set: it is for choosing.",
     "leakage": {
@@ -221,7 +233,53 @@
         "forest": "Random Forest",
         "forest_balanced": "Balanced Random Forest",
         "mlp": "Neural network"
+      },
+      "regressionModel": {
+        "ridge": "Ridge regression"
       }
+    },
+    "regression": {
+      "verdict": {
+        "beatsDetail": "On average it is off by ±{model}; {baseline} is off by ±{reference}: {pct}% less error.",
+        "tiesDetail": "On average it is off by ±{model}; {baseline} is off by ±{reference}: practically the same. There is no extra signal to learn from these columns — adding variables related to the target usually helps more than switching models.",
+        "losesDetail": "On average it is off by ±{model}; {baseline} is off by less: ±{reference}. Your current columns don't carry enough signal about the target — try variables more related to what you want to estimate.",
+        "linearTie": "The league found nothing better than the reference linear regression",
+        "linearTieDetail": "No model beat linear regression in cross-validation by more than one standard error, and linear regression is also the baseline. On average it is off by ±{model}. With these columns there is no extra signal to learn: adding variables related to the target usually helps more than changing the model.",
+        "baseline": {
+          "median": "always guessing the median ({value})",
+          "linear": "a linear regression"
+        },
+        "units": "Figures are in the units of «{column}»: its name carries no unit the app recognizes."
+      },
+      "primaryMetric": "Main metric: MAE, the average error in the target's units",
+      "guide": "Which one to read: MAE says how far off it is on average. RMSE punishes large errors more: if it is much larger than MAE, it misses by a lot now and then. R² says how much of the variation it explains: 1 is all of it, 0 is the same as guessing the average, and it goes negative when it does worse. MedAE is the typical error, without extreme cases weighing in.",
+      "chart": {
+        "title": "Estimated vs actual, on the test set",
+        "axisReal": "Actual",
+        "axisPredicted": "Estimated",
+        "diagonal": "Diagonal: perfect estimate",
+        "band": "Band: ±MAE ({mae})",
+        "inside": "inside the band",
+        "outside": "outside the band",
+        "label": "Scatter plot of {shown} test rows: actual value on the horizontal axis, estimate on the vertical one. {inside} in every 100 land within ±{mae} of their actual value.",
+        "sample": "The chart shows {shown} of the {total} test rows (a fixed sample spread across the whole range). What follows uses all {total}."
+      },
+      "residuals": {
+        "title": "How the errors are spread",
+        "middle": "Half of the estimates are off by between {p25} and {p75}.",
+        "abs90": "9 in 10 are off by less than ±{abs90}.",
+        "median": {
+          "over": "The median error is {p50}: it tends to overestimate.",
+          "under": "The median error is {p50}: it tends to underestimate.",
+          "none": "The median error is {p50}: it does not lean either way."
+        },
+        "sign": "Error = estimate − actual: positive means overestimating; negative, underestimating.",
+        "tableCaption": "Error percentiles over the {total} test rows",
+        "percentile": "Percentile",
+        "error": "Error"
+      },
+      "baselinesNote": "Baselines don't compete: they measure whether the league adds anything. The median is the constant with the smallest average error; linear regression, the simplest straight line.",
+      "testNote": "The verdict, metrics, chart and baselines are computed on the test set, never on the training set. The league table uses cross-validation inside training: it is for choosing."
     }
   },
   "score": {
@@ -269,7 +327,8 @@
     },
     "columns": {
       "prediction": "prediction",
-      "probability": "probability_{label}"
+      "probability": "probability_{label}",
+      "estimate": "{target}_estimate"
     },
     "fileSuffix": "scored",
     "download": "Download scored CSV",
@@ -280,7 +339,16 @@
       "runtime": "Scoring failed. Check that the columns hold the same kind of data as in training and try again.",
       "import-failed": "The saved model could not be restored. The file may come from an incompatible version; retrain and export again."
     },
-    "noProbabilities": "This model decides the class but does not give a probability, so the probability column is left out. If you need to rank rows by risk, choose a model that gives one."
+    "noProbabilities": "This model decides the class but does not give a probability, so the probability column is left out. If you need to rank rows by risk, choose a model that gives one.",
+    "subtitleQuantity": "Upload a new CSV with the columns the model knows (without the target column) and get the estimated quantity for each row. Everything happens in your browser.",
+    "modelLineQuantity": "Model: {dataset} · estimates: {target}",
+    "quantity": {
+      "title": "Estimates ({rows} rows)",
+      "min": "Minimum",
+      "median": "Median",
+      "max": "Maximum"
+    },
+    "quantityNote": "Estimating gives no probability: each row gets its estimated quantity, with the decimals you used for the target."
   },
   "why": {
     "title": "Why does it predict this way?",
@@ -308,10 +376,16 @@
         "unavailable": "AI narration isn't configured in this deployment.",
         "provider": "The AI provider didn't respond. You can try again.",
         "rejected": "The AI narrative didn't pass verification against the numbers; for honesty it isn't shown. You can try again."
-      }
+      },
+      "aiNotForQuantity": "For now, AI narration only covers classification into two categories. For estimating a quantity there is the standard text above, built from the same numbers."
     },
     "legend": "The bar measures how much each variable MATTERS; the line below says which way it PUSHES. A variable can matter a lot and still have no single direction — that doesn't make it irrelevant.",
-    "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”."
+    "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”.",
+    "directionQuantity": {
+      "positive": "▲ the higher the value, the higher «{target}»",
+      "negative": "▼ the higher the value, the lower «{target}»"
+    },
+    "quantityNote": "The model estimates the column «{target}». The bar measures how much its error (MAE) grows when that variable's link to the target is broken."
   },
   "card": {
     "title": "Model card",
@@ -346,7 +420,21 @@
         "f1": "balance between precision and recall, from 0 to 1",
         "auc": "how well it separates the two classes: 0.50 would be chance and 1.00 perfect"
       },
-      "metricNote": "The primary metric here is {metric} ({help})."
+      "metricNote": "The primary metric here is {metric} ({help}).",
+      "regression": {
+        "verdict": {
+          "beats": "The model is off by ±{model} on average, against ±{baseline} for the best baseline: {pct}% less error.",
+          "ties": "The model is off by ±{model} on average, practically the same as the best baseline (±{baseline}); a simple rule does just as well.",
+          "loses": "The model is off by ±{model} on average, more than the best baseline (±{baseline}); with these variables it adds nothing."
+        },
+        "metricNote": "MAE is the average error in the target's units (0 would be always right). R² is {r2}: how much of the variation it explains, where 1 is all of it and 0 is the same as guessing the average.",
+        "direction": {
+          "positive": "the higher the value, the higher the target",
+          "negative": "the higher the value, the lower the target"
+        },
+        "skewed": "The target is heavily skewed (skew {skew}): a few large values weigh heavily on the error.",
+        "outliers": "{share}% of the target values sit far from the rest: RMSE punishes them more than MAE."
+      }
     }
   },
   "modelcard": {
@@ -463,7 +551,26 @@
     "suggested": "Most likely: {task}.",
     "blocked": "The app trains this kind of prediction, but with this data models cannot be compared honestly (the reason is below).",
     "trainable": "Ready to train.",
-    "notYet": "This version does not train this kind of prediction yet: it comes in a later version. For now, pick a column with two categories."
+    "notYet": "This version does not train this kind of prediction yet: it comes in a later version. For now, pick a column with two categories or with a quantity.",
+    "estimate": {
+      "unit": "You are going to estimate a quantity, in {unit}. The verdict will say how far off it is on average, in {unit}.",
+      "noUnit": "You are going to estimate a quantity. Its name carries no unit the app recognizes, so figures will be given in the units of «{column}»."
+    },
+    "ask": {
+      "question": "Does «{column}» hold categories or a quantity?",
+      "help": "This data alone cannot tell; you know the column.",
+      "suggested": "Suggested",
+      "numerica": {
+        "label": "A quantity",
+        "desc": "The number is estimated. The verdict says how far off it is on average, in the column's units."
+      },
+      "multiclase": {
+        "label": "Categories",
+        "desc": "Each number is a class, like a 1-to-5 rating. This version does not train several classes yet: it comes in a later version."
+      },
+      "answered": "You answered: {answer}.",
+      "change": "Change the answer"
+    }
   },
   "roster": {
     "title": "Who competes",
@@ -520,7 +627,8 @@
     "time": "The league took {seconds} s on this device.",
     "testShort": "test",
     "fichaAria": "About {model}",
-    "title_one": "The league: 1 model"
+    "title_one": "The league: 1 model",
+    "lowerIsBetter": "In this table, lower is better: it is the average error (MAE) in the target's units."
   },
   "ficha": {
     "eyebrow": "Model sheet",

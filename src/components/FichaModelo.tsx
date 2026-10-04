@@ -5,10 +5,12 @@ import {
   BALANCED_NOTES,
   FICHAS,
   type BalancedId,
+  type BaselineFichaId,
   type Ficha,
   type FichaId,
 } from "@/content/modelos";
-import { MEMBERS, type MemberId } from "@/engine/roster";
+import { MEMBERS, memberNameKey, type MemberId } from "@/engine/roster";
+import type { TrainTask } from "@/engine/tarea";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "./ui";
 
@@ -27,7 +29,15 @@ export type FichaStatus =
   | { kind: "out"; reason: string }
   | { kind: "baseline" };
 
-export type FichaTarget = { id: MemberId | "majority"; status: FichaStatus };
+export type FichaTarget = {
+  id: MemberId | BaselineFichaId;
+  status: FichaStatus;
+  /** S6: la tarea de la liga (un mismo modelo se llama distinto al estimar). */
+  task?: TrainTask;
+};
+
+const isBaselineFicha = (id: FichaTarget["id"]): id is BaselineFichaId =>
+  id === "majority" || id === "median";
 
 const SECTIONS: (keyof Ficha)[] = [
   "what",
@@ -63,19 +73,17 @@ export default function FichaModelo({
     return () => opener?.focus();
   }, []);
 
-  const { id, status } = target;
+  const { id, status, task = "binaria" } = target;
   // `base` es un MemberId; que sea una ficha lo fija tests/unit/modelos.test.ts.
-  const fichaId =
-    id === "majority" ? "majority" : (MEMBERS[id].base as FichaId);
+  const fichaId = isBaselineFicha(id) ? id : (MEMBERS[id].base as FichaId);
   const ficha = FICHAS[fichaId];
   const balancedNote =
-    id !== "majority" && MEMBERS[id].balanced
+    !isBaselineFicha(id) && MEMBERS[id].balanced
       ? BALANCED_NOTES[id as BalancedId]
       : null;
-  const name =
-    id === "majority"
-      ? t("results.baselines.majority")
-      : t(`results.candidates.model.${id}`);
+  const name = isBaselineFicha(id)
+    ? t(`results.baselines.${id}`)
+    : t(memberNameKey(id, task));
   const mark = STATUS_MARK[status.kind];
 
   return (

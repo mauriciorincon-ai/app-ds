@@ -16,6 +16,7 @@ export default function Home() {
     state,
     loadCsv,
     selectTarget,
+    answerTask,
     run,
     reset,
     goToScoring,
@@ -42,6 +43,7 @@ export default function Home() {
           edaAlerts={state.edaAlerts}
           plan={state.plan}
           onSelectTarget={selectTarget}
+          onAnswerTask={answerTask}
           onRun={run}
           onBack={reset}
         />
