@@ -4,10 +4,13 @@ import { useEffect, useRef } from "react";
 import {
   BALANCED_NOTES,
   FICHAS,
+  REGRESSION_FICHA_FIELDS,
+  REGRESSION_NOTES,
   type BalancedId,
   type BaselineFichaId,
   type Ficha,
   type FichaId,
+  type SharedId,
 } from "@/content/modelos";
 import { MEMBERS, memberNameKey, type MemberId } from "@/engine/roster";
 import type { TrainTask } from "@/engine/tarea";
@@ -76,10 +79,19 @@ export default function FichaModelo({
   const { id, status, task = "binaria" } = target;
   // `base` es un MemberId; que sea una ficha lo fija tests/unit/modelos.test.ts.
   const fichaId = isBaselineFicha(id) ? id : (MEMBERS[id].base as FichaId);
-  const ficha = FICHAS[fichaId];
+  // S6: al estimar, los apartados que solo hablan de clasificar se reemplazan.
+  const ficha: Ficha =
+    task === "numerica" && id in REGRESSION_FICHA_FIELDS
+      ? { ...FICHAS[fichaId], ...REGRESSION_FICHA_FIELDS[id as SharedId] }
+      : FICHAS[fichaId];
   const balancedNote =
     !isBaselineFicha(id) && MEMBERS[id].balanced
       ? BALANCED_NOTES[id as BalancedId]
+      : null;
+  // S6: al estimar, los modelos compartidos suman cómo estiman.
+  const regressionNote =
+    task === "numerica" && id in REGRESSION_NOTES
+      ? REGRESSION_NOTES[id as SharedId]
       : null;
   const name = isBaselineFicha(id)
     ? t(`results.baselines.${id}`)
@@ -133,6 +145,11 @@ export default function FichaModelo({
         {balancedNote && (
           <p className="rounded-md border border-hairline bg-sunken p-3 text-sm">
             {balancedNote[locale]}
+          </p>
+        )}
+        {regressionNote && (
+          <p className="rounded-md border border-hairline bg-sunken p-3 text-sm">
+            {regressionNote[locale]}
           </p>
         )}
 

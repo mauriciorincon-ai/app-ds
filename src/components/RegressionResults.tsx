@@ -2,13 +2,11 @@
 
 import { REGRESSION_BASELINE_IDS } from "@/engine/roster";
 import { useT } from "@/i18n/use-translation";
-import { bestRegressionBaseline } from "@/lib/experiment";
+import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
 import {
-  errorReductionPct,
-  formatQuantity,
-  quantityDecimals,
-  withUnit,
-} from "@/lib/quantity";
+  quantityFormatter,
+  regressionVerdictText,
+} from "@/lib/regression-text";
 import type { RegressionResult } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import { PredichoVsReal } from "./PredichoVsReal";
@@ -21,12 +19,7 @@ import { LEVEL_MARK, VerdictCard, type Banner } from "./VerdictCard";
 // del error sobre TODO el test). Todo valor aquí deriva del objetivo: vive solo
 // en el navegador (regla dura 2).
 
-/** Formateador de un grupo de cantidades comparables (mismos decimales). */
-function quantities(result: RegressionResult, values: readonly number[]) {
-  const decimals = quantityDecimals(values);
-  return (value: number) =>
-    withUnit(formatQuantity(value, decimals), result.unit);
-}
+const quantities = quantityFormatter;
 
 export function RegressionVerdict({
   result,
@@ -38,26 +31,11 @@ export function RegressionVerdict({
   hasLeak: boolean;
 }) {
   const t = useT();
-  const { verdict } = result;
-  const q = quantities(result, [verdict.modelScore, verdict.baselineScore]);
-  const winnerName = t(`results.candidates.short.${result.modelName}`);
-  const baselineId = bestRegressionBaseline(result.baselines);
-  const baselinePhrase = t(
-    `results.regression.verdict.baseline.${baselineId}`,
-    {
-      value: quantities(result, [result.targetStats.median])(
-        result.targetStats.median,
-      ),
-    },
-  );
-
   // R10: la lineal es baseline Y miembro. Si gana la liga y EMPATA, empata consigo
   // misma y se dice así; si PIERDE (la mediana rinde mejor), el «NO supera» franco
-  // no se reemplaza (regla dura 3, AU-S5-01).
-  const linearWon =
-    result.modelName === "linear" &&
-    result.selection.by === "cv" &&
-    verdict.level === "ties";
+  // no se reemplaza (regla dura 3, AU-S5-01). El texto vive en regression-text.ts
+  // (lo comparte la model card).
+  const text = regressionVerdictText(result, t);
   const banner: Banner = hasLeak
     ? {
         tone: "caution",
@@ -65,24 +43,11 @@ export function RegressionVerdict({
         headline: t("results.verdict.suspicious"),
         detail: t("results.verdict.suspiciousDetail"),
       }
-    : linearWon
-      ? {
-          ...LEVEL_MARK.ties,
-          headline: t("results.regression.verdict.linearTie"),
-          detail: t("results.regression.verdict.linearTieDetail", {
-            model: q(verdict.modelScore),
-          }),
-        }
-      : {
-          ...LEVEL_MARK[verdict.level],
-          headline: t(`results.verdict.${verdict.level}`, { name: winnerName }),
-          detail: t(`results.regression.verdict.${verdict.level}Detail`, {
-            model: q(verdict.modelScore),
-            baseline: baselinePhrase,
-            reference: q(verdict.baselineScore),
-            pct: errorReductionPct(verdict.modelScore, verdict.baselineScore),
-          }),
-        };
+    : {
+        ...LEVEL_MARK[text.linearTie ? "ties" : result.verdict.level],
+        headline: text.headline,
+        detail: text.detail,
+      };
 
   return (
     <VerdictCard banner={banner}>

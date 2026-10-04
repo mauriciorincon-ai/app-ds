@@ -317,7 +317,9 @@
       "categorical": "“{column}”: {count} values with categories never seen in training",
       "summary": "The model is guessing on {affected} of {total} rows ({percent}%).",
       "hint": "On those rows the prediction is less reliable: the model never saw values like these while training.",
-      "none": "Nothing new: every value falls within what the model saw while training."
+      "none": "Nothing new: every value falls within what the model saw while training.",
+      "numeric_one": "“{column}”: 1 value outside the range seen in training",
+      "categorical_one": "“{column}”: 1 value with a category never seen in training"
     },
     "distribution": {
       "title": "Predictions ({rows} rows)"
@@ -451,28 +453,34 @@
       "narrative": "Verified narrative",
       "limits": "Limits",
       "sanitation": "Sanitization",
-      "selection": "Model selection"
+      "selection": "Model selection",
+      "estimate": "Estimation"
     },
     "data": {
       "dataset": "Dataset: {name}",
       "shape": "{rows} rows × {cols} columns ({numeric} numeric predictors, {categorical} categorical)",
-      "target": "Target: “{target}” (binary classification; positive class: “{positive}”)"
+      "target": "Target: “{target}” (binary classification; positive class: “{positive}”)",
+      "targetQuantity": "Target: «{target}» (estimating a quantity)"
     },
     "split": {
       "sizes": "Training: {train} rows · Test: {test} rows (stratified, seed {seed}).",
-      "rule": "Preprocessing was fitted ONLY on the training set (anti-leakage by construction)."
+      "rule": "Preprocessing was fitted ONLY on the training set (anti-leakage by construction).",
+      "sizesQuantity": "Training: {train} rows · Test: {test} rows (stratified by 5 target bands, seed {seed})."
     },
     "method": {
       "pipeline": "Imputation (median / most frequent), rare-category grouping, scaling and one-hot inside a scikit-learn Pipeline.",
-      "models": "Baselines: majority class and logistic regression. Candidates compared: {candidates}. Chosen model: {model}.",
-      "rareCategories": "Rare categories grouped (learned from training only): {cols}."
+      "models": "Candidates compared: {candidates}. Chosen model: {model}.",
+      "rareCategories": "Rare categories grouped (learned from training only): {cols}.",
+      "baselines": "Baselines: majority class and logistic regression.",
+      "baselinesQuantity": "Baselines: the target's median and linear regression."
     },
     "metrics": {
       "metric": "Metric",
       "model": "Model"
     },
     "verdict": {
-      "primary": "Primary metric: {metric}."
+      "primary": "Primary metric: {metric}.",
+      "primaryQuantity": "Primary metric: MAE, the average error in the target's units (lower is better); it ties when within 1% of the best baseline."
     },
     "leakage": {
       "found": "Columns suspected of leakage: {columns}. Metrics may be inflated; remove them and retrain.",
@@ -487,10 +495,10 @@
       "notVerified": "No AI narrative is included: it was not generated or it failed the numeric verification."
     },
     "limits": {
-      "binary": "Binary classification only in this version.",
       "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
       "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
-      "dates": "Date columns are detected but not used yet (no temporal split)."
+      "dates": "Date columns are detected but not used yet (no temporal split).",
+      "tasks": "This version trains two tasks: classification into two categories and estimating a quantity. Several categories come in a later version."
     },
     "sanitation": {
       "duplicates": "Removed {count} exact duplicate rows (prevents leakage by duplication).",
@@ -509,6 +517,14 @@
       "time": "League time on this device: {seconds} s.",
       "smallSample": "Small sample: with fewer than {rows} rows, cross-validation scores vary a lot from one fold to another.",
       "league_one": "1 model competed with {k}-fold cross-validation inside the training set (preprocessing was refit in every fold). Metric: {metric}."
+    },
+    "estimate": {
+      "task": "Task: estimating a quantity (regression). It is compared against the baseline with the smallest error: the median or linear regression.",
+      "unit": "Unit: {unit}, read from the column name.",
+      "noUnit": "Unit: the column name carries none the app recognizes; figures are in the units of «{column}».",
+      "targetStats": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with {decimals} decimals).",
+      "errors": "Errors over the {total} test rows (estimate − actual): half fall between {p25} and {p75}; 9 in 10 are off by less than ±{abs90}.",
+      "noAi": "AI narration: does not apply to estimating a quantity (for now it only covers classification into two categories)."
     }
   },
   "errors": {

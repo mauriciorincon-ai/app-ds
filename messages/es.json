@@ -317,7 +317,9 @@
       "categorical": "«{column}»: {count} valores con categorías nunca vistas en el entrenamiento",
       "summary": "El modelo está adivinando en {affected} de {total} filas ({percent}%).",
       "hint": "En esas filas la predicción es menos confiable: el modelo nunca vio valores así al entrenar.",
-      "none": "Sin novedades: todos los valores están dentro de lo que el modelo vio al entrenar."
+      "none": "Sin novedades: todos los valores están dentro de lo que el modelo vio al entrenar.",
+      "numeric_one": "«{column}»: 1 valor fuera del rango visto en el entrenamiento",
+      "categorical_one": "«{column}»: 1 valor con una categoría nunca vista en el entrenamiento"
     },
     "distribution": {
       "title": "Predicciones ({rows} filas)"
@@ -451,28 +453,34 @@
       "narrative": "Narración verificada",
       "limits": "Límites",
       "sanitation": "Saneamiento",
-      "selection": "Selección del modelo"
+      "selection": "Selección del modelo",
+      "estimate": "Estimación"
     },
     "data": {
       "dataset": "Dataset: {name}",
       "shape": "{rows} filas × {cols} columnas ({numeric} predictores numéricos, {categorical} categóricos)",
-      "target": "Objetivo: «{target}» (clasificación binaria; clase positiva: «{positive}»)"
+      "target": "Objetivo: «{target}» (clasificación binaria; clase positiva: «{positive}»)",
+      "targetQuantity": "Objetivo: «{target}» (estimar una cantidad)"
     },
     "split": {
       "sizes": "Entrenamiento: {train} filas · Prueba: {test} filas (estratificado, semilla {seed}).",
-      "rule": "El preprocesamiento se ajustó SOLO con el entrenamiento (anti-fuga por construcción)."
+      "rule": "El preprocesamiento se ajustó SOLO con el entrenamiento (anti-fuga por construcción).",
+      "sizesQuantity": "Entrenamiento: {train} filas · Prueba: {test} filas (estratificado por 5 bandas del objetivo, semilla {seed})."
     },
     "method": {
       "pipeline": "Imputación (mediana / más frecuente), agrupación de categorías raras, escalado y one-hot dentro de un Pipeline de scikit-learn.",
-      "models": "Baselines: clase mayoritaria y regresión logística. Candidatos comparados: {candidates}. Modelo elegido: {model}.",
-      "rareCategories": "Categorías raras agrupadas (aprendido solo de entrenamiento): {cols}."
+      "models": "Candidatos comparados: {candidates}. Modelo elegido: {model}.",
+      "rareCategories": "Categorías raras agrupadas (aprendido solo de entrenamiento): {cols}.",
+      "baselines": "Baselines: clase mayoritaria y regresión logística.",
+      "baselinesQuantity": "Baselines: la mediana del objetivo y la regresión lineal."
     },
     "metrics": {
       "metric": "Métrica",
       "model": "Modelo"
     },
     "verdict": {
-      "primary": "Métrica principal: {metric}."
+      "primary": "Métrica principal: {metric}.",
+      "primaryQuantity": "Métrica principal: MAE, el error promedio en las unidades del objetivo (menor es mejor); empata si queda a menos del 1 % del mejor baseline."
     },
     "leakage": {
       "found": "Columnas sospechosas de fuga: {columns}. Las métricas pueden estar infladas; quítalas y vuelve a entrenar.",
@@ -487,10 +495,10 @@
       "notVerified": "No se incluye narración IA: no se generó o no pasó la verificación numérica."
     },
     "limits": {
-      "binary": "Solo clasificación binaria en esta versión.",
       "leakage": "El chequeo de fuga atrapa casos evidentes; no es una garantía.",
       "explainability": "La importancia por permutación es global (no por predicción) y puede repartirse entre variables correlacionadas; la dirección es univariada y no captura interacciones.",
-      "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal)."
+      "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal).",
+      "tasks": "Esta versión entrena dos tareas: la clasificación en dos categorías y la estimación de una cantidad. Varias categorías llegan en una próxima versión."
     },
     "sanitation": {
       "duplicates": "Se quitaron {count} filas duplicadas exactas (previene fuga por duplicación).",
@@ -509,6 +517,14 @@
       "time": "Tiempo de la liga en este equipo: {seconds} s.",
       "smallSample": "Muestra pequeña: con menos de {rows} filas, los puntajes de validación cruzada varían mucho de un pliegue a otro.",
       "league_one": "Compitió 1 modelo con validación cruzada de {k} pliegues dentro del entrenamiento (el preprocesamiento se reajustó en cada pliegue). Métrica: {metric}."
+    },
+    "estimate": {
+      "task": "Tarea: estimar una cantidad (regresión). Se compara contra el baseline que menos se equivoca: la mediana o la regresión lineal.",
+      "unit": "Unidad: {unit}, leída del nombre de la columna.",
+      "noUnit": "Unidad: el nombre de la columna no trae una que la app reconozca; las cifras están en las unidades de «{column}».",
+      "targetStats": "El objetivo en el entrenamiento: media {mean}, desviación {std}, mínimo {min}, mediana {median}, máximo {max} (escrito con {decimals} decimales).",
+      "errors": "Errores en las {total} filas de prueba (estimado − real): la mitad queda entre {p25} y {p75}; 9 de cada 10 se equivocan por menos de ±{abs90}.",
+      "noAi": "Narración con IA: no aplica a estimar una cantidad (por ahora solo cubre la clasificación en dos categorías)."
     }
   },
   "errors": {

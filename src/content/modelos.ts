@@ -5,7 +5,11 @@
 // Se carga con import() dinámico junto con FichaModelo (budget de script).
 // Paridad (ids = roster, ambos idiomas completos): tests/unit/modelos.test.ts.
 import { MLP_MIN_ROWS } from "@/engine/encarrilador";
-import type { MemberId } from "@/engine/roster";
+import type {
+  BinaryMemberId,
+  MemberId,
+  RegressionMemberId,
+} from "@/engine/roster";
 
 export type Bilingual = { es: string; en: string };
 
@@ -396,5 +400,76 @@ export const BALANCED_NOTES: Record<BalancedId, Bilingual> = {
   forest_balanced: {
     es: "Variante balanceada: cada árbol pesa más los ejemplos de la clase menos frecuente. Compite solo cuando tus clases están desequilibradas; con clases parejas repetiría al bosque normal.",
     en: "Balanced variant: every tree weighs the rarer class more heavily. It only competes when your classes are imbalanced; with even classes it would just repeat the regular forest.",
+  },
+};
+
+/**
+ * S6: los modelos que compiten en las DOS tareas comparten id y ficha; al estimar
+ * una cantidad, la ficha suma este párrafo (cómo estima, qué cambia). Las fichas
+ * de `linear` y `lasso` ya hablan de estimar: solo compiten ahí.
+ */
+export type SharedId = Extract<BinaryMemberId, RegressionMemberId>;
+
+export const REGRESSION_NOTES: Record<SharedId, Bilingual> = {
+  ridge: {
+    es: "Al estimar, Ridge compite con su versión sin freno (la regresión lineal) y con Lasso, que además puede dejar columnas en cero.",
+    en: "When estimating, Ridge competes with its unbraked version (linear regression) and with Lasso, which can also switch columns off entirely.",
+  },
+  decision_tree: {
+    es: "Al estimar, cada hoja del árbol predice el promedio de las filas de entrenamiento que caen en ella: la estimación sube en escalones, nunca en curva suave. Con hojas de al menos 5 filas no memoriza cada caso.",
+    en: "When estimating, each leaf predicts the average of the training rows that land in it: estimates move in steps, never along a smooth curve. Leaves of at least 5 rows keep it from memorising every case.",
+  },
+  knn: {
+    es: "Al estimar, promedia el valor del objetivo de las 5 filas de entrenamiento más parecidas. Nunca estima por fuera del rango que vio: si los datos nuevos son más extremos, se queda corto.",
+    en: "When estimating, it averages the target of the 5 most similar training rows. It never estimates outside the range it saw: with more extreme new data, it falls short.",
+  },
+  hgb: {
+    es: "Al estimar, suma árboles pequeños que corrigen, uno tras otro, el error de los anteriores. Suele estar entre los más precisos en tablas medianas y grandes.",
+    en: "When estimating, it adds up small trees that each correct the error left by the ones before. It is often among the most accurate on medium and large tables.",
+  },
+  lightgbm: {
+    es: "Al estimar funciona igual que al clasificar: 200 árboles que se corrigen entre sí, ahora achicando el error en las unidades del objetivo.",
+    en: "When estimating it works as it does when classifying: 200 trees correcting one another, now shrinking the error in the target's units.",
+  },
+  xgboost: {
+    es: "Al estimar, sus 200 árboles se ajustan uno tras otro para achicar el error de la suma, con una penalización que frena a los árboles demasiado detallados.",
+    en: "When estimating, its 200 trees are fitted one after another to shrink the error of the sum, with a penalty that holds back overly detailed trees.",
+  },
+  extra_trees: {
+    es: "Al estimar, promedia lo que estiman sus 200 árboles, cada uno con cortes elegidos al azar. Ese azar suaviza la estimación y suele resistir bien el ruido.",
+    en: "When estimating, it averages what its 200 trees estimate, each built with randomly chosen splits. That randomness smooths the estimate and usually copes well with noise.",
+  },
+  forest: {
+    es: "Al estimar, promedia lo que estiman sus 200 árboles, cada uno entrenado con una muestra distinta de filas. Como todo árbol, no estima por fuera del rango que vio en el entrenamiento.",
+    en: "When estimating, it averages the estimates of its 200 trees, each trained on a different sample of rows. Like any tree, it never estimates outside the range it saw in training.",
+  },
+  mlp: {
+    es: "Al estimar, la red aprende con el objetivo estandarizado (restada la media y dividido por la desviación) y la app devuelve la estimación a las unidades originales. Se detiene sola cuando deja de mejorar en una parte reservada del entrenamiento.",
+    en: "When estimating, the network learns from a standardised target (mean removed, divided by the spread) and the app converts the estimate back to the original units. It stops on its own once it no longer improves on a held-out slice of training.",
+  },
+};
+
+/**
+ * S6: los apartados de una ficha compartida que hablan SOLO de clasificar
+ * (probabilidad, AUC, «decide la clase») se reemplazan al estimar — si no, la ficha
+ * diría dos cosas que se contradicen. Hoy solo Ridge los tiene; el test de paridad
+ * vigila que cada reemplazo traiga los dos idiomas.
+ */
+export const REGRESSION_FICHA_FIELDS: Partial<
+  Record<SharedId, Partial<Ficha>>
+> = {
+  ridge: {
+    what: {
+      es: "Una regresión lineal con freno: ajusta una recta (un plano, con varias columnas) y no deja que ningún peso crezca demasiado.",
+      en: "A linear regression with a brake: it fits a straight line (a plane, with several columns) and keeps any single weight from growing too large.",
+    },
+    notFor: {
+      es: "Cuando la relación con el objetivo es curva o depende de combinaciones de columnas: una recta no la sigue.",
+      en: "When the link to the target is curved or depends on combinations of columns: a straight line cannot follow it.",
+    },
+    watch: {
+      es: "Compárala con la regresión lineal: si quedan casi iguales, el freno no hacía falta; si Ridge gana, había columnas que se pisaban entre sí.",
+      en: "Compare it with plain linear regression: if they come out nearly equal, the brake was not needed; if Ridge wins, some columns were stepping on each other.",
+    },
   },
 };

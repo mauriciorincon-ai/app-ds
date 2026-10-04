@@ -218,21 +218,19 @@ export function ResultsScreen({
       </section>
 
       {/* S2: la constancia exportable del experimento. */}
-      {binary && (
-        <ModelCardView
-          result={binary}
-          meta={{
-            datasetName: datasetName ?? "dataset",
-            cols,
-            numericFeatures: runMeta.numericFeatures,
-            categoricalFeatures: runMeta.categoricalFeatures,
-            target: runMeta.target,
-            seed: runMeta.seed,
-          }}
-          sanitation={sanitation}
-          verifiedNarrative={ai.kind === "verified" ? ai.text : null}
-        />
-      )}
+      <ModelCardView
+        result={result}
+        meta={{
+          datasetName: datasetName ?? "dataset",
+          cols,
+          numericFeatures: runMeta.numericFeatures,
+          categoricalFeatures: runMeta.categoricalFeatures,
+          target: runMeta.target,
+          seed: runMeta.seed,
+        }}
+        sanitation={sanitation}
+        verifiedNarrative={ai.kind === "verified" ? ai.text : null}
+      />
 
       <div>
         <Button variant="secondary" icon="plus" onClick={onAgain}>
