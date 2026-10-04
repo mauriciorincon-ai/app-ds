@@ -281,6 +281,10 @@ function leakageColumns(
   });
 }
 
+/** S6 (AU-S6-08): filas mínimas de PRUEBA para estimar una cantidad. Con una sola,
+ *  el R² no existe; con ninguna, no hay nada que medir. Espejo en pipeline.py. */
+export const MIN_REGRESSION_TEST_ROWS = 2;
+
 /**
  * S6 — estimar una cantidad (ADR-013). Mismas garantías que la binaria: split
  * anti-fuga por índices (estratificado por bandas de cuantiles, P4), fuga medida
@@ -306,6 +310,9 @@ function prepareRegression(
     return { ok: false, error: "no-features" };
 
   const { trainIdx, testIdx } = quantileSplit(y, TEST_SIZE, seed);
+  // Con menos filas de prueba no hay métricas que creer (AU-S6-08).
+  if (testIdx.length < MIN_REGRESSION_TEST_ROWS)
+    return { ok: false, error: "too-few-rows-quantity" };
   const leakage = detectLeakageContinuous(
     leakageColumns(table, rows, numeric, categorical, trainIdx),
     trainIdx.map((i) => y[i]),
@@ -313,7 +320,7 @@ function prepareRegression(
 
   // Sin clases que cuidar, k solo está acotado por las filas de train.
   const k = chooseCvK(rows.length, trainIdx.length);
-  if (k === null) return { ok: false, error: "too-few-rows" };
+  if (k === null) return { ok: false, error: "too-few-rows-quantity" };
 
   const profile: RouteProfile = {
     task: "numerica",

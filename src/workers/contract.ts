@@ -89,11 +89,25 @@ const cvScoreV = obj({
   folds: arr(num, 2),
 });
 
-const leagueRowOf = (memberV: Validator, testV: Validator) =>
+/** S6: la CV de una métrica de ERROR (el MAE) llega en sus unidades, con el signo
+ *  ya invertido por Python: jamás negativa. Si Python perdiera el cambio de signo,
+ *  «menor es mejor» elegiría al PEOR modelo y el recálculo de la regla de un error
+ *  estándar coincidiría igual: lo para el dominio, nombrando el campo (AU-S6-09). */
+const errorCvScoreV = obj({
+  mean: nonNeg,
+  std: nonNeg,
+  folds: arr(nonNeg, 2),
+});
+
+const leagueRowOf = (
+  memberV: Validator,
+  testV: Validator,
+  cvV: Validator = cvScoreV,
+) =>
   obj({
     name: memberV,
     status: oneOf(["ok", "no-converge", "error"]),
-    cv: nullable(cvScoreV),
+    cv: nullable(cvV),
     test: nullable(testV),
     elapsed_ms: nonNegInt,
     error_type: nullable(str),
@@ -180,7 +194,9 @@ export const targetStatsV = refine(
   },
 );
 
-/** Muestra del gráfico: dos listas finitas del MISMO largo, dentro del tope. */
+/** Muestra del gráfico: dos listas finitas del MISMO largo, dentro del tope. Su
+ *  largo exacto y su `n_total` se cotejan con el tamaño de la prueba aparte
+ *  (`predVsRealField`), porque dependen de un campo hermano. */
 const predVsRealV = refine(
   obj({
     real: arr(num, 1),
@@ -188,13 +204,25 @@ const predVsRealV = refine(
     n_total: refine(int, (v) => (v as number) >= 1),
   }),
   (v) => {
-    const p = v as { real: number[]; predicted: number[]; n_total: number };
+    const p = v as { real: number[]; predicted: number[] };
     return (
-      p.real.length === p.predicted.length &&
-      p.real.length <= Math.min(p.n_total, PRED_VS_REAL_MAX)
+      p.real.length === p.predicted.length && p.real.length <= PRED_VS_REAL_MAX
     );
   },
 );
+
+/** S6 (AU-S6-10): `n_total` ES el tamaño de la prueba (se muestra en pantalla y
+ *  en la model card), y la muestra trae todos los puntos hasta el tope: ni una
+ *  muestra truncada ni un total inventado pasan. */
+function predVsRealField(
+  p: { real: readonly number[]; n_total: number },
+  nTest: number,
+): string | null {
+  if (p.n_total !== nTest) return "pred_vs_real.n_total";
+  if (p.real.length !== Math.min(p.n_total, PRED_VS_REAL_MAX))
+    return "pred_vs_real.real";
+  return null;
+}
 
 /** Cuantiles del residuo: ordenados (p05 ≤ … ≤ p95) y |error| p90 ≥ 0. */
 const residualsV = refine(
@@ -221,7 +249,10 @@ const regressionResultV = obj({
   model: regressionMetricsV,
   model_name: regressionMember,
   winner: regressionMember,
-  league: arr(leagueRowOf(regressionMember, regressionMetricsV), 1),
+  league: arr(
+    leagueRowOf(regressionMember, regressionMetricsV, errorCvScoreV),
+    1,
+  ),
   cv: cvSummaryOf(regressionMember),
   elapsed_ms: nonNegInt,
   pred_vs_real: predVsRealV,
@@ -272,6 +303,10 @@ export function validateTrainResult(
       : check<PipelineResult>(pipelineResultV, raw);
   if (!shaped.ok) return shaped;
   const r: AnyTrainResult = shaped.value;
+  if (r.task === "numerica") {
+    const field = predVsRealField(r.pred_vs_real, r.n_test);
+    if (field) return { ok: false, field };
+  }
   const names = r.league.map((row) => row.name);
   if (
     names.length !== sent.roster.length ||
@@ -340,7 +375,8 @@ const regressionMemberFitV = obj({
 /** Valida el ajuste de un miembro elegido a mano (U1): tiene que ser el pedido. */
 export function validateMemberFit(
   raw: unknown,
-  sent: { member: MemberId; task: "numerica" },
+  // S6: el tamaño de la prueba del resultado vigente (el fit-member no lo trae).
+  sent: { member: MemberId; task: "numerica"; nTest: number },
 ): Checked<RegressionMemberFitResult>;
 export function validateMemberFit(
   raw: unknown,
@@ -348,7 +384,7 @@ export function validateMemberFit(
 ): Checked<MemberFitResult>;
 export function validateMemberFit(
   raw: unknown,
-  sent: { member: MemberId; task?: TrainTask },
+  sent: { member: MemberId; task?: TrainTask; nTest?: number },
 ): Checked<MemberFitResult | RegressionMemberFitResult> {
   const task = sent.task ?? "binaria";
   if (!isRecord(raw) || raw.task !== task) return { ok: false, field: "task" };
@@ -357,6 +393,10 @@ export function validateMemberFit(
       ? check<RegressionMemberFitResult>(regressionMemberFitV, raw)
       : check<MemberFitResult>(memberFitV, raw);
   if (!shaped.ok) return shaped;
+  if (shaped.value.task === "numerica" && sent.nTest !== undefined) {
+    const field = predVsRealField(shaped.value.pred_vs_real, sent.nTest);
+    if (field) return { ok: false, field };
+  }
   if (shaped.value.model_name !== sent.member)
     return { ok: false, field: "model_name" };
   return shaped;

@@ -542,6 +542,7 @@
     "retry": "Start over",
     "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file.",
     "too-few-rows": "There are too few examples of one of the two classes to compare models honestly: cross-validation needs at least 2 of each class in the training set. Try with more rows.",
+    "too-few-rows-quantity": "There are too few rows to estimate a quantity honestly: the test set needs at least 2 rows the model never saw in training. Try with more rows.",
     "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file.",
     "target-mixed-notation": "Your target has 2 values, but written in more than one way (for example «1» and «1.0»): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
     "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns."

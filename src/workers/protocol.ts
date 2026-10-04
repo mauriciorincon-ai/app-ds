@@ -41,6 +41,9 @@ export type WorkerErrorKind =
   // S5: la clase minoritaria de train no alcanza para 2 pliegues de validación
   // cruzada (hay que tener al menos 2 ejemplos de cada clase en train).
   | "too-few-rows"
+  // S6 (AU-S6-08): al estimar una cantidad, la prueba quedaría con menos de
+  // MIN_REGRESSION_TEST_ROWS filas (el texto de «too-few-rows» habla de clases).
+  | "too-few-rows-quantity"
   // S5 (regla 15): el resultado del motor no tiene la forma del contrato; se
   // nombra el campo y no se muestra nada que no se pueda verificar.
   | "contract"

@@ -33,6 +33,7 @@ import base64
 import json
 import math
 import pickle
+import re
 import sys
 import time
 import warnings
@@ -326,6 +327,10 @@ METRIC_DIRECTION = {
 }
 
 # Qué métricas primarias admite cada tarea (la elige TS; Python no la re-deriva).
+# S6 (AU-S6-08): filas mínimas de PRUEBA para estimar una cantidad. Espejo de
+# MIN_REGRESSION_TEST_ROWS en src/lib/experiment.ts (tripwire en regresion-motor).
+MIN_REGRESSION_TEST_ROWS = 2
+
 TASK_METRICS = {
     "binaria": ("auc", "f1", "accuracy", "precision", "recall"),
     "numerica": ("mae",),
@@ -495,6 +500,10 @@ def _validate_payload(p, *, league=True):
     factories = _FACTORIES_BY_TASK[task]
     if p.get("primary_metric") not in TASK_METRICS[task]:
         _contract("primary_metric")
+    # S6 (AU-S6-08): con menos filas de prueba no hay métricas que creer (el R² de
+    # una sola fila es NaN y rompe el JSON). TS lo rechaza antes con su propio texto.
+    if task == "numerica" and len(p["test_idx"]) < MIN_REGRESSION_TEST_ROWS:
+        _contract("test_idx")
     if league:
         roster = p.get("roster")
         if (
@@ -516,6 +525,12 @@ def _decimals(text):
     if text is None:
         return 0
     value = str(text).strip().lower()
+    # Notación científica: los decimales que de verdad escribe («1.5e2» = 150 →
+    # 0; «1.5e-3» = 0,0015 → 4), no el tope (AU-S6-31).
+    scientific = re.fullmatch(r"[+-]?\d*(?:\.(\d*))?e([+-]?\d+)", value)
+    if scientific:
+        written = len(scientific.group(1) or "") - int(scientific.group(2))
+        return min(max(written, 0), TARGET_DECIMALS_MAX)
     if "e" in value:
         return TARGET_DECIMALS_MAX
     return min(len(value.split(".", 1)[1]), TARGET_DECIMALS_MAX) if "." in value else 0

@@ -51,6 +51,7 @@ import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import {
   assembleRegressionResult,
   inferUnit,
+  MIN_REGRESSION_TEST_ROWS,
   prepareRun,
 } from "@/lib/experiment";
 import { formatEstimates } from "@/lib/scored-csv";
@@ -437,6 +438,43 @@ describe("prepareRun por tarea", () => {
     expect(
       prepareRun(table, "ocupantes", 42, { ambiguousChoice: "multiclase" }),
     ).toEqual({ ok: false, error: "target-not-binary" });
+  });
+
+  it("muy pocas filas: un rechazo honesto propio, no un error del motor (AU-S6-08)", () => {
+    // Por la ambigua (≤ 10 enteros) con «Una cantidad»: con 6 filas la prueba se
+    // quedaría con 1 (R² inexistente); con 7, ya tiene 2.
+    const tiny = (n: number): CsvTable => ({
+      headers: ["x", "cat", "y"],
+      rows: Array.from({ length: n }, (_, i) => [
+        String(i * 3),
+        i % 2 ? "a" : "b",
+        String(i + 1),
+      ]),
+    });
+    for (const n of [3, 4, 5, 6]) {
+      expect(
+        prepareRun(tiny(n), "y", 42, { ambiguousChoice: "numerica" }),
+        `${n} filas`,
+      ).toEqual({ ok: false, error: "too-few-rows-quantity" });
+    }
+    const seven = prepareRun(tiny(7), "y", 42, { ambiguousChoice: "numerica" });
+    expect(seven.ok).toBe(true);
+    expect(seven.ok && seven.payload.test_idx.length).toBeGreaterThanOrEqual(
+      MIN_REGRESSION_TEST_ROWS,
+    );
+  });
+
+  it("el mínimo de filas de prueba es el mismo en pipeline.py (tripwire)", () => {
+    const python = readFileSync(
+      resolve(process.cwd(), "src/lib/ds/pipeline.py"),
+      "utf8",
+    );
+    expect(python).toMatch(
+      new RegExp(
+        `^MIN_REGRESSION_TEST_ROWS = ${MIN_REGRESSION_TEST_ROWS}$`,
+        "m",
+      ),
+    );
   });
 
   it("la binaria sigue igual, ahora con `task` explícita", () => {

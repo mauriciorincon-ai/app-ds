@@ -304,7 +304,11 @@ function applyFit(
   member: MemberId,
 ): { ok: true; value: ExperimentResult } | { ok: false; field: string } {
   if (current.task === "numerica") {
-    const checked = validateMemberFit(raw, { member, task: "numerica" });
+    const checked = validateMemberFit(raw, {
+      member,
+      task: "numerica",
+      nTest: current.nTest,
+    });
     return checked.ok
       ? { ok: true, value: applyRegressionMemberFit(current, checked.value) }
       : checked;

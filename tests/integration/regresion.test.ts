@@ -294,9 +294,13 @@ describe("elección manual y export en regresión", () => {
       const fit = JSON.parse(
         fitMember(JSON.stringify(memberPayload(payload, member))),
       ) as RegressionMemberFitResult;
-      expect(validateMemberFit(fit, { member, task: "numerica" }).ok).toBe(
-        true,
-      );
+      expect(
+        validateMemberFit(fit, {
+          member,
+          task: "numerica",
+          nTest: payload.test_idx.length,
+        }).ok,
+      ).toBe(true);
       expect(fit.model, member).toEqual(
         result.league.find((x) => x.name === member)!.test,
       );
@@ -414,6 +418,12 @@ describe("TS → Python: _validate_payload rechaza cada carnada de regresión NO
       ["cv_k", "train", (p) => (p.cv_k = (p.train_idx as number[]).length + 1)],
       ["member", "fit", (p) => (p.member = "logistic")],
       ["task", "fit", (p) => (p.task = "binaria-no")],
+      // AU-S6-08: menos de 2 filas de prueba no dan métricas que creer.
+      [
+        "test_idx",
+        "train",
+        (p) => (p.test_idx = (p.test_idx as number[]).slice(0, 1)),
+      ],
     ];
     const missed: string[] = [];
     for (const [field, fn, mutate] of baits) {
@@ -434,6 +444,40 @@ describe("TS → Python: _validate_payload rechaza cada carnada de regresión NO
       `[contrato TS→Python regresión] detectó ${baits.length - missed.length} de ${baits.length} carnadas`,
     );
     expect(missed).toEqual([]);
+  });
+});
+
+describe("el emisor en los bordes del objetivo", () => {
+  it("decimales del objetivo en notación científica: los que de verdad escribe (AU-S6-31)", () => {
+    const decimals = py.globals.get("_decimals") as (text: string) => number;
+    expect(decimals("1.5e2")).toBe(0);
+    expect(decimals("1.5e-3")).toBe(4);
+    expect(decimals("3E1")).toBe(0);
+    expect(decimals("2.25")).toBe(2);
+    expect(decimals("40")).toBe(0);
+  });
+
+  it("un objetivo con ceros ⇒ MAPE null en el modelo y los baselines, y el lector lo acepta (AU-S6-32)", () => {
+    // Un consumo de 0 cada 3 filas: el error porcentual no existe (se dividiría
+    // por cero); se declara null, jamás un número enorme.
+    const lines = kitCsv("consumo-energia.csv").trimEnd().split("\n");
+    const col = lines[0]!.split(",").indexOf("consumo_kwh");
+    const withZeros = [
+      lines[0],
+      ...lines.slice(1).map((line, i) => {
+        if (i % 3 !== 0) return line;
+        const cells = line.split(",");
+        cells[col] = "0";
+        return cells.join(",");
+      }),
+    ].join("\n");
+    const run = prepared(withZeros, "consumo_kwh");
+    const payload = { ...run.payload, roster: ["linear", "hgb"] as MemberId[] };
+    const result = league(payload);
+    expect(result.model.mape).toBeNull();
+    expect(result.baselines.median.mape).toBeNull();
+    expect(result.baselines.linear.mape).toBeNull();
+    expect(validateTrainResult(result, sent(payload)).ok).toBe(true);
   });
 });
 
@@ -508,7 +552,7 @@ describe("cruce de punta a punta: prepareRun → Pyodide → contract.ts → ass
           JSON.stringify({ ...withoutLeague(r.payload), member: other }),
         ),
       ),
-      { member: other, task: "numerica" },
+      { member: other, task: "numerica", nTest: result.nTest },
     );
     expect(fit.ok).toBe(true);
     if (!fit.ok) return;
@@ -588,11 +632,8 @@ describe("fixtures del contrato de regresión (emisor real: pipeline.py en Pyodi
     );
     const exported = JSON.parse(exportModel("{}"));
     exported.payload_b64 = String(exported.payload_b64).slice(0, 64);
-    // El gráfico: la muestra se recorta para el fixture (la forma no depende del largo).
-    for (const value of [train, fit]) {
-      value.pred_vs_real.real = value.pred_vs_real.real.slice(0, 5);
-      value.pred_vs_real.predicted = value.pred_vs_real.predicted.slice(0, 5);
-    }
+    // El gráfico viaja ENTERO en el fixture: el lector exige el largo exacto
+    // (AU-S6-10), así que recortarlo aquí lo obligaría a ablandarse.
     emit("train-result-regresion", train);
     emit("fit-member-result-regresion", fit);
     emit("score-result-regresion", score);

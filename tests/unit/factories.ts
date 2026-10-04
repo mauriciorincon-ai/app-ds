@@ -167,6 +167,9 @@ export function regressionMetrics(
   };
 }
 
+const REAL = [150, 250, 350, 450, 550];
+const PREDICTED = [170, 240, 400, 445, 600];
+
 /**
  * Liga de regresión coherente con lo enviado: MAE en kWh, menor es mejor. Por
  * defecto el primero gana con holgura (CV 35 y cada siguiente 3 más, std 1).
@@ -228,9 +231,18 @@ export function regressionPipelineResult(
       se: selection.se,
     },
     elapsed_ms: 2345,
+    // La muestra trae TODOS los puntos de la prueba (hasta el tope): el lector lo
+    // exige (AU-S6-10). Cinco formas repetidas, corridas juntas: 3 de cada 5
+    // dentro de ±33.5 (+20, −10, +5) y 2 fuera (+50, +50).
     pred_vs_real: {
-      real: [150, 250, 350, 450, 550],
-      predicted: [170, 240, 400, 445, 600],
+      real: Array.from(
+        { length: 50 },
+        (_, i) => REAL[i % 5]! + Math.floor(i / 5),
+      ),
+      predicted: Array.from(
+        { length: 50 },
+        (_, i) => PREDICTED[i % 5]! + Math.floor(i / 5),
+      ),
       n_total: 50,
     },
     residuals: { p05: -40, p25: -20, p50: 5, p75: 25, p95: 60, abs_p90: 55 },

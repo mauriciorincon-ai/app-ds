@@ -542,6 +542,7 @@
     "retry": "Volver a empezar",
     "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo.",
     "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
+    "too-few-rows-quantity": "Hay muy pocas filas para estimar una cantidad con honestidad: la prueba necesita al menos 2 filas que el modelo no vio al entrenar. Prueba con más filas.",
     "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo.",
     "target-mixed-notation": "Tu objetivo tiene 2 valores, pero escritos de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalos en tu CSV y vuelve a cargarlo.",
     "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas."

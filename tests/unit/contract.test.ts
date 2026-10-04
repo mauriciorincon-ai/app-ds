@@ -300,6 +300,12 @@ describe("Python → TS: liga de REGRESIÓN (train)", () => {
       ["baselines.linear.r2", (t) => (t.baselines.linear.r2 = "?")],
       ["league[0].test.mae", (t) => (t.league[0].test.mae = -2)],
       ["league[0].cv.mean", (t) => delete t.league[0].cv.mean],
+      // El signo sin invertir (AU-S6-09): un MAE de CV negativo jamás pasa.
+      [
+        "league[0].cv.mean",
+        (t) => (t.league[0].cv.mean = -t.league[0].cv.mean),
+      ],
+      ["league[0].cv.folds[0]", (t) => (t.league[0].cv.folds[0] = -1)],
       ["league[0].name", (t) => (t.league[0].name = "logistic")],
       ["cv.scoring", (t) => (t.cv.scoring = "roc_auc")],
       // Elegir como si «mayor fuera mejor»: el lector recalcula CON la dirección del MAE.
@@ -313,8 +319,18 @@ describe("Python → TS: liga de REGRESIÓN (train)", () => {
       ["target_stats.decimals", (t) => (t.target_stats.decimals = 7)],
       ["target_stats", (t) => (t.target_stats.min = t.target_stats.max + 1)],
       ["pred_vs_real", (t) => t.pred_vs_real.predicted.pop()],
-      ["pred_vs_real", (t) => (t.pred_vs_real.n_total = 2)],
+      // n_total ES el tamaño de la prueba, y la muestra trae todos los puntos (AU-S6-10).
+      ["pred_vs_real.n_total", (t) => (t.pred_vs_real.n_total = 2)],
+      ["pred_vs_real.n_total", (t) => (t.pred_vs_real.n_total += 1)],
+      [
+        "pred_vs_real.real",
+        (t) => {
+          t.pred_vs_real.real.pop();
+          t.pred_vs_real.predicted.pop();
+        },
+      ],
       ["pred_vs_real.real[0]", (t) => (t.pred_vs_real.real[0] = "1")],
+      ["pred_vs_real.real[0]", (t) => (t.pred_vs_real.real[0] = Infinity)],
       ["pred_vs_real.n_total", (t) => (t.pred_vs_real.n_total = 0)],
       ["residuals.p50", (t) => (t.residuals.p50 = "x")],
       ["residuals", (t) => (t.residuals.p05 = t.residuals.p95 + 1)],
@@ -328,6 +344,7 @@ describe("Python → TS: elección manual en regresión (fit-member)", () => {
   const sentFit = {
     member: fit.model_name as MemberId,
     task: "numerica" as const,
+    nTest: fixture("train-result-regresion").n_test as number,
   };
 
   it("el fixture real valida (y tiene que ser el miembro pedido)", () => {
@@ -347,6 +364,7 @@ describe("Python → TS: elección manual en regresión (fit-member)", () => {
         ["task", (f) => (f.task = "binaria")],
         ["model.mae", (f) => (f.model.mae = -3)],
         ["pred_vs_real", (f) => f.pred_vs_real.real.pop()],
+        ["pred_vs_real.n_total", (f) => (f.pred_vs_real.n_total += 1)],
         ["residuals", (f) => (f.residuals.p25 = f.residuals.p75 + 1)],
         ["model_name", (f) => (f.model_name = "logistic")],
       ],
