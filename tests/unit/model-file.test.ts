@@ -330,6 +330,8 @@ describe("S5 — la liga y la selección en el manifiesto (aditivos-opcionales)"
 
   it("carnadas del manifiesto: cada campo nuevo mutado se rechaza NOMBRÁNDOLO — detectó k de n", async () => {
     const file = await pack();
+    // `any` a propósito: cada carnada rompe la forma del manifiesto ya parseado, y un
+    // tipo estricto no dejaría escribir la mutación.
     type Mutation = [field: string, mutate: (m: Record<string, any>) => void]; // eslint-disable-line @typescript-eslint/no-explicit-any
     const baits: Mutation[] = [
       ["manifest.league", (m) => (m.league = "liga")],
@@ -440,6 +442,8 @@ describe("S6 — manifiesto por tarea (P8)", () => {
 
   it("carnadas del manifiesto de regresión: cada campo nuevo se rechaza NOMBRÁNDOLO — detectó k de n", async () => {
     const file = await packRegression();
+    // `any` a propósito: cada carnada rompe la forma del manifiesto ya parseado, y un
+    // tipo estricto no dejaría escribir la mutación.
     type Mutation = [field: string, mutate: (m: Record<string, any>) => void]; // eslint-disable-line @typescript-eslint/no-explicit-any
     const baits: Mutation[] = [
       // Una tarea que no es texto es forma rota; una tarea con nombre que esta
