@@ -730,6 +730,12 @@ liga entera y la regla sin depender de la app.
 - Una corrida de demo en rojo registró un test de ConfigScreen de **331 s** (pausa del equipo, no
   del test): tres repeticiones seguidas lo dan en 43 ms. No es un flaky del código; se anota.
 
+**Casilla 4, segunda pasada (2026-10-03):** sobre el diff de la Fase 2, la única promesa aplazada
+nueva es la del manual («varias categorías y cantidades llegan en una próxima versión»), que es
+verdad hoy y coincide con la UI (D16); queda inventariada. Sobre `sprints/SPRINT_005-summary.md`,
+las menciones de S6/S7 y «próxima versión» son citas o el sprint de pago de una deuda según el plan
+del ciclo, en un documento interno: ninguna promesa en una superficie pública.
+
 **Capturas de la Fase 2** (evidencia, scratchpad, no versionadas): 10 encuadres a 360 px, claro y
 oscuro: el corte, el diccionario y el pie del brochure (`/conoce` del build de producción), la
 TaskCard bloqueada y el entrenamiento del Nivel 1 con su estimación. 6 mediciones
