@@ -131,7 +131,8 @@ export function estimateEncodedWidth(
 }
 
 // Features = columnas no-objetivo, no-fecha; numéricas/categóricas según perfil.
-function selectFeatures(table: CsvTable, targetColumn: string) {
+// Exportada para el spike de regresión de la F0 del S6 (arma payloads con la regla real).
+export function selectFeatures(table: CsvTable, targetColumn: string) {
   const numeric: string[] = [];
   const categorical: string[] = [];
   for (const profile of profileTable(table)) {
