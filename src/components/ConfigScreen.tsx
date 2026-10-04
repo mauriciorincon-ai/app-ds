@@ -108,6 +108,8 @@ export function ConfigScreen({
       {/* S5 (E1): qué tarea plantea el objetivo elegido, con su razón. */}
       {target !== "" && plan && (
         <TaskCard
+          // Otra columna, otra tarjeta: el foco solo se mueve tras responder.
+          key={plan.target}
           detection={plan.task}
           blocked={plan.blocked !== null}
           target={plan.target}

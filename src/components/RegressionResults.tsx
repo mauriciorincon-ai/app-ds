@@ -1,5 +1,6 @@
 "use client";
 
+import { residualLean } from "@/engine/residuals";
 import { REGRESSION_BASELINE_IDS } from "@/engine/roster";
 import { useT } from "@/i18n/use-translation";
 import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
@@ -111,20 +112,19 @@ export function RegressionDetail({
     residuals.p75,
     residuals.abs_p90,
   ]);
-  const err = (value: number) =>
-    withUnit(
-      `${value > 0 ? "+" : ""}${formatQuantity(value, errDecimals)}`,
+  const err = (value: number) => {
+    // El signo del número que se MUESTRA: 0.004 con un decimal es «0.0», no «+0.0».
+    const shown = Number(value.toFixed(errDecimals));
+    return withUnit(
+      `${shown > 0 ? "+" : ""}${formatQuantity(value, errDecimals)}`,
       result.unit,
     );
+  };
   const abs = (value: number) =>
     withUnit(formatQuantity(value, errDecimals), result.unit);
-  // Un sesgo «apreciable»: el error mediano supera el 5 % del MAE.
-  const lean =
-    Math.abs(residuals.p50) <= 0.05 * model.mae
-      ? "none"
-      : residuals.p50 > 0
-        ? "over"
-        : "under";
+  // ¿Tiende a estimar de más o de menos? Una prueba de signo, no un umbral a ojo
+  // (D9: el 5 % del MAE leía ruido como tendencia).
+  const lean = residualLean(predVsReal, residuals.p50);
   const baselineQ = quantities(result, [
     result.baselines.median.mae,
     result.baselines.linear.mae,

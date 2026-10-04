@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import {
   isTrainableTask,
   type AmbiguousChoice,
@@ -39,12 +40,23 @@ export function TaskCard({
   unit?: TargetUnit | null;
   onAnswer?: (choice: AmbiguousChoice | null) => void;
 }) {
-  if (detection.task === "ambigua" && onAnswer && choice === null) {
+  // Responder (o cambiar la respuesta) desmonta el control que tenía el foco: el
+  // foco va a lo que aparece en su lugar, para que el teclado y el lector de
+  // pantalla no se pierdan (AU-S6-04). Al montar no se roba el foco a nadie.
+  const [moveFocus, setMoveFocus] = useState(false);
+  const answer = onAnswer
+    ? (next: AmbiguousChoice | null) => {
+        setMoveFocus(true);
+        onAnswer(next);
+      }
+    : undefined;
+  if (detection.task === "ambigua" && answer && choice === null) {
     return (
       <AmbiguousQuestion
         detection={detection}
         target={target}
-        onAnswer={onAnswer}
+        onAnswer={answer}
+        autoFocus={moveFocus}
       />
     );
   }
@@ -56,7 +68,8 @@ export function TaskCard({
       resolved={resolved}
       choice={choice}
       unit={unit}
-      onAnswer={onAnswer}
+      onAnswer={answer}
+      autoFocus={moveFocus}
     />
   );
 }
@@ -70,12 +83,18 @@ function AmbiguousQuestion({
   detection,
   target,
   onAnswer,
+  autoFocus,
 }: {
   detection: TaskDetection;
   target: string;
   onAnswer: (choice: AmbiguousChoice) => void;
+  autoFocus: boolean;
 }) {
   const t = useT();
+  const firstRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (autoFocus) firstRef.current?.focus();
+  }, [autoFocus]);
   return (
     <div
       role="group"
@@ -102,8 +121,12 @@ function AmbiguousQuestion({
           return (
             <li key={id}>
               <button
+                ref={id === CHOICES[0]!.id ? firstRef : undefined}
                 type="button"
                 onClick={() => onAnswer(id)}
+                // El nombre es la etiqueta (y «Sugerida»); la descripción va
+                // aparte, para que el lector no la lea dos veces (AU-S6-38).
+                aria-labelledby={`task-answer-${id}-label`}
                 aria-describedby={`task-answer-${id}`}
                 className={`flex min-h-11 w-full items-start gap-3 rounded-md border p-3 text-left transition-colors motion-reduce:transition-none hover:bg-sunken ${
                   suggested
@@ -113,7 +136,10 @@ function AmbiguousQuestion({
               >
                 <Icon name={icon} className="mt-0.5 h-5 w-5" />
                 <span className="flex flex-col gap-0.5">
-                  <span className="flex flex-wrap items-center gap-x-2 font-medium">
+                  <span
+                    id={`task-answer-${id}-label`}
+                    className="flex flex-wrap items-center gap-x-2 font-medium"
+                  >
                     {t(`task.ask.${id}.label`)}
                     {suggested && (
                       <span className="inline-flex items-center gap-1 text-xs font-semibold text-accent">
@@ -146,6 +172,7 @@ function TaskStatus({
   choice,
   unit,
   onAnswer,
+  autoFocus,
 }: {
   detection: TaskDetection;
   blocked: boolean;
@@ -154,11 +181,18 @@ function TaskStatus({
   choice: AmbiguousChoice | null;
   unit: TargetUnit | null;
   onAnswer?: (choice: AmbiguousChoice | null) => void;
+  autoFocus: boolean;
 }) {
   const t = useT();
   const task = t(`task.name.${detection.task}`);
   const trainable = isTrainableTask(resolved) && !blocked;
   const answered = detection.task === "ambigua" && choice !== null;
+  // Tras responder, el foco va a la respuesta: el lector la lee (un role="status"
+  // que nace con su texto no siempre se anuncia).
+  const headRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (autoFocus && answered) headRef.current?.focus();
+  }, [autoFocus, answered]);
   return (
     <div
       role="status"
@@ -177,7 +211,7 @@ function TaskStatus({
         {trainable ? "✓" : "⚠"}
       </span>
       <div className="flex flex-col gap-1">
-        <p className="font-medium">
+        <p ref={headRef} tabIndex={-1} className="font-medium">
           <span className="sr-only">{t("task.title")}: </span>
           {answered
             ? t("task.ask.answered", {
@@ -199,7 +233,13 @@ function TaskStatus({
           {blocked
             ? t("task.blocked")
             : !trainable
-              ? t("task.notYet")
+              ? // Una columna que no sirve como objetivo no espera una versión
+                // futura: se dice de frente (AU-S6-05).
+                t(
+                  detection.task === "sin-objetivo"
+                    ? "task.notUsable"
+                    : "task.notYet",
+                )
               : resolved === "numerica"
                 ? unit?.symbol
                   ? t("task.estimate.unit", { unit: unit.symbol })

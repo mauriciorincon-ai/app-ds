@@ -39,8 +39,9 @@ export function formatQuantity(value: number, decimals: number): string {
     });
     formatters.set(decimals, formatter);
   }
-  // −0 se escribe 0 (un residuo de −0.0 no dice nada que 0.0 no diga).
-  return formatter.format(value === 0 ? 0 : value);
+  // −0 se escribe 0 (un residuo de −0.0 no dice nada que 0.0 no diga), también
+  // cuando lo produce el redondeo: −0.004 con un decimal es «0.0» (AU-S6-15).
+  return formatter.format(Number(value.toFixed(decimals)) === 0 ? 0 : value);
 }
 
 /** «33.3 kWh» si la unidad se conoce; si no, el número solo (la UI dice de qué

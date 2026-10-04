@@ -271,7 +271,7 @@
         "median": {
           "over": "El error mediano es {p50}: tiende a estimar de más.",
           "under": "El error mediano es {p50}: tiende a estimar de menos.",
-          "none": "El error mediano es {p50}: no se inclina hacia un lado."
+          "none": "El error mediano es {p50}: no se ve una inclinación clara hacia un lado."
         },
         "sign": "Error = estimado − real: positivo es estimar de más; negativo, de menos.",
         "tableCaption": "Percentiles del error en las {total} filas de prueba",
@@ -536,6 +536,8 @@
     "csv-semicolon": "Tu archivo separa las columnas con punto y coma (;), no con comas, así que no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "csv-tab": "Tu archivo separa las columnas con tabulaciones, no con comas, así que no se reconoce ninguna columna. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
+    "target-not-numeric": "Para estimar una cantidad, el objetivo tiene que ser un número en todas las filas, y esta columna trae valores que no lo son. Revísala en tu CSV o elige otra columna.",
+    "target-ambiguous": "Esta columna puede guardar categorías o una cantidad, y falta tu respuesta. Responde la pregunta de la tarjeta «Tipo de predicción» y vuelve a entrenar.",
     "no-features": "No hay columnas utilizables como predictores.",
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
     "worker-dead": "El motor de cómputo se detuvo de forma inesperada (pudo quedarse sin memoria, o falló la carga de sus componentes). Intenta de nuevo; si persiste, prueba con un archivo más pequeño.",
@@ -569,6 +571,7 @@
     "blocked": "Es un tipo de predicción que la app entrena, pero con estos datos no se pueden comparar modelos con honestidad (el motivo está abajo).",
     "trainable": "Se puede entrenar.",
     "notYet": "Esta versión todavía no entrena este tipo de predicción: llega en una próxima versión. Por ahora, elige una columna con dos categorías o con una cantidad.",
+    "notUsable": "Esta columna no sirve como objetivo. Elige una columna con dos categorías o con una cantidad.",
     "estimate": {
       "unit": "Vas a estimar una cantidad, en {unit}. El veredicto dirá cuánto se equivoca en promedio, en {unit}.",
       "noUnit": "Vas a estimar una cantidad. Su nombre no trae una unidad que la app reconozca, así que las cifras se dirán en las unidades de «{column}»."

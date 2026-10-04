@@ -26,12 +26,22 @@ test("ambigua: la pregunta, las dos respuestas y cambiarla", async ({
   // Por teclado: foco en «Una cantidad» y Enter.
   await question.getByRole("button", { name: /Una cantidad/ }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByText("Respondiste: Una cantidad.")).toBeVisible();
+  // El foco va a la respuesta (AU-S6-04): el lector la lee y el teclado sigue.
+  await expect(page.getByText("Respondiste: Una cantidad.")).toBeFocused();
   await expect(page.getByText(/Vas a estimar una cantidad/)).toBeVisible();
   await expect(train).toBeEnabled();
   await axeBothThemes(page);
 
-  await page.getByRole("button", { name: /Cambiar la respuesta/ }).click();
+  // Con teclado: Tab llega a «Cambiar la respuesta» y Enter devuelve el foco a la
+  // primera respuesta de la pregunta.
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: /Cambiar la respuesta/ }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(
+    question.getByRole("button", { name: /Una cantidad/ }),
+  ).toBeFocused();
   await question.getByRole("button", { name: /Categorías/ }).click();
   await expect(page.getByText("Respondiste: Categorías.")).toBeVisible();
   await expect(

@@ -246,9 +246,10 @@ describe("estimado frente a real: nada solo por color", () => {
     expect(
       screen.getByText(`9 de cada 10 se equivocan por menos de ±55.0 kWh.`),
     ).toBeInTheDocument();
+    // 30 de 50 por encima: el azar lo explica (prueba de signo, D9).
     expect(
       screen.getByText(
-        `El error mediano es +5.0 kWh: tiende a estimar de más.`,
+        `El error mediano es +5.0 kWh: no se ve una inclinación clara hacia un lado.`,
       ),
     ).toBeInTheDocument();
     expect(
@@ -256,6 +257,39 @@ describe("estimado frente a real: nada solo por color", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Ficha de Regresión lineal" }),
+    ).toBeInTheDocument();
+  });
+
+  it("con evidencia, «tiende a estimar de más»; un error que redondea a cero va sin signo (D9, AU-S6-15)", () => {
+    const base = regressionResult();
+    const biased = {
+      ...base,
+      // 45 de 50 por encima del valor real: p < 0,05.
+      predVsReal: {
+        ...base.predVsReal,
+        predicted: base.predVsReal.real.map((v, i) => v + (i < 45 ? 8 : -8)),
+      },
+      residuals: { ...base.residuals, p50: 8 },
+    };
+    const { unmount } = ui(
+      <RegressionDetail result={biased} target="consumo_kwh" />,
+    );
+    expect(
+      screen.getByText(
+        `El error mediano es +8.0 kWh: tiende a estimar de más.`,
+      ),
+    ).toBeInTheDocument();
+    unmount();
+    ui(
+      <RegressionDetail
+        result={{ ...base, residuals: { ...base.residuals, p50: -0.004 } }}
+        target="consumo_kwh"
+      />,
+    );
+    expect(
+      screen.getByText(
+        `El error mediano es 0.0 kWh: no se ve una inclinación clara hacia un lado.`,
+      ),
     ).toBeInTheDocument();
   });
 });

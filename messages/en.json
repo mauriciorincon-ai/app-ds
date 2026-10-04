@@ -271,7 +271,7 @@
         "median": {
           "over": "The median error is {p50}: it tends to overestimate.",
           "under": "The median error is {p50}: it tends to underestimate.",
-          "none": "The median error is {p50}: it does not lean either way."
+          "none": "The median error is {p50}: no clear lean to either side."
         },
         "sign": "Error = estimate − actual: positive means overestimating; negative, underestimating.",
         "tableCaption": "Error percentiles over the {total} test rows",
@@ -536,6 +536,8 @@
     "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
     "csv-tab": "Your file separates columns with tabs rather than commas, so no column is recognised. Save it again as “CSV (comma delimited)” and upload it once more.",
     "target-not-binary": "The target must have exactly two categories.",
+    "target-not-numeric": "To estimate a quantity, the target has to be a number in every row, and this column has values that are not. Check it in your CSV or pick another column.",
+    "target-ambiguous": "This column could hold categories or a quantity, and your answer is missing. Answer the question on the «Kind of prediction» card and train again.",
     "no-features": "There are no usable columns as predictors.",
     "runtime": "Something went wrong while processing. Please try again.",
     "worker-dead": "The compute engine stopped unexpectedly (it may have run out of memory, or its components failed to load). Try again; if it persists, try a smaller file.",
@@ -569,6 +571,7 @@
     "blocked": "The app trains this kind of prediction, but with this data models cannot be compared honestly (the reason is below).",
     "trainable": "Ready to train.",
     "notYet": "This version does not train this kind of prediction yet: it comes in a later version. For now, pick a column with two categories or with a quantity.",
+    "notUsable": "This column is not usable as a target. Pick a column with two categories or with a quantity.",
     "estimate": {
       "unit": "You are going to estimate a quantity, in {unit}. The verdict will say how far off it is on average, in {unit}.",
       "noUnit": "You are going to estimate a quantity. Its name carries no unit the app recognizes, so figures will be given in the units of «{column}»."

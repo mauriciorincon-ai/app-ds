@@ -3,7 +3,7 @@
 // ti con texto, nunca solo color), el veredicto del elegido y el progreso.
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ConfigScreen } from "@/components/ConfigScreen";
 import { LeagueTable } from "@/components/LeagueTable";
 import { ResultsScreen } from "@/components/ResultsScreen";
@@ -12,7 +12,7 @@ import { TaskCard } from "@/components/TaskCard";
 import { TrainingScreen } from "@/components/TrainingScreen";
 import { routeModels, type RouteProfile } from "@/engine/encarrilador";
 import { selectOneSe } from "@/engine/roster";
-import { detectTask } from "@/engine/tarea";
+import { detectTask, type AmbiguousChoice } from "@/engine/tarea";
 import { I18nProvider } from "@/i18n/provider";
 import { assembleResult, summarizeDataset } from "@/lib/experiment";
 import type { ChoiceState, TargetPlan } from "@/lib/useExperiment";
@@ -163,6 +163,66 @@ describe("TaskCard (E1)", () => {
       within(group).getByRole("button", { name: /Una cantidad/ }),
     );
     expect(onAnswer).toHaveBeenCalledWith("numerica");
+  });
+
+  it("responder y cambiar la respuesta: el foco va a lo que aparece (AU-S6-04)", () => {
+    const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
+    function Harness() {
+      const [choice, setChoice] = useState<AmbiguousChoice | null>(null);
+      return (
+        <TaskCard
+          detection={detection}
+          target="ocupantes"
+          resolved={choice ?? "ambigua"}
+          choice={choice}
+          unit={{ suffix: null, symbol: null }}
+          onAnswer={setChoice}
+        />
+      );
+    }
+    ui(<Harness />);
+    // Al montar no se roba el foco.
+    expect(document.activeElement).toBe(document.body);
+    const answer = screen.getByRole("button", { name: /Una cantidad/ });
+    answer.focus();
+    fireEvent.click(answer);
+    // El párrafo de la respuesta, no el body (que también contiene el texto).
+    const head = document.activeElement as HTMLElement;
+    expect(head.tagName).toBe("P");
+    expect(head).toHaveTextContent("Respondiste: Una cantidad.");
+    fireEvent.click(
+      screen.getByRole("button", { name: /Cambiar la respuesta/ }),
+    );
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: /Una cantidad/ }),
+    );
+  });
+
+  it("cada respuesta se nombra por su etiqueta y se describe una sola vez (AU-S6-38)", () => {
+    const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
+    ui(
+      <TaskCard detection={detection} target="ocupantes" onAnswer={vi.fn()} />,
+    );
+    const quantity = screen.getByRole("button", { name: /Una cantidad/ });
+    expect(quantity).toHaveAccessibleName(/^Una cantidad( Sugerida)?$/);
+    expect(quantity).toHaveAccessibleDescription(/^Se estima el número/);
+  });
+
+  it("una columna que no sirve como objetivo no promete una próxima versión (AU-S6-05)", () => {
+    ui(
+      <TaskCard
+        detection={detectTask(
+          Array.from({ length: 50 }, (_, i) => `c${i % 25}`),
+        )}
+      />,
+    );
+    expect(screen.getByText(/no algo que predecir/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Esta columna no sirve como objetivo. Elige una columna con dos categorías o con una cantidad.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/próxima versión/)).toBeNull();
   });
 
   it("ambigua respondida: dice la respuesta, la tarea que resulta y deja cambiarla", () => {
