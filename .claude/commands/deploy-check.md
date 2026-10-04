@@ -108,6 +108,8 @@ Corre cada verificación en orden y reporta estado:
       ```
       git grep -nE "vercel[.]app|workers[.]dev|pages[.]dev" -- ':!pnpm-lock.yaml'   # TODOS los archivos versionados — jamás include-list (kit v1.23.0: wrangler.jsonc pasó un gate con lista); suma el host real del stack si difiere
       gh repo view --json homepageUrl -q .homepageUrl   # el campo About/website APUNTA AL PROPIO REPO (kit v1.32.1); si está vacío, Vercel lo reescribe
+      # REPARA, no solo verifica (kit v1.35.0 — habla: Vercel lo reescribió tres veces tras el deploy y se limpió a mano):
+      [ "$(gh repo view --json homepageUrl -q .homepageUrl)" = "$(gh repo view --json url -q .url)" ] || gh repo edit --homepage "$(gh repo view --json url -q .url)"
       ```
       README, BLUEPRINT ("qué ve quién" sin la URL), manual, guía (su campo de URL se llena EN
       USO), CTAs. *La producción se muestra (brochure), jamás se entrega (link).* Si este sprint

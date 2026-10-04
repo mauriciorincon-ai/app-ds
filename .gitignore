@@ -22,3 +22,6 @@ Thumbs.db
 # Reportes locales de Lighthouse CI
 .lighthouseci/
 .lh-*.json
+
+# Respaldo de scripts/demo-rojo.sh (kit v1.35.0): UNA carpeta, se borra sola al restaurar
+.demo-rojo/

@@ -1,4 +1,4 @@
-# kit-app (se estampa en cada app) — kit v1.26.0
+# kit-app (se estampa en cada app) — kit v1.35.0 (regla fijada en v1.23.1 y v1.26.0; cabecera al día desde v1.35.0)
 # REGLA DEL USUARIO (2026-08-22, fijada en Innmobiliaria): máximo DOS PRs de dependencias
 # abiertos a la vez — jamás una lista de merges pendientes. Un PR agrupado por ecosistema.
 # (La v1.23.0 traía limit 5 POR ecosistema = hasta 10 abiertos, y la primera activación
