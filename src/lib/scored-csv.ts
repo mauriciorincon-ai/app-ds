@@ -5,7 +5,7 @@
 // llegan localizados por parámetro (el CSV descargado sale en el idioma
 // activo); si colisionan con columnas del usuario se les añade un sufijo
 // determinista (_2, _3, …) — jamás se pisa una columna existente.
-import type { CsvTable } from "@/lib/ds/csv";
+import { parseNumber, type CsvTable } from "@/lib/ds/csv";
 import { datasetSlug } from "@/lib/files";
 import { TARGET_DECIMALS_MAX } from "@/workers/contract";
 
@@ -43,6 +43,21 @@ function escapeField(value: string): string {
 }
 
 /**
+ * Inyección de fórmulas (OWASP «CSV injection», pagado en el S6: AU-S6-33). Una
+ * celda que empieza con =, +, -, @, tabulador o retorno se EJECUTA como fórmula al
+ * abrir la descarga en una hoja de cálculo (`=HYPERLINK(…)`). Se escribe con un
+ * apóstrofo delante, que la hoja muestra como texto. Un número («-12.5», «+3») no
+ * es fórmula y no se toca: el archivo sigue siendo la tabla del usuario.
+ */
+export function neutralizeFormula(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) && parseNumber(value) === null
+    ? `'${value}`
+    : value;
+}
+
+const cell = (value: string) => escapeField(neutralizeFormula(value));
+
+/**
  * Serializa la tabla original + predicción + probabilidad como CSV RFC-4180.
  * Preserva TODAS las columnas y filas del usuario (incluidas las que el modelo
  * ignoró: el archivo descargado es su tabla completa, puntuada). S5: si el modelo
@@ -72,7 +87,7 @@ export function buildScoredCsv(
     resolved.prediction,
     ...(probabilities ? [resolved.probability] : []),
   ]
-    .map(escapeField)
+    .map(cell)
     .join(",");
   const lines = rows.map((row, i) =>
     [
@@ -82,7 +97,7 @@ export function buildScoredCsv(
         ? [probabilities[i]!.toFixed(PROBABILITY_DECIMALS)]
         : []),
     ]
-      .map(escapeField)
+      .map(cell)
       .join(","),
   );
   return [header, ...lines].join("\n") + "\n";

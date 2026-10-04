@@ -145,6 +145,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      nombre, la nueva sale con un sufijo (`_2`) — nunca se pisa nada tuyo. Desde el Sprint 005, si
      el modelo es uno de los que **deciden la clase sin dar una probabilidad** (Ridge, SVM lineal),
      la columna de probabilidad no se incluye y la pantalla te lo dice: la app no inventa una.
+     Desde el Sprint 006, si una celda empieza con `=`, `+`, `-` o `@` y no es un número, el
+     archivo descargado la escribe con un apóstrofo delante (`'=…`): así la hoja de cálculo la
+     muestra como texto y no la ejecuta como fórmula. Los números negativos quedan como están.
 
 - **Guardar el modelo (exportar):**
   - En Resultados, pulsa **"Exportar modelo"**. Se descarga un único archivo `.probeta.json`.

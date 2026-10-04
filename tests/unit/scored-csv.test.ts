@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseRows, type CsvTable } from "@/lib/ds/csv";
 import {
   buildScoredCsv,
+  neutralizeFormula,
   resolveScoredColumnNames,
   scoredCsvFileName,
 } from "@/lib/scored-csv";
@@ -103,6 +104,27 @@ describe("buildScoredCsv", () => {
       ["34", "norte", "si"],
       ["51", "sur", "no"],
     ]);
+  });
+
+  it("una celda que una hoja de cálculo ejecutaría como fórmula sale como texto (AU-S6-33)", () => {
+    expect(neutralizeFormula("=1+1")).toBe("'=1+1");
+    expect(neutralizeFormula('=HYPERLINK("x")')).toBe(`'=HYPERLINK("x")`);
+    expect(neutralizeFormula("@SUM(A1)")).toBe("'@SUM(A1)");
+    expect(neutralizeFormula("+cmd")).toBe("'+cmd");
+    expect(neutralizeFormula("\tx")).toBe("'\tx");
+    // Un número no es una fórmula: la tabla del usuario no se toca.
+    expect(neutralizeFormula("-12.5")).toBe("-12.5");
+    expect(neutralizeFormula("+3")).toBe("+3");
+    expect(neutralizeFormula("norte")).toBe("norte");
+    const table: CsvTable = {
+      headers: ["@x", "nota"],
+      rows: [["1", "=1+1"]],
+    };
+    const [header, row] = parseRows(
+      buildScoredCsv(table, ["-si"], null, NAMES),
+    );
+    expect(header).toEqual(["'@x", "nota", "prediccion"]);
+    expect(row).toEqual(["1", "'=1+1", "'-si"]);
   });
 
   it("longitudes inconsistentes ⇒ error (jamás puntúa a medias)", () => {
