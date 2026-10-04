@@ -3,13 +3,17 @@
 // folds, ganador = regla de un error estándar —, así los tests de UI y de estado
 // no se escriben con un contrato que la app rechazaría.
 import { selectOneSe, type MemberId } from "@/engine/roster";
-import type { Metrics } from "@/engine/verdict";
+import type { Metrics, RegressionMetrics } from "@/engine/verdict";
+import { assembleRegressionResult } from "@/lib/experiment";
 import type {
   BinaryResult,
   LeagueRow,
   MemberFitResult,
   PipelinePayload,
   PipelineResult,
+  RegressionMemberFitResult,
+  RegressionPipelineResult,
+  RegressionResult,
 } from "@/workers/protocol";
 import { SCORER } from "@/workers/contract";
 
@@ -146,4 +150,136 @@ export function leagueFields(
     },
     smallSample: false,
   };
+}
+
+// --- S6: estimar una cantidad ----------------------------------------------
+
+export function regressionMetrics(
+  overrides: Partial<RegressionMetrics> = {},
+): RegressionMetrics {
+  return {
+    mae: 33.5,
+    rmse: 44.5,
+    r2: 0.8,
+    medae: 27,
+    mape: 0.09,
+    ...overrides,
+  };
+}
+
+/**
+ * Liga de regresión coherente con lo enviado: MAE en kWh, menor es mejor. Por
+ * defecto el primero gana con holgura (CV 35 y cada siguiente 3 más, std 1).
+ */
+export function regressionPipelineResult(
+  sent: Pick<PipelinePayload, "roster" | "cv_k"> = {
+    roster: ["linear", "ridge", "extra_trees"],
+    cv_k: 5,
+  },
+  cvMeans: Partial<Record<MemberId, number>> = {},
+): RegressionPipelineResult {
+  const league: LeagueRow<RegressionMetrics>[] = sent.roster.map((name, i) => {
+    const mean = cvMeans[name] ?? 35 + 3 * i;
+    return {
+      name,
+      status: "ok",
+      cv: {
+        mean,
+        std: 1,
+        folds: Array.from({ length: sent.cv_k }, () => mean),
+      },
+      test: regressionMetrics({ mae: mean - 1.5, rmse: mean + 9 }),
+      elapsed_ms: 40 + i,
+      error_type: null,
+    };
+  });
+  const selection = selectOneSe(league, sent.cv_k, "lower")!;
+  const winner = league.find((row) => row.name === selection.winner)!;
+  return {
+    task: "numerica",
+    target_stats: {
+      mean: 374.7,
+      std: 114.2,
+      min: 148.8,
+      max: 840.5,
+      median: 365.4,
+      decimals: 1,
+    },
+    n_train: 150,
+    n_test: 50,
+    baselines: {
+      median: regressionMetrics({ mae: 80.9, rmse: 99.9, r2: 0, medae: 64 }),
+      linear: regressionMetrics({
+        mae: 43.8,
+        rmse: 51.8,
+        r2: 0.73,
+        medae: 42.3,
+      }),
+    },
+    model: winner.test!,
+    model_name: selection.winner,
+    winner: selection.winner,
+    league,
+    cv: {
+      k: sent.cv_k,
+      scoring: SCORER.mae,
+      rule: "one-se",
+      best: selection.best,
+      se: selection.se,
+    },
+    elapsed_ms: 2345,
+    pred_vs_real: {
+      real: [150, 250, 350, 450, 550],
+      predicted: [170, 240, 400, 445, 600],
+      n_total: 50,
+    },
+    residuals: { p05: -40, p25: -20, p50: 5, p75: 25, p95: 60, abs_p90: 55 },
+    explainability: {
+      method: "permutation_importance",
+      scoring: "neg_mean_absolute_error",
+      n_repeats: 10,
+      features: [
+        {
+          name: "ocupantes",
+          kind: "numeric",
+          importance: 61.1,
+          std: 2,
+          direction: "positive",
+        },
+        {
+          name: "calefaccion",
+          kind: "categorical",
+          importance: 9.5,
+          std: 1,
+          direction: null,
+        },
+      ],
+    },
+    preprocessing: { numeric_medians: { ocupantes: 3 }, rare_categories: {} },
+  };
+}
+
+/** Lo que Python devuelve al ajustar a mano un miembro de una liga de regresión. */
+export function regressionMemberFit(
+  result: RegressionPipelineResult,
+  member: MemberId,
+): RegressionMemberFitResult {
+  const row = result.league.find((r) => r.name === member);
+  return {
+    task: "numerica",
+    model: row?.test ?? regressionMetrics(),
+    model_name: member,
+    pred_vs_real: result.pred_vs_real,
+    residuals: result.residuals,
+    explainability: result.explainability,
+    preprocessing: result.preprocessing,
+  };
+}
+
+/** Un RegressionResult ensamblado como en producción (objetivo «consumo_kwh»). */
+export function regressionResult(
+  py: RegressionPipelineResult = regressionPipelineResult(),
+  target = "consumo_kwh",
+): RegressionResult {
+  return assembleRegressionResult(py, [], target);
 }

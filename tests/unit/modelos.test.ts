@@ -10,10 +10,12 @@ import { translate } from "@/i18n/translate";
 const texts = (value: Bilingual) => [value.es, value.en];
 
 describe("fichas ↔ roster", () => {
-  it("una ficha por modelo base (y ninguna de más) + la de clase mayoritaria", () => {
+  it("una ficha por modelo base (y ninguna de más) + las de los baselines que no compiten", () => {
     // S6: el espacio de ids abarca las dos tareas (linear y lasso solo estiman).
     const bases = [...new Set(ALL_MEMBER_IDS.map((id) => MEMBERS[id].base))];
-    expect(Object.keys(FICHAS).sort()).toEqual([...bases, "majority"].sort());
+    expect(Object.keys(FICHAS).sort()).toEqual(
+      [...bases, "majority", "median"].sort(),
+    );
   });
 
   it("cada miembro del roster tiene nombre largo y corto en ES y EN", () => {

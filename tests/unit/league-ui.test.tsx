@@ -97,20 +97,104 @@ describe("TaskCard (E1)", () => {
   });
 
   it("otras tareas: se nombran y se dice que llegan en una próxima versión (no se esconden)", () => {
-    const values = Array.from({ length: 30 }, (_, i) => String(i * 1.5));
-    ui(<TaskCard detection={detectTask(values)} />);
+    ui(<TaskCard detection={detectTask(["a", "b", "c", "a"])} />);
     expect(
-      screen.getByText(/30 números distintos → predicción de una cantidad/),
+      screen.getByText(
+        /3 categorías distintas → clasificación en varias categorías/,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/llega en una próxima versión/),
     ).toBeInTheDocument();
   });
 
+  // S6: estimar una cantidad se entrena, y la tarjeta dice en qué unidades.
+  it("una cantidad: se entrena, con la unidad si el nombre la trae y franqueza si no", () => {
+    const values = Array.from({ length: 30 }, (_, i) => String(i * 1.5));
+    const { unmount } = ui(
+      <TaskCard
+        detection={detectTask(values)}
+        target="consumo_kwh"
+        unit={{ suffix: "kwh", symbol: "kWh" }}
+      />,
+    );
+    expect(
+      screen.getByText(/30 números distintos → predicción de una cantidad/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Vas a estimar una cantidad, en kWh/),
+    ).toBeInTheDocument();
+    unmount();
+    ui(
+      <TaskCard
+        detection={detectTask(values)}
+        target="edad"
+        unit={{ suffix: null, symbol: null }}
+      />,
+    );
+    expect(screen.getByText(/en las unidades de «edad»/)).toBeInTheDocument();
+  });
+
   it("ambigua: sugiere la lectura más probable", () => {
     ui(<TaskCard detection={detectTask(["1", "2", "3", "4", "5", "1"])} />);
     expect(
       screen.getByText("Lo más probable: clasificación en varias categorías."),
+    ).toBeInTheDocument();
+  });
+
+  // S6 (D2): la app pregunta, no adivina — dos botones, la sugerida con ★ + texto.
+  it("ambigua con pregunta: dos respuestas por teclado, la sugerida marcada", () => {
+    const onAnswer = vi.fn();
+    const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
+    ui(
+      <TaskCard detection={detection} target="ocupantes" onAnswer={onAnswer} />,
+    );
+    const group = screen.getByRole("group", {
+      name: "¿«ocupantes» guarda categorías o una cantidad?",
+    });
+    const buttons = within(group).getAllByRole("button");
+    expect(buttons).toHaveLength(2);
+    const suggested = detection.suggested === "numerica" ? 0 : 1;
+    expect(buttons[suggested]).toHaveTextContent("★Sugerida");
+    expect(buttons[1 - suggested]).not.toHaveTextContent("Sugerida");
+    fireEvent.click(
+      within(group).getByRole("button", { name: /Una cantidad/ }),
+    );
+    expect(onAnswer).toHaveBeenCalledWith("numerica");
+  });
+
+  it("ambigua respondida: dice la respuesta, la tarea que resulta y deja cambiarla", () => {
+    const onAnswer = vi.fn();
+    const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
+    const { unmount } = ui(
+      <TaskCard
+        detection={detection}
+        target="ocupantes"
+        resolved="numerica"
+        choice="numerica"
+        unit={{ suffix: null, symbol: null }}
+        onAnswer={onAnswer}
+      />,
+    );
+    expect(screen.getByText("Respondiste: Una cantidad.")).toBeInTheDocument();
+    expect(screen.getByText(/Vas a estimar una cantidad/)).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Cambiar la respuesta/ }),
+    );
+    expect(onAnswer).toHaveBeenCalledWith(null);
+    unmount();
+    ui(
+      <TaskCard
+        detection={detection}
+        target="ocupantes"
+        resolved="multiclase"
+        choice="multiclase"
+        onAnswer={onAnswer}
+      />,
+    );
+    expect(screen.getByText("Respondiste: Categorías.")).toBeInTheDocument();
+    expect(
+      screen.getByText(/llega en una próxima versión/),
     ).toBeInTheDocument();
   });
 });
@@ -192,6 +276,9 @@ describe("ConfigScreen con el plan (E1 + E2)", () => {
   ): TargetPlan => ({
     target,
     task: dataset.targetTasks[target]!,
+    choice: null,
+    resolved: dataset.targetTasks[target]!.task,
+    unit: null,
     routing,
     profile: routing ? KIT : null,
     smallSample: false,

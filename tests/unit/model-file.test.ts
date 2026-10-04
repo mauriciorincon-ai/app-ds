@@ -412,14 +412,14 @@ describe("S6 — manifiesto por tarea (P8)", () => {
     expect(file.manifest.task).toBe("binaria");
   });
 
-  it("un archivo de regresión íntegro se rechaza NOMBRANDO su tarea mientras la UI no la usa", async () => {
+  it("una tarea que la UI no usa se rechaza NOMBRÁNDOLA (D4); desde la F2 la regresión se usa", async () => {
     const text = JSON.stringify(await packRegression());
-    expect(await validateModelFile(text)).toEqual({
+    expect(await validateModelFile(text, ["binaria"])).toEqual({
       ok: false,
       error: "unsupported-task",
       task: "numerica",
     });
-    const usable = await validateModelFile(text, ["binaria", "numerica"]);
+    const usable = await validateModelFile(text);
     expect(usable.ok).toBe(true);
     if (usable.ok) expect(manifestTask(usable.file.manifest)).toBe("numerica");
   });

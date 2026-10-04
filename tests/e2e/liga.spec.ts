@@ -15,11 +15,13 @@ test("liga: tabla, ficha, prueba etiquetada y elección manual registrada", asyn
   await page.goto("/");
   await page.getByRole("button", { name: /Rotación de empleados/i }).click();
   // E1 con una tarea que todavía no se entrena: la TaskCard en ámbar, auditada
-  // en ambos temas (AU-S5-08).
-  await page.selectOption("#target", "edad");
+  // en ambos temas (AU-S5-08). S6 (R19): «edad» ya se entrena (estimar una
+  // cantidad); el caso «todavía no» pasa a varias categorías (multiclase).
+  await page.selectOption("#target", "departamento");
   await expect(
-    page.getByText(/números distintos → predicción de una cantidad/),
+    page.getByText(/categorías distintas → clasificación en varias categorías/),
   ).toBeVisible();
+  await expect(page.getByText(/llega en una próxima versión/)).toBeVisible();
   await axeBothThemes(page);
   await page.selectOption("#target", "renuncio");
   // E1 + E2 antes de entrenar: la tarea y quién compite.
