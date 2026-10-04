@@ -62,7 +62,9 @@ Regression enters **parametrised by task**, never as a fork of the binary path.
      Without a known suffix the UI says «en las unidades de «columna»»; it never invents one.
    - Figures use a dot decimal and comma thousands, like the rest of the app, with three
      significant digits of the smallest value they are compared with, and a non-breaking space
-     before the unit.
+     before the unit. A value that would print as 0 anyway (below half of the sixth decimal) does
+     not set the precision: with a planted leak the linear MAE is ~1e-11, and it used to give the
+     whole league six decimals.
 8. **Estimate-vs-actual as data in the contract.**
    - Python returns a deterministic sample of test points, capped at 200.
    - It also returns error quantiles computed on the WHOLE test set; they feed the text equivalent

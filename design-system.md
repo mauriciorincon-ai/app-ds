@@ -270,7 +270,13 @@ aprobadas por el usuario el 2026-10-04 con la preview abierta.
 - **PredichoVsReal** (SVG sin librería, en Resultados, fuera del LCP) — «Estimado frente a real,
   en el conjunto de prueba»:
   - **Ejes:** real en horizontal, estimado en vertical, mismo rango en los dos. Rejilla `hairline`,
-    marcas mono 10 px con paso redondo (1·2·5 × 10ⁿ), rótulo de eje con la unidad.
+    marcas mono de 12 px en el viewBox con paso redondo (1·2·5 × 10ⁿ) y rótulo de eje con la
+    unidad, también de 12 px. En un móvil de 360 px el SVG se escala a 0,8, así que se leen a unos
+    9,6 px (con 10 px quedaban en 8; auditoría del S6, AU-S6-43). Los márgenes salen del rótulo más
+    largo: el izquierdo (mínimo 64) para no pisar el título del eje y el derecho (mínimo 12) para
+    que quepa medio rótulo de una marca en el borde. Si los rótulos del eje horizontal se tocarían,
+    se rotula una marca de cada dos (o de cada k) y la rejilla va entera (`leftMargin`,
+    `rightMargin` y `labelEvery` en `src/lib/scatter.ts`).
   - **La diagonal** y = x: línea continua `ink`, 1.5 px.
   - **La franja ±MAE:** relleno `accent/10` con bordes punteados `accent` pleno (4 3): ≥ 3:1 contra el fondo en los dos temas (con `accent/60` daban 2,7:1 y 2,9:1; auditoría del S6, AU-S6-20).
   - **Los puntos cambian de FORMA, no solo de color:** disco relleno `accent` dentro de la franja;

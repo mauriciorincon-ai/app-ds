@@ -523,7 +523,7 @@ fases (el paso de categorías de Lighthouse ya había corrido en el #16).
 | `7021ff4` | 2 (UI antes de la mirada) | 6 de 6 verde |
 | `fdac870` | 2 (después de la mirada)  | 6 de 6 verde |
 
-## Auditoría final — Fase 2 (pago de los 43 hallazgos, EN CURSO)
+## Auditoría final — Fase 2 (pago de los 43 hallazgos, cerrada)
 
 Informe de la Fase 1: `sprints/SPRINT_006-auditoria.md` (tres auditores independientes, 49 hallazgos
 en bruto → 43 consolidados: 1 Crítico, 6 Altos, 15 Medios, 21 Bajos).
@@ -549,13 +549,19 @@ D9):
   que coincidir con el error mediano de toda la prueba. «none» se dice «no se ve una inclinación
   clara», no «no se inclina».
 
-### Pagados (commits `da01ea2` a `c7a6e50`, sobre `cc547c7`)
+### Pagados: los 43 (commits `da01ea2` a `f20f1ee`, sobre `cc547c7`)
 
-AU-S6-01 · 02 · 03 · 04 · 05 · 06 · 07 · 08 · 09 · 10 · 11 · 12 · 13 · 14 · 15 · 16 · 18 · 19 · 20 ·
-21 · 22 (prueba + README del kit; falta su D10) · 26 · 28 (código; falta la línea del ADR 014) · 30 ·
-31 · 32 · 33 · 34 · 35 (mensajes; falta la línea 333 del manual) · 36 · 37 · 38 · 39 (y un chequeo
-nuevo del lector: el miembro lineal puntúa EXACTO como el baseline lineal, carnada 36/36) · 40 · 41 · 42. AU-S6-17: los e2e ya llaman `axeBothThemes` en cada pantalla tocada, **sin correr todavía en
-local**.
+- **Código y pruebas** (`da01ea2` a `c7a6e50`): AU-S6-01 a 22, 26, 28 (código), 30 a 42 y 35
+  (mensajes). AU-S6-39 trae además un chequeo nuevo del lector: el miembro lineal puntúa EXACTO como
+  el baseline lineal (carnada 36/36).
+- **Textos, ADR y gráfico** (`f20f1ee`): AU-S6-23 (manual: quién compite en el Nivel 1 y el Baseline
+  de las dos tareas) · 24 (guía :127 y D4) · 25 (D8 a D11 en `## Desviación del plan`) · 27 y 29
+  (ADR 013 y 014) · 28 (ADR 014: qué lee el import y qué es documental; se cotejó con el código y la
+  lista del auditor se quedaba corta: el import también lee `verdict.primaryMetric` y cuántas filas
+  trae la liga) · 35 (manual sin «por ahora») · 43 (marcas y rótulos del gráfico a 12 px; también en
+  `design-sync/` y en `design-system.md`).
+- **AU-S6-17** (axe en los dos temas en cada pantalla tocada): corrido sobre el build de producción
+  en el e2e completo (44 de 44) y con su rojo (#71 y #72).
 
 Carnadas tras la Fase 2: liga de regresión 30 → **36/36** · elección manual 5 → **6/6** · TS → Python
 8 → **9/9** · manifiesto de regresión 12/12 (la carnada `manifest.task` pasa a un número; una tarea
@@ -563,69 +569,118 @@ con nombre se rechaza NOMBRÁNDOLA) · binarias intactas (27 · 6 · 5 · 6 · 5
 
 ### Demos en rojo de la Fase 2 (todas con el `demo-rojo.sh` endurecido, `--debe-nombrar`)
 
-| #   | Gate                                                            | Qué nombró el fallo                                                                                                                    |
-| --- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 29  | `demo-rojo.sh` (AU-S6-12): 127, SIGTERM, sin nombrar, 0 pruebas | las cuatro sondas salen 1/130 con el archivo intacto; el control sale 0                                                                |
-| 30  | Sentry: solo breadcrumbs `probeta.*` (AU-S6-01)                 | «descarta los breadcrumbs de la UI»                                                                                                    |
-| 31  | `TrainTask` + «multiclase» no compila (AU-S6-03)                | costos.ts ×2, eda.ts, roster.ts ×2, model-file.ts (antes solo roster.ts)                                                               |
-| 32  | Python: tercera tarea registrada → contrato «task» (AU-S6-03)   | «expected 'aceptada' to be 'task'»                                                                                                     |
-| 33  | Import nombra una tarea desconocida (AU-S6-02)                  | «NO CONOCE» (3 pruebas)                                                                                                                |
-| 34  | CV de MAE negativa (AU-S6-09)                                   | «train-regresión] detectó 33 de 35»                                                                                                    |
-| 35  | `n_total` = tamaño de la prueba (AU-S6-10)                      | «fit-member-regresión] detectó 5 de 6»                                                                                                 |
-| 36  | `too-few-rows-quantity` en TS (AU-S6-08)                        | «muy pocas filas: un rechazo honesto propio»                                                                                           |
-| 37  | … y en `_validate_payload` (AU-S6-08)                           | «train:test_idx → aceptada»                                                                                                            |
-| 38  | Decimales en notación científica (AU-S6-31)                     | «expected 6 to be +0» (el primer intento lo rechazó el propio script: esperé «0», vitest escribe «+0»)                                 |
-| 39  | MAPE null con ceros, en el emisor (AU-S6-32)                    | «to be null»                                                                                                                           |
-| 40  | Umbral de cobertura de `contract.ts` (AU-S6-30)                 | «src/workers/contract.ts threshold (101%)»                                                                                             |
-| 41  | Fórmulas neutralizadas en el CSV (AU-S6-33)                     | «ejecutaría como fórmula»                                                                                                              |
-| 42  | `verificar-dependencias` con lockfile ilegible (AU-S6-13)       | «675 de 675 paquetes … no aparecen»; control: el script VIEJO decía «✓ 0 paquetes»                                                     |
-| 43  | Checksum fijado de gitleaks (AU-S6-34)                          | local con `shasum -c`: «FAILED» con un dígito cambiado                                                                                 |
-| 44  | Foco tras responder (AU-S6-04)                                  | «expected 'BODY' to be 'P'» — el primer intento PASÓ en verde: la aserción comparaba texto y el body también lo contiene; se endureció |
-| 45  | Foco tras «Cambiar la respuesta» (AU-S6-04)                     | «el foco va a lo que aparece»                                                                                                          |
-| 46  | Columna que no sirve como objetivo (AU-S6-05)                   | «no promete una próxima versión»                                                                                                       |
-| 47  | Descripción leída una sola vez (AU-S6-38)                       | «se describe una sola vez»                                                                                                             |
-| 48  | Texto de cada falla del motor (AU-S6-14)                        | «es: target-ambiguous»                                                                                                                 |
-| 49  | … y el `Record` exhaustivo                                      | typecheck: «error-copy.test.ts … "nueva-falla" is missing»                                                                             |
-| 50  | Prueba de signo (D9, AU-S6-15)                                  | «un desbalance claro inclina»                                                                                                          |
-| 51  | «0.0» sin signo (AU-S6-15)                                      | «redondea a cero»                                                                                                                      |
-| 52  | Nivel 2 al estimar conserva la respuesta (AU-S6-16)             | «el Nivel 2 conserva la respuesta»                                                                                                     |
-| 53  | `planLevel2` con roster de regresión (AU-S6-16)                 | «al estimar (S6)»                                                                                                                      |
-| 54  | Empate de la lineal solo si decide la lineal (AU-S6-18)         | «empata con la MEDIANA»                                                                                                                |
-| 55  | … y su hermana binaria (AU-S6-18)                               | «empata con la CLASE MAYORITARIA»                                                                                                      |
-| 56  | Fichas al estimar sin votos ni clases (AU-S6-19)                | «knn.what»                                                                                                                             |
-| 57  | Bordes de la franja en `accent` pleno (AU-S6-20)                | «nada solo por color» (el primer verde lo rechazó mi `--minimo-tests` mal puesto: 27 por 26; se rehízo)                                |
-| 58  | Importancias en unidades, pantalla (AU-S6-21)                   | «sin botón de IA»                                                                                                                      |
-| 59  | … y model card (AU-S6-21)                                       | «el objetivo en train»                                                                                                                 |
-| 60  | `LEAKAGE_MIN_PAIRS` (D8, AU-S6-11)                              | «una columna casi vacía no se evalúa»                                                                                                  |
-| 61  | Precio sin la columna plantada entrena sin aviso (AU-S6-22)     | «precio SIN la columna plantada»                                                                                                       |
-| 62  | Recuento del export (AU-S6-06)                                  | «se recuentan desde el repo» (expected 13 to be 14)                                                                                    |
-| 63  | «Estimaciones (1 fila)» (AU-S6-36)                              | «una sola fila»                                                                                                                        |
-| 64  | «escrito con 1 decimal» (AU-S6-36)                              | «el objetivo en train»                                                                                                                 |
-| 65  | Espacio no separable antes de % (AU-S6-37)                      | «el MISMO veredicto que la pantalla»                                                                                                   |
-| 66  | Miembro lineal = baseline lineal (AU-S6-39)                     | «train-regresión] detectó 35 de 36»                                                                                                    |
-| 67  | Identificadores en una frase (AU-S6-40)                         | «en UNA frase»                                                                                                                         |
-| 68  | `estimateSummary` (AU-S6-41)                                    | «mediana par»                                                                                                                          |
-| 69  | Banner de fuga en un solo sitio (AU-S6-42)                      | los dos tests «sospechoso», binario y de regresión, con UNA mutación                                                                   |
+| #   | Gate                                                              | Qué nombró el fallo                                                                                                                                                     |
+| --- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 29  | `demo-rojo.sh` (AU-S6-12): 127, SIGTERM, sin nombrar, 0 pruebas   | las cuatro sondas salen 1/130 con el archivo intacto; el control sale 0                                                                                                 |
+| 30  | Sentry: solo breadcrumbs `probeta.*` (AU-S6-01)                   | «descarta los breadcrumbs de la UI»                                                                                                                                     |
+| 31  | `TrainTask` + «multiclase» no compila (AU-S6-03)                  | costos.ts ×2, eda.ts, roster.ts ×2, model-file.ts (antes solo roster.ts)                                                                                                |
+| 32  | Python: tercera tarea registrada → contrato «task» (AU-S6-03)     | «expected 'aceptada' to be 'task'»                                                                                                                                      |
+| 33  | Import nombra una tarea desconocida (AU-S6-02)                    | «NO CONOCE» (3 pruebas)                                                                                                                                                 |
+| 34  | CV de MAE negativa (AU-S6-09)                                     | «train-regresión] detectó 33 de 35»                                                                                                                                     |
+| 35  | `n_total` = tamaño de la prueba (AU-S6-10)                        | «fit-member-regresión] detectó 5 de 6»                                                                                                                                  |
+| 36  | `too-few-rows-quantity` en TS (AU-S6-08)                          | «muy pocas filas: un rechazo honesto propio»                                                                                                                            |
+| 37  | … y en `_validate_payload` (AU-S6-08)                             | «train:test_idx → aceptada»                                                                                                                                             |
+| 38  | Decimales en notación científica (AU-S6-31)                       | «expected 6 to be +0» (el primer intento lo rechazó el propio script: esperé «0», vitest escribe «+0»)                                                                  |
+| 39  | MAPE null con ceros, en el emisor (AU-S6-32)                      | «to be null»                                                                                                                                                            |
+| 40  | Umbral de cobertura de `contract.ts` (AU-S6-30)                   | «src/workers/contract.ts threshold (101%)»                                                                                                                              |
+| 41  | Fórmulas neutralizadas en el CSV (AU-S6-33)                       | «ejecutaría como fórmula»                                                                                                                                               |
+| 42  | `verificar-dependencias` con lockfile ilegible (AU-S6-13)         | «675 de 675 paquetes … no aparecen»; control: el script VIEJO decía «✓ 0 paquetes»                                                                                      |
+| 43  | Checksum fijado de gitleaks (AU-S6-34)                            | local con `shasum -c`: «FAILED» con un dígito cambiado                                                                                                                  |
+| 44  | Foco tras responder (AU-S6-04)                                    | «expected 'BODY' to be 'P'» — el primer intento PASÓ en verde: la aserción comparaba texto y el body también lo contiene; se endureció                                  |
+| 45  | Foco tras «Cambiar la respuesta» (AU-S6-04)                       | «el foco va a lo que aparece»                                                                                                                                           |
+| 46  | Columna que no sirve como objetivo (AU-S6-05)                     | «no promete una próxima versión»                                                                                                                                        |
+| 47  | Descripción leída una sola vez (AU-S6-38)                         | «se describe una sola vez»                                                                                                                                              |
+| 48  | Texto de cada falla del motor (AU-S6-14)                          | «es: target-ambiguous»                                                                                                                                                  |
+| 49  | … y el `Record` exhaustivo                                        | typecheck: «error-copy.test.ts … "nueva-falla" is missing»                                                                                                              |
+| 50  | Prueba de signo (D9, AU-S6-15)                                    | «un desbalance claro inclina»                                                                                                                                           |
+| 51  | «0.0» sin signo (AU-S6-15)                                        | «redondea a cero»                                                                                                                                                       |
+| 52  | Nivel 2 al estimar conserva la respuesta (AU-S6-16)               | «el Nivel 2 conserva la respuesta»                                                                                                                                      |
+| 53  | `planLevel2` con roster de regresión (AU-S6-16)                   | «al estimar (S6)»                                                                                                                                                       |
+| 54  | Empate de la lineal solo si decide la lineal (AU-S6-18)           | «empata con la MEDIANA»                                                                                                                                                 |
+| 55  | … y su hermana binaria (AU-S6-18)                                 | «empata con la CLASE MAYORITARIA»                                                                                                                                       |
+| 56  | Fichas al estimar sin votos ni clases (AU-S6-19)                  | «knn.what»                                                                                                                                                              |
+| 57  | Bordes de la franja en `accent` pleno (AU-S6-20)                  | «nada solo por color» (el primer verde lo rechazó mi `--minimo-tests` mal puesto: 27 por 26; se rehízo)                                                                 |
+| 58  | Importancias en unidades, pantalla (AU-S6-21)                     | «sin botón de IA»                                                                                                                                                       |
+| 59  | … y model card (AU-S6-21)                                         | «el objetivo en train»                                                                                                                                                  |
+| 60  | `LEAKAGE_MIN_PAIRS` (D8, AU-S6-11)                                | «una columna casi vacía no se evalúa»                                                                                                                                   |
+| 61  | Precio sin la columna plantada entrena sin aviso (AU-S6-22)       | «precio SIN la columna plantada»                                                                                                                                        |
+| 62  | Recuento del export (AU-S6-06)                                    | «se recuentan desde el repo» (expected 13 to be 14)                                                                                                                     |
+| 63  | «Estimaciones (1 fila)» (AU-S6-36)                                | «una sola fila»                                                                                                                                                         |
+| 64  | «escrito con 1 decimal» (AU-S6-36)                                | «el objetivo en train»                                                                                                                                                  |
+| 65  | Espacio no separable antes de % (AU-S6-37)                        | «el MISMO veredicto que la pantalla»                                                                                                                                    |
+| 66  | Miembro lineal = baseline lineal (AU-S6-39)                       | «train-regresión] detectó 35 de 36»                                                                                                                                     |
+| 67  | Identificadores en una frase (AU-S6-40)                           | «en UNA frase»                                                                                                                                                          |
+| 68  | `estimateSummary` (AU-S6-41)                                      | «mediana par»                                                                                                                                                           |
+| 69  | Banner de fuga en un solo sitio (AU-S6-42)                        | los dos tests «sospechoso», binario y de regresión, con UNA mutación                                                                                                    |
+| 70  | e2e: el foco va a la respuesta (AU-S6-04), build de producción    | `toBeFocused` en `tarea-ambigua.spec.ts:30`, móvil y escritorio; verde 2 de 2 al restaurar                                                                              |
+| 71  | e2e: axe del diálogo de la ficha al estimar (AU-S6-17)            | `color-contrast` (1,27:1) en la llamada nueva `regresion.spec.ts:80`, no en las de antes; verde 2 de 2                                                                  |
+| 72  | e2e: axe del resumen del import al estimar (AU-S6-17)             | `color-contrast` en la llamada nueva `regresion-score.spec.ts:61`, no en la final; verde 2 de 2                                                                         |
+| 73  | Un valor que se escribiría 0 no decide los decimales (capturas)   | «un valor que se escribiría 0 no decide los decimales» y la franja «±MAE (0 USD)»; verde 30 de 30 (el primer verde lo rechazó mi `--minimo-tests 32`; se rehízo con 30) |
+| 74  | Margen izquierdo según el rótulo más largo (capturas)             | «más margen a la izquierda»; verde 30 de 30 (mismo rehacer)                                                                                                             |
+| 75  | El eje horizontal se rotula salteado (capturas), en el componente | «el horizontal salteado»; verde 30 de 30 (mismo rehacer)                                                                                                                |
+| 76  | Margen derecho para medio rótulo (capturas)                       | «expected 12 to be greater than or equal to 25.2»; verde 30 de 30                                                                                                       |
 
 **Observación (no es hallazgo de la auditoría):** una corrida completa de vitest dio 2 fallas por
 tiempo (`ficha-level2` y `start-import` «versiones distintas») con la máquina cargada; aisladas
 pasaron 3 de 3 y la suite completa, 3 de 3 seguidas. Se vigila en las corridas siguientes y en la CI.
 
-### Pendiente de la Fase 2
+### La pasada de capturas del cierre encontró dos defectos (pagados)
 
-- **Textos y documentos:** AU-S6-23 (manual: «Compiten 11» y el Baseline del diccionario) · 24 (guía
-  :127 y el texto de D4 en esta bitácora; el JSDoc de `eda.ts` ya está) · 25 (D10 = AC2 como etiqueta y
-  D11 = desviaciones menores, en `## Desviación del plan`, junto con D8 y D9) · 27 (ADR 013 :45 y :106;
-  ADR 014 :49 y :61-63) · 28 (ADR 014: los campos documentales del manifiesto) · 29 (ADR 014 §2: las
-  formas toleran claves extra) · 35 (manual :333 sin «por ahora»).
-- **AU-S6-43:** marcas del gráfico de 10–11 px a 12 px (`PredichoVsReal.tsx`).
-- **Cierre de la Fase 2:** e2e sobre el build de producción (incluye los `axeBothThemes` nuevos de
-  AU-S6-17 y el foco con teclado de AU-S6-04) · integración con Pyodide real (el chequeo del miembro
-  lineal corre sobre datos reales) · pasada de capturas `capturas-s6.mjs` leída como imagen (franja y
-  marcas: segunda vuelta, «maquetado, no visto») · segunda pasada de la casilla 4 sobre el diff de la
-  Fase 2 y sus frases hermanas · push + `gh pr checks 17`.
-- **Después:** `/deploy-check` (re-medir pruebas, e2e y cobertura del export; `sprints_cerrados` 6
-  en el commit del summary) → summary en el PR con la deuda de D8 (fuga binaria por clase → S7).
+Al leer como imagen el gráfico con cifras de seis dígitos (ejemplo de precios, que la pasada de
+siempre no encuadraba: su captura de la fuga solo recorta el banner), aparecieron dos defectos que
+no estaban en la auditoría:
+
+- **Los rótulos del gráfico se pisaban.** Con «500,000», los del eje vertical quedaban encima de su
+  título y los del horizontal se tocaban. Ya pasaba con 10 px; los 12 px de AU-S6-43 lo empeoraron.
+  Ahora los márgenes salen del rótulo más largo (`leftMargin`, mínimo 64; `rightMargin`, mínimo 12)
+  y el eje horizontal se rotula una de cada k marcas si se tocarían (`labelEvery`). Medido con
+  `getBoundingClientRect` en el build de producción a 360 px: ningún rótulo solapa ni sale del
+  dibujo, en precios y en consumo. Consumo queda idéntico (64 y 12).
+- **Seis decimales en toda la liga con la fuga plantada.** La recta se equivoca por ~1e-11 y, como
+  `quantityDecimals` toma las cifras significativas del valor más pequeño, la tabla decía
+  «72,918.000000 USD» y la franja «±MAE (0.000000 USD)». Ahora un valor que de todos modos se
+  escribiría 0 (menos de medio sexto decimal) no decide: «672.7 USD», «±MAE (0 USD)».
+
+Ambos son segunda vuelta visual: «maquetado, no visto», y su veredicto va al gate ⭐ del ciclo.
+
+### Segunda pasada de la casilla 4 (sobre el diff de la Fase 2 y sus frases hermanas)
+
+Barrido por promesa aplazada sobre las líneas que añadió la Fase 2 (`cc547c7..HEAD`): sin frases
+nuevas caducadas. Las coincidencias son prosa de gates, esta bitácora y pruebas que exigen que la
+promesa NO esté. Frases hermanas de los ajustes:
+
+- **Caducada y corregida:** la prueba G7 de la guía (`GUIA:424`) citaba el copy viejo «Por ahora,
+  la narración con IA solo cubre…», que AU-S6-35 cambió. Ahora cita el actual.
+- **Siguen ciertas:**
+  - `task.notYet` («llega en una próxima versión. Por ahora, elige…»): la multiclase llega en el
+    S7, y el auditor A ya la había juzgado así;
+  - `GUIA:123` («por ahora 8: 4 del S5 y 4 del S6»): es la cuenta acumulada de hoy;
+  - «liga de 11 modelos» (manual :480 y export): es el roster, y la red neuronal se puede forzar en
+    el Nivel 2;
+  - `modelcard.method.baselines`: solo la usa la rama binaria; la de estimar usa
+    `baselinesQuantity`.
+- **Del gráfico:** `design-system.md` decía «marcas mono 10 px». Ahora dice 12 px y la regla de los
+  márgenes; el ADR 013 §7 suma el piso de cero de los decimales.
+
+### Cierre de la Fase 2: los gates sobre el árbol completo (2026-10-04)
+
+| Gate                                   | Resultado                                                                                                                                                                                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| typecheck · lint                       | 0 errores · limpio                                                                                                                                                                                                                                           |
+| unit con cobertura                     | 523 de 523 (47 archivos); total 93,24 % de líneas · `engine/` 98,08 % · `contract.ts` 99,37 %                                                                                                                                                                |
+| integración con Pyodide real           | 66 de 66 (7 archivos), con el miembro lineal = baseline lineal sobre datos reales. Carnadas TS → Python: regresión 9 de 9, binaria 16 de 16                                                                                                                  |
+| carnadas Python → TS y manifiesto      | regresión 36 · 6 · 4 · 4 · 12, todas detectadas; binarias intactas 27 · 6 · 5 · 6 · 5 · 16                                                                                                                                                                   |
+| e2e sobre el build de producción       | 44 de 44, dos veces: antes y después de los arreglos de la pasada de capturas (la segunda, con el gráfico final)                                                                                                                                             |
+| pasada de capturas (`capturas-s6.mjs`) | 54 encuadres + 2 del gráfico de precios; los del gráfico, la liga y la ficha leídos como imagen. 32 de 32 sin desplazamiento lateral, la ficha cabe en la ventana 4 de 4, y los rótulos del gráfico, medidos, no se solapan ni se cortan (precios y consumo) |
+| demos en rojo de la Fase 2             | #29 a #76, todas con `demo-rojo.sh` y `--debe-nombrar`                                                                                                                                                                                                       |
+
+La integración corrió antes de los arreglos de la pasada de capturas, pero no importa
+`quantity.ts` ni `scatter.ts` (son de la UI), así que su resultado vale para el árbol final.
+
+### Después
+
+`/deploy-check` (re-medir pruebas, e2e y cobertura del export; `sprints_cerrados` 6 en el commit
+del summary) → summary en el PR con la deuda de D8 (fuga binaria por clase → S7).
 
 ### CI de la Fase 2
 

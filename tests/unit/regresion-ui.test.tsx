@@ -45,7 +45,17 @@ import {
   quantityDecimals,
   withUnit,
 } from "@/lib/quantity";
-import { insideBandShare, niceTicks, scatterDomain } from "@/lib/scatter";
+import {
+  insideBandShare,
+  labelEvery,
+  leftMargin,
+  MIN_LEFT_MARGIN,
+  MIN_RIGHT_MARGIN,
+  niceTicks,
+  rightMargin,
+  scatterDomain,
+  TICK_CHAR_WIDTH,
+} from "@/lib/scatter";
 import { buildScoredCsv, formatEstimates } from "@/lib/scored-csv";
 import { useExperiment, type ModelMeta } from "@/lib/useExperiment";
 import { useNarration } from "@/lib/useNarration";
@@ -83,7 +93,15 @@ describe("cifras en unidades (R9)", () => {
     expect(quantityDecimals([0.42, 12])).toBe(3);
     expect(quantityDecimals([158_912, 201_334])).toBe(0);
     expect(quantityDecimals([0, Number.NaN])).toBe(0);
-    expect(quantityDecimals([1e-12])).toBe(6); // el tope del contrato
+    expect(quantityDecimals([1e-5])).toBe(6); // el tope del contrato
+  });
+
+  it("un valor que se escribiría 0 no decide los decimales (fuga plantada)", () => {
+    // La recta con la fuga plantada se equivoca por ~1e-11: antes ponía seis
+    // decimales a toda la liga («72,918.000000 USD»).
+    expect(quantityDecimals([1e-11, 672.66, 72_918])).toBe(0);
+    expect(quantityDecimals([1e-11])).toBe(0);
+    expect(formatQuantity(1e-11, quantityDecimals([1e-11, 672.66]))).toBe("0");
   });
 
   it("punto decimal y miles con coma; la unidad no se separa del número", () => {
@@ -113,6 +131,46 @@ describe("geometría del gráfico (P6)", () => {
     expect(scatterDomain({ real: [5], predicted: [5], n_total: 1 })).toEqual([
       3.92, 6.08,
     ]);
+  });
+
+  it("cifras largas: más margen a la izquierda y el eje horizontal rotulado salteado", () => {
+    expect(leftMargin(["200", "300"])).toBe(MIN_LEFT_MARGIN);
+    const long = ["100,000", "500,000"];
+    const margin = leftMargin(long);
+    // El rótulo (que termina 6 unidades antes del eje) empieza después del
+    // título girado, que ocupa hasta ~18.
+    expect(margin - 6 - 7 * TICK_CHAR_WIDTH).toBeGreaterThanOrEqual(22);
+    // A la derecha, cabe medio rótulo: el de una marca justo en el borde no se corta.
+    expect(rightMargin(["200", "300"])).toBe(MIN_RIGHT_MARGIN);
+    expect(rightMargin(long)).toBeGreaterThanOrEqual((7 * TICK_CHAR_WIDTH) / 2);
+    expect(labelEvery(["200"], 61)).toBe(1);
+    expect(labelEvery(long, 48.8)).toBe(2);
+    expect(labelEvery(long, 0)).toBe(1);
+  });
+
+  it("el gráfico con precios rotula el eje vertical entero y el horizontal salteado", () => {
+    const prices = {
+      real: [60_000, 500_000],
+      predicted: [60_000, 500_000],
+      n_total: 2,
+    };
+    const { container } = ui(
+      <PredichoVsReal
+        points={prices}
+        mae={1e-11}
+        unit={{ symbol: "USD" }}
+        column="precio_usd"
+      />,
+    );
+    const marks = [...container.querySelectorAll("svg text.font-mono")].map(
+      (el) => el.textContent,
+    );
+    // Cinco marcas en el vertical; en el horizontal, una de cada dos.
+    expect(marks.filter((m) => m === "100,000")).toHaveLength(2);
+    expect(marks.filter((m) => m === "200,000")).toHaveLength(1);
+    expect(marks.filter((m) => m === "500,000")).toHaveLength(2);
+    // Y la franja de la fuga plantada no presume seis decimales.
+    expect(screen.getByText(/±MAE \(0 USD\)/)).toBeInTheDocument();
   });
 });
 

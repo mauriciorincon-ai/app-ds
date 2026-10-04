@@ -9,10 +9,15 @@ import type { TargetUnit } from "@/workers/protocol";
 /** Cifras significativas del valor más pequeño de un grupo que se compara. */
 export const QUANTITY_SIG_DIGITS = 3;
 
+/** Lo que redondea a 0 con el tope de decimales: para la pantalla, es cero. */
+const ZERO_BELOW = 0.5 * 10 ** -TARGET_DECIMALS_MAX;
+
 /**
  * Decimales para mostrar JUNTOS varios valores (p. ej. el MAE del modelo y el del
  * baseline): los que necesita el más pequeño para tener 3 cifras significativas,
- * entre 0 y el tope del contrato.
+ * entre 0 y el tope del contrato. Un valor que de todos modos se escribiría 0 no
+ * decide: con una fuga plantada el MAE de la recta es ~1e-11, y antes ponía seis
+ * decimales a toda la liga («72,918.000000 USD»; pasada de capturas del cierre del S6).
  */
 export function quantityDecimals(
   values: readonly number[],
@@ -20,7 +25,7 @@ export function quantityDecimals(
 ): number {
   const sizes = values
     .map((v) => Math.abs(v))
-    .filter((v) => v > 0 && Number.isFinite(v));
+    .filter((v) => v >= ZERO_BELOW && Number.isFinite(v));
   if (sizes.length === 0) return 0;
   const smallest = Math.min(...sizes);
   const decimals = sig - 1 - Math.floor(Math.log10(smallest));

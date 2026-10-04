@@ -4,6 +4,9 @@ import { useT } from "@/i18n/use-translation";
 import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
 import {
   insideBandShare,
+  labelEvery,
+  leftMargin,
+  rightMargin,
   niceTicks,
   scatterDomain,
   tickStep,
@@ -18,11 +21,9 @@ import type { PredVsReal, TargetUnit } from "@/workers/protocol";
 // sobre TODO el test) la pone RegressionDetail debajo del gráfico.
 
 const SIZE = { width: 340, height: 300 };
-const MARGIN = { top: 10, right: 12, bottom: 44, left: 64 };
-const PLOT = {
-  width: SIZE.width - MARGIN.left - MARGIN.right,
-  height: SIZE.height - MARGIN.top - MARGIN.bottom,
-};
+// Los márgenes laterales salen de los rótulos (`leftMargin`, `rightMargin`):
+// cifras largas, más margen.
+const MARGIN = { top: 10, bottom: 44 };
 
 export function PredichoVsReal({
   points,
@@ -40,10 +41,18 @@ export function PredichoVsReal({
   const [lo, hi] = scatterDomain(points);
   const ticks = niceTicks(lo, hi, 5);
   const tickDecimals = quantityDecimals([tickStep(ticks)], 1);
+  const labels = ticks.map((tick) => formatQuantity(tick, tickDecimals));
+  const left = leftMargin(labels);
+  const right = rightMargin(labels);
+  const plot = {
+    width: SIZE.width - left - right,
+    height: SIZE.height - MARGIN.top - MARGIN.bottom,
+  };
+  const every = labelEvery(labels, (tickStep(ticks) / (hi - lo)) * plot.width);
   const maeText = withUnit(formatQuantity(mae, quantityDecimals([mae])), unit);
-  const x = (v: number) => MARGIN.left + ((v - lo) / (hi - lo)) * PLOT.width;
+  const x = (v: number) => left + ((v - lo) / (hi - lo)) * plot.width;
   const y = (v: number) =>
-    MARGIN.top + PLOT.height - ((v - lo) / (hi - lo)) * PLOT.height;
+    MARGIN.top + plot.height - ((v - lo) / (hi - lo)) * plot.height;
   const axisUnit = unit.symbol ?? column;
   const shown = points.real.length;
   const inside = Math.round(insideBandShare(points, mae) * 100);
@@ -66,46 +75,48 @@ export function PredichoVsReal({
         <defs>
           <clipPath id="pvr-plot">
             <rect
-              x={MARGIN.left}
+              x={left}
               y={MARGIN.top}
-              width={PLOT.width}
-              height={PLOT.height}
+              width={plot.width}
+              height={plot.height}
             />
           </clipPath>
         </defs>
 
         {/* Rejilla y marcas: los dos ejes comparten rango (y = x es la diagonal). */}
-        {ticks.map((tick) => (
+        {ticks.map((tick, i) => (
           <g key={tick} className="text-ink-muted">
             <line
               x1={x(tick)}
               x2={x(tick)}
               y1={MARGIN.top}
-              y2={MARGIN.top + PLOT.height}
+              y2={MARGIN.top + plot.height}
               className="stroke-hairline"
             />
             <line
-              x1={MARGIN.left}
-              x2={MARGIN.left + PLOT.width}
+              x1={left}
+              x2={left + plot.width}
               y1={y(tick)}
               y2={y(tick)}
               className="stroke-hairline"
             />
+            {i % every === 0 && (
+              <text
+                x={x(tick)}
+                y={MARGIN.top + plot.height + 14}
+                textAnchor="middle"
+                className="fill-current font-mono text-[12px]"
+              >
+                {labels[i]}
+              </text>
+            )}
             <text
-              x={x(tick)}
-              y={MARGIN.top + PLOT.height + 14}
-              textAnchor="middle"
-              className="fill-current font-mono text-[12px]"
-            >
-              {formatQuantity(tick, tickDecimals)}
-            </text>
-            <text
-              x={MARGIN.left - 6}
+              x={left - 6}
               y={y(tick) + 4}
               textAnchor="end"
               className="fill-current font-mono text-[12px]"
             >
-              {formatQuantity(tick, tickDecimals)}
+              {labels[i]}
             </text>
           </g>
         ))}
@@ -168,7 +179,7 @@ export function PredichoVsReal({
         </g>
 
         <text
-          x={MARGIN.left + PLOT.width / 2}
+          x={left + plot.width / 2}
           y={SIZE.height - 6}
           textAnchor="middle"
           className="fill-current text-[12px] text-ink-muted"
@@ -176,7 +187,7 @@ export function PredichoVsReal({
           {t("results.regression.chart.axisReal")} ({axisUnit})
         </text>
         <text
-          transform={`translate(13 ${MARGIN.top + PLOT.height / 2}) rotate(-90)`}
+          transform={`translate(13 ${MARGIN.top + plot.height / 2}) rotate(-90)`}
           textAnchor="middle"
           className="fill-current text-[12px] text-ink-muted"
         >
