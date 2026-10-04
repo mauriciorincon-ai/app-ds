@@ -238,6 +238,59 @@ usuario: un tinte sutil no comunica), y todo botón de acción lleva su icono de
 - **Motion:** `motion-reduce:transition-none` en botones, zonas de carga y tarjetas de ejemplo — la
   regla «respeta prefers-reduced-motion» ahora la vigila un e2e con opacidad efectiva medida.
 
+### Añadidos Sprint 006 — estimar una cantidad (mismos tokens, cero valores nuevos; ADR 013)
+
+Miradas de FORMA M1 (Resultados de regresión) y M2 (la pregunta de la columna ambigua),
+aprobadas por el usuario el 2026-10-04 con la preview abierta.
+
+- **TaskCard — cantidad y pregunta:**
+  - **Cantidad:** con un objetivo numérico dice _«Vas a estimar una cantidad, en kWh…»_ (✓
+    `positive`). La unidad sale de una tabla CERRADA de sufijos del nombre (`_kwh`, `_usd`…). Sin
+    sufijo conocido no se inventa: _«…en las unidades de «columna»»_.
+  - **Columna ambigua** (pocos números distintos): `role="group"` con la pregunta _«¿«columna» guarda
+    categorías o una cantidad?»_, marcada con `?` en `accent` y franja `border-l-4 accent`.
+  - **Las dos respuestas:** botones de ancho completo (44 px mínimo, icono de trazo a la izquierda:
+    `ruler` para cantidad, `tag` para categorías) con su consecuencia en `text-xs ink-muted`.
+  - **La sugerida:** borde `accent` + `accent/5` + **«★ Sugerida»** (símbolo + texto, nunca solo
+    color).
+  - **Respondida:** la tarjeta dice _«Respondiste: …»_, la tarea que resulta, y ofrece «Cambiar la
+    respuesta» (ghost + `retry`).
+- **VerdictCard** (compartida por las dos tareas): el banner jerárquico del S1 extraído. Al estimar,
+  el detalle va **en unidades**: _«En promedio se equivoca por ±33.5 kWh; una regresión lineal se
+  equivoca por ±43.8 kWh: un 23 % menos de error.»_
+  - El rival es el mejor de dos baselines: la **mediana** o la **lineal**.
+  - La lineal es baseline Y miembro: el titular «La liga no encontró nada mejor que la regresión
+    lineal de referencia» aparece SOLO si empata. «NO supera» nunca se tapa.
+- **Métricas de regresión:** cuatro MetricTile (MAE · RMSE · R² · MedAE; `grid-cols-2` en móvil,
+  `sm:grid-cols-4`) + la línea «cuál mirar y por qué» en prosa `ink-muted`.
+- **Cifras en unidades (R9):** punto decimal y miles con coma, como el resto de la app (no
+  dependen del idioma). Llevan 3 cifras significativas del valor más chico del grupo que se compara
+  (el modelo y el baseline salen con los mismos decimales). Entre el número y la unidad va un
+  **espacio no separable**: «33.5 kWh» nunca se parte en dos líneas.
+- **PredichoVsReal** (SVG sin librería, en Resultados, fuera del LCP) — «Estimado frente a real,
+  en el conjunto de prueba»:
+  - **Ejes:** real en horizontal, estimado en vertical, mismo rango en los dos. Rejilla `hairline`,
+    marcas mono 10 px con paso redondo (1·2·5 × 10ⁿ), rótulo de eje con la unidad.
+  - **La diagonal** y = x: línea continua `ink`, 1.5 px.
+  - **La franja ±MAE:** relleno `accent/10` con bordes punteados `accent/60` (4 3).
+  - **Los puntos cambian de FORMA, no solo de color:** disco relleno `accent` dentro de la franja;
+    anillo `caution` sobre `surface` fuera.
+  - **Leyenda** en HTML con una muestra dibujada de cada elemento.
+  - **Accesibilidad:** `role="img"` con un nombre que describe el gráfico y cuántos de cada 100
+    quedan dentro de la franja. Si la muestra es menor que la prueba (tope 200), se dice.
+  - **El equivalente en texto** va debajo, sobre TODA la prueba: tres frases (dónde cae la mitad del
+    error, el 90 %, hacia dónde se inclina) y una tabla de percentiles del error con signo
+    (estimado − real).
+- **LeagueTable — menor es mejor:** con el MAE la tabla ordena de menor a mayor, la banda del error
+  estándar suma y una línea ▼ lo dice (_«En esta tabla, menor es mejor…»_). Las cifras van en
+  unidades. El resto, igual que el S5.
+- **WhySection — sin IA al estimar:** las direcciones se leen contra la cantidad (_«▲ a mayor
+  valor, mayor «consumo_kwh»»_). El bloque de IA se reemplaza por una línea franca en caja `sunken`
+  (no hay botón que no haría nada); el texto estándar sí está.
+- **ScoreScreen — estimar:** la columna nueva es `<objetivo>_estimado` con los decimales del
+  objetivo, sin probabilidad (se dice por qué). El mosaico de clases se reemplaza por tres
+  MetricTile: mínimo · mediana · máximo.
+
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).
@@ -246,7 +299,8 @@ usuario: un tinte sutil no comunica), y todo botón de acción lleva su icono de
    **SanitationBlock** y el **EdaBlock** lo enmarcan.
 3. **Entrenamiento** → el progreso honesto (qué modelo, en qué fase); en el Nivel 2, cancelar.
 4. **Resultados** → el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
-   métricas, matriz y advertencias lo sostienen.
+   métricas, matriz y advertencias lo sostienen. Al estimar (S6), el veredicto va en unidades y el
+   **PredichoVsReal** ocupa el lugar de la matriz.
 5. **Error** → el mensaje llano + la acción de recuperación.
 6. **Usar el modelo (S3)** → el **NoveltyPanel** antes de descargar; la descarga lo sostiene.
    Encabezado estático (candidato LCP, patrón lcp-nace-estatico).

@@ -12,14 +12,14 @@
     "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
   },
   "schema_version": "1.0.0",
-  "actualizado": "2026-08-20",
+  "actualizado": "2026-10-04",
   "app": {
     "slug": "ds",
     "nombre": "Probeta DS",
-    "ciclo": "H1",
+    "ciclo": "H2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 4,
+    "sprints_cerrados": 5,
     "version_repo": "0.1.0"
   },
   "promesa": {
@@ -29,7 +29,7 @@
     "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad."
   },
   "funcionalidades": {
-    "total": 33,
+    "total": 35,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
     "descartadas": [],
     "grupos": [
@@ -42,7 +42,7 @@
           {
             "id": "V1",
             "nombre": "Eliges qué predecir",
-            "que_hace": "Seleccionas la columna objetivo, que debe tener exactamente dos categorías (sí/no, 0/1, aprobado/rechazado).",
+            "que_hace": "Seleccionas la columna objetivo: dos categorías (sí/no, 0/1, aprobado/rechazado) o, desde el Sprint 006, una cantidad (un precio, un consumo, un tiempo).",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -94,6 +94,18 @@
             "seccion_manual": "La liga honesta"
           },
           {
+            "id": "V11",
+            "nombre": "Estimar una cantidad, con el error en sus unidades",
+            "que_hace": "Una liga de 11 modelos que estiman un número; el veredicto dice cuánto se equivoca en promedio en las unidades de la columna, contra adivinar la mediana o una regresión lineal, con el gráfico estimado frente a real.",
+            "seccion_manual": "Estimar una cantidad"
+          },
+          {
+            "id": "V12",
+            "nombre": "¿Categorías o una cantidad? Te lo pregunta",
+            "que_hace": "Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada, y deja cambiar la respuesta.",
+            "seccion_manual": "Estimar una cantidad"
+          },
+          {
             "id": "V10",
             "nombre": "Nuevo experimento",
             "que_hace": "Un botón devuelve la app al inicio para volver a empezar.",
@@ -115,7 +127,7 @@
           },
           {
             "id": "D2",
-            "nombre": "Tres ejemplos incluidos",
+            "nombre": "Cinco ejemplos incluidos",
             "que_hace": "Datos sintéticos empaquetados para recorrer la app entera sin traer nada propio.",
             "seccion_manual": "El veredicto honesto"
           },
@@ -276,11 +288,11 @@
   "metricas": [
     {
       "clave": "funcionalidades",
-      "etiqueta": "Funcionalidades del H1",
-      "valor": 33,
+      "etiqueta": "Funcionalidades",
+      "valor": 35,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad se descartó en H1."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. El Sprint 006 suma dos (estimar una cantidad y la pregunta de la columna ambigua). Ninguna funcionalidad se descartó."
     },
     {
       "clave": "pantallas",

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Probeta DS — Guía de prueba (v2, acumulativa S1–S5)</title>
+<title>Probeta DS — Guía de prueba (v3, acumulativa S1–S6)</title>
 <style>
   :root {
     --fondo: #fafaf9; --superficie: #ffffff; --tinta: #1c1917; --tinta-suave: #57534e;
@@ -86,8 +86,8 @@
   .origen { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em;
     text-transform: uppercase; border-radius: 99px; padding: 1px 7px; margin-left: 4px; vertical-align: middle;
     border: 1px solid currentColor; }
-  .o-s1, .o-s2, .o-s3, .o-s4 { color: var(--regresion); }
-  .o-s5 { color: var(--nuevo); }
+  .o-s1, .o-s2, .o-s3, .o-s4, .o-s5, .o-hist { color: var(--regresion); }
+  .o-s6 { color: var(--nuevo); }
   .o-h1 { color: var(--regresion); font-weight: 600; }
   .o-mejora { color: var(--mejora); }
   .o-clave { color: var(--clave); font-weight: 800; }
@@ -100,8 +100,8 @@
 <body>
 <div class="wrap">
   <p class="eyebrow">Probeta DS · guía de prueba</p>
-  <h1>Cómo probar Probeta DS — v2 (acumulativa S1–S5)</h1>
-  <p class="chica suave">Esta guía reúne <strong>todas</strong> las pruebas vigentes de la app: las 27 del ciclo H1 (heredadas, con su origen) y las del <strong>Sprint 005 «La liga honesta»</strong>, primero del ciclo H2. Cada prueba dice <strong>qué</strong> hacer, <strong>cómo</strong> y <strong>qué esperar</strong>. Las casillas se guardan en tu navegador (localStorage, una lista nueva por versión).</p>
+  <h1>Cómo probar Probeta DS — v3 (acumulativa S1–S6)</h1>
+  <p class="chica suave">Esta guía reúne <strong>todas</strong> las pruebas vigentes de la app: las 27 del ciclo H1 y las 11 del <strong>Sprint 005 «La liga honesta»</strong> (heredadas, con su origen), y las del <strong>Sprint 006 «Estimar»</strong>, segundo del ciclo H2: la app ya estima una cantidad (bloque G). Cada prueba dice <strong>qué</strong> hacer, <strong>cómo</strong> y <strong>qué esperar</strong>. Las casillas se guardan en tu navegador (localStorage, una lista nueva por versión).</p>
 
   <div class="progreso">
     <span class="num" id="contador">0/0</span>
@@ -120,18 +120,19 @@
       <li><strong>Desarrollo local:</strong> <code>pnpm dev</code> → <a href="http://localhost:3000">localhost:3000</a></li>
     </ul>
     <p class="chica suave" style="margin:2px 0 0"><strong>La URL no vive en este repo</strong> (regla de cero enlaces del pipeline: la producción se muestra, jamás se entrega). La trae la orden de la planeadora y la pegas arriba al momento de probar. Ojo: hay un dominio ajeno de nombre parecido — usa exactamente el que te pasó la orden, no uno que adivines.</p>
-    <p class="chica suave" style="margin:6px 0 0"><strong>¿Poco tiempo?</strong> Filtra por <span class="origen o-clave">⭐ gate H2</span>: son las pruebas que <strong>ninguna automatización puede verificar por ti</strong> (juicio humano, un móvil real) y que se acumulan para el gate del cierre del ciclo H2 — por ahora <strong>4 del S5</strong>, unos <strong>15 minutos</strong>. Las marcadas <span class="origen o-h1">⭐ H1 · corrida</span> fueron el gate del ciclo anterior y ya pasaron; quedan como regresión. El resto lo respaldan los tests automáticos (unit, integración con Pyodide real, e2e ×2 dispositivos sobre el build de producción, axe en ambos temas, Lighthouse).</p>
+    <p class="chica suave" style="margin:6px 0 0"><strong>¿Poco tiempo?</strong> Filtra por <span class="origen o-clave">⭐ gate H2</span>: son las pruebas que <strong>ninguna automatización puede verificar por ti</strong> (juicio humano, un móvil real) y que se acumulan para el gate del cierre del ciclo H2 — por ahora <strong>8: 4 del S5 y 4 del S6</strong>, unos <strong>30 minutos</strong>. Las marcadas <span class="origen o-h1">⭐ H1 · corrida</span> fueron el gate del ciclo anterior y ya pasaron; quedan como regresión. El resto lo respaldan los tests automáticos (unit, integración con Pyodide real, e2e ×2 dispositivos sobre el build de producción, axe en ambos temas, Lighthouse).</p>
   </div>
 
   <div class="kit">
-    <strong>Kit de prueba:</strong> los archivos que usa esta guía están en <a href="kit-de-prueba/">docs/kit-de-prueba/</a> — los 4 datasets de ejemplo (también botones en la app), <a href="kit-de-prueba/clientes-nuevos.csv" download>clientes-nuevos.csv</a> para el paso de puntuar datos nuevos y, desde el S5, <a href="kit-de-prueba/liga-mediana.csv" download>liga-mediana.csv</a> (5.000 filas: el único con Nivel 2 que correr y cancelar). Todo sintético; nada sale de tu navegador.
+    <strong>Kit de prueba:</strong> los archivos que usa esta guía están en <a href="kit-de-prueba/">docs/kit-de-prueba/</a> — los 4 datasets de ejemplo (también botones en la app), <a href="kit-de-prueba/clientes-nuevos.csv" download>clientes-nuevos.csv</a> para el paso de puntuar datos nuevos y, desde el S5, <a href="kit-de-prueba/liga-mediana.csv" download>liga-mediana.csv</a> (5.000 filas: el único con Nivel 2 que correr y cancelar). Desde el S6, para estimar: <a href="kit-de-prueba/consumo-energia.csv" download>consumo-energia.csv</a> (también botón en la app), <a href="kit-de-prueba/consumo-energia-mediano.csv" download>consumo-energia-mediano.csv</a> (5.000 filas, con Nivel 2), <a href="kit-de-prueba/precio-fuga-plantada.csv" download>precio-fuga-plantada.csv</a> (fuga plantada) y <a href="kit-de-prueba/casas-nuevas.csv" download>casas-nuevas.csv</a> (para puntuar, con novedad plantada). Todo sintético; nada sale de tu navegador.
   </div>
 
   <div class="filtros" role="group" aria-label="Filtrar pruebas por origen">
     <button type="button" data-filtro="todo" aria-pressed="true">Ver todo</button>
     <button type="button" data-filtro="clave" aria-pressed="false">⭐ Solo el gate H2</button>
-    <button type="button" data-filtro="s5" aria-pressed="false">Nuevo del S5</button>
-    <button type="button" data-filtro="mejora" aria-pressed="false">Mejorado en S5</button>
+    <button type="button" data-filtro="s6" aria-pressed="false">Nuevo del S6</button>
+    <button type="button" data-filtro="mejora" aria-pressed="false">Mejorado en S6</button>
+    <button type="button" data-filtro="s5" aria-pressed="false">Regresión S5</button>
     <button type="button" data-filtro="s4" aria-pressed="false">Regresión S4</button>
     <button type="button" data-filtro="s3" aria-pressed="false">Regresión S3</button>
     <button type="button" data-filtro="s2" aria-pressed="false">Regresión S2</button>
@@ -187,13 +188,13 @@
     <p class="meta-bloque chica suave">El corazón de la app: ¿el modelo sirve, dicho de frente, contra un baseline? — y qué modelo ganó (S4).</p>
     <p class="donde"><strong>Dónde:</strong> inicio → elegir ejemplo → objetivo → «Entrenar modelos»</p>
     <ul class="pasos">
-      <li data-origen="mejora"><input type="checkbox" id="b1"><div>
-        <label for="b1">Con «Campaña de marketing» y objetivo <strong>«convirtio»</strong>, pulsa <strong>«Entrenar modelos»</strong> y espera el veredicto (la primera carga de Pyodide tarda). <span class="origen o-s1">S1</span> <span class="origen o-mejora">Mejorada en S5</span> <span class="origen o-h1">⭐ H1 · corrida</span></label>
+      <li data-origen="s1"><input type="checkbox" id="b1"><div>
+        <label for="b1">Con «Campaña de marketing» y objetivo <strong>«convirtio»</strong>, pulsa <strong>«Entrenar modelos»</strong> y espera el veredicto (la primera carga de Pyodide tarda). <span class="origen o-s1">S1</span> <span class="origen o-hist">Mejorada en S5</span> <span class="origen o-h1">⭐ H1 · corrida</span></label>
         <p class="esperar"><span class="et">Esperado</span> Banner verde: <strong>«HistGradientBoosting» supera al baseline</strong> — por +0.21 en F1 (0.73 frente a 0.52). Desde el S5 el ganador sale de una liga de 11 modelos elegida por validación cruzada (bloque F). <strong>Tu juicio:</strong> ¿el texto es claro y franco para alguien no técnico?</p>
       </div></li>
 
-      <li data-origen="mejora"><input type="checkbox" id="b2"><div>
-        <label for="b2"><strong>La honestidad del empate.</strong> Inicio → «Rotación de empleados» → objetivo <strong>«renuncio»</strong> → Entrenar. <span class="origen o-s1">S1</span> <span class="origen o-mejora">Mejorada en S5</span> <span class="origen o-h1">⭐ H1 · corrida</span></label>
+      <li data-origen="s1"><input type="checkbox" id="b2"><div>
+        <label for="b2"><strong>La honestidad del empate.</strong> Inicio → «Rotación de empleados» → objetivo <strong>«renuncio»</strong> → Entrenar. <span class="origen o-s1">S1</span> <span class="origen o-hist">Mejorada en S5</span> <span class="origen o-h1">⭐ H1 · corrida</span></label>
         <p class="esperar"><span class="et">Esperado</span> El veredicto <strong>NO infla</strong>. Desde el S5 el titular es <strong>«＝ La liga no encontró nada mejor que la regresión de referencia»</strong>: ganó la regresión logística, que también es el baseline, y empata consigo misma (0.76 frente a 0.76 en AUC). En H1 esta prueba daba «supera» por la suerte de elegir mirando la prueba; ahora lo dice de frente.</p>
         <p class="mal"><span class="et">Mal</span> Presume de un modelo que no supera al baseline.</p>
       </div></li>
@@ -203,8 +204,8 @@
         <p class="esperar"><span class="et">Esperado</span> Métricas casi perfectas <strong>+ banner de precaución</strong> «sospechoso» que señala <strong>«monto_recuperado»</strong> como posible fuga. No celebra el número: avisa.</p>
       </div></li>
 
-      <li data-origen="mejora"><input type="checkbox" id="b4"><div>
-        <label for="b4"><strong>Los modelos que compiten.</strong> En cualquier resultado, busca la tabla <strong>«La liga: N modelos»</strong>. <span class="origen o-s4">S4</span> <span class="origen o-mejora">Mejorada en S5</span></label>
+      <li data-origen="s4"><input type="checkbox" id="b4"><div>
+        <label for="b4"><strong>Los modelos que compiten.</strong> En cualquier resultado, busca la tabla <strong>«La liga: N modelos»</strong>. <span class="origen o-s4">S4</span> <span class="origen o-hist">Mejorada en S5</span></label>
         <p class="esperar"><span class="et">Esperado</span> Ya no son dos candidatos: una fila por modelo, ordenadas por validación cruzada, con el ganador marcado <strong>★ + «Ganador (validación cruzada)»</strong> (símbolo relleno + texto, no solo color). <em>Cambio del S5:</em> «No hay selector: el veredicto decide» dejó de ser la regla — ahora puedes elegir otro modelo y queda registrado (prueba F5).</p>
       </div></li>
     </ul>
@@ -243,8 +244,8 @@
         <p class="esperar"><span class="et">Esperado</span> Un documento con datos, partición, método, métricas en prueba, veredicto, chequeo de fuga y explicabilidad.</p>
       </div></li>
 
-      <li data-origen="mejora"><input type="checkbox" id="c6"><div>
-        <label for="c6"><strong>La model card.</strong> En la model card de un dataset sucio, busca la sección de <strong>Saneamiento</strong>, la de <strong>Selección del modelo</strong> y el nombre del modelo. <span class="origen o-s4">S4</span> <span class="origen o-mejora">Mejorada en S5</span></label>
+      <li data-origen="s4"><input type="checkbox" id="c6"><div>
+        <label for="c6"><strong>La model card.</strong> En la model card de un dataset sucio, busca la sección de <strong>Saneamiento</strong>, la de <strong>Selección del modelo</strong> y el nombre del modelo. <span class="origen o-s4">S4</span> <span class="origen o-hist">Mejorada en S5</span></label>
         <p class="esperar"><span class="et">Esperado</span> Trae una sección <strong>«Saneamiento»</strong> con las cifras (duplicados, exclusiones, coerciones), nombra al <strong>modelo elegido</strong>, y desde el S5 una sección <strong>«Selección del modelo»</strong>: cuántos compitieron, con cuántos pliegues de validación cruzada, el criterio (un error estándar), el tiempo y, si elegiste a mano, <strong>«◆ Elegido por ti»</strong> con el ganador de la validación cruzada al lado.</p>
       </div></li>
     </ul>
@@ -305,7 +306,7 @@
       </div></li>
 
       <li data-origen="mejora"><input type="checkbox" id="e4"><div>
-        <label for="e4"><strong>Veredicto de diseño ⭐.</strong> Recorre las pantallas nuevas (informe de saneamiento, alertas EDA y, desde el S5, la tabla de la liga, las tarjetas del encarrilador y la ficha de cada modelo) en <strong>móvil y desktop</strong> — y si tu sistema usa <strong>modo oscuro</strong>, revisa también ese tema. <span class="origen o-s4">S4</span> <span class="origen o-mejora">Mejorada en S5</span> <span class="origen o-h1">⭐ H1 · corrida</span></label>
+        <label for="e4"><strong>Veredicto de diseño ⭐.</strong> Recorre las pantallas nuevas (informe de saneamiento, alertas EDA; desde el S5, la tabla de la liga, las tarjetas del encarrilador y la ficha de cada modelo; desde el S6, los resultados al estimar con su gráfico y la pregunta «¿categorías o una cantidad?») en <strong>móvil y desktop</strong> — y si tu sistema usa <strong>modo oscuro</strong>, revisa también ese tema. <span class="origen o-s4">S4</span> <span class="origen o-hist">Mejorada en S5</span> <span class="origen o-mejora">Mejorada en S6</span> <span class="origen o-h1">⭐ H1 · corrida</span></label>
         <p class="esperar"><span class="et">Esperado</span> Se ven serias, claras y confiables (el tono de la app); táctil cómodo en móvil; nada roto ni apretado en ninguno de los dos temas. <strong>¿Apruebas visualmente el cierre, o qué cambiar?</strong></p>
       </div></li>
 
@@ -322,67 +323,132 @@
     <p class="meta-bloque chica suave">Compiten todos los modelos que tu navegador puede entrenar; se elige con validación cruzada sin mirar la prueba; la honestidad acompaña y etiqueta, no bloquea ni esconde (S5).</p>
     <p class="donde"><strong>Dónde:</strong> configuración y resultados. F7–F8 con <a href="kit-de-prueba/liga-mediana.csv" download>liga-mediana.csv</a>; F8 en un <strong>móvil real</strong>.</p>
     <ul class="pasos">
-      <li data-origen="s5"><input type="checkbox" id="f1"><div>
-        <label for="f1"><strong>Qué tipo de predicción es.</strong> «Rotación de empleados» → abre el selector de objetivo y elige <strong>«edad»</strong>; luego <strong>«renuncio»</strong>. <span class="origen o-s5">Nuevo · S5</span></label>
-        <p class="esperar"><span class="et">Esperado</span> El selector ofrece <strong>todas</strong> las columnas con su tipo («edad · predicción de una cantidad»). Con «edad», una tarjeta dice <strong>«39 números distintos → predicción de una cantidad»</strong>, que esta versión todavía no la entrena, y «Entrenar modelos» queda deshabilitado — la columna no se esconde. Con «renuncio»: <strong>«2 valores distintos → clasificación binaria»</strong>.</p>
+      <li data-origen="mejora"><input type="checkbox" id="f1"><div>
+        <label for="f1"><strong>Qué tipo de predicción es.</strong> «Rotación de empleados» → abre el selector de objetivo y elige <strong>«departamento»</strong>, luego <strong>«edad»</strong> y luego <strong>«renuncio»</strong>. <span class="origen o-s5">S5</span> <span class="origen o-mejora">Mejorada en S6</span></label>
+        <p class="esperar"><span class="et">Esperado</span> El selector ofrece <strong>todas</strong> las columnas con su tipo («edad · predicción de una cantidad»). Con «departamento», la tarjeta dice <strong>«4 categorías distintas → clasificación en varias categorías»</strong>, que esta versión todavía no la entrena, y «Entrenar modelos» queda deshabilitado — la columna no se esconde. Con «edad», <strong>desde el S6 sí se entrena</strong>: «39 números distintos → predicción de una cantidad» y «Vas a estimar una cantidad…», sin unidad reconocida en el nombre. Con «renuncio»: <strong>«2 valores distintos → clasificación binaria»</strong>.</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f2"><div>
-        <label for="f2"><strong>Quién compite.</strong> Con «renuncio», lee la tarjeta <strong>«Quién compite»</strong>; luego prueba «Incumplimiento de crédito» → «incumplio». <span class="origen o-s5">Nuevo · S5</span></label>
+        <label for="f2"><strong>Quién compite.</strong> Con «renuncio», lee la tarjeta <strong>«Quién compite»</strong>; luego prueba «Incumplimiento de crédito» → «incumplio». <span class="origen o-s5">S5</span></label>
         <p class="esperar"><span class="et">Esperado</span> Rotación: <strong>«Nivel 1 · ahora · 13 modelos · unos 4 s»</strong> y <strong>«Fuera · recomendación · 1»</strong>: la red neuronal, porque el dataset tiene 200 filas y necesita al menos 500. Crédito: 11 en el Nivel 1 y 3 fuera — las dos <strong>balanceadas</strong> («tus clases ya están equilibradas (la menor es el 45 %)») y la red neuronal. Cada uno con su razón y la nota «nada se esconde».</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f3"><div>
-        <label for="f3"><strong>La tabla de la liga.</strong> Entrena «renuncio» y lee la tabla <strong>«La liga: 13 modelos»</strong> y la nota al pie. <span class="origen o-s5">Nuevo · S5</span> <span class="origen o-clave">⭐ gate H2</span></label>
+        <label for="f3"><strong>La tabla de la liga.</strong> Entrena «renuncio» y lee la tabla <strong>«La liga: 13 modelos»</strong> y la nota al pie. <span class="origen o-s5">S5</span> <span class="origen o-clave">⭐ gate H2</span></label>
         <p class="esperar"><span class="et">Esperado</span> Arriba, la regla: <em>«La tabla se calcula con validación cruzada: sirve para elegir. El veredicto se calcula con el conjunto de prueba: sirve para creer.»</em> <strong>★ Ganador (validación cruzada)</strong>: la regresión logística; <strong>▲ mejor puntaje</strong>: Naive Bayes; varios <strong>≈ empata con el mejor</strong>. Al pie, por qué ganó el más simple. <strong>Tu juicio:</strong> sin ser científico de datos, ¿entiendes por qué ganó la logística si Naive Bayes tiene el número más alto? ¿Distingues al ganador sin depender del color?</p>
         <p class="mal"><span class="et">Mal</span> El ganador solo se reconoce por un color, o la explicación del pie no se entiende.</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f4"><div>
-        <label for="f4"><strong>Los puntajes de prueba, etiquetados.</strong> Pulsa <strong>«Ver puntajes de prueba (no sirven para elegir)»</strong>, en móvil y en desktop. <span class="origen o-s5">Nuevo · S5</span> <span class="origen o-clave">⭐ gate H2</span></label>
+        <label for="f4"><strong>Los puntajes de prueba, etiquetados.</strong> Pulsa <strong>«Ver puntajes de prueba (no sirven para elegir)»</strong>, en móvil y en desktop. <span class="origen o-s5">S5</span> <span class="origen o-clave">⭐ gate H2</span></label>
         <p class="esperar"><span class="et">Esperado</span> Aparece una advertencia ámbar (⚠ «…si eliges mirándolos, el número del veredicto puede ser optimista») y los puntajes de prueba: en desktop como columna <strong>«Prueba · AUC · no sirve para elegir»</strong>, en móvil como línea «prueba 0.xxx» bajo cada puntaje. La página no se desplaza de lado. <strong>Tu juicio:</strong> ¿queda claro para qué sirven estos números y para qué no?</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f5"><div>
-        <label for="f5"><strong>Elegir otro modelo a mano.</strong> Pulsa <strong>«Elegir»</strong> en Random Forest, espera, y abre «Ver el contenido» de la model card. Después pulsa <strong>«Volver al ganador»</strong>. <span class="origen o-s5">Nuevo · S5</span></label>
+        <label for="f5"><strong>Elegir otro modelo a mano.</strong> Pulsa <strong>«Elegir»</strong> en Random Forest, espera, y abre «Ver el contenido» de la model card. Después pulsa <strong>«Volver al ganador»</strong>. <span class="origen o-s5">S5</span></label>
         <p class="esperar"><span class="et">Esperado</span> Mientras ajusta, el botón dice «Ajustando…» y «Usar el modelo» / «Exportar» esperan. Luego: la fila de Random Forest lleva <strong>◆ Elegido por ti</strong> y «✓ En uso»; el veredicto habla de Random Forest con la línea <strong>«◆ Elegido por ti, no por la validación cruzada. Si lo elegiste mirando la prueba, este número puede ser optimista.»</strong>; la model card dice «◆ Elegido por ti: Random Forest…» y nombra al ganador de la validación cruzada. «Volver al ganador» lo deshace todo.</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f6"><div>
-        <label for="f6"><strong>La ficha de cada modelo.</strong> Pulsa el nombre de varios modelos (llevan el icono ⓘ): el ganador, uno «fuera» (Red neuronal) y, en Baselines, «Clase mayoritaria». Cierra con <strong>Esc</strong>. Repite una en <strong>EN</strong>. <span class="origen o-s5">Nuevo · S5</span> <span class="origen o-clave">⭐ gate H2</span></label>
+        <label for="f6"><strong>La ficha de cada modelo.</strong> Pulsa el nombre de varios modelos (llevan el icono ⓘ): el ganador, uno «fuera» (Red neuronal) y, en Baselines, «Clase mayoritaria». Cierra con <strong>Esc</strong>. Repite una en <strong>EN</strong>. <span class="origen o-s5">S5</span> <span class="origen o-clave">⭐ gate H2</span></label>
         <p class="esperar"><span class="et">Esperado</span> Una ficha con <strong>qué es · cuándo sirve · cuándo no · qué mirar · cuánto cuesta</strong> y qué le pasó en <em>esta</em> liga («★ … ganador por validación cruzada», «puesto 3 de 13», «fuera, porque…», «Baseline del veredicto: no compite en la liga, la juzga»). Esc la cierra y el foco vuelve al nombre. En inglés está redactada en inglés, no traducida palabra por palabra. <strong>Tu juicio:</strong> ¿las fichas te ayudan a decidir, en lenguaje llano?</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f7"><div>
-        <label for="f7"><strong>El Nivel 2 (desktop).</strong> Inicio → sube <a href="kit-de-prueba/liga-mediana.csv" download>liga-mediana.csv</a> → objetivo <strong>«objetivo»</strong> → mira «Quién compite» → Entrenar → en la tarjeta <strong>«Nivel 2: la liga completa»</strong> pulsa «Correr el Nivel 2 (+4)» y deja que termine. <span class="origen o-s5">Nuevo · S5</span></label>
+        <label for="f7"><strong>El Nivel 2 (desktop).</strong> Inicio → sube <a href="kit-de-prueba/liga-mediana.csv" download>liga-mediana.csv</a> → objetivo <strong>«objetivo»</strong> → mira «Quién compite» → Entrenar → en la tarjeta <strong>«Nivel 2: la liga completa»</strong> pulsa «Correr el Nivel 2 (+4)» y deja que termine. <span class="origen o-s5">S5</span></label>
         <p class="esperar"><span class="et">Esperado</span> Antes: <strong>Nivel 1 · 10 modelos</strong> y <strong>Nivel 2 · 4 modelos más</strong>, con su costo. Tras el Nivel 1: la tabla muestra los 4 como «Nivel 2 · pendiente» y la tarjeta estima la liga completa <strong>«unos N s en este equipo»</strong>, con la nota «Calibrado con lo que tardó la corrida anterior.». Corriendo: «Nivel 2 · 14 modelos · unos N s en este equipo» con el modelo en curso y «Cancelar el Nivel 2». Al terminar: <strong>«La liga: 14 modelos»</strong>.</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f8"><div>
-        <label for="f8"><strong>Cancelar en tu móvil.</strong> En un <strong>teléfono real</strong>, repite F7 hasta que el Nivel 2 esté corriendo («Validación cruzada · modelo k de 14») y pulsa <strong>«Cancelar el Nivel 2»</strong>. Después pulsa «Exportar modelo». Anota la estimación que dio la tarjeta y cuánto tardó de verdad el Nivel 1. <span class="origen o-s5">Nuevo · S5</span> <span class="origen o-clave">⭐ gate H2</span></label>
+        <label for="f8"><strong>Cancelar en tu móvil.</strong> En un <strong>teléfono real</strong>, repite F7 hasta que el Nivel 2 esté corriendo («Validación cruzada · modelo k de 14») y pulsa <strong>«Cancelar el Nivel 2»</strong>. Después pulsa «Exportar modelo». Anota la estimación que dio la tarjeta y cuánto tardó de verdad el Nivel 1. <span class="origen o-s5">S5</span> <span class="origen o-clave">⭐ gate H2</span></label>
         <p class="esperar"><span class="et">Esperado</span> Vuelves al resultado anterior con <strong>«Cancelaste el Nivel 2. Sigue vigente el resultado anterior.»</strong> y, unos segundos, «Recuperando el modelo anterior…»; luego Exportar funciona y descarga el modelo del Nivel 1. <strong>Tu juicio:</strong> ¿la estimación fue creíble en tu equipo? ¿cancelar te dejó seguir sin perder nada? (Ninguna automatización corre en tu móvil.)</p>
         <p class="mal"><span class="et">Mal</span> Quedas sin modelo (Exportar deshabilitado para siempre), la app se va a la pantalla de error, o la estimación se equivoca por mucho más del doble.</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f9"><div>
-        <label for="f9"><strong>Incluir un modelo «fuera».</strong> Rotación → «renuncio» → Entrenar → en la tarjeta del Nivel 2 marca <strong>«Red neuronal»</strong> en «Incluir de todos modos» → «Correr el Nivel 2 (+1)». <span class="origen o-s5">Nuevo · S5</span></label>
+        <label for="f9"><strong>Incluir un modelo «fuera».</strong> Rotación → «renuncio» → Entrenar → en la tarjeta del Nivel 2 marca <strong>«Red neuronal»</strong> en «Incluir de todos modos» → «Correr el Nivel 2 (+1)». <span class="origen o-s5">S5</span></label>
         <p class="esperar"><span class="et">Esperado</span> Antes de marcar, el botón dice «Correr el Nivel 2» y está deshabilitado (no hay nada que sumar); al marcar, la razón del encarrilador queda a la vista y la estimación sube. Al terminar: «La liga: 14 modelos», y la red neuronal lleva <strong>«lo incluiste tú (el encarrilador lo dejaba fuera)»</strong>.</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f10"><div>
-        <label for="f10"><strong>Un booster sobrevive la pestaña.</strong> «Campaña de marketing» → «convirtio» → Entrenar → <strong>Elegir LightGBM</strong> → Exportar → recarga → «Cargar modelo guardado» → «Usar este modelo» → puntúa <a href="kit-de-prueba/clientes-nuevos.csv" download>clientes-nuevos.csv</a>. <span class="origen o-s5">Nuevo · S5</span></label>
+        <label for="f10"><strong>Un booster sobrevive la pestaña.</strong> «Campaña de marketing» → «convirtio» → Entrenar → <strong>Elegir LightGBM</strong> → Exportar → recarga → «Cargar modelo guardado» → «Usar este modelo» → puntúa <a href="kit-de-prueba/clientes-nuevos.csv" download>clientes-nuevos.csv</a>. <span class="origen o-s5">S5</span></label>
         <p class="esperar"><span class="et">Esperado</span> El resumen del archivo dice que el modelo es LightGBM; se carga sin re-entrenar y puntúa las 8 filas con predicción y probabilidad.</p>
       </div></li>
 
       <li data-origen="s5"><input type="checkbox" id="f11"><div>
-        <label for="f11"><strong>Un modelo que no da probabilidad.</strong> «Campaña de marketing» → Entrenar → <strong>Elegir Ridge</strong> → «Usar el modelo» → puntúa <code>clientes-nuevos.csv</code> → descarga. <span class="origen o-s5">Nuevo · S5</span></label>
+        <label for="f11"><strong>Un modelo que no da probabilidad.</strong> «Campaña de marketing» → Entrenar → <strong>Elegir Ridge</strong> → «Usar el modelo» → puntúa <code>clientes-nuevos.csv</code> → descarga. <span class="origen o-s5">S5</span></label>
         <p class="esperar"><span class="et">Esperado</span> La pantalla avisa: <strong>«Este modelo decide la clase pero no da una probabilidad, así que la columna de probabilidad no se incluye…»</strong>, y el CSV trae solo la predicción. La app no inventa un número.</p>
       </div></li>
     </ul>
   </section>
 
+  <section class="bloque">
+    <div class="bloque-cabeza"><span class="letra" aria-hidden="true">G</span><h2>Estimar una cantidad</h2></div>
+    <p class="meta-bloque chica suave">Un objetivo numérico entrena la misma liga honesta, y el veredicto dice cuánto se equivoca en las unidades de la columna (S6).</p>
+    <p class="donde"><strong>Dónde:</strong> inicio → «Consumo de energía» (o los archivos del kit: <a href="kit-de-prueba/precio-fuga-plantada.csv" download>precio-fuga-plantada.csv</a>, <a href="kit-de-prueba/consumo-energia-mediano.csv" download>consumo-energia-mediano.csv</a>, <a href="kit-de-prueba/casas-nuevas.csv" download>casas-nuevas.csv</a>). G10 en un <strong>móvil real</strong>.</p>
+    <ul class="pasos">
+      <li data-origen="s6"><input type="checkbox" id="g1"><div>
+        <label for="g1"><strong>La tarea y quién compite.</strong> Inicio → <strong>«Consumo de energía»</strong> → objetivo <strong>«consumo_kwh»</strong>. <span class="origen o-s6">Nuevo · S6</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La tarjeta dice <strong>«195 números distintos → predicción de una cantidad»</strong> y <strong>«Vas a estimar una cantidad, en kWh…»</strong>. «Quién compite»: <strong>Nivel 1 · ahora · 10 modelos · unos 3 s</strong> (lineal, Ridge, Lasso, árbol, vecinos, los tres boosting, Extra Trees y Random Forest) y <strong>Fuera · 1</strong>: la red neuronal (200 filas; necesita al menos 500). «Sin alertas para este objetivo».</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g2"><div>
+        <label for="g2"><strong>El veredicto en unidades.</strong> Pulsa <strong>«Entrenar modelos»</strong> y lee el veredicto y las métricas. <span class="origen o-s6">Nuevo · S6</span> <span class="origen o-clave">⭐ gate H2</span></label>
+        <p class="esperar"><span class="et">Esperado</span> <strong>▲ «Extra Trees» supera al baseline</strong> — <em>«En promedio se equivoca por ±33.5 kWh; una regresión lineal se equivoca por ±43.8 kWh: un 23 % menos de error.»</em> Debajo, MAE · RMSE · R² · MedAE en kWh (R² sin unidad) y la línea «Cuál mirar». <strong>Tu juicio:</strong> sin ser científico de datos, ¿entiendes cuánto se equivoca y contra qué se compara? (La forma la aprobaste en la mirada M1; aquí cuenta la lectura completa.)</p>
+        <p class="mal"><span class="et">Mal</span> Una cifra sin unidad, o un veredicto que no dice contra qué se compara.</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g3"><div>
+        <label for="g3"><strong>La liga cuando menor es mejor.</strong> Lee la tabla, pulsa «Ver puntajes de prueba», y luego <strong>«Elegir»</strong> en Lasso y «Volver al ganador». <span class="origen o-s6">Nuevo · S6</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Arriba: <strong>«▼ En esta tabla, menor es mejor: es el error promedio (MAE) en las unidades del objetivo.»</strong> La tabla va del menor al mayor MAE, en kWh; <strong>★ Extra Trees</strong>; la red neuronal «Fuera» con su razón. La prueba aparece en ámbar («prueba 33.50 kWh» en móvil, columna en desktop). Al elegir Lasso, el veredicto habla de Lasso con «◆ Elegido por ti…»; «Volver al ganador» lo deshace.</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g4"><div>
+        <label for="g4"><strong>El gráfico estimado frente a real.</strong> Mira el gráfico y el texto de debajo, en <strong>móvil y desktop</strong>, y en modo oscuro si lo usas. <span class="origen o-s6">Nuevo · S6</span> <span class="origen o-clave">⭐ gate H2</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La <strong>diagonal</strong> es la estimación perfecta; la <strong>franja</strong> con bordes punteados marca ±MAE (33.5 kWh); los puntos <strong>dentro</strong> son discos rellenos y los de <strong>fuera</strong>, anillos. Debajo, en palabras y en una tabla: entre qué valores cae la mitad de los errores y <em>«9 de cada 10 se equivocan por menos de ±62.7 kWh»</em>. <strong>Tu juicio:</strong> ¿lo lees sin depender del color? ¿El texto dice lo mismo que el gráfico?</p>
+        <p class="mal"><span class="et">Mal</span> Puntos que solo se distinguen por el color, o el gráfico se sale de la pantalla en el móvil.</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g5"><div>
+        <label for="g5"><strong>¿Categorías o una cantidad?</strong> Mismo ejemplo → objetivo <strong>«ocupantes»</strong>. Responde <strong>con el teclado</strong> (Tab hasta «Una cantidad», Enter); luego «Cambiar la respuesta» → «Categorías». <span class="origen o-s6">Nuevo · S6</span> <span class="origen o-clave">⭐ gate H2</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La pregunta <strong>«¿«ocupantes» guarda categorías o una cantidad?»</strong> con dos botones; «Categorías» lleva <strong>★ Sugerida</strong>, y «Entrenar modelos» espera tu respuesta. Con «Una cantidad»: «Respondiste: Una cantidad.», la frase de las unidades de «ocupantes», y se puede entrenar. Con «Categorías»: «llega en una próxima versión», y no se entrena. <strong>Tu juicio:</strong> ¿se entiende qué pasa con cada respuesta?</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g6"><div>
+        <label for="g6"><strong>La fuga plantada al estimar.</strong> Inicio → sube <a href="kit-de-prueba/precio-fuga-plantada.csv" download>precio-fuga-plantada.csv</a> → objetivo <strong>«precio_usd»</strong> → mira las alertas → Entrenar. <span class="origen o-s6">Nuevo · S6</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Antes de entrenar: «Vas a estimar una cantidad, en USD», la alerta <strong>«impuesto_transferencia_usd» predice el objetivo casi a la perfección…</strong> y <strong>«El objetivo está muy sesgado (sesgo 1.1)…»</strong>. Tras entrenar: <strong>⚠ «Métricas casi perfectas — sospechoso»</strong> y la columna nombrada como posible fuga.</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g7"><div>
+        <label for="g7"><strong>Sin IA al estimar.</strong> En los resultados de G2, baja a <strong>«¿Por qué predice así?»</strong>. <span class="origen o-s6">Nuevo · S6</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Las barras de importancia con su dirección contra la cantidad («▲ a mayor valor, mayor «consumo_kwh»»), el texto estándar con las cifras en kWh, y, en lugar del botón «Narrar con IA», la línea <strong>«Por ahora, la narración con IA solo cubre la clasificación en dos categorías…»</strong>. No sale ninguna petición de narración (lo vigila una prueba automática).</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g8"><div>
+        <label for="g8"><strong>La model card al estimar.</strong> Abre «Ver el contenido» de la model card (o descárgala). <span class="origen o-s6">Nuevo · S6</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Una sección <strong>«Estimación»</strong>: la tarea, la unidad (kWh), el objetivo en el entrenamiento (media, desviación, mínimo, mediana, máximo), cómo se reparten los errores y «Narración con IA: no aplica…». La tabla de métricas va en kWh contra <strong>Mediana</strong> y <strong>Regresión lineal</strong>, y el veredicto es el mismo que el de la pantalla. No habla de «clase positiva».</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g9"><div>
+        <label for="g9"><strong>La ficha al estimar.</strong> Pulsa <strong>«Ridge»</strong> en la tabla y <strong>«Mediana»</strong> en Baselines. <span class="origen o-s6">Nuevo · S6</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La ficha se llama <strong>«Regresión Ridge»</strong> (no «Clasificador Ridge») y habla de una recta con freno, sin probabilidad ni AUC, con el párrafo «Al estimar, Ridge compite con su versión sin freno…». La Mediana tiene ficha propia: «Predice siempre el mismo número…».</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g10"><div>
+        <label for="g10"><strong>El Nivel 2 al estimar, en tu móvil.</strong> En un <strong>teléfono real</strong>, sube <a href="kit-de-prueba/consumo-energia-mediano.csv" download>consumo-energia-mediano.csv</a> → objetivo «consumo_kwh» → mira «Quién compite» → Entrenar → «Correr el Nivel 2». Anota la estimación de la tarjeta y lo que tardó de verdad. <span class="origen o-s6">Nuevo · S6</span> <span class="origen o-clave">⭐ gate H2</span></label>
+        <p class="esperar"><span class="et">Esperado</span> <strong>Nivel 1 · 9 modelos · unos 5 s</strong> y <strong>Nivel 2 · 2 modelos más</strong>. El Nivel 2 corre con «Validación cruzada · modelo k de 11» y se puede cancelar. <strong>Tu juicio:</strong> ¿la estimación fue creíble en tu equipo? (Ninguna automatización corre en tu móvil.)</p>
+        <p class="mal"><span class="et">Mal</span> Se cuelga, va a la pantalla de error, o tarda mucho más del doble de lo estimado.</p>
+      </div></li>
+
+      <li data-origen="s6"><input type="checkbox" id="g11"><div>
+        <label for="g11"><strong>Puntuar con «_estimado».</strong> Con el modelo de G2: «Usar el modelo» → carga <a href="kit-de-prueba/casas-nuevas.csv" download>casas-nuevas.csv</a> → descarga. Luego «Exportar modelo» → recarga la página → «Cargar modelo guardado» → «Usar este modelo» → puntúa otra vez. <span class="origen o-s6">Nuevo · S6</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Novedad: «superficie_m2»: 1 valor fuera del rango y «calefaccion»: 1 valor con una categoría nunca vista ⇒ <strong>2 de 8 filas (25%)</strong>. «Estimaciones (8 filas)» con mínimo, mediana y máximo en kWh; la columna <strong>consumo_kwh_estimado</strong>, con un decimal, sin columna de probabilidad («Estimar no da una probabilidad…»). Al importar, el resumen dice <strong>«Estima «consumo_kwh», una cantidad»</strong> y «MAE en prueba: 33.5 kWh».</p>
+      </div></li>
+    </ul>
+  </section>
+
   <div class="promesa">
-    <p style="margin:0"><strong>Repórtame sí o sí:</strong> cualquier <span class="et" style="color:var(--alerta)">Mal</span> que hayas visto; y en particular tu lectura de <strong>la liga</strong> (F3–F4: ¿se entiende por qué ganó quien ganó y para qué no sirve la prueba?), de <strong>las fichas</strong> (F6) y de <strong>cancelar en tu móvil</strong> (F8). Ese juicio se acumula para el gate del cierre del ciclo H2.</p>
+    <p style="margin:0"><strong>Repórtame sí o sí:</strong> cualquier <span class="et" style="color:var(--alerta)">Mal</span> que hayas visto; y en particular tu lectura de <strong>la liga</strong> (F3–F4: ¿se entiende por qué ganó quien ganó y para qué no sirve la prueba?), de <strong>las fichas</strong> (F6), de <strong>cancelar en tu móvil</strong> (F8) y, desde el S6, de <strong>estimar</strong>: el veredicto en unidades (G2), el gráfico sin color (G4), la pregunta de la columna ambigua (G5) y el Nivel 2 en tu móvil (G10). Ese juicio se acumula para el gate del cierre del ciclo H2.</p>
   </div>
 
   <footer>
@@ -391,6 +457,7 @@
     <p class="chica suave"><strong>Regla de la bola de nieve:</strong> esta guía es acumulativa. Contiene <strong>todas</strong> las pruebas vigentes de la app, con el <strong>origen</strong> de cada una (de qué sprint nació y si un sprint posterior la cambió). Una prueba solo se elimina cuando la feature que probaba deja de existir — y se anota abajo.</p>
 
     <p class="eyebrow" style="margin-top:16px">Historial</p>
+    <p class="chica suave"><strong>Sprint 006 (2026-10-04) — «Estimar» · v3 de esta guía:</strong> segundo sprint del ciclo H2. <strong>Nuevo · S6:</strong> bloque G (11 pruebas: la tarea y quién compite, el veredicto en unidades, la liga cuando menor es mejor, el gráfico estimado frente a real, la pregunta «¿categorías o una cantidad?», la fuga plantada al estimar, sin IA al estimar, la model card, la ficha, el Nivel 2 en el móvil y puntuar con «_estimado»). <strong>Mejoradas en S6:</strong> F1 («edad» ya se entrena como cantidad; el caso «todavía no» pasa a «departamento», varias categorías) y E4 (la revisión visual incluye estimar). Las del S5 pasan a regresión («S5»; sus «Mejorada en S5» quedan como historia). <strong>Gate ⭐ H2:</strong> 4 del S6 (G2, G4, G5, G10) + 4 del S5 = 8, diferidas al acumulado del cierre del ciclo H2. <strong>Eliminado:</strong> nada. Kit: <code>casas-nuevas.csv</code> nuevo. Total: 49. Casillas en una lista nueva (<code>guia-ds:s6:</code>).</p>
     <p class="chica suave"><strong>Sprint 005 (2026-10-02) — «La liga honesta» · v2 de esta guía:</strong> primer sprint del ciclo H2. <strong>Nuevo · S5:</strong> bloque F (11 pruebas: tipo de predicción, quién compite, la tabla de la liga, la prueba etiquetada, elegir a mano, fichas, Nivel 2, cancelar, incluir un «fuera», booster que se exporta, modelo sin probabilidad). <strong>Mejoradas en S5:</strong> B1 (ahora gana HistGradientBoosting en una liga de 11), B2 (titular «La liga no encontró nada mejor que la regresión de referencia»), B4 (la liga reemplaza a los dos candidatos y deja de regir «sin selector»), C6 (sección «Selección del modelo» en la model card) y E4 (la revisión visual incluye la liga). <strong>Gate ⭐ H2:</strong> 4 pruebas del S5 (F3, F4, F6, F8), diferidas al acumulado del cierre del ciclo H2 (S5: 4). Las 11 ⭐ del H1 ya se corrieron y quedan como regresión («⭐ H1 · corrida»). <strong>Eliminado:</strong> nada — las 27 pruebas del H1 se heredan. Total: 38. Casillas en una lista nueva (<code>guia-ds:s5:</code>).</p>
     <p class="chica suave"><strong>Hallazgos del gate ⭐, bloque D (2026-08-12):</strong> <strong>A7</strong> nueva — un CSV exportado de Excel (punto y coma + BOM) hacía que la app no reconociera <em>ninguna</em> columna y respondiera «faltan todas»: cierto pero inútil. Ahora nombra el separador y dice cómo arreglarlo. <strong>D2</strong> y <strong>D5</strong> ya no piden editar archivos a mano: el kit trae los tres archivos listos (<code>clientes-nuevos-sin-dispositivo.csv</code>, <code>modelo-ajeno.json</code>, <code>modelo-manipulado.probeta.json</code>). Gate ⭐ sin cambios: 11 pruebas.</p>
     <p class="chica suave"><strong>Validación de cobertura (2026-07-20):</strong> enlaces directos «Dónde» por bloque (preview S4 · producción · kit) y 2 regresiones que faltaban del inventario S1: <strong>A6</strong> (cargar CSV propio por el recuadro de carga) y <strong>E5</strong> (bilingüe ES/EN). E4 ahora pide revisar también el modo oscuro. Gate ⭐ sin cambios: 11 pruebas.</p>
@@ -407,7 +474,7 @@
     var botones = Array.prototype.slice.call(document.querySelectorAll(".filtros button"));
     // Namespace VERSIONADO por sprint: una regresión sin correr jamás aparece
     // marcada por el sprint anterior (regla de la guía acumulativa).
-    var CLAVE = "guia-ds:s5:";
+    var CLAVE = "guia-ds:s6:";
 
     function visibles() {
       return casillas.filter(function (c) {

@@ -1,0 +1,63 @@
+<!-- @dsCard group="Componentes · S6" name="TaskCard — ¿categorías o una cantidad?" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>La pregunta de la columna ambigua — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif; box-sizing: border-box;
+  }
+  .lead { max-width: 68ch; font-size: 14px; color: #586172; margin: 0 0 20px; }
+  .lead h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; color: #14181f; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; }
+  .ask { max-width: 560px; background: #fff; border: 1px solid #e4e4dc; border-left: 4px solid #0e6e6b; border-radius: 6px; padding: 16px; font-size: 14px; margin-bottom: 20px; }
+  .ask .q { font-weight: 600; margin: 0; }
+  .ask .q span { color: #0e6e6b; margin-right: 6px; }
+  .ask .help { color: #586172; margin: 4px 0 12px; }
+  .opt { display: flex; gap: 12px; align-items: flex-start; width: 100%; min-height: 44px; padding: 12px; border: 1px solid #e4e4dc; border-radius: 6px; background: #fff; text-align: left; font: inherit; margin-bottom: 8px; box-sizing: border-box; }
+  .opt.sug { border-color: #0e6e6b; background: rgb(14 110 107 / .05); }
+  .opt b { font-weight: 500; }
+  .opt small { display: block; font-size: 12px; color: #586172; margin-top: 2px; }
+  .star { color: #0e6e6b; font-size: 12px; font-weight: 600; margin-left: 8px; }
+  svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+  .ok { max-width: 560px; display: flex; gap: 10px; align-items: flex-start; border: 1px solid rgb(28 124 74 / .6); border-left: 4px solid #1c7c4a; background: rgb(28 124 74 / .15); border-radius: 6px; padding: 12px; font-size: 14px; }
+  .ok .tick { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: #1c7c4a; color: #fafaf7; font-size: 12px; font-weight: 700; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ghost { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 500; }
+  .ghost svg { width: 16px; height: 16px; margin: 0; }
+</style>
+</head>
+<body>
+  <div class="lead">
+    <h1>TaskCard — la columna ambigua <span class="mono" style="font-size:13px">· S6 · D2</span></h1>
+    Con pocos números distintos la app <b>no adivina</b>: pregunta. Dos respuestas de ancho
+    completo, cada una con su icono de trazo a la izquierda y su consecuencia; la lectura más
+    probable lleva <b>★ + «Sugerida»</b> (símbolo + texto, nunca solo color). Se responde con
+    teclado y se puede cambiar. Aprobada en la mirada M2 (2026-10-04).
+  </div>
+
+  <div class="ask" role="group" aria-labelledby="q">
+    <p class="q" id="q"><span aria-hidden="true">?</span>¿«ocupantes» guarda categorías o una cantidad?</p>
+    <p class="help">Solo 6 números distintos: pueden ser categorías (como una nota del 1 al 5) o una cantidad. Con estos datos no se puede saber; tú conoces la columna.</p>
+    <button class="opt">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="8" width="19" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/></svg>
+      <span><b>Una cantidad</b><small>Se estima el número. El veredicto dice cuánto se equivoca en promedio, en las unidades de la columna.</small></span>
+    </button>
+    <button class="opt sug">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+      <span><b>Categorías</b><span class="star"><span aria-hidden="true">★</span> Sugerida</span><small>Cada número es una clase, como una nota del 1 al 5. Esta versión todavía no entrena varias clases: llega en una próxima versión.</small></span>
+    </button>
+  </div>
+
+  <div class="ok" role="status">
+    <span class="tick" aria-hidden="true">✓</span>
+    <div>
+      <p style="margin:0;font-weight:500">Respondiste: Una cantidad.</p>
+      <p style="margin:4px 0 0">Vas a estimar una cantidad. Su nombre no trae una unidad que la app reconozca, así que las cifras se dirán en las unidades de «ocupantes».</p>
+      <button class="ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Cambiar la respuesta</button>
+    </div>
+  </div>
+</body>
+</html>

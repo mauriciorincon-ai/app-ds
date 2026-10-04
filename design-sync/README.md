@@ -59,7 +59,9 @@ solo aparecen en veredicto/estados, cada uno con un tinte de fondo al 8–12% pa
 `[data-theme]`). Las tarjetas de preview muestran los patrones reales: paleta, tipografía, y los
 componentes canon — con el **VerdictBanner** como pieza jerárquica — más los añadidos de cada
 sprint (narración con importancia, scoring con novedad, saneamiento y, desde S5, la liga, los
-encarriladores y la ficha de cada modelo).
+encarriladores y la ficha de cada modelo; desde S6, **estimar una cantidad** — el veredicto en
+unidades, la liga «menor es mejor», el gráfico estimado frente a real — y la pregunta de la columna
+ambigua).
 
 ## Snippet idiomático
 
