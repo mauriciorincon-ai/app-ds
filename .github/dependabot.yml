@@ -24,6 +24,11 @@ updates:
     ignore:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # app-ds S6 (decisión del usuario, 2026-10-04, PR #15 cerrado): Pyodide viaja DENTRO de cada
+      # modelo exportado (RUNTIME_VERSIONS, src/lib/model-file.ts) y gobierna el aviso de versiones
+      # al importar: se mueve por DECISIÓN, con el runtime re-medido, nunca en el lote semanal. Lo
+      # vigila tests/unit/runtime-pin.test.ts (pin exacto = constante = este ignore).
+      - dependency-name: "pyodide"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

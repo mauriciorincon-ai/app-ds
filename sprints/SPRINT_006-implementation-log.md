@@ -80,6 +80,40 @@ ocurre después de cargar datos.
   `axeBothThemes` (`tests/e2e/axe-temas.ts`) ahora espera a que `document.getAnimations()` no tenga
   nada corriendo antes de medir. Con eso, 2 de 2 en verde, en móvil y en escritorio.
 
+### Dependabot #15: Pyodide se retiene (decisión del usuario, 2026-10-04)
+
+El lote `todo-npm` (#15: react 19.2.4 → 19.3.0, react-dom igual, **pyodide 314.0.2 → 314.0.7**)
+quedó en rojo en `integration`:
+
+> «RUNTIME_VERSIONS (TS) coincide con el runtime real — expected '314.0.7' to be '314.0.2'»
+
+Es el gate funcionando.
+
+- El build copia Pyodide desde `node_modules`, así que el navegador habría corrido 314.0.7.
+- Cada modelo exportado habría seguido declarando 314.0.2.
+- Esa versión gobierna el aviso de versiones al importar. Por eso el S4 la fijó con pin exacto: se
+  mueve por decisión.
+
+El usuario eligió **retener Pyodide** (opción recomendada):
+
+- El #15 se cerró con un comentario que explica el motivo.
+- `.github/dependabot.yml` ahora ignora `pyodide` en todos los tipos de actualización (toma efecto
+  cuando este PR llegue a `main`). React 19.3 vuelve sola en el próximo lote.
+- Pyodide se sube a propósito en el cierre del ciclo H2, con el runtime re-medido.
+- El #14 (GitHub Actions) estaba en verde, 6 de 6: lo mergea el usuario.
+
+**Gate nuevo:** `tests/unit/runtime-pin.test.ts` corre en `quality` y no necesita runtime. Vigila tres
+cosas: pin exacto en `package.json` · `RUNTIME_VERSIONS.pyodide` igual al pin · `ignore` de Pyodide
+en dependabot. Dos rojos, ambos con `demo-rojo.sh`:
+
+| Mutación                                                      | Qué dijo el fallo                                                                                   |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `package.json`: `"pyodide": "314.0.2"` → `"314.0.7"` (el #15) | «package.json pide pyodide 314.0.7 pero los modelos exportados declararían 314.0.2», 1 de 3 en rojo |
+| `dependabot.yml`: quitar `- dependency-name: "pyodide"`       | «falta el ignore de pyodide en .github/dependabot.yml», 1 de 3 en rojo                              |
+
+En los dos casos, al restaurar volvió a 3 de 3 en verde. Antes, este cruce solo lo atrapaba
+`integration`, con Pyodide real y minutos después.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S6-1 · `README.md` dentro de `.claude/commands/` se carga como un comando `/README`.** El kit
