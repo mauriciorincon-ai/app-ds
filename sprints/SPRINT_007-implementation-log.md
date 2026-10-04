@@ -125,6 +125,7 @@ solo vio archivos nuevos.
 | --------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `e9e084b` | constitución + delta del kit | 6 de 6 `success` (`quality`, `integration`, `e2e`, `lighthouse`, Vercel, Vercel Preview Comments). **Primera corrida** de `lighthouse-margen` y de `hook-secretos.test.ts` en `quality`. El margen **avisó**: «/ · largest-contentful-paint mediana 3168 vs presupuesto 3500 (margen 9.5 % < 10 %)». Es un aviso (exit 0), no un rojo, y queda como decisión para el STOP |
 | `77f4c0a` | fixture del S6 + datasets    | 6 de 6 `success`. El margen esta vez: «✓ ninguna mediana a menos del 10 %». Es la bimodalidad de Lighthouse sobre localhost que describe el kit                                                                                                                                                                                                                           |
+| `74b5168` | spike + informe              | 6 de 6 `success` (`gh pr checks 19` y `statusCheckRollup`, run 37240356889). El margen **avisó otra vez**: «/ · largest-contentful-paint mediana 3250 vs presupuesto 3500 (margen 7.1 % < 10 %)», en un push que no toca la landing (solo scripts y documentos). Avisó en 2 de 3 corridas: va a la decisión del STOP                                                      |
 
 ### Spike en el navegador
 
@@ -202,6 +203,104 @@ anexos: `sprints/SPRINT_007-spike-catalogo.md`. Lo que pasó, en orden:
   por consenso» (agrupar).
 
 El servidor de producción de la medición se apagó al terminar.
+
+### Decisiones del usuario en el STOP de la F0 (2026-10-04)
+
+Respuesta literal: «1. Exactitud balanceada (sugerida) 2. 0,01 3. umbral 0,98 4. Consenso
+(sugerida) 5. comparar cada agrupador con lo que él mismo da sobre datos sin estructura. 6. se queda 7. bajarlo en la F3 8. no entiendo la 8».
+
+| #   | Decisión                                                                                                                                                                                              | Desviación del plan                                    |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| 1   | Métrica primaria multiclase: **exactitud balanceada** (F1 macro a la vista)                                                                                                                           | El plan sugería F1 macro; el plan preveía el cambio    |
+| 2   | Empate contra el baseline: **0,01 absoluto**                                                                                                                                                          | —                                                      |
+| 3   | Fuga por clase: **umbral 0,98**, **soporte mínimo 5** de cada lado, **pureza normalizada** en las categóricas, y **la binaria adopta la regla** (D8)                                                  | —                                                      |
+| 4   | Ganador entre agrupadores **por consenso** (el k en el que coinciden más agrupadores; entre ellos, el de mayor puntaje)                                                                               | **Sí: reemplaza la regla de P11** (mayor puntaje)      |
+| 5   | Lectura de agrupar **con la referencia nula** (el mismo agrupador sobre datos sin estructura): «existen» / «frágiles» / «no hay estructura»                                                           | La orden decía «sin baseline»: decidido por el usuario |
+| 6   | Pyodide **se queda en 314.0.2**: sin ADR 018, `runtime-pin.test.ts` sin cambios                                                                                                                       | —                                                      |
+| 7   | El margen del LCP **se baja en la F3**, antes de sumar los botones de ejemplo a la portada                                                                                                            | Trabajo nuevo en la F3                                 |
+| 8   | `AGGLO_MAX_ROWS = 8.000`: por encima, Agglomerative se ajusta sobre una muestra sembrada de 8.000 filas y asigna el resto al grupo más cercano. **Con una nota clara en la app** (pedido del usuario) | La nota es requisito nuevo de la F3                    |
+
+Segunda respuesta, tras la explicación de la 8 y las dos confirmaciones (3 y 5 leídas con la
+sugerencia completa: soporte 5 y pureza normalizada; gap ≥ 0,10 y ARI ≥ 0,7 con R = 10 y f = 0,8):
+«Aprobada tu propuesta pero es importante poner una nota en la app para esa decision y que quede
+claro». Sin corrección de las lecturas de la 3 y la 5: quedan como arriba.
+
+**La nota de la muestra de Agglomerative (requisito de la F3).** Visible sin abrir nada, en ES/EN,
+con símbolo y texto (no solo color), donde se lee el resultado:
+
+- en la fila de Agglomerative de la tabla de agrupadores y, si gana, junto a la lectura: «Ajustado
+  sobre una muestra de 8.000 de tus N filas; las demás se asignaron al grupo más cercano»;
+- con el porqué en llano (la memoria del navegador, para que la pestaña no se cierre en un teléfono)
+  y que los otros tres agrupadores usan todas las filas;
+- en la model card y en el archivo exportado (`assign` con el tamaño de la muestra), en el manual
+  (limitaciones) y en una pregunta de la FAQ. Un e2e y la pasada de capturas la verifican con un
+  dataset de más de 8.000 filas.
+
+## Fase 1 — despacho exhaustivo + motor multiclase + D8
+
+El usuario dijo «continúa» el 2026-10-04 tras las decisiones del STOP de la F0.
+
+### Primer commit: el despacho exhaustivo, sin cambio de conducta (P2, R1)
+
+Hasta el S6, unos 45 sitios de TS y 11 de Python decidían por tarea con «si es numérica, X;
+si no, la binaria». Una tarea nueva habría caído en silencio en la rama binaria. Ahora:
+
+- **`src/engine/despacho.ts`** (nuevo): `byTask`, `matchTask` y `matchByTask`, con tipos
+  mapeados sobre la unión. Qué ramas se exigen lo dice el TIPO de lo despachado: una
+  `TrainTask`, todas; un resultado, las de su unión etiquetada. Cada rama recibe su variante ya
+  estrechada, y una tarea sin rama que llega en runtime falla nombrándola. `taskOf` y
+  `declaredTask` son el único «sin tarea = binaria» de TS (los datos del S5 no la traían).
+- **`src/engine/tarea.ts`**: `SupervisedTask` y `TrainTask` (hoy la misma unión; agrupar llega en
+  la F2). `TRAIN_TASKS` sale de un `Record` completo, no de una lista a mano.
+- **Sitios convertidos**:
+  - motor: `roster.ts` (`memberNameKey`), `eda.ts` (el `switch` pasa a `matchTask`), `experiment.ts`
+    (`prepareRun` despacha a `prepareBinary`/`prepareRegression`);
+  - contrato: `contract.ts` (validadores por tarea con `byTask`; los chequeos propios de cada
+    tarea con `matchByTask`);
+  - archivo y lectura: `model-file.ts` (empaquetar por tarea; el esquema exportado de otra tarea
+    falla), `modelcard.ts`, `useNarration.ts` (la IA solo arma payload en la rama binaria),
+    `useExperiment.ts`;
+  - componentes: `ResultsScreen`, `LeagueTable`, `ScoreScreen`, `StartScreen`, `FichaModelo`,
+    `TaskCard`.
+- **Python** (`pipeline.py`): `_is_regression` se retira. `_by_task(task, ramas)` exige la rama de
+  TODAS las tareas de `_FACTORIES_BY_TASK`; la tarea pedida sin rama es `contract:task` (se mira
+  primero, como pedía AU-S6-03), y una registrada sin ramas falla con `dispatch-incomplete`
+  aunque se pida otra. `_task_of` es el único «sin tarea = binaria» de Python. Las ramas
+  largas pasan a funciones propias (`_binary_target`, `_numeric_target`, `_binary_baselines`,
+  `_regression_baselines`, `_score_binary`, `_score_numeric`).
+- **La binaria conserva su tope de prueba**: `_validate_payload` no tenía mínimo de filas de prueba
+  para la binaria y sigue sin tenerlo (`"binaria": 0`).
+
+**Los gates y sus rojos** (`scripts/demo-rojo.sh`, corridos el 2026-10-04 antes del commit):
+
+| Gate                                                     | Mutación                                                                                              | Rojo (lo que nombró)                                                                                                                                         | Verde al restaurar                    |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| 1 · tipos (`ByTask`)                                     | `despacho.ts`: `readonly [P in K]: T;` → `?: T;`                                                       | `pnpm typecheck`: «tests/unit/despacho.test.ts(37,7) / (39,7): Unused '@ts-expect-error' directive», más dos sitios de producción que invocan una rama posiblemente ausente | `pnpm typecheck` sin errores          |
+| 1 · tipos (`TaskBranches`)                               | `despacho.ts`: las ramas de `matchByTask` opcionales                                                   | «tests/unit/despacho.test.ts(41,7): Unused '@ts-expect-error' directive» (solo la prueba lo vio: ningún sitio de producción falla)                              | `pnpm typecheck` sin errores          |
+| 2 · fuente TS                                            | `modelcard.ts`: `taskOf(result)` → `result.task ?? "binaria"`                                          | «src/lib/modelcard.ts:221 («?? binaria»)»                                                                                                                     | 9 de 9                                |
+| 2 · fuente Python (comparación)                          | `pipeline.py`: `if k > k_max:` → `if ctx["task"] == "binaria" and k > k_max:`                          | «src/lib/ds/pipeline.py:837 (comparación)»                                                                                                                    | 9 de 9                                |
+| 2 · fuente Python (rama faltante)                        | `pipeline.py`: se borra la rama `"numerica"` del `KFold`                                                | «src/lib/ds/pipeline.py:640 escribe [binaria], registradas [binaria, numerica]»                                                                               | 9 de 9                                |
+| 3 · conducta Python (runtime)                            | `pipeline.py`: se quita el chequeo de despacho completo de `_by_task`                                  | La integración nueva «…y rompe también las tareas que SÍ tienen ramas»: la corrida fue «aceptada» en vez de `dispatch-incomplete`                              | 1 prueba (filtrada) en verde          |
+
+**¿Puede fallar siquiera?** Sí: los seis rojos de arriba. El de fuente de Python exige además
+al menos 10 llamadas a `_by_task`, para no probar nada sobre un archivo vacío.
+
+**La conducta del gate 3 para las tareas nuevas** (resultados, liga, puntuar, ficha y model card de
+multiclase y agrupar sin marcas binarias) nace con cada tarea: no hay tarea nueva que probar
+en este commit. Se escribe en el commit del motor multiclase (superficies de `lib/`) y en la F3
+(componentes).
+
+**Cambio esperado en una prueba heredada:** ninguno. La de AU-S6-03 (`regresion.test.ts`) quedó
+en verde sin tocarla, después de mover el chequeo de la tarea pedida antes que el de despacho
+completo. Se le sumó una hermana (la de `dispatch-incomplete`).
+
+**Verde del árbol completo** (2026-10-04, después de los rojos, con los comandos del `ci.yml`):
+
+- `pnpm lint`: sin avisos;
+- `pnpm typecheck`: sin errores;
+- `pnpm test`: 542 de 542 en 50 archivos (533 + las 9 de `despacho.test.ts`);
+- `pnpm test:integration`: 67 pasan y 1 se salta, en 8 archivos (la binaria y la regresión
+  completas, con Pyodide real).
 
 ## Fricciones del kit (SEPARADAS del producto)
 

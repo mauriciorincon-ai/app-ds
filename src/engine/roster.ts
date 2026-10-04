@@ -9,6 +9,7 @@
 // `MEMBER_IDS` sigue siendo el roster de clasificación binaria (el S5 lo usa por
 // nombre); ALL_MEMBER_IDS fija la prioridad GLOBAL y cada roster es una
 // subsecuencia suya (invariante con test), así `byPriority` sirve a las dos.
+import { matchTask } from "@/engine/despacho";
 import type { TrainTask } from "@/engine/tarea";
 import type { Direction } from "@/engine/verdict";
 
@@ -220,10 +221,14 @@ export const REGRESSION_NAMED_IDS = [
 
 /** La clave i18n del nombre largo de un miembro en esa tarea. */
 export function memberNameKey(id: MemberId, task: TrainTask): string {
-  return task === "numerica" &&
-    (REGRESSION_NAMED_IDS as readonly MemberId[]).includes(id)
-    ? `results.candidates.regressionModel.${id}`
-    : `results.candidates.model.${id}`;
+  const shared = `results.candidates.model.${id}`;
+  return matchTask(task, {
+    binaria: () => shared,
+    numerica: () =>
+      (REGRESSION_NAMED_IDS as readonly MemberId[]).includes(id)
+        ? `results.candidates.regressionModel.${id}`
+        : shared,
+  });
 }
 
 /** Ordena (sin duplicados) por prioridad: el orden que Python recibe y no re-deriva. */

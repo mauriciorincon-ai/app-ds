@@ -29,7 +29,8 @@ import {
   detectLeakageContinuous,
   type LeakageColumn,
 } from "@/engine/leakage";
-import { assertNever, type TrainTask } from "@/engine/tarea";
+import { matchTask } from "@/engine/despacho";
+import type { SupervisedTask } from "@/engine/tarea";
 import {
   isNullToken,
   parseNumber,
@@ -69,7 +70,7 @@ export const TARGET_OUTLIER_SHARE = 0.01;
 export function computeEdaAlerts(
   table: CsvTable,
   targetColumn: string,
-  task: TrainTask,
+  task: SupervisedTask,
 ): EdaAlert[] {
   const targetIndex = table.headers.indexOf(targetColumn);
   if (targetIndex < 0) return [];
@@ -80,14 +81,11 @@ export function computeEdaAlerts(
   const labels = rowsWithTarget.map((row) => row[targetIndex]);
   const n = rowsWithTarget.length;
   if (n === 0) return [];
-  switch (task) {
-    case "numerica":
-      return regressionAlerts(table, targetIndex, rowsWithTarget, labels);
-    case "binaria":
-      return binaryAlerts(table, targetIndex, rowsWithTarget, labels);
-    default:
-      return assertNever(task);
-  }
+  return matchTask(task, {
+    binaria: () => binaryAlerts(table, targetIndex, rowsWithTarget, labels),
+    numerica: () =>
+      regressionAlerts(table, targetIndex, rowsWithTarget, labels),
+  });
 }
 
 /**

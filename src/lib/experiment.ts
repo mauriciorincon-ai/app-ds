@@ -19,7 +19,13 @@ import {
 } from "@/engine/encarrilador";
 import { BASELINE_IDS_BY_TASK, type MemberId } from "@/engine/roster";
 import { quantileSplit, stratifiedSplit } from "@/engine/split";
-import { detectTask, resolveTask, type AmbiguousChoice } from "@/engine/tarea";
+import { matchTask } from "@/engine/despacho";
+import {
+  detectTask,
+  isTrainTask,
+  resolveTask,
+  type AmbiguousChoice,
+} from "@/engine/tarea";
 import {
   computeVerdict,
   pickBestBaseline,
@@ -166,17 +172,31 @@ export function prepareRun(
   // S6: E1 decide la tarea; una ambigua necesita la respuesta del usuario (D2).
   const task = resolveTask(detectTask(labels), options.ambiguousChoice);
   if (task === "ambigua") return { ok: false, error: "target-ambiguous" };
-  if (task === "numerica") {
-    return prepareRegression(table, targetColumn, rows, seed, options);
-  }
+  // Una tarea que el motor no entrena (o una columna que no sirve de objetivo).
+  if (!isTrainTask(task)) return { ok: false, error: "target-not-binary" };
+  // S7 (P2): una rama por tarea; la que falte no compila.
+  return matchTask(task, {
+    binaria: () =>
+      prepareBinary(table, targetColumn, rows, labels, seed, options),
+    numerica: () =>
+      prepareRegression(table, targetColumn, rows, seed, options),
+  });
+}
 
+/** Clasificación binaria (S1–S5): estratificada, fuga por AUC de rango y pureza. */
+function prepareBinary(
+  table: CsvTable,
+  targetColumn: string,
+  rows: string[][],
+  labels: readonly string[],
+  seed: number,
+  options: RunOptions,
+): PreparedRun {
+  const targetIndex = table.headers.indexOf(targetColumn);
   if (!isBinaryTarget(labels)) {
     // E1 cuenta valores numéricos («1» = «1.0»); el entrenador, texto. Si E1 ve
     // dos valores, el problema es la notación, y se dice así (AU-S5-10).
-    return {
-      ok: false,
-      error: task === "binaria" ? "target-mixed-notation" : "target-not-binary",
-    };
+    return { ok: false, error: "target-mixed-notation" };
   }
 
   const { numeric, categorical } = selectFeatures(table, targetColumn);

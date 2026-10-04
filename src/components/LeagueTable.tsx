@@ -6,6 +6,7 @@ import {
   type Placement,
   type Routing,
 } from "@/engine/encarrilador";
+import { matchByTask, taskOf } from "@/engine/despacho";
 import { selectOneSe, type MemberId } from "@/engine/roster";
 import {
   METRIC_RULES,
@@ -54,7 +55,7 @@ export function LeagueTable({
   const [showTest, setShowTest] = useState(false);
   const { selection } = result;
   const league: readonly AnyRow[] = result.league;
-  const task = result.task ?? "binaria";
+  const task = taskOf(result);
   const metric = selection.metric;
   const metricName = t(`results.metrics.${metric}`);
   const lower = METRIC_RULES[metric].direction === "lower";
@@ -64,16 +65,16 @@ export function LeagueTable({
     "mae" in m ? m.mae : m[metric as MetricName];
   // Clasificación: 3 decimales (de 0 a 1). Estimar: unidades del objetivo, con
   // los decimales que pide el puntaje más chico de la tabla (R9).
-  const unitDecimals =
-    result.task === "numerica"
-      ? quantityDecimals(
-          league.flatMap((row) => (row.cv ? [row.cv.mean, row.cv.std] : [])),
-        )
-      : 0;
-  const fmt = (v: number) =>
-    result.task === "numerica"
-      ? withUnit(formatQuantity(v, unitDecimals), result.unit)
-      : v.toFixed(3);
+  const fmt: (v: number) => string = matchByTask(result, {
+    binaria: () => (v: number) => v.toFixed(3),
+    numerica: (regression) => {
+      const decimals = quantityDecimals(
+        league.flatMap((row) => (row.cv ? [row.cv.mean, row.cv.std] : [])),
+      );
+      return (v: number) =>
+        withUnit(formatQuantity(v, decimals), regression.unit);
+    },
+  });
 
   // La banda del error estándar: los que «empatan» con el mejor.
   const oneSe = selectOneSe(
@@ -106,10 +107,10 @@ export function LeagueTable({
   ];
 
   const rows = result.nTrain + result.nTest;
-  const minorityShare =
-    result.task === "numerica"
-      ? 0
-      : Math.min(result.positiveRate, 1 - result.positiveRate);
+  const minorityShare = matchByTask(result, {
+    binaria: (binary) => Math.min(binary.positiveRate, 1 - binary.positiveRate),
+    numerica: () => 0,
+  });
   const outReason = (p: Placement) =>
     t(`roster.reason.${p.outReason ?? p.reason}`, {
       rows,

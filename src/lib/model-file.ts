@@ -5,6 +5,12 @@
 // integridad: el import valida forma, versión de formato y SHA-256 del payload
 // ANTES de que el payload (pickle) toque Pyodide. Un archivo ajeno o corrupto
 // se rechaza aquí, en TS puro, sin deserializar nada.
+import {
+  declaredTask,
+  matchByTask,
+  taskOf,
+  type ByTask,
+} from "@/engine/despacho";
 import type { LeakageFinding } from "@/engine/leakage";
 import { isMemberOf, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
@@ -151,12 +157,15 @@ export type ModelManifest = BinaryManifest | RegressionManifest;
 export function isBinaryManifest(
   manifest: ModelManifest,
 ): manifest is BinaryManifest {
-  return manifestTask(manifest) === "binaria";
+  return matchByTask(manifest, {
+    binaria: () => true,
+    numerica: () => false,
+  });
 }
 
 /** La tarea de un manifiesto (sin `task` = binaria, P8). */
 export function manifestTask(manifest: ModelManifest): TrainTask {
-  return manifest.task ?? "binaria";
+  return taskOf(manifest);
 }
 
 export type ModelFile = {
@@ -309,7 +318,7 @@ const regressionManifestV = obj({
 
 /** El validador del manifiesto de cada tarea que el motor entrena. Es un `Record`
  *  completo: sumar una tarea a `TrainTask` sin su validador no compila (AU-S6-03). */
-const MANIFEST_V_BY_TASK: Record<TrainTask, Validator> = {
+const MANIFEST_V_BY_TASK: ByTask<Validator> = {
   binaria: binaryManifestV,
   numerica: regressionManifestV,
 };
@@ -321,7 +330,7 @@ function isKnownManifestTask(task: string): task is TrainTask {
 /** Sin `task`, el manifiesto binario (archivos del S3–S5); con ella, el de su tarea. */
 const manifestV: Validator = (v, path) => {
   if (!isRecord(v)) return path;
-  const task = v.task ?? "binaria";
+  const task = declaredTask(v);
   return typeof task === "string" && isKnownManifestTask(task)
     ? MANIFEST_V_BY_TASK[task](v, path)
     : `${path}.task`;
@@ -412,38 +421,37 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
       test: row.test,
     }));
 
-  if (result.task === "numerica") {
-    if (exported.schema.task !== "numerica") {
-      throw new Error("packModelFile: el esquema exportado no es de regresión");
-    }
-    const manifest: RegressionManifest = {
+  // El esquema exportado tiene que ser de la MISMA tarea que el resultado.
+  const mismatch = (): never => {
+    throw new Error("packModelFile: el esquema exportado es de otra tarea");
+  };
+  const manifest: ModelManifest = matchByTask(result, {
+    binaria: (binary): BinaryManifest => ({
+      task: "binaria",
+      ...common,
+      schema: matchByTask(exported.schema, {
+        binaria: (schema) => schema,
+        numerica: mismatch,
+      }),
+      metrics: { model: binary.model, baselines: binary.baselines },
+      positive_rate: binary.positiveRate,
+      verdict: binary.verdict,
+      league: league(binary.league),
+      selection: { ...selection, metric: binary.selection.metric },
+    }),
+    numerica: (regression): RegressionManifest => ({
       task: "numerica",
       ...common,
-      schema: exported.schema,
-      metrics: { model: result.model, baselines: result.baselines },
-      verdict: result.verdict,
-      league: league(result.league),
+      schema: matchByTask(exported.schema, {
+        binaria: mismatch,
+        numerica: (schema) => schema,
+      }),
+      metrics: { model: regression.model, baselines: regression.baselines },
+      verdict: regression.verdict,
+      league: league(regression.league),
       selection: { ...selection, metric: "mae" },
-    };
-    return {
-      format_version: MODEL_FILE_FORMAT_VERSION,
-      manifest,
-      payload: exported.payload_b64,
-    };
-  }
-  if (exported.schema.task === "numerica") {
-    throw new Error("packModelFile: el esquema exportado no es binario");
-  }
-  const manifest: BinaryManifest = {
-    task: "binaria",
-    ...common,
-    schema: exported.schema,
-    metrics: { model: result.model, baselines: result.baselines },
-    positive_rate: result.positiveRate,
-    verdict: result.verdict,
-    league: league(result.league),
-    selection: { ...selection, metric: result.selection.metric },
-  };
+    }),
+  });
   return {
     format_version: MODEL_FILE_FORMAT_VERSION,
     manifest,
@@ -545,8 +553,8 @@ export async function validateModelFile(
   // multiclase del S7 abierto aquí), se rechaza NOMBRÁNDOLA, jamás con un
   // engañoso «no parece un modelo de Probeta» (AU-S6-02).
   const declared = isRecord(raw.manifest)
-    ? (raw.manifest.task ?? "binaria")
-    : "binaria";
+    ? declaredTask(raw.manifest)
+    : declaredTask({});
   if (typeof declared !== "string") {
     return { ok: false, error: "invalid-format", field: "manifest.task" };
   }

@@ -60,9 +60,21 @@ export function assertNever(value: never): never {
   throw new Error(`tarea sin rama propia: ${String(value)}`);
 }
 
-/** Las tareas que el MOTOR sabe entrenar (S6: también estimar una cantidad). */
-export type TrainTask = "binaria" | "numerica";
-export const TRAIN_TASKS: readonly TrainTask[] = ["binaria", "numerica"];
+/** Las tareas CON objetivo que el motor sabe entrenar (S6: también estimar una
+ *  cantidad). S7 (P1): lo que depende de tener un objetivo (la EDA supervisada, el
+ *  veredicto contra un baseline) va por esta unión. */
+export type SupervisedTask = "binaria" | "numerica";
+
+/** Todas las tareas que el MOTOR sabe entrenar. Toda decisión por tarea pasa por
+ *  engine/despacho.ts, que obliga a escribir la rama de cada una (S7, P2). */
+export type TrainTask = SupervisedTask;
+
+/** Un `Record` completo: sumar una tarea a `TrainTask` sin listarla aquí no compila. */
+const TRAIN_TASK_NAMES: Record<TrainTask, true> = {
+  binaria: true,
+  numerica: true,
+};
+export const TRAIN_TASKS = Object.keys(TRAIN_TASK_NAMES) as TrainTask[];
 
 /** Las tareas que la UI ofrece entrenar (S6 F2: también estimar una cantidad). */
 export const TRAINABLE_TASKS: readonly Task[] = ["binaria", "numerica"];

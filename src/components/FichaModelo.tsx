@@ -13,6 +13,7 @@ import {
   type SharedId,
 } from "@/content/modelos";
 import { MEMBERS, memberNameKey, type MemberId } from "@/engine/roster";
+import { matchTask, taskOf } from "@/engine/despacho";
 import type { TrainTask } from "@/engine/tarea";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "./ui";
@@ -76,22 +77,26 @@ export default function FichaModelo({
     return () => opener?.focus();
   }, []);
 
-  const { id, status, task = "binaria" } = target;
+  const { id, status } = target;
+  const task = taskOf(target);
   // `base` es un MemberId; que sea una ficha lo fija tests/unit/modelos.test.ts.
   const fichaId = isBaselineFicha(id) ? id : (MEMBERS[id].base as FichaId);
-  // S6: al estimar, los apartados que solo hablan de clasificar se reemplazan.
-  const ficha: Ficha =
-    task === "numerica" && id in REGRESSION_FICHA_FIELDS
-      ? { ...FICHAS[fichaId], ...REGRESSION_FICHA_FIELDS[id as SharedId] }
-      : FICHAS[fichaId];
+  // S6: al estimar, los apartados que solo hablan de clasificar se reemplazan y
+  // los modelos compartidos suman cómo estiman.
+  const { ficha, regressionNote } = matchTask(task, {
+    binaria: () => ({ ficha: FICHAS[fichaId], regressionNote: null }),
+    numerica: () => ({
+      ficha:
+        id in REGRESSION_FICHA_FIELDS
+          ? { ...FICHAS[fichaId], ...REGRESSION_FICHA_FIELDS[id as SharedId] }
+          : FICHAS[fichaId],
+      regressionNote:
+        id in REGRESSION_NOTES ? REGRESSION_NOTES[id as SharedId] : null,
+    }),
+  });
   const balancedNote =
     !isBaselineFicha(id) && MEMBERS[id].balanced
       ? BALANCED_NOTES[id as BalancedId]
-      : null;
-  // S6: al estimar, los modelos compartidos suman cómo estiman.
-  const regressionNote =
-    task === "numerica" && id in REGRESSION_NOTES
-      ? REGRESSION_NOTES[id as SharedId]
       : null;
   const name = isBaselineFicha(id)
     ? t(`results.baselines.${id}`)

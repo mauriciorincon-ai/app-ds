@@ -18,6 +18,7 @@
 // (`aiAvailable` false; pedirla no hace nada). Segundo cerrojo: el route rechaza
 // todo payload que no sea de clasificación binaria. La plantilla sí existe.
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { matchByTask } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import { useI18n } from "@/i18n/provider";
 // SOLO tipos: importar el schema Zod aquí metería zod al bundle del cliente
@@ -89,20 +90,30 @@ export function useNarration(input: {
   const { result, target, cols, edaAlerts } = input;
   const { locale } = useI18n();
 
+  // S7 (P10): la IA narra SOLO las tareas listadas con payload; cada tarea nueva
+  // escribe aquí su rama, y la que no narra lo dice (null) a la vista.
   const payload = useMemo(
     () =>
-      result.task === "numerica"
-        ? null
-        : buildNarrationPayload({ result, target, cols, locale, edaAlerts }),
+      matchByTask(result, {
+        binaria: (binary) =>
+          buildNarrationPayload({
+            result: binary,
+            target,
+            cols,
+            locale,
+            edaAlerts,
+          }),
+        numerica: () => null,
+      }),
     [result, target, cols, locale, edaAlerts],
   );
   const template = useMemo(
     () =>
-      payload
-        ? buildTemplateNarrative(payload)
-        : result.task === "numerica"
-          ? buildRegressionTemplate({ result, locale, edaAlerts })
-          : "",
+      matchByTask(result, {
+        binaria: () => (payload ? buildTemplateNarrative(payload) : ""),
+        numerica: (regression) =>
+          buildRegressionTemplate({ result: regression, locale, edaAlerts }),
+      }),
     [payload, result, locale, edaAlerts],
   );
 

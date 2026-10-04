@@ -225,11 +225,13 @@ def _explainability(pipe, X_test, y_test, features, numeric, seed, task):
     S6: en regresión la importancia es cuánto SUBE el MAE al permutar la columna
     (en unidades del objetivo) y la dirección es la de Spearman.
     """
-    if _is_regression(task):
-        scoring, method = "neg_mean_absolute_error", "spearman"
-    else:
-        scoring = "roc_auc" if len(np.unique(y_test)) > 1 else "accuracy"
-        method = "pearson"
+    scoring, method = _by_task(task, {
+        "binaria": lambda: (
+            "roc_auc" if len(np.unique(y_test)) > 1 else "accuracy",
+            "pearson",
+        ),
+        "numerica": lambda: ("neg_mean_absolute_error", "spearman"),
+    })()
     pi = permutation_importance(
         pipe, X_test, y_test,
         n_repeats=10, random_state=seed, scoring=scoring, n_jobs=1,
@@ -449,7 +451,7 @@ _FACTORIES_BY_TASK = {"binaria": _FACTORIES, "numerica": _REGRESSORS}
 def roster_ids(payload_json="{}"):
     """Ids del roster de una tarea (ordenados) — para la paridad TS↔Python.
     Sin `task`, el de clasificación binaria (lo que el S5 preguntaba)."""
-    task = json.loads(payload_json or "{}").get("task", "binaria")
+    task = _task_of(json.loads(payload_json or "{}"))
     return json.dumps(sorted(_FACTORIES_BY_TASK[task]))
 
 
@@ -466,16 +468,24 @@ def _contract(field):
     raise ValueError(f"contract:{field}")
 
 
-def _is_regression(task):
-    """La rama de una tarea. Una tarea sin ramas propias en este archivo es un error
-    de contrato que NOMBRA el campo, jamás la binaria por descarte: si mañana se
-    registra «multiclase» en `_FACTORIES_BY_TASK` sin escribir sus ramas, no se
-    binariza en silencio (ds S6, AU-S6-03)."""
-    if task == "numerica":
-        return True
-    if task == "binaria":
-        return False
-    _contract("task")
+def _task_of(record):
+    """EL único «sin tarea = binaria» de este archivo (espejo de `taskOf` en
+    engine/despacho.ts): los payloads y esquemas del S5 no la traían."""
+    return record.get("task", "binaria")
+
+
+def _by_task(task, branches):
+    """Despacho EXHAUSTIVO por tarea (S7, P2; espejo de engine/despacho.ts). Cada
+    sitio escribe la rama de TODAS las tareas de `_FACTORIES_BY_TASK`: si falta
+    una, falla aunque la pedida sea otra — registrar «multiclase» sin escribir sus
+    ramas rompe la primera corrida de cualquier tarea en vez de binarizar en
+    silencio (ds S6, AU-S6-03). La tarea pedida sin rama es un error de contrato
+    que NOMBRA el campo, jamás la binaria por descarte; por eso se mira primero."""
+    if task not in branches:
+        _contract("task")
+    if set(branches) != set(_FACTORIES_BY_TASK):
+        raise RuntimeError("dispatch-incomplete")
+    return branches[task]
 
 
 def _is_int(value):
@@ -502,7 +512,9 @@ def _validate_payload(p, *, league=True):
         _contract("primary_metric")
     # S6 (AU-S6-08): con menos filas de prueba no hay métricas que creer (el R² de
     # una sola fila es NaN y rompe el JSON). TS lo rechaza antes con su propio texto.
-    if task == "numerica" and len(p["test_idx"]) < MIN_REGRESSION_TEST_ROWS:
+    # La binaria no tenía tope propio (su texto vive en TS): 0 conserva la conducta.
+    min_test = _by_task(task, {"binaria": 0, "numerica": MIN_REGRESSION_TEST_ROWS})
+    if len(p["test_idx"]) < min_test:
         _contract("test_idx")
     if league:
         roster = p.get("roster")
@@ -552,6 +564,28 @@ def _target_stats(y_train, raw_train):
     }
 
 
+def _binary_target(df, p):
+    """Objetivo binario → 0/1. Positiva = la clase MINORITARIA (el evento de
+    interés); empate → la mayor lexicográficamente (determinista)."""
+    target = df[p["target"]].astype("string")
+    counts = target.value_counts()
+    classes = sorted(counts.index.tolist())
+    positive = min(classes, key=lambda c: (counts[c], [-ord(ch) for ch in c]))
+    y = (target == positive).astype(int).to_numpy()
+    return y, classes, positive, None
+
+
+def _numeric_target(df, p, train_idx):
+    """S6: el objetivo en sus unidades (float) y su resumen en TRAIN."""
+    y = pd.to_numeric(df[p["target"]], errors="coerce").to_numpy(dtype=float)
+    # TS valida que todo el objetivo sea numérico; si llega otra cosa, se nombra
+    # el campo (sin valores: regla dura 2).
+    if not np.all(np.isfinite(y)):
+        _contract("target")
+    stats = _target_stats(y[train_idx], df[p["target"]].iloc[train_idx].tolist())
+    return y, None, None, stats
+
+
 def _prepare(p):
     """Frame, objetivo y partición — compartido por la liga y fit_member. Binaria:
     objetivo 0/1. Numérica (S6): el objetivo en sus unidades (float)."""
@@ -563,23 +597,10 @@ def _prepare(p):
     train_idx = np.array(p["train_idx"], dtype=int)
     test_idx = np.array(p["test_idx"], dtype=int)
 
-    if _is_regression(task):
-        y = pd.to_numeric(df[p["target"]], errors="coerce").to_numpy(dtype=float)
-        # TS valida que todo el objetivo sea numérico; si llega otra cosa, se
-        # nombra el campo (sin valores: regla dura 2).
-        if not np.all(np.isfinite(y)):
-            _contract("target")
-        classes = positive = None
-        stats = _target_stats(y[train_idx], df[p["target"]].iloc[train_idx].tolist())
-    else:
-        # Objetivo binario → 0/1. Positiva = la clase MINORITARIA (el evento de interés);
-        # empate → la mayor lexicográficamente (determinista).
-        target = df[p["target"]].astype("string")
-        counts = target.value_counts()
-        classes = sorted(counts.index.tolist())
-        positive = min(classes, key=lambda c: (counts[c], [-ord(ch) for ch in c]))
-        y = (target == positive).astype(int).to_numpy()
-        stats = None
+    y, classes, positive, stats = _by_task(task, {
+        "binaria": lambda: _binary_target(df, p),
+        "numerica": lambda: _numeric_target(df, p, train_idx),
+    })()
 
     X = df[features]
     return {
@@ -616,11 +637,10 @@ def _cross_validate(name, ctx, k):
     de su fold (el test anti-fuga de la CV lo vigila con un espía). S6: con un
     objetivo continuo no hay clases que estratificar ⇒ KFold barajado; los folds
     de una métrica «menor es mejor» se devuelven en sus unidades (signo invertido)."""
-    splitter = (
-        KFold(k, shuffle=True, random_state=ctx["seed"])
-        if _is_regression(ctx["task"])
-        else StratifiedKFold(k, shuffle=True, random_state=ctx["seed"])
-    )
+    splitter = _by_task(ctx["task"], {
+        "binaria": lambda: StratifiedKFold(k, shuffle=True, random_state=ctx["seed"]),
+        "numerica": lambda: KFold(k, shuffle=True, random_state=ctx["seed"]),
+    })()
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         cv = cross_validate(
@@ -697,15 +717,15 @@ def _selected_details(pipe, y_pred, ctx):
     (binaria) o predicho-vs-real y residuos (numérica), explicabilidad y lo que
     el preprocesamiento aprendió (de train)."""
     numeric, categorical = ctx["numeric"], ctx["categorical"]
-    if _is_regression(ctx["task"]):
-        task_details = {
+    task_details = _by_task(ctx["task"], {
+        "binaria": lambda: {
+            "confusion_matrix": confusion_matrix(ctx["y_test"], y_pred, labels=[0, 1]).tolist()
+        },
+        "numerica": lambda: {
             "pred_vs_real": _pred_vs_real(ctx["y_test"], y_pred),
             "residuals": _residuals(ctx["y_test"], y_pred),
-        }
-    else:
-        task_details = {
-            "confusion_matrix": confusion_matrix(ctx["y_test"], y_pred, labels=[0, 1]).tolist()
-        }
+        },
+    })()
     explainability = _explainability(
         pipe, ctx["X_test"], ctx["y_test"], ctx["features"], numeric, ctx["seed"], ctx["task"]
     )
@@ -739,23 +759,23 @@ def _retain(pipe, ctx, target):
     """S3/S4: retener el modelo SELECCIONADO (el que recibe el veredicto) + esquema
     + perfil de train — lo que score_new_data y export_model necesitan."""
     global _MODEL
-    if _is_regression(ctx["task"]):
-        schema = {
-            "numeric": ctx["numeric"],
-            "categorical": ctx["categorical"],
-            "target": target,
-            "task": "numerica",
-            "target_stats": ctx["target_stats"],
-        }
-    else:
-        schema = {
+    schema = _by_task(ctx["task"], {
+        "binaria": lambda: {
             "numeric": ctx["numeric"],
             "categorical": ctx["categorical"],
             "target": target,
             "classes": ctx["classes"],
             "positive_class": ctx["positive"],
             "task": "binaria",
-        }
+        },
+        "numerica": lambda: {
+            "numeric": ctx["numeric"],
+            "categorical": ctx["categorical"],
+            "target": target,
+            "task": "numerica",
+            "target_stats": ctx["target_stats"],
+        },
+    })()
     _MODEL = {
         "pipe": pipe,
         "schema": schema,
@@ -763,6 +783,34 @@ def _retain(pipe, ctx, target):
             ctx["X_train"], ctx["numeric"], ctx["categorical"]
         ),
     }
+
+
+def _binary_baselines(ctx):
+    """Los rivales honestos de la binaria: la clase mayoritaria y una logística."""
+    baselines = {}
+    for name, estimator in (
+        ("majority", DummyClassifier(strategy="most_frequent")),
+        ("logistic", LogisticRegression(max_iter=1000, random_state=ctx["seed"])),
+    ):
+        _, y_pred, y_score = _fit_score(
+            estimator, clone(ctx["preprocessor"]), ctx["X_train"], ctx["y_train"], ctx["X_test"]
+        )
+        baselines[name] = _metrics(ctx["y_test"], y_pred, y_score)
+    return baselines
+
+
+def _regression_baselines(ctx):
+    """S6 (decisión del usuario en el STOP de la F0): con MAE la constante óptima es
+    la MEDIANA (no la media), y la lineal es el rival estructural."""
+    baselines = {}
+    for name, estimator in (
+        ("median", DummyRegressor(strategy="median")),
+        ("linear", LinearRegression()),
+    ):
+        pipe = Pipeline([("prep", clone(ctx["preprocessor"])), ("model", estimator)])
+        pipe.fit(ctx["X_train"], ctx["y_train"])  # <-- ajuste SOLO sobre train
+        baselines[name] = _reg_metrics(ctx["y_test"], pipe.predict(ctx["X_test"]))
+    return baselines
 
 
 def _elapsed_ms(start):
@@ -782,10 +830,11 @@ def run_experiment(payload_json, on_progress=None):
     k = int(p["cv_k"])
     # Binaria: k > clase minoritaria de train ⇒ hay folds sin positivos. Numérica:
     # k > filas de train ⇒ hay folds vacíos. TS ya lo acota; aquí se verifica.
-    if _is_regression(ctx["task"]):
-        if k > len(ctx["train_idx"]):
-            _contract("cv_k")
-    elif k > int(np.bincount(ctx["y_train"], minlength=2).min()):
+    k_max = _by_task(ctx["task"], {
+        "binaria": lambda: int(np.bincount(ctx["y_train"], minlength=2).min()),
+        "numerica": lambda: len(ctx["train_idx"]),
+    })()
+    if k > k_max:
         _contract("cv_k")
     order = list(p["roster"])
     total = len(order)
@@ -819,27 +868,11 @@ def run_experiment(payload_json, on_progress=None):
 
     # 3) Recién ahora se abre el test: baselines (rivales honestos) y cada miembro
     #    ajustado en train completo. Solo el pipeline del ganador queda en memoria.
-    X_train, y_train, X_test, y_test = ctx["X_train"], ctx["y_train"], ctx["X_test"], ctx["y_test"]
-    baselines = {}
-    if _is_regression(ctx["task"]):
-        # S6 (decisión del usuario en el STOP de la F0): con MAE la constante
-        # óptima es la MEDIANA (no la media), y la lineal es el rival estructural.
-        for name, estimator in (
-            ("median", DummyRegressor(strategy="median")),
-            ("linear", LinearRegression()),
-        ):
-            pipe = Pipeline([("prep", clone(ctx["preprocessor"])), ("model", estimator)])
-            pipe.fit(X_train, y_train)  # <-- ajuste SOLO sobre train
-            baselines[name] = _reg_metrics(y_test, pipe.predict(X_test))
-    else:
-        for name, estimator in (
-            ("majority", DummyClassifier(strategy="most_frequent")),
-            ("logistic", LogisticRegression(max_iter=1000, random_state=ctx["seed"])),
-        ):
-            _, y_pred, y_score = _fit_score(
-                estimator, clone(ctx["preprocessor"]), X_train, y_train, X_test
-            )
-            baselines[name] = _metrics(y_test, y_pred, y_score)
+    X_train, y_train, X_test = ctx["X_train"], ctx["y_train"], ctx["X_test"]
+    baselines = _by_task(ctx["task"], {
+        "binaria": lambda: _binary_baselines(ctx),
+        "numerica": lambda: _regression_baselines(ctx),
+    })()
 
     winner_pipe = winner_pred = None
     for index, row in enumerate(league):
@@ -868,15 +901,15 @@ def run_experiment(payload_json, on_progress=None):
     details = _selected_details(winner_pipe, winner_pred, ctx)
     _retain(winner_pipe, ctx, p["target"])
 
-    if _is_regression(ctx["task"]):
-        task_fields = {"task": "numerica", "target_stats": ctx["target_stats"]}
-    else:
-        task_fields = {
+    task_fields = _by_task(ctx["task"], {
+        "binaria": lambda: {
             "task": "binaria",
             "classes": ctx["classes"],
             "positive_class": ctx["positive"],
             "positive_rate": float(ctx["y"].mean()),
-        }
+        },
+        "numerica": lambda: {"task": "numerica", "target_stats": ctx["target_stats"]},
+    })()
     return json.dumps(
         {
             **task_fields,
@@ -903,9 +936,10 @@ def run_experiment(payload_json, on_progress=None):
 
 def _test_metrics(pipe, y_pred, ctx):
     """Métricas de TEST según la tarea (binaria: necesita el puntaje continuo)."""
-    if _is_regression(ctx["task"]):
-        return _reg_metrics(ctx["y_test"], y_pred)
-    return _metrics(ctx["y_test"], y_pred, _scores(pipe, ctx["X_test"]))
+    return _by_task(ctx["task"], {
+        "binaria": lambda: _metrics(ctx["y_test"], y_pred, _scores(pipe, ctx["X_test"])),
+        "numerica": lambda: _reg_metrics(ctx["y_test"], y_pred),
+    })()
 
 
 def fit_member(payload_json):
@@ -978,33 +1012,37 @@ def score_new_data(payload_json):
         "affected_rows": int(row_flags.sum()),
         "n_rows": int(len(X)),
     }
-    # S6: un modelo de regresión devuelve la cantidad estimada, en las unidades del
-    # objetivo; no hay clase ni probabilidad que dar (no se inventa).
-    if _is_regression(schema.get("task", "binaria")):
-        return json.dumps(
-            {
-                "task": "numerica",
-                "predictions": [float(v) for v in pipe.predict(X)],
-                "probabilities": None,
-                "novelty": novelty,
-            }
-        )
+    scored = _by_task(_task_of(schema), {
+        "binaria": lambda: _score_binary(pipe, X, schema),
+        "numerica": lambda: _score_numeric(pipe, X),
+    })()
+    return json.dumps({**scored, "novelty": novelty})
+
+
+def _score_binary(pipe, X, schema):
+    """La etiqueta ORIGINAL de la clase (jamás 0/1) y la probabilidad de la positiva."""
     pred01 = pipe.predict(X)
     # S5: ridge y el SVM lineal deciden la clase sin dar una probabilidad. No se
     # inventa una (honestidad): `probabilities` viaja null y la UI lo dice.
     proba = pipe.predict_proba(X)[:, 1] if hasattr(pipe, "predict_proba") else None
     positive = schema["positive_class"]
     negative = next(c for c in schema["classes"] if c != positive)
+    return {
+        "task": "binaria",
+        "predictions": [positive if v == 1 else negative for v in pred01],
+        "probabilities": None if proba is None else [float(v) for v in proba],
+        "positive_class": positive,
+    }
 
-    return json.dumps(
-        {
-            "task": "binaria",
-            "predictions": [positive if v == 1 else negative for v in pred01],
-            "probabilities": None if proba is None else [float(v) for v in proba],
-            "positive_class": positive,
-            "novelty": novelty,
-        }
-    )
+
+def _score_numeric(pipe, X):
+    """S6: la cantidad estimada, en las unidades del objetivo; no hay clase ni
+    probabilidad que dar (no se inventa)."""
+    return {
+        "task": "numerica",
+        "predictions": [float(v) for v in pipe.predict(X)],
+        "probabilities": None,
+    }
 
 
 def export_model(payload_json="{}"):

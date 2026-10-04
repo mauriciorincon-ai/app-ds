@@ -8,8 +8,9 @@
 //
 // S6 (P1): cada resultado trae su `task` y el lector la coteja con la enviada; la
 // forma, las métricas y la selección se validan con las reglas de ESA tarea.
+import { byTask, matchByTask, taskOf, type ByTask } from "@/engine/despacho";
 import { isMemberOf, selectOneSe, type MemberId } from "@/engine/roster";
-import type { TrainTask } from "@/engine/tarea";
+import { TRAIN_TASKS, type TrainTask } from "@/engine/tarea";
 import { METRIC_RULES, type PrimaryMetric } from "@/engine/verdict";
 import {
   arr,
@@ -261,6 +262,29 @@ const regressionResultV = obj({
   preprocessing: preprocessingV,
 });
 
+/** S6: lo que solo una liga de regresión puede incumplir. */
+function regressionTrainField(r: RegressionPipelineResult): string | null {
+  const field = predVsRealField(r.pred_vs_real, r.n_test);
+  if (field) return field;
+  // La lineal es baseline Y miembro: el MISMO ajuste sobre el mismo train, así
+  // que su puntaje de prueba como miembro es el del baseline (AU-S6-39). Si no
+  // coincide, uno de los dos no es lo que dice ser.
+  const linear = r.league.find((row) => row.name === "linear")?.test;
+  if (
+    linear &&
+    REGRESSION_METRIC_KEYS.some((k) => {
+      const a = linear[k];
+      const b = r.baselines.linear[k];
+      return a === null || b === null
+        ? a !== b
+        : Math.abs(a - b) > 1e-9 * Math.max(1, Math.abs(b));
+    })
+  ) {
+    return "baselines.linear";
+  }
+  return null;
+}
+
 export type TrainSent = {
   /** S6: ausente = binaria (lo que el S5 enviaba). */
   task?: TrainTask;
@@ -294,35 +318,21 @@ export function validateTrainResult(
   raw: unknown,
   sent: TrainSent,
 ): Checked<AnyTrainResult> {
-  const task = sent.task ?? "binaria";
+  const task = taskOf(sent);
   // La tarea primero: con otra tarea, todo lo demás tiene otra forma.
   if (!isRecord(raw) || raw.task !== task) return { ok: false, field: "task" };
-  const shaped =
-    task === "numerica"
-      ? check<RegressionPipelineResult>(regressionResultV, raw)
-      : check<PipelineResult>(pipelineResultV, raw);
+  const shaped = check<AnyTrainResult>(
+    byTask(task, { binaria: pipelineResultV, numerica: regressionResultV }),
+    raw,
+  );
   if (!shaped.ok) return shaped;
   const r: AnyTrainResult = shaped.value;
-  if (r.task === "numerica") {
-    const field = predVsRealField(r.pred_vs_real, r.n_test);
-    if (field) return { ok: false, field };
-    // La lineal es baseline Y miembro: el MISMO ajuste sobre el mismo train, así
-    // que su puntaje de prueba como miembro es el del baseline (AU-S6-39). Si no
-    // coincide, uno de los dos no es lo que dice ser.
-    const linear = r.league.find((row) => row.name === "linear")?.test;
-    if (
-      linear &&
-      REGRESSION_METRIC_KEYS.some((k) => {
-        const a = linear[k];
-        const b = r.baselines.linear[k];
-        return a === null || b === null
-          ? a !== b
-          : Math.abs(a - b) > 1e-9 * Math.max(1, Math.abs(b));
-      })
-    ) {
-      return { ok: false, field: "baselines.linear" };
-    }
-  }
+  // Lo que solo puede cotejarse dentro de cada tarea.
+  const taskField: string | null = matchByTask(r, {
+    binaria: () => null,
+    numerica: (reg) => regressionTrainField(reg),
+  });
+  if (taskField) return { ok: false, field: taskField };
   const names = r.league.map((row) => row.name);
   if (
     names.length !== sent.roster.length ||
@@ -361,7 +371,10 @@ export function validateTrainResult(
   if (r.model_name !== r.winner) return { ok: false, field: "model_name" };
   const winnerTest = r.league.find((row) => row.name === r.winner)!
     .test as Record<string, unknown> | null;
-  const keys = task === "numerica" ? REGRESSION_METRIC_KEYS : METRIC_KEYS;
+  const keys: readonly string[] = byTask(task, {
+    binaria: METRIC_KEYS,
+    numerica: REGRESSION_METRIC_KEYS,
+  });
   const model = r.model as Record<string, unknown>;
   if (!winnerTest || keys.some((k) => winnerTest[k] !== model[k])) {
     return { ok: false, field: "model" };
@@ -402,17 +415,20 @@ export function validateMemberFit(
   raw: unknown,
   sent: { member: MemberId; task?: TrainTask; nTest?: number },
 ): Checked<MemberFitResult | RegressionMemberFitResult> {
-  const task = sent.task ?? "binaria";
+  const task = taskOf(sent);
   if (!isRecord(raw) || raw.task !== task) return { ok: false, field: "task" };
-  const shaped =
-    task === "numerica"
-      ? check<RegressionMemberFitResult>(regressionMemberFitV, raw)
-      : check<MemberFitResult>(memberFitV, raw);
+  const shaped = check<MemberFitResult | RegressionMemberFitResult>(
+    byTask(task, { binaria: memberFitV, numerica: regressionMemberFitV }),
+    raw,
+  );
   if (!shaped.ok) return shaped;
-  if (shaped.value.task === "numerica" && sent.nTest !== undefined) {
-    const field = predVsRealField(shaped.value.pred_vs_real, sent.nTest);
-    if (field) return { ok: false, field };
-  }
+  const { nTest } = sent;
+  const taskField: string | null = matchByTask(shaped.value, {
+    binaria: () => null,
+    numerica: (fit) =>
+      nTest === undefined ? null : predVsRealField(fit.pred_vs_real, nTest),
+  });
+  if (taskField) return { ok: false, field: taskField };
   if (shaped.value.model_name !== sent.member)
     return { ok: false, field: "model_name" };
   return shaped;
@@ -421,7 +437,7 @@ export function validateMemberFit(
 const progressV = obj({
   phase: oneOf(["cv", "test"]),
   member: (v, path) =>
-    isMemberOf("binaria", v) || isMemberOf("numerica", v) ? null : path,
+    TRAIN_TASKS.some((task) => isMemberOf(task, v)) ? null : path,
   index: nonNegInt,
   total: refine(int, (v) => (v as number) >= 1),
 });
@@ -461,11 +477,17 @@ const regressionSchemaV = obj({
 
 /** S6: el esquema exportado dice su tarea; la binaria exige sus clases, la
  *  numérica su objetivo. Una tarea que no es ninguna se nombra como tal. */
+const SCHEMA_V_BY_TASK: ByTask<Validator> = {
+  binaria: binarySchemaV,
+  numerica: regressionSchemaV,
+};
 const exportSchemaV: Validator = (v, path) => {
   if (!isRecord(v)) return path;
-  if (v.task === "numerica") return regressionSchemaV(v, path);
-  if (v.task === "binaria") return binarySchemaV(v, path);
-  return path ? `${path}.task` : "task";
+  return typeof v.task === "string" && Object.hasOwn(SCHEMA_V_BY_TASK, v.task)
+    ? SCHEMA_V_BY_TASK[v.task as TrainTask](v, path)
+    : path
+      ? `${path}.task`
+      : "task";
 };
 
 export const trainingProfileV = obj({
@@ -524,22 +546,22 @@ export function validateScoreResult(
   raw: unknown,
   sent: { task?: TrainTask } = {},
 ): Checked<BinaryScoreResult | RegressionScoreResult> {
-  const task = sent.task ?? "binaria";
+  const task = taskOf(sent);
   if (!isRecord(raw) || raw.task !== task) return { ok: false, field: "task" };
-  if (task === "numerica") {
-    const shaped = check<RegressionScoreResult>(regressionScoreV, raw);
-    if (!shaped.ok) return shaped;
-    if (shaped.value.predictions.length !== shaped.value.novelty.n_rows)
-      return { ok: false, field: "predictions" };
-    return shaped;
-  }
-  const shaped = check<BinaryScoreResult>(scoreV, raw);
+  const shaped = check<BinaryScoreResult | RegressionScoreResult>(
+    byTask(task, { binaria: scoreV, numerica: regressionScoreV }),
+    raw,
+  );
   if (!shaped.ok) return shaped;
-  const { predictions, probabilities } = shaped.value;
-  if (probabilities && probabilities.length !== predictions.length) {
-    return { ok: false, field: "probabilities" };
-  }
-  return shaped;
+  const field: string | null = matchByTask(shaped.value, {
+    binaria: ({ predictions, probabilities }) =>
+      probabilities && probabilities.length !== predictions.length
+        ? "probabilities"
+        : null,
+    numerica: ({ predictions, novelty }) =>
+      predictions.length !== novelty.n_rows ? "predictions" : null,
+  });
+  return field ? { ok: false, field } : shaped;
 }
 
 /** «contract:<campo>» que lanza _validate_payload en Python (lado que LEE TS → Python).

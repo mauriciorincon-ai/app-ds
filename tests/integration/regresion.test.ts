@@ -513,6 +513,26 @@ describe("una tarea registrada sin ramas propias (AU-S6-03)", () => {
     }
     expect(got).toBe("task");
   });
+
+  it("S7 (P2): y rompe también las tareas que SÍ tienen ramas (el despacho es exhaustivo)", () => {
+    // _by_task exige la rama de TODAS las tareas registradas: una tarea nueva sin
+    // sus ramas no puede quedar latente mientras las viejas siguen corriendo.
+    const payload = { ...consumo().payload, roster: ["linear"] as MemberId[] };
+    py.runPython(
+      '_FACTORIES_BY_TASK["serie-tiempo"] = _REGRESSORS\nTASK_METRICS["serie-tiempo"] = ("mae",)',
+    );
+    let got = "aceptada";
+    try {
+      runExperiment(JSON.stringify(payload));
+    } catch (error) {
+      got = String((error as Error).message);
+    } finally {
+      py.runPython(
+        'del _FACTORIES_BY_TASK["serie-tiempo"]\ndel TASK_METRICS["serie-tiempo"]',
+      );
+    }
+    expect(got).toMatch(/RuntimeError: dispatch-incomplete\s*$/);
+  });
 });
 
 describe("cruce de punta a punta: prepareRun → Pyodide → contract.ts → assembleRegressionResult", () => {

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { matchTask } from "@/engine/despacho";
 import {
   isTrainableTask,
+  isTrainTask,
   type AmbiguousChoice,
   type Task,
   type TaskDetection,
@@ -240,10 +242,14 @@ function TaskStatus({
                     ? "task.notUsable"
                     : "task.notYet",
                 )
-              : resolved === "numerica"
-                ? unit?.symbol
-                  ? t("task.estimate.unit", { unit: unit.symbol })
-                  : t("task.estimate.noUnit", { column: target })
+              : isTrainTask(resolved)
+                ? matchTask(resolved, {
+                    binaria: () => t("task.trainable"),
+                    numerica: () =>
+                      unit?.symbol
+                        ? t("task.estimate.unit", { unit: unit.symbol })
+                        : t("task.estimate.noUnit", { column: target }),
+                  })
                 : t("task.trainable")}
         </p>
         {answered && onAnswer && (

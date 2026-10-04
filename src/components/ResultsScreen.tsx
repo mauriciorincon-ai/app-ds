@@ -1,5 +1,6 @@
 "use client";
 
+import { matchByTask } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
 import {
@@ -98,8 +99,29 @@ export function ResultsScreen({
     edaAlerts,
   });
   const hasLeak = leakage.length > 0;
-  const regression = result.task === "numerica" ? result : null;
-  const binary = result.task === "numerica" ? null : result;
+  // S7 (P2): cada pieza que depende de la tarea escribe la rama de cada una.
+  const byResult = matchByTask(result, {
+    binaria: (binary) => ({
+      verdict: <BinaryVerdict result={binary} hasLeak={hasLeak} />,
+      metrics: <BinaryMetrics result={binary} />,
+      detail: <BinaryDetail result={binary} />,
+      positiveClass: binary.positiveClass,
+      unit: null,
+    }),
+    numerica: (regression) => ({
+      verdict: (
+        <RegressionVerdict
+          result={regression}
+          target={runMeta.target}
+          hasLeak={hasLeak}
+        />
+      ),
+      metrics: <RegressionMetricsSection result={regression} />,
+      detail: <RegressionDetail result={regression} target={runMeta.target} />,
+      positiveClass: null,
+      unit: regression.unit,
+    }),
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -118,15 +140,7 @@ export function ResultsScreen({
       </header>
 
       {/* Pieza jerárquica: el veredicto. */}
-      {regression ? (
-        <RegressionVerdict
-          result={regression}
-          target={runMeta.target}
-          hasLeak={hasLeak}
-        />
-      ) : (
-        binary && <BinaryVerdict result={binary} hasLeak={hasLeak} />
-      )}
+      {byResult.verdict}
 
       {hasLeak && (
         <div className="rounded-md border border-caution/40 bg-caution/10 p-4">
@@ -149,11 +163,7 @@ export function ResultsScreen({
         </div>
       )}
 
-      {regression ? (
-        <RegressionMetricsSection result={regression} />
-      ) : (
-        binary && <BinaryMetrics result={binary} />
-      )}
+      {byResult.metrics}
 
       {/* S5: la liga — filas = modelos, CV para elegir, prueba para creer. */}
       <LeagueTable
@@ -173,22 +183,18 @@ export function ResultsScreen({
         />
       )}
 
-      {regression ? (
-        <RegressionDetail result={regression} target={runMeta.target} />
-      ) : (
-        binary && <BinaryDetail result={binary} />
-      )}
+      {byResult.detail}
 
       {/* S2: el porqué — gráfico siempre visible + texto estándar + IA a demanda. */}
       <WhySection
         explain={result.explainability}
         target={runMeta.target}
-        positiveClass={binary?.positiveClass ?? null}
+        positiveClass={byResult.positiveClass}
         template={template}
         ai={ai}
         aiAvailable={aiAvailable}
         onRequestNarration={requestNarration}
-        unit={regression?.unit ?? null}
+        unit={byResult.unit}
       />
 
       {/* S3: el modelo se usa — puntuar datos nuevos y exportar como archivo. */}

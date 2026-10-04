@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  matchByTask,
+  matchTask,
+  taskOf,
+} from "@/engine/despacho";
 import type { LeakageFinding } from "@/engine/leakage";
 import { computeEdaAlerts, idLikeAlerts, type EdaAlert } from "@/engine/eda";
 import { sanitizeTable, type SanitationReport } from "@/engine/sanitize";
@@ -62,6 +67,7 @@ import {
   type TrainSent,
 } from "@/workers/contract";
 import type {
+  BinaryModelSchema,
   DatasetSummary,
   ExperimentResult,
   ExportResult,
@@ -69,6 +75,7 @@ import type {
   PipelinePayload,
   ProgressDetail,
   ProgressStage,
+  RegressionModelSchema,
   RunnerResponse,
   ScorePayload,
   ScoreResult,
@@ -291,32 +298,43 @@ function trainPending(
 
 /** La tarea de un esquema de modelo (los archivos del S5 no la traen: binaria). */
 function schemaTask(schema: ModelSchema): TrainTask {
-  return schema.task ?? "binaria";
+  return taskOf(schema);
 }
 
 /**
  * S6: el resultado de fit-member, validado por el lector del contrato y aplicado
  * según la tarea del resultado vigente (el veredicto pasa a hablar del elegido).
  */
+type Applied =
+  | { ok: true; value: ExperimentResult }
+  | { ok: false; field: string };
+
 function applyFit(
   current: ExperimentResult,
   raw: unknown,
   member: MemberId,
-): { ok: true; value: ExperimentResult } | { ok: false; field: string } {
-  if (current.task === "numerica") {
-    const checked = validateMemberFit(raw, {
-      member,
-      task: "numerica",
-      nTest: current.nTest,
-    });
-    return checked.ok
-      ? { ok: true, value: applyRegressionMemberFit(current, checked.value) }
-      : checked;
-  }
-  const checked = validateMemberFit(raw, { member });
-  return checked.ok
-    ? { ok: true, value: applyMemberFit(current, checked.value) }
-    : checked;
+): Applied {
+  return matchByTask(current, {
+    binaria: (binary): Applied => {
+      const checked = validateMemberFit(raw, { member });
+      return checked.ok
+        ? { ok: true, value: applyMemberFit(binary, checked.value) }
+        : checked;
+    },
+    numerica: (regression): Applied => {
+      const checked = validateMemberFit(raw, {
+        member,
+        task: "numerica",
+        nTest: regression.nTest,
+      });
+      return checked.ok
+        ? {
+            ok: true,
+            value: applyRegressionMemberFit(regression, checked.value),
+          }
+        : checked;
+    },
+  });
 }
 
 /**
@@ -337,7 +355,12 @@ function planTarget(
     task,
     choice: task.task === "ambigua" ? choice : null,
     resolved,
-    unit: resolved === "numerica" ? inferUnit(target) : null,
+    unit: isTrainTask(resolved)
+      ? matchTask(resolved, {
+          binaria: () => null,
+          numerica: () => inferUnit(target),
+        })
+      : null,
     routing: null,
     profile: null,
     smallSample: false,
@@ -598,29 +621,36 @@ export function useExperiment() {
           return;
         }
         const py = checked.value;
-        const assembled: ExperimentResult =
-          py.task === "numerica"
-            ? assembleRegressionResult(
-                py,
-                pending.leakage,
-                pending.features.target,
-                pending.smallSample,
-              )
-            : assembleResult(py, pending.leakage, pending.smallSample);
+        const { assembled, schema } = matchByTask(py, {
+          binaria: (binary) => ({
+            assembled: assembleResult(
+              binary,
+              pending.leakage,
+              pending.smallSample,
+            ),
+            schema: {
+              ...pending.features,
+              classes: binary.classes,
+              positive_class: binary.positive_class,
+            } satisfies BinaryModelSchema,
+          }),
+          numerica: (regression) => ({
+            assembled: assembleRegressionResult(
+              regression,
+              pending.leakage,
+              pending.features.target,
+              pending.smallSample,
+            ),
+            schema: {
+              ...pending.features,
+              task: "numerica",
+              target_stats: regression.target_stats,
+            } satisfies RegressionModelSchema,
+          }),
+        });
         const meta: ModelMeta = {
           source: "trained",
-          schema:
-            py.task === "numerica"
-              ? {
-                  ...pending.features,
-                  task: "numerica",
-                  target_stats: py.target_stats,
-                }
-              : {
-                  ...pending.features,
-                  classes: py.classes,
-                  positive_class: py.positive_class,
-                },
+          schema,
           datasetName: datasetNameRef.current ?? "dataset",
           manifest: null,
         };
@@ -680,10 +710,11 @@ export function useExperiment() {
         setState((s) => ({ ...s, modelReady: true }));
       } else if (message.command === "score" && pending.kind === "score") {
         // S6: el lector exige la forma de la tarea del modelo activo.
-        const checked =
-          pending.task === "numerica"
-            ? validateScoreResult(message.result, { task: "numerica" })
-            : validateScoreResult(message.result);
+        const checked = matchTask(pending.task, {
+          binaria: () => validateScoreResult(message.result),
+          numerica: () =>
+            validateScoreResult(message.result, { task: "numerica" }),
+        });
         if (!checked.ok) {
           console.error("[experiment] contract", checked.field);
           reportScoringError(`contract:${checked.field}`);
@@ -1084,7 +1115,7 @@ export function useExperiment() {
     }
     const table = tableRef.current;
     recordLeagueRun({
-      task: level1Ref.current.result.task ?? "binaria",
+      task: taskOf(level1Ref.current.result),
       rows: table?.rows.length,
       cols: table?.headers.length,
       competitors,

@@ -6,6 +6,7 @@
 // SIEMPRE se muestra antes de descargar. El encabezado es el candidato LCP y
 // nace estático (patrón lcp-nace-estatico: sin motion, sin opacity inicial).
 import { useRef, useState } from "react";
+import { matchByTask } from "@/engine/despacho";
 import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
 import { modelFeatures } from "@/lib/ds/schema-check";
@@ -73,6 +74,24 @@ export function ScoreScreen({
     onScoreFile(await file.text(), file.name);
   }
 
+  const header = matchByTask(meta.schema, {
+    binaria: (schema) => ({
+      subtitle: t("score.subtitle"),
+      modelLine: t("score.modelLine", {
+        dataset: meta.datasetName,
+        target: schema.target,
+        positive: schema.positive_class,
+      }),
+    }),
+    numerica: (schema) => ({
+      subtitle: t("score.subtitleQuantity"),
+      modelLine: t("score.modelLineQuantity", {
+        dataset: meta.datasetName,
+        target: schema.target,
+      }),
+    }),
+  });
+
   return (
     <div className="flex flex-col gap-6">
       {/* Candidato LCP: nace visible, sin wrapper de motion. */}
@@ -80,22 +99,9 @@ export function ScoreScreen({
         <h1 className="text-3xl font-semibold tracking-tight">
           {t("score.title")}
         </h1>
-        <p className="max-w-prose text-ink-muted">
-          {meta.schema.task === "numerica"
-            ? t("score.subtitleQuantity")
-            : t("score.subtitle")}
-        </p>
+        <p className="max-w-prose text-ink-muted">{header.subtitle}</p>
         <p className="font-mono text-sm tabular-nums text-ink-muted">
-          {meta.schema.task === "numerica"
-            ? t("score.modelLineQuantity", {
-                dataset: meta.datasetName,
-                target: meta.schema.target,
-              })
-            : t("score.modelLine", {
-                dataset: meta.datasetName,
-                target: meta.schema.target,
-                positive: meta.schema.positive_class,
-              })}
+          {header.modelLine}
         </p>
       </header>
 
@@ -320,25 +326,35 @@ function ScoredResults({
 
   // S6: al estimar, la columna nueva es «<objetivo>_estimado» con los decimales
   // con que el usuario escribió su objetivo; no hay probabilidad (no se inventa).
-  const quantity =
-    score.task === "numerica" && schema.task === "numerica"
-      ? { values: score.predictions, decimals: schema.target_stats.decimals }
-      : null;
-  const predictions =
-    score.task === "numerica"
-      ? formatEstimates(score.predictions, quantity?.decimals ?? 0)
-      : score.predictions;
+  const decimals = matchByTask(schema, {
+    binaria: () => null,
+    numerica: (quantitySchema) => quantitySchema.target_stats.decimals,
+  });
+  const quantity = matchByTask(score, {
+    binaria: () => null,
+    numerica: (estimated) =>
+      decimals === null ? null : { values: estimated.predictions, decimals },
+  });
+  const predictions = matchByTask(score, {
+    binaria: (classified) => classified.predictions,
+    numerica: (estimated) =>
+      formatEstimates(estimated.predictions, quantity?.decimals ?? 0),
+  });
 
-  const desiredNames = {
-    prediction:
-      schema.task === "numerica"
-        ? t("score.columns.estimate", { target: schema.target })
-        : t("score.columns.prediction"),
-    probability:
-      schema.task === "numerica"
-        ? ""
-        : t("score.columns.probability", { label: schema.positive_class }),
-  };
+  const desiredNames = matchByTask(schema, {
+    binaria: (binarySchema) => ({
+      prediction: t("score.columns.prediction"),
+      probability: t("score.columns.probability", {
+        label: binarySchema.positive_class,
+      }),
+    }),
+    numerica: (quantitySchema) => ({
+      prediction: t("score.columns.estimate", {
+        target: quantitySchema.target,
+      }),
+      probability: "",
+    }),
+  });
   const names = resolveScoredColumnNames(table.headers, desiredNames);
 
   // Distribución de predicciones por clase (conteo simple, honesto). Al estimar

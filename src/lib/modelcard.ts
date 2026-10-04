@@ -11,6 +11,7 @@
 // errores) y la narración con IA se declara «no aplica».
 import type { Locale } from "@/i18n/config";
 import { translate, type TParams } from "@/i18n/translate";
+import { matchByTask, taskOf } from "@/engine/despacho";
 import { SMALL_SAMPLE_ROWS } from "@/engine/encarrilador";
 import { memberNameKey, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
@@ -217,11 +218,11 @@ export function buildModelCard(input: ModelCardInput): string {
   const { locale, result } = input;
   const t = (key: string, params?: TParams) => translate(locale, key, params);
   const section = (key: string) => `## ${t(`modelcard.sections.${key}`)}`;
-  const task = result.task ?? "binaria";
-  const blocks =
-    result.task === "numerica"
-      ? regressionBlocks(result, input, t)
-      : binaryBlocks(result, input, t);
+  const task = taskOf(result);
+  const blocks = matchByTask(result, {
+    binaria: (binary) => binaryBlocks(binary, input, t),
+    numerica: (regression) => regressionBlocks(regression, input, t),
+  });
 
   const date = (input.date ?? new Date()).toLocaleDateString(
     locale === "es" ? "es-ES" : "en-US",

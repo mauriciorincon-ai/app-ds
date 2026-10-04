@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
+import { matchByTask, matchTask } from "@/engine/despacho";
 import { memberNameKey } from "@/engine/roster";
 import { isTask } from "@/engine/tarea";
 import { inferUnit } from "@/lib/experiment";
 import {
-  isBinaryManifest,
   manifestTask,
   MAX_MODEL_FILE_BYTES,
   validateModelFile,
@@ -290,12 +290,14 @@ function ImportSummary({
   const task = manifestTask(manifest);
   // S6: el MAE se lee en las unidades del objetivo; las métricas de clase, de 0 a 1.
   const fmt = (value: number) =>
-    task === "numerica"
-      ? withUnit(
+    matchTask(task, {
+      binaria: () => value.toFixed(2),
+      numerica: () =>
+        withUnit(
           formatQuantity(value, quantityDecimals([value])),
           inferUnit(manifest.schema.target),
-        )
-      : value.toFixed(2);
+        ),
+    });
 
   return (
     <div className="flex flex-col gap-2 text-sm">
@@ -314,14 +316,17 @@ function ImportSummary({
           })}
         </li>
         <li>
-          {isBinaryManifest(manifest)
-            ? t("start.import.summary.target", {
-                target: manifest.schema.target,
-                positive: manifest.schema.positive_class,
-              })
-            : t("start.import.summary.targetQuantity", {
-                target: manifest.schema.target,
-              })}
+          {matchByTask(manifest, {
+            binaria: (binary) =>
+              t("start.import.summary.target", {
+                target: binary.schema.target,
+                positive: binary.schema.positive_class,
+              }),
+            numerica: (regression) =>
+              t("start.import.summary.targetQuantity", {
+                target: regression.schema.target,
+              }),
+          })}
         </li>
         <li className="font-mono tabular-nums">
           {t("start.import.summary.metric", {
