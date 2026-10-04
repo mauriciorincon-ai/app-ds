@@ -16,7 +16,7 @@ import { detectTask } from "@/engine/tarea";
 import { I18nProvider } from "@/i18n/provider";
 import { assembleResult, summarizeDataset } from "@/lib/experiment";
 import type { ChoiceState, TargetPlan } from "@/lib/useExperiment";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 import { pipelineResult } from "./factories";
 
 function ui(children: ReactNode) {
@@ -40,7 +40,7 @@ const MEDIANA: RouteProfile = {
 
 /** Liga de rotación (F0): NB tiene el máximo con un EE ancho; la logística,
  *  primera del orden y dentro del EE, gana. El ganador sale de la regla real. */
-function rotationResult(): ExperimentResult {
+function rotationResult(): BinaryResult {
   const py = pipelineResult(
     { roster: ["logistic", "ridge", "naive_bayes", "hgb", "forest"], cv_k: 5 },
     {
@@ -70,7 +70,7 @@ function rotationResult(): ExperimentResult {
 const IDLE: ChoiceState = { status: "idle" };
 
 function table(
-  result: ExperimentResult,
+  result: BinaryResult,
   opts: {
     choice?: ChoiceState;
     onChoose?: (m: string) => void;
@@ -322,7 +322,7 @@ describe("LeagueTable", () => {
   it("elegido por ti: ◆ con texto, y el ganador ofrece volver", () => {
     const onChoose = vi.fn();
     const base = rotationResult();
-    const chosen: ExperimentResult = {
+    const chosen: BinaryResult = {
       ...base,
       modelName: "forest",
       selection: { ...base.selection, by: "user" },
@@ -337,7 +337,7 @@ describe("LeagueTable", () => {
 
   it("ninguno se omite: pendientes del Nivel 2 y «fuera» con su razón; un error, con su tipo", () => {
     const base = rotationResult();
-    const withError: ExperimentResult = {
+    const withError: BinaryResult = {
       ...base,
       league: base.league.map((row) =>
         row.name === "hgb"
@@ -373,7 +373,7 @@ describe("ResultsScreen — el veredicto de la liga", () => {
     categoricalFeatures: 1,
     seed: 42,
   };
-  const screenWith = (result: ExperimentResult, modelReady = true) =>
+  const screenWith = (result: BinaryResult, modelReady = true) =>
     ui(
       <ResultsScreen
         result={result}

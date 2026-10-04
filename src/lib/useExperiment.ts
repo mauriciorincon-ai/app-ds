@@ -17,7 +17,7 @@ import {
   type Routing,
 } from "@/engine/encarrilador";
 import type { TaskDetection } from "@/engine/tarea";
-import type { MetricName } from "@/engine/verdict";
+import type { PrimaryMetric } from "@/engine/verdict";
 import {
   applyMemberFit,
   assembleResult,
@@ -27,10 +27,11 @@ import {
 } from "@/lib/experiment";
 import { downloadTextFile } from "@/lib/files";
 import {
+  isBinaryManifest,
   modelFileName,
   packModelFile,
+  type BinaryManifest,
   type ModelFile,
-  type ModelManifest,
 } from "@/lib/model-file";
 import {
   recordLeagueRun,
@@ -51,15 +52,15 @@ import {
 } from "@/workers/contract";
 import type {
   DatasetSummary,
-  ExperimentResult,
+  BinaryResult,
   ExportResult,
-  ModelSchema,
+  BinaryModelSchema,
   PipelinePayload,
   ProgressDetail,
   ProgressStage,
   RunnerResponse,
   ScorePayload,
-  ScoreResult,
+  BinaryScoreResult,
   WorkerErrorKind,
 } from "@/workers/protocol";
 
@@ -79,10 +80,10 @@ export type ModelSource = "trained" | "imported";
 
 export type ModelMeta = {
   source: ModelSource;
-  schema: ModelSchema;
+  schema: BinaryModelSchema;
   datasetName: string;
   /** Solo `imported`: manifiesto validado, para el resumen honesto. */
-  manifest: ModelManifest | null;
+  manifest: BinaryManifest | null;
 };
 
 export type ScoringErrorKind =
@@ -105,7 +106,7 @@ export type ScoringState =
       check: SchemaCheck;
       fileName: string;
       table: CsvTable;
-      score: ScoreResult;
+      score: BinaryScoreResult;
     }
   | { status: "error"; kind: ScoringErrorKind };
 
@@ -149,7 +150,7 @@ export type ExperimentState = {
   progress: ProgressStage | null;
   /** S5: modelo a modelo durante la liga (validado por contract.ts). */
   progressDetail: ProgressDetail | null;
-  result: ExperimentResult | null;
+  result: BinaryResult | null;
   runMeta: RunMeta | null;
   error: { kind: WorkerErrorKind; message: string } | null;
   // S4 — saneamiento (fijado UNA vez en loadCsv) + alertas EDA por objetivo elegido.
@@ -213,9 +214,9 @@ type Pending =
   | {
       kind: "train";
       leakage: LeakageFinding[];
-      schema: Pick<ModelSchema, "numeric" | "categorical" | "target">;
+      schema: Pick<BinaryModelSchema, "numeric" | "categorical" | "target">;
       // S5: lo enviado, para que el lector del contrato lo coteje.
-      sent: { roster: MemberId[]; cv_k: number; primary_metric: MetricName };
+      sent: { roster: MemberId[]; cv_k: number; primary_metric: PrimaryMetric };
       smallSample: boolean;
       // S5: el reparto y los forzados de ESTA corrida (se fijan solo si termina).
       level: 1 | 2;
@@ -231,7 +232,7 @@ type Pending =
   // S5 (R1): restaurar esa instantánea tras cancelar o fallar el Nivel 2.
   | { kind: "restore" }
   | { kind: "score"; check: SchemaCheck; fileName: string; table: CsvTable }
-  | { kind: "export-model"; datasetName: string; result: ExperimentResult }
+  | { kind: "export-model"; datasetName: string; result: BinaryResult }
   | { kind: "import-model" }
   | { kind: "fit-member"; member: MemberId };
 
@@ -286,13 +287,13 @@ export function useExperiment() {
   const pendingRef = useRef(new Map<number, Pending>());
   // Espejos para leer en callbacks sin closures obsoletas (patrón tableRef).
   const modelRef = useRef<ModelMeta | null>(null);
-  const resultRef = useRef<ExperimentResult | null>(null);
+  const resultRef = useRef<BinaryResult | null>(null);
   const datasetNameRef = useRef<string | null>(null);
   // S5: el último payload de la liga (para fit-member y el Nivel 2).
   const payloadRef = useRef<PipelinePayload | null>(null);
   // S5 (R1): lo que vuelve si el Nivel 2 se cancela o falla.
   const level1Ref = useRef<{
-    result: ExperimentResult;
+    result: BinaryResult;
     routing: Routing | null;
     forced: MemberId[];
     payload: PipelinePayload;
@@ -1060,6 +1061,9 @@ export function useExperiment() {
 
   /** Activa un modelo importado (el archivo YA pasó validateModelFile). */
   const activateImportedModel = useCallback((file: ModelFile) => {
+    // validateModelFile solo deja pasar tareas que la UI sabe usar (S6); el
+    // guard además estrecha el tipo del manifiesto para esta UI binaria.
+    if (!isBinaryManifest(file.manifest)) return;
     const meta: ModelMeta = {
       source: "imported",
       schema: file.manifest.schema,

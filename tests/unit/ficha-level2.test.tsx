@@ -28,7 +28,7 @@ import { I18nProvider } from "@/i18n/provider";
 import { assembleResult } from "@/lib/experiment";
 import { formatEstimate } from "@/lib/duration";
 import type { Level2State } from "@/lib/useExperiment";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 import es from "../../messages/es.json";
 import { pipelineResult } from "./factories";
 
@@ -70,7 +70,7 @@ const MEDIANA: RouteProfile = {
 };
 
 /** Resultado de una liga que corrió exactamente `roster`. */
-function leagueOf(roster: MemberId[]): ExperimentResult {
+function leagueOf(roster: MemberId[]): BinaryResult {
   return assembleResult(pipelineResult({ roster, cv_k: 5 }), []);
 }
 
@@ -212,7 +212,7 @@ describe("ResultsScreen — los baselines también abren su ficha", () => {
 describe("Level2Card (D5 + U3)", () => {
   function card(
     profile: RouteProfile,
-    result: ExperimentResult,
+    result: BinaryResult,
     opts: {
       forced?: MemberId[];
       level2?: Level2State;

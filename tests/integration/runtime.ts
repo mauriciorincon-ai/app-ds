@@ -52,11 +52,23 @@ export function pyFunction<A extends unknown[] = [string]>(
 /**
  * Payloads armados a mano por los tests de S1–S4 (no son tests de la liga): una
  * liga chica, k=2 y AUC por defecto (lo que H1 asumía). Lo explícito del payload
- * manda sobre estos valores.
+ * manda sobre estos valores. S6: la tarea es obligatoria en el contrato (P1); lo
+ * que H1 asumía era clasificación binaria.
  */
 export function withLeague<T extends object>(
   payload: T,
   roster: readonly string[] = ["logistic", "forest", "hgb"],
-): T & { roster: readonly string[]; cv_k: number; primary_metric: string } {
-  return { primary_metric: "auc", roster, cv_k: 2, ...payload };
+): T & {
+  task: string;
+  roster: readonly string[];
+  cv_k: number;
+  primary_metric: string;
+} {
+  return {
+    task: "binaria",
+    primary_metric: "auc",
+    roster,
+    cv_k: 2,
+    ...payload,
+  };
 }

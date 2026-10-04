@@ -6,7 +6,7 @@ import {
   buildNarrationPayload,
   NARRATION_TOP_FEATURES,
 } from "@/lib/narration/payload";
-import type { ExperimentResult, FeatureImportance } from "@/workers/protocol";
+import type { BinaryResult, FeatureImportance } from "@/workers/protocol";
 import { leagueFields } from "./factories";
 
 // Valores de celda DISTINTIVOS: si alguno aparece en el payload serializado,
@@ -45,9 +45,7 @@ function feature(
   };
 }
 
-function experimentResult(
-  overrides: Partial<ExperimentResult> = {},
-): ExperimentResult {
+function experimentResult(overrides: Partial<BinaryResult> = {}): BinaryResult {
   return {
     positiveClass: POSITIVE_CLASS,
     positiveRate: 0.3,
@@ -89,7 +87,7 @@ function experimentResult(
 }
 
 function build(
-  overrides: Partial<ExperimentResult> = {},
+  overrides: Partial<BinaryResult> = {},
   edaAlerts?: EdaAlert[] | null,
 ) {
   return buildNarrationPayload({

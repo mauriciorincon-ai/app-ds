@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
 import {
+  isBinaryManifest,
   MAX_MODEL_FILE_BYTES,
   validateModelFile,
   type ModelFile,
@@ -287,7 +288,9 @@ function ImportSummary({
         <li>
           {t("start.import.summary.target", {
             target: manifest.schema.target,
-            positive: manifest.schema.positive_class,
+            positive: isBinaryManifest(manifest)
+              ? manifest.schema.positive_class
+              : "",
           })}
         </li>
         <li className="font-mono tabular-nums">

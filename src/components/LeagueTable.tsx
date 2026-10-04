@@ -10,7 +10,7 @@ import { selectOneSe, type MemberId } from "@/engine/roster";
 import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
 import type { ChoiceState } from "@/lib/useExperiment";
-import type { ExperimentResult, LeagueRow } from "@/workers/protocol";
+import type { BinaryResult, LeagueRow } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import type { FichaStatus } from "./FichaModelo";
 import { Badge, Button, Card } from "./ui";
@@ -32,7 +32,7 @@ export function LeagueTable({
   choice,
   onChoose,
 }: {
-  result: ExperimentResult;
+  result: BinaryResult;
   routing: Routing | null;
   choice: ChoiceState;
   onChoose: (member: MemberId) => void;

@@ -21,7 +21,7 @@ import { useI18n } from "@/i18n/provider";
 import type { FallbackReason, NarrationPayload } from "@/lib/ia/schemas";
 import { buildNarrationPayload } from "@/lib/narration/payload";
 import { buildTemplateNarrative } from "@/lib/narration/templates";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 
 /** Estado del bloque de IA (el bloque de plantilla no tiene estados: existe). */
 export type AiNarrationState =
@@ -66,7 +66,7 @@ function toOutcome(json: unknown): RemoteOutcome {
 }
 
 export function useNarration(input: {
-  result: ExperimentResult;
+  result: BinaryResult;
   target: string;
   cols: number;
   /** Alertas EDA del objetivo (S4). Referencia estable ⇒ no re-dispara el fetch. */

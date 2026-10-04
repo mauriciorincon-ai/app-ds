@@ -9,11 +9,16 @@
 // Un equipo concreto tarda distinto (WebKit ~1,4× en 2.000–5.000 filas; un móvil
 // 2–4×): por eso la estimación del Nivel 2 se CALIBRA con lo que el Nivel 1 tardó
 // de verdad en el equipo del usuario.
-import type { MemberId } from "@/engine/roster";
+import type {
+  BinaryMemberId,
+  MemberId,
+  RegressionMemberId,
+} from "@/engine/roster";
+import type { TrainTask } from "@/engine/tarea";
 
 export type CostCoefficients = { t0: number; a: number; b: number; c: number };
 
-export const COST_COEFFICIENTS: Record<MemberId, CostCoefficients> = {
+export const COST_COEFFICIENTS: Record<BinaryMemberId, CostCoefficients> = {
   logistic: { t0: 0.037, a: 0.0243, b: 0.833, c: 0.593 },
   logistic_balanced: { t0: 0.038, a: 0.0179, b: 0.951, c: 0.597 },
   ridge: { t0: 0.035, a: 0.0181, b: 0.974, c: 1.142 },
@@ -29,6 +34,44 @@ export const COST_COEFFICIENTS: Record<MemberId, CostCoefficients> = {
   forest_balanced: { t0: 0.675, a: 0.4834, b: 1.28, c: 0.51 },
   mlp: { t0: 0.1, a: 0.8409, b: 0.74, c: 0.24 },
 };
+
+/**
+ * S6: la misma forma, ajustada en el spike de regresores de la F0
+ * (sprints/SPRINT_006-spike-regresores.md, Chromium 153 sobre el build de
+ * producción, corrida con la máquina quieta). Sobre la liga entera el error fue de
+ * −3 % a +4 % desde 2.000 filas. Los bosques de regresión cuestan ~5× los de
+ * clasificación (max_features=1.0 por defecto en sklearn).
+ */
+export const REGRESSION_COST_COEFFICIENTS: Record<
+  RegressionMemberId,
+  CostCoefficients
+> = {
+  linear: { t0: 0.033, a: 0.0298, b: 0.879, c: 0.557 },
+  ridge: { t0: 0.033, a: 0.0264, b: 1.004, c: 0.92 },
+  lasso: { t0: 0.036, a: 0.0232, b: 0.966, c: 0.149 },
+  decision_tree: { t0: 0.033, a: 0.0366, b: 1.108, c: 0.546 },
+  knn: { t0: 0.033, a: 0.0309, b: 1.537, c: 0.092 },
+  hgb: { t0: 0.107, a: 0.6148, b: 0.509, c: 0.528 },
+  lightgbm: { t0: 0.107, a: 0.7469, b: 0.373, c: 0.485 },
+  xgboost: { t0: 0.156, a: 1.042, b: 0.324, c: 1.211 },
+  extra_trees: { t0: 0.539, a: 2.9095, b: 1.076, c: 1.018 },
+  forest: { t0: 0.718, a: 2.7491, b: 1.289, c: 0.854 },
+  mlp: { t0: 0.153, a: 0.6372, b: 1.21, c: 1.158 },
+};
+
+/** Los coeficientes de un miembro EN su tarea (un id compartido cuesta distinto). */
+export function costCoefficients(
+  member: MemberId,
+  task: TrainTask = "binaria",
+): CostCoefficients {
+  const table: Partial<Record<MemberId, CostCoefficients>> =
+    task === "numerica" ? REGRESSION_COST_COEFFICIENTS : COST_COEFFICIENTS;
+  const coefficients = table[member];
+  if (!coefficients) {
+    throw new Error(`costos: ${member} no compite en la tarea ${task}`);
+  }
+  return coefficients;
+}
 
 /** Ancho de referencia del ajuste (columnas tras one-hot de los sintéticos). */
 const REFERENCE_WIDTH = 33;
@@ -53,8 +96,9 @@ export type CostInput = {
 export function estimateMemberSeconds(
   member: MemberId,
   input: CostInput,
+  task: TrainTask = "binaria",
 ): number {
-  const { t0, a, b, c } = COST_COEFFICIENTS[member];
+  const { t0, a, b, c } = costCoefficients(member, task);
   const nTrain = Math.max(input.nTrain, 1);
   const width = Math.max(input.width, 1);
   const variable = a * (nTrain / 1000) ** b * (width / REFERENCE_WIDTH) ** c;

@@ -13,7 +13,7 @@ import type {
   Level2State,
   RunMeta,
 } from "@/lib/useExperiment";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import { LeagueTable } from "./LeagueTable";
 import { Level2Card } from "./Level2Card";
@@ -64,7 +64,7 @@ export function ResultsScreen({
   level2 = { status: "idle" },
   onRunLevel2,
 }: {
-  result: ExperimentResult;
+  result: BinaryResult;
   datasetName: string | null;
   cols: number;
   runMeta: RunMeta;

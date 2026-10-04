@@ -50,6 +50,29 @@ export const FICHAS: Record<FichaId, Ficha> = {
       en: "Next to nothing: milliseconds, even with thousands of rows.",
     },
   },
+  // S6 (ADR-013): solo estima cantidades. También es baseline del veredicto de regresión.
+  linear: {
+    what: {
+      es: "Una suma ponderada de tus columnas que da directamente la cantidad estimada: cada columna suma o resta con un peso fijo.",
+      en: "A weighted sum of your columns that gives the estimate directly: each column adds or subtracts with one fixed weight.",
+    },
+    goodFor: {
+      es: "Relaciones del tipo «a más de esto, más cantidad»; pocos datos; cuando tienes que poder explicar de dónde sale cada número.",
+      en: "Relationships of the «more of this, more of that» kind; small datasets; any time you need to explain where each number comes from.",
+    },
+    notFor: {
+      es: "Combinaciones («esto pesa solo si además pasa aquello») y curvas: si nadie se las construye, no las ve.",
+      en: "Combinations («this matters only when that happens too») and curves: it cannot see them unless someone builds them in.",
+    },
+    watch: {
+      es: "También es baseline del veredicto. Si gana la liga, ningún modelo más complejo aportó algo: eso es un resultado, no un fracaso.",
+      en: "It is also one of the verdict's baselines. If it wins the league, no fancier model added anything — that is a finding, not a failure.",
+    },
+    cost: {
+      es: "Casi nada: milisegundos, incluso con miles de filas.",
+      en: "Next to nothing: milliseconds, even with thousands of rows.",
+    },
+  },
   ridge: {
     what: {
       es: "Un modelo lineal, pariente de la logística, que traza una frontera recta y le pone freno a los pesos demasiado grandes.",
@@ -66,6 +89,29 @@ export const FICHAS: Record<FichaId, Ficha> = {
     watch: {
       es: "Su AUC se calcula con su puntaje de decisión, no con una probabilidad: sirve para ordenar filas, no para leerlo como porcentaje.",
       en: "Its AUC comes from a decision score rather than a probability: good for ranking rows, meaningless as a percentage.",
+    },
+    cost: {
+      es: "Casi nada.",
+      en: "Next to nothing.",
+    },
+  },
+  // S6 (ADR-013): solo estima cantidades.
+  lasso: {
+    what: {
+      es: "Una regresión lineal que castiga sus pesos y puede dejar en cero los de las columnas que no aportan: elige columnas mientras ajusta.",
+      en: "A linear regression that penalises its weights and can push the useless ones all the way to zero — it picks columns as it fits.",
+    },
+    goodFor: {
+      es: "Muchas columnas de las que sospechas que solo unas pocas importan.",
+      en: "Lots of columns when you suspect only a handful really matter.",
+    },
+    notFor: {
+      es: "Lo mismo que la lineal: no ve combinaciones ni curvas. Con columnas casi iguales entre sí, se queda con una casi al azar.",
+      en: "Same blind spots as plain linear regression: no combinations, no curves. Given near-duplicate columns, it keeps one of them almost arbitrarily.",
+    },
+    watch: {
+      es: "Si empata con la lineal, la penalización no tuvo nada que podar: todas tus columnas aportan un poco.",
+      en: "If it ties with linear regression, the penalty found nothing to prune: every column pulls a little weight.",
     },
     cost: {
       es: "Casi nada.",

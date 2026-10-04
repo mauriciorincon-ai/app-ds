@@ -1,5 +1,5 @@
 {
-  "payload_b64": "eJytV2tsHFcV3vXueteO14+YVgltk0BBCdBu7SZto4rKG6zUKdNOiuMooOJe3Z25",
+  "payload_b64": "eJytV2tsHFcV9np3vWvH60dMq4S2SUpBCVA2dpO2UUXlDVbqlGknreMooOJe3Z25",
   "versions": {
     "pyodide": "314.0.2",
     "sklearn": "1.8.0",
@@ -22,7 +22,8 @@
       "0",
       "1"
     ],
-    "positive_class": "1"
+    "positive_class": "1",
+    "task": "binaria"
   },
   "training_profile": {
     "numeric": {

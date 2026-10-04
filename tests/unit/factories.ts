@@ -5,7 +5,7 @@
 import { selectOneSe, type MemberId } from "@/engine/roster";
 import type { Metrics } from "@/engine/verdict";
 import type {
-  ExperimentResult,
+  BinaryResult,
   LeagueRow,
   MemberFitResult,
   PipelinePayload,
@@ -60,6 +60,8 @@ export function pipelineResult(
   const selection = selectOneSe(league, sent.cv_k)!;
   const winner = league.find((row) => row.name === selection.winner)!;
   return {
+    // S6: Python devuelve la tarea (aditivo en la binaria).
+    task: "binaria",
     classes: ["0", "1"],
     positive_class: "1",
     positive_rate: 0.3,
@@ -111,6 +113,7 @@ export function memberFit(
 ): MemberFitResult {
   const row = result.league.find((r) => r.name === member);
   return {
+    task: "binaria",
     model: row?.test ?? metrics(),
     model_name: member,
     confusion_matrix: result.confusion_matrix,
@@ -120,13 +123,13 @@ export function memberFit(
 }
 
 /**
- * Los campos S5 de un ExperimentResult armado a mano por los tests H1: la liga
+ * Los campos S5 de un BinaryResult armado a mano por los tests H1: la liga
  * con `modelName` como ganador de la CV (y, si se pasan, otros competidores).
  */
 export function leagueFields(
   modelName: MemberId = "forest",
   others: readonly MemberId[] = [],
-): Pick<ExperimentResult, "league" | "selection" | "smallSample"> {
+): Pick<BinaryResult, "league" | "selection" | "smallSample"> {
   const league = leagueRows([modelName, ...others]);
   return {
     league,

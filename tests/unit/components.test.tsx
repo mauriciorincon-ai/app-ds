@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import type { Metrics } from "@/engine/verdict";
 import { I18nProvider } from "@/i18n/provider";
 import { summarizeDataset } from "@/lib/experiment";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 import { ConfigScreen } from "@/components/ConfigScreen";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { ModelCardView } from "@/components/ModelCardView";
@@ -32,7 +32,7 @@ function metrics(overrides: Partial<Metrics> = {}): Metrics {
   };
 }
 
-function result(overrides: Partial<ExperimentResult> = {}): ExperimentResult {
+function result(overrides: Partial<BinaryResult> = {}): BinaryResult {
   return {
     positiveClass: "1",
     positiveRate: 0.3,

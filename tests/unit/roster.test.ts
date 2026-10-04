@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  ALL_MEMBER_IDS,
   BASELINE_IDS,
   byPriority,
   isMemberId,
@@ -35,8 +36,9 @@ describe("paridad del roster TS ↔ Python", () => {
   });
 
   it("cada miembro tiene su ficha de app (familia, base, probabilidades)", () => {
-    expect(Object.keys(MEMBERS).sort()).toEqual([...MEMBER_IDS].sort());
-    for (const id of MEMBER_IDS) {
+    // S6: MEMBERS cubre el espacio de ids de las dos tareas.
+    expect(Object.keys(MEMBERS).sort()).toEqual([...ALL_MEMBER_IDS].sort());
+    for (const id of ALL_MEMBER_IDS) {
       expect(isMemberId(MEMBERS[id].base)).toBe(true);
       // Una variante balanceada comparte la ficha de su base (D4).
       if (MEMBERS[id].balanced) expect(MEMBERS[id].base).not.toBe(id);

@@ -16,7 +16,7 @@ import {
 } from "@/lib/model-file";
 import { useExperiment } from "@/lib/useExperiment";
 import { useNarration } from "@/lib/useNarration";
-import type { ExperimentResult, PipelinePayload } from "@/workers/protocol";
+import type { BinaryResult, PipelinePayload } from "@/workers/protocol";
 import type { Metrics } from "@/engine/verdict";
 import { leagueFields, memberFit, pipelineResult } from "./factories";
 
@@ -48,7 +48,7 @@ function metrics(overrides: Partial<Metrics> = {}): Metrics {
   };
 }
 
-function experimentResult(): ExperimentResult {
+function experimentResult(): BinaryResult {
   return {
     positiveClass: "1",
     positiveRate: 0.3,
@@ -178,7 +178,7 @@ describe("useNarration", () => {
     );
     const winner = experimentResult();
     const { result, rerender } = renderHook(
-      ({ res }: { res: ExperimentResult }) =>
+      ({ res }: { res: BinaryResult }) =>
         useNarration({ ...input, result: res }),
       { wrapper, initialProps: { res: winner } },
     );
@@ -525,9 +525,11 @@ describe("useExperiment", () => {
           type: "result",
           command: "score",
           result: {
+            task: "binaria",
             predictions: ["1", "0"],
             probabilities: [0.9, 0.2],
             positive_class: "1",
+            task: "binaria",
             novelty: { columns: [], affected_rows: 0, n_rows: 2 },
           },
         },
@@ -581,6 +583,7 @@ describe("useExperiment", () => {
               target: "y",
               classes: ["0", "1"],
               positive_class: "1",
+              task: "binaria",
             },
             training_profile: {
               numeric: { x: { min: 1, max: 8 } },
@@ -617,6 +620,7 @@ describe("useExperiment", () => {
           target: "y",
           classes: ["0", "1"],
           positive_class: "1",
+          task: "binaria",
         },
         training_profile: {
           numeric: { x: { min: 1, max: 8 } },
@@ -663,6 +667,7 @@ describe("useExperiment", () => {
           target: "y",
           classes: ["0", "1"],
           positive_class: "1",
+          task: "binaria",
         },
         training_profile: {
           numeric: { x: { min: 1, max: 8 } },
@@ -700,6 +705,7 @@ describe("useExperiment", () => {
       target: "y",
       classes: ["0", "1"],
       positive_class: "1",
+      task: "binaria",
     },
     training_profile: {
       numeric: { x: { min: 1, max: 8 } },

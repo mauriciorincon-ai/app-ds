@@ -4,20 +4,21 @@
 import { describe, expect, it } from "vitest";
 import { BALANCED_NOTES, FICHAS, type Bilingual } from "@/content/modelos";
 import { MLP_MIN_ROWS } from "@/engine/encarrilador";
-import { MEMBER_IDS, MEMBERS } from "@/engine/roster";
+import { ALL_MEMBER_IDS, MEMBER_IDS, MEMBERS } from "@/engine/roster";
 import { translate } from "@/i18n/translate";
 
 const texts = (value: Bilingual) => [value.es, value.en];
 
 describe("fichas ↔ roster", () => {
   it("una ficha por modelo base (y ninguna de más) + la de clase mayoritaria", () => {
-    const bases = [...new Set(MEMBER_IDS.map((id) => MEMBERS[id].base))];
+    // S6: el espacio de ids abarca las dos tareas (linear y lasso solo estiman).
+    const bases = [...new Set(ALL_MEMBER_IDS.map((id) => MEMBERS[id].base))];
     expect(Object.keys(FICHAS).sort()).toEqual([...bases, "majority"].sort());
   });
 
   it("cada miembro del roster tiene nombre largo y corto en ES y EN", () => {
     for (const locale of ["es", "en"] as const)
-      for (const id of MEMBER_IDS)
+      for (const id of ALL_MEMBER_IDS)
         for (const kind of ["model", "short"]) {
           const key = `results.candidates.${kind}.${id}`;
           expect(translate(locale, key), `${locale} ${key}`).not.toBe(key);

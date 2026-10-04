@@ -10,7 +10,7 @@ import { SMALL_SAMPLE_ROWS } from "@/engine/encarrilador";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { datasetSlug } from "@/lib/files";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 
 export type ModelCardInput = {
   locale: Locale;
@@ -21,7 +21,7 @@ export type ModelCardInput = {
   categoricalFeatures: number;
   target: string;
   seed: number;
-  result: ExperimentResult;
+  result: BinaryResult;
   /** Saneamiento del dataset (S4) — cifras exactas en la constancia. */
   sanitation?: SanitationReport | null;
   /** Narración IA que PASÓ la verificación numérica; null ⇒ no se cita. */
@@ -96,7 +96,7 @@ export function buildModelCard(input: ModelCardInput): string {
 
   // S4 — nombre del modelo ganador y candidatos comparados (parametrizados; ya
   // no se hardcodea "Random Forest").
-  const modelLabel = (name: ExperimentResult["modelName"]) =>
+  const modelLabel = (name: BinaryResult["modelName"]) =>
     t(`results.candidates.model.${name}`);
   const candidatesList = result.candidates
     .map((c) => modelLabel(c.name))
@@ -104,7 +104,7 @@ export function buildModelCard(input: ModelCardInput): string {
 
   // S5 — la liga: cuántos compitieron, cómo se eligió y si lo eligió el usuario.
   const sel = result.selection;
-  const short = (name: ExperimentResult["modelName"]) =>
+  const short = (name: BinaryResult["modelName"]) =>
     t(`results.candidates.short.${name}`);
   const selectionSection = [
     section("selection"),

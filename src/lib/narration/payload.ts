@@ -6,7 +6,7 @@
 import type { EdaAlert } from "@/engine/eda";
 import type { Locale } from "@/i18n/config";
 import type { NarrationPayload } from "@/lib/ia/schemas";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 
 export const NARRATION_TOP_FEATURES = 8;
 
@@ -29,7 +29,7 @@ function edaAggregates(alerts: EdaAlert[]): NarrationPayload["eda"] {
 }
 
 export function buildNarrationPayload(input: {
-  result: ExperimentResult;
+  result: BinaryResult;
   target: string;
   cols: number;
   locale: Locale;

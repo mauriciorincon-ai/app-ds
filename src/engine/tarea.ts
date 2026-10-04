@@ -39,8 +39,15 @@ export const AMBIGUOUS_MAX_DISTINCT = 10;
 /** Texto con más categorías que esto no se trata como clases. */
 export const MULTICLASS_MAX_CLASSES = 20;
 
-/** Las tareas que el S5 sabe entrenar. */
+/** Las tareas que el MOTOR sabe entrenar (S6: también estimar una cantidad). */
+export type TrainTask = "binaria" | "numerica";
+export const TRAIN_TASKS: readonly TrainTask[] = ["binaria", "numerica"];
+
+/** Las tareas que la UI ofrece entrenar. */
 export const TRAINABLE_TASKS: readonly Task[] = ["binaria"];
+
+/** Respuesta del usuario a la pregunta de una columna ambigua (D2 del S6). */
+export type AmbiguousChoice = "multiclase" | "numerica";
 
 export function detectTask(values: readonly string[]): TaskDetection {
   const distinct = new Set<string>();
@@ -94,4 +101,20 @@ export function detectTask(values: readonly string[]): TaskDetection {
 
 export function isTrainable(detection: TaskDetection): boolean {
   return TRAINABLE_TASKS.includes(detection.task);
+}
+
+/**
+ * La tarea con que se entrena: la detectada, salvo que sea ambigua y el usuario
+ * haya respondido «¿clases o cantidad?» (D2 del S6). Sin respuesta, una ambigua
+ * sigue siendo ambigua: la app pregunta, no adivina.
+ */
+export function resolveTask(
+  detection: TaskDetection,
+  choice?: AmbiguousChoice | null,
+): Task {
+  return detection.task === "ambigua" && choice ? choice : detection.task;
+}
+
+export function isTrainTask(task: Task): task is TrainTask {
+  return (TRAIN_TASKS as readonly Task[]).includes(task);
 }

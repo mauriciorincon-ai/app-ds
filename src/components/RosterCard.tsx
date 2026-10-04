@@ -20,7 +20,8 @@ export function RosterCard({
 }: {
   routing: Routing;
   rows: number;
-  minorityShare: number;
+  /** null en regresión (S6): sin clases no hay minoritaria. */
+  minorityShare: number | null;
   k: number;
   smallSample: boolean;
 }) {
@@ -33,7 +34,7 @@ export function RosterCard({
     t(`roster.reason.${p.outReason ?? p.reason}`, {
       rows,
       min: MLP_MIN_ROWS,
-      share: Math.round(minorityShare * 100),
+      share: Math.round((minorityShare ?? 0) * 100),
     });
 
   return (

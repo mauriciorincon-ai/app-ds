@@ -68,6 +68,7 @@
         "invalid-json": "That file isn't valid JSON.",
         "invalid-format": "That file doesn't look like a model exported by Probeta.",
         "unsupported-version": "That file comes from a Probeta format version this app doesn't support.",
+        "unsupported-task": "That file is an intact Probeta model, but for a kind of task this version can't open yet. It was not loaded.",
         "hash-mismatch": "The file's content doesn't match its manifest (it may be corrupted or modified). For safety it was not loaded.",
         "hint": "Only load .probeta.json files exported by Probeta. The file's payload was never touched."
       },
@@ -186,6 +187,8 @@
       "model": {
         "logistic": "Logistic regression",
         "logistic_balanced": "Logistic regression (balanced classes)",
+        "linear": "Linear regression",
+        "lasso": "Lasso regression",
         "ridge": "Ridge classifier",
         "naive_bayes": "Naive Bayes (Gaussian)",
         "linear_svc": "Linear support vector machine",
@@ -202,6 +205,8 @@
       "short": {
         "logistic": "Logistic regression",
         "logistic_balanced": "Balanced logistic",
+        "linear": "Linear",
+        "lasso": "Lasso",
         "ridge": "Ridge",
         "naive_bayes": "Naive Bayes",
         "linear_svc": "Linear SVM",

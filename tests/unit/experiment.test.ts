@@ -292,6 +292,7 @@ describe("applyMemberFit (elección manual, U1)", () => {
       [],
     );
   const fit = (name: "knn" | "logistic", auc: number): MemberFitResult => ({
+    task: "binaria",
     model: metrics({ auc }),
     model_name: name,
     confusion_matrix: [
