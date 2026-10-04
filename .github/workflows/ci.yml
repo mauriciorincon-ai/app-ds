@@ -123,3 +123,9 @@ jobs:
       # el job no cambia de nombre (no toca la ruleset). Nació en rojo con scripts/demo-rojo.sh.
       - name: Lighthouse CI — categorías ≥ 0.9 (lighthouse-categorias.json)
         run: lhci assert --config=./lighthouse-categorias.json --aggregationMethod=median-run
+      # S7 (kit v1.37.0): lo que `lhci assert` no dice. AVISA (exit 0) si la mediana de un timing
+      # queda a menos del 10 % de su presupuesto (Lighthouse sobre localhost es bimodal), y FALLA si
+      # una URL medida no cae bajo ningún `path` de perf-budget.json. Nació en rojo con
+      # scripts/demo-rojo.sh (path del budget mutado → «/ no cae bajo ningún path»).
+      - name: Lighthouse — margen y presupuesto por URL medida (lighthouse-margen.mjs)
+        run: node scripts/lighthouse-margen.mjs

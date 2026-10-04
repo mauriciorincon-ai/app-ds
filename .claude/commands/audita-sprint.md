@@ -29,6 +29,14 @@ mismo. *(Origen: hoja-de-vida S7 — los dos hallazgos más caros —un agujero 
 enlaces con host sin esquema y una ficha en el frente equivocado pasando el build— salieron
 de revisar lo que el constructor daba por bueno.)*
 
+**Cuando el diff del sprint pasa de ~100 archivos, la Fase 1 se parte por SUPERFICIES (kit v1.38.0):**
+tres auditores independientes en paralelo —**alcance y textos** · **motor, contrato, gates y
+dependencias** · **UI, hooks, i18n, a11y y privacidad del cliente**— cada uno con su tramo del diff
+entero, y un consolidado único sin duplicados con el auditor de origen en cada hallazgo. *(ds S6: 150+
+archivos; el auditor de privacidad encontró el Crítico —un breadcrumb automático de Sentry copiando un
+`aria-label` con cifras y nombres de columna— que un auditor único con todo el diff probablemente no
+habría mirado; `demo-rojo.sh` rechazó además tres demos que no eran rojos.)*
+
 ## FASE 1 — Auditoría (SOLO LECTURA)
 
 1. **Cobertura de alcance:** contrasta CADA ítem planeado (el plan aprobado del sprint +
@@ -105,6 +113,13 @@ de más. Cierra recordando al usuario: *"aprueba la Fase 1 y fija el modelo de l
    «podría suscitar un error estructural».)*
 
 
+8. **¿QUÉ PROTECCIÓN DEL SISTEMA DEL USUARIO TOCÓ EL SPRINT, Y DÓNDE ESTÁ EL «SÍ»? (kit v1.36.0, regla 24).**
+   Lista cada acción del sprint sobre lo que el sistema operativo protege (Llavero, permisos TCC, launchd o
+   ítems de inicio, Touch ID, Automatización, cuentas, certificados) —en código, en scripts, en tests y en
+   comandos del constructor— y busca en la bitácora la matriz previa (qué · para qué · aviso · cómo se deshace)
+   y el «sí» del usuario. Acción sin matriz o sin «sí» = hallazgo **alto**. Y comprueba la regla 25: el comando
+   de pruebas por defecto no corre nada de eso (lo marcado `#[ignore]`/feature lo corre la CI).
+
 ## FASE 2 — Correcciones (SOLO tras aprobación del usuario)
 
 1. Propón el **plan de ajustes para TODOS los hallazgos — críticos, altos, medios y bajos (kit
@@ -112,7 +127,10 @@ de más. Cierra recordando al usuario: *"aprueba la Fase 1 y fija el modelo de l
    sprint… resolver todos, hasta los bajos»).** La deuda solo recoge lo que es IMPOSIBLE pagar en
    el sprint, con su razón y su `archivo:línea`; **«no reproducible» no cierra un hallazgo**: si
    no se puede reproducir, se re-audita su superficie hasta ubicarlo o descartarlo con evidencia.
-2. **Espera la validación del usuario** del plan.
+2. **Espera la validación del usuario** del plan. **Toda decisión que le pidas va en llano (kit v1.36.0):**
+   para cada opción, qué pasa si la elige y qué cuesta (tiempo, dinero, lo que deja de funcionar), sin
+   identificadores de hallazgo ni jerga en la pregunta *(Angel Ghost S3: seis decisiones llegaron en jerga y el
+   usuario pidió que se las explicaran)*.
 3. Solo entonces implementa — siguiendo el plan de la Fase 1 al pie; cualquier desviación se
    declara antes de ejecutarla. **Orden de pago (kit v1.35.0): primero los hallazgos que CREAN o
    amplían gates (tests, axe, aserciones); después el resto; y los gates nuevos se corren AL FINAL
@@ -127,7 +145,12 @@ de más. Cierra recordando al usuario: *"aprueba la Fase 1 y fija el modelo de l
    sigue cada ajuste hasta sus frases HERMANAS y nombra el summary entre las superficies (kit
    v1.31.0):** el summary se escribe después de la auditoría y nadie lo audita *(Angel Ghost S2:
    de 25 frases cazadas en la segunda pasada, once las fabricó la Fase 2 y dos vivían en el
-   propio summary)*.
+   propio summary)*. **La segunda pasada la hace OTRO auditor independiente (kit v1.36.0):** un subagente
+   que no construyó ni auditó la Fase 1, en solo lectura, sobre el diff completo del sprint.
+   **Y busca las frases de EVIDENCIA (kit v1.38.0, regla 27):** «leído como imagen», «N de N», «% de
+   líneas», «medido», «en verde» — para cada una debe existir la corrida que la sostiene (archivo,
+   cuenta, fecha) y coincidir con ella; una evidencia escrita antes de su corrida es hallazgo Medio
+   *(ds S6: tres frases escritas como plan en pasado, corregidas solo porque se releyó)*.
 5. Al terminar: registra en la bitácora y en el `SPRINT_NNN-summary.md` los hallazgos, los
    pagos y la deuda aceptada. **Sin auditoría registrada en el summary, el cierre del sprint
    queda condicionado** (lo verifica el `/cierre-sprint` de la planeadora).

@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# demo-rojo.sh — regla 15 del kit (kit v1.35.0): un gate se demuestra FALLANDO, con candado.
+# demo-rojo.sh — regla 15 del kit (kit v1.35.0; endurecido en v1.38.0): un gate se demuestra
+# FALLANDO, con candado.
 #
-# Aplica UNA mutación deliberada a un archivo, corre el gate, exige que el gate falle, restaura el
-# archivo desde una ÚNICA carpeta de respaldo y verifica con grep que la mutación ya no está.
+# Aplica UNA mutación deliberada a un archivo, corre el gate, exige que el gate falle NOMBRANDO lo
+# esperado, restaura el archivo desde una ÚNICA carpeta de respaldo y verifica (Python + cmp) que la
+# mutación ya no está.
 # Origen: ds S5 (K-S5-8/10/11) — una demo «en rojo» que nunca se puso roja, un respaldo guardado en
 # otra carpeta que dejó la mutación viva, y un server viejo que seguía sirviendo en el puerto.
+# Endurecido en ds S6 (AU-S6-12, K-S6-2/4/5) — un gate que no llegó a correr contaba como rojo, un
+# filtro de pruebas que no coincidía salía 0, y un `--buscar` de varias líneas debilitaba el grep.
 #
 # Uso:
 #   scripts/demo-rojo.sh --archivo <ruta> --buscar '<texto exacto>' --reemplazar '<texto>' \
@@ -36,7 +40,12 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$archivo" ] && [ -n "$buscar" ] && [ -n "$gate" ] || { echo "demo-rojo: faltan --archivo, --buscar o --gate" >&2; exit 1; }
 [ -f "$archivo" ] || { echo "demo-rojo: no existe $archivo" >&2; exit 1; }
-grep -qF -- "$buscar" "$archivo" || { echo "demo-rojo: '$buscar' no está en $archivo — la mutación no aplica a nada" >&2; exit 1; }
+
+# Presencia/ausencia de un texto LITERAL (puede tener varias líneas — K-S6-2: `grep -F` trata
+# cada línea como un patrón aparte y da verdadero con cualquiera de ellas).
+contiene() { python3 -c 'import sys,pathlib; sys.exit(0 if sys.argv[2] in pathlib.Path(sys.argv[1]).read_text() else 1)' "$1" "$2"; }
+
+contiene "$archivo" "$buscar" || { echo "demo-rojo: el texto de --buscar no está en $archivo — la mutación no aplica a nada" >&2; exit 1; }
 [ -z "$debe" ] && echo "demo-rojo: ⚠ sin --debe-nombrar, cualquier fallo cuenta como rojo (también uno que no vino de la aserción)" >&2
 
 # UNA sola carpeta de respaldo, nombrada aquí y solo aquí (K-S5-10).
@@ -44,17 +53,17 @@ RESPALDO="${DEMO_ROJO_DIR:-.demo-rojo}"
 mkdir -p "$RESPALDO"
 copia="$RESPALDO/$(echo "$archivo" | tr '/' '_').orig"
 cp "$archivo" "$copia"
+salida="$RESPALDO/salida.log"
 
 restaurar() {
   cp "$copia" "$archivo"
-  if [ -n "$reemplazar" ] && grep -qF -- "$reemplazar" "$archivo" && ! grep -qF -- "$reemplazar" "$copia"; then
+  if [ -n "$reemplazar" ] && contiene "$archivo" "$reemplazar" && ! contiene "$copia" "$reemplazar"; then
     echo "demo-rojo: ✗ la restauración dejó la mutación en $archivo" >&2; return 1
   fi
   cmp -s "$copia" "$archivo" || { echo "demo-rojo: ✗ $archivo no quedó idéntico al respaldo" >&2; return 1; }
   rm -f "$copia" "$salida"; rmdir "$RESPALDO" 2>/dev/null || true
   return 0
 }
-salida="$RESPALDO/salida.log"
 # Una interrupción a mitad del gate no deja la mutación viva en el árbol.
 trap 'echo "demo-rojo: interrumpido — restaurando $archivo" >&2; restaurar; exit 130' INT TERM
 
@@ -95,7 +104,7 @@ echo "demo-rojo: ✓ el gate falló con la mutación${debe:+ y nombró '$debe'}"
 
 trap - INT TERM
 restaurar || exit 1
-echo "demo-rojo: ✓ restaurado y verificado (grep + cmp)"
+echo "demo-rojo: ✓ restaurado y verificado (Python + cmp)"
 
 if [ -n "$verde" ]; then
   echo "demo-rojo: corriendo el gate restaurado (debe PASAR)…"
@@ -108,4 +117,4 @@ if [ -n "$verde" ]; then
   fi
   echo "demo-rojo: ✓ verde tras restaurar${minimo:+ ($n pruebas)}"
 fi
-echo "demo-rojo: registra en la bitácora: archivo, mutación, a quién nombró el fallo."
+echo "demo-rojo: registra en la bitácora, DESPUÉS de esta corrida (regla 27): archivo, mutación, a quién nombró el fallo."

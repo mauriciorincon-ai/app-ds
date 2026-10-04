@@ -2,12 +2,16 @@
 
 > Auto-cargado en cada sesión de este repo. Esta app pertenece al pipeline **AI-APPs**; su plan
 > vive en la casa planeadora. Estampada desde kit-app v1.2.0 el 2026-07-08 (Sprint 001).
+> **Regenerada por la planeadora el 2026-10-04 con el kit v1.38.0** (modo regenerar, método v1.39.0):
+> reglas propias de la app S1–S6 + reglas del kit v1.34.0–v1.38.0 (reglas 16–22, regla 11 y workflow
+> ampliados, cierre de ciclo en dos actos). La fase 0 del S7 la sincroniza; frase centinela:
+> «la evidencia se escribe DESPUÉS del hecho».
 
 ## Las dos casas (regla dura)
 
 | Casa           | Path                            | Escritor único   | Qué vive ahí                                                                     |
 | -------------- | ------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
-| **Planeadora** | `C:\Code\hr01-develop-ai-apps\` | su propia sesión | brief, VISION, sprints (plan+retro), órdenes de construcción, método, estándares |
+| **Planeadora** | `~/Code/hr01-develop-ai-apps/`  | su propia sesión | brief, VISION, sprints (plan+retro), órdenes de construcción, método, estándares |
 | **Esta app**   | este repo                       | **tú**           | código, tests, ADRs de implementación, bitácora y summary del sprint             |
 
 - ✅ Puedes **leer** la planeadora (agregada como `additionalDirectories`, o por path absoluto).
@@ -24,7 +28,8 @@ sin fuga de datos, validado correctamente, honesto contra un baseline, con incer
 pipeline reproducible. El diferenciador es la **honestidad metodológica automática**:
 **la honestidad acompaña y etiqueta; no bloquea ni esconde** (texto completo aprobado en la regla dura 3).
 Contrato de alcance: `portafolio/ds/VISION.md` (planeadora, v1.1.0 aprobada 2026-10-02). Sprint 001:
-"El veredicto honesto" · Sprint 005: "La liga honesta" (ciclo H2 «El catálogo»).
+"El veredicto honesto" · Sprint 005: "La liga honesta" · Sprint 006: "Estimar" · Sprint 007: "Agrupar y
+multiclase" (cierre del ciclo H2 «El catálogo»).
 
 ## ⚠️ Reglas duras de esta app (producto, no estilo)
 
@@ -35,7 +40,9 @@ Contrato de alcance: `portafolio/ds/VISION.md` (planeadora, v1.1.0 aprobada 2026
 2. **Los datos del usuario NUNCA salen de su navegador.** El cómputo (perfilado, EDA,
    entrenamiento) corre client-side con Pyodide/WASM. No se suben datasets a ningún servidor. Los
    logs/observabilidad **jamás** incluyen valores del dataset (solo metadatos: nº filas/columnas,
-   tipos, forma — nunca contenido ni, idealmente, nombres de columnas del usuario).
+   tipos, forma — nunca contenido ni, idealmente, nombres de columnas del usuario). **Incluye los
+   breadcrumbs automáticos de Sentry** (S6, AU-S6-01: copiaban un `aria-label` con cifras y columnas;
+   solo pasan los propios `probeta.*`).
 3. **Honestidad por diseño** (texto aprobado por el usuario, F0 #13, 2026-10-02 — literal):
    **El diferenciador es la honestidad metodológica automática, y la honestidad ACOMPAÑA: etiqueta,
    no bloquea ni esconde.** Lo escaso no es el número de modelos sino **las decisiones tomadas sobre
@@ -56,7 +63,9 @@ Contrato de alcance: `portafolio/ds/VISION.md` (planeadora, v1.1.0 aprobada 2026
   (i18n approach → ADR). Responsive móvil (360–420px) + desktop (≥1024px).
 - **Cómputo:** **Pyodide** (pandas + scikit-learn, y desde S5 xgboost + lightgbm del propio lockfile
   de Pyodide, en WASM) en un **Web Worker** (no bloquear el hilo principal), single-thread, **cargado bajo demanda** al iniciar el experimento.
-  Assets de Pyodide **self-hosteados** en `public/pyodide/` (o CDN con excepción de CSP → ADR).
+  Assets de Pyodide **self-hosteados** en `public/pyodide/` (o CDN con excepción de CSP → ADR). La
+  versión de Pyodide viaja dentro de cada modelo exportado: **se mueve por decisión, con test de pin**
+  (`runtime-pin.test.ts`, S6) y el runtime re-medido.
 - **Backend/BD/Auth:** **ninguno en Sprint 1** — todo client-side. Supabase entra más adelante
   **solo para metadata** (proyectos, planes de wrangling, métricas, model cards) con RLS desde la
   primera tabla; **jamás datos crudos del usuario**.
@@ -75,21 +84,29 @@ Contrato de alcance: `portafolio/ds/VISION.md` (planeadora, v1.1.0 aprobada 2026
 src/
 ├─ app/            (App Router: workspace del experimento)
 ├─ components/     (UI sin lógica: carga · configuración · entrenamiento · resultados/veredicto)
-├─ engine/         (motores puros, >80% cobertura: verdict.ts modelo-vs-baseline · leakage heurística)
-├─ workers/        (protocol.ts — contrato tipado UI↔worker; el runner es un module worker
-│                   autónomo en public/pyodide-runner.js — ver ADR-001, fricción K11 de Turbopack)
+├─ engine/         (motores puros, >80% cobertura: verdict.ts modelo-vs-baseline · leakage heurística ·
+│                   tarea.ts E1 · encarrilador.ts/costos.ts E2 · roster.ts · eda.ts)
+├─ workers/        (protocol.ts — contrato tipado UI↔worker; contract.ts — validadores Python → TS con
+│                   carnadas por campo; el runner es un module worker autónomo en public/pyodide-runner.js)
 ├─ lib/
-│  ├─ ds/          (parsing/validación CSV · perfilado · pipeline sklearn anti-fuga [.py embebido])
+│  ├─ ds/          (parsing/validación CSV · perfilado · pipeline sklearn anti-fuga [.py embebido, copia
+│  │               idéntica en public/pyodide/ vigilada por test])
 │  └─ ia/          (S2 — patrón IA-embebida: schemas.ts · client.ts · guardrails.ts · persist.ts)
+├─ content/        (fichas de modelo E3 como dato {es, en})
 ├─ i18n/           (es · en — paridad exigida por tests)
 └─ types/
-datasets/                 (ejemplos empaquetados, anonimizados; uno con fuga plantada)
+datasets/                 (ejemplos empaquetados, anonimizados; con fuga plantada por tarea)
 public/pyodide/           (assets de Pyodide self-hosteados)
 tests/{unit,integration,e2e}/
-design-system.md          (fuente de verdad visual — se crea en el sprint 1 desde cero)
+design-system.md          (fuente de verdad visual — creada en el sprint 1 desde cero)
+design-sync/              (bundle publicable del design system — artefacto del repo)
 docs/MANUAL-DE-USO.md     (manual en español llano — OBLIGATORIO, vivo desde S1)
-sprints/SPRINT_NNN-implementation-log.md · SPRINT_NNN-summary.md
+docs/GUIA-DE-PRUEBA.html  (guía viva y ACUMULATIVA · docs/kit-de-prueba/ con los datasets)
+docs/BROCHURE.html + docs/brochure-export.json (brochure vivo + export para la vitrina)
+docs/BLUEPRINT.html       (as-built de la infraestructura, vivo entre ciclos)
+sprints/SPRINT_NNN-implementation-log.md · SPRINT_NNN-summary.md · SPRINT_NNN-auditoria.md
 decisions/NNN-titulo.md   (ADRs de implementación)
+scripts/demo-rojo.sh      (toda demo en rojo pasa por aquí — regla 11)
 ```
 
 ## Reglas de desarrollo
@@ -109,20 +126,21 @@ decisions/NNN-titulo.md   (ADRs de implementación)
 7. **Secrets solo en `.env.local` (gitignored) y Vercel env vars.** Doble protección gitleaks
    (hook PreToolUse + `githooks/pre-commit`). El hook nace ejecutable (100755) y `core.hooksPath`
    se re-aplica en cada `pnpm install` (script `prepare` — K12 pagada en S3); si un commit con
-   secreto de prueba NO es bloqueado, el gate está muerto. **Carnada canónica verificada (kit
-   v1.6.3; desde v1.7.3 viaja PARTIDA aquí para no disparar el hook al comitear este archivo):
-   ármala concatenando `AWS_ACCESS_KEY_ID=` + `AKIAQ7RTZ4PX` + `KM2WNB3S` SOLO en el archivo de
-   prueba del hook** — no improvises el secreto (las reglas modernas de gitleaks exigen alfabeto
-   base32 tras `AKIA` y entropía; una carnada floja pasa en silencio dando falsa tranquilidad).
-   En esta app el gate de privacidad es doble: secrets Y datos del usuario (regla dura 2 — nunca
-   salen del navegador, nunca a logs).
+   secreto de prueba NO es bloqueado, el gate está muerto. **El hook PreToolUse FALLA CERRADO si
+   faltan gitleaks o jq (kit v1.37.0)**; `KIT_SIN_GITLEAKS=1` lo salta a sabiendas, por invocación.
+   **Carnada canónica verificada (kit v1.6.3; desde v1.7.3 viaja PARTIDA aquí para no disparar el hook
+   al comitear este archivo): ármala concatenando `AWS_ACCESS_KEY_ID=` + `AKIAQ7RTZ4PX` + `KM2WNB3S`
+   SOLO en el archivo de prueba del hook** — no improvises el secreto (las reglas modernas de gitleaks
+   exigen alfabeto base32 tras `AKIA` y entropía; una carnada floja pasa en silencio dando falsa
+   tranquilidad). En esta app el gate de privacidad es doble: secrets Y datos del usuario (regla dura
+   2 — nunca salen del navegador, nunca a logs).
 8. **Presupuesto de esfuerzo:** ~12 pasos por pantalla; si lo excedes, detente y simplifica o consulta.
 9. **Manual de uso vivo (`docs/MANUAL-DE-USO.md`, obligatorio).** Español llano, para un usuario
    NO técnico: cómo cargar datos, elegir el objetivo, leer el veredicto y las advertencias de fuga.
    Toda feature que llegue a `main` queda documentada en el mismo sprint.
 10. **Diseño con gate (`design-system.md` + skill `diseno-ui`).** **No hay prototipo utilizable**
     (el legado "Visual Lab" de `referencias-ui/ds/` fue ANULADO — es pedagógico-visual, justo lo
-    que esta app NO es; no tomarlo como referencia). El **Sprint 1 CREA** el `design-system.md`
+    que esta app NO es; no tomarlo como referencia). El **Sprint 1 CREÓ** el `design-system.md`
     desde cero (tono: claro, confiable, de herramienta seria — no pedagógico, no lúdico). Cada
     sprint con UI cierra con el checklist `diseno-ui` + aprobación visual del usuario sobre la
     preview. Claude Design es BAJO DEMANDA (solo si el gate no converge); su publicación es
@@ -136,7 +154,9 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     se construye) abre parada; la de **TEXTO** (si un copy se entiende) no bloquea — se registra
     «maquetado, no visto» y su veredicto viaja al gate humano del ciclo. Toda mirada va en **matriz
     de una fila** (archivo · botón/estado · qué mirar · respuesta esperada), nunca preguntas sueltas;
-    las segundas vueltas no abren parada.
+    las segundas vueltas no abren parada. **Solo las miradas de DECISIÓN** (cambian una decisión del
+    usuario, la promesa o su máquina) abren parada; FORMA y TEXTO se maquetan y van al único gate humano
+    del ciclo (regla del usuario 2026-09-26 y 2026-10-04).
 11. **Un gate se demuestra FALLANDO — y se demuestra CORRIENDO** (regla 15 del kit + su hermana,
     kit v1.16.0; regla dura del pipeline). Todo gate nuevo que este repo agregue —job de CI, hook,
     aserción, umbral, script— nace con su **demo**: un cambio deliberado que lo pone en **rojo**,
@@ -159,6 +179,12 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     el build de producción y el runtime Pyodide real del navegador, no solo Node). **`gh pr checks`
     DESPUÉS DE CADA PUSH (kit v1.31.0)**, no al cierre de la fase; y una métrica que la CI no puede
     medir se declara **`manual`** con su corrida local registrada, o no se declara.
+    **Toda demo en rojo se corre con `scripts/demo-rojo.sh` (kit v1.35.0 → endurecido en v1.38.0 a
+    partir de lo que ESTE repo le hizo en el S6):** mutación literal → gate (debe fallar **nombrando lo
+    esperado**, `--debe-nombrar`) → restauración desde UNA carpeta verificada con Python y `cmp` → gate
+    restaurado (debe pasar con **al menos N pruebas**, `--minimo-tests`); un exit 126/127 o una señal no
+    cuentan como rojo; una interrupción restaura; `--puerto` mata el server viejo por puerto. Registra la
+    demo DESPUÉS de correrla (regla 22).
 12. **Brochure vivo + su export** (regla 13 del kit, molde v2). `docs/BROCHURE.html` + la ruta
     pública `/conoce` son el entregable de PRESENTACIÓN de la app — el anti-manual, para usuarios
     finales y clientes. **REGLA CERO: no se estampa, se PRODUCE** — antes de una línea de HTML, un
@@ -187,17 +213,21 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     `git add` y cubriendo también código y comentarios de tests (kit v1.26.0):
     `git grep -nE "vercel[.]app|workers[.]dev|pages[.]dev" -- ':!pnpm-lock.yaml'` vacío **y**
     `gh repo view --json homepageUrl -q .homepageUrl` = **la URL del propio repo** (kit v1.32.1: con
-    el campo vacío, la GitHub App de Vercel lo reescribe con la URL de producción). Los documentos
-    que narran el barrido escriben el patrón con clase de carácter, nunca el literal. _(La vitrina
-    de hoja-de-vida muestra QUÉ construyó el usuario, nunca POR DÓNDE entrar.)_
+    el campo vacío, la GitHub App de Vercel lo reescribe con la URL de producción; `/deploy-check` §9
+    lo REPARA, kit v1.35.0). Los documentos que narran el barrido escriben el patrón con clase de
+    carácter, nunca el literal. _(La vitrina de hoja-de-vida muestra QUÉ construyó el usuario, nunca
+    POR DÓNDE entrar.)_
 14. **PRs de dependencias: máximo DOS abiertos y el lockfile NO se pelea** (regla 18 del kit,
     v1.24.0/v1.32.0). `.github/dependabot.yml` con techo real de 2 (limit 1 por ecosistema, todo
     agrupado, solo minor+patch en el lote; los mayores llegan sueltos) — la invariante la vigila
     `tests/unit/dependabot-config.test.ts`. Se mergean **de a uno**, dejando que dependabot regenere.
     Un conflicto de lockfile resuelto a mano parte del lado que trae los bumps. `pnpm peers check`
     corre en `quality`, y **`scripts/verificar-dependencias.mjs`** compara el lockfile del PR contra
-    `origin/main` y falla si algún paquete quedó por debajo. Overrides: en `pnpm-workspace.yaml`,
-    jamás en `package.json`.
+    la base y **falla cerrado** (base ilegible = rojo, kit v1.35.0); las degradaciones se DECLARAN en
+    `scripts/degradaciones-permitidas.json` (`{nombre, de, a, razon}`, kit v1.37.0) y una entrada sin uso
+    falla. Overrides: en `pnpm-workspace.yaml`, jamás en `package.json`. **Toda excepción de
+    `pnpm audit` (`auditConfig.ignoreGhsas`) exige ADR** con id · razón · fecha · condición de retiro, y
+    solo si la advisory no tiene parche publicado (kit v1.34.0; aquí: ADR 012 `braces`).
 15. **Gate de contrato entre lenguajes** (regla 19 del kit, v1.28.0). Donde un dato cambia de
     lenguaje o de runtime —aquí: el payload TS → `pipeline.py`, el retorno Python → TS por
     `postMessage`, el progreso worker → UI y el manifiesto `.probeta.json` archivo → import— la suite
@@ -207,10 +237,50 @@ decisions/NNN-titulo.md   (ADRs de implementación)
     cruza de punta a punta**. Cada campo nuevo del contrato trae su **carnada**: una mutación de ese
     solo campo que el lector debe rechazar NOMBRÁNDOLO; se reporta «detectó k de n». Un contrato
     tipado en cada orilla y ninguna prueba entre ellas son dos suposiciones que coinciden hasta que no.
+16. **La app es BILINGÜE español/inglés en TODO desde el primer sprint** (regla 20 del kit, v1.29.0;
+    estándares 2.14.0 apartado 6-B, regla de la casa). Interfaz, contenido, informes, documentos
+    generados, brochure y ficha técnica. El dato nace como mapa `{ es, en }`, redactado en cada idioma
+    (no traducido), con test de paridad; todo contenido nuevo se escribe en ambos idiomas EN EL MISMO
+    PASO. *(La IA de construcción por suscripción —regla 21 del kit, 7-S— no aplica a esta app: su IA
+    de runtime es el adapter de la regla dura 4 con ADR 005.)*
+17. **Todo control dibujado tiene su script cargado, y una pasada de INTERACCIÓN lo demuestra**
+    (regla 22 del kit, v1.32.0). El arnés de capturas activa cada control (responder la tarea ambigua,
+    cambiar tema e idioma, abrir una ficha, el Nivel 2, cancelar) y comprueba que ALGO cambió en el DOM
+    o en la captura antes de darlo por bueno — una captura de un panel cerrado «mide bien» y no dice nada.
+18. **Matriz de envejecimiento** (regla 23 del kit, v1.33.0; método v1.36.0). Todo dato con fecha de
+    cambio de estado trae un gate que construye la página en cada fecha en que algo cambia; la fecha es
+    perilla de build. Aquí aplica a las **condiciones de retiro con fecha** (ADR 012 `braces`; el pin
+    de Pyodide): el test que las vigila se re-lee en cada cierre de ciclo y dice si venció.
+19. **Las protecciones del sistema del usuario se enseñan ANTES de tocarlas** (regla 24 del kit,
+    v1.36.0; método v1.38.0 — regla dura del pipeline). Antes de crear, modificar o invocar algo que el
+    sistema operativo protege (Llavero, permisos TCC, ítems de inicio, Touch ID, Automatización, cuentas,
+    certificados) —en código, scripts, tests o comandos tuyos— presentas una **matriz de una fila por
+    acción: qué · para qué · qué aviso verá · cómo se deshace** y esperas un «sí» por acción. Si no sabes
+    si pide permiso, se enseña. `/audita-sprint` lo pregunta (casilla 8). *(Esta app es web y hoy no toca
+    nada de eso; la regla aplica al arnés de capturas, a Playwright con WebKit y a cualquier script nuevo.)*
+20. **El comando de pruebas por defecto no toca hardware ni permisos** (regla 25 del kit, v1.36.0).
+    `pnpm test` corre solo lo que no abre micrófono, cámara, audio, Llavero, red local ni diálogos del
+    sistema; lo que los toca va detrás de una marca explícita y lo corre la CI o un comando nombrado.
+21. **Worktrees prohibidos** (regla 26 del kit, v1.37.0; regla del usuario 2026-09-27). Todo el trabajo
+    ocurre en el checkout principal `~/Code/app-ds`: nada de `git worktree` ni de `.claude/worktrees`; el
+    trabajo en paralelo vive como archivos en este directorio y se comitea a su rama con índice temporal;
+    jamás `git stash` a secas sobre trabajo ajeno.
+22. **La evidencia se escribe DESPUÉS del hecho** (regla 27 del kit, v1.38.0; método v1.40.0 — nació
+    en ESTE repo, S6). Una frase de evidencia en la bitácora, el summary o el PR —«leído como imagen»,
+    «N de N», «% de líneas», «medido con…», «en verde en la CI»— se escribe después de la corrida que la
+    produce, con su cuenta tomada del resultado, nunca como plan en pasado. Es la hermana de «ninguna
+    cifra sin procedencia»; la segunda pasada de la casilla 4 de `/audita-sprint` busca estas frases y
+    exige su corrida *(S6: «leído como imagen» antes de leer, «36 de 36» que mezclaba anchos con altos,
+    «93,24 % de líneas» que era la cifra de sentencias)*. **La pasada de capturas cubre los extremos de
+    magnitud** de cada dataset de ejemplo (seis dígitos, ~1e-11, el nombre de columna más largo), no solo
+    el principal *(S6: los dos defectos del cierre vivían en el gráfico de precios)*. **Un spike de costos
+    se corre con máquina quieta y carga registrada** (molde `docs/SPIKE-DE-COSTOS.plantilla.md` del kit;
+    se repite el lote si hubo carga — K-S6-3).
 
 ## Estándares (los 6+1, gates en CI)
 
-Testing · CI/CD · Observabilidad · Seguridad · Performance (contra `perf-budget.json`) · UX+A11y ·
+Testing · CI/CD · Observabilidad · Seguridad · Performance (contra `perf-budget.json`,
+`lighthouse-categorias.json` y `lighthouse-margen.mjs` del kit v1.37.0) · UX+A11y ·
 **IA embebida responsable** (desde S2). Detalle canónico: `estandares/estandares.md` de la
 planeadora (read-only). Ítem rojo ⇒ deuda técnica explícita en el summary o el sprint no cierra.
 **Nota de performance:** Pyodide es pesado y se carga **bajo demanda** — NO debe estar en el camino
@@ -225,33 +295,38 @@ del LCP; la landing es liviana y el motor se trae al iniciar el experimento (Lig
 aprobarse el plan, emite el **bloque de arranque** — tu recomendación de **modelo y esfuerzo**
 para el sprint (por fase si difiere; el usuario los fija con `/model`) + espacio para sus
 ajustes — y espera su **«construye»** explícito antes de tocar cualquier archivo.
-Branch `sprint-NNN/<tema>`.
+Branch `sprint-NNN/<tema>`. **El PR del sprint nace en borrador (`gh pr create --draft`) y su cuerpo
+EMPIEZA con la línea del merge (kit v1.38.0):** «cuando esté verde: marca el PR listo, mergea con
+**squash** y borra la rama; después corre `/cierre-sprint ds`».
 
 **Durante** — construye por fases (setup → motor → UI → integración → e2e). **Gate de FASE (kit
 v1.8.0):** al terminar cada fase, DETENTE, entrega el resumen completo y espera el «continúa»
 explícito. Mantén viva la bitácora `sprints/SPRINT_NNN-implementation-log.md` (fricciones del kit
-SEPARADAS del trabajo del producto). ADRs en `decisions/` para decisiones no anticipadas.
-`/self-review` tras cada bloque; `/run-tests` frecuente; **`gh pr checks` tras cada push**.
+SEPARADAS del trabajo del producto; **evidencia después del hecho**, regla 22). ADRs en `decisions/`
+para decisiones no anticipadas. `/self-review` tras cada bloque; `/run-tests` frecuente; **`gh pr
+checks` tras cada push**. **Los umbrales no vienen en la orden (método v1.37.0):** se fijan con tu
+medición en el STOP y quedan como constante exportada con su test.
 
-**Cierre — summary OBLIGATORIO y DENTRO del PR (kit v1.24.0).** Con la construcción concluida:
-**`/audita-sprint`** (Fase 1 por un auditor independiente → `sprints/SPRINT_NNN-auditoria.md` con
-TODOS los hallazgos y su `archivo:línea`; Fase 2 paga TODOS, hasta los bajos) → `/deploy-check` →
-`sprints/SPRINT_NNN-summary.md` (plantilla abajo) commiteado EN el PR → merge con CI verde y
-conclusión propia `success` por check. **Sin summary el sprint NO está cerrado** (es lo que la
-planeadora lee para la retrospectiva).
+**Cierre — auditoría OBLIGATORIA + summary OBLIGATORIO y DENTRO del PR (kit v1.24.0).** Con la
+construcción concluida: **`/audita-sprint`** (Fase 1 por auditores independientes —por superficies si
+el diff pasa de ~100 archivos— → `sprints/SPRINT_NNN-auditoria.md` con TODOS los hallazgos y su
+`archivo:línea`; Fase 2 paga TODOS, hasta los bajos, primero los que crean gates; segunda casilla 4 por
+otro auditor, incluidas las frases de evidencia) → `/deploy-check` (bundle contra `merge-base` con el
+mismo entorno; homepage reparado) → `sprints/SPRINT_NNN-summary.md` (plantilla abajo, con la sección
+fija «Para mergear») commiteado EN el PR → **el usuario** marca listo, mergea con squash y borra la
+rama → `/cierre-sprint ds` en la planeadora. **Sin summary el sprint NO está cerrado.**
 
-**Cierre de CICLO (método v1.8.0 — cuando este sprint es el ÚLTIMO de un ciclo H1/fase/MVP; la
-orden lo declara):** además de la DoD, el sprint entrega (1) **`docs/BLUEPRINT.html`** — as-built
-de TODA la infraestructura que soporta la app (plantilla `docs/BLUEPRINT.plantilla.html` del kit:
-**HTML autocontenido con diagrama SVG embebido** — jamás mermaid ni CDNs — + tabla por pieza +
-costo real/mes + punto único de falla), vivo y acumulativo entre ciclos; (2) el **design system
-publicado en Claude Design** (`/design-sync`); y (3) la **`docs/GUIA-DE-PRUEBA.html` v1
-ACUMULATIVA** con TODAS las pruebas vigentes del ciclo (chips de origen `Nuevo·SN`/`Mejorado en
-SN`/`SN` heredada, filtros, gate mínimo ⭐ SOLO no-automatizable, `localStorage` con prefijo
-versionado por sprint, kit de prueba en `docs/kit-de-prueba/` enlazado, HTML autocontenido;
-referencia: `app-habla/docs/GUIA-DE-PRUEBA.html`). El **gate ⭐ del usuario** sobre la guía v1 es
-la ÚNICA vía de cierre del ciclo y JAMÁS se difiere a otro sprint (lo que puede pausarse es el
-MOMENTO en que se ejecuta). Todo ciclo tiene MÍNIMO 3 sprints (regla dura 2026-07-17).
+**Cierre de CICLO — ocurre en DOS ACTOS (método v1.20.0; la orden declara cuando este sprint es el
+ÚLTIMO del ciclo):** **Acto 1, DE CONSTRUCCIÓN** — el último sprint mergea con CI verde (conclusión
+propia por check) + auditoría + contrapesos + **`docs/BLUEPRINT.html`** al día (as-built de TODA la
+infraestructura, HTML autocontenido con SVG embebido, vivo y acumulativo entre ciclos) + la guía
+ACUMULATIVA con el **⭐⭐ corto** declarado (recorrido caminable ≤ ~20 min, «N de M», qué deja fuera y
+por qué) + **auditoría de esta constitución contra el código** (método v1.24.0) + el brochure y su
+export ajustados en el mismo PR (regla 12). **Acto 2, DE PRUEBAS (el sello del ciclo)** — cuando el
+usuario decida: gate **⭐⭐** parada a parada → correcciones por PR normal → brochure ajustado →
+`/design-sync` (**el usuario INVOCA, tú EJECUTAS**; `lastPublished` al día en `design-sync/project.json`;
+jamás antes del ⭐⭐). El ⭐⭐ condiciona el acto 2, no el 1: no retengas el merge esperándolo, y registra
+en el summary cuál acto ocurrió. Todo ciclo tiene MÍNIMO 3 sprints (regla dura 2026-07-17).
 
 ### Plantilla del summary
 
@@ -280,24 +355,26 @@ pr: <link>
 
 ## Bugs + resoluciones
 
-## Qué salió bien / qué generó fricción [S1: fricciones del kit v1.2.0 aparte]
+## Qué salió bien / qué generó fricción [fricciones del kit aparte, numeradas K-SN-n]
 
 ## Sugerencias de mejora al método [¿algo de metodo/metodo.md debería cambiar?]
 
 ## Deuda técnica aceptada [qué, por qué, sprint de pago]
 
-## Auditoría [/audita-sprint: artefacto, hallazgos por severidad, todos pagados]
+## Auditoría [/audita-sprint: artefacto, hallazgos por severidad, todos pagados, carnadas «k de n»]
 
 ## Gate ⭐ — diferimiento y contrapesos [kit v1.28.0 — sección FIJA; sin ella el diferimiento no es válido]
 
-| Contrapeso                     | Evidencia (archivo, cuenta medida, corrida)     |
-| ------------------------------ | ----------------------------------------------- |
-| Pasada de capturas del builder | [N encuadres leídos como imagen · ruta · fecha] |
-| e2e de `reduced-motion`        | [N pruebas · archivo del spec · corrida en CI]  |
+| Contrapeso                     | Evidencia (archivo, cuenta medida, corrida — escrita DESPUÉS de correrla) |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| Pasada de capturas del builder | [N encuadres leídos como imagen · extremos de magnitud · ruta · fecha]    |
+| e2e de `reduced-motion`        | [N pruebas · archivo del spec · corrida en CI]                            |
 
-[+ «⭐ diferido: N pruebas al acumulado del ciclo (S1: n₁ · S2: n₂…)» o «⭐ OBLIGATORIO corrido: parada a parada»]
+[+ «⭐ diferido: N pruebas al acumulado del ciclo (S5: n₁ · S6: n₂…)» o «⭐⭐ OBLIGATORIO: Acto 1 (declarado) / Acto 2 (corrido parada a parada)»]
 
 ## Archivos clave (máx. 10) · ## Cómo probar
+
+## Para mergear [línea FIJA (kit v1.38.0): «marca el PR listo, mergea con SQUASH y borra la rama; después corre /cierre-sprint ds» — la hace el usuario]
 ```
 
 ## Patrones de dominio de esta app
@@ -305,31 +382,38 @@ pr: <link>
 - **Anti-fuga por construcción:** un `Pipeline` de sklearn (imputación + encoding en un
   `ColumnTransformer`) que se ajusta **solo con `fit` sobre train**; es el único camino que la UI
   ofrece. El test unit del `engine/` falla si alguien ajusta el preprocesador sobre todo el dataset.
-- **Veredicto modelo-vs-baseline:** `engine/verdict.ts` compara el modelo contra un baseline (clase
-  mayoritaria + regresión) en la métrica primaria y emite un texto franco ("supera por +N" / "NO
-  supera — revisa tus features"). Todas las métricas se calculan sobre **test**, jamás sobre train.
+- **Veredicto modelo-vs-baseline:** `engine/verdict.ts` compara el modelo contra un baseline en la
+  métrica primaria y emite un texto franco ("supera por +N" / "NO supera — revisa tus features").
+  **La regla de cada métrica vive en UN sitio (`METRIC_RULES`)**: dirección, empate, texto. Binaria:
+  clase mayoritaria + logística; estimar: **mediana + lineal**, MAE en unidades, empate 1 % relativo
+  (decisiones del usuario en el STOP del S6). Todas las métricas se calculan sobre **test**, jamás
+  sobre train.
 - **La liga (desde S5):** todos los modelos que el navegador puede entrenar compiten con
   **validación cruzada dentro de train** (el preprocesador se reajusta en cada fold); gana el mejor
-  en CV y **recién entonces se abre el test**. «La tabla se calcula con validación cruzada: sirve
-  para elegir. El veredicto se calcula con el conjunto de prueba: sirve para creer.» Los puntajes de
-  test de los perdedores existen bajo la etiqueta «no sirve para elegir»; la elección manual queda
-  registrada como «elegido por ti». Un test de integración falla si la selección mira el test.
+  en CV con la regla de un error estándar y **recién entonces se abre el test**. «La tabla se calcula
+  con validación cruzada: sirve para elegir. El veredicto se calcula con el conjunto de prueba: sirve
+  para creer.» Los puntajes de test de los perdedores existen bajo la etiqueta «no sirve para elegir»;
+  la elección manual queda registrada como «elegido por ti». Un test de integración falla si la
+  selección mira el test. **Un roster POR TAREA sobre un solo espacio de ids** (`ALL_MEMBER_IDS` fija la
+  prioridad global; cada roster es una subsecuencia, con test).
 - **Encarriladores deterministas (desde S5):** E1 decide la tarea (binaria · multiclase · numérica ·
-  sin objetivo · ambigua), E2 decide quién compite y en qué nivel (reglas exportadas como
-  constantes, razón por modelo, Python recibe la lista y no re-deriva) y E3 da la ficha de lectura
-  de cada modelo. Ninguno se oculta: «fuera» es una recomendación con su razón, forzable en el
-  Nivel 2.
-- **Heurística de fuga honesta (no exhaustiva):** marca features con relación univariada
-  sospechosamente alta con el target ("esta columna podría ser un proxy del objetivo") sin prometer
-  atrapar todos los casos.
+  sin objetivo · ambigua — la ambigua PREGUNTA con respuesta sugerida), E2 decide quién compite y en
+  qué nivel (reglas exportadas como constantes medidas en el spike, razón por modelo, Python recibe la
+  lista y no re-deriva) y E3 da la ficha de lectura de cada modelo (`content/modelos.ts`, `{es, en}`).
+  Ninguno se oculta: «fuera» es una recomendación con su razón, forzable en el Nivel 2.
+- **Fuga honesta (no exhaustiva), por tarea:** binaria (AUC de rango / pureza por categoría) y continua
+  (|Spearman| / varianza explicada, umbral 0,98 con soporte ≥ 5 y mínimo 10 pares — S6, D8). Marca y
+  nombra la columna; «sin ella, entrena» tiene su prueba.
+- **Manifiesto por tarea (ADR 014):** `.probeta.json` con `task` aditivo («si falta, es binaria»); un
+  archivo viejo importa; una tarea desconocida se rechaza nombrándola (`unsupported-task`). Pyodide viaja
+  dentro del archivo: su versión se mueve por decisión.
 - **Cómputo en el navegador:** Pyodide en Web Worker; los datasets viven en el cliente
   (OPFS/IndexedDB/memoria), nunca en un servidor. Límite de tamaño validado con aviso honesto.
-- **Ejemplos empaquetados:** la app funciona completa con `datasets/` (anonimizados; uno con fuga
-  plantada para demostrar el chequeo). El CSV del usuario se carga en runtime y no se persiste fuera.
+- **Ejemplos empaquetados:** la app funciona completa con `docs/kit-de-prueba/` (anonimizados; con
+  fuga plantada por tarea; generados por `scripts/make-example-datasets.mjs` con semilla). El CSV del
+  usuario se carga en runtime y no se persiste fuera.
 - **Bilingüe estructural:** UI por i18n (es/en); tests de paridad de claves. Todo contenido nuevo
-  se escribe en ambos idiomas EN EL MISMO PASO. **El contenido largo es dato `{es, en}`** (regla 20
-  del kit, v1.29.0 — p. ej. las fichas de modelo en `src/content/modelos.ts`), redactado en cada
-  idioma, no traducido, con su propio test de paridad.
+  se escribe en ambos idiomas EN EL MISMO PASO. **El contenido largo es dato `{es, en}`** (regla 16).
 
 ## Idioma
 
