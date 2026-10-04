@@ -20,6 +20,9 @@ export default defineConfig({
         "src/lib/**/*.ts",
         "src/engine/**/*.ts",
         "src/components/**/*.tsx",
+        // S6 (AU-S6-30): el lector del contrato Python → TS es una garantía del
+        // sprint (regla 15); se mide como los motores.
+        "src/workers/**/*.ts",
       ],
       thresholds: {
         lines: 70,
@@ -49,6 +52,12 @@ export default defineConfig({
           statements: 80,
         },
         "src/lib/scored-csv.ts": {
+          lines: 80,
+          functions: 80,
+          branches: 80,
+          statements: 80,
+        },
+        "src/workers/contract.ts": {
           lines: 80,
           functions: 80,
           branches: 80,
