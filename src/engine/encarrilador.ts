@@ -73,7 +73,6 @@ export type Routing = {
   level1: MemberId[];
   level2: MemberId[];
   out: MemberId[];
-  ceilingS: number;
   level1EstimateS: number;
   /** El Nivel 2 re-corre la unión (D5): Nivel 1 ∪ Nivel 2. */
   unionEstimateS: number;
@@ -158,7 +157,6 @@ export function routeModels(
     level1,
     level2,
     out: level("out"),
-    ceilingS,
     level1EstimateS: sum(level1),
     unionEstimateS: sum([...level1, ...level2]),
   };
@@ -181,21 +179,39 @@ export type Level2Plan = {
    * se pueden incluir de todos modos (U3) — o volver a dejar fuera.
    */
   forceable: Placement[];
-  /** Cuánto más lento (o rápido) que la referencia resultó este equipo. */
-  factor: number;
   /** Segundos estimados EN ESTE EQUIPO para correr `roster` entero. */
   estimateS: number;
 };
 
+/** Lo que tardó DE VERDAD la corrida anterior, en ms. */
+export type MeasuredRun = {
+  /** La corrida entera (preparar, baselines, liga, detalles del ganador). */
+  totalMs: number;
+  /** La suma de lo que tardó cada miembro (`league[].elapsed_ms`). */
+  membersMs: number;
+};
+
+/** Lo medido de una liga: el total y la suma por miembro. */
+export function measuredRun(
+  totalMs: number,
+  league: readonly { elapsed_ms: number }[],
+): MeasuredRun {
+  return {
+    totalMs,
+    membersMs: league.reduce((acc, row) => acc + row.elapsed_ms, 0),
+  };
+}
+
 /**
  * El Nivel 2 tras una corrida (D5 + U3 + ADR-010): re-corre la unión, así que la
- * estimación es la del roster entero, corregida con lo que la corrida anterior
- * tardó DE VERDAD frente a lo que se estimó para lo que corrió.
+ * estimación es la del roster entero. El factor de este equipo sale de lo que
+ * tardaron DE VERDAD los miembros que corrieron frente a lo que se estimó para
+ * ellos; la parte fija de la corrida (total − miembros) se suma una vez.
  */
 export function planLevel2(
   profile: RouteProfile,
   ran: readonly MemberId[],
-  measuredMs: number,
+  measured: MeasuredRun,
   forced: readonly MemberId[] = [],
   ceilingS: number = LEVEL1_CEILING_S,
 ): Level2Plan {
@@ -204,7 +220,8 @@ export function planLevel2(
     routing.placements.find((p) => p.id === id)!.estimateS;
   const ranSet = new Set(ran);
   const ranEstimateS = [...ranSet].reduce((acc, id) => acc + estimateOf(id), 0);
-  const factor = calibrationFactor(measuredMs, ranEstimateS);
+  const factor = calibrationFactor(measured.membersMs, ranEstimateS);
+  const fixedS = Math.max(0, measured.totalMs - measured.membersMs) / 1000;
   const roster = rosterFor(routing, 2);
   return {
     roster,
@@ -212,7 +229,7 @@ export function planLevel2(
     forceable: routing.placements.filter(
       (p) => (p.level === "out" || p.reason === "forced") && !ranSet.has(p.id),
     ),
-    factor,
-    estimateS: factor * roster.reduce((acc, id) => acc + estimateOf(id), 0),
+    estimateS:
+      factor * roster.reduce((acc, id) => acc + estimateOf(id), 0) + fixedS,
   };
 }

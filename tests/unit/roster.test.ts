@@ -14,6 +14,7 @@ import {
   type CvRowLike,
   type MemberId,
 } from "@/engine/roster";
+import { SCORER } from "@/workers/contract";
 
 const PIPELINE_PY = readFileSync(
   resolve(__dirname, "../../src/lib/ds/pipeline.py"),
@@ -43,6 +44,20 @@ describe("paridad del roster TS ↔ Python", () => {
     expect(MEMBERS.ridge.probabilities).toBe(false);
     expect(MEMBERS.linear_svc.probabilities).toBe(false);
     expect(BASELINE_IDS).toEqual(["majority", "logistic"]);
+  });
+
+  it("SCORER de pipeline.py tiene las mismas parejas métrica → scorer que contract.ts", () => {
+    const block = PIPELINE_PY.slice(
+      PIPELINE_PY.indexOf("SCORER = {"),
+      PIPELINE_PY.indexOf("\n}\n", PIPELINE_PY.indexOf("SCORER = {")),
+    );
+    const pairs = Object.fromEntries(
+      [...block.matchAll(/^ {4}"([a-z0-9]+)": "([a-z0-9_]+)",$/gm)].map((m) => [
+        m[1],
+        m[2],
+      ]),
+    );
+    expect(pairs).toEqual(SCORER);
   });
 
   it("isMemberId y byPriority", () => {
@@ -76,7 +91,10 @@ describe("selectOneSe — regla de un error estándar (D8)", () => {
       row("forest", 0.701),
     ];
     const selection = selectOneSe(league, 5)!;
-    expect(selection).toMatchObject({ best: "naive_bayes", winner: "logistic" });
+    expect(selection).toMatchObject({
+      best: "naive_bayes",
+      winner: "logistic",
+    });
     expect(selection.se).toBeCloseTo(0.0405, 10);
   });
 

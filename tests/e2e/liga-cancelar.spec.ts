@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { axeBothThemes } from "./axe-temas";
 
 // S5 (R1) — cancelar el Nivel 2 no deja la app sin modelo. Con liga-mediana.csv
 // (5.000 filas, D6) el Nivel 1 no lo abarca todo: la tarjeta del Nivel 2 estima la
@@ -36,9 +36,10 @@ test("Nivel 2: estimar → arrancar → cancelar → el Nivel 1 vuelve y exporta
   await expect(
     page.getByRole("heading", { name: "Nivel 2: la liga completa" }),
   ).toBeVisible();
-  await expect(page.getByText("Calibrado con lo que tardó la corrida anterior.")).toBeVisible();
-  const axe = await new AxeBuilder({ page }).analyze();
-  expect(axe.violations).toEqual([]);
+  await expect(
+    page.getByText("Calibrado con lo que tardó la corrida anterior."),
+  ).toBeVisible();
+  await axeBothThemes(page);
 
   await page.getByRole("button", { name: /Correr el Nivel 2/ }).click();
   await expect(page.getByText(/Nivel 2 · \d+ modelos · unos/)).toBeVisible();
@@ -48,6 +49,8 @@ test("Nivel 2: estimar → arrancar → cancelar → el Nivel 1 vuelve y exporta
   ).toBeVisible({
     timeout: 60_000,
   });
+  // La pantalla del Nivel 2 corriendo (barra, «Cancelar»), en ambos temas.
+  await axeBothThemes(page);
   await page.getByRole("button", { name: "Cancelar el Nivel 2" }).click();
 
   // Vuelve el resultado anterior, dicho de frente.

@@ -48,9 +48,6 @@ const TEST_SIZE = 0.25;
 
 export function summarizeDataset(table: CsvTable): DatasetSummary {
   const profiles = profileTable(table);
-  const targetCandidates = table.headers.filter((_, index) =>
-    isBinaryTarget(columnValues(table, index)),
-  );
   const dateColumns = profiles
     .filter((p) => p.looksLikeDate)
     .map((p) => p.name);
@@ -67,7 +64,6 @@ export function summarizeDataset(table: CsvTable): DatasetSummary {
     rowCount: table.rows.length,
     profiles,
     previewRows: table.rows.slice(0, PREVIEW_ROWS),
-    targetCandidates,
     targetTasks,
     dateColumns,
   };
@@ -156,7 +152,17 @@ export function prepareRun(
   // Filtra filas con objetivo nulo (no se pueden entrenar/evaluar).
   const rows = table.rows.filter((row) => !isNullToken(row[targetIndex]));
   const labels = rows.map((row) => row[targetIndex]);
-  if (!isBinaryTarget(labels)) return { ok: false, error: "target-not-binary" };
+  if (!isBinaryTarget(labels)) {
+    // E1 cuenta valores numéricos («1» = «1.0»); el entrenador, texto. Si E1 ve
+    // dos valores, el problema es la notación, y se dice así (AU-S5-10).
+    return {
+      ok: false,
+      error:
+        detectTask(labels).task === "binaria"
+          ? "target-mixed-notation"
+          : "target-not-binary",
+    };
+  }
 
   const { numeric, categorical } = selectFeatures(table, targetColumn);
   if (numeric.length + categorical.length === 0)
@@ -248,8 +254,7 @@ export function prepareRun(
   };
 }
 
-// Interino S5 F1: la tabla de candidatos de la UI H1 lee `candidates`; la F2 la
-// reemplaza por la tabla de la liga (filas = modelos, CV y test etiquetados).
+// La model card lista los miembros con puntaje de prueba («Candidatos comparados»).
 function candidatesOf(py: Pick<PipelineResult, "league">): ModelCandidate[] {
   return py.league.flatMap((row) =>
     row.test ? [{ name: row.name, metrics: row.test }] : [],

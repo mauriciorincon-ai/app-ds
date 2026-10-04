@@ -54,16 +54,18 @@ export function LeagueTable({
   // Corrieron (por puntaje de CV, de mayor a menor; sin puntaje al final) →
   // pendientes del Nivel 2 → fuera. Ninguno se omite.
   const ran = league.map((row) => row.name);
+  const placementOf = (id: MemberId) =>
+    routing!.placements.find((p) => p.id === id)!;
   const entries: Entry[] = [
     ...[...league]
       .sort((a, b) => (b.cv?.mean ?? -Infinity) - (a.cv?.mean ?? -Infinity))
       .map((row): Entry => ({ kind: "ran", row })),
-    ...(routing?.placements ?? [])
-      .filter((p) => !ran.includes(p.id) && p.level === 2)
-      .map((placement): Entry => ({ kind: "pending", placement })),
-    ...(routing?.placements ?? [])
-      .filter((p) => !ran.includes(p.id) && p.level === "out")
-      .map((placement): Entry => ({ kind: "out", placement })),
+    ...(routing?.level2 ?? [])
+      .filter((id) => !ran.includes(id))
+      .map((id): Entry => ({ kind: "pending", placement: placementOf(id) })),
+    ...(routing?.out ?? [])
+      .filter((id) => !ran.includes(id))
+      .map((id): Entry => ({ kind: "out", placement: placementOf(id) })),
   ];
 
   const rows = result.nTrain + result.nTest;

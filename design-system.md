@@ -185,8 +185,10 @@ usuario: un tinte sutil no comunica), y todo botón de acción lleva su icono de
 
 - **TaskCard** (en ConfigScreen, E1) — el tipo de predicción del objetivo elegido con su razón en
   números (_«2 valores distintos → clasificación binaria»_); si la tarea aún no se entrena, lo dice
-  en `ink-muted` y deshabilita «Entrenar modelos» sin esconder la columna. El selector ofrece TODAS
-  las columnas como «columna · tarea».
+  en `ink-muted` y deshabilita «Entrenar modelos» sin esconder la columna. Si la tarea se entrena
+  pero el plan está bloqueado (p. ej. muy pocas filas), tampoco hay ✓: ⚠ `caution` y la frase
+  remite al motivo, que se muestra debajo. El selector ofrece TODAS las columnas como «columna ·
+  tarea».
 - **RosterCard** (en ConfigScreen, E2) — «Quién compite»: **Nivel 1** (chips `sunken` + estimación),
   **Nivel 2** (uno por línea con su costo y el total de la liga completa) y **Fuera ·
   recomendación** (uno por línea con su razón medida), más la nota «nada se esconde». La acción
@@ -229,7 +231,10 @@ usuario: un tinte sutil no comunica), y todo botón de acción lleva su icono de
   con ✕ (`role="alert"`).
 - **TrainingScreen — liga:** línea mono «Validación cruzada · modelo k de N: nombre» (y luego
   «Conjunto de prueba · …») + barra `progressbar` accesible (`sunken` con relleno `accent`); en el
-  Nivel 2, encabezado mono con conteo y estimación + «Cancelar el Nivel 2» (`secondary` + `stop`).
+  Nivel 1, línea mono con la estimación que prometió Configuración; en el Nivel 2, encabezado mono
+  con conteo y estimación + «Cancelar el Nivel 2» (`secondary` + `stop`). La región viva
+  (`role="status"`) envuelve solo la lista de etapas: la línea por modelo cambia hasta 2·N veces y
+  no se anuncia (la barra expone el avance).
 - **Motion:** `motion-reduce:transition-none` en botones, zonas de carga y tarjetas de ejemplo — la
   regla «respeta prefers-reduced-motion» ahora la vigila un e2e con opacidad efectiva medida.
 

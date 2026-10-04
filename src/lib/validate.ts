@@ -2,7 +2,9 @@
 // de 300 KB en el cliente — lección S2). Cada validador devuelve null si el valor
 // cuadra, o la RUTA del primer campo que no cuadra («league[3].cv.mean»): el lado
 // que LEE un contrato rechaza nombrando el campo (regla 15, gate de contrato entre
-// lenguajes). Las rutas son nombres de campos de la app, nunca valores del dataset.
+// lenguajes). Las rutas son nombres de campos de la app, nunca valores del dataset
+// ni nombres de sus columnas: la clave de un diccionario (p. ej. una mediana por
+// columna del usuario) se escribe «*» (regla dura 2: la ruta puede llegar a Sentry).
 //
 // Política: los objetos toleran claves extra (un emisor más nuevo no rompe a un
 // lector más viejo); lo que se exige es que lo declarado esté y tenga su forma.
@@ -61,12 +63,13 @@ export function obj(shape: Record<string, Validator>): Validator {
   };
 }
 
-/** Objeto-diccionario: toda clave vale; cada valor pasa `inner`. */
+/** Objeto-diccionario: toda clave vale; cada valor pasa `inner`. La ruta usa
+ *  «*» y no la clave: las claves pueden ser nombres de columna del usuario. */
 export function dict(inner: Validator): Validator {
   return (v, path) => {
     if (!isRecord(v)) return path;
-    for (const [key, value] of Object.entries(v)) {
-      const issue = inner(value, at(path, key));
+    for (const value of Object.values(v)) {
+      const issue = inner(value, at(path, "*"));
       if (issue) return issue;
     }
     return null;

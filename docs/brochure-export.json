@@ -26,7 +26,7 @@
     "tagline": "Construye un modelo que puedas defender.",
     "intro": "Traes una tabla, eliges qué quieres predecir, y la app entrena un modelo de verdad dentro de tu navegador — y te dice con franqueza si sirve o no. Sin ser científico de datos, sin escribir código y sin una sola tarjeta gráfica.",
     "para_quien": "Para el profesional que no es científico de datos —analistas, financieros, investigadores aplicados— y que tiene que defender un modelo ante su jefe o su comité, no ganar un leaderboard.",
-    "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la mitad de entrenamiento y la UI no ofrece otro camino), y toda cifra sale del conjunto de prueba. El incentivo del mercado es el optimismo; aquí es la honestidad."
+    "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad."
   },
   "funcionalidades": {
     "total": 33,
@@ -378,7 +378,7 @@
     },
     {
       "nombre": "Vitest y Playwright",
-      "papel": "las pruebas, incluidas las que fallan si alguien ajusta el preprocesamiento fuera de la mitad de entrenamiento"
+      "papel": "las pruebas, incluidas las que fallan si alguien ajusta el preprocesamiento fuera de la parte de entrenamiento"
     },
     {
       "nombre": "Groq",

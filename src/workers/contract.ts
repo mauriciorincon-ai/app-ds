@@ -6,6 +6,7 @@
 // fixtures en tests/fixtures/contrato/; tests/unit/contract.test.ts los valida y
 // muta cada campo (carnadas) — «detectó k de n».
 import { isMemberId, selectOneSe, type MemberId } from "@/engine/roster";
+import type { MetricName } from "@/engine/verdict";
 import {
   arr,
   check,
@@ -31,6 +32,16 @@ import type {
 const METRIC_KEYS = ["accuracy", "precision", "recall", "f1", "auc"] as const;
 
 const member: Validator = (v, path) => (isMemberId(v) ? null : path);
+
+/** Espejo de SCORER en pipeline.py: la métrica primaria enviada es el scorer de
+ *  la CV (paridad de texto vigilada en tests/unit/roster.test.ts). */
+export const SCORER: Record<MetricName, string> = {
+  auc: "roc_auc",
+  f1: "f1",
+  accuracy: "accuracy",
+  precision: "precision",
+  recall: "recall",
+};
 
 const nonNegInt = refine(int, (v) => (v as number) >= 0);
 
@@ -112,7 +123,11 @@ const pipelineResultV = obj({
  */
 export function validateTrainResult(
   raw: unknown,
-  sent: { roster: readonly MemberId[]; cv_k: number },
+  sent: {
+    roster: readonly MemberId[];
+    cv_k: number;
+    primary_metric: MetricName;
+  },
 ): Checked<PipelineResult> {
   const shaped = check<PipelineResult>(pipelineResultV, raw);
   if (!shaped.ok) return shaped;
@@ -126,6 +141,9 @@ export function validateTrainResult(
   }
   // k antes que las filas: un k distinto al enviado es la causa, no sus folds.
   if (r.cv.k !== sent.cv_k) return { ok: false, field: "cv.k" };
+  // La CV puntuó con la métrica enviada (no con otra que Python re-derivara).
+  if (r.cv.scoring !== SCORER[sent.primary_metric])
+    return { ok: false, field: "cv.scoring" };
   for (const [i, row] of r.league.entries()) {
     // «error» ⇔ no concluyó la CV ⇔ sin puntaje de CV.
     if ((row.status === "error") !== (row.cv === null)) {
@@ -159,7 +177,6 @@ export function validateTrainResult(
 const memberFitV = obj({
   model: metricsV,
   model_name: member,
-  elapsed_ms: nonNegInt,
   confusion_matrix: confusionV,
   explainability: explainabilityV,
   preprocessing: preprocessingV,
@@ -251,8 +268,15 @@ export function validateScoreResult(raw: unknown): Checked<ScoreResult> {
   return shaped;
 }
 
-/** «contract:<campo>» que lanza _validate_payload en Python (lado que LEE TS → Python). */
+/** «contract:<campo>» que lanza _validate_payload en Python (lado que LEE TS → Python).
+ *  Anclado a la ÚLTIMA línea del traceback: un «contract:xyz» citado dentro de otro
+ *  error (un valor que pandas o sklearn repiten) no se lee como campo rechazado. */
 export function pythonContractField(message: string): string | null {
-  const match = /contract:([A-Za-z_]+)/.exec(message);
+  const match = /ValueError: contract:([A-Za-z_]+)\s*$/.exec(message);
   return match ? match[1]! : null;
+}
+
+/** RuntimeError("league-empty") de Python: ningún miembro concluyó la CV. */
+export function pythonLeagueEmpty(message: string): boolean {
+  return /RuntimeError: league-empty\s*$/.test(message);
 }

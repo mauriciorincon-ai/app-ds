@@ -936,7 +936,7 @@
 
       <div class="corte-caja" aria-hidden="true">
         <div class="mitad mitad-train">
-          <p class="mitad-rotulo"><span class="sig">✓</span> Con esta mitad aprende</p>
+          <p class="mitad-rotulo"><span class="sig">✓</span> Con esta parte aprende</p>
           <div class="fila"></div><div class="fila"></div><div class="fila"></div>
           <div class="fila"></div><div class="fila"></div>
         </div>
@@ -947,10 +947,11 @@
       </div>
 
       <p class="corte-leyenda">
-        El modelo aprende con una mitad y se examina con la otra, que nunca vio. Toda cifra que
-        te muestre la app sale de esa segunda mitad. <b>Por eso el número es real</b> — y por eso
-        no hay forma de que la limpieza de datos contamine el examen: se ajusta solo con la parte
-        de aprender.
+        El modelo aprende con una parte y se examina con la otra, que nunca vio. El veredicto y
+        sus métricas salen de esa segunda parte; para elegir entre modelos, la app los compara solo
+        dentro de la primera (validación cruzada). <b>Por eso el número es real</b> — y por eso no
+        hay forma de que la limpieza de datos contamine el examen: se ajusta solo con la parte de
+        aprender.
       </p>
     </div>
   </section>
@@ -1127,9 +1128,9 @@
         <div class="fino-cuerpo">
           <table>
             <tbody>
-              <tr><th>Baseline</th><td>La regla más tonta que podría funcionar: responder siempre lo más frecuente. Si tu modelo no la supera, no sirve.</td></tr>
-              <tr><th>Veredicto</th><td>La comparación franca entre tu modelo y ese baseline: lo supera, empata o pierde.</td></tr>
-              <tr><th>Entrenamiento y prueba</th><td>Las dos mitades de tu tabla: con una aprende, con la otra se examina.</td></tr>
+              <tr><th>Baseline</th><td>Las reglas simples a batir: responder siempre lo más frecuente y una regresión logística. Si tu modelo no supera a la mejor, no sirve.</td></tr>
+              <tr><th>Veredicto</th><td>La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.</td></tr>
+              <tr><th>Entrenamiento y prueba</th><td>Las dos partes de tu tabla: con la más grande aprende, con la otra se examina.</td></tr>
               <tr><th>Fuga de datos</th><td>Una columna que ya contiene la respuesta disfrazada. Infla las métricas y vuelve inútil el modelo en la vida real.</td></tr>
               <tr><th>Desbalance</th><td>Una de las dos respuestas es mucho más rara que la otra. Obliga a mirar AUC en vez de aciertos.</td></tr>
               <tr><th>Importancia</th><td>Cuánto empeora el modelo si se desordena esa columna. Mide cuánto <b>pesa</b>, no hacia dónde empuja.</td></tr>
@@ -1152,8 +1153,9 @@
     <p class="conteo">
       <span class="conteo-cifra" data-contador="33" aria-hidden="true">33</span>
       <span class="conteo-glosa">
-        <b><span class="oculto-visual">33 </span>funcionalidades</b>, todas las que Probeta DS
-        tiene hoy. Ninguna se quedó fuera de esta página.
+        <b><span class="oculto-visual">33 </span>funcionalidades</b> del primer ciclo, todas en
+        esta página; la liga honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin
+        mirar la prueba”.
       </span>
     </p>
 

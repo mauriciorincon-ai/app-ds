@@ -5,11 +5,19 @@ import { useT } from "@/i18n/use-translation";
 
 // E1 (S5): qué tipo de predicción plantea la columna elegida y por qué. La
 // honestidad acompaña: toda columna se puede elegir; si su tarea todavía no se
-// entrena, se dice de frente (no se esconde la columna ni se adivina).
-export function TaskCard({ detection }: { detection: TaskDetection }) {
+// entrena, se dice de frente (no se esconde la columna ni se adivina). Si la
+// tarea se entrena pero el plan está bloqueado (p. ej. muy pocas filas), no hay
+// ✓: la tarjeta remite al motivo, que se muestra debajo.
+export function TaskCard({
+  detection,
+  blocked = false,
+}: {
+  detection: TaskDetection;
+  blocked?: boolean;
+}) {
   const t = useT();
   const task = t(`task.name.${detection.task}`);
-  const trainable = isTrainable(detection);
+  const trainable = isTrainable(detection) && !blocked;
   return (
     <div
       role="status"
@@ -43,7 +51,11 @@ export function TaskCard({ detection }: { detection: TaskDetection }) {
           </p>
         )}
         <p className={trainable ? "" : "text-ink-muted"}>
-          {trainable ? t("task.trainable") : t("task.notYet")}
+          {trainable
+            ? t("task.trainable")
+            : blocked
+              ? t("task.blocked")
+              : t("task.notYet")}
         </p>
       </div>
     </div>

@@ -7,9 +7,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { MemberId } from "@/engine/roster";
-import { check, type Checked } from "@/lib/validate";
+import { check, dict, num, obj, type Checked } from "@/lib/validate";
 import {
   pythonContractField,
+  pythonLeagueEmpty,
   validateExportResult,
   validateMemberFit,
   validateProgressDetail,
@@ -30,7 +31,11 @@ const fixture = <T = Json>(name: string): T =>
   ) as T;
 
 const PAYLOAD = fixture<PipelinePayload>("payload");
-const SENT = { roster: PAYLOAD.roster, cv_k: PAYLOAD.cv_k };
+const SENT = {
+  roster: PAYLOAD.roster,
+  cv_k: PAYLOAD.cv_k,
+  primary_metric: PAYLOAD.primary_metric,
+};
 
 type Bait = [field: string, mutate: (value: Json) => void];
 
@@ -86,6 +91,8 @@ describe("Python → TS: resultado de la liga (train)", () => {
       ["league[0].error_type", (t) => (t.league[0].error_type = 3)],
       ["cv.k", (t) => (t.cv.k = SENT.cv_k + 1)],
       ["cv.scoring", (t) => delete t.cv.scoring],
+      // Una métrica distinta a la enviada: la CV no puntuó con lo que TS pidió.
+      ["cv.scoring", (t) => (t.cv.scoring = "accuracy")],
       ["cv.rule", (t) => (t.cv.rule = "max")],
       ["cv.best", (t) => (t.cv.best = otherOk(t))],
       ["cv.se", (t) => (t.cv.se = t.cv.se + 0.5)],
@@ -123,12 +130,19 @@ describe("Python → TS: elección manual (fit-member)", () => {
     runBaits("fit-member", fit, (v) => validateMemberFit(v, sent), [
       ["model_name", (f) => (f.model_name = "no_existe")],
       ["model.f1", (f) => delete f.model.f1],
-      ["elapsed_ms", (f) => (f.elapsed_ms = 1.5)],
       ["confusion_matrix", (f) => (f.confusion_matrix = [[1, 2]])],
       ["explainability.method", (f) => (f.explainability.method = "shap")],
       [
         "preprocessing.numeric_medians",
         (f) => (f.preprocessing.numeric_medians = []),
+      ],
+      // La ruta del valor NO lleva el nombre de la columna del usuario (AU-S5-15).
+      [
+        "preprocessing.numeric_medians.*",
+        (f) => {
+          const k = Object.keys(f.preprocessing.numeric_medians)[0]!;
+          f.preprocessing.numeric_medians[k] = "x";
+        },
       ],
     ]);
   });
@@ -204,6 +218,23 @@ describe("TS → Python: el fixture del payload lo emite el serializador real de
       'Traceback (most recent call last):\n  File "<exec>", line 330\nValueError: contract:cv_k';
     expect(pythonContractField(traceback)).toBe("cv_k");
     expect(pythonContractField("RuntimeError: league-empty")).toBeNull();
+    // Con salto final (así llega el traceback de Pyodide) se sigue leyendo.
+    expect(pythonContractField(`${traceback}\n`)).toBe("cv_k");
+    // Un «contract:» citado dentro de OTRO error no es un campo rechazado (AU-S5-16).
+    expect(
+      pythonContractField(
+        "Traceback…\nValueError: could not convert 'contract:abc'\nRuntimeError: x",
+      ),
+    ).toBeNull();
+  });
+
+  it("la liga vacía de Python se reconoce solo en la última línea del traceback", () => {
+    expect(pythonLeagueEmpty("Traceback…\nRuntimeError: league-empty\n")).toBe(
+      true,
+    );
+    expect(
+      pythonLeagueEmpty("ValueError: 'league-empty' is not a number"),
+    ).toBe(false);
   });
 });
 
@@ -214,5 +245,16 @@ describe("validate.ts — el lector nombra el primer campo que no cuadra", () =>
       field: "(root)",
     });
     expect(check(() => null, 1)).toEqual({ ok: true, value: 1 });
+  });
+
+  it("las claves de un diccionario (nombres de columna del usuario) no viajan en la ruta", () => {
+    expect(check(dict(num), { salario_juan: "x" })).toEqual({
+      ok: false,
+      field: "*",
+    });
+    expect(check(obj({ m: dict(num) }), { m: { edad_de_ana: null } })).toEqual({
+      ok: false,
+      field: "m.*",
+    });
   });
 });

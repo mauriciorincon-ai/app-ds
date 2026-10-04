@@ -17,6 +17,7 @@ import { ResultsScreen } from "@/components/ResultsScreen";
 import { TrainingScreen } from "@/components/TrainingScreen";
 import { BALANCED_NOTES, FICHAS } from "@/content/modelos";
 import {
+  measuredRun,
   planLevel2,
   routeModels,
   type RouteProfile,
@@ -239,7 +240,7 @@ describe("Level2Card (D5 + U3)", () => {
     const plan = planLevel2(
       MEDIANA,
       routing.level1,
-      result.selection.elapsedMs,
+      measuredRun(result.selection.elapsedMs, result.league),
     );
     expect(
       screen.getByRole("heading", { name: "Nivel 2: la liga completa" }),

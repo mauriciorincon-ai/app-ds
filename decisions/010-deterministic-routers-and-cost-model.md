@@ -65,9 +65,12 @@ Per member, fitted on the F0 spike (Chromium on the production build, 8 datasets
 on all of train (the test of every member is computed in the same run — F0-5).
 
 Devices differ (WebKit ≈ 1.4×, a phone 2–4×), so the level 2 estimate is **calibrated**: the factor
-is what the previous run actually took over what was estimated for the members that ran, clamped to
-`[0.25, 8]` so one odd measurement (a background tab) neither over-promises nor scares. The level 1
-estimate on the configuration screen is labelled as the reference desktop figure.
+is what the members that ran actually took (the sum of `league[].elapsed_ms`) over what was
+estimated for them, clamped to `[0.25, 8]` so one odd measurement (a background tab) neither
+over-promises nor scares; the fixed part of the previous run (total − members: preparing, the
+baselines, the winner's details) is added once, not multiplied. The level 1 estimate on the
+configuration screen is labelled as the reference desktop figure, and the training screen repeats it
+while level 1 runs.
 
 ### Cancelling level 2 (R1)
 
@@ -76,8 +79,9 @@ exported as a snapshot; cancelling terminates the worker, spawns a new one and r
 snapshot (the ADR 007 path). Use/export wait for `modelReady`. If level 2 fails (Python error,
 contract violation, dead worker) the previous result comes back with a notice instead of the error
 screen; if the worker dies before the snapshot exists, the app says the model could not be
-recovered. `reset()` with work in flight also terminates the worker, so a new experiment never
-queues behind an abandoned league (R15).
+recovered. `reset()` with work in flight (a manual fit, a snapshot restore, an export) also
+terminates the worker, so a new experiment never queues behind abandoned work (R15). While level 2
+runs, the way out is «Cancelar el Nivel 2», which keeps the level 1 result.
 
 ## Consequences
 

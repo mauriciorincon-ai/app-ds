@@ -52,6 +52,7 @@ export default function Home() {
           stage={state.progress}
           detail={state.progressDetail}
           level2={state.level2.status === "running" ? state.level2 : null}
+          estimateS={state.routing?.level1EstimateS ?? null}
           onCancel={cancelLevel2}
         />
       )}

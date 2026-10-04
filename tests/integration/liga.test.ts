@@ -25,7 +25,12 @@ import type { PyodideInterface } from "pyodide";
 import { MEMBER_IDS, selectOneSe, type MemberId } from "@/engine/roster";
 import { sanitizeTable } from "@/engine/sanitize";
 import { parseCsvWithLimits } from "@/lib/ds/csv";
-import { applyMemberFit, assembleResult, prepareRun } from "@/lib/experiment";
+import {
+  applyMemberFit,
+  assembleResult,
+  prepareRun,
+  withoutLeague,
+} from "@/lib/experiment";
 import {
   pythonContractField,
   validateExportResult,
@@ -76,16 +81,6 @@ function prepared(csv: string, target: string) {
 }
 const kitCsv = (file: string) =>
   readFileSync(resolve(process.cwd(), "public/datasets", file), "utf8");
-
-/** El payload de fit_member: el de la liga sin roster ni k (ya no hay CV). */
-function withoutLeague(
-  payload: PipelinePayload,
-): Omit<PipelinePayload, "roster" | "cv_k"> {
-  const copy: Partial<PipelinePayload> = { ...payload };
-  delete copy.roster;
-  delete copy.cv_k;
-  return copy as Omit<PipelinePayload, "roster" | "cv_k">;
-}
 
 const league = (payload: PipelinePayload, onProgress?: (d: string) => void) =>
   JSON.parse(
@@ -227,6 +222,7 @@ describe("cada miembro en el runtime real", () => {
       validateTrainResult(result, {
         roster: [...MEMBER_IDS],
         cv_k: run.payload.cv_k,
+        primary_metric: run.payload.primary_metric,
       }).ok,
     ).toBe(true);
   });
@@ -261,6 +257,7 @@ _FACTORIES["naive_bayes"] = lambda seed: _Broken()
       validateTrainResult(result, {
         roster: ["logistic", "naive_bayes", "hgb"],
         cv_k: run.payload.cv_k,
+        primary_metric: run.payload.primary_metric,
       }).ok,
     ).toBe(true);
   });
@@ -306,6 +303,31 @@ describe("elección manual (fit_member) y export de los boosters", () => {
       const row = result.league.find((x) => x.name === member)!;
       expect(fit.model).toEqual(row.test); // floats exactos
     }
+  });
+
+  it("si fit_member falla DESPUÉS de ajustar, el modelo retenido NO cambia (AU-S5-07)", () => {
+    const r = run();
+    const payload = { ...r.payload, roster: ["logistic", "knn"] as MemberId[] };
+    const result = league(payload);
+    const retained = () =>
+      py.runPython(
+        "type(_MODEL['pipe'].named_steps['model']).__name__",
+      ) as string;
+    const before = retained();
+    const other: MemberId = result.winner === "knn" ? "logistic" : "knn";
+    py.runPython(`
+_REAL_SD = _selected_details
+def _selected_details(*a, **k):
+    raise RuntimeError("boom")
+`);
+    try {
+      expect(() =>
+        fitMember(JSON.stringify(memberPayload(payload, other))),
+      ).toThrow(/boom/);
+    } finally {
+      py.runPython("_selected_details = _REAL_SD");
+    }
+    expect(retained()).toBe(before);
   });
 
   it.each(["xgboost", "lightgbm"] as MemberId[])(

@@ -53,7 +53,15 @@
         "versionWarning": "Este archivo se creó con versiones distintas a las de esta app ({list}). Se cargará igual; si falla, re-entrena y exporta de nuevo.",
         "use": "Usar este modelo",
         "cancel": "Cancelar",
-        "model": "Modelo elegido: {model}."
+        "model": "Modelo elegido: {model}.",
+        "verdict": {
+          "beats": "supera al baseline",
+          "ties": "empata con el baseline",
+          "loses": "NO supera al baseline"
+        },
+        "chosen": "◆ Elegido por ti, no por la validación cruzada (el ganador de la validación cruzada era {winner}). Si se eligió mirando la prueba, la métrica puede ser optimista.",
+        "cv": "Elegido por validación cruzada de {k} pliegues entre {count} modelos.",
+        "cv_one": "Elegido por validación cruzada de {k} pliegues (compitió 1 modelo)."
       },
       "errors": {
         "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
@@ -114,6 +122,7 @@
     "loading-packages": "Cargando pandas, scikit-learn, XGBoost y LightGBM…",
     "training": "Compitiendo con validación cruzada; al final se abre el conjunto de prueba…",
     "wait": "La primera vez tarda unos segundos: el motor se descarga una sola vez.",
+    "estimate": "Unos {time} de cálculo en un computador de escritorio (en un móvil, el doble o más).",
     "member": {
       "cv": "Validación cruzada · modelo {index} de {total}: {model}",
       "test": "Conjunto de prueba · modelo {index} de {total}: {model}"
@@ -154,7 +163,7 @@
       "majority": "Clase mayoritaria",
       "logistic": "Regresión logística"
     },
-    "testNote": "Todas las métricas se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento.",
+    "testNote": "Las métricas del veredicto, la matriz de confusión y los baselines se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento. La tabla de la liga usa validación cruzada dentro del entrenamiento: sirve para elegir.",
     "leakage": {
       "title": "Posible fuga de datos",
       "finding": "La columna «{column}» podría ser un proxy del objetivo.",
@@ -174,7 +183,6 @@
       "contents": "El archivo contiene lo que el modelo aprendió de tus datos (parámetros, categorías, medianas) — no tus filas crudas. Aun así, trátalo como un archivo sensible."
     },
     "candidates": {
-      "title": "Modelos que compitieron",
       "model": {
         "logistic": "Regresión logística",
         "logistic_balanced": "Regresión logística (clases balanceadas)",
@@ -206,11 +214,7 @@
         "forest": "Random Forest",
         "forest_balanced": "Random Forest balanceado",
         "mlp": "Red neuronal"
-      },
-      "winner": "elegido",
-      "metricCol": "Métrica",
-      "primary": "primaria",
-      "note": "Todos usan el mismo preprocesamiento. El ganador se eligió con validación cruzada dentro del entrenamiento; estos puntajes son del conjunto de prueba: sirven para creer, no para elegir."
+      }
     }
   },
   "score": {
@@ -427,7 +431,9 @@
     "retry": "Volver a empezar",
     "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo.",
     "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
-    "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo."
+    "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo.",
+    "target-mixed-notation": "Tu objetivo tiene 2 valores, pero escritos de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalos en tu CSV y vuelve a cargarlo.",
+    "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas."
   },
   "task": {
     "title": "Tipo de predicción",
@@ -448,6 +454,7 @@
       "empty": "La columna está vacía."
     },
     "suggested": "Lo más probable: {task}.",
+    "blocked": "Es un tipo de predicción que la app entrena, pero con estos datos no se pueden comparar modelos con honestidad (el motivo está abajo).",
     "trainable": "Se puede entrenar.",
     "notYet": "Esta versión todavía no entrena este tipo de predicción: llega en una próxima versión. Por ahora, elige una columna con dos categorías."
   },

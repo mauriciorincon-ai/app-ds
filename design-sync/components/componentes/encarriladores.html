@@ -41,7 +41,8 @@
   <p class="sub">
     Tres reglas fijas que deciden ANTES de entrenar —qué tipo de predicción es la columna, quién
     compite y en qué nivel— siempre con su razón. «Fuera» es una <b>recomendación</b>, forzable en el
-    Nivel 2; nada se esconde. El Nivel 2 estima el tiempo <b>en este equipo</b>.
+    Nivel 2; nada se esconde. Si el plan está bloqueado (muy pocas filas), la tarjeta de tipo no
+    muestra ✓: ⚠ y remite al motivo. El Nivel 2 estima el tiempo <b>en este equipo</b>.
   </p>
 
   <div class="grid">
@@ -49,6 +50,12 @@
       <h2>Tipo de predicción</h2>
       <p style="margin:0;font-size:14px">2 valores distintos → clasificación binaria.</p>
       <p class="muted">Se puede entrenar.</p>
+    </div>
+
+    <div class="card" style="border-color:#8a5a0c66;background:#8a5a0c1a">
+      <h2>Tipo de predicción · bloqueada</h2>
+      <p style="margin:0;font-size:14px"><span aria-hidden="true" style="color:#8a5a0c;font-weight:700">⚠</span> 2 valores distintos → clasificación binaria.</p>
+      <p class="muted">Es un tipo de predicción que la app entrena, pero con estos datos no se pueden comparar modelos con honestidad (el motivo está abajo).</p>
     </div>
 
     <div class="card">

@@ -285,7 +285,7 @@ function ImportSummary({
             metric: t(`results.metrics.${manifest.verdict.primaryMetric}`),
             value: fmt(manifest.verdict.modelScore),
           })}{" "}
-          — {t(`results.verdict.${manifest.verdict.level}`)}
+          — {t(`start.import.summary.verdict.${manifest.verdict.level}`)}
         </li>
         {/* S4: nombre del modelo ganador (campo aditivo opcional del manifiesto;
             un archivo S3 sin él simplemente no muestra esta línea). */}
@@ -293,6 +293,25 @@ function ImportSummary({
           <li>
             {t("start.import.summary.model", {
               model: t(`results.candidates.model.${manifest.model_name}`),
+            })}
+          </li>
+        )}
+        {/* S5: cómo se eligió — la etiqueta «◆ Elegido por ti» cruza el archivo
+            (la honestidad acompaña también al modelo importado). */}
+        {manifest.selection?.by === "user" && (
+          <li>
+            {t("start.import.summary.chosen", {
+              winner: t(
+                `results.candidates.short.${manifest.selection.cv_winner}`,
+              ),
+            })}
+          </li>
+        )}
+        {manifest.selection?.by === "cv" && (
+          <li>
+            {t("start.import.summary.cv", {
+              k: manifest.selection.k,
+              count: manifest.league?.length ?? 0,
             })}
           </li>
         )}

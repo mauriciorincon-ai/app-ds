@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { I18nProvider } from "@/i18n/provider";
 import { downloadTextFile } from "@/lib/files";
+import { recordLeagueRun } from "@/lib/observability";
 import type { NarrateResponse } from "@/lib/ia/schemas";
 import {
   RUNTIME_VERSIONS,
@@ -17,13 +18,19 @@ import { useExperiment } from "@/lib/useExperiment";
 import { useNarration } from "@/lib/useNarration";
 import type { ExperimentResult, PipelinePayload } from "@/workers/protocol";
 import type { Metrics } from "@/engine/verdict";
-import { leagueFields, pipelineResult } from "./factories";
+import { leagueFields, memberFit, pipelineResult } from "./factories";
 
 // La descarga real (Blob + anchor) se prueba en files.test.ts; aquí solo
 // importa QUE el hook la dispare con el archivo empaquetado correcto.
 vi.mock("@/lib/files", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/files")>();
   return { ...actual, downloadTextFile: vi.fn() };
+});
+
+// El breadcrumb de la liga: se afirma QUÉ registra (solo metadatos), no Sentry.
+vi.mock("@/lib/observability", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/observability")>();
+  return { ...actual, recordLeagueRun: vi.fn() };
 });
 
 const wrapper = ({ children }: { children: ReactNode }) => (
@@ -159,6 +166,35 @@ describe("useNarration", () => {
     await waitFor(() => expect(result.current.ai.kind).toBe("verified"));
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
+
+  it("R8: si el resultado cambia (elección manual), la narración verificada vuelve a reposo", async () => {
+    const response: NarrateResponse = {
+      status: "verified",
+      narrative: "Narrativa verificada del ganador con x.",
+      grader: { accuracy: 5, completeness: 4, clarity: 5 },
+    };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(response), { status: 200 }),
+    );
+    const winner = experimentResult();
+    const { result, rerender } = renderHook(
+      ({ res }: { res: ExperimentResult }) =>
+        useNarration({ ...input, result: res }),
+      { wrapper, initialProps: { res: winner } },
+    );
+    act(() => result.current.requestNarration());
+    await waitFor(() => expect(result.current.ai.kind).toBe("verified"));
+
+    rerender({
+      res: {
+        ...winner,
+        modelName: "logistic",
+        selection: { ...winner.selection, by: "user" },
+      },
+    });
+    await waitFor(() => expect(result.current.ai.kind).toBe("idle"));
+    expect(result.current.template.length).toBeGreaterThan(20);
+  });
 });
 
 describe("useExperiment", () => {
@@ -210,7 +246,7 @@ describe("useExperiment", () => {
 
     act(() => result.current.loadCsv(CSV, "test.csv"));
     expect(result.current.state.phase).toBe("configuring");
-    expect(result.current.state.dataset?.targetCandidates).toContain("y");
+    expect(result.current.state.dataset?.targetTasks.y?.task).toBe("binaria");
 
     act(() => result.current.run("y"));
     expect(result.current.state.phase).toBe("running");
@@ -261,6 +297,53 @@ describe("useExperiment", () => {
     });
     expect(result.current.state.phase).toBe("error");
     expect(result.current.state.error?.kind).toBe("runtime");
+  });
+
+  it("liga sin ningún «ok» ⇒ error franco «league-empty», no el genérico (AU-S5-23)", () => {
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(CSV, "test.csv"));
+    act(() => result.current.run("y"));
+    const worker = FakeWorker.last!;
+    act(() => {
+      worker.onmessage?.({
+        data: {
+          id: worker.posted[0]!.id,
+          type: "error",
+          message:
+            "Traceback (most recent call last):\nRuntimeError: league-empty\n",
+        },
+      } as MessageEvent);
+    });
+    expect(result.current.state.phase).toBe("error");
+    expect(result.current.state.error?.kind).toBe("league-empty");
+  });
+
+  // --- S5: el plan E1 + E2 al elegir el objetivo (AU-S5-09) -------------------
+
+  it("selectTarget: binaria ⇒ reparto; varias categorías ⇒ sin reparto ni bloqueo; muy pocas filas ⇒ bloqueo", () => {
+    const multi = [
+      "x,cat,y,grupo",
+      ...Array.from(
+        { length: 12 },
+        (_, i) => `${i},${i % 2 ? "a" : "b"},${i % 2},${"pqr"[i % 3]}`,
+      ),
+    ].join("\n");
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(multi, "multi.csv"));
+    act(() => result.current.selectTarget("y"));
+    expect(result.current.state.plan?.routing).not.toBeNull();
+    expect(result.current.state.plan?.blocked).toBeNull();
+
+    act(() => result.current.selectTarget("grupo"));
+    expect(result.current.state.plan?.task.task).toBe("multiclase");
+    expect(result.current.state.plan?.routing).toBeNull();
+    expect(result.current.state.plan?.blocked).toBeNull();
+
+    const tiny = ["x,y", "1,0", "2,0", "3,0", "4,0", "5,0", "6,1"].join("\n");
+    act(() => result.current.loadCsv(tiny, "tiny.csv"));
+    act(() => result.current.selectTarget("y"));
+    expect(result.current.state.plan?.task.task).toBe("binaria");
+    expect(result.current.state.plan?.blocked).toBe("too-few-rows");
   });
 
   // --- S5: el lector del contrato en producción ------------------------------
@@ -786,5 +869,91 @@ describe("useExperiment", () => {
     act(() => result.current.reset());
     expect(worker.terminated).toBe(false);
     expect(FakeWorker.last).toBe(worker);
+  });
+
+  // --- S5 (U1): la elección manual en el hook (AU-S5-09) ----------------------
+
+  /** Resultados del Nivel 1 → «Elegir» un miembro que NO es el ganador. */
+  function chooseOther() {
+    const rendered = trainToResults();
+    const worker = FakeWorker.last!;
+    const trained = respondTo(worker.posted[0]!);
+    const member = trained.league.find((r) => r.name !== trained.winner)!.name;
+    act(() => rendered.result.current.chooseMember(member));
+    return { ...rendered, worker, trained, member };
+  }
+
+  it("chooseMember: postea fit-member SIN liga; el modelo espera; al volver habla del elegido", () => {
+    const { result, worker, trained, member } = chooseOther();
+    const posted = worker.posted[1]!;
+    expect(posted.type).toBe("fit-member");
+    const payload = posted.payload as Record<string, unknown>;
+    expect(payload.member).toBe(member);
+    expect(payload).not.toHaveProperty("roster");
+    expect(payload).not.toHaveProperty("cv_k");
+    expect(result.current.state.choice).toEqual({ status: "fitting", member });
+    expect(result.current.state.modelReady).toBe(false);
+
+    reply(worker, 1, {
+      type: "result",
+      command: "fit-member",
+      result: memberFit(trained, member),
+    });
+    const state = result.current.state;
+    expect(state.result?.modelName).toBe(member);
+    expect(state.result?.selection.by).toBe("user");
+    expect(state.modelReady).toBe(true);
+    expect(state.choice).toEqual({ status: "idle" });
+  });
+
+  it("chooseMember: si Python falla, el modelo anterior sigue activo y se dice", () => {
+    const { result, worker, member } = chooseOther();
+    const before = result.current.state.result;
+    reply(worker, 1, { type: "error", message: "RuntimeError: boom" });
+    expect(result.current.state.choice).toEqual({ status: "error", member });
+    expect(result.current.state.modelReady).toBe(true);
+    expect(result.current.state.result).toBe(before);
+    expect(result.current.state.phase).toBe("results");
+  });
+
+  it("chooseMember: un ajuste de OTRO miembro se rechaza por contrato", () => {
+    const { result, worker, trained } = chooseOther();
+    reply(worker, 1, {
+      type: "result",
+      command: "fit-member",
+      result: memberFit(trained, trained.winner),
+    });
+    expect(result.current.state.phase).toBe("error");
+    expect(result.current.state.error).toEqual({
+      kind: "contract",
+      message: "model_name",
+    });
+  });
+
+  // --- S5 (AU-S5-19): el breadcrumb de una liga cancelada ----------------------
+
+  it("cancelar registra los competidores de la corrida CANCELADA (la unión), no los del Nivel 1", () => {
+    vi.mocked(recordLeagueRun).mockClear();
+    const { result, worker } = startLevel2();
+    const union = (worker.posted[2]!.payload as PipelinePayload).roster;
+    expect(union.length).toBeGreaterThan(
+      result.current.state.result!.league.length,
+    );
+    act(() => result.current.cancelLevel2());
+    expect(vi.mocked(recordLeagueRun).mock.lastCall?.[0]).toMatchObject({
+      competitors: union.length,
+      level: 2,
+      cancelled: true,
+    });
+  });
+
+  it("cancelar antes de la instantánea registra la unión que iba a correr", () => {
+    vi.mocked(recordLeagueRun).mockClear();
+    const { result } = startLevel2(false);
+    const level1Count = result.current.state.result!.league.length;
+    act(() => result.current.cancelLevel2());
+    const call = vi.mocked(recordLeagueRun).mock.lastCall?.[0];
+    expect(call?.cancelled).toBe(true);
+    expect(call?.competitors).toBeGreaterThan(level1Count);
   });
 });

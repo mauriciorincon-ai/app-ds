@@ -580,6 +580,9 @@ def run_experiment(payload_json, on_progress=None):
         row["elapsed_ms"] += _elapsed_ms(t)
 
     winner_row = next(row for row in league if row["name"] == winner)
+    # Los detalles pueden lanzar: se calculan ANTES de retener, para que el
+    # modelo retenido sea siempre el del resultado que se devuelve (AU-S5-07).
+    details = _selected_details(winner_pipe, winner_pred, ctx)
     _retain(winner_pipe, ctx, p["target"])
 
     return json.dumps(
@@ -603,7 +606,7 @@ def run_experiment(payload_json, on_progress=None):
                 "se": se,
             },
             "elapsed_ms": _elapsed_ms(started),
-            **_selected_details(winner_pipe, winner_pred, ctx),
+            **details,
         }
     )
 
@@ -613,7 +616,6 @@ def fit_member(payload_json):
     lugar del ganador. Mismo split, misma semilla ⇒ reproduce exactamente su fila
     de la liga (determinismo, vigilado por un test). No hay CV: la elección ya la
     hizo el usuario y TS la registra como «elegido por ti»."""
-    started = time.perf_counter()
     p = json.loads(payload_json)
     _validate_payload(p, league=False)
     ctx = _prepare(p)
@@ -621,15 +623,11 @@ def fit_member(payload_json):
     pipe = _member_pipe(name, ctx).fit(ctx["X_train"], ctx["y_train"])
     y_pred = pipe.predict(ctx["X_test"])
     metrics = _metrics(ctx["y_test"], y_pred, _scores(pipe, ctx["X_test"]))
+    # Puede lanzar: ANTES de retener. Si falla, el modelo activo sigue siendo el
+    # anterior y la UI lo dice así (AU-S5-07).
+    details = _selected_details(pipe, y_pred, ctx)
     _retain(pipe, ctx, p["target"])
-    return json.dumps(
-        {
-            "model": metrics,
-            "model_name": name,
-            "elapsed_ms": _elapsed_ms(started),
-            **_selected_details(pipe, y_pred, ctx),
-        }
-    )
+    return json.dumps({"model": metrics, "model_name": name, **details})
 
 
 # --- S3: puntuar datos nuevos + export/import (ADR-007) ----------------------

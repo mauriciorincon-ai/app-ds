@@ -250,6 +250,11 @@ describe("ConfigScreen con el plan (E1 + E2)", () => {
         /la validación cruzada necesita al menos 2 de cada clase/,
       ),
     ).toBeInTheDocument();
+    // La tarjeta de tarea no dice «✓ Se puede entrenar» junto al bloqueo (AU-S5-02).
+    expect(screen.queryByText("Se puede entrenar.")).toBeNull();
+    expect(
+      screen.getByText(/no se pueden comparar modelos con honestidad/),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Entrenar modelos/ }),
     ).toBeDisabled();
@@ -401,6 +406,28 @@ describe("ResultsScreen — el veredicto de la liga", () => {
     ).toBeInTheDocument();
   });
 
+  it("R2: si gana la logística pero PIERDE contra la clase mayoritaria, el veredicto franco se mantiene", () => {
+    const result = rotationResult();
+    screenWith({
+      ...result,
+      verdict: {
+        ...result.verdict,
+        level: "loses",
+        delta: -0.04,
+        modelScore: 0.46,
+        baselineScore: 0.5,
+      },
+    });
+    expect(
+      screen.queryByText(
+        "La liga no encontró nada mejor que la regresión de referencia",
+      ),
+    ).toBeNull();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /NO supera al baseline/ }),
+    ).toBeInTheDocument();
+  });
+
   it("U1: elegido a mano ⇒ el veredicto habla de él, etiquetado; usar/exportar esperan al modelo", () => {
     const base = rotationResult();
     screenWith(
@@ -439,5 +466,16 @@ describe("TrainingScreen — progreso modelo a modelo", () => {
     const bar = screen.getByRole("progressbar");
     expect(bar).toHaveAttribute("aria-valuenow", String(9 + 3));
     expect(bar).toHaveAttribute("aria-valuemax", "18");
+    // La región viva anuncia la etapa, no cada modelo (AU-S5-24).
+    expect(screen.getByRole("status")).not.toHaveTextContent(
+      /modelo \d+ de \d+/,
+    );
+  });
+
+  it("Nivel 1: muestra el tiempo estimado que prometió Configuración (AU-S5-21)", () => {
+    ui(<TrainingScreen stage="training" estimateS={4.2} />);
+    expect(
+      screen.getByText(/^Unos 5 s de cálculo en un computador de escritorio/),
+    ).toBeInTheDocument();
   });
 });

@@ -11,11 +11,13 @@ import {
   type SchemaCheck,
 } from "@/lib/ds/schema-check";
 import {
+  measuredRun,
   planLevel2,
   type RouteProfile,
   type Routing,
 } from "@/engine/encarrilador";
 import type { TaskDetection } from "@/engine/tarea";
+import type { MetricName } from "@/engine/verdict";
 import {
   applyMemberFit,
   assembleResult,
@@ -40,6 +42,7 @@ import {
 import { byPriority, type MemberId } from "@/engine/roster";
 import {
   pythonContractField,
+  pythonLeagueEmpty,
   validateExportResult,
   validateMemberFit,
   validateProgressDetail,
@@ -212,7 +215,7 @@ type Pending =
       leakage: LeakageFinding[];
       schema: Pick<ModelSchema, "numeric" | "categorical" | "target">;
       // S5: lo enviado, para que el lector del contrato lo coteje.
-      sent: { roster: MemberId[]; cv_k: number };
+      sent: { roster: MemberId[]; cv_k: number; primary_metric: MetricName };
       smallSample: boolean;
       // S5: el reparto y los forzados de ESTA corrida (se fijan solo si termina).
       level: 1 | 2;
@@ -446,6 +449,12 @@ export function useExperiment() {
             level2: { status: "restore-failed" },
           }));
         } else if (pending.kind === "train") {
+          // S5: ninguna fila de la liga concluyó — no hay ganador que defender, y
+          // «intenta de nuevo» sería falso (AU-S5-23).
+          if (pythonLeagueEmpty(message.message)) {
+            failTrain("league-empty", "league-empty");
+            return;
+          }
           // S5: Python rechazó el payload nombrando el campo (contract:<campo>).
           const field = pythonContractField(message.message);
           failTrain(
@@ -561,7 +570,11 @@ export function useExperiment() {
             categorical: next.payload.categorical,
             target: next.payload.target,
           },
-          sent: { roster: next.payload.roster, cv_k: next.payload.cv_k },
+          sent: {
+            roster: next.payload.roster,
+            cv_k: next.payload.cv_k,
+            primary_metric: next.payload.primary_metric,
+          },
           smallSample: next.smallSample,
           level: 2,
           routing: next.routing,
@@ -817,7 +830,11 @@ export function useExperiment() {
         categorical: prepared.payload.categorical,
         target: targetColumn,
       },
-      sent: { roster: prepared.payload.roster, cv_k: prepared.payload.cv_k },
+      sent: {
+        roster: prepared.payload.roster,
+        cv_k: prepared.payload.cv_k,
+        primary_metric: prepared.payload.primary_metric,
+      },
       smallSample: prepared.smallSample,
       level: 1,
       routing: prepared.routing,
@@ -902,7 +919,7 @@ export function useExperiment() {
     const plan = planLevel2(
       next.profile,
       result.league.map((row) => row.name),
-      result.selection.elapsedMs,
+      measuredRun(result.selection.elapsedMs, result.league),
       forced,
     );
     level1Ref.current = {
@@ -939,7 +956,19 @@ export function useExperiment() {
    */
   const cancelLevel2 = useCallback(() => {
     if (!level1Ref.current) return;
-    const competitors = level1Ref.current.result.league.length;
+    // Los competidores de la corrida CANCELADA (la unión del Nivel 2), no los de
+    // la liga que vuelve — se leen antes de vaciar los pendientes (AU-S5-19).
+    const inFlight = [...pendingRef.current.values()];
+    const level2Train = inFlight.find(
+      (p) => p.kind === "train" && p.level === 2,
+    );
+    const snapshot = inFlight.find((p) => p.kind === "snapshot");
+    const competitors =
+      level2Train?.kind === "train"
+        ? level2Train.sent.roster.length
+        : snapshot?.kind === "snapshot"
+          ? snapshot.next.payload.roster.length
+          : level1Ref.current.result.league.length;
     const snapshotPending = [...pendingRef.current.entries()].find(
       ([, pending]) => pending.kind === "snapshot",
     );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   MLP_MIN_ROWS,
+  measuredRun,
   planLevel2,
   type Placement,
   type RouteProfile,
@@ -38,11 +39,9 @@ export function Level2Card({
   const t = useT();
   const [extra, setExtra] = useState<MemberId[]>([]);
   const ran = result.league.map((row) => row.name);
-  const baseline = planLevel2(profile, ran, result.selection.elapsedMs, forced);
-  const plan = planLevel2(profile, ran, result.selection.elapsedMs, [
-    ...forced,
-    ...extra,
-  ]);
+  const measured = measuredRun(result.selection.elapsedMs, result.league);
+  const baseline = planLevel2(profile, ran, measured, forced);
+  const plan = planLevel2(profile, ran, measured, [...forced, ...extra]);
   const short = (id: MemberId) => t(`results.candidates.short.${id}`);
   const outReason = (p: Placement) =>
     t(`roster.reason.${p.outReason ?? p.reason}`, {

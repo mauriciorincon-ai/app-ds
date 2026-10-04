@@ -60,6 +60,14 @@ test("elegir LightGBM → exportar → recargar → importar → puntuar", async
     .locator('input[accept=".json,application/json"]')
     .setInputFiles(filePath);
   await expect(page.getByText(/Modelo válido/)).toBeVisible();
+  // La etiqueta cruza el archivo: el resumen del import dice cómo se eligió (AU-S5-06).
+  await expect(
+    page.getByText(
+      chosenByUser
+        ? /◆ Elegido por ti, no por la validación cruzada/
+        : /Elegido por validación cruzada de \d+ pliegues/,
+    ),
+  ).toBeVisible();
   await page.getByRole("button", { name: /Usar este modelo/i }).click();
   await expect(page.getByText(/Arrastra tu CSV nuevo/)).toBeVisible({
     timeout: 150_000,

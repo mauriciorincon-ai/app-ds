@@ -7,7 +7,6 @@
     "auc": 1
   },
   "model_name": "logistic",
-  "elapsed_ms": 13,
   "confusion_matrix": [
     [
       28,

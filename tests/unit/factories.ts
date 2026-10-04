@@ -7,9 +7,11 @@ import type { Metrics } from "@/engine/verdict";
 import type {
   ExperimentResult,
   LeagueRow,
+  MemberFitResult,
   PipelinePayload,
   PipelineResult,
 } from "@/workers/protocol";
+import { SCORER } from "@/workers/contract";
 
 export function metrics(overrides: Partial<Metrics> = {}): Metrics {
   return {
@@ -47,7 +49,8 @@ export function leagueRows(
 
 /** Resultado de Python coherente con lo enviado (lo que el FakeWorker responde). */
 export function pipelineResult(
-  sent: Pick<PipelinePayload, "roster" | "cv_k"> = {
+  sent: Pick<PipelinePayload, "roster" | "cv_k"> &
+    Partial<Pick<PipelinePayload, "primary_metric">> = {
     roster: ["logistic", "forest"],
     cv_k: 5,
   },
@@ -72,7 +75,8 @@ export function pipelineResult(
     league,
     cv: {
       k: sent.cv_k,
-      scoring: "roc_auc",
+      // Como Python: la CV puntúa con la métrica enviada (lo cruza contract.ts).
+      scoring: SCORER[sent.primary_metric ?? "auc"],
       rule: "one-se",
       best: selection.best,
       se: selection.se,
@@ -97,6 +101,21 @@ export function pipelineResult(
       ],
     },
     preprocessing: { numeric_medians: { x: 1 }, rare_categories: {} },
+  };
+}
+
+/** Lo que Python devuelve al ajustar a mano un miembro de esa liga (U1). */
+export function memberFit(
+  result: PipelineResult,
+  member: MemberId,
+): MemberFitResult {
+  const row = result.league.find((r) => r.name === member);
+  return {
+    model: row?.test ?? metrics(),
+    model_name: member,
+    confusion_matrix: result.confusion_matrix,
+    explainability: result.explainability,
+    preprocessing: result.preprocessing,
   };
 }
 

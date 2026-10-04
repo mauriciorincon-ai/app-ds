@@ -82,6 +82,15 @@ Registradas durante la Fase 1 (se reportan en el STOP de la F1):
   de un error estándar sobre la liga recibida y rechaza el resultado si Python eligió otra cosa
   (`winner`, `cv.best`, `cv.se`). Es un cruce entre lenguajes, no una segunda regla: Python elige y
   TS comprueba.
+- **D16 — E1 sin números de sprint en la UI:** la orden pedía «llega en el S6/S7»; la tarjeta dice
+  «llega en una próxima versión» (`messages/*.json` `task.notYet`). Los números de sprint son
+  internos al método; para el usuario final, «próxima versión» es verdad y no caduca con un
+  replan. Vista y aprobada en la mirada de FORMA M1 (2026-10-02). _(Registrada por AU-S5-30; el
+  manual se alinea en la Fase 2 de la auditoría: «llegan en una próxima versión».)_
+- **D17 — R15 en la UI:** el plan decía que «Nuevo experimento» durante el Nivel 2 usara el camino
+  de cancelar; la pantalla del Nivel 2 ofrece solo «Cancelar el Nivel 2» (que ya restaura el Nivel
+  1). `reset()` corta igual cualquier cómputo en vuelo. ADR 010 corregido. _(AU-S5-20; aprobada
+  por el usuario con la Fase 1 de la auditoría, 2026-10-03.)_
 
 ## Fase 0 — delta del kit + constitución + spike en el navegador
 
@@ -642,6 +651,90 @@ botón habilitado tenga opacidad 1.
 **Barrido de cero enlaces:** después del último `git add`, con el patrón de la regla 13, vacío (ver
 el commit del cierre de la F2).
 
+## Cierre — `/audita-sprint` (2026-10-02 → 2026-10-03)
+
+### Fase 1 — auditor independiente
+
+- Subagente que no construyó el sprint, con el diff `main…620ed2a` como fuente primaria. Informe
+  completo en `sprints/SPRINT_005-auditoria.md`: **requiere ajustes**, 30 hallazgos (1 Alto · 8
+  Medio · 21 Bajo), cada uno con `archivo:línea`, ajuste ejecutable y criterio de «verificado».
+- Sólido según el auditor: anti-fuga de la CV con espía, la selección no mira el test, carnadas de
+  todos los contratos, 13 escenarios de la máquina de estados del Nivel 2 sin defectos, cero
+  enlaces y CI 6/6.
+- **Aprobación del usuario (2026-10-03):** «continúa» sobre la presentación de la Fase 1 y del plan
+  de pagos, con dos variaciones propuestas por el constructor:
+  1. AU-S5-05 — el pie del brochure no promete un re-armado futuro (eso es justo lo que caza la
+     casilla 4): «33 funcionalidades del primer ciclo, todas en esta página; la liga honesta del
+     Sprint 005 se resume en “Una liga de modelos, elegida sin mirar la prueba”».
+  2. AU-S5-20 — sin segundo botón: ADR 010 corregido y D17.
+
+### Fase 2 — los 30 pagados (+1 propio)
+
+| id     | sev.  | Pago                                                                                                                                                                                                                                                                                                                   | Verificación                                                                         | Rojo demostrado                                                                                                             |
+| ------ | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| 01     | Alto  | El titular «＝ La liga no encontró nada mejor…» solo con `ties`; con `loses` vuelve «▼ NO supera»                                                                                                                                                                                                                      | `league-ui` 20/20                                                                    | condición vieja `!== "beats"` → 1 rojo («PIERDE»)                                                                           |
+| 02     | Medio | `TaskCard blocked`: sin ✓ junto a un bloqueo; ⚠ + `task.blocked` (ES/EN)                                                                                                                                                                                                                                               | `league-ui` + captura 360 claro/oscuro                                               | `blocked` ignorado → 1 rojo                                                                                                 |
+| 03     | Medio | `results.testNote` dice qué se calcula en prueba y que la liga usa CV en train (pantalla + model card)                                                                                                                                                                                                                 | paridad i18n                                                                         | — (copy)                                                                                                                    |
+| 04     | Medio | Brochure (rótulo «parte», párrafo del corte) y export (`diferencial`, `papel`)                                                                                                                                                                                                                                         | `brochure-export` 7/7, e2e `brochure` verde, captura del corte a 360 leída           | — (copy)                                                                                                                    |
+| 05     | Medio | Pie del brochure con la variación 1 aprobada; `data-contador="33"` intacto                                                                                                                                                                                                                                             | e2e `brochure` verde, captura del pie                                                | — (copy)                                                                                                                    |
+| 06     | Medio | El resumen del import lee `selection`: «◆ Elegido por ti…» o «Elegido por validación cruzada de k pliegues…» (+ `_one`); manual                                                                                                                                                                                        | `start-import` 5/5; e2e `liga-booster-export` lo afirma tras importar                | antes del ajuste → 2 rojos                                                                                                  |
+| 07     | Medio | `fit_member` y `run_experiment` calculan los detalles ANTES de `_retain`                                                                                                                                                                                                                                               | integración: `_selected_details` parcheado para lanzar → la clase retenida no cambia | orden viejo → `LogisticRegression` ≠ `KNeighborsClassifier`                                                                 |
+| 08     | Medio | axe en ambos temas en Configuración (tarea ámbar «edad» y binaria), en la tarjeta del Nivel 2 y con el Nivel 2 corriendo; helper compartido `tests/e2e/axe-temas.ts` (saca el cursor y vuelve al tema claro)                                                                                                           | e2e 32/32 en build de producción                                                     | **dos rojos:** (a) real, ver abajo; (b) deliberado `text-ink-muted/40` en TaskCard → `color-contrast` en móvil y escritorio |
+| 09     | Medio | 4 tests del hook: `chooseMember` (éxito, error, contrato) y `selectTarget` (binaria · multiclase · muy pocas filas); fábrica `memberFit`                                                                                                                                                                               | `useExperiment.ts` ramas 57,8 % → **72,9 %**, líneas 76,1 % → 84,4 %                 | — (cobertura)                                                                                                               |
+| 10     | Bajo  | `target-mixed-notation` cuando E1 ve 2 valores escritos de 2 formas                                                                                                                                                                                                                                                    | `experiment` 15/15                                                                   | error viejo → 1 rojo                                                                                                        |
+| 11     | Bajo  | Guía: E4 «Mejorada en S5» (la revisión visual incluye la liga); historial                                                                                                                                                                                                                                              | filtro «Mejorado» = 5; total 38                                                      | —                                                                                                                           |
+| 12     | Bajo  | 5 claves i18n muertas fuera; comentarios «interinos» caducados reescritos                                                                                                                                                                                                                                              | `grep` vacío; paridad verde                                                          | —                                                                                                                           |
+| 13     | Bajo  | `cv.scoring` cruzado contra `SCORER[primary_metric]` (+ carnada → **train 27/27**; tripwire de paridad con `pipeline.py`); `league[].elapsed_ms` calibra el Nivel 2 (`measuredRun`: factor con los miembros, parte fija sumada una vez); `MemberFitResult.elapsed_ms` retirado (fixture regenerado por el emisor real) | unit + integración 47/47                                                             | sin el cruce → la carnada pasa («cv.scoring → aceptada»); SCORER cambiado en Python → tripwire rojo                         |
+| 14     | Bajo  | Fuera `targetCandidates`, `Routing.ceilingS`, `Level2Plan.factor`; `Routing.out` y `level2` alimentan la tabla de la liga                                                                                                                                                                                              | typecheck + unit + e2e                                                               | —                                                                                                                           |
+| 15     | Bajo  | `dict()` escribe `*` en la ruta, nunca la clave (nombre de columna)                                                                                                                                                                                                                                                    | carnada `preprocessing.numeric_medians.*` → **fit-member 6/6**                       | ruta con la clave → 2 rojos                                                                                                 |
+| 16     | Bajo  | `pythonContractField` anclado a la última línea (`ValueError: contract:<campo>`)                                                                                                                                                                                                                                       | `contract` 14/14                                                                     | regex viejo → 1 rojo                                                                                                        |
+| 17     | Bajo  | Manual y diccionario del brochure: Nivel 1/2/fuera, dos baselines, 75/25, k acotado; «Veredicto» contra el mejor baseline                                                                                                                                                                                              | `grep` vacío; captura del diccionario                                                | — (copy)                                                                                                                    |
+| 18     | Bajo  | ADR 011: el H1 sí mostraba la prueba de los candidatos (y elegía por ella)                                                                                                                                                                                                                                             | `grep` vacío                                                                         | —                                                                                                                           |
+| 19     | Bajo  | Al cancelar, el breadcrumb cuenta los competidores de la corrida cancelada                                                                                                                                                                                                                                             | 2 tests con `recordLeagueRun` mockeado                                               | línea vieja → 2 rojos                                                                                                       |
+| 20     | Bajo  | ADR 010 (R15) + D17                                                                                                                                                                                                                                                                                                    | `grep "abandoned league"` vacío                                                      | —                                                                                                                           |
+| 21     | Bajo  | TrainingScreen muestra la estimación del Nivel 1 (`training.estimate`)                                                                                                                                                                                                                                                 | `league-ui`; captura 360                                                             | sin la línea → 1 rojo                                                                                                       |
+| 22     | Bajo  | Test R8: elegir a mano devuelve la narración a reposo                                                                                                                                                                                                                                                                  | `use-hooks`                                                                          | `result` fuera de las dependencias → 1 rojo                                                                                 |
+| 23     | Bajo  | `league-empty` franco (no el genérico)                                                                                                                                                                                                                                                                                 | `use-hooks`                                                                          | rama quitada → 1 rojo                                                                                                       |
+| 24     | Bajo  | La región viva envuelve solo la lista de etapas (un `<div>`, no un role en el `<ol>`)                                                                                                                                                                                                                                  | `league-ui`; axe del Nivel 2                                                         | región en la raíz → 2 rojos                                                                                                 |
+| 25     | Bajo  | `BASELINE_IDS` en ResultsScreen                                                                                                                                                                                                                                                                                        | typecheck + `league-ui`                                                              | —                                                                                                                           |
+| 26     | Bajo  | La integración importa `withoutLeague` de producción                                                                                                                                                                                                                                                                   | integración 47/47                                                                    | —                                                                                                                           |
+| 27     | Bajo  | Nombres i18n por miembro (ES/EN) + la ficha del MLP cita `MLP_MIN_ROWS`                                                                                                                                                                                                                                                | `modelos` 7/7                                                                        | sin `short.mlp` en es → rojo nombrando «es results.candidates.short.mlp»                                                    |
+| 28     | Bajo  | Categoría `probeta.league`                                                                                                                                                                                                                                                                                             | `observability`                                                                      | —                                                                                                                           |
+| 29     | Bajo  | K-S5-9 (abajo)                                                                                                                                                                                                                                                                                                         | —                                                                                    | —                                                                                                                           |
+| 30     | Bajo  | D16 (arriba)                                                                                                                                                                                                                                                                                                           | —                                                                                    | —                                                                                                                           |
+| **31** | Bajo  | **Hallazgo propio de la Fase 2:** el resumen del import llamaba `results.verdict.<nivel>` sin `{name}` → mostraba «— «{name}» supera al baseline» (bug desde el gate ⭐ S4, bloque B). Claves propias `start.import.summary.verdict.*` sin nombre (el modelo ya va en su línea)                                        | `start-import` afirma «— supera al baseline» y ninguna «{name}»                      | antes del ajuste → rojo                                                                                                     |
+
+**El gate nuevo atrapó un error del propio pago (AU-S5-08 sobre AU-S5-24).** La primera versión de
+AU-S5-24 puso `role="status"` sobre el `<ol>`: axe, en su primera corrida con el Nivel 2 corriendo,
+cayó en `listitem` + `aria-allowed-role` (móvil y escritorio). El auditor había pedido envolverlo
+en un `<div>`; corregido así. Es el rojo «real» del gate; el deliberado (contraste) se hizo igual.
+
+**Ajustes menores al texto propuesto:** `training.estimate` (AU-S5-21) dice «(en un móvil, el doble
+o más)» en vez de «(más la descarga del motor la primera vez)», porque la misma pantalla ya dice
+«La primera vez tarda unos segundos: el motor se descarga una sola vez». Los bloques del brochure
+y del manual usan «parte» y «tres cuartas partes» como propuso el auditor.
+
+**AU-S5-06, lo que queda como registro legible:** `league[].*` y `selection.metric/rule` del
+manifiesto se escriben y se validan, pero el import solo lee `selection.by`, `cv_winner` y `k` (+ el
+largo de `league`). Lo demás es la «cara legible» del archivo (ADR 007): quien abre el JSON ve la
+liga entera y la regla sin depender de la app.
+
+**Corridas (2026-10-03):**
+
+- `pnpm typecheck` ✓ · `pnpm lint` ✓.
+- `pnpm test`: 41 archivos, **387/387**; cobertura total 92,9 % de líneas.
+- `pnpm test:integration` (Pyodide real): **47/47**; carnadas train 27/27 · fit-member 6/6 ·
+  progreso 5/5 · export 6/6 · score 5/5.
+- `pnpm test:e2e` sobre el **build de producción** (`pnpm build && pnpm start`): **32/32**, sin
+  reintentos.
+- Una corrida de demo en rojo registró un test de ConfigScreen de **331 s** (pausa del equipo, no
+  del test): tres repeticiones seguidas lo dan en 43 ms. No es un flaky del código; se anota.
+
+**Capturas de la Fase 2** (evidencia, scratchpad, no versionadas): 10 encuadres a 360 px, claro y
+oscuro: el corte, el diccionario y el pie del brochure (`/conoce` del build de producción), la
+TaskCard bloqueada y el entrenamiento del Nivel 1 con su estimación. 6 mediciones
+`scrollWidth ≤ clientWidth` OK. Leídas como imagen.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S5-1 — `audita-sprint.md` tiene dos casillas numeradas «6»** (líneas 73 y 93 del kit): en la
@@ -667,3 +760,16 @@ el commit del cierre de la F2).
   determinismo de `fit_member` probaba solo miembros que no usan azar; con otra semilla seguía
   verde. La tercera pregunta de la regla 15 («¿puede fallar siquiera?») lo cazó en el acto. Se
   reforzó con los bosques. Lección: un test de determinismo tiene que incluir algo aleatorio.
+- **K-S5-9 — El PreToolUse de B-8 falla ABIERTO**: sin `jq` o sin `gitleaks` en el PATH, el
+  escaneo del contenido no corre y no avisa (`.claude/settings.json:12`), mientras el pre-commit
+  del mismo kit falla cerrado. Propuesta: que imprima un aviso visible en `stderr` cuando omite
+  el escaneo. _(AU-S5-29.)_
+- **K-S5-10 — Fricción del constructor: una copia de respaldo en otra carpeta.** En una demo en
+  rojo, el respaldo se guardó en `$TMPDIR` y la restauración lo buscó en el scratchpad: el archivo
+  quedó un momento con la mutación. Lo delató el `grep` de verificación que sigue a cada
+  restauración; se restauró y se repitió la suite. Regla desde ahí: una sola variable para la
+  carpeta de respaldos y un `grep` del ajuste después de cada restauración.
+- **K-S5-11 — Fricción del constructor: `pkill -f "next start"` no mata el server.** El proceso no
+  se llama así; el server viejo siguió en el puerto 3000 sirviendo un `.next` reconstruido por
+  debajo y la demo falló por timeout, no por axe. Se mata por puerto (`lsof -ti :3000`) y se
+  comprueba que el log del server nuevo no traiga `EADDRINUSE`.

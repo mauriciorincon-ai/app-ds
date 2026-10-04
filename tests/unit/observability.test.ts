@@ -45,7 +45,7 @@ describe("recordLeagueRun (S5, privacidad)", () => {
       cancelled: false,
     });
     expect(addBreadcrumb).toHaveBeenCalledWith({
-      category: "league",
+      category: "probeta.league",
       level: "info",
       message: "league-run",
       data: {

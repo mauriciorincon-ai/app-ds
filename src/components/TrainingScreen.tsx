@@ -15,6 +15,7 @@ export function TrainingScreen({
   stage,
   detail = null,
   level2 = null,
+  estimateS = null,
   onCancel,
 }: {
   stage: ProgressStage | null;
@@ -22,6 +23,8 @@ export function TrainingScreen({
   detail?: ProgressDetail | null;
   /** S5: corriendo el Nivel 2 (se puede cancelar: vuelve el Nivel 1). */
   level2?: { count: number; estimateS: number } | null;
+  /** S5: segundos estimados del Nivel 1 (la misma cifra que prometió Configuración). */
+  estimateS?: number | null;
   onCancel?: () => void;
 }) {
   const t = useT();
@@ -33,43 +36,54 @@ export function TrainingScreen({
   const steps = detail ? detail.total * 2 : 0;
 
   return (
-    <div className="flex flex-col gap-6" role="status" aria-live="polite">
+    <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">{t("training.title")}</h1>
-      {level2 && (
+      {level2 ? (
         <p className="font-mono text-sm tabular-nums">
           {t("level2.running", {
             count: level2.count,
             time: formatEstimate(level2.estimateS),
           })}
         </p>
+      ) : (
+        estimateS !== null && (
+          <p className="font-mono text-sm tabular-nums">
+            {t("training.estimate", { time: formatEstimate(estimateS) })}
+          </p>
+        )
       )}
-      <ol className="flex flex-col gap-3">
-        {STAGES.map((s, index) => {
-          const done = index < activeIndex;
-          const active = index === activeIndex;
-          return (
-            <li key={s} className="flex items-center gap-3">
-              <span
-                aria-hidden
-                className={`grid size-6 shrink-0 place-items-center rounded-full border font-mono text-xs ${
-                  done
-                    ? "border-accent bg-accent text-accent-ink"
-                    : active
-                      ? "border-accent text-accent"
-                      : "border-hairline text-ink-muted"
-                }`}
-              >
-                {done ? "✓" : index + 1}
-              </span>
-              <span
-                className={active ? "font-medium text-ink" : "text-ink-muted"}
-              >
-                {t(`training.${s}`)}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
+      {/* La región viva anuncia solo el cambio de etapa: la línea por modelo
+          (hasta 2·N cambios por liga) queda fuera; la barra expone el avance.
+          Envuelve la lista (un role en el <ol> le quitaría su semántica). */}
+      <div role="status" aria-live="polite">
+        <ol className="flex flex-col gap-3">
+          {STAGES.map((s, index) => {
+            const done = index < activeIndex;
+            const active = index === activeIndex;
+            return (
+              <li key={s} className="flex items-center gap-3">
+                <span
+                  aria-hidden
+                  className={`grid size-6 shrink-0 place-items-center rounded-full border font-mono text-xs ${
+                    done
+                      ? "border-accent bg-accent text-accent-ink"
+                      : active
+                        ? "border-accent text-accent"
+                        : "border-hairline text-ink-muted"
+                  }`}
+                >
+                  {done ? "✓" : index + 1}
+                </span>
+                <span
+                  className={active ? "font-medium text-ink" : "text-ink-muted"}
+                >
+                  {t(`training.${s}`)}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
       {detail && (
         <div className="flex flex-col gap-2">
           <p className="font-mono text-sm tabular-nums">

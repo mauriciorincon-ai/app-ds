@@ -53,7 +53,15 @@
         "versionWarning": "This file was created with versions different from this app's ({list}). It will load anyway; if it fails, retrain and export again.",
         "use": "Use this model",
         "cancel": "Cancel",
-        "model": "Chosen model: {model}."
+        "model": "Chosen model: {model}.",
+        "verdict": {
+          "beats": "beats the baseline",
+          "ties": "ties the baseline",
+          "loses": "does NOT beat the baseline"
+        },
+        "chosen": "◆ Chosen by you, not by cross-validation (the cross-validation winner was {winner}). If it was chosen by looking at the test set, the metric may be optimistic.",
+        "cv": "Chosen by {k}-fold cross-validation among {count} models.",
+        "cv_one": "Chosen by {k}-fold cross-validation (1 model competed)."
       },
       "errors": {
         "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
@@ -114,6 +122,7 @@
     "loading-packages": "Loading pandas, scikit-learn, XGBoost and LightGBM…",
     "training": "Competing with cross-validation; the test set opens at the end…",
     "wait": "The first run takes a few seconds: the engine downloads only once.",
+    "estimate": "About {time} of computing on a desktop computer (on a phone, twice as long or more).",
     "member": {
       "cv": "Cross-validation · model {index} of {total}: {model}",
       "test": "Test set · model {index} of {total}: {model}"
@@ -154,7 +163,7 @@
       "majority": "Majority class",
       "logistic": "Logistic regression"
     },
-    "testNote": "All metrics are computed on the test set, never on the training set.",
+    "testNote": "The verdict metrics, the confusion matrix and the baselines are computed on the test set, never on the training set. The league table uses cross-validation inside the training set: it is for choosing.",
     "leakage": {
       "title": "Possible data leakage",
       "finding": "The column “{column}” could be a proxy for the target.",
@@ -174,7 +183,6 @@
       "contents": "The file contains what the model learned from your data (parameters, categories, medians) — not your raw rows. Still, treat it as a sensitive file."
     },
     "candidates": {
-      "title": "Models that competed",
       "model": {
         "logistic": "Logistic regression",
         "logistic_balanced": "Logistic regression (balanced classes)",
@@ -206,11 +214,7 @@
         "forest": "Random Forest",
         "forest_balanced": "Balanced Random Forest",
         "mlp": "Neural network"
-      },
-      "winner": "chosen",
-      "metricCol": "Metric",
-      "primary": "primary",
-      "note": "All of them use the same preprocessing. The winner was chosen with cross-validation inside the training set; these scores come from the test set: they are for believing, not for choosing."
+      }
     }
   },
   "score": {
@@ -427,7 +431,9 @@
     "retry": "Start over",
     "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file.",
     "too-few-rows": "There are too few examples of one of the two classes to compare models honestly: cross-validation needs at least 2 of each class in the training set. Try with more rows.",
-    "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file."
+    "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file.",
+    "target-mixed-notation": "Your target has 2 values, but written in more than one way (for example «1» and «1.0»): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
+    "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns."
   },
   "task": {
     "title": "Kind of prediction",
@@ -448,6 +454,7 @@
       "empty": "The column is empty."
     },
     "suggested": "Most likely: {task}.",
+    "blocked": "The app trains this kind of prediction, but with this data models cannot be compared honestly (the reason is below).",
     "trainable": "Ready to train.",
     "notYet": "This version does not train this kind of prediction yet: it comes in a later version. For now, pick a column with two categories."
   },

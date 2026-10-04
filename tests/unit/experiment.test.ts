@@ -39,7 +39,7 @@ describe("summarizeDataset", () => {
     );
     const summary = summarizeDataset(t);
     expect(summary.rowCount).toBe(3);
-    expect(summary.targetCandidates).toContain("convirtio");
+    expect(summary.targetTasks.convirtio?.task).toBe("binaria");
     expect(summary.dateColumns).toContain("alta");
     const edad = summary.profiles.find((p: ColumnProfile) => p.name === "edad");
     expect(edad?.kind).toBe("numeric");
@@ -124,6 +124,20 @@ describe("prepareRun", () => {
     expect(prepareRun(t, "t", 1)).toEqual({
       ok: false,
       error: "target-not-binary",
+    });
+  });
+
+  it("AU-S5-10: dos valores para E1 escritos de dos formas («1» y «1.0») ⇒ se nombra la notación", () => {
+    const t = table(
+      ["x", "y"],
+      Array.from({ length: 12 }, (_, i) => [
+        String(i),
+        ["0", "1", "1.0"][i % 3],
+      ]),
+    );
+    expect(prepareRun(t, "y", 1)).toEqual({
+      ok: false,
+      error: "target-mixed-notation",
     });
   });
 
@@ -280,7 +294,6 @@ describe("applyMemberFit (elección manual, U1)", () => {
   const fit = (name: "knn" | "logistic", auc: number): MemberFitResult => ({
     model: metrics({ auc }),
     model_name: name,
-    elapsed_ms: 12,
     confusion_matrix: [
       [2, 1],
       [1, 2],

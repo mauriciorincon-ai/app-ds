@@ -1,34 +1,11 @@
-import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { axeBothThemes } from "./axe-temas";
 
 // S5 — la liga de punta a punta en el navegador real (build de producción en CI):
 // Nivel 1 → tabla → ficha de lectura (<dialog> nativo: foco, Esc) → prueba a
 // pedido y etiquetada → elegir a mano → «◆ Elegido por ti» en el veredicto y en la
-// model card → volver al ganador. axe en ambos temas con la ficha abierta.
-
-// Con un modal abierto, lo de atrás es inerte (no se percibe ni se alcanza): se
-// audita el diálogo. Sin modal, la página entera.
-// axe mide contraste con la opacidad del momento: un botón que se rehabilita
-// funde de 0,5 a 1 en 150 ms y, medido a mitad, «falla» contraste. Se espera a
-// que no quede ninguna transición en curso (misma lección que la pasada de
-// capturas: el botón pálido era la transición a medio camino).
-async function settle(page: Page) {
-  await page.waitForFunction(() =>
-    [...document.querySelectorAll("button")].every(
-      (button) => button.disabled || getComputedStyle(button).opacity === "1",
-    ),
-  );
-}
-
-async function axeBothThemes(page: Page, scope?: string) {
-  await settle(page);
-  for (const colorScheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme });
-    const builder = new AxeBuilder({ page });
-    const axe = await (scope ? builder.include(scope) : builder).analyze();
-    expect(axe.violations, `axe (${colorScheme})`).toEqual([]);
-  }
-}
+// model card → volver al ganador. axe en ambos temas en Configuración (tarea que
+// se entrena y tarea que todavía no), en Resultados y con la ficha abierta.
 
 test("liga: tabla, ficha, prueba etiquetada y elección manual registrada", async ({
   page,
@@ -37,6 +14,13 @@ test("liga: tabla, ficha, prueba etiquetada y elección manual registrada", asyn
 
   await page.goto("/");
   await page.getByRole("button", { name: /Rotación de empleados/i }).click();
+  // E1 con una tarea que todavía no se entrena: la TaskCard en ámbar, auditada
+  // en ambos temas (AU-S5-08).
+  await page.selectOption("#target", "edad");
+  await expect(
+    page.getByText(/números distintos → predicción de una cantidad/),
+  ).toBeVisible();
+  await axeBothThemes(page);
   await page.selectOption("#target", "renuncio");
   // E1 + E2 antes de entrenar: la tarea y quién compite.
   await expect(
@@ -45,6 +29,7 @@ test("liga: tabla, ficha, prueba etiquetada y elección manual registrada", asyn
   await expect(
     page.getByRole("heading", { name: "Quién compite" }),
   ).toBeVisible();
+  await axeBothThemes(page);
   await page.getByRole("button", { name: /Entrenar modelos/i }).click();
 
   await expect(
@@ -73,14 +58,12 @@ test("liga: tabla, ficha, prueba etiquetada y elección manual registrada", asyn
     )
     .toBe(true);
   await axeBothThemes(page, "dialog");
-  await page.emulateMedia({ colorScheme: "light" });
 
   // Esc cierra y el foco vuelve al botón que la abrió.
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(fichaButton).toBeFocused();
   await axeBothThemes(page);
-  await page.emulateMedia({ colorScheme: "light" });
 
   // La prueba existe, a pedido y etiquetada «no sirve para elegir».
   await page.getByRole("button", { name: /Ver puntajes de prueba/i }).click();

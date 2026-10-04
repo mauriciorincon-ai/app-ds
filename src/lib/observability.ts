@@ -68,7 +68,7 @@ export type LeagueRunMeta = {
 
 export function recordLeagueRun(meta: LeagueRunMeta): void {
   Sentry.addBreadcrumb({
-    category: "league",
+    category: "probeta.league",
     level: "info",
     message: meta.cancelled ? "league-cancelled" : "league-run",
     data: {

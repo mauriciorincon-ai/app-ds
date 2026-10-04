@@ -2,7 +2,7 @@
 
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
-import type { MemberId } from "@/engine/roster";
+import { BASELINE_IDS, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
@@ -104,12 +104,13 @@ export function ResultsScreen({
   // a secas dejaba la duda de CUÁL superó al baseline.
   const winnerName = t(`results.candidates.short.${result.modelName}`);
 
-  // S5 (R2): la logística es baseline Y miembro — si gana la liga, empata
-  // consigo misma. Se dice lo que de verdad pasó, no «empata con el baseline».
+  // S5 (R2): la logística es baseline Y miembro — si gana la liga y EMPATA, empata
+  // consigo misma y se dice así. Si PIERDE (la clase mayoritaria rinde mejor), el
+  // veredicto franco «NO supera» no se reemplaza (regla dura 3).
   const logisticWon =
-    result.modelName === "logistic" &&
+    (BASELINE_IDS as readonly string[]).includes(result.modelName) &&
     result.selection.by === "cv" &&
-    verdict.level !== "beats";
+    verdict.level === "ties";
   const banner = hasLeak
     ? {
         tone: "caution" as BannerTone,
@@ -278,7 +279,7 @@ export function ResultsScreen({
             </p>
             {/* S5 (E3): cada baseline abre su ficha — juzgan la liga, no compiten. */}
             <ul className="mt-1 flex flex-col">
-              {(["majority", "logistic"] as const).map((id) => (
+              {BASELINE_IDS.map((id) => (
                 <li key={id} className="flex flex-wrap items-center gap-x-2">
                   <FichaButton
                     target={{ id, status: { kind: "baseline" } }}

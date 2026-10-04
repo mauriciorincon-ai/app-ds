@@ -102,7 +102,9 @@ export function ConfigScreen({
       </div>
 
       {/* S5 (E1): qué tarea plantea el objetivo elegido, con su razón. */}
-      {target !== "" && plan && <TaskCard detection={plan.task} />}
+      {target !== "" && plan && (
+        <TaskCard detection={plan.task} blocked={plan.blocked !== null} />
+      )}
 
       {/* Alertas EDA del objetivo elegido — role="status" (no "alert": no
           interrumpe; el route announcer de Next reserva alert — regla 7). */}

@@ -25,6 +25,8 @@ export type WorkerErrorKind =
   | "csv-semicolon"
   | "csv-tab"
   | "target-not-binary"
+  // S5: el objetivo tiene 2 valores para E1 pero escritos de más de una forma («1» y «1.0»).
+  | "target-mixed-notation"
   | "no-features"
   // S5: la clase minoritaria de train no alcanza para 2 pliegues de validación
   // cruzada (hay que tener al menos 2 ejemplos de cada clase en train).
@@ -32,6 +34,9 @@ export type WorkerErrorKind =
   // S5 (regla 15): el resultado del motor no tiene la forma del contrato; se
   // nombra el campo y no se muestra nada que no se pueda verificar.
   | "contract"
+  // S5: ningún miembro de la liga concluyó la CV (todos «error» o «no-converge»):
+  // no hay ganador defendible y reintentar no cambia nada.
+  | "league-empty"
   // S4: tras el saneamiento no queda estructura modelable (todo eran IDs/constantes,
   // o no quedan filas/columnas suficientes) — irrecuperable, con reporte honesto.
   | "csv-unusable"
@@ -45,8 +50,6 @@ export type DatasetSummary = {
   rowCount: number;
   profiles: ColumnProfile[];
   previewRows: string[][];
-  /** Columnas elegibles como objetivo binario. */
-  targetCandidates: string[];
   /** S5 (E1): la tarea que cada columna plantearía como objetivo, con su razón. */
   targetTasks: Record<string, TaskDetection>;
   /** Columnas que parecen fecha (aviso S1: no se usa split temporal aún). */
@@ -97,7 +100,7 @@ export type Explainability = {
 };
 
 // S4: cada candidato entrenado (mismo preprocesador) con sus métricas sobre test.
-// S5: derivado de la liga (filas con test) mientras la UI de la F2 no la reemplace.
+// S5: derivado de la liga (filas con test); lo lista la model card («Candidatos comparados»).
 export type ModelCandidate = {
   /** Clave estable e independiente de idioma; la UI la traduce por i18n. */
   name: MemberId;
@@ -124,7 +127,7 @@ export type LeagueRow = {
   cv: CvScore | null;
   /** Métricas en test («no sirve para elegir»); null ⇔ status "error". */
   test: Metrics | null;
-  /** CV + ajuste en train + test, en ms (calibra la estimación del Nivel 2). */
+  /** CV + ajuste en train + test de ESTE miembro, en ms (calibra el Nivel 2: ver planLevel2). */
   elapsed_ms: number;
   error_type: string | null;
 };
@@ -181,7 +184,6 @@ export type Preprocessing = {
 export type MemberFitResult = {
   model: Metrics;
   model_name: MemberId;
-  elapsed_ms: number;
   confusion_matrix: number[][];
   explainability: Explainability;
   preprocessing: Preprocessing;
@@ -211,7 +213,7 @@ export type ExperimentResult = {
   model: Metrics;
   /** El modelo activo (el ganador de la CV o el elegido por el usuario). */
   modelName: MemberId;
-  /** Interino S5 F1: la liga con test, hasta que la F2 la muestre como tabla. */
+  /** Los miembros de la liga con puntaje de prueba (lo lista la model card). */
   candidates: ModelCandidate[];
   /** S5: la liga completa y cómo se eligió. */
   league: LeagueRow[];

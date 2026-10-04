@@ -4,6 +4,7 @@
 // balanceadas comparten la ficha de su base y suman un párrafo propio (D4).
 // Se carga con import() dinámico junto con FichaModelo (budget de script).
 // Paridad (ids = roster, ambos idiomas completos): tests/unit/modelos.test.ts.
+import { MLP_MIN_ROWS } from "@/engine/encarrilador";
 import type { MemberId } from "@/engine/roster";
 
 export type Bilingual = { es: string; en: string };
@@ -279,8 +280,8 @@ export const FICHAS: Record<FichaId, Ficha> = {
       en: "Smooth, non-linear relationships, given enough rows.",
     },
     notFor: {
-      es: "Menos de 500 filas: no aprende nada estable (por eso queda fuera, aunque puedes incluirla en el Nivel 2). En datos tabulares, los árboles suelen ganarle.",
-      en: "Fewer than 500 rows: it learns nothing stable (that is why it sits out, though you can add it in Level 2). On tabular data, trees usually beat it.",
+      es: `Menos de ${MLP_MIN_ROWS} filas: no aprende nada estable (por eso queda fuera, aunque puedes incluirla en el Nivel 2). En datos tabulares, los árboles suelen ganarle.`,
+      en: `Fewer than ${MLP_MIN_ROWS} rows: it learns nothing stable (that is why it sits out, though you can add it in Level 2). On tabular data, trees usually beat it.`,
     },
     watch: {
       es: "Si aparece «no convergió», su puntaje puede cambiar de una corrida a otra: no la elijas por un puntaje alto aislado.",
