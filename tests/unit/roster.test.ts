@@ -133,7 +133,7 @@ describe("selectOneSe — regla de un error estándar (D8)", () => {
       row("naive_bayes", 0.72, 0.0405 * Math.sqrt(5)),
       row("forest", 0.701),
     ];
-    const selection = selectOneSe(league, 5)!;
+    const selection = selectOneSe(league, 5, "higher")!;
     expect(selection).toMatchObject({
       best: "naive_bayes",
       winner: "logistic",
@@ -143,12 +143,12 @@ describe("selectOneSe — regla de un error estándar (D8)", () => {
 
   it("si nadie queda dentro del EE, gana el mejor", () => {
     const league = [row("logistic", 0.6), row("hgb", 0.8, 0.01)];
-    expect(selectOneSe(league, 5)!.winner).toBe("hgb");
+    expect(selectOneSe(league, 5, "higher")!.winner).toBe("hgb");
   });
 
   it("empate exacto en el máximo ⇒ el primero del orden", () => {
     const league = [row("ridge", 0.75, 0), row("hgb", 0.75, 0)];
-    expect(selectOneSe(league, 5)).toMatchObject({
+    expect(selectOneSe(league, 5, "higher")).toMatchObject({
       best: "ridge",
       winner: "ridge",
     });
@@ -160,14 +160,14 @@ describe("selectOneSe — regla de un error estándar (D8)", () => {
       row("knn", 0, 0, "error"),
       row("hgb", 0.7, 0.01),
     ];
-    expect(selectOneSe(league, 5)).toMatchObject({
+    expect(selectOneSe(league, 5, "higher")).toMatchObject({
       best: "hgb",
       winner: "hgb",
     });
   });
 
   it("nadie concluyó ⇒ null (la app no inventa un ganador)", () => {
-    expect(selectOneSe([row("knn", 0, 0, "error")], 5)).toBeNull();
-    expect(selectOneSe([], 5)).toBeNull();
+    expect(selectOneSe([row("knn", 0, 0, "error")], 5, "higher")).toBeNull();
+    expect(selectOneSe([], 5, "higher")).toBeNull();
   });
 });

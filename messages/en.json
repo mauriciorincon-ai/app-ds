@@ -73,7 +73,7 @@
         "invalid-json": "That file isn't valid JSON.",
         "invalid-format": "That file doesn't look like a model exported by Probeta.",
         "unsupported-version": "That file comes from a Probeta format version this app doesn't support.",
-        "unsupported-task": "That file is an intact Probeta model, but for a kind of task this version can't open yet. It was not loaded.",
+        "unsupported-task": "That file declares a Probeta model for «{task}», a kind of task this version doesn't open. It was not loaded.",
         "hash-mismatch": "The file's content doesn't match its manifest (it may be corrupted or modified). For safety it was not loaded.",
         "hint": "Only load .probeta.json files exported by Probeta. The file's payload was never touched."
       },

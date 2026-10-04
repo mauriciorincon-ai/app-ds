@@ -20,6 +20,7 @@ import { MEMBER_IDS } from "@/engine/roster";
 
 // Un dataset del kit (200 filas) y el sintético de 20.000 filas de la F0.
 const KIT: RouteProfile = {
+  task: "binaria",
   rows: 200,
   nTrain: 150,
   width: 10,
@@ -27,6 +28,7 @@ const KIT: RouteProfile = {
   k: 5,
 };
 const BIG: RouteProfile = {
+  task: "binaria",
   rows: 20_000,
   nTrain: 15_000,
   width: 33,

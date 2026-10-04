@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LeakageFinding } from "@/engine/leakage";
-import { computeEdaAlerts, type EdaAlert } from "@/engine/eda";
+import { computeEdaAlerts, idLikeAlerts, type EdaAlert } from "@/engine/eda";
 import { sanitizeTable, type SanitationReport } from "@/engine/sanitize";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import {
@@ -291,7 +291,7 @@ function trainPending(
 
 /** La tarea de un esquema de modelo (los archivos del S5 no la traen: binaria). */
 function schemaTask(schema: ModelSchema): TrainTask {
-  return schema.task === "numerica" ? "numerica" : "binaria";
+  return schema.task ?? "binaria";
 }
 
 /**
@@ -351,10 +351,11 @@ function planTarget(
     : { ...plan, blocked: prepared.error };
 }
 
-/** Las alertas EDA hablan de la tarea con que se entrenaría (sin ella, la binaria del S5). */
+/** Las alertas EDA hablan de la tarea con que se entrenaría. Sin una tarea que se
+ *  entrene, solo las que no dependen de ella (ninguna se supone por descarte). */
 function edaFor(table: CsvTable, plan: TargetPlan | null, target: string) {
-  const task = plan && isTrainTask(plan.resolved) ? plan.resolved : "binaria";
-  return computeEdaAlerts(table, target, task);
+  if (!plan || !isTrainTask(plan.resolved)) return idLikeAlerts(table, target);
+  return computeEdaAlerts(table, target, plan.resolved);
 }
 
 // Gestiona el runner de Pyodide y la máquina de estados del experimento. El

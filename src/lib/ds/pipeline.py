@@ -217,14 +217,14 @@ def _feature_directions(X_test, y_test, numeric, method="pearson"):
     return directions
 
 
-def _explainability(pipe, X_test, y_test, features, numeric, seed, task="binaria"):
+def _explainability(pipe, X_test, y_test, features, numeric, seed, task):
     """Importancia global por permutación sobre TEST (modelo-agnóstica; método
     respaldado — shap no carga en Pyodide, ver decisions/004). Devuelve las
     features ordenadas por importancia descendente, con dirección del efecto.
     S6: en regresión la importancia es cuánto SUBE el MAE al permutar la columna
     (en unidades del objetivo) y la dirección es la de Spearman.
     """
-    if task == "numerica":
+    if _is_regression(task):
         scoring, method = "neg_mean_absolute_error", "spearman"
     else:
         scoring = "roc_auc" if len(np.unique(y_test)) > 1 else "accuracy"
@@ -461,6 +461,18 @@ def _contract(field):
     raise ValueError(f"contract:{field}")
 
 
+def _is_regression(task):
+    """La rama de una tarea. Una tarea sin ramas propias en este archivo es un error
+    de contrato que NOMBRA el campo, jamás la binaria por descarte: si mañana se
+    registra «multiclase» en `_FACTORIES_BY_TASK` sin escribir sus ramas, no se
+    binariza en silencio (ds S6, AU-S6-03)."""
+    if task == "numerica":
+        return True
+    if task == "binaria":
+        return False
+    _contract("task")
+
+
 def _is_int(value):
     return isinstance(value, int) and not isinstance(value, bool)
 
@@ -536,7 +548,7 @@ def _prepare(p):
     train_idx = np.array(p["train_idx"], dtype=int)
     test_idx = np.array(p["test_idx"], dtype=int)
 
-    if task == "numerica":
+    if _is_regression(task):
         y = pd.to_numeric(df[p["target"]], errors="coerce").to_numpy(dtype=float)
         # TS valida que todo el objetivo sea numérico; si llega otra cosa, se
         # nombra el campo (sin valores: regla dura 2).
@@ -591,7 +603,7 @@ def _cross_validate(name, ctx, k):
     de una métrica «menor es mejor» se devuelven en sus unidades (signo invertido)."""
     splitter = (
         KFold(k, shuffle=True, random_state=ctx["seed"])
-        if ctx["task"] == "numerica"
+        if _is_regression(ctx["task"])
         else StratifiedKFold(k, shuffle=True, random_state=ctx["seed"])
     )
     with warnings.catch_warnings(record=True) as caught:
@@ -670,7 +682,7 @@ def _selected_details(pipe, y_pred, ctx):
     (binaria) o predicho-vs-real y residuos (numérica), explicabilidad y lo que
     el preprocesamiento aprendió (de train)."""
     numeric, categorical = ctx["numeric"], ctx["categorical"]
-    if ctx["task"] == "numerica":
+    if _is_regression(ctx["task"]):
         task_details = {
             "pred_vs_real": _pred_vs_real(ctx["y_test"], y_pred),
             "residuals": _residuals(ctx["y_test"], y_pred),
@@ -712,7 +724,7 @@ def _retain(pipe, ctx, target):
     """S3/S4: retener el modelo SELECCIONADO (el que recibe el veredicto) + esquema
     + perfil de train — lo que score_new_data y export_model necesitan."""
     global _MODEL
-    if ctx["task"] == "numerica":
+    if _is_regression(ctx["task"]):
         schema = {
             "numeric": ctx["numeric"],
             "categorical": ctx["categorical"],
@@ -755,7 +767,7 @@ def run_experiment(payload_json, on_progress=None):
     k = int(p["cv_k"])
     # Binaria: k > clase minoritaria de train ⇒ hay folds sin positivos. Numérica:
     # k > filas de train ⇒ hay folds vacíos. TS ya lo acota; aquí se verifica.
-    if ctx["task"] == "numerica":
+    if _is_regression(ctx["task"]):
         if k > len(ctx["train_idx"]):
             _contract("cv_k")
     elif k > int(np.bincount(ctx["y_train"], minlength=2).min()):
@@ -794,7 +806,7 @@ def run_experiment(payload_json, on_progress=None):
     #    ajustado en train completo. Solo el pipeline del ganador queda en memoria.
     X_train, y_train, X_test, y_test = ctx["X_train"], ctx["y_train"], ctx["X_test"], ctx["y_test"]
     baselines = {}
-    if ctx["task"] == "numerica":
+    if _is_regression(ctx["task"]):
         # S6 (decisión del usuario en el STOP de la F0): con MAE la constante
         # óptima es la MEDIANA (no la media), y la lineal es el rival estructural.
         for name, estimator in (
@@ -841,7 +853,7 @@ def run_experiment(payload_json, on_progress=None):
     details = _selected_details(winner_pipe, winner_pred, ctx)
     _retain(winner_pipe, ctx, p["target"])
 
-    if ctx["task"] == "numerica":
+    if _is_regression(ctx["task"]):
         task_fields = {"task": "numerica", "target_stats": ctx["target_stats"]}
     else:
         task_fields = {
@@ -876,7 +888,7 @@ def run_experiment(payload_json, on_progress=None):
 
 def _test_metrics(pipe, y_pred, ctx):
     """Métricas de TEST según la tarea (binaria: necesita el puntaje continuo)."""
-    if ctx["task"] == "numerica":
+    if _is_regression(ctx["task"]):
         return _reg_metrics(ctx["y_test"], y_pred)
     return _metrics(ctx["y_test"], y_pred, _scores(pipe, ctx["X_test"]))
 
@@ -953,7 +965,7 @@ def score_new_data(payload_json):
     }
     # S6: un modelo de regresión devuelve la cantidad estimada, en las unidades del
     # objetivo; no hay clase ni probabilidad que dar (no se inventa).
-    if schema.get("task") == "numerica":
+    if _is_regression(schema.get("task", "binaria")):
         return json.dumps(
             {
                 "task": "numerica",

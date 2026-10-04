@@ -59,13 +59,23 @@ export const REGRESSION_COST_COEFFICIENTS: Record<
   mlp: { t0: 0.153, a: 0.6372, b: 1.21, c: 1.158 },
 };
 
+/** Los coeficientes de cada tarea. Un `Record` completo por tarea: sumar una a
+ *  `TrainTask` sin sus coeficientes no compila (AU-S6-03). */
+export const COST_COEFFICIENTS_BY_TASK = {
+  binaria: COST_COEFFICIENTS,
+  numerica: REGRESSION_COST_COEFFICIENTS,
+} as const satisfies Record<
+  TrainTask,
+  Partial<Record<MemberId, CostCoefficients>>
+>;
+
 /** Los coeficientes de un miembro EN su tarea (un id compartido cuesta distinto). */
 export function costCoefficients(
   member: MemberId,
-  task: TrainTask = "binaria",
+  task: TrainTask,
 ): CostCoefficients {
   const table: Partial<Record<MemberId, CostCoefficients>> =
-    task === "numerica" ? REGRESSION_COST_COEFFICIENTS : COST_COEFFICIENTS;
+    COST_COEFFICIENTS_BY_TASK[task];
   const coefficients = table[member];
   if (!coefficients) {
     throw new Error(`costos: ${member} no compite en la tarea ${task}`);
@@ -96,7 +106,7 @@ export type CostInput = {
 export function estimateMemberSeconds(
   member: MemberId,
   input: CostInput,
-  task: TrainTask = "binaria",
+  task: TrainTask,
 ): number {
   const { t0, a, b, c } = costCoefficients(member, task);
   const nTrain = Math.max(input.nTrain, 1);

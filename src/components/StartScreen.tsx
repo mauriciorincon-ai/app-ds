@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
 import { memberNameKey } from "@/engine/roster";
+import { isTask } from "@/engine/tarea";
 import { inferUnit } from "@/lib/experiment";
 import {
   isBinaryManifest,
@@ -136,7 +137,7 @@ type ImportStatus =
   | { step: "idle" }
   | { step: "validating" }
   | { step: "summary"; file: ModelFile; warnings: VersionWarning[] }
-  | { step: "rejected"; error: ModelFileErrorKind };
+  | { step: "rejected"; error: ModelFileErrorKind; task?: string };
 
 function ImportModelSection({
   onImport,
@@ -160,7 +161,11 @@ function ImportModelSection({
     if (!validation.ok) {
       // Solo el kind del rechazo (metadata) — jamás el contenido del archivo.
       reportImportError(validation.error);
-      setStatus({ step: "rejected", error: validation.error });
+      setStatus({
+        step: "rejected",
+        error: validation.error,
+        task: validation.task,
+      });
       return;
     }
     setStatus({
@@ -220,7 +225,16 @@ function ImportModelSection({
               <span aria-hidden className="mr-1">
                 ✕
               </span>
-              {t(`start.import.errors.${status.error}`)}
+              {t(`start.import.errors.${status.error}`, {
+                // La tarea que declara el archivo: con su nombre si esta versión
+                // la conoce; si no (p. ej. una futura), tal como viene.
+                task:
+                  status.task === undefined
+                    ? ""
+                    : isTask(status.task)
+                      ? t(`task.name.${status.task}`)
+                      : status.task,
+              })}
             </p>
             <p className="text-ink-muted">{t("start.import.errors.hint")}</p>
             <Button variant="secondary" icon="retry" onClick={pickFile}>

@@ -424,11 +424,27 @@ describe("S6 — manifiesto por tarea (P8)", () => {
     if (usable.ok) expect(manifestTask(usable.file.manifest)).toBe("numerica");
   });
 
+  it("una tarea que esta versión NO CONOCE también se rechaza nombrándola, no como «no parece un modelo» (ADR 014 §3, AU-S6-02)", async () => {
+    for (const task of ["multiclase", "agrupar"]) {
+      const raw = JSON.parse(JSON.stringify(await packRegression())) as {
+        manifest: Record<string, unknown>;
+      };
+      raw.manifest.task = task;
+      expect(await validateModelFile(JSON.stringify(raw))).toEqual({
+        ok: false,
+        error: "unsupported-task",
+        task,
+      });
+    }
+  });
+
   it("carnadas del manifiesto de regresión: cada campo nuevo se rechaza NOMBRÁNDOLO — detectó k de n", async () => {
     const file = await packRegression();
     type Mutation = [field: string, mutate: (m: Record<string, any>) => void]; // eslint-disable-line @typescript-eslint/no-explicit-any
     const baits: Mutation[] = [
-      ["manifest.task", (m) => (m.task = "multiclase")],
+      // Una tarea que no es texto es forma rota; una tarea con nombre que esta
+      // versión no abre se NOMBRA (unsupported-task, prueba aparte: AU-S6-02).
+      ["manifest.task", (m) => (m.task = 7)],
       // «numerica» con métricas de clase: un archivo binario disfrazado.
       ["manifest.metrics.model.mae", (m) => (m.metrics.model = { ...METRICS })],
       ["manifest.metrics.model.mae", (m) => (m.metrics.model.mae = -1)],

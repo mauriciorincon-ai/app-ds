@@ -243,8 +243,8 @@ describe("regla de un error estándar con dirección", () => {
       best: "extra_trees",
       winner: "hgb",
     });
-    // Sin dirección (la binaria), el «mejor» sería el máximo: otra elección.
-    expect(selectOneSe(league, 5)).toMatchObject({ best: "linear" });
+    // Con la dirección de la binaria («mayor es mejor»), el «mejor» sería el máximo.
+    expect(selectOneSe(league, 5, "higher")).toMatchObject({ best: "linear" });
   });
 
   it("empate exacto ⇒ el primero del orden", () => {
@@ -390,9 +390,13 @@ describe("EDA de un objetivo numérico (umbrales del STOP de la F0)", () => {
     expect(computeEdaAlerts(conTexto, "objetivo", "numerica")).toEqual([]);
   });
 
-  it("sin la tarea, el comportamiento del S5 (un objetivo numérico no da alertas)", () => {
+  it("con la tarea binaria, un objetivo numérico no da alertas (el comportamiento del S5)", () => {
     expect(
-      computeEdaAlerts(kit("precio-fuga-plantada.csv"), "precio_usd"),
+      computeEdaAlerts(
+        kit("precio-fuga-plantada.csv"),
+        "precio_usd",
+        "binaria",
+      ),
     ).toEqual([]);
   });
 });

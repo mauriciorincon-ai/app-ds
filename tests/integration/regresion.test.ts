@@ -437,6 +437,40 @@ describe("TS → Python: _validate_payload rechaza cada carnada de regresión NO
   });
 });
 
+describe("una tarea registrada sin ramas propias (AU-S6-03)", () => {
+  it("se rechaza NOMBRANDO «task», jamás se binariza en silencio", () => {
+    // El día que alguien registre «multiclase» en _FACTORIES_BY_TASK sin escribir
+    // sus ramas, un objetivo de tres clases NO puede volver como `task: "binaria"`
+    // (la minoritaria contra el resto): cada rama pasa por _is_regression.
+    const base = consumo().payload;
+    const targetIndex = base.headers.indexOf(base.target);
+    const rows = base.rows.map((row, i) =>
+      row.map((cell, j) => (j === targetIndex ? "abc"[i % 3]! : cell)),
+    );
+    const payload = {
+      ...base,
+      rows,
+      task: "multiclase",
+      primary_metric: "accuracy",
+      roster: ["logistic"],
+    };
+    py.runPython(
+      '_FACTORIES_BY_TASK["multiclase"] = _FACTORIES\nTASK_METRICS["multiclase"] = ("accuracy",)',
+    );
+    let got: string | null = "aceptada";
+    try {
+      runExperiment(JSON.stringify(payload));
+    } catch (error) {
+      got = pythonContractField(String((error as Error).message));
+    } finally {
+      py.runPython(
+        'del _FACTORIES_BY_TASK["multiclase"]\ndel TASK_METRICS["multiclase"]',
+      );
+    }
+    expect(got).toBe("task");
+  });
+});
+
 describe("cruce de punta a punta: prepareRun → Pyodide → contract.ts → assembleRegressionResult", () => {
   it("consumo: el veredicto habla en kWh contra la mediana y la lineal", () => {
     const r = consumo();

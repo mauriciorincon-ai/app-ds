@@ -61,7 +61,7 @@ export function pipelineResult(
   cvMeans: Partial<Record<MemberId, number>> = {},
 ): PipelineResult {
   const league = leagueRows(sent.roster, sent.cv_k, cvMeans);
-  const selection = selectOneSe(league, sent.cv_k)!;
+  const selection = selectOneSe(league, sent.cv_k, "higher")!;
   const winner = league.find((row) => row.name === selection.winner)!;
   return {
     // S6: Python devuelve la tarea (aditivo en la binaria).

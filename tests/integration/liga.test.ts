@@ -414,7 +414,7 @@ describe("cruce de punta a punta: prepareRun → Pyodide → contract.ts → ass
     const result = assembleResult(checked.value, r.leakage, r.smallSample);
     expect(result.selection.by).toBe("cv");
     expect(result.selection.cvWinner).toBe(
-      selectOneSe(result.league, result.selection.k)!.winner,
+      selectOneSe(result.league, result.selection.k, "higher")!.winner,
     );
     expect(result.selection.competitors).toBe(r.payload.roster.length);
 

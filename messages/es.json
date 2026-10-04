@@ -73,7 +73,7 @@
         "invalid-json": "Ese archivo no es un JSON válido.",
         "invalid-format": "Ese archivo no parece un modelo exportado por Probeta.",
         "unsupported-version": "Ese archivo viene de una versión del formato de Probeta que esta app no soporta.",
-        "unsupported-task": "Ese archivo es un modelo íntegro de Probeta, pero de un tipo de tarea que esta versión todavía no abre. No se cargó.",
+        "unsupported-task": "Ese archivo declara un modelo de Probeta para «{task}», un tipo de tarea que esta versión no abre. No se cargó.",
         "hash-mismatch": "El contenido del archivo no coincide con su manifiesto (pudo corromperse o ser modificado). Por seguridad no se cargó.",
         "hint": "Solo carga archivos .probeta.json exportados por Probeta. El contenido del archivo no se tocó."
       },

@@ -216,6 +216,7 @@ export function prepareRun(
   if (k === null) return { ok: false, error: "too-few-rows" };
 
   const profile: RouteProfile = {
+    task: "binaria",
     rows: rows.length,
     nTrain: trainIdx.length,
     width: estimateEncodedWidth(

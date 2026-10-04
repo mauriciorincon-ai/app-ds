@@ -24,6 +24,7 @@ function ui(children: ReactNode) {
 }
 
 const KIT: RouteProfile = {
+  task: "binaria",
   rows: 200,
   nTrain: 150,
   width: 10,
@@ -31,6 +32,7 @@ const KIT: RouteProfile = {
   k: 5,
 };
 const MEDIANA: RouteProfile = {
+  task: "binaria",
   rows: 5000,
   nTrain: 3750,
   width: 33,
@@ -53,7 +55,7 @@ function rotationResult(): BinaryResult {
   );
   const nb = py.league[2]!;
   nb.cv = { ...nb.cv!, std: 0.04 * Math.sqrt(5) };
-  const sel = selectOneSe(py.league, 5)!;
+  const sel = selectOneSe(py.league, 5, "higher")!;
   const winner = py.league.find((row) => row.name === sel.winner)!;
   return assembleResult(
     {

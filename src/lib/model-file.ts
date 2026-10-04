@@ -151,7 +151,7 @@ export type ModelManifest = BinaryManifest | RegressionManifest;
 export function isBinaryManifest(
   manifest: ModelManifest,
 ): manifest is BinaryManifest {
-  return manifest.task !== "numerica";
+  return manifestTask(manifest) === "binaria";
 }
 
 /** La tarea de un manifiesto (sin `task` = binaria, P8). */
@@ -307,11 +307,25 @@ const regressionManifestV = obj({
   }),
 });
 
-/** Sin `task` o con «binaria», el manifiesto binario; con «numerica», el de regresión. */
-const manifestV: Validator = (v, path) =>
-  isRecord(v) && v.task === "numerica"
-    ? regressionManifestV(v, path)
-    : binaryManifestV(v, path);
+/** El validador del manifiesto de cada tarea que el motor entrena. Es un `Record`
+ *  completo: sumar una tarea a `TrainTask` sin su validador no compila (AU-S6-03). */
+const MANIFEST_V_BY_TASK: Record<TrainTask, Validator> = {
+  binaria: binaryManifestV,
+  numerica: regressionManifestV,
+};
+
+function isKnownManifestTask(task: string): task is TrainTask {
+  return Object.hasOwn(MANIFEST_V_BY_TASK, task);
+}
+
+/** Sin `task`, el manifiesto binario (archivos del S3–S5); con ella, el de su tarea. */
+const manifestV: Validator = (v, path) => {
+  if (!isRecord(v)) return path;
+  const task = v.task ?? "binaria";
+  return typeof task === "string" && isKnownManifestTask(task)
+    ? MANIFEST_V_BY_TASK[task](v, path)
+    : `${path}.task`;
+};
 
 const modelFileV = obj({
   format_version: oneOf([MODEL_FILE_FORMAT_VERSION]),
@@ -455,6 +469,9 @@ export type ModelFileErrorKind =
   // (p. ej. un modelo multiclase abierto en una versión que solo sabe de binaria).
   | "unsupported-task";
 
+/** Largo máximo con que se nombra una tarea desconocida (texto del archivo). */
+const MAX_TASK_NAME = 40;
+
 export type VersionWarning = {
   component: "pyodide" | "sklearn" | "xgboost" | "lightgbm";
   file: string;
@@ -468,8 +485,9 @@ export type ModelFileValidation =
       error: ModelFileErrorKind;
       /** S5: con invalid-format estructural, el campo que no cuadra (diagnóstico). */
       field?: string;
-      /** S6: con unsupported-task, la tarea del archivo (para nombrarla). */
-      task?: TrainTask;
+      /** S6: con unsupported-task, la tarea que declara el archivo (para
+       *  nombrarla): puede ser una que esta versión no conoce («multiclase»). */
+      task?: string;
     };
 
 function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
@@ -522,15 +540,30 @@ export async function validateModelFile(
     return { ok: false, error: "unsupported-version" };
   }
 
+  // S6 (ADR 014 §3): la tarea se mira ANTES que la forma, igual que la versión.
+  // Un archivo de una tarea que esta versión no abre, o que no conoce (uno
+  // multiclase del S7 abierto aquí), se rechaza NOMBRÁNDOLA, jamás con un
+  // engañoso «no parece un modelo de Probeta» (AU-S6-02).
+  const declared = isRecord(raw.manifest)
+    ? (raw.manifest.task ?? "binaria")
+    : "binaria";
+  if (typeof declared !== "string") {
+    return { ok: false, error: "invalid-format", field: "manifest.task" };
+  }
+  if (!isKnownManifestTask(declared) || !usable.includes(declared)) {
+    // Recortada: es texto del archivo y solo se muestra (React lo escapa).
+    return {
+      ok: false,
+      error: "unsupported-task",
+      task: declared.slice(0, MAX_TASK_NAME),
+    };
+  }
+
   const shaped = check<ModelFile>(modelFileV, raw);
   if (!shaped.ok) {
     return { ok: false, error: "invalid-format", field: shaped.field };
   }
   const file = shaped.value;
-  const task = manifestTask(file.manifest);
-  if (!usable.includes(task)) {
-    return { ok: false, error: "unsupported-task", task };
-  }
 
   let payloadBytes: Uint8Array;
   try {

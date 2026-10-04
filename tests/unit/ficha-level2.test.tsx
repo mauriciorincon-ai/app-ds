@@ -55,6 +55,7 @@ function ui(children: ReactNode) {
 }
 
 const KIT: RouteProfile = {
+  task: "binaria",
   rows: 200,
   nTrain: 150,
   width: 10,
@@ -62,6 +63,7 @@ const KIT: RouteProfile = {
   k: 5,
 };
 const MEDIANA: RouteProfile = {
+  task: "binaria",
   rows: 5000,
   nTrain: 3750,
   width: 33,

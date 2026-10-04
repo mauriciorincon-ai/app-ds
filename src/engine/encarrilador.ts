@@ -34,8 +34,9 @@ export const CV_LARGE_FROM_ROWS = 20_001;
 export const SMALL_SAMPLE_ROWS = 200;
 
 export type RouteProfile = {
-  /** S6: la tarea (roster y costos son por tarea). Ausente = binaria (S5). */
-  task?: TrainTask;
+  /** S6: la tarea (roster y costos son por tarea). Obligatoria: un perfil sin
+   *  tarea no toma el roster binario por descarte (AU-S6-03). */
+  task: TrainTask;
   /** Filas del dataset con objetivo (train + test). */
   rows: number;
   nTrain: number;
@@ -122,7 +123,7 @@ export function routeModels(
     width: profile.width,
     k: profile.k,
   };
-  const task = profile.task ?? "binaria";
+  const task = profile.task;
   const forcedSet = new Set(forced);
   const placements: Placement[] = [];
   let used = 0;

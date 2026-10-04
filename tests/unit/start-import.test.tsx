@@ -2,7 +2,13 @@
 // SHA-256, ANTES de deserializar) es la real de model-file.ts — aquí se prueba
 // que la pantalla la comunica: resumen honesto, advertencia de versión y
 // rechazo claro sin tocar el payload.
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "@/i18n/provider";
 import {
@@ -189,6 +195,30 @@ describe("StartScreen — cargar modelo guardado", () => {
       screen.getByText(/Solo carga archivos .probeta.json/),
     ).toBeInTheDocument();
     expect(onImport).not.toHaveBeenCalled();
+  });
+
+  it("un archivo de una tarea que esta versión no abre la NOMBRA (ADR 014 §3, AU-S6-02)", async () => {
+    for (const [task, named] of [
+      ["multiclase", "clasificación en varias categorías"],
+      // Una tarea que esta versión ni conoce: se nombra tal como viene.
+      ["agrupar", "agrupar"],
+    ] as const) {
+      const { onImport } = ui();
+      const file = await packFixture();
+      (file.manifest as { task?: string }).task = task;
+      uploadModelFile(JSON.stringify(file));
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toBeInTheDocument(),
+      );
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        `Ese archivo declara un modelo de Probeta para «${named}», un tipo de tarea que esta versión no abre.`,
+      );
+      expect(screen.getByRole("alert")).not.toHaveTextContent(
+        /no parece un modelo/,
+      );
+      expect(onImport).not.toHaveBeenCalled();
+      cleanup();
+    }
   });
 
   it("archivo ajeno ⇒ 'no parece un modelo exportado por Probeta'", async () => {

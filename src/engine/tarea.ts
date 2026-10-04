@@ -39,6 +39,27 @@ export const AMBIGUOUS_MAX_DISTINCT = 10;
 /** Texto con más categorías que esto no se trata como clases. */
 export const MULTICLASS_MAX_CLASSES = 20;
 
+/** Todas las tareas que E1 nombra. Un `Record` completo: sumar una tarea a `Task`
+ *  sin listarla aquí no compila. */
+const TASK_NAMES: Record<Task, true> = {
+  binaria: true,
+  multiclase: true,
+  numerica: true,
+  "sin-objetivo": true,
+  ambigua: true,
+};
+
+/** ¿Es un nombre de tarea de esta versión? (p. ej. el que declara un archivo). */
+export function isTask(name: string): name is Task {
+  return Object.hasOwn(TASK_NAMES, name);
+}
+
+/** Cierre exhaustivo de un `switch` por tarea: si la unión crece, el caso que
+ *  falta no compila; si llega igual en runtime, falla nombrándola (AU-S6-03). */
+export function assertNever(value: never): never {
+  throw new Error(`tarea sin rama propia: ${String(value)}`);
+}
+
 /** Las tareas que el MOTOR sabe entrenar (S6: también estimar una cantidad). */
 export type TrainTask = "binaria" | "numerica";
 export const TRAIN_TASKS: readonly TrainTask[] = ["binaria", "numerica"];

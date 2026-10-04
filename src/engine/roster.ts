@@ -260,8 +260,9 @@ export type OneSeSelection = {
 export function selectOneSe(
   league: readonly CvRowLike[],
   k: number,
-  // S6: el MAE es «menor es mejor» (METRIC_RULES): el mejor es el mínimo y el umbral suma.
-  direction: Direction = "higher",
+  // S6: el MAE es «menor es mejor» (METRIC_RULES): el mejor es el mínimo y el
+  // umbral suma. Obligatoria: ninguna métrica hereda la dirección por descarte.
+  direction: Direction,
 ): OneSeSelection | null {
   const eligible = league.filter(
     (row): row is CvRowLike & { cv: { mean: number; std: number } } =>

@@ -29,7 +29,7 @@ import {
   detectLeakageContinuous,
   type LeakageColumn,
 } from "@/engine/leakage";
-import type { TrainTask } from "@/engine/tarea";
+import { assertNever, type TrainTask } from "@/engine/tarea";
 import {
   isNullToken,
   parseNumber,
@@ -60,15 +60,16 @@ export const TARGET_OUTLIER_IQR = 3;
 export const TARGET_OUTLIER_SHARE = 0.01;
 
 /**
- * Alertas EDA para un objetivo dado. Vacío si el objetivo no es binario (mismo
- * criterio que el resto del pipeline). Orden: fuga (lo más serio) → id-like →
- * desbalance.
+ * Alertas EDA para un objetivo dado y la tarea con que se va a entrenar. Binaria:
+ * fuga → id-like → desbalance (vacío si el objetivo no tiene dos clases).
+ * Numérica (S6): fuga continua → id-like → objetivo muy sesgado → atípicos
+ * extremos. La tarea es obligatoria y el despacho es exhaustivo: una tarea nueva
+ * no compila hasta tener su rama (AU-S6-03).
  */
 export function computeEdaAlerts(
   table: CsvTable,
   targetColumn: string,
-  // S6: la tarea con que se va a entrenar (sin ella, la binaria del S5).
-  task: TrainTask = "binaria",
+  task: TrainTask,
 ): EdaAlert[] {
   const targetIndex = table.headers.indexOf(targetColumn);
   if (targetIndex < 0) return [];
@@ -79,9 +80,42 @@ export function computeEdaAlerts(
   const labels = rowsWithTarget.map((row) => row[targetIndex]);
   const n = rowsWithTarget.length;
   if (n === 0) return [];
-  if (task === "numerica") {
-    return regressionAlerts(table, targetIndex, rowsWithTarget, labels);
+  switch (task) {
+    case "numerica":
+      return regressionAlerts(table, targetIndex, rowsWithTarget, labels);
+    case "binaria":
+      return binaryAlerts(table, targetIndex, rowsWithTarget, labels);
+    default:
+      return assertNever(task);
   }
+}
+
+/**
+ * Las alertas que no dependen de la tarea: las columnas con pinta de
+ * identificador. Para un objetivo cuya tarea no se entrena (una ambigua sin
+ * responder, una multiclase, una columna que no sirve como objetivo): ninguna
+ * tarea se supone por descarte.
+ */
+export function idLikeAlerts(
+  table: CsvTable,
+  targetColumn: string,
+): EdaAlert[] {
+  const targetIndex = table.headers.indexOf(targetColumn);
+  if (targetIndex < 0) return [];
+  const rowsWithTarget = table.rows.filter(
+    (row) => !isNullToken(row[targetIndex]),
+  );
+  if (rowsWithTarget.length === 0) return [];
+  return idLikeColumns(table, targetIndex, rowsWithTarget).idAlerts;
+}
+
+function binaryAlerts(
+  table: CsvTable,
+  targetIndex: number,
+  rowsWithTarget: readonly string[][],
+  labels: readonly string[],
+): EdaAlert[] {
+  const n = rowsWithTarget.length;
   const classes = targetClasses(labels).sort();
   if (classes.length !== 2) return [];
 
