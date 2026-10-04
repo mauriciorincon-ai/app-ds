@@ -44,6 +44,24 @@ ella.
     continuación **#17** (borrador). El summary va en el #17, que es el que se mergea con squash al
     cierre.
   - No se reescribe `main`, por la regla de jamás hacer push directo a `main`.
+- **D4 · Habilitar la regresión en la UI pasa a la F2 (Fase 1, 2026-10-04).** El plan ponía el
+  cambio de `TRAINABLE_TASKS` en la F1. Queda así:
+  - En la F1 el **motor** entrena regresión de punta a punta: Python, contrato, `prepareRun` y
+    manifiesto, probado por unit y por la integración con Pyodide real.
+  - La **UI** sigue ofreciendo solo binaria hasta la F2, donde la habilita junto con sus pantallas.
+    Así la preview de la F1 nunca muestra un resultado de regresión en una pantalla binaria.
+  - **Regla nueva y permanente:** `validateModelFile` solo acepta archivos de tareas que la UI sabe
+    usar (`TRAINABLE_TASKS`). Un archivo íntegro de otra tarea se rechaza nombrándola
+    (`unsupported-task`). Hoy rechaza los de regresión; el día del S7, uno multiclase abierto en una
+    versión vieja.
+- **D5 · Las fichas de `linear` y `lasso` llegan en la F1.** `FICHAS` está tipado sobre todos los
+  miembros, así que sumar los ids obliga a escribirlas. Se redactaron en ES y EN en el mismo paso.
+  El párrafo de regresión de las fichas compartidas y la ficha de la mediana siguen en la F2.
+- **D6 · El soporte mínimo de η² es una regla nueva, no «la misma que la binaria».** El plan
+  decía que la fuga continua usaría la regla de soporte mínimo de la binaria, pero esa regla no
+  existe (`categoryPurity` no tiene soporte). Se agregó `ETA_MIN_SUPPORT = 5`: las categorías con
+  menos filas se agrupan, igual que el `min_frequency` del preprocesador. El usuario lo aprobó en el
+  STOP de la F0 con los umbrales.
 
 ## Fase 0 — delta del kit + deuda del S5 + spike de regresores
 
@@ -161,6 +179,121 @@ Lo que decide el STOP queda en el informe y en el resumen de la fase.
 | `5942408` (pin de Pyodide)             | #16 | los 4 jobs + Vercel en `success` (05:20:17); el usuario mergeó el #16 a las 05:20:39 (D3)                                                                    |
 | `eda6230` (datasets + arnés)           | #17 | 6 de 6 en `success`: primera corrida del PR #17                                                                                                              |
 
+## Fase 1 — motor y guardarraíles
+
+### Umbrales fijados por el usuario en el STOP de la Fase 0 (2026-10-04)
+
+El usuario respondió las cuatro preguntas eligiendo en cada una la respuesta sugerida por la
+medición:
+
+| #   | Pregunta             | Decisión                                                                                                                                          | Dónde vive                                                                                                                   |
+| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Métrica primaria     | **MAE** en unidades. R², RMSE y MedAE se muestran, no deciden. MAPE solo sin ceros                                                                | `METRIC_RULES.mae` · `SCORER.mae` · `METRIC_DIRECTION` (Python)                                                              |
+| 2   | Tolerancia de empate | **1 % relativo** al MAE del mejor baseline                                                                                                        | `REGRESSION_TIE_TOLERANCE`                                                                                                   |
+| 3   | Guardarraíles        | Fuga **0,98** en \|Spearman\| y η², con **soporte ≥ 5**. Aviso de sesgo con **\|sesgo\| ≥ 1**. Aviso de atípicos con **≥ 1 %** fuera de **3·IQR** | `CONTINUOUS_LEAKAGE_THRESHOLD` · `ETA_MIN_SUPPORT` · `TARGET_SKEW_THRESHOLD` · `TARGET_OUTLIER_SHARE` · `TARGET_OUTLIER_IQR` |
+| 4   | Baselines            | **Mediana + lineal**                                                                                                                              | `REGRESSION_BASELINE_IDS` · `run_experiment` (Python)                                                                        |
+
+### Qué se construyó
+
+**Python (`pipeline.py`):**
+
+- `task` obligatoria en el payload.
+- `_REGRESSORS`, con 11 regresores e hiperparámetros del spike: Lasso y el MLP con el objetivo
+  estandarizado. `_FACTORIES` sigue siendo el roster binario, y un test heredado lo parchea por
+  nombre.
+- `KFold` en regresión, con folds en MAE de signo invertido.
+- `select_one_se` con dirección.
+- Baselines mediana + lineal.
+- Métricas MAE · RMSE · R² · MedAE · MAPE.
+- Direcciones por Spearman.
+- `pred_vs_real` (muestra determinista, tope 200) y residuos sobre TODO el test.
+- `target_stats` de train, con los decimales del usuario.
+- `score_new_data` numérico.
+- `task` en el esquema exportado.
+- `roster_ids(task)` y `metric_directions()` para la paridad.
+
+**TypeScript:**
+
+- `METRIC_RULES`: dirección + tolerancia en UN sitio. Gobierna `selectOneSe`, `pickBestBaseline` y
+  `computeVerdict`; `Verdict<M>` es genérico por métrica.
+- Un roster por tarea sobre un solo espacio de ids: `ALL_MEMBER_IDS` fija la prioridad global y cada
+  roster es una subsecuencia suya.
+- Costos de regresión medidos; E2 por tarea; `quantileSplit` (P4).
+- `detectLeakageContinuous`: |Spearman| y η² con soporte.
+- EDA por tarea, con el bloque de id-like compartido y `target-skewed` / `target-outliers`.
+- `prepareRun` por tarea: `target-ambiguous` (D2), `assembleRegressionResult`,
+  `applyRegressionMemberFit`, `inferUnit` (tabla cerrada de sufijos).
+- Tipos discriminados por `task`.
+- `contract.ts` con validadores por tarea y cruces propios: `target_stats` ordenado, largo de
+  `pred_vs_real`, residuos ordenados, selección recalculada con la dirección.
+- Manifiesto por tarea (P8), con `unsupported-task` (D4).
+- `formatEstimates`.
+- El cerrojo de la narración del lado del servidor, ahora con su test.
+
+**Archivo del S5 real:** antes de tocar `pipeline.py`, el código del S5 emitió con su propio
+serializador `tests/fixtures/modelos/modelo-s5.probeta.json` (5,5 KB, liga solo `logistic`) y sus
+predicciones sobre `clientes-nuevos.csv`. El pipeline del S6 lo valida, lo restaura y puntúa
+**exactamente igual**: predicciones, probabilidades y novedad.
+
+### Cambios esperados en tests heredados (R1/R4/R18): solo forma, ninguna lógica
+
+| Archivo                                                                                           | Cambio                                                                                                                                                    | Por qué                                               |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `tests/fixtures/contrato/*.json` (binarios)                                                       | Regenerados con `CONTRATO_ACTUALIZAR=1`: + `task` (payload, train, fit, score, schema del export), tiempos y bytes del pickle. **Ninguna métrica cambió** | P1/R18                                                |
+| `tests/integration/runtime.ts` (`withLeague`)                                                     | + `task: "binaria"`                                                                                                                                       | La tarea es obligatoria; lo que H1 asumía era binaria |
+| `tests/integration/scoring.test.ts`                                                               | El esquema exportado esperado + `task: "binaria"`; un tipo pasa a `BinaryScoreResult`                                                                     | P8 (aditivo)                                          |
+| `tests/integration/liga.test.ts`                                                                  | `validateTrainResult(…, {...payload, task: "binaria"})` en un cruce                                                                                       | Estrechar el tipo de la unión                         |
+| `tests/unit/{modelos,roster}.test.ts`                                                             | `MEMBER_IDS` → `ALL_MEMBER_IDS` en dos invariantes de fichas y nombres                                                                                    | Un solo espacio de ids (P2, R4)                       |
+| `tests/unit/use-hooks.test.tsx`                                                                   | Los literales que emulan al worker + `task: "binaria"`                                                                                                    | Imitan al emisor actual                               |
+| `tests/unit/{factories,experiment,components,ficha-level2,league-ui,modelcard,narration-payload}` | `ExperimentResult` → `BinaryResult` (solo anotaciones) y `task` en dos fábricas                                                                           | La unión discriminada                                 |
+
+Todo lo demás de la liga binaria quedó verde **sin tocarse**: anti-fuga de la CV, selección sin
+mirar el test, los 14 miembros, export/import con boosters y las 49 carnadas Python → TS.
+
+### Carnadas: «detectó k de n»
+
+| Dirección                                                  | Resultado                                                                                                                                                      |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TS → Python, `_validate_payload` (regresión, Pyodide real) | **8 de 8**: `task` (ausente · desconocida · tipo · en fit) · `roster` con `logistic` · `primary_metric` = `auc` · `cv_k` > n_train · `member` fuera del roster |
+| Python → TS, liga de regresión                             | **30 de 30**                                                                                                                                                   |
+| Python → TS, elección manual                               | **5 de 5**                                                                                                                                                     |
+| Python → TS, export                                        | **4 de 4**                                                                                                                                                     |
+| Python → TS, puntuación                                    | **4 de 4**                                                                                                                                                     |
+| Manifiesto de regresión                                    | **12 de 12**                                                                                                                                                   |
+| Binarias heredadas                                         | 27 + 6 + 5 + 6 + 5 = 49 de 49, y 16 de 16 del manifiesto: intactas                                                                                             |
+
+### Gates nuevos, cada uno visto en ROJO (siempre con `scripts/demo-rojo.sh`)
+
+| #   | Gate                                              | Mutación                                  | Qué dijo el fallo                                                    |
+| --- | ------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
+| 1   | El lector recalcula la selección CON la dirección | `contract.ts`: dirección → `"higher"`     | El fixture real de regresión deja de validar, y las carnadas fallan  |
+| 2   | Paridad de dirección TS ↔ Python                  | `pipeline.py`: `"mae": "higher"`          | `roster.test.ts`: METRIC_DIRECTION ≠ METRIC_RULES                    |
+| 3   | Split por bandas                                  | `quantileSplit` estratifica por valor     | «expected [] to have a length of 50»: la prueba quedaba vacía (R2)   |
+| 4   | Soporte mínimo de η²                              | `ETA_MIN_SUPPORT` = 1                     | «expected 1 to be less than 0.05»: un identificador «explicaba» todo |
+| 5   | Tolerancia relativa del MAE                       | Tolerancia → absoluta                     | La regla cambia y el caso de `edad` pasa de «empata» a «NO supera»   |
+| 6   | Un archivo del S5 importa                         | El manifiesto binario exige `task`        | El archivo REAL del S5 deja de validar                               |
+| 7   | `unsupported-task`                                | Se apaga el chequeo de tarea usable       | Un archivo de regresión valida en una UI que no lo usa               |
+| 8   | Anti-fuga de la CV de regresión (espía)           | CV sobre train + test                     | «expected true to be false»: un ajuste vio filas de test             |
+| 9   | La selección no mira el test                      | CV sobre el test                          | Permutar el test cambió el ganador (`lasso` ≠ `linear`)              |
+| 10  | `fit_member` reproduce su fila                    | `fit_member` con OTRA semilla que la liga | `extra_trees` con MAE distinto (33,29 frente a 33,50)                |
+| 11  | Lector TS → Python: `task` obligatoria            | `task` ausente ⇒ binaria                  | «detectó 7 de 8»: la carnada `task` ausente no se detectó            |
+| 12  | Cerrojo de la narración en el servidor (P7)       | El esquema acepta cualquier `problem`     | «expected 200 to be 400»: llegaba al proveedor                       |
+| 13  | Aviso «objetivo muy sesgado» (\|sesgo\| ≥ 1)      | Umbral × 10 en la comparación             | `precio`: falta `target-skewed` en la lista de alertas               |
+| 14  | Aviso «atípicos extremos» (≥ 1 % fuera de 3·IQR)  | Umbral × 10 en la comparación             | «atípicos simétricos»: falta `target-outliers`                       |
+
+**La #14 no podía fallar hasta que existió su test.** Antes del cierre de la fase, ningún test hacía
+disparar el aviso de atípicos: los datasets del kit no lo activan, y la prueba de `farOutShare`
+cubría el cálculo, no la comparación. Se agregó un objetivo con atípicos simétricos (sesgo ≈ 0,
+4 % lejos), así que el test nombra solo ese aviso.
+
+**Dos demos no se pusieron rojas a la primera, y `demo-rojo.sh` las atrapó** (salió con 1):
+
+- La #10 cambiaba la semilla en la fábrica, que comparten la liga y `fit_member`. Las dos
+  coincidían igual, así que la mutación no podía romper nada; es la tercera pregunta del kit. Se
+  rehízo con la mutación del S5 (K-S5-8).
+- La #11 tenía un `-t` que no coincidía con el nombre del test, así que corrieron 0 tests y el gate
+  «pasó» en vacío (K-S6-4).
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S6-1 · `README.md` dentro de `.claude/commands/` se carga como un comando `/README`.** El kit
@@ -176,3 +309,9 @@ Lo que decide el STOP queda en el informe y en el resumen de la fase.
   40 % (26,9 s frente a 19,1 s). Se notó solo porque había una corrida abortada para comparar.
   Propuesta: el molde del spike de costos dice explícitamente «nada más corriendo; si hubo carga, se
   repite», y registra la carga del sistema al empezar y al terminar.
+- **K-S6-4 · Un `vitest run -t` que no coincide con ningún test sale con 0 («15 skipped»).** Una
+  demo en rojo con un filtro mal escrito «pasa» en vacío. `demo-rojo.sh` lo atrapó porque esperaba
+  un fallo, pero en `--esperar-verde` el mismo error daría un verde falso. Regla adoptada: el gate de
+  toda demo filtra con `grep "Tests "` y el resumen debe mostrar al menos 1 test que corrió.
+  Propuesta para el kit: que `demo-rojo.sh` acepte `--minimo-tests N` y lo verifique en las dos
+  corridas.
