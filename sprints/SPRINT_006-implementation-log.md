@@ -34,6 +34,17 @@ ella.
 
   Las dos respuestas enrutan a su tarea correcta; hoy solo entrena una.
 
+- **D3 · El PR del sprint se mergeó al empezar la Fase 0 (2026-10-04, 05:20 UTC).** El usuario
+  mergeó el #14 de dependabot y, 38 s después, el #16 (el PR del sprint).
+  - El #16 entró como merge commit `6bf5e08`, no con squash. Llevaba el delta del kit v1.35.0, las
+    categorías de Lighthouse con el arreglo de los inputs y el pin de Pyodide.
+  - Su última CI (`5942408`) había terminado antes del merge con los cuatro jobs en `success`:
+    `quality` · `integration` · `lighthouse` · `e2e`. A `main` no entró nada rojo.
+  - **Consecuencia:** el sprint sigue en la misma rama `sprint-006/estimar`, con el PR de
+    continuación **#17** (borrador). El summary va en el #17, que es el que se mergea con squash al
+    cierre.
+  - No se reescribe `main`, por la regla de jamás hacer push directo a `main`.
+
 ## Fase 0 — delta del kit + deuda del S5 + spike de regresores
 
 ### Delta del kit v1.33.0 → v1.35.0 (por nombre)
@@ -114,6 +125,42 @@ en dependabot. Dos rojos, ambos con `demo-rojo.sh`:
 En los dos casos, al restaurar volvió a 3 de 3 en verde. Antes, este cruce solo lo atrapaba
 `integration`, con Pyodide real y minutos después.
 
+### Datasets de regresión (P9)
+
+Los genera `scripts/make-example-datasets.mjs`, con semilla. Los cuatro datasets heredados salieron
+**idénticos**: el generador sigue siendo determinista.
+
+| Archivo                       | Filas | Objetivo      | Dónde                                      | Qué demuestra                                                                                                     |
+| ----------------------------- | ----: | ------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `consumo-energia.csv`         |   200 | `consumo_kwh` | `public/datasets/` + kit                   | Señal con interacción calefacción × frío × aislamiento. `ocupantes` (1 a 6) es la columna ambigua de M2           |
+| `consumo-energia-mediano.csv` | 5.000 | `consumo_kwh` | **solo kit**, igual que `liga-mediana.csv` | Nivel 2 de regresión. Con el techo de 5 s entran 8 de 11; el Nivel 2 cambia el ganador                            |
+| `precio-fuga-plantada.csv`    |   200 | `precio_usd`  | `public/datasets/` + kit                   | Precio log-normal (sesgo 1,01). `impuesto_transferencia_usd` = 3 % del precio de venta: fuga con \|Spearman\| = 1 |
+
+El botón de ejemplo en Inicio llega con la UI, en la F2. Hoy el objetivo numérico todavía muestra
+«próxima versión». El README del kit de prueba está al día.
+
+### Spike de regresores EN EL NAVEGADOR (informe completo en `sprints/SPRINT_006-spike-regresores.md`)
+
+Arnés `scripts/spike-regresion/`, que reusa `scripts/spike-liga/correr.mjs` mediante `SPIKE_PY`.
+Corrió en Chromium 153 y WebKit 26.6 sobre el build de producción, con 9 datasets.
+
+- **La primera corrida de Chromium se descartó:** coincidió con corridas de vitest.
+  `consumo-5000` dio 26,9 s, frente a 19,1 s con la máquina quieta. Se repitió y se registra
+  (K-S6-3).
+- **Un error del arnés, no del modelo:** `Ridge.n_iter_` es `None` con el solver por defecto, y el
+  `np.max(None)` del arnés marcó `TypeError` en `ridge`. Se cortó la corrida, se corrigió y se
+  repitió.
+
+Lo que decide el STOP queda en el informe y en el resumen de la fase.
+
+### CI de la Fase 0
+
+| Push                                   | PR  | Checks                                                                                                                                                       |
+| -------------------------------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `34c39d6` (delta del kit + Lighthouse) | #16 | `quality` · `integration` · `lighthouse` · `e2e` · Vercel en `success`. El paso de categorías de Lighthouse corrió por **primera vez**, con `success` propio |
+| `5942408` (pin de Pyodide)             | #16 | los 4 jobs + Vercel en `success` (05:20:17); el usuario mergeó el #16 a las 05:20:39 (D3)                                                                    |
+| `eda6230` (datasets + arnés)           | #17 | 6 de 6 en `success`: primera corrida del PR #17                                                                                                              |
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S6-1 · `README.md` dentro de `.claude/commands/` se carga como un comando `/README`.** El kit
@@ -124,3 +171,8 @@ En los dos casos, al restaurar volvió a 3 de 3 en verde. Antes, este cruce solo
   interpreta cada línea como un patrón aparte (OR). La comprobación «la mutación ya no está» se
   debilita; la que sostiene la garantía es el `cmp`. Usado aquí con tres líneas en `StartScreen.tsx`
   sin daño. Propuesta: verificar la ausencia con Python (`in`), igual que la mutación.
+- **K-S6-3 · Ninguna regla del kit pide «máquina quieta» durante un spike de costos.** En la primera
+  corrida de Chromium, las demos en rojo (vitest) que corrí en paralelo inflaron `consumo-5000` un
+  40 % (26,9 s frente a 19,1 s). Se notó solo porque había una corrida abortada para comparar.
+  Propuesta: el molde del spike de costos dice explícitamente «nada más corriendo; si hubo carga, se
+  repite», y registra la carga del sistema al empezar y al terminar.
