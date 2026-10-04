@@ -478,6 +478,20 @@ nombró el grupo de la pregunta.
 | 27  | e2e: reduced-motion al estimar                                    | La respuesta de la ambigua sin `motion-reduce` | `transitionOff` → «Expected: true, Received: false»                 |
 | 28  | La ficha de Ridge al estimar no habla de clasificar               | Sin los reemplazos por tarea                   | El diálogo contenía «AUC / probabilidad / la clase»                 |
 
+### CI de las Fases 1 y 2 (`gh pr checks 17` tras cada push)
+
+Cada push del PR #17 tuvo los 6 checks con conclusión propia `success`: `quality`, `integration`,
+`e2e`, `lighthouse`, Vercel y Vercel Preview Comments. Ningún job corrió por primera vez en estas
+fases (el paso de categorías de Lighthouse ya había corrido en el #16).
+
+| Push      | Fase                      | Checks       |
+| --------- | ------------------------- | ------------ |
+| `07ef62a` | 0 (informe del spike)     | 6 de 6 verde |
+| `79d7ef4` | 1 (motor y bitácora)      | 6 de 6 verde |
+| `11cf65e` | 1 (bordes de la EDA)      | 6 de 6 verde |
+| `7021ff4` | 2 (UI antes de la mirada) | 6 de 6 verde |
+| `fdac870` | 2 (después de la mirada)  | 6 de 6 verde |
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S6-1 · `README.md` dentro de `.claude/commands/` se carga como un comando `/README`.** El kit
