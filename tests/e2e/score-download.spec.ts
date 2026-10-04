@@ -77,9 +77,7 @@ test("entrenar → puntuar con novedad plantada → descargar, sin datos en la r
   await expect(
     page.getByText(/«dispositivo»: 2 valores con categorías nunca vistas/),
   ).toBeVisible();
-  await expect(
-    page.getByText(/«edad»: 1 valores fuera del rango/),
-  ).toBeVisible();
+  await expect(page.getByText(/«edad»: 1 valor fuera del rango/)).toBeVisible();
   await expect(
     page.getByText(/adivinando en 3 de 4 filas \(75%\)/),
   ).toBeVisible();

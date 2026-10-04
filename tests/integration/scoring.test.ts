@@ -20,6 +20,7 @@ import {
   validateModelFile,
 } from "@/lib/model-file";
 import type {
+  BinaryScoreResult,
   ExportResult,
   PipelineResult,
   ScoreResult,
@@ -147,7 +148,7 @@ describe("score_new_data (integración Pyodide)", () => {
       seed: 42,
       primary_metric: "f1",
     });
-    const score = call<ScoreResult>(fns.score_new_data, {
+    const score = call<BinaryScoreResult>(fns.score_new_data, {
       headers: ["x"],
       rows: [["45"], ["5"]],
     });
@@ -217,6 +218,8 @@ describe("export_model / import_model (integración Pyodide)", () => {
       target: "y",
       classes: ["no", "si"],
       positive_class: "si",
+      // S6 (P8): el esquema dice su tarea (aditivo; ausente en los archivos del S5).
+      task: "binaria",
     });
     expect(exported.training_profile.numeric.x).toEqual({ min: 1, max: 10 });
     expect(exported.training_profile.categorical.c).toEqual(["a", "b"]);

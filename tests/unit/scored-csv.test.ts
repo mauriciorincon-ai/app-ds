@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { parseRows, type CsvTable } from "@/lib/ds/csv";
 import {
   buildScoredCsv,
+  estimateSummary,
+  neutralizeFormula,
   resolveScoredColumnNames,
   scoredCsvFileName,
 } from "@/lib/scored-csv";
@@ -105,6 +107,27 @@ describe("buildScoredCsv", () => {
     ]);
   });
 
+  it("una celda que una hoja de cálculo ejecutaría como fórmula sale como texto (AU-S6-33)", () => {
+    expect(neutralizeFormula("=1+1")).toBe("'=1+1");
+    expect(neutralizeFormula('=HYPERLINK("x")')).toBe(`'=HYPERLINK("x")`);
+    expect(neutralizeFormula("@SUM(A1)")).toBe("'@SUM(A1)");
+    expect(neutralizeFormula("+cmd")).toBe("'+cmd");
+    expect(neutralizeFormula("\tx")).toBe("'\tx");
+    // Un número no es una fórmula: la tabla del usuario no se toca.
+    expect(neutralizeFormula("-12.5")).toBe("-12.5");
+    expect(neutralizeFormula("+3")).toBe("+3");
+    expect(neutralizeFormula("norte")).toBe("norte");
+    const table: CsvTable = {
+      headers: ["@x", "nota"],
+      rows: [["1", "=1+1"]],
+    };
+    const [header, row] = parseRows(
+      buildScoredCsv(table, ["-si"], null, NAMES),
+    );
+    expect(header).toEqual(["'@x", "nota", "prediccion"]);
+    expect(row).toEqual(["1", "'=1+1", "'-si"]);
+  });
+
   it("longitudes inconsistentes ⇒ error (jamás puntúa a medias)", () => {
     expect(() => buildScoredCsv(TABLE, ["si"], [0.5, 0.5], NAMES)).toThrow();
     expect(() => buildScoredCsv(TABLE, ["si", "no"], [0.5], NAMES)).toThrow();
@@ -123,5 +146,17 @@ describe("scoredCsvFileName", () => {
 
   it("nombre vacío ⇒ fallback 'datos'", () => {
     expect(scoredCsvFileName("···", "puntuado")).toBe("datos-puntuado.csv");
+  });
+});
+
+describe("estimateSummary (S6, AU-S6-41)", () => {
+  it("mínimo, mediana y máximo; mediana par = promedio de las dos centrales; vacío = null", () => {
+    expect(estimateSummary([3, 1, 2])).toEqual({ min: 1, median: 2, max: 3 });
+    expect(estimateSummary([4, 1, 3, 2])).toEqual({
+      min: 1,
+      median: 2.5,
+      max: 4,
+    });
+    expect(estimateSummary([])).toBeNull();
   });
 });

@@ -1,12 +1,13 @@
 {
-  "n_train": 149,
-  "n_test": 51,
+  "task": "binaria",
   "classes": [
     "0",
     "1"
   ],
   "positive_class": "1",
   "positive_rate": 0.45,
+  "n_train": 149,
+  "n_test": 51,
   "baselines": {
     "majority": {
       "accuracy": 0.5490196078431373,
@@ -55,7 +56,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 51
+      "elapsed_ms": 76
     },
     {
       "name": "ridge",
@@ -79,7 +80,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 46
+      "elapsed_ms": 53
     },
     {
       "name": "naive_bayes",
@@ -103,7 +104,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 44
+      "elapsed_ms": 49
     },
     {
       "name": "linear_svc",
@@ -127,7 +128,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 45
+      "elapsed_ms": 52
     },
     {
       "name": "decision_tree",
@@ -151,7 +152,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 45
+      "elapsed_ms": 51
     },
     {
       "name": "knn",
@@ -175,7 +176,7 @@
         "auc": 0.96972049689441
       },
       "error_type": null,
-      "elapsed_ms": 47
+      "elapsed_ms": 53
     },
     {
       "name": "hgb",
@@ -199,7 +200,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 112
+      "elapsed_ms": 117
     },
     {
       "name": "lightgbm",
@@ -223,7 +224,7 @@
         "auc": 0.9999999999999999
       },
       "error_type": null,
-      "elapsed_ms": 82
+      "elapsed_ms": 185
     },
     {
       "name": "xgboost",
@@ -247,7 +248,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 90
+      "elapsed_ms": 185
     },
     {
       "name": "extra_trees",
@@ -271,7 +272,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 636
+      "elapsed_ms": 669
     },
     {
       "name": "forest",
@@ -295,7 +296,7 @@
         "auc": 1
       },
       "error_type": null,
-      "elapsed_ms": 877
+      "elapsed_ms": 903
     }
   ],
   "cv": {
@@ -305,7 +306,7 @@
     "best": "naive_bayes",
     "se": 0
   },
-  "elapsed_ms": 2100,
+  "elapsed_ms": 2565,
   "confusion_matrix": [
     [
       28,

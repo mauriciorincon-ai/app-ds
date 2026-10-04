@@ -13,12 +13,18 @@ jobs:
       - uses: actions/checkout@v7
       # Tercera red de secretos (auditoría de cierre H1): los hooks locales
       # dependen de core.hooksPath por máquina; CI escanea el working tree
-      # siempre. Versión pineada = la validada localmente.
+      # siempre. Versión pineada = la validada localmente. S6 (AU-S6-34): el binario se
+      # verifica contra su sha256 FIJADO aquí (cotejado el 2026-10-04 con el
+      # gitleaks_8.30.1_checksums.txt del release) antes de ejecutarlo, y se baja fuera
+      # del árbol que escanea.
       - name: gitleaks (escaneo de secretos del working tree)
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz | tar -xz gitleaks
-          ./gitleaks dir . --no-banner --redact
-          rm gitleaks
+          cd "$RUNNER_TEMP"
+          curl -sSfLO https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks_8.30.1_linux_x64.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
+          cd "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/gitleaks" dir . --no-banner --redact
       - uses: pnpm/action-setup@v6
         with: { version: 11 }   # el scaffold estampa pnpm 11 (lockfile + allowBuilds); pnpm 11 exige Node >=22.13
       - uses: actions/setup-node@v7
@@ -107,7 +113,8 @@ jobs:
         # S5 (kit v1.26.0): UNA corrida NO es una medición — tres corridas por URL y se asevera
         # sobre la MEDIANA (median-run), nunca sobre la optimista.
         run: |
-          npm i -g @lhci/cli
+          # S6 (AU-S6-34): versión fijada; un LHCI nuevo con otros flags no cambia el gate en silencio.
+          npm i -g @lhci/cli@0.15.1
           URLS=$(node -e "console.log(require('./lighthouse-urls.json').map(u=>'--url=http://localhost:3000'+u).join(' '))")
           lhci collect --startServerCommand="pnpm start" --numberOfRuns=3 $URLS
           lhci assert --budgetsFile=./perf-budget.json --aggregationMethod=median-run

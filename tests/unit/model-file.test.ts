@@ -1,8 +1,17 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { ExperimentResult, ExportResult } from "@/workers/protocol";
+import { assembleRegressionResult } from "@/lib/experiment";
+import type {
+  ExperimentResult,
+  ExportResult,
+  RegressionPipelineResult,
+} from "@/workers/protocol";
 import {
   MODEL_FILE_FORMAT_VERSION,
   RUNTIME_VERSIONS,
+  isBinaryManifest,
+  manifestTask,
   modelFileName,
   packModelFile,
   validateModelFile,
@@ -321,6 +330,8 @@ describe("S5 — la liga y la selección en el manifiesto (aditivos-opcionales)"
 
   it("carnadas del manifiesto: cada campo nuevo mutado se rechaza NOMBRÁNDOLO — detectó k de n", async () => {
     const file = await pack();
+    // `any` a propósito: cada carnada rompe la forma del manifiesto ya parseado, y un
+    // tipo estricto no dejaría escribir la mutación.
     type Mutation = [field: string, mutate: (m: Record<string, any>) => void]; // eslint-disable-line @typescript-eslint/no-explicit-any
     const baits: Mutation[] = [
       ["manifest.league", (m) => (m.league = "liga")],
@@ -362,6 +373,129 @@ describe("S5 — la liga y la selección en el manifiesto (aditivos-opcionales)"
     }
     console.log(
       `[contrato manifiesto] validateModelFile detectó ${detected} de ${baits.length} carnadas`,
+    );
+    expect(detected).toBe(baits.length);
+  });
+});
+
+describe("S6 — manifiesto por tarea (P8)", () => {
+  const fixture = (path: string) =>
+    readFileSync(resolve(process.cwd(), "tests/fixtures", path), "utf8");
+
+  async function packRegression() {
+    const py = JSON.parse(
+      fixture("contrato/train-result-regresion.json"),
+    ) as RegressionPipelineResult;
+    const exported = JSON.parse(
+      fixture("contrato/export-result-regresion.json"),
+    ) as ExportResult;
+    return packModelFile({
+      datasetName: "consumo-energia.csv",
+      result: assembleRegressionResult(py, [], "consumo_kwh"),
+      exported,
+      date: DATE,
+    });
+  }
+
+  it("un archivo REAL del S5 (emitido por su serializador) importa como binaria, sin advertencias", async () => {
+    const validation = await validateModelFile(
+      fixture("modelos/modelo-s5.probeta.json"),
+    );
+    expect(validation.ok).toBe(true);
+    if (!validation.ok) return;
+    expect(validation.file.manifest.task).toBeUndefined();
+    expect(manifestTask(validation.file.manifest)).toBe("binaria");
+    expect(isBinaryManifest(validation.file.manifest)).toBe(true);
+    expect(validation.warnings).toEqual([]);
+  });
+
+  it("un archivo binario nuevo declara su tarea", async () => {
+    const file = await pack();
+    expect(file.manifest.task).toBe("binaria");
+  });
+
+  it("una tarea que la UI no usa se rechaza NOMBRÁNDOLA (D4); desde la F2 la regresión se usa", async () => {
+    const text = JSON.stringify(await packRegression());
+    expect(await validateModelFile(text, ["binaria"])).toEqual({
+      ok: false,
+      error: "unsupported-task",
+      task: "numerica",
+    });
+    const usable = await validateModelFile(text);
+    expect(usable.ok).toBe(true);
+    if (usable.ok) expect(manifestTask(usable.file.manifest)).toBe("numerica");
+  });
+
+  it("una tarea que esta versión NO CONOCE también se rechaza nombrándola, no como «no parece un modelo» (ADR 014 §3, AU-S6-02)", async () => {
+    for (const task of ["multiclase", "agrupar"]) {
+      const raw = JSON.parse(JSON.stringify(await packRegression())) as {
+        manifest: Record<string, unknown>;
+      };
+      raw.manifest.task = task;
+      expect(await validateModelFile(JSON.stringify(raw))).toEqual({
+        ok: false,
+        error: "unsupported-task",
+        task,
+      });
+    }
+  });
+
+  it("carnadas del manifiesto de regresión: cada campo nuevo se rechaza NOMBRÁNDOLO — detectó k de n", async () => {
+    const file = await packRegression();
+    // `any` a propósito: cada carnada rompe la forma del manifiesto ya parseado, y un
+    // tipo estricto no dejaría escribir la mutación.
+    type Mutation = [field: string, mutate: (m: Record<string, any>) => void]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const baits: Mutation[] = [
+      // Una tarea que no es texto es forma rota; una tarea con nombre que esta
+      // versión no abre se NOMBRA (unsupported-task, prueba aparte: AU-S6-02).
+      ["manifest.task", (m) => (m.task = 7)],
+      // «numerica» con métricas de clase: un archivo binario disfrazado.
+      ["manifest.metrics.model.mae", (m) => (m.metrics.model = { ...METRICS })],
+      ["manifest.metrics.model.mae", (m) => (m.metrics.model.mae = -1)],
+      [
+        "manifest.metrics.baselines.median",
+        (m) => delete m.metrics.baselines.median,
+      ],
+      ["manifest.schema.target_stats", (m) => delete m.schema.target_stats],
+      [
+        "manifest.schema.target_stats.decimals",
+        (m) => (m.schema.target_stats.decimals = 1.5),
+      ],
+      ["manifest.schema.task", (m) => (m.schema.task = "binaria")],
+      [
+        "manifest.verdict.primaryMetric",
+        (m) => (m.verdict.primaryMetric = "auc"),
+      ],
+      ["manifest.selection.metric", (m) => (m.selection.metric = "auc")],
+      ["manifest.league[0].name", (m) => (m.league[0].name = "logistic")],
+      ["manifest.league[0].test.mae", (m) => delete m.league[0].test.mae],
+      ["manifest.model_name", (m) => (m.model_name = "naive_bayes")],
+    ];
+    let detected = 0;
+    for (const [field, mutate] of baits) {
+      const raw = JSON.parse(JSON.stringify(file)) as {
+        manifest: Record<string, unknown>;
+      };
+      mutate(raw.manifest);
+      const validation = await validateModelFile(JSON.stringify(raw), [
+        "binaria",
+        "numerica",
+      ]);
+      if (
+        !validation.ok &&
+        validation.error === "invalid-format" &&
+        validation.field === field
+      ) {
+        detected += 1;
+      } else {
+        console.log(
+          `[manifiesto regresión] carnada NO detectada: ${field}`,
+          validation,
+        );
+      }
+    }
+    console.log(
+      `[contrato manifiesto regresión] validateModelFile detectó ${detected} de ${baits.length} carnadas`,
     );
     expect(detected).toBe(baits.length);
   });

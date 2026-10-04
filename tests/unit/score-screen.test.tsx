@@ -161,7 +161,7 @@ describe("ScoreScreen — resultados", () => {
       screen.getByText("El modelo está viendo cosas nuevas"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/«edad»: 1 valores fuera del rango/),
+      screen.getByText(/«edad»: 1 valor fuera del rango/),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/«region»: 2 valores con categorías nunca vistas/),

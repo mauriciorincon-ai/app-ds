@@ -1,0 +1,64 @@
+{
+  "payload_b64": "eJylV2tsHFcVXnt3veu11w+ZooS0dUoVlLZmycNpAiLKUCdxkm02aV5KRMPN3Zm7",
+  "versions": {
+    "pyodide": "314.0.2",
+    "sklearn": "1.8.0",
+    "python": "3.14.2",
+    "xgboost": "2.1.4",
+    "lightgbm": "4.6.0"
+  },
+  "schema": {
+    "numeric": [
+      "superficie_m2",
+      "ocupantes",
+      "anio_construccion",
+      "temp_media_c"
+    ],
+    "categorical": [
+      "calefaccion",
+      "aislamiento"
+    ],
+    "target": "consumo_kwh",
+    "task": "numerica",
+    "target_stats": {
+      "mean": 374.72333333333336,
+      "std": 114.22423103377528,
+      "min": 148.8,
+      "max": 840.5,
+      "median": 365.4,
+      "decimals": 1
+    }
+  },
+  "training_profile": {
+    "numeric": {
+      "superficie_m2": {
+        "min": 42,
+        "max": 220
+      },
+      "ocupantes": {
+        "min": 1,
+        "max": 6
+      },
+      "anio_construccion": {
+        "min": 1960,
+        "max": 2022
+      },
+      "temp_media_c": {
+        "min": 2,
+        "max": 23.3
+      }
+    },
+    "categorical": {
+      "calefaccion": [
+        "bomba_calor",
+        "electrica",
+        "gas"
+      ],
+      "aislamiento": [
+        "alto",
+        "bajo",
+        "medio"
+      ]
+    }
+  }
+}

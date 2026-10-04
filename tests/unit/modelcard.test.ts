@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Metrics } from "@/engine/verdict";
 import { buildModelCard, modelCardFileName } from "@/lib/modelcard";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 import { leagueFields } from "./factories";
 
 function metrics(overrides: Partial<Metrics> = {}): Metrics {
@@ -15,7 +15,7 @@ function metrics(overrides: Partial<Metrics> = {}): Metrics {
   };
 }
 
-function result(overrides: Partial<ExperimentResult> = {}): ExperimentResult {
+function result(overrides: Partial<BinaryResult> = {}): BinaryResult {
   return {
     positiveClass: "1",
     positiveRate: 0.3,

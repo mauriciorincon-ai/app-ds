@@ -405,13 +405,16 @@ describe("cruce de punta a punta: prepareRun → Pyodide → contract.ts → ass
 
   it("la app ensambla la liga y la elección manual con lo que el lector validó", () => {
     const r = prepared(kitCsv("rotacion-empleados.csv"), "renuncio");
-    const checked = validateTrainResult(league(r.payload), r.payload);
+    const checked = validateTrainResult(league(r.payload), {
+      ...r.payload,
+      task: "binaria",
+    });
     expect(checked.ok).toBe(true);
     if (!checked.ok) return;
     const result = assembleResult(checked.value, r.leakage, r.smallSample);
     expect(result.selection.by).toBe("cv");
     expect(result.selection.cvWinner).toBe(
-      selectOneSe(result.league, result.selection.k)!.winner,
+      selectOneSe(result.league, result.selection.k, "higher")!.winner,
     );
     expect(result.selection.competitors).toBe(r.payload.roster.length);
 

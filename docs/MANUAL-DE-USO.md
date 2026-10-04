@@ -32,8 +32,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   2. **Configuración → elige qué predecir.** Verás una vista previa de tu tabla y, en el menú _¿Qué
      quieres predecir?_, seleccionas la columna objetivo. Desde el Sprint 005 puedes elegir
      **cualquier columna**: la app te dice qué tipo de predicción sería. Esta versión entrena las de
-     **dos categorías** (sí/no, 0/1, aprobado/rechazado…). Si alguna columna parece una fecha, la app
-     te avisa (en esta versión no se usa para el análisis).
+     **dos categorías** (sí/no, 0/1, aprobado/rechazado…) y, desde el Sprint 006, las **cantidades**
+     (un precio, un consumo, un tiempo: ver _Estimar una cantidad_). Si alguna columna parece una
+     fecha, la app te avisa (en esta versión no se usa para el análisis).
   3. **Pulsa _Entrenar modelos_.** La primera vez tarda unos segundos mientras se prepara el motor
      de análisis; verás el progreso paso a paso.
   4. **Resultados → lee el veredicto.** Arriba, en grande, aparece el veredicto:
@@ -60,7 +61,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   Probeta DS: no inflar resultados.
 
 - **Limitaciones conocidas (Sprint 001):**
-  - Solo predicción de **dos categorías** (clasificación binaria).
+  - Solo predicción de **dos categorías** (clasificación binaria). _Desde el Sprint 006 también se
+    estiman cantidades._
   - Tamaño máximo del archivo: **5 MB o 50 000 filas**. Por encima, la app avisa (no se cuelga).
   - El chequeo de fuga es una **ayuda honesta, no una garantía**: atrapa los casos evidentes, no
     todos.
@@ -143,6 +145,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      nombre, la nueva sale con un sufijo (`_2`) — nunca se pisa nada tuyo. Desde el Sprint 005, si
      el modelo es uno de los que **deciden la clase sin dar una probabilidad** (Ridge, SVM lineal),
      la columna de probabilidad no se incluye y la pantalla te lo dice: la app no inventa una.
+     Desde el Sprint 006, si una celda empieza con `=`, `+`, `-` o `@` y no es un número, el
+     archivo descargado la escribe con un apóstrofo delante (`'=…`): así la hoja de cálculo la
+     muestra como texto y no la ejecuta como fórmula. Los números negativos quedan como están.
 
 - **Guardar el modelo (exportar):**
   - En Resultados, pulsa **"Exportar modelo"**. Se descarga un único archivo `.probeta.json`.
@@ -218,8 +223,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 - **Antes de entrenar (Configuración):**
   - **Tipo de predicción:** al elegir la columna, una tarjeta te dice qué tipo de predicción sería y
     por qué (por ejemplo, _«2 valores distintos → clasificación binaria»_). Si es de otro tipo
-    (varias categorías, una cantidad), te lo dice: esta versión todavía no la entrena, pero la
-    columna no se esconde.
+    (varias categorías), te lo dice: esta versión todavía no la entrena, pero la columna no se
+    esconde. _Desde el Sprint 006, las cantidades sí se entrenan._
   - **Quién compite:** otra tarjeta reparte los modelos en tres grupos, cada uno con su razón:
     - **Nivel 1 · ahora:** los que caben en unos 5 segundos de cálculo en un computador de
       escritorio (en un móvil puede tardar el doble o más).
@@ -280,11 +285,76 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Limitaciones conocidas (Sprint 005):**
   - Solo se entrenan objetivos de **dos categorías**; varias categorías y cantidades llegan en una
-    próxima versión.
+    próxima versión. _Las cantidades llegaron en el Sprint 006._
   - Con **muestras pequeñas** (menos de 200 filas) los puntajes de validación cruzada varían mucho;
     la app lo avisa.
   - Los tiempos son **estimaciones**: tu equipo puede tardar distinto, sobre todo un móvil.
   - Con datos grandes (decenas de miles de filas) el Nivel 2 puede tardar minutos.
+
+### Estimar una cantidad · desde Sprint 006
+
+- **Qué hace:** si la columna que quieres predecir es un **número que se mide** —un precio, un
+  consumo en kWh, un tiempo en minutos—, la app ya no te dice «llega en una próxima versión»: arma la
+  misma liga honesta del Sprint 005 y te dice **cuánto se equivoca en promedio, en las unidades de
+  tu columna**, comparado con adivinar siempre el mismo número.
+
+- **Cómo se usa:**
+  1. **Elige la columna.** La tarjeta dice _«Vas a estimar una cantidad, en kWh»_. La unidad la lee
+     del final del nombre de la columna (`_kwh`, `_usd`, `_min`, `_kg`, `_m2`…). Si el nombre no
+     trae una unidad que reconozca, no la inventa: te dice que las cifras irán «en las unidades de»
+     tu columna.
+  2. **Si la columna tiene pocos números distintos** (por ejemplo, _ocupantes_ de 1 a 6), la app no
+     puede saber si son **categorías** (como una nota del 1 al 5) o **una cantidad**, y te lo
+     **pregunta**, con la lectura más probable marcada con ★ _Sugerida_:
+     - **Una cantidad** → se entrena la liga que estima el número.
+     - **Categorías** → es una predicción de varias clases, que esta versión todavía no entrena (y
+       te lo dice).
+     - Puedes **cambiar la respuesta** cuando quieras.
+  3. **Pulsa _Entrenar modelos_.** La liga de estimar reúne 11 modelos (los mismos árboles, boosting,
+     vecinos y red neuronal de la liga, más tres rectas: lineal, Ridge y Lasso). Como al clasificar,
+     primero compiten los que caben en el Nivel 1, y con menos de 500 filas la red neuronal queda
+     «fuera» con su razón (en el ejemplo de consumo compiten 10). Misma validación cruzada y misma
+     regla del más simple entre empatados.
+
+- **Cómo leer el resultado:**
+  - **El veredicto, en unidades:** _«En promedio se equivoca por ±33.5 kWh; una regresión lineal se
+    equivoca por ±43.8 kWh: un 23 % menos de error.»_ El rival es el **mejor de dos baselines**:
+    adivinar siempre la **mediana** (el valor del medio de tu columna) o una **regresión lineal**
+    (la recta más simple). Si tu modelo se equivoca prácticamente lo mismo (menos de un 1 % de
+    diferencia), **empata**; si se equivoca más, **NO supera**, y te lo dice de frente.
+  - **Las métricas:** el **MAE** (cuánto se equivoca en promedio) decide; el **RMSE**, el **R²** y
+    la **MedAE** se muestran para leer mejor. Una línea te dice cuál mirar y por qué.
+  - **La tabla de la liga:** igual que al clasificar, pero aquí **menor es mejor** (es un error), y
+    lo dice arriba de la tabla.
+  - **El gráfico _Estimado frente a real_:** cada punto es una fila de la prueba; en horizontal, el
+    valor real; en vertical, lo que estimó el modelo. La **diagonal** es la estimación perfecta y la
+    **franja** alrededor marca ±MAE. Los puntos **dentro** de la franja son discos rellenos; los de
+    **fuera**, anillos: se distinguen por la forma, no solo por el color.
+  - **Cómo se reparten los errores:** debajo del gráfico, en palabras y en una tabla: entre qué
+    valores cae la mitad de los errores, por cuánto se equivocan 9 de cada 10, y si el modelo tiende
+    a estimar de más o de menos. Esto usa **todas** las filas de la prueba (el gráfico muestra hasta
+    200).
+  - **El porqué:** las barras de importancia y la dirección se leen contra tu cantidad («a mayor
+    valor, mayor consumo»). La **narración con IA no se ofrece al estimar**: solo cubre la
+    clasificación en dos categorías. El texto estándar, que sale de los mismos números, sí está.
+
+- **Antes de entrenar, la app te avisa si:**
+  - una columna **casi copia** al objetivo (una posible fuga, como un impuesto que se calcula del
+    precio). La nombra antes de entrenar y en el resultado;
+  - el objetivo está **muy sesgado** (unos pocos valores muy grandes pesan mucho en el error);
+  - hay **valores muy lejos del resto** (pueden ser errores de captura).
+
+- **Usar el modelo:** al puntuar un CSV nuevo, la columna nueva se llama **`<tu columna>_estimado`**
+  (por ejemplo `consumo_kwh_estimado`) y trae los **mismos decimales** con que escribiste tu
+  objetivo. No hay columna de probabilidad: estimar no la da. Arriba verás el **mínimo, la mediana y
+  el máximo** de lo estimado. El archivo exportado (`.probeta.json`) recuerda que estima una
+  cantidad; al importarlo, el resumen lo dice.
+
+- **Limitaciones conocidas (Sprint 006):**
+  - La unidad sale **solo del nombre** de la columna; si no la reconoce, no la inventa.
+  - Árboles, bosques y vecinos **no estiman por fuera** del rango que vieron al entrenar.
+  - La narración con IA no cubre estimar (sí el texto estándar).
+  - Varias categorías (multiclase) llegan en una próxima versión.
 
 ## Diccionario de términos
 
@@ -293,13 +363,13 @@ cuando una te frene.
 
 **Sobre el resultado**
 
-| Término                    | Qué significa                                                                                                                                                                                  |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Baseline** (línea base)  | Las reglas simples contra las que se mide tu modelo: responder siempre lo más frecuente (clase mayoritaria) y una regresión logística. Si tu modelo no supera a la mejor de las dos, no sirve. |
-| **Veredicto**              | La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.                                                                                                |
-| **Entrenamiento y prueba** | La app parte tus datos en dos: con tres cuartas partes aprende y con la cuarta parte restante, que nunca vio, se examina. Por eso el número del veredicto es real.                             |
-| **Liga**                   | Todos los modelos que compiten entre sí. Se elige al ganador sin mirar la prueba; puedes elegir otro, y queda registrado.                                                                      |
-| **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                                                                                           |
+| Término                    | Qué significa                                                                                                                                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Baseline** (línea base)  | Las reglas simples contra las que se mide tu modelo. Al clasificar: responder siempre lo más frecuente (clase mayoritaria) y una regresión logística. Al estimar: adivinar siempre la mediana y una regresión lineal. Si tu modelo no supera a la mejor de las dos, no sirve. |
+| **Veredicto**              | La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.                                                                                                                                                                               |
+| **Entrenamiento y prueba** | La app parte tus datos en dos: con tres cuartas partes aprende y con la cuarta parte restante, que nunca vio, se examina. Por eso el número del veredicto es real.                                                                                                            |
+| **Liga**                   | Todos los modelos que compiten entre sí. Se elige al ganador sin mirar la prueba; puedes elegir otro, y queda registrado.                                                                                                                                                     |
+| **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                                                                                                                                                                          |
 
 **Sobre la liga** (desde Sprint 005)
 
@@ -323,6 +393,18 @@ cuando una te frene.
 | **Sensibilidad** (recall) | De los casos positivos reales, cuántos logró detectar, de 0 a 1.            |
 | **F1**                    | Equilibrio entre precisión y sensibilidad, de 0 a 1.                        |
 | **AUC**                   | Qué tan bien separa las dos clases: 0.50 sería azar y 1.00 perfecto.        |
+
+**Sobre estimar una cantidad** (desde Sprint 006)
+
+| Término                        | Qué significa                                                                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **MAE** (error absoluto medio) | Cuánto se equivoca el modelo en promedio, en las unidades de tu columna. Es la métrica que decide: menor es mejor.                                  |
+| **RMSE**                       | Otro promedio del error que castiga más los errores grandes. Si es mucho mayor que el MAE, de vez en cuando falla por mucho.                        |
+| **R²**                         | Qué parte de la variación de tu columna explica el modelo: 1 es toda; 0, lo mismo que adivinar el promedio; negativo, peor que adivinarlo.          |
+| **MedAE**                      | El error típico: la mitad de las estimaciones se equivoca menos que esto. No le pesan los casos extremos.                                           |
+| **La mediana como baseline**   | Adivinar siempre el valor del medio de tu columna. Es la constante que menos se equivoca en promedio, por eso es el rival honesto (no el promedio). |
+| **Estimado frente a real**     | El gráfico que pone cada fila de la prueba según su valor real y lo que estimó el modelo. Cuanto más cerca de la diagonal, mejor.                   |
+| **Unidad**                     | La que la app lee del final del nombre de tu columna (`_kwh`, `_usd`…). Si no la reconoce, no la inventa.                                           |
 
 **Sobre las advertencias**
 
@@ -373,14 +455,26 @@ cuando una te frene.
 - **Un modelo dice «Fuera», ¿no puedo usarlo?** Sí puedes: en la tarjeta del Nivel 2 marca
   «Incluir de todos modos». La app te dice por qué lo dejaba fuera y lo marca en la tabla como
   «lo incluiste tú».
+- **¿Por qué el R² puede ser negativo?** El R² compara tu modelo con adivinar siempre el promedio de
+  la columna: 0 significa «igual que adivinar», 1 significa «perfecto». Si el modelo se equivoca
+  **más** que adivinar el promedio, el R² baja de 0. No es un error de la app: es la forma honesta de
+  decir que, con esas columnas, el modelo empeora una regla trivial.
+- **¿Por qué la app me pregunta si mi columna son categorías o una cantidad?** Porque con pocos
+  números distintos (por ejemplo, del 1 al 6) los datos no alcanzan para saberlo: puede ser una nota
+  (categorías) o un conteo (una cantidad). Tú conoces la columna; la app sugiere la lectura más
+  probable, pero no adivina por ti.
+- **¿Por qué el baseline es la mediana y no el promedio?** Porque el veredicto mide cuánto se
+  equivoca en promedio (el MAE), y para esa medida la constante que menos se equivoca es la mediana.
+  Comparar contra el promedio le regalaría al modelo una victoria contra un rival más débil.
 
 ## Historial
 
-| Sprint | Features añadidas a este manual                                                                                                                                                                                                                                        |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                                                                                                                         |
-| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable).                                                                                                        |
-| 003    | El modelo se usa (puntuar datos nuevos con aviso de novedad, exportar el modelo como archivo `.probeta.json`, volver a importarlo y puntuar sin re-entrenar).                                                                                                          |
-| 004    | Sobrevive datos reales (saneamiento transparente con conteos, alertas EDA de fuga/identificador/desbalance, boosting HistGradientBoosting compitiendo con el mismo veredicto).                                                                                         |
-| 004    | **Diccionario de términos** (pedido en el gate ⭐, prueba E3) + aviso de CSV con punto y coma.                                                                                                                                                                         |
-| 005    | La liga honesta (14 modelos con validación cruzada, ganador por la regla de un error estándar, prueba a pedido y etiquetada, elección manual «elegido por ti», tipo de predicción de cada columna, quién compite por nivel, ficha de cada modelo, Nivel 2 cancelable). |
+| Sprint | Features añadidas a este manual                                                                                                                                                                                                                                                                                      |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 001    | El veredicto honesto (carga CSV/ejemplos, elección de objetivo, entrenamiento, veredicto vs. baseline, advertencia de fuga, métricas en test).                                                                                                                                                                       |
+| 002    | El porqué honesto (importancia de variables + dirección, narración con IA verificada contra los números, consentimiento de privacidad, model card descargable).                                                                                                                                                      |
+| 003    | El modelo se usa (puntuar datos nuevos con aviso de novedad, exportar el modelo como archivo `.probeta.json`, volver a importarlo y puntuar sin re-entrenar).                                                                                                                                                        |
+| 004    | Sobrevive datos reales (saneamiento transparente con conteos, alertas EDA de fuga/identificador/desbalance, boosting HistGradientBoosting compitiendo con el mismo veredicto).                                                                                                                                       |
+| 004    | **Diccionario de términos** (pedido en el gate ⭐, prueba E3) + aviso de CSV con punto y coma.                                                                                                                                                                                                                       |
+| 005    | La liga honesta (14 modelos con validación cruzada, ganador por la regla de un error estándar, prueba a pedido y etiquetada, elección manual «elegido por ti», tipo de predicción de cada columna, quién compite por nivel, ficha de cada modelo, Nivel 2 cancelable).                                               |
+| 006    | Estimar una cantidad (liga de 11 modelos que estiman, veredicto en las unidades de la columna contra la mediana y la regresión lineal, gráfico estimado frente a real, la pregunta «¿categorías o una cantidad?», `<columna>_estimado` al puntuar, avisos de sesgo y atípicos) + diccionario y preguntas de estimar. |

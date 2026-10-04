@@ -6,9 +6,15 @@
 // ANTES de que el payload (pickle) toque Pyodide. Un archivo ajeno o corrupto
 // se rechaza aquí, en TS puro, sin deserializar nada.
 import type { LeakageFinding } from "@/engine/leakage";
-import { isMemberId, type MemberId } from "@/engine/roster";
+import { isMemberOf, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
-import type { MetricName, Metrics, Verdict } from "@/engine/verdict";
+import { TRAINABLE_TASKS, type Task, type TrainTask } from "@/engine/tarea";
+import type {
+  MetricName,
+  Metrics,
+  RegressionMetrics,
+  Verdict,
+} from "@/engine/verdict";
 import {
   arr,
   check,
@@ -23,12 +29,18 @@ import {
   str,
   type Validator,
 } from "@/lib/validate";
-import { metricsV, trainingProfileV } from "@/workers/contract";
+import {
+  metricsV,
+  regressionMetricsV,
+  targetStatsV,
+  trainingProfileV,
+} from "@/workers/contract";
 import type {
+  BinaryModelSchema,
   ExperimentResult,
   ExportResult,
   MemberStatus,
-  ModelSchema,
+  RegressionModelSchema,
   RuntimeVersions,
   TrainingProfile,
 } from "@/workers/protocol";
@@ -59,28 +71,31 @@ export const RUNTIME_VERSIONS = {
 } as const;
 
 /** S5: una fila de la liga tal como queda en el manifiesto (snake_case). */
-export type ManifestLeagueRow = {
+export type ManifestLeagueRow<M = Metrics> = {
   name: MemberId;
   status: MemberStatus;
   cv_mean: number | null;
   cv_std: number | null;
-  test: Metrics | null;
+  test: M | null;
 };
 
 /** S5: cómo se eligió el modelo del archivo (U1: «elegido por ti»). */
-export type ManifestSelection = {
+export type ManifestSelection<P extends MetricName | "mae" = MetricName> = {
   by: "cv" | "user";
   cv_winner: MemberId;
   k: number;
-  metric: MetricName;
+  metric: P;
   rule: "one-se";
 };
 
-export type ModelManifest = {
+/** El manifiesto de clasificación binaria (S3–S5; S6 suma `task` aditivo). */
+export type BinaryManifest = {
+  /** S6 (P8): aditivo y opcional — ausente = binaria (los archivos del S5). */
+  task?: "binaria";
   app: { name: typeof APP_NAME; version: string };
   created_at: string;
   dataset: { name: string; n_train: number; n_test: number };
-  schema: ModelSchema;
+  schema: BinaryModelSchema;
   training_profile: TrainingProfile;
   metrics: {
     model: Metrics;
@@ -107,6 +122,43 @@ export type ModelManifest = {
   selection?: ManifestSelection;
 };
 
+/** S6 (P8): el manifiesto de un modelo que estima una cantidad. Nace con la liga y
+ *  la selección obligatorias (no hay archivos de regresión anteriores al S6). */
+export type RegressionManifest = {
+  task: "numerica";
+  app: { name: typeof APP_NAME; version: string };
+  created_at: string;
+  dataset: { name: string; n_train: number; n_test: number };
+  schema: RegressionModelSchema;
+  training_profile: TrainingProfile;
+  metrics: {
+    model: RegressionMetrics;
+    baselines: { median: RegressionMetrics; linear: RegressionMetrics };
+  };
+  verdict: Verdict<"mae">;
+  leakage: LeakageFinding[];
+  versions: RuntimeVersions;
+  payload_sha256: string;
+  payload_encoding: typeof PAYLOAD_ENCODING;
+  model_name: MemberId;
+  sanitation?: BinaryManifest["sanitation"];
+  league: ManifestLeagueRow<RegressionMetrics>[];
+  selection: ManifestSelection<"mae">;
+};
+
+export type ModelManifest = BinaryManifest | RegressionManifest;
+
+export function isBinaryManifest(
+  manifest: ModelManifest,
+): manifest is BinaryManifest {
+  return manifestTask(manifest) === "binaria";
+}
+
+/** La tarea de un manifiesto (sin `task` = binaria, P8). */
+export function manifestTask(manifest: ModelManifest): TrainTask {
+  return manifest.task ?? "binaria";
+}
+
 export type ModelFile = {
   format_version: typeof MODEL_FILE_FORMAT_VERSION;
   manifest: ModelManifest;
@@ -118,7 +170,9 @@ export type ModelFile = {
 // S2 de bundle — aquí rompía el budget de script de 300KB). S5: el validador
 // devuelve la RUTA del campo que no cuadra (carnadas del contrato, regla 15).
 
-const member: Validator = (v, path) => (isMemberId(v) ? null : path);
+const member: Validator = (v, path) => (isMemberOf("binaria", v) ? null : path);
+const regressionMember: Validator = (v, path) =>
+  isMemberOf("numerica", v) ? null : path;
 const METRIC_NAMES = ["accuracy", "precision", "recall", "f1", "auc"];
 
 const schemaV = obj({
@@ -127,25 +181,49 @@ const schemaV = obj({
   target: str,
   classes: refine(arr(str), (v) => (v as string[]).length === 2),
   positive_class: str,
+  task: optional(oneOf(["binaria"])),
 });
 
-const verdictV = obj({
-  level: oneOf(["beats", "ties", "loses"]),
-  primaryMetric: oneOf(METRIC_NAMES),
-  modelScore: num,
-  baselineScore: num,
-  delta: num,
-});
+const verdictOf = (metrics: readonly string[]) =>
+  obj({
+    level: oneOf(["beats", "ties", "loses"]),
+    primaryMetric: oneOf(metrics),
+    modelScore: num,
+    baselineScore: num,
+    delta: num,
+  });
 
 const leakageV = arr(
   obj({
     column: str,
     score: num,
-    reason: oneOf(["near-perfect-separation", "category-purity"]),
+    reason: oneOf([
+      "near-perfect-separation",
+      "category-purity",
+      "near-perfect-rank-correlation",
+      "category-determines-target",
+    ]),
   }),
 );
 
-const manifestV = obj({
+const versionsV = obj({
+  pyodide: str,
+  sklearn: str,
+  python: str,
+  xgboost: optional(str),
+  lightgbm: optional(str),
+});
+
+const sanitationV = optional(
+  obj({
+    duplicateRowsRemoved: num,
+    exclusions: arr(obj({ column: str, reason: str })),
+    coercions: arr(obj({ column: str })),
+  }),
+);
+
+const binaryManifestV = obj({
+  task: optional(oneOf(["binaria"])),
   app: obj({ name: oneOf([APP_NAME]), version: str }),
   created_at: str,
   dataset: obj({ name: str, n_train: num, n_test: num }),
@@ -156,15 +234,9 @@ const manifestV = obj({
     baselines: obj({ majority: metricsV, logistic: metricsV }),
   }),
   positive_rate: num,
-  verdict: verdictV,
+  verdict: verdictOf(METRIC_NAMES),
   leakage: leakageV,
-  versions: obj({
-    pyodide: str,
-    sklearn: str,
-    python: str,
-    xgboost: optional(str),
-    lightgbm: optional(str),
-  }),
+  versions: versionsV,
   payload_sha256: str,
   payload_encoding: oneOf([PAYLOAD_ENCODING]),
   model_name: optional(member),
@@ -190,6 +262,70 @@ const manifestV = obj({
     }),
   ),
 });
+
+// S6 (P8): carnadas en tests/unit/model-file.test.ts — una por campo nuevo.
+const regressionManifestV = obj({
+  task: oneOf(["numerica"]),
+  app: obj({ name: oneOf([APP_NAME]), version: str }),
+  created_at: str,
+  dataset: obj({ name: str, n_train: num, n_test: num }),
+  schema: obj({
+    numeric: arr(str),
+    categorical: arr(str),
+    target: str,
+    task: oneOf(["numerica"]),
+    target_stats: targetStatsV,
+  }),
+  training_profile: trainingProfileV,
+  metrics: obj({
+    model: regressionMetricsV,
+    baselines: obj({ median: regressionMetricsV, linear: regressionMetricsV }),
+  }),
+  verdict: verdictOf(["mae"]),
+  leakage: leakageV,
+  versions: versionsV,
+  payload_sha256: str,
+  payload_encoding: oneOf([PAYLOAD_ENCODING]),
+  model_name: regressionMember,
+  sanitation: sanitationV,
+  league: arr(
+    obj({
+      name: regressionMember,
+      status: oneOf(["ok", "no-converge", "error"]),
+      cv_mean: nullable(num),
+      cv_std: nullable(num),
+      test: nullable(regressionMetricsV),
+    }),
+    1,
+  ),
+  selection: obj({
+    by: oneOf(["cv", "user"]),
+    cv_winner: regressionMember,
+    k: refine(int, (v) => (v as number) >= 2),
+    metric: oneOf(["mae"]),
+    rule: oneOf(["one-se"]),
+  }),
+});
+
+/** El validador del manifiesto de cada tarea que el motor entrena. Es un `Record`
+ *  completo: sumar una tarea a `TrainTask` sin su validador no compila (AU-S6-03). */
+const MANIFEST_V_BY_TASK: Record<TrainTask, Validator> = {
+  binaria: binaryManifestV,
+  numerica: regressionManifestV,
+};
+
+function isKnownManifestTask(task: string): task is TrainTask {
+  return Object.hasOwn(MANIFEST_V_BY_TASK, task);
+}
+
+/** Sin `task`, el manifiesto binario (archivos del S3–S5); con ella, el de su tarea. */
+const manifestV: Validator = (v, path) => {
+  if (!isRecord(v)) return path;
+  const task = v.task ?? "binaria";
+  return typeof task === "string" && isKnownManifestTask(task)
+    ? MANIFEST_V_BY_TASK[task](v, path)
+    : `${path}.task`;
+};
 
 const modelFileV = obj({
   format_version: oneOf([MODEL_FILE_FORMAT_VERSION]),
@@ -238,42 +374,79 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
           coercions: sanitation.coercions,
         }
       : undefined;
+  const common = {
+    app: { name: APP_NAME, version: APP_VERSION },
+    created_at: (input.date ?? new Date()).toISOString(),
+    dataset: {
+      name: input.datasetName,
+      n_train: result.nTrain,
+      n_test: result.nTest,
+    },
+    training_profile: exported.training_profile,
+    leakage: result.leakage,
+    versions: exported.versions,
+    payload_sha256,
+    payload_encoding: PAYLOAD_ENCODING,
+    model_name: result.modelName,
+    ...(sanitationSummary ? { sanitation: sanitationSummary } : {}),
+  } as const;
+  const selection = {
+    by: result.selection.by,
+    cv_winner: result.selection.cvWinner,
+    k: result.selection.k,
+    rule: result.selection.rule,
+  };
+  const league = <M>(
+    rows: readonly {
+      name: MemberId;
+      status: MemberStatus;
+      cv: { mean: number; std: number } | null;
+      test: M | null;
+    }[],
+  ) =>
+    rows.map((row) => ({
+      name: row.name,
+      status: row.status,
+      cv_mean: row.cv?.mean ?? null,
+      cv_std: row.cv?.std ?? null,
+      test: row.test,
+    }));
+
+  if (result.task === "numerica") {
+    if (exported.schema.task !== "numerica") {
+      throw new Error("packModelFile: el esquema exportado no es de regresión");
+    }
+    const manifest: RegressionManifest = {
+      task: "numerica",
+      ...common,
+      schema: exported.schema,
+      metrics: { model: result.model, baselines: result.baselines },
+      verdict: result.verdict,
+      league: league(result.league),
+      selection: { ...selection, metric: "mae" },
+    };
+    return {
+      format_version: MODEL_FILE_FORMAT_VERSION,
+      manifest,
+      payload: exported.payload_b64,
+    };
+  }
+  if (exported.schema.task === "numerica") {
+    throw new Error("packModelFile: el esquema exportado no es binario");
+  }
+  const manifest: BinaryManifest = {
+    task: "binaria",
+    ...common,
+    schema: exported.schema,
+    metrics: { model: result.model, baselines: result.baselines },
+    positive_rate: result.positiveRate,
+    verdict: result.verdict,
+    league: league(result.league),
+    selection: { ...selection, metric: result.selection.metric },
+  };
   return {
     format_version: MODEL_FILE_FORMAT_VERSION,
-    manifest: {
-      app: { name: APP_NAME, version: APP_VERSION },
-      created_at: (input.date ?? new Date()).toISOString(),
-      dataset: {
-        name: input.datasetName,
-        n_train: result.nTrain,
-        n_test: result.nTest,
-      },
-      schema: exported.schema,
-      training_profile: exported.training_profile,
-      metrics: { model: result.model, baselines: result.baselines },
-      positive_rate: result.positiveRate,
-      verdict: result.verdict,
-      leakage: result.leakage,
-      versions: exported.versions,
-      payload_sha256,
-      payload_encoding: PAYLOAD_ENCODING,
-      model_name: result.modelName,
-      ...(sanitationSummary ? { sanitation: sanitationSummary } : {}),
-      league: result.league.map((row) => ({
-        name: row.name,
-        status: row.status,
-        cv_mean: row.cv?.mean ?? null,
-        cv_std: row.cv?.std ?? null,
-        test: row.test,
-      })),
-      selection: {
-        by: result.selection.by,
-        cv_winner: result.selection.cvWinner,
-        k: result.selection.k,
-        metric: result.selection.metric,
-        rule: result.selection.rule,
-      },
-    },
+    manifest,
     payload: exported.payload_b64,
   };
 }
@@ -291,7 +464,13 @@ export type ModelFileErrorKind =
   | "invalid-json"
   | "invalid-format"
   | "unsupported-version"
-  | "hash-mismatch";
+  | "hash-mismatch"
+  // S6: el archivo es válido pero de una tarea que esta versión todavía no usa
+  // (p. ej. un modelo multiclase abierto en una versión que solo sabe de binaria).
+  | "unsupported-task";
+
+/** Largo máximo con que se nombra una tarea desconocida (texto del archivo). */
+const MAX_TASK_NAME = 40;
 
 export type VersionWarning = {
   component: "pyodide" | "sklearn" | "xgboost" | "lightgbm";
@@ -306,6 +485,9 @@ export type ModelFileValidation =
       error: ModelFileErrorKind;
       /** S5: con invalid-format estructural, el campo que no cuadra (diagnóstico). */
       field?: string;
+      /** S6: con unsupported-task, la tarea que declara el archivo (para
+       *  nombrarla): puede ser una que esta versión no conoce («multiclase»). */
+      task?: string;
     };
 
 function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
@@ -338,6 +520,9 @@ function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
  */
 export async function validateModelFile(
   text: string,
+  // S6: las tareas que la UI sabe usar (las mismas que ofrece entrenar). Un
+  // archivo íntegro de otra tarea se rechaza nombrándola, no se abre a medias.
+  usable: readonly Task[] = TRAINABLE_TASKS,
 ): Promise<ModelFileValidation> {
   let raw: unknown;
   try {
@@ -353,6 +538,25 @@ export async function validateModelFile(
   }
   if (raw.format_version !== MODEL_FILE_FORMAT_VERSION) {
     return { ok: false, error: "unsupported-version" };
+  }
+
+  // S6 (ADR 014 §3): la tarea se mira ANTES que la forma, igual que la versión.
+  // Un archivo de una tarea que esta versión no abre, o que no conoce (uno
+  // multiclase del S7 abierto aquí), se rechaza NOMBRÁNDOLA, jamás con un
+  // engañoso «no parece un modelo de Probeta» (AU-S6-02).
+  const declared = isRecord(raw.manifest)
+    ? (raw.manifest.task ?? "binaria")
+    : "binaria";
+  if (typeof declared !== "string") {
+    return { ok: false, error: "invalid-format", field: "manifest.task" };
+  }
+  if (!isKnownManifestTask(declared) || !usable.includes(declared)) {
+    // Recortada: es texto del archivo y solo se muestra (React lo escapa).
+    return {
+      ok: false,
+      error: "unsupported-task",
+      task: declared.slice(0, MAX_TASK_NAME),
+    };
   }
 
   const shaped = check<ModelFile>(modelFileV, raw);

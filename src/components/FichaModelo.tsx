@@ -4,11 +4,16 @@ import { useEffect, useRef } from "react";
 import {
   BALANCED_NOTES,
   FICHAS,
+  REGRESSION_FICHA_FIELDS,
+  REGRESSION_NOTES,
   type BalancedId,
+  type BaselineFichaId,
   type Ficha,
   type FichaId,
+  type SharedId,
 } from "@/content/modelos";
-import { MEMBERS, type MemberId } from "@/engine/roster";
+import { MEMBERS, memberNameKey, type MemberId } from "@/engine/roster";
+import type { TrainTask } from "@/engine/tarea";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "./ui";
 
@@ -27,7 +32,15 @@ export type FichaStatus =
   | { kind: "out"; reason: string }
   | { kind: "baseline" };
 
-export type FichaTarget = { id: MemberId | "majority"; status: FichaStatus };
+export type FichaTarget = {
+  id: MemberId | BaselineFichaId;
+  status: FichaStatus;
+  /** S6: la tarea de la liga (un mismo modelo se llama distinto al estimar). */
+  task?: TrainTask;
+};
+
+const isBaselineFicha = (id: FichaTarget["id"]): id is BaselineFichaId =>
+  id === "majority" || id === "median";
 
 const SECTIONS: (keyof Ficha)[] = [
   "what",
@@ -63,19 +76,26 @@ export default function FichaModelo({
     return () => opener?.focus();
   }, []);
 
-  const { id, status } = target;
+  const { id, status, task = "binaria" } = target;
   // `base` es un MemberId; que sea una ficha lo fija tests/unit/modelos.test.ts.
-  const fichaId =
-    id === "majority" ? "majority" : (MEMBERS[id].base as FichaId);
-  const ficha = FICHAS[fichaId];
+  const fichaId = isBaselineFicha(id) ? id : (MEMBERS[id].base as FichaId);
+  // S6: al estimar, los apartados que solo hablan de clasificar se reemplazan.
+  const ficha: Ficha =
+    task === "numerica" && id in REGRESSION_FICHA_FIELDS
+      ? { ...FICHAS[fichaId], ...REGRESSION_FICHA_FIELDS[id as SharedId] }
+      : FICHAS[fichaId];
   const balancedNote =
-    id !== "majority" && MEMBERS[id].balanced
+    !isBaselineFicha(id) && MEMBERS[id].balanced
       ? BALANCED_NOTES[id as BalancedId]
       : null;
-  const name =
-    id === "majority"
-      ? t("results.baselines.majority")
-      : t(`results.candidates.model.${id}`);
+  // S6: al estimar, los modelos compartidos suman cómo estiman.
+  const regressionNote =
+    task === "numerica" && id in REGRESSION_NOTES
+      ? REGRESSION_NOTES[id as SharedId]
+      : null;
+  const name = isBaselineFicha(id)
+    ? t(`results.baselines.${id}`)
+    : t(memberNameKey(id, task));
   const mark = STATUS_MARK[status.kind];
 
   return (
@@ -125,6 +145,11 @@ export default function FichaModelo({
         {balancedNote && (
           <p className="rounded-md border border-hairline bg-sunken p-3 text-sm">
             {balancedNote[locale]}
+          </p>
+        )}
+        {regressionNote && (
+          <p className="rounded-md border border-hairline bg-sunken p-3 text-sm">
+            {regressionNote[locale]}
           </p>
         )}
 

@@ -53,7 +53,7 @@ describe("clientes-sucio.csv — el dataset sucio demuestra el saneamiento", () 
 
   it("no dispara falsa fuga; el objetivo tiene señal aprendible", () => {
     const { table: clean } = sanitizeTable(loadDirty());
-    const alerts = computeEdaAlerts(clean, "contrato");
+    const alerts = computeEdaAlerts(clean, "contrato", "binaria");
     // Ninguna feature legítima es un proxy casi perfecto ⇒ sin alerta de fuga.
     expect(alerts.some((a) => a.kind === "possible-leak")).toBe(false);
   });

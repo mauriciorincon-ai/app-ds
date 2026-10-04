@@ -1,0 +1,105 @@
+<!-- @dsCard group="Componentes · S6" name="Estimar — veredicto en unidades, liga y gráfico" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estimar una cantidad — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif; box-sizing: border-box;
+  }
+  .lead { max-width: 68ch; font-size: 14px; color: #586172; margin: 0 0 20px; }
+  .lead h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; color: #14181f; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .card { max-width: 680px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); }
+  .verdict { display: flex; gap: 12px; align-items: flex-start; }
+  .verdict .mark { font-size: 24px; color: #1c7c4a; }
+  .verdict h2 { font-size: 20px; font-weight: 600; color: #1c7c4a; margin: 0; }
+  .verdict p { font-size: 14px; color: #586172; margin: 4px 0 0; }
+  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #586172; margin: 0 0 8px; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 680px; }
+  .tile { background: #f2f2ec; border-radius: 4px; padding: 10px; }
+  .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #586172; }
+  .tile .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .guide { max-width: 68ch; font-size: 14px; color: #586172; margin: 8px 0 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #586172; border-bottom: 1px solid #e4e4dc; padding: 8px; }
+  td { padding: 8px; border-bottom: 1px solid #e4e4dc; vertical-align: top; }
+  tr.win { border-left: 4px solid #0e6e6b; background: rgb(14 110 107 / .05); }
+  .mark-win { display: inline-flex; gap: 4px; align-items: center; color: #0e6e6b; font-size: 12px; font-weight: 600; }
+  .disc { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; background: #0e6e6b; color: #fff; font-size: 10px; align-items: center; justify-content: center; }
+  .lower { font-size: 14px; color: #586172; margin: 4px 0 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: #586172; list-style: none; padding: 0; margin: 12px 0 0; }
+  .legend li { display: inline-flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+  <div class="lead">
+    <h1>Estimar una cantidad <span class="mono" style="font-size:13px">· S6 · ADR 013</span></h1>
+    El veredicto habla <b>en las unidades del objetivo</b> contra el mejor baseline (la
+    <b>mediana</b> o la <b>regresión lineal</b>). La liga ordena de menor a mayor error y lo dice.
+    El gráfico distingue dentro/fuera de la franja ±MAE por <b>forma</b> (disco / anillo), no solo
+    por color, y tiene su equivalente en texto debajo. Cifras: punto decimal, miles con coma y un
+    espacio no separable antes de la unidad.
+  </div>
+
+  <div class="card verdict">
+    <span class="mark" aria-hidden="true">▲</span>
+    <div>
+      <h2>«Extra Trees» supera al baseline</h2>
+      <p>En promedio se equivoca por ±33.5&nbsp;kWh; una regresión lineal se equivoca por ±43.8&nbsp;kWh: un 23 % menos de error.</p>
+    </div>
+  </div>
+
+  <p class="eyebrow">Métrica principal: MAE, el error promedio en las unidades del objetivo</p>
+  <div class="tiles mono">
+    <div class="tile"><div class="k">MAE</div><div class="v">33.5&nbsp;kWh</div></div>
+    <div class="tile"><div class="k">RMSE</div><div class="v">44.5&nbsp;kWh</div></div>
+    <div class="tile"><div class="k">R²</div><div class="v">0.80</div></div>
+    <div class="tile"><div class="k">MedAE</div><div class="v">27.0&nbsp;kWh</div></div>
+  </div>
+  <p class="guide">Cuál mirar: el MAE dice cuánto se equivoca en promedio. El RMSE castiga más los errores grandes. El R² dice qué parte de la variación explica: 1 es toda, 0 es lo mismo que adivinar el promedio, y es negativo si lo hace peor.</p>
+
+  <div class="card">
+    <h3 style="margin:0;font-size:16px">La liga: 10 modelos</h3>
+    <p class="lower"><span aria-hidden="true">▼</span> En esta tabla, menor es mejor: es el error promedio (MAE) en las unidades del objetivo.</p>
+    <table>
+      <thead><tr><th>Modelo</th><th>Validación cruzada · MAE</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>Extra Trees<br><span class="mark-win"><span class="disc" aria-hidden="true">★</span>Ganador (validación cruzada)</span></td><td class="mono">35.02&nbsp;kWh<br><span style="font-size:12px;color:#586172">± 1.12&nbsp;kWh</span></td></tr>
+        <tr><td>Lasso</td><td class="mono">36.71&nbsp;kWh<br><span style="font-size:12px;color:#586172">± 2.30&nbsp;kWh</span></td></tr>
+        <tr><td>Ridge</td><td class="mono">37.02&nbsp;kWh<br><span style="font-size:12px;color:#586172">± 1.91&nbsp;kWh</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <p style="font-size:14px;font-weight:600;margin:0 0 8px">Estimado frente a real, en el conjunto de prueba</p>
+    <svg viewBox="0 0 340 300" width="340" role="img" aria-label="Gráfico de dispersión: real en horizontal, estimado en vertical; diagonal y franja ±MAE">
+      <rect x="58" y="10" width="270" height="246" fill="none" stroke="#e4e4dc" />
+      <polygon points="58,256 328,10 328,-20 58,226" fill="rgb(14 110 107 / .10)" />
+      <line x1="58" y1="286" x2="328" y2="40" stroke="#0e6e6b" stroke-dasharray="4 3" />
+      <line x1="58" y1="226" x2="328" y2="-20" stroke="#0e6e6b" stroke-dasharray="4 3" />
+      <line x1="58" y1="256" x2="328" y2="10" stroke="#14181f" stroke-width="1.5" />
+      <g fill="#0e6e6b">
+        <circle cx="100" cy="205" r="2.6" /><circle cx="140" cy="190" r="2.6" /><circle cx="170" cy="150" r="2.6" />
+        <circle cx="210" cy="125" r="2.6" /><circle cx="250" cy="95" r="2.6" /><circle cx="290" cy="45" r="2.6" />
+      </g>
+      <g fill="#ffffff" stroke="#8a5a0c" stroke-width="1.4">
+        <circle cx="120" cy="150" r="3" /><circle cx="230" cy="160" r="3" /><circle cx="300" cy="90" r="3" />
+      </g>
+      <text x="193" y="292" text-anchor="middle" font-size="12" fill="#586172">Real (kWh)</text>
+      <text transform="translate(13 133) rotate(-90)" text-anchor="middle" font-size="12" fill="#586172">Estimado (kWh)</text>
+    </svg>
+    <ul class="legend">
+      <li><svg width="20" height="10" aria-hidden="true"><line x1="0" y1="5" x2="20" y2="5" stroke="#14181f" stroke-width="1.5"/></svg>Diagonal: estimación perfecta</li>
+      <li><svg width="20" height="10" aria-hidden="true"><rect x="0" y="1" width="20" height="8" fill="rgb(14 110 107 / .10)"/><line x1="0" y1="1" x2="20" y2="1" stroke="#0e6e6b" stroke-dasharray="3 2"/><line x1="0" y1="9" x2="20" y2="9" stroke="#0e6e6b" stroke-dasharray="3 2"/></svg>Franja: ±MAE (33.5&nbsp;kWh)</li>
+      <li><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="3.2" fill="#0e6e6b"/></svg>dentro de la franja</li>
+      <li><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="3.2" fill="#fff" stroke="#8a5a0c" stroke-width="1.4"/></svg>fuera de la franja</li>
+    </ul>
+    <p style="font-size:14px;margin:12px 0 0">La mitad de las estimaciones se equivoca entre −22.7&nbsp;kWh y +27.4&nbsp;kWh. 9 de cada 10 se equivocan por menos de ±62.7&nbsp;kWh.</p>
+  </div>
+</body>
+</html>

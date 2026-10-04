@@ -14,10 +14,11 @@ import {
 } from "@/engine/costos";
 import {
   byPriority,
-  MEMBER_IDS,
   MEMBERS,
+  ROSTER_BY_TASK,
   type MemberId,
 } from "@/engine/roster";
+import type { TrainTask } from "@/engine/tarea";
 
 /** Techo del Nivel 1 en segundos del equipo de referencia (F0-1, fijado por el usuario). */
 export const LEVEL1_CEILING_S = 5;
@@ -33,13 +34,16 @@ export const CV_LARGE_FROM_ROWS = 20_001;
 export const SMALL_SAMPLE_ROWS = 200;
 
 export type RouteProfile = {
+  /** S6: la tarea (roster y costos son por tarea). Obligatoria: un perfil sin
+   *  tarea no toma el roster binario por descarte (AU-S6-03). */
+  task: TrainTask;
   /** Filas del dataset con objetivo (train + test). */
   rows: number;
   nTrain: number;
   /** Columnas tras one-hot (estimadas). */
   width: number;
-  /** Proporción de la clase minoritaria en train (0..0,5). */
-  minorityShare: number;
+  /** Proporción de la clase minoritaria en train (0..0,5); null sin clases (numérica). */
+  minorityShare: number | null;
   /** Pliegues de la CV. */
   k: number;
 };
@@ -78,7 +82,8 @@ export type Routing = {
   unionEstimateS: number;
 };
 
-/** k de la CV: 5 (3 con muchas filas), acotado a la minoritaria de train. null ⇒ no alcanza. */
+/** k de la CV: 5 (3 con muchas filas), acotado a la minoritaria de train. null ⇒ no alcanza.
+ *  S6: en regresión no hay clases; el tope es el número de filas de train. */
 export function chooseCvK(
   rows: number,
   minorityTrainCount: number,
@@ -92,7 +97,11 @@ export function chooseCvK(
 
 function outReasonFor(id: MemberId, profile: RouteProfile): OutReason | null {
   if (id === "mlp" && profile.rows < MLP_MIN_ROWS) return "mlp-few-rows";
-  if (MEMBERS[id].balanced && profile.minorityShare >= BALANCED_MIN_MINORITY) {
+  if (
+    MEMBERS[id].balanced &&
+    profile.minorityShare !== null &&
+    profile.minorityShare >= BALANCED_MIN_MINORITY
+  ) {
     return "balanced-not-needed";
   }
   return null;
@@ -114,11 +123,12 @@ export function routeModels(
     width: profile.width,
     k: profile.k,
   };
+  const task = profile.task;
   const forcedSet = new Set(forced);
   const placements: Placement[] = [];
   let used = 0;
-  for (const id of MEMBER_IDS) {
-    const estimateS = estimateMemberSeconds(id, cost);
+  for (const id of ROSTER_BY_TASK[task]) {
+    const estimateS = estimateMemberSeconds(id, cost, task);
     const out = outReasonFor(id, profile);
     if (out) {
       placements.push(

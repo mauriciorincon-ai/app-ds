@@ -1,6 +1,6 @@
 // Genera los datasets de ejemplo empaquetados (sintéticos, anonimizados,
-// reproducibles) en public/datasets/. Dos limpios + uno con FUGA PLANTADA para
-// demostrar el chequeo de fuga. Ejecutar: node scripts/make-example-datasets.mjs
+// reproducibles) en public/datasets/. Clasificación (S1–S4) y regresión (S6),
+// cada familia con un dataset de FUGA PLANTADA para demostrar el chequeo de fuga. Ejecutar: node scripts/make-example-datasets.mjs
 //
 // Todo es sintético (ninguna persona real). El seed hace la generación
 // determinista: el mismo comando produce siempre los mismos CSV.
@@ -144,6 +144,66 @@ function messyCustomers(base = 190, dupes = 10, seed = 404) {
   return toCsv(["id_cliente", "pais", "edad", "ingreso", "canal", "contrato"], rows);
 }
 
+// 5) Consumo de energía — REGRESIÓN (S6), objetivo `consumo_kwh` (kWh al mes).
+// Señal con INTERACCIÓN: la calefacción eléctrica gasta en proporción a superficie ×
+// grados de frío, y el aislamiento la multiplica. Un modelo lineal sin términos
+// cruzados no la captura entera; los árboles y el boosting, sí. `ocupantes` (1..6,
+// enteros) es la columna AMBIGUA del ejemplo: elegida como objetivo, la app pregunta
+// «¿clases o cantidad?». La variante grande (5.000 filas) vive solo en el kit de prueba.
+function energyConsumption(n = 200, seed = 505) {
+  const rng = mulberry32(seed);
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const area = round(40 + rng() * 180);
+    const occupants = 1 + Math.floor(rng() * 6);
+    const year = round(1960 + rng() * 62);
+    const heating = pick(rng, ["electrica", "gas", "bomba_calor"]);
+    const insulation = pick(rng, ["bajo", "medio", "alto"]);
+    const temp = round(2 + rng() * 22, 1);
+    const cold = Math.max(0, 18 - temp);
+    const perDegree = heating === "electrica" ? 0.12 : heating === "bomba_calor" ? 0.04 : 0.01;
+    const insulationFactor = insulation === "bajo" ? 1.4 : insulation === "medio" ? 1 : 0.6;
+    const oldBuilding = year < 1990 ? 1.15 : 1;
+    const heatingKwh = area * cold * perDegree * insulationFactor * oldBuilding;
+    const appliances = 60 + 45 * occupants + 0.8 * area;
+    const noise = (rng() + rng() + rng() - 1.5) * 25;
+    const kwh = (appliances + heatingKwh) * (0.9 + rng() * 0.2) + noise;
+    rows.push([area, occupants, year, heating, insulation, temp, round(Math.max(kwh, 20), 1)]);
+  }
+  return toCsv(
+    ["superficie_m2", "ocupantes", "anio_construccion", "calefaccion", "aislamiento", "temp_media_c", "consumo_kwh"],
+    rows,
+  );
+}
+
+// 6) Precio de vivienda — REGRESIÓN CON FUGA PLANTADA (S6), objetivo `precio_usd`.
+// El precio es log-normal (sesgado a la derecha, como los precios reales).
+// `impuesto_transferencia_usd` se calcula SOBRE el precio de venta (3 %): existe
+// solo DESPUÉS de vender → proxy perfecto del objetivo. La heurística de fuga
+// continua debe marcarla nombrándola; sin ella, el ejemplo entrena.
+function housePriceLeak(n = 200, seed = 707) {
+  const rng = mulberry32(seed);
+  const barrioEffect = { centro: 0.35, norte: 0.2, sur: 0, periferia: -0.25 };
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const area = round(35 + rng() * 165);
+    const rooms = Math.min(6, Math.max(1, Math.floor(area / 35 + (rng() - 0.5) * 2) + 1));
+    const age = round(rng() * 60);
+    const barrio = pick(rng, Object.keys(barrioEffect));
+    const parking = pick(rng, ["si", "no"]);
+    const noise = (rng() + rng() + rng() - 1.5) * 0.3;
+    const logPrice =
+      11 + 0.009 * area + barrioEffect[barrio] - 0.004 * age + (parking === "si" ? 0.08 : 0) + noise;
+    const price = Math.round(Math.exp(logPrice) / 100) * 100;
+    const tax = Math.round(price * 0.03);
+    rows.push([area, rooms, age, barrio, parking, tax, price]);
+  }
+  return toCsv(
+    ["superficie_m2", "habitaciones", "antiguedad_anios", "barrio", "estacionamiento", "impuesto_transferencia_usd", "precio_usd"],
+    rows,
+  );
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   await mkdir(kitDir, { recursive: true });
@@ -152,6 +212,8 @@ async function main() {
     "rotacion-empleados.csv": employeeAttrition(),
     "credito-fuga-plantada.csv": loanDefaultLeak(),
     "clientes-sucio.csv": messyCustomers(),
+    "consumo-energia.csv": energyConsumption(),
+    "precio-fuga-plantada.csv": housePriceLeak(),
   };
   for (const [name, content] of Object.entries(files)) {
     await writeFile(resolve(outDir, name), content, "utf8");
@@ -159,6 +221,10 @@ async function main() {
     const rows = content.trimEnd().split("\n").length - 1;
     console.log(`[datasets] ${name} — ${rows} filas`);
   }
+  // Solo kit de prueba (S6): 5.000 filas para el Nivel 2 de la liga de regresión.
+  const medium = energyConsumption(5000, 606);
+  await writeFile(resolve(kitDir, "consumo-energia-mediano.csv"), medium, "utf8");
+  console.log(`[datasets] consumo-energia-mediano.csv — ${medium.trimEnd().split("\n").length - 1} filas (solo kit)`);
 }
 
 main().catch((error) => {

@@ -3,7 +3,12 @@
 import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
+import { memberNameKey } from "@/engine/roster";
+import { isTask } from "@/engine/tarea";
+import { inferUnit } from "@/lib/experiment";
 import {
+  isBinaryManifest,
+  manifestTask,
   MAX_MODEL_FILE_BYTES,
   validateModelFile,
   type ModelFile,
@@ -11,6 +16,7 @@ import {
   type VersionWarning,
 } from "@/lib/model-file";
 import { reportImportError } from "@/lib/observability";
+import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
 import { Button, Card, Icon } from "./ui";
 
 const EXAMPLES = [
@@ -20,6 +26,8 @@ const EXAMPLES = [
   // S4: dataset "real" sucio (nulos mixtos, basura, ID, constante, duplicados,
   // categoría rara) para demostrar el saneamiento transparente.
   { key: "clientes", file: "clientes-sucio.csv" },
+  // S6 (P9): estimar una cantidad — el consumo de una casa, en kWh.
+  { key: "consumo", file: "consumo-energia.csv" },
 ] as const;
 
 export function StartScreen({
@@ -98,7 +106,7 @@ export function StartScreen({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
           {t("start.examples.title")}
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {EXAMPLES.map(({ key, file }) => (
             <button
               key={key}
@@ -129,7 +137,7 @@ type ImportStatus =
   | { step: "idle" }
   | { step: "validating" }
   | { step: "summary"; file: ModelFile; warnings: VersionWarning[] }
-  | { step: "rejected"; error: ModelFileErrorKind };
+  | { step: "rejected"; error: ModelFileErrorKind; task?: string };
 
 function ImportModelSection({
   onImport,
@@ -153,7 +161,11 @@ function ImportModelSection({
     if (!validation.ok) {
       // Solo el kind del rechazo (metadata) — jamás el contenido del archivo.
       reportImportError(validation.error);
-      setStatus({ step: "rejected", error: validation.error });
+      setStatus({
+        step: "rejected",
+        error: validation.error,
+        task: validation.task,
+      });
       return;
     }
     setStatus({
@@ -213,7 +225,16 @@ function ImportModelSection({
               <span aria-hidden className="mr-1">
                 ✕
               </span>
-              {t(`start.import.errors.${status.error}`)}
+              {t(`start.import.errors.${status.error}`, {
+                // La tarea que declara el archivo: con su nombre si esta versión
+                // la conoce; si no (p. ej. una futura), tal como viene.
+                task:
+                  status.task === undefined
+                    ? ""
+                    : isTask(status.task)
+                      ? t(`task.name.${status.task}`)
+                      : status.task,
+              })}
             </p>
             <p className="text-ink-muted">{t("start.import.errors.hint")}</p>
             <Button variant="secondary" icon="retry" onClick={pickFile}>
@@ -266,7 +287,15 @@ function ImportSummary({
     locale === "es" ? "es-ES" : "en-US",
     { year: "numeric", month: "long", day: "numeric" },
   );
-  const fmt = (value: number) => value.toFixed(2);
+  const task = manifestTask(manifest);
+  // S6: el MAE se lee en las unidades del objetivo; las métricas de clase, de 0 a 1.
+  const fmt = (value: number) =>
+    task === "numerica"
+      ? withUnit(
+          formatQuantity(value, quantityDecimals([value])),
+          inferUnit(manifest.schema.target),
+        )
+      : value.toFixed(2);
 
   return (
     <div className="flex flex-col gap-2 text-sm">
@@ -285,10 +314,14 @@ function ImportSummary({
           })}
         </li>
         <li>
-          {t("start.import.summary.target", {
-            target: manifest.schema.target,
-            positive: manifest.schema.positive_class,
-          })}
+          {isBinaryManifest(manifest)
+            ? t("start.import.summary.target", {
+                target: manifest.schema.target,
+                positive: manifest.schema.positive_class,
+              })
+            : t("start.import.summary.targetQuantity", {
+                target: manifest.schema.target,
+              })}
         </li>
         <li className="font-mono tabular-nums">
           {t("start.import.summary.metric", {
@@ -302,7 +335,7 @@ function ImportSummary({
         {manifest.model_name && (
           <li>
             {t("start.import.summary.model", {
-              model: t(`results.candidates.model.${manifest.model_name}`),
+              model: t(memberNameKey(manifest.model_name, task)),
             })}
           </li>
         )}

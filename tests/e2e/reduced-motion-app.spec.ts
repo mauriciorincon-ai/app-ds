@@ -97,3 +97,35 @@ test("reduced-motion: configurar → liga → ficha, todo visible y sin transici
     ),
   ).toBe(0);
 });
+
+// S6: Resultados al estimar — el veredicto en unidades y el gráfico estimado
+// frente a real se VEN de verdad y la pantalla queda quieta.
+test("reduced-motion: estimar una cantidad, veredicto y gráfico visibles y quietos", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  await page.goto("/");
+  await page.getByRole("button", { name: /Consumo de energía/i }).click();
+  await page.selectOption("#target", "ocupantes");
+  const answer = page.getByRole("button", { name: /Una cantidad/ });
+  await expectReallyVisible(answer);
+  expect(await transitionOff(answer)).toBe(true);
+  await page.selectOption("#target", "consumo_kwh");
+  await page.getByRole("button", { name: /Entrenar modelos/i }).click();
+
+  await expect(
+    page.getByRole("heading", { name: /La liga: \d+ modelos/ }),
+  ).toBeVisible({ timeout: 150_000 });
+  await expectReallyVisible(page.getByRole("heading", { level: 1 }));
+  await expectReallyVisible(
+    page.getByRole("img", { name: /Gráfico de dispersión/ }),
+  );
+  await expectReallyVisible(page.getByText(/9 de cada 10 se equivocan/));
+  expect(
+    await page.evaluate(
+      () =>
+        document.getAnimations().filter((a) => a.playState === "running")
+          .length,
+    ),
+  ).toBe(0);
+});

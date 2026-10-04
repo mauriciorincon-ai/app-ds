@@ -1,0 +1,14 @@
+{
+  "task": "numerica",
+  "predictions": [
+    350.5211203945115,
+    174.37959630741946,
+    368.04157925561105
+  ],
+  "probabilities": null,
+  "novelty": {
+    "columns": [],
+    "affected_rows": 0,
+    "n_rows": 3
+  }
+}

@@ -24,7 +24,7 @@ describe("estimateMemberSeconds", () => {
     const cv5 = t0 + variable;
     const fitFull = t0 / 5 + (variable / 5) * (1 / 0.8) ** b;
     expect(
-      estimateMemberSeconds("forest", { nTrain, width, k: 5 }),
+      estimateMemberSeconds("forest", { nTrain, width, k: 5 }, "binaria"),
     ).toBeCloseTo(cv5 + fitFull, 10);
     // Medido en la F0 (Chromium, sintetico-5000): CV k=5 del bosque = 3,07 s.
     expect(cv5).toBeGreaterThan(3.07 * 0.8);
@@ -33,17 +33,37 @@ describe("estimateMemberSeconds", () => {
 
   it("crece con las filas y con el ancho; k=3 cuesta menos que k=5", () => {
     for (const id of MEMBER_IDS) {
-      const base = estimateMemberSeconds(id, { nTrain: 1500, width: 33, k: 5 });
+      const base = estimateMemberSeconds(
+        id,
+        { nTrain: 1500, width: 33, k: 5 },
+        "binaria",
+      );
       expect(
-        estimateMemberSeconds(id, { nTrain: 15000, width: 33, k: 5 }),
+        estimateMemberSeconds(
+          id,
+          { nTrain: 15000, width: 33, k: 5 },
+          "binaria",
+        ),
       ).toBeGreaterThan(base);
       expect(
-        estimateMemberSeconds(id, { nTrain: 1500, width: 112, k: 5 }),
+        estimateMemberSeconds(
+          id,
+          { nTrain: 1500, width: 112, k: 5 },
+          "binaria",
+        ),
       ).toBeGreaterThanOrEqual(base);
       expect(
-        estimateMemberSeconds(id, { nTrain: 15000, width: 33, k: 3 }),
+        estimateMemberSeconds(
+          id,
+          { nTrain: 15000, width: 33, k: 3 },
+          "binaria",
+        ),
       ).toBeLessThan(
-        estimateMemberSeconds(id, { nTrain: 15000, width: 33, k: 5 }),
+        estimateMemberSeconds(
+          id,
+          { nTrain: 15000, width: 33, k: 5 },
+          "binaria",
+        ),
       );
     }
   });
@@ -51,7 +71,7 @@ describe("estimateMemberSeconds", () => {
   it("entradas degeneradas no rompen la estimación (filas/ancho ≥ 1)", () => {
     expect(
       Number.isFinite(
-        estimateMemberSeconds("knn", { nTrain: 0, width: 0, k: 2 }),
+        estimateMemberSeconds("knn", { nTrain: 0, width: 0, k: 2 }, "binaria"),
       ),
     ).toBe(true);
   });

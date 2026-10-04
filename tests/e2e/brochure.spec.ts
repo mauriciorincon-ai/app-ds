@@ -98,7 +98,7 @@ test.describe("brochure vivo — /conoce", () => {
   }) => {
     await page.goto("/conoce");
     await expect(page.locator(".conteo-glosa")).toContainText(
-      "33 funcionalidades",
+      "35 funcionalidades",
     );
   });
 

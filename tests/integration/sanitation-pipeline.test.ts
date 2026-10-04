@@ -132,7 +132,7 @@ describe("la liga con boosting (integración Pyodide)", () => {
 
   it("el ganador es la regla de un error estándar sobre la CV; model = su test", () => {
     const result = balancedRun("auc");
-    const selection = selectOneSe(result.league, result.cv.k)!;
+    const selection = selectOneSe(result.league, result.cv.k, "higher")!;
     expect(result.winner).toBe(selection.winner);
     expect(result.model_name).toBe(result.winner);
     const winnerRow = result.league.find((row) => row.name === result.winner)!;

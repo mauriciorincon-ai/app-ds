@@ -23,8 +23,9 @@
   sitio): 1) grid-template-rows en la apertura de tarjeta · 2) stroke-dashoffset para calibrar
   los iconos · 3) filter:blur en la apertura del titular, con opacidad SIEMPRE 1 (LCP honesto).
 
-  CONTEO: 33 funcionalidades (10 + 7 + 5 + 9 en las cuatro tarjetas + 2 en "lo fino"), cuadrado
-  contra docs/MANUAL-DE-USO.md. La tabla de mapeo vive en sprints/ENTREGA-brochure-summary.md.
+  CONTEO: 35 funcionalidades (12 + 7 + 5 + 9 en las cuatro tarjetas + 2 en "lo fino"), cuadrado
+  contra docs/MANUAL-DE-USO.md. S6 suma dos en la tarjeta del veredicto (estimar una cantidad y
+  la pregunta «¿categorías o una cantidad?»); la tabla de mapeo de S6 va en su summary. La tabla de mapeo vive en sprints/ENTREGA-brochure-summary.md.
 
   NOTA data-tema (regla 8 del molde): el brochure vive FUERA del storage de la app, así que no
   persigue su selector de tema — solo el del sistema (prefers-color-scheme). Se declara y ya.
@@ -781,7 +782,7 @@
               </svg>
             </span>
             <span class="tarjeta-titulo">El veredicto honesto</span>
-            <span class="tarjeta-n">10</span>
+            <span class="tarjeta-n">12</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"/>
@@ -794,16 +795,18 @@
         <div class="detalle" id="d-veredicto">
           <div class="detalle-caja">
             <ul class="features">
-              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Eliges qué predecir.</b> <em>Una columna de dos opciones: sí/no, 0/1, aprobado/rechazado.</em></span></li>
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Eliges qué predecir.</b> <em>Una columna de dos opciones (sí/no, 0/1, aprobado/rechazado) o una cantidad (un precio, un consumo, un tiempo).</em></span></li>
               <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Entrena con el progreso a la vista.</b> <em>Paso a paso, sin pantallas en blanco.</em></span></li>
               <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>El veredicto, en grande.</b> <em>▲ supera al baseline · ＝ empata · ▼ NO supera. Con el número exacto de la diferencia.</em></span></li>
               <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Aviso de métricas casi perfectas.</b> <em>Un resultado redondo casi siempre esconde una trampa, no un gran modelo. Te lo dice.</em></span></li>
               <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Advertencia de fuga con la columna nombrada.</b> <em>«La columna X podría ser un proxy del objetivo». Con nombre y apellido.</em></span></li>
-              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Cinco métricas, todas sobre datos que el modelo no vio.</b> <em>Exactitud, precisión, sensibilidad, F1 y AUC.</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Las métricas, todas sobre datos que el modelo no vio.</b> <em>Al clasificar: exactitud, precisión, sensibilidad, F1 y AUC. Al estimar: MAE, RMSE, R² y MedAE, en las unidades de tu columna.</em></span></li>
               <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Matriz de confusión.</b> <em>En qué se equivoca, no solo cuánto.</em></span></li>
-              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Los baselines, a la vista.</b> <em>Clase mayoritaria y regresión logística: los rivales que hay que batir.</em></span></li>
+              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Los baselines, a la vista.</b> <em>Al clasificar, la clase mayoritaria y la regresión logística; al estimar, la mediana y la regresión lineal: los rivales que hay que batir.</em></span></li>
               <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Una liga de modelos, elegida sin mirar la prueba.</b> <em>Compiten todos los que tu navegador puede entrenar; gana el que elige la validación cruzada. Puedes elegir otro: queda registrado como «elegido por ti».</em></span></li>
-              <li style="--i:9"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Nuevo experimento cuando quieras.</b> <em>Un botón y vuelves a empezar.</em></span></li>
+              <li style="--i:9"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Estimar una cantidad, con el error en sus unidades.</b> <em>«En promedio se equivoca por ±33.5 kWh; una regresión lineal se equivoca por ±43.8 kWh». Con el gráfico estimado frente a real.</em></span></li>
+              <li style="--i:10"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>¿Categorías o una cantidad? Te lo pregunta.</b> <em>Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada.</em></span></li>
+              <li style="--i:11"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Nuevo experimento cuando quieras.</b> <em>Un botón y vuelves a empezar.</em></span></li>
             </ul>
           </div>
         </div>
@@ -836,11 +839,11 @@
           <div class="detalle-caja">
             <ul class="features">
               <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Sube tu propio CSV.</b> <em>Arrástralo o elígelo. Se queda en tu equipo.</em></span></li>
-              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>O prueba con tres ejemplos incluidos.</b> <em>Datos sintéticos, listos para que veas la app funcionando entera.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>O prueba con cinco ejemplos incluidos.</b> <em>Datos sintéticos, listos para que veas la app funcionando entera.</em></span></li>
               <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Vista previa con el perfil de cada columna.</b> <em>Tipo, valores vacíos y aviso si algo parece una fecha.</em></span></li>
               <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Límites dichos de frente.</b> <em>5 MB o 50 000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.</em></span></li>
               <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Saneamiento con el conteo exacto.</b> <em>Filas repetidas eliminadas, columnas identificadoras o constantes apartadas, celdas basura vaciadas. Y si venías limpio, un franco «nada que sanear».</em></span></li>
-              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Tres alertas antes de entrenar.</b> <em>Una columna que huele a fuga, una que parece un código de cliente, un objetivo desbalanceado. Con símbolo y texto, nunca solo color.</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Cinco alertas antes de entrenar.</b> <em>Una columna que huele a fuga, una que parece un código de cliente, un objetivo desbalanceado y, al estimar, un objetivo muy sesgado o con valores muy lejos del resto. Con símbolo y texto, nunca solo color.</em></span></li>
               <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Si tu CSV separa con punto y coma, se bloquea y se te dice.</b> <em>El caso típico de Excel en español. Adivinar el separador sería convertir tus números en categorías en silencio.</em></span></li>
             </ul>
           </div>
@@ -914,7 +917,7 @@
               <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Si falta una columna, se niega a puntuar.</b> <em>Y te dice exactamente cuáles faltan. Nunca rellena en silencio.</em></span></li>
               <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Aviso de novedad con el porcentaje.</b> <em>«El modelo está adivinando en el N % de tus filas» — valores que nunca vio al entrenar.</em></span></li>
               <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Distribución de las predicciones y vista previa.</b> <em>Antes de descargar nada.</em></span></li>
-              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>CSV puntuado sin pisar nada tuyo.</b> <em>Tu tabla completa más predicción y probabilidad. Si ya tenías una columna con ese nombre, la nueva sale con sufijo.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>CSV puntuado sin pisar nada tuyo.</b> <em>Tu tabla completa más la predicción y, si el modelo la da, su probabilidad; al estimar, la cantidad estimada con los decimales de tu columna. Si ya tenías una columna con ese nombre, la nueva sale con sufijo.</em></span></li>
               <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Exporta el modelo a un archivo.</b> <em>Lo que aprendió y su constancia — no tus filas. Aun así, trátalo como sensible.</em></span></li>
               <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Al importarlo, se valida antes de abrirlo.</b> <em>Un archivo ajeno, corrupto o manipulado se rechaza con la razón exacta.</em></span></li>
               <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Resumen honesto antes de usarlo.</b> <em>Con qué datos nació, qué métrica sacó, qué advertencias trae. Decides con la información delante.</em></span></li>
@@ -1048,8 +1051,8 @@
         </summary>
         <div class="fino-cuerpo">
           <ul>
-            <li>Predice <b>dos categorías</b> (sí/no, aprobado/rechazado). Ni tres, ni un número
-              continuo, todavía.</li>
+            <li>Predice <b>dos categorías</b> (sí/no, aprobado/rechazado) o <b>estima una
+              cantidad</b> (un precio, un consumo). Varias categorías, todavía no.</li>
             <li>El chequeo de fuga es una <b>ayuda honesta, no una garantía</b>: atrapa los casos
               evidentes, no todos.</li>
             <li>La importancia de variables es <b>global</b>, no caso por caso, y puede repartirse
@@ -1128,7 +1131,7 @@
         <div class="fino-cuerpo">
           <table>
             <tbody>
-              <tr><th>Baseline</th><td>Las reglas simples a batir: responder siempre lo más frecuente y una regresión logística. Si tu modelo no supera a la mejor, no sirve.</td></tr>
+              <tr><th>Baseline</th><td>Las reglas simples a batir: al clasificar, responder siempre lo más frecuente y una regresión logística; al estimar, adivinar siempre la mediana y una regresión lineal. Si tu modelo no supera a la mejor, no sirve.</td></tr>
               <tr><th>Veredicto</th><td>La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.</td></tr>
               <tr><th>Entrenamiento y prueba</th><td>Las dos partes de tu tabla: con la más grande aprende, con la otra se examina.</td></tr>
               <tr><th>Fuga de datos</th><td>Una columna que ya contiene la respuesta disfrazada. Infla las métricas y vuelve inútil el modelo en la vida real.</td></tr>
@@ -1139,7 +1142,7 @@
             </tbody>
           </table>
           <p style="margin-top:14px">
-            La lista completa, con las cinco métricas explicadas una a una, vive dentro de la app.
+            La lista completa, con cada métrica explicada en una línea, está en el manual de uso.
           </p>
         </div>
       </details>
@@ -1151,11 +1154,11 @@
 <footer>
   <div class="env">
     <p class="conteo">
-      <span class="conteo-cifra" data-contador="33" aria-hidden="true">33</span>
+      <span class="conteo-cifra" data-contador="35" aria-hidden="true">35</span>
       <span class="conteo-glosa">
-        <b><span class="oculto-visual">33 </span>funcionalidades</b> del primer ciclo, todas en
-        esta página; la liga honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin
-        mirar la prueba”.
+        <b><span class="oculto-visual">35 </span>funcionalidades</b>, todas en esta página; la liga
+        honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin mirar la prueba”, y
+        estimar una cantidad, del Sprint 006, suma dos.
       </span>
     </p>
 
@@ -1167,6 +1170,8 @@
           <tr><th scope="row">Etapa 2</th><td>El porqué: importancia de variables, texto sin IA, narración verificada y model card.</td></tr>
           <tr><th scope="row">Etapa 3</th><td>El modelo se usa: puntuar datos nuevos, exportar e importar sin re-entrenar.</td></tr>
           <tr><th scope="row">Etapa 4</th><td>Sobrevive datos reales: saneamiento con conteos, alertas antes de entrenar y un segundo modelo compitiendo.</td></tr>
+          <tr><th scope="row">Etapa 5</th><td>La liga honesta: todos los modelos que el navegador puede entrenar, elegidos con validación cruzada sin mirar la prueba.</td></tr>
+          <tr><th scope="row">Etapa 6</th><td>Estimar una cantidad: el veredicto en las unidades de la columna y el gráfico estimado frente a real.</td></tr>
         </tbody>
       </table>
       <p class="pie-nota">
@@ -1239,7 +1244,7 @@
     window.addEventListener("resize", () => { medir(); despertar(); }, { passive: true });
   }
 
-  // ── E08 · el contador. El texto accesible ya dice 33 desde el primer byte; esto solo
+  // ── E08 · el contador. El texto accesible ya dice 35 desde el primer byte; esto solo
   // dramatiza la cifra decorativa (aria-hidden), así que ningún e2e depende de él.
   const cifra = document.querySelector(".conteo-cifra");
   if (cifra && !menosMovimiento.matches) {

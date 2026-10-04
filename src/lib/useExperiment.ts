@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LeakageFinding } from "@/engine/leakage";
-import { computeEdaAlerts, type EdaAlert } from "@/engine/eda";
+import { computeEdaAlerts, idLikeAlerts, type EdaAlert } from "@/engine/eda";
 import { sanitizeTable, type SanitationReport } from "@/engine/sanitize";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import {
@@ -16,14 +16,25 @@ import {
   type RouteProfile,
   type Routing,
 } from "@/engine/encarrilador";
-import type { TaskDetection } from "@/engine/tarea";
-import type { MetricName } from "@/engine/verdict";
+import {
+  isTrainableTask,
+  isTrainTask,
+  resolveTask,
+  type AmbiguousChoice,
+  type Task,
+  type TaskDetection,
+  type TrainTask,
+} from "@/engine/tarea";
 import {
   applyMemberFit,
+  applyRegressionMemberFit,
+  assembleRegressionResult,
   assembleResult,
+  inferUnit,
   prepareRun,
   summarizeDataset,
   withoutLeague,
+  type PreparedRun,
 } from "@/lib/experiment";
 import { downloadTextFile } from "@/lib/files";
 import {
@@ -48,6 +59,7 @@ import {
   validateProgressDetail,
   validateScoreResult,
   validateTrainResult,
+  type TrainSent,
 } from "@/workers/contract";
 import type {
   DatasetSummary,
@@ -60,6 +72,7 @@ import type {
   RunnerResponse,
   ScorePayload,
   ScoreResult,
+  TargetUnit,
   WorkerErrorKind,
 } from "@/workers/protocol";
 
@@ -79,6 +92,7 @@ export type ModelSource = "trained" | "imported";
 
 export type ModelMeta = {
   source: ModelSource;
+  /** S6: por tarea (con clases en binaria; con el objetivo en train al estimar). */
   schema: ModelSchema;
   datasetName: string;
   /** Solo `imported`: manifiesto validado, para el resumen honesto. */
@@ -115,12 +129,18 @@ export type ExportState = "idle" | "exporting" | "error";
 export type TargetPlan = {
   target: string;
   task: TaskDetection;
-  /** Solo binaria y preparable: quién compite y en qué nivel. */
+  /** S6 (D2): la respuesta a «¿clases o cantidad?» (solo en una ambigua). */
+  choice: AmbiguousChoice | null;
+  /** La tarea con que se entrenaría: la detectada o, si era ambigua, la respondida. */
+  resolved: Task;
+  /** Solo al estimar: la unidad leída del nombre de la columna (P5). */
+  unit: TargetUnit | null;
+  /** Solo si la tarea se entrena y prepareRun pudo armarla: quién compite y en qué nivel. */
   routing: Routing | null;
   /** Forma del dataset para E2 (filas, ancho, minoritaria, k). */
   profile: RouteProfile | null;
   smallSample: boolean;
-  /** Binaria pero sin CV honesta posible u otro rechazo de prepareRun. */
+  /** Entrenable pero sin CV honesta posible u otro rechazo de prepareRun. */
   blocked: WorkerErrorKind | null;
 };
 
@@ -209,68 +229,137 @@ const CSV_ERROR: Record<string, WorkerErrorKind & ScoringErrorKind> = {
 
 // Qué esperaba cada mensaje en vuelo. Mapa por id (no un único pending): un
 // mensaje tardío de un comando viejo no puede pisar el estado del actual.
+type ReadyRun = Extract<PreparedRun, { ok: true }>;
+
+type TrainPending = {
+  kind: "train";
+  leakage: LeakageFinding[];
+  features: { numeric: string[]; categorical: string[]; target: string };
+  // S5: lo enviado, para que el lector del contrato lo coteje (S6: con la tarea).
+  sent: TrainSent & { task: TrainTask };
+  smallSample: boolean;
+  // S5: el reparto y los forzados de ESTA corrida (se fijan solo si termina).
+  level: 1 | 2;
+  routing: Routing;
+  forced: MemberId[];
+};
+
 type Pending =
-  | {
-      kind: "train";
-      leakage: LeakageFinding[];
-      schema: Pick<ModelSchema, "numeric" | "categorical" | "target">;
-      // S5: lo enviado, para que el lector del contrato lo coteje.
-      sent: { roster: MemberId[]; cv_k: number; primary_metric: MetricName };
-      smallSample: boolean;
-      // S5: el reparto y los forzados de ESTA corrida (se fijan solo si termina).
-      level: 1 | 2;
-      routing: Routing;
-      forced: MemberId[];
-    }
+  | TrainPending
   // S5 (R1): la instantánea del modelo del Nivel 1, antes de arrancar el Nivel 2.
-  | {
-      kind: "snapshot";
-      next: Extract<ReturnType<typeof prepareRun>, { ok: true }>;
-      forced: MemberId[];
-    }
+  | { kind: "snapshot"; next: ReadyRun; forced: MemberId[] }
   // S5 (R1): restaurar esa instantánea tras cancelar o fallar el Nivel 2.
   | { kind: "restore" }
-  | { kind: "score"; check: SchemaCheck; fileName: string; table: CsvTable }
+  | {
+      kind: "score";
+      task: TrainTask;
+      check: SchemaCheck;
+      fileName: string;
+      table: CsvTable;
+    }
   | { kind: "export-model"; datasetName: string; result: ExperimentResult }
   | { kind: "import-model" }
   | { kind: "fit-member"; member: MemberId };
 
-/** S5: E1 (tarea) y, si es binaria, E2 (quién compite) para el objetivo elegido. */
+/** Lo que queda en vuelo al mandar una liga: lo enviado y con qué se armó. */
+function trainPending(
+  prepared: ReadyRun,
+  level: 1 | 2,
+  forced: MemberId[],
+): TrainPending {
+  const { payload } = prepared;
+  return {
+    kind: "train",
+    leakage: prepared.leakage,
+    features: {
+      numeric: payload.numeric,
+      categorical: payload.categorical,
+      target: payload.target,
+    },
+    sent: {
+      task: payload.task,
+      roster: payload.roster,
+      cv_k: payload.cv_k,
+      primary_metric: payload.primary_metric,
+    },
+    smallSample: prepared.smallSample,
+    level,
+    routing: prepared.routing,
+    forced,
+  };
+}
+
+/** La tarea de un esquema de modelo (los archivos del S5 no la traen: binaria). */
+function schemaTask(schema: ModelSchema): TrainTask {
+  return schema.task ?? "binaria";
+}
+
+/**
+ * S6: el resultado de fit-member, validado por el lector del contrato y aplicado
+ * según la tarea del resultado vigente (el veredicto pasa a hablar del elegido).
+ */
+function applyFit(
+  current: ExperimentResult,
+  raw: unknown,
+  member: MemberId,
+): { ok: true; value: ExperimentResult } | { ok: false; field: string } {
+  if (current.task === "numerica") {
+    const checked = validateMemberFit(raw, {
+      member,
+      task: "numerica",
+      nTest: current.nTest,
+    });
+    return checked.ok
+      ? { ok: true, value: applyRegressionMemberFit(current, checked.value) }
+      : checked;
+  }
+  const checked = validateMemberFit(raw, { member });
+  return checked.ok
+    ? { ok: true, value: applyMemberFit(current, checked.value) }
+    : checked;
+}
+
+/**
+ * S5: E1 (tarea) y, si se entrena, E2 (quién compite) para el objetivo elegido.
+ * S6: una ambigua se planea con la respuesta del usuario (sin ella, pregunta).
+ */
 function planTarget(
   table: CsvTable,
   target: string,
   dataset: DatasetSummary,
+  choice: AmbiguousChoice | null,
 ): TargetPlan | null {
   const task = dataset.targetTasks[target];
   if (!task) return null;
-  if (task.task !== "binaria") {
-    return {
-      target,
-      task,
-      routing: null,
-      profile: null,
-      smallSample: false,
-      blocked: null,
-    };
-  }
-  const prepared = prepareRun(table, target, SEED);
+  const resolved = resolveTask(task, choice);
+  const plan: TargetPlan = {
+    target,
+    task,
+    choice: task.task === "ambigua" ? choice : null,
+    resolved,
+    unit: resolved === "numerica" ? inferUnit(target) : null,
+    routing: null,
+    profile: null,
+    smallSample: false,
+    blocked: null,
+  };
+  if (!isTrainableTask(resolved)) return plan;
+  const prepared = prepareRun(table, target, SEED, { ambiguousChoice: choice });
   return prepared.ok
     ? {
-        target,
-        task,
+        ...plan,
         routing: prepared.routing,
         profile: prepared.profile,
         smallSample: prepared.smallSample,
-        blocked: null,
       }
-    : {
-        target,
-        task,
-        routing: null,
-        profile: null,
-        smallSample: false,
-        blocked: prepared.error,
-      };
+    : { ...plan, blocked: prepared.error };
+}
+
+/** Las alertas EDA hablan de la tarea con que se entrenaría. Sin una tarea que se
+ *  entrene, solo las que no dependen de ella (ninguna se supone por descarte). */
+function edaFor(table: CsvTable, plan: TargetPlan | null, target: string) {
+  if (!plan || !isTrainTask(plan.resolved)) return idLikeAlerts(table, target);
+  return computeEdaAlerts(table, target, plan.resolved);
 }
 
 // Gestiona el runner de Pyodide y la máquina de estados del experimento. El
@@ -290,6 +379,8 @@ export function useExperiment() {
   const datasetNameRef = useRef<string | null>(null);
   // S5: el último payload de la liga (para fit-member y el Nivel 2).
   const payloadRef = useRef<PipelinePayload | null>(null);
+  // S6 (D2): la respuesta a «¿clases o cantidad?» del objetivo elegido.
+  const choiceRef = useRef<AmbiguousChoice | null>(null);
   // S5 (R1): lo que vuelve si el Nivel 2 se cancela o falla.
   const level1Ref = useRef<{
     result: ExperimentResult;
@@ -506,18 +597,30 @@ export function useExperiment() {
           }
           return;
         }
-        const assembled = assembleResult(
-          checked.value,
-          pending.leakage,
-          pending.smallSample,
-        );
+        const py = checked.value;
+        const assembled: ExperimentResult =
+          py.task === "numerica"
+            ? assembleRegressionResult(
+                py,
+                pending.leakage,
+                pending.features.target,
+                pending.smallSample,
+              )
+            : assembleResult(py, pending.leakage, pending.smallSample);
         const meta: ModelMeta = {
           source: "trained",
-          schema: {
-            ...pending.schema,
-            classes: checked.value.classes,
-            positive_class: checked.value.positive_class,
-          },
+          schema:
+            py.task === "numerica"
+              ? {
+                  ...pending.features,
+                  task: "numerica",
+                  target_stats: py.target_stats,
+                }
+              : {
+                  ...pending.features,
+                  classes: py.classes,
+                  positive_class: py.positive_class,
+                },
           datasetName: datasetNameRef.current ?? "dataset",
           manifest: null,
         };
@@ -528,6 +631,7 @@ export function useExperiment() {
         forcedRef.current = pending.forced;
         level1Ref.current = null;
         recordLeagueRun({
+          task: pending.sent.task,
           ...tableSize(),
           competitors: assembled.league.length,
           level: pending.level,
@@ -562,24 +666,7 @@ export function useExperiment() {
         l1.snapshot = checked.value;
         const { next, forced } = pending;
         const trainId = nextId.current++;
-        pendingRef.current.set(trainId, {
-          kind: "train",
-          leakage: next.leakage,
-          schema: {
-            numeric: next.payload.numeric,
-            categorical: next.payload.categorical,
-            target: next.payload.target,
-          },
-          sent: {
-            roster: next.payload.roster,
-            cv_k: next.payload.cv_k,
-            primary_metric: next.payload.primary_metric,
-          },
-          smallSample: next.smallSample,
-          level: 2,
-          routing: next.routing,
-          forced,
-        });
+        pendingRef.current.set(trainId, trainPending(next, 2, forced));
         payloadRef.current = next.payload;
         workerRef.current?.postMessage({
           id: trainId,
@@ -592,7 +679,11 @@ export function useExperiment() {
       ) {
         setState((s) => ({ ...s, modelReady: true }));
       } else if (message.command === "score" && pending.kind === "score") {
-        const checked = validateScoreResult(message.result);
+        // S6: el lector exige la forma de la tarea del modelo activo.
+        const checked =
+          pending.task === "numerica"
+            ? validateScoreResult(message.result, { task: "numerica" })
+            : validateScoreResult(message.result);
         if (!checked.ok) {
           console.error("[experiment] contract", checked.field);
           reportScoringError(`contract:${checked.field}`);
@@ -633,19 +724,16 @@ export function useExperiment() {
         message.command === "fit-member" &&
         pending.kind === "fit-member"
       ) {
-        const checked = validateMemberFit(message.result, {
-          member: pending.member,
-        });
         const current = resultRef.current;
-        if (!checked.ok || !current) {
-          console.error(
-            "[experiment] contract",
-            checked.ok ? "result" : checked.field,
-          );
-          failTrain("contract", checked.ok ? "result" : checked.field);
+        const checked = current
+          ? applyFit(current, message.result, pending.member)
+          : ({ ok: false, field: "result" } as const);
+        if (!checked.ok) {
+          console.error("[experiment] contract", checked.field);
+          failTrain("contract", checked.field);
           return;
         }
-        const chosen = applyMemberFit(current, checked.value);
+        const chosen = checked.value;
         resultRef.current = chosen;
         setState((s) => ({
           ...s,
@@ -796,22 +884,46 @@ export function useExperiment() {
   // Puras y baratas sobre la tabla saneada; se recomputan al cambiar el objetivo.
   const selectTarget = useCallback((targetColumn: string) => {
     const table = tableRef.current;
-    setState((s) => ({
-      ...s,
-      edaAlerts:
-        table && targetColumn ? computeEdaAlerts(table, targetColumn) : null,
-      plan:
+    // Un objetivo nuevo vuelve a preguntar (la respuesta era de la columna anterior).
+    choiceRef.current = null;
+    setState((s) => {
+      const plan =
         table && targetColumn && s.dataset
-          ? planTarget(table, targetColumn, s.dataset)
-          : null,
-    }));
+          ? planTarget(table, targetColumn, s.dataset, null)
+          : null;
+      return {
+        ...s,
+        plan,
+        edaAlerts:
+          table && targetColumn ? edaFor(table, plan, targetColumn) : null,
+      };
+    });
+  }, []);
+
+  /**
+   * S6 (D2): la respuesta a «¿clases o cantidad?» de una columna ambigua. Con
+   * «cantidad» se planea la regresión; con «clases», la multiclase (que esta
+   * versión todavía no entrena, y se dice de frente). null vuelve a preguntar.
+   */
+  const answerTask = useCallback((choice: AmbiguousChoice | null) => {
+    const table = tableRef.current;
+    setState((s) => {
+      if (!table || !s.plan || !s.dataset || s.plan.task.task !== "ambigua") {
+        return s;
+      }
+      choiceRef.current = choice;
+      const plan = planTarget(table, s.plan.target, s.dataset, choice);
+      return { ...s, plan, edaAlerts: edaFor(table, plan, s.plan.target) };
+    });
   }, []);
 
   const run = useCallback((targetColumn: string) => {
     const table = tableRef.current;
     if (!table) return;
 
-    const prepared = prepareRun(table, targetColumn, SEED);
+    const prepared = prepareRun(table, targetColumn, SEED, {
+      ambiguousChoice: choiceRef.current,
+    });
     if (!prepared.ok) {
       setState((s) => ({
         ...s,
@@ -822,24 +934,7 @@ export function useExperiment() {
     }
 
     const id = nextId.current++;
-    pendingRef.current.set(id, {
-      kind: "train",
-      leakage: prepared.leakage,
-      schema: {
-        numeric: prepared.payload.numeric,
-        categorical: prepared.payload.categorical,
-        target: targetColumn,
-      },
-      sent: {
-        roster: prepared.payload.roster,
-        cv_k: prepared.payload.cv_k,
-        primary_metric: prepared.payload.primary_metric,
-      },
-      smallSample: prepared.smallSample,
-      level: 1,
-      routing: prepared.routing,
-      forced: [],
-    });
+    pendingRef.current.set(id, trainPending(prepared, 1, []));
     modelRef.current = null;
     resultRef.current = null;
     payloadRef.current = prepared.payload;
@@ -914,8 +1009,17 @@ export function useExperiment() {
     const forced = byPriority([
       ...new Set([...forcedRef.current, ...extraForced]),
     ]);
-    const next = prepareRun(table, payload.target, SEED, { level: 2, forced });
-    if (!next.ok) return;
+    const next = prepareRun(table, payload.target, SEED, {
+      level: 2,
+      forced,
+      ambiguousChoice: choiceRef.current,
+    });
+    // Con los mismos datos esto no falla; si algún día falla, se dice: el botón
+    // no queda mudo (AU-S6-16). Sigue vigente el resultado del Nivel 1.
+    if (!next.ok) {
+      setState((s) => ({ ...s, level2: { status: "failed" } }));
+      return;
+    }
     const plan = planLevel2(
       next.profile,
       result.league.map((row) => row.name),
@@ -980,6 +1084,7 @@ export function useExperiment() {
     }
     const table = tableRef.current;
     recordLeagueRun({
+      task: level1Ref.current.result.task ?? "binaria",
       rows: table?.rows.length,
       cols: table?.headers.length,
       competitors,
@@ -1037,6 +1142,7 @@ export function useExperiment() {
     const id = nextId.current++;
     pendingRef.current.set(id, {
       kind: "score",
+      task: schemaTask(meta.schema),
       check,
       fileName,
       table: parsed.table,
@@ -1060,6 +1166,7 @@ export function useExperiment() {
 
   /** Activa un modelo importado (el archivo YA pasó validateModelFile). */
   const activateImportedModel = useCallback((file: ModelFile) => {
+    // validateModelFile solo deja pasar tareas que la UI sabe usar (S6).
     const meta: ModelMeta = {
       source: "imported",
       schema: file.manifest.schema,
@@ -1097,6 +1204,7 @@ export function useExperiment() {
     if (pendingRef.current.size > 0) respawnRef.current?.();
     tableRef.current = null;
     payloadRef.current = null;
+    choiceRef.current = null;
     modelRef.current = null;
     resultRef.current = null;
     datasetNameRef.current = null;
@@ -1111,6 +1219,7 @@ export function useExperiment() {
     state,
     loadCsv,
     selectTarget,
+    answerTask,
     run,
     reset,
     goToScoring,

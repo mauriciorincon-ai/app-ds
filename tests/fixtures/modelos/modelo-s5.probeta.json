@@ -1,0 +1,132 @@
+{
+  "format_version": 1,
+  "manifest": {
+    "app": {
+      "name": "probeta-ds",
+      "version": "0.1.0"
+    },
+    "created_at": "2026-10-03T12:00:00.000Z",
+    "dataset": {
+      "name": "marketing-campania.csv",
+      "n_train": 150,
+      "n_test": 50
+    },
+    "schema": {
+      "numeric": [
+        "edad",
+        "ingreso_mensual",
+        "visitas_web",
+        "correos_abiertos"
+      ],
+      "categorical": [
+        "region",
+        "dispositivo"
+      ],
+      "target": "convirtio",
+      "classes": [
+        "0",
+        "1"
+      ],
+      "positive_class": "0"
+    },
+    "training_profile": {
+      "numeric": {
+        "edad": {
+          "min": 18,
+          "max": 68
+        },
+        "ingreso_mensual": {
+          "min": 1667,
+          "max": 7368
+        },
+        "visitas_web": {
+          "min": 0,
+          "max": 40
+        },
+        "correos_abiertos": {
+          "min": 0,
+          "max": 20
+        }
+      },
+      "categorical": {
+        "region": [
+          "este",
+          "norte",
+          "oeste",
+          "sur"
+        ],
+        "dispositivo": [
+          "escritorio",
+          "movil"
+        ]
+      }
+    },
+    "metrics": {
+      "model": {
+        "accuracy": 0.6,
+        "precision": 0.5238095238095238,
+        "recall": 0.5238095238095238,
+        "f1": 0.5238095238095238,
+        "auc": 0.6486042692939245
+      },
+      "baselines": {
+        "majority": {
+          "accuracy": 0.58,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "auc": 0.5
+        },
+        "logistic": {
+          "accuracy": 0.6,
+          "precision": 0.5238095238095238,
+          "recall": 0.5238095238095238,
+          "f1": 0.5238095238095238,
+          "auc": 0.6486042692939245
+        }
+      }
+    },
+    "positive_rate": 0.425,
+    "verdict": {
+      "level": "ties",
+      "primaryMetric": "f1",
+      "modelScore": 0.5238095238095238,
+      "baselineScore": 0.5238095238095238,
+      "delta": 0
+    },
+    "leakage": [],
+    "versions": {
+      "pyodide": "314.0.2",
+      "sklearn": "1.8.0",
+      "python": "3.14.2",
+      "xgboost": "2.1.4",
+      "lightgbm": "4.6.0"
+    },
+    "payload_sha256": "6fb9e85fb21ccabe55780bcf847f9652ab4214f92e40db06a1b0a7372bba66ae",
+    "payload_encoding": "pickle+zlib+base64",
+    "model_name": "logistic",
+    "league": [
+      {
+        "name": "logistic",
+        "status": "ok",
+        "cv_mean": 0.5866305418719212,
+        "cv_std": 0.04141351363539196,
+        "test": {
+          "accuracy": 0.6,
+          "precision": 0.5238095238095238,
+          "recall": 0.5238095238095238,
+          "f1": 0.5238095238095238,
+          "auc": 0.6486042692939245
+        }
+      }
+    ],
+    "selection": {
+      "by": "cv",
+      "cv_winner": "logistic",
+      "k": 5,
+      "metric": "f1",
+      "rule": "one-se"
+    }
+  },
+  "payload": "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"
+}

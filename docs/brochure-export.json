@@ -12,14 +12,14 @@
     "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
   },
   "schema_version": "1.0.0",
-  "actualizado": "2026-08-20",
+  "actualizado": "2026-10-04",
   "app": {
     "slug": "ds",
     "nombre": "Probeta DS",
-    "ciclo": "H1",
+    "ciclo": "H2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 4,
+    "sprints_cerrados": 6,
     "version_repo": "0.1.0"
   },
   "promesa": {
@@ -29,7 +29,7 @@
     "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad."
   },
   "funcionalidades": {
-    "total": 33,
+    "total": 35,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
     "descartadas": [],
     "grupos": [
@@ -42,7 +42,7 @@
           {
             "id": "V1",
             "nombre": "Eliges qué predecir",
-            "que_hace": "Seleccionas la columna objetivo, que debe tener exactamente dos categorías (sí/no, 0/1, aprobado/rechazado).",
+            "que_hace": "Seleccionas la columna objetivo: dos categorías (sí/no, 0/1, aprobado/rechazado) o, desde el Sprint 006, una cantidad (un precio, un consumo, un tiempo).",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -71,8 +71,8 @@
           },
           {
             "id": "V6",
-            "nombre": "Cinco métricas, todas sobre datos no vistos",
-            "que_hace": "Exactitud, precisión, sensibilidad, F1 y AUC, calculadas siempre sobre el conjunto de prueba.",
+            "nombre": "Las métricas, todas sobre datos no vistos",
+            "que_hace": "Al clasificar: exactitud, precisión, sensibilidad, F1 y AUC. Al estimar: MAE, RMSE, R² y MedAE, en las unidades del objetivo. Calculadas siempre sobre el conjunto de prueba.",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -84,7 +84,7 @@
           {
             "id": "V8",
             "nombre": "Los baselines, a la vista",
-            "que_hace": "Clase mayoritaria y regresión logística: los rivales que hay que batir, con sus cifras.",
+            "que_hace": "Al clasificar, la clase mayoritaria y la regresión logística; al estimar, la mediana y la regresión lineal: los rivales que hay que batir, con sus cifras.",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -92,6 +92,18 @@
             "nombre": "Una liga de modelos, elegida sin mirar la prueba",
             "que_hace": "Compiten todos los modelos que el navegador puede entrenar, con validación cruzada dentro del entrenamiento; la prueba se abre una sola vez. El usuario puede elegir otro, etiquetado «elegido por ti».",
             "seccion_manual": "La liga honesta"
+          },
+          {
+            "id": "V11",
+            "nombre": "Estimar una cantidad, con el error en sus unidades",
+            "que_hace": "Una liga de 11 modelos que estiman un número; el veredicto dice cuánto se equivoca en promedio en las unidades de la columna, contra adivinar la mediana o una regresión lineal, con el gráfico estimado frente a real.",
+            "seccion_manual": "Estimar una cantidad"
+          },
+          {
+            "id": "V12",
+            "nombre": "¿Categorías o una cantidad? Te lo pregunta",
+            "que_hace": "Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada, y deja cambiar la respuesta.",
+            "seccion_manual": "Estimar una cantidad"
           },
           {
             "id": "V10",
@@ -115,7 +127,7 @@
           },
           {
             "id": "D2",
-            "nombre": "Tres ejemplos incluidos",
+            "nombre": "Cinco ejemplos incluidos",
             "que_hace": "Datos sintéticos empaquetados para recorrer la app entera sin traer nada propio.",
             "seccion_manual": "El veredicto honesto"
           },
@@ -139,8 +151,8 @@
           },
           {
             "id": "D6",
-            "nombre": "Tres alertas antes de entrenar",
-            "que_hace": "Columna que huele a fuga, columna que parece un identificador y objetivo desbalanceado. Con símbolo y texto, nunca solo color.",
+            "nombre": "Cinco alertas antes de entrenar",
+            "que_hace": "Columna que huele a fuga, columna que parece un identificador, objetivo desbalanceado y, al estimar, objetivo muy sesgado u objetivo con valores muy lejos del resto. Con símbolo y texto, nunca solo color.",
             "seccion_manual": "Sobrevive datos reales"
           },
           {
@@ -222,7 +234,7 @@
           {
             "id": "U5",
             "nombre": "CSV puntuado sin pisar columnas",
-            "que_hace": "La tabla completa más predicción y probabilidad; si ya existía una columna con ese nombre, la nueva sale con sufijo.",
+            "que_hace": "La tabla completa más la predicción y, si el modelo la da, su probabilidad; al estimar, la cantidad estimada (<objetivo>_estimado). Si ya existía una columna con ese nombre, la nueva sale con sufijo.",
             "seccion_manual": "El modelo se usa"
           },
           {
@@ -266,7 +278,7 @@
           {
             "id": "T2",
             "nombre": "Diccionario de términos",
-            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y las cinco métricas.",
+            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y cada métrica, las de clasificar y las de estimar.",
             "seccion_manual": "Diccionario de términos"
           }
         ]
@@ -276,11 +288,11 @@
   "metricas": [
     {
       "clave": "funcionalidades",
-      "etiqueta": "Funcionalidades del H1",
-      "valor": 33,
+      "etiqueta": "Funcionalidades",
+      "valor": 35,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad se descartó en H1."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. El Sprint 006 suma dos (estimar una cantidad y la pregunta de la columna ambigua). Ninguna funcionalidad se descartó."
     },
     {
       "clave": "pantallas",
@@ -293,26 +305,26 @@
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 267,
+      "valor": 589,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-08-20: `pnpm test` 239 pruebas en 29 archivos + `pnpm test:integration` 28 pruebas en 5 archivos (estas últimas ejecutan Pyodide real)."
+      "detalle": "Salida del 2026-10-04: `pnpm test` 523 pruebas en 47 archivos + `pnpm test:integration` 66 pruebas en 7 archivos (estas últimas ejecutan Pyodide real)."
     },
     {
       "clave": "pruebas_e2e",
       "etiqueta": "Pruebas end-to-end",
-      "valor": 24,
+      "valor": 44,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida de `pnpm test:e2e` el 2026-08-20: 7 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe incluido. Cero flaky."
+      "detalle": "Salida de `pnpm test:e2e` el 2026-10-04, sobre el build de producción: 14 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe incluido. Cero flaky."
     },
     {
       "clave": "cobertura_lineas",
       "etiqueta": "Cobertura de líneas",
-      "valor": 90.69,
+      "valor": 94.54,
       "unidad": "%",
       "fuente": "medido",
-      "detalle": "v8 sobre engine, lib y components; 984 de 1085 líneas. Los motores puros de engine/ llevan umbral propio más alto."
+      "detalle": "v8 sobre engine, lib, components y workers; 2099 de 2220 líneas (salida de `pnpm test` del 2026-10-04). Los motores puros de engine/ llevan umbral propio más alto."
     },
     {
       "clave": "dependencias_runtime",
@@ -320,7 +332,7 @@
       "valor": 8,
       "unidad": "paquetes",
       "fuente": "medido",
-      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador."
+      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador. Lo recuenta tests/unit/brochure-export.test.ts contra package.json."
     },
     {
       "clave": "filas_del_usuario_en_la_red",
@@ -328,7 +340,7 @@
       "valor": 0,
       "unidad": "filas",
       "fuente": "medido",
-      "detalle": "Cuatro pruebas e2e inspeccionan cada petición de red durante el recorrido completo y fallan si alguna contiene valores del dataset. La única salida posible es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real."
+      "detalle": "Cinco pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard y, desde el S6, regresion-score) inspeccionan la red durante su recorrido y fallan si alguna petición contiene valores del dataset. La única salida posible es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real."
     },
     {
       "clave": "gpu_requerida",
@@ -349,18 +361,18 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 61572,
+      "valor": 63768,
       "unidad": "bytes",
       "fuente": "medido",
-      "detalle": "`wc -c docs/BROCHURE.html`. Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
+      "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
     },
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 8,
+      "valor": 14,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/."
+      "detalle": "Archivos de decisions/ (001–014). Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [

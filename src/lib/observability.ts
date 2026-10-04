@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import type { TrainTask } from "@/engine/tarea";
 
 // Reporte de errores del experimento a Sentry — SOLO metadatos. No se envía el
 // mensaje crudo del runtime (un traceback de Python/pandas podría filtrar nombres
@@ -58,6 +59,8 @@ export function reportImportError(kind: string): void {
 // valores ni nombres de columnas del usuario (regla dura 2). Viaja adjunto al
 // próximo error que se reporte, si lo hay; por sí solo no genera un evento.
 export type LeagueRunMeta = {
+  /** S6: la tarea (un nombre de la app, nunca un valor ni un nombre de columna). */
+  task: TrainTask;
   rows?: number;
   cols?: number;
   competitors: number;
@@ -72,6 +75,7 @@ export function recordLeagueRun(meta: LeagueRunMeta): void {
     level: "info",
     message: meta.cancelled ? "league-cancelled" : "league-run",
     data: {
+      task: meta.task,
       rows: meta.rows ?? null,
       cols: meta.cols ?? null,
       competitors: meta.competitors,

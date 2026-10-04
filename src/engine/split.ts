@@ -89,3 +89,36 @@ export function stratifiedSplit(
   testIdx.sort((a, b) => a - b);
   return { trainIdx, testIdx };
 }
+
+/** S6 (P4): bandas por cuantiles del objetivo con que se estratifica la regresión. */
+export const TARGET_BANDS = 5;
+
+/**
+ * Split de REGRESIÓN (S6, P4): un objetivo continuo no tiene clases (cada valor
+ * sería un grupo de uno y la prueba quedaría casi vacía), así que se estratifica
+ * por BANDA: el rango del objetivo se corta en `bands` cuantiles (por rango, con
+ * desempate por índice ⇒ determinista) y cada banda aporta su parte a la prueba.
+ * Así 200 filas tienen prueba en todo el recorrido del objetivo. Mismas garantías
+ * que `stratifiedSplit`: índices, cero solapamiento, determinista por semilla.
+ */
+export function quantileSplit(
+  values: readonly number[],
+  testSize: number,
+  seed: number,
+  bands: number = TARGET_BANDS,
+): SplitResult {
+  if (values.length === 0) {
+    throw new Error("quantileSplit: values no puede estar vacío");
+  }
+  const order = values
+    .map((value, index) => [value, index] as const)
+    .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const band = new Array<number>(values.length);
+  order.forEach(([, index], rank) => {
+    band[index] = Math.min(
+      bands - 1,
+      Math.floor((rank * bands) / values.length),
+    );
+  });
+  return stratifiedSplit(band, testSize, seed);
+}

@@ -2,9 +2,13 @@
 
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
-import { BASELINE_IDS, type MemberId } from "@/engine/roster";
+import {
+  BASELINE_IDS,
+  BASELINE_IDS_BY_TASK,
+  type MemberId,
+} from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
-import type { MetricName } from "@/engine/verdict";
+import { pickBestBaseline, type MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { useNarration } from "@/lib/useNarration";
 import type {
@@ -13,13 +17,24 @@ import type {
   Level2State,
   RunMeta,
 } from "@/lib/useExperiment";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult, ExperimentResult } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import { LeagueTable } from "./LeagueTable";
 import { Level2Card } from "./Level2Card";
 import { ModelCardView } from "./ModelCardView";
+import {
+  RegressionDetail,
+  RegressionMetricsSection,
+  RegressionVerdict,
+} from "./RegressionResults";
 import { WhySection } from "./WhySection";
 import { Button, Card, MetricTile } from "./ui";
+import {
+  LEVEL_MARK,
+  suspiciousBanner,
+  VerdictCard,
+  type Banner,
+} from "./VerdictCard";
 
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
@@ -28,21 +43,6 @@ const METRIC_KEYS: MetricName[] = [
   "f1",
   "auc",
 ];
-
-type BannerTone = "positive" | "negative" | "caution" | "ink";
-
-const TONE_CLASS: Record<BannerTone, string> = {
-  positive: "text-positive",
-  negative: "text-negative",
-  caution: "text-caution",
-  ink: "text-ink",
-};
-
-const LEVEL_MARK: Record<string, { tone: BannerTone; mark: string }> = {
-  beats: { tone: "positive", mark: "▲" },
-  ties: { tone: "ink", mark: "＝" },
-  loses: { tone: "negative", mark: "▼" },
-};
 
 export function ResultsScreen({
   result,
@@ -87,53 +87,19 @@ export function ResultsScreen({
   onRunLevel2?: (extraForced: MemberId[]) => void;
 }) {
   const t = useT();
-  const { verdict, model, leakage, confusionMatrix } = result;
+  const { leakage } = result;
   // Narración a demanda (gate ⭐ S4, bloque C): la plantilla existe siempre;
-  // la IA solo se pide cuando el usuario pulsa el botón de WhySection.
-  const { template, ai, requestNarration } = useNarration({
+  // la IA solo se pide cuando el usuario pulsa el botón de WhySection. S6 (P7):
+  // al estimar una cantidad no hay IA (el hook no llama al route).
+  const { template, ai, aiAvailable, requestNarration } = useNarration({
     result,
     target: runMeta.target,
     cols,
     edaAlerts,
   });
   const hasLeak = leakage.length > 0;
-  const fmt = (value: number) => value.toFixed(2);
-  const metricLabel = (metric: MetricName) => t(`results.metrics.${metric}`);
-
-  // Gate ⭐ S4 (bloque B): el veredicto nombra al modelo ganador — "el modelo"
-  // a secas dejaba la duda de CUÁL superó al baseline.
-  const winnerName = t(`results.candidates.short.${result.modelName}`);
-
-  // S5 (R2): la logística es baseline Y miembro — si gana la liga y EMPATA, empata
-  // consigo misma y se dice así. Si PIERDE (la clase mayoritaria rinde mejor), el
-  // veredicto franco «NO supera» no se reemplaza (regla dura 3).
-  const logisticWon =
-    (BASELINE_IDS as readonly string[]).includes(result.modelName) &&
-    result.selection.by === "cv" &&
-    verdict.level === "ties";
-  const banner = hasLeak
-    ? {
-        tone: "caution" as BannerTone,
-        mark: "⚠",
-        headline: t("results.verdict.suspicious"),
-        detail: t("results.verdict.suspiciousDetail"),
-      }
-    : logisticWon
-      ? {
-          ...LEVEL_MARK.ties,
-          headline: t("results.verdict.logisticTie"),
-          detail: t("results.verdict.logisticTieDetail"),
-        }
-      : {
-          ...LEVEL_MARK[verdict.level],
-          headline: t(`results.verdict.${verdict.level}`, { name: winnerName }),
-          detail: t(`results.verdict.${verdict.level}Detail`, {
-            delta: `+${fmt(verdict.delta)}`,
-            metric: metricLabel(verdict.primaryMetric),
-            model: fmt(verdict.modelScore),
-            baseline: fmt(verdict.baselineScore),
-          }),
-        };
+  const regression = result.task === "numerica" ? result : null;
+  const binary = result.task === "numerica" ? null : result;
 
   return (
     <div className="flex flex-col gap-6">
@@ -152,25 +118,15 @@ export function ResultsScreen({
       </header>
 
       {/* Pieza jerárquica: el veredicto. */}
-      <Card className="p-5">
-        <div className="flex items-start gap-3">
-          <span className={`text-2xl ${TONE_CLASS[banner.tone]}`} aria-hidden>
-            {banner.mark}
-          </span>
-          <div>
-            <h1 className={`text-xl font-semibold ${TONE_CLASS[banner.tone]}`}>
-              {banner.headline}
-            </h1>
-            <p className="mt-1 text-sm text-ink-muted">{banner.detail}</p>
-            {/* S5 (U1): el veredicto habla del elegido, etiquetado. */}
-            {result.selection.by === "user" && (
-              <p className="mt-2 text-sm font-medium">
-                {t("results.verdict.chosenNote")}
-              </p>
-            )}
-          </div>
-        </div>
-      </Card>
+      {regression ? (
+        <RegressionVerdict
+          result={regression}
+          target={runMeta.target}
+          hasLeak={hasLeak}
+        />
+      ) : (
+        binary && <BinaryVerdict result={binary} hasLeak={hasLeak} />
+      )}
 
       {hasLeak && (
         <div className="rounded-md border border-caution/40 bg-caution/10 p-4">
@@ -193,22 +149,11 @@ export function ResultsScreen({
         </div>
       )}
 
-      <section className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-          {t("results.primaryMetric", {
-            metric: metricLabel(verdict.primaryMetric),
-          })}
-        </p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {METRIC_KEYS.map((metric) => (
-            <MetricTile
-              key={metric}
-              label={metricLabel(metric)}
-              value={fmt(model[metric])}
-            />
-          ))}
-        </div>
-      </section>
+      {regression ? (
+        <RegressionMetricsSection result={regression} />
+      ) : (
+        binary && <BinaryMetrics result={binary} />
+      )}
 
       {/* S5: la liga — filas = modelos, CV para elegir, prueba para creer. */}
       <LeagueTable
@@ -228,86 +173,22 @@ export function ResultsScreen({
         />
       )}
 
-      <section className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
-        <Card className="w-fit p-4">
-          <table className="border-collapse font-mono text-sm tabular-nums">
-            <caption className="mb-2 text-left font-sans text-xs font-semibold uppercase tracking-wide text-ink-muted">
-              {t("results.confusion.title")}
-            </caption>
-            <thead>
-              <tr>
-                <td />
-                <th className="px-3 py-1 text-xs font-normal text-ink-muted">
-                  {t("results.confusion.pred", { label: 0 })}
-                </th>
-                <th className="px-3 py-1 text-xs font-normal text-ink-muted">
-                  {t("results.confusion.pred", { label: 1 })}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {confusionMatrix.map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  <th className="px-3 py-1 text-left text-xs font-normal text-ink-muted">
-                    {t("results.confusion.real", { label: rowIndex })}
-                  </th>
-                  {row.map((count, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className={`border border-hairline px-4 py-2 text-center ${
-                        rowIndex === colIndex
-                          ? "bg-positive/10 font-semibold"
-                          : ""
-                      }`}
-                    >
-                      {count}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-
-        <div className="flex flex-col gap-3 text-sm">
-          <p className="text-ink-muted">
-            {t("results.confusion.positive", { label: result.positiveClass })}
-          </p>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-              {t("results.baselines.title")}
-            </p>
-            {/* S5 (E3): cada baseline abre su ficha — juzgan la liga, no compiten. */}
-            <ul className="mt-1 flex flex-col">
-              {BASELINE_IDS.map((id) => (
-                <li key={id} className="flex flex-wrap items-center gap-x-2">
-                  <FichaButton
-                    target={{ id, status: { kind: "baseline" } }}
-                    label={t("league.fichaAria", {
-                      model: t(`results.baselines.${id}`),
-                    })}
-                  >
-                    {t(`results.baselines.${id}`)}
-                  </FichaButton>
-                  <span className="font-mono tabular-nums">
-                    {fmt(result.baselines[id][verdict.primaryMetric])}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <p className="text-ink-muted">{t("results.testNote")}</p>
-        </div>
-      </section>
+      {regression ? (
+        <RegressionDetail result={regression} target={runMeta.target} />
+      ) : (
+        binary && <BinaryDetail result={binary} />
+      )}
 
       {/* S2: el porqué — gráfico siempre visible + texto estándar + IA a demanda. */}
       <WhySection
         explain={result.explainability}
         target={runMeta.target}
-        positiveClass={result.positiveClass}
+        positiveClass={binary?.positiveClass ?? null}
         template={template}
         ai={ai}
+        aiAvailable={aiAvailable}
         onRequestNarration={requestNarration}
+        unit={regression?.unit ?? null}
       />
 
       {/* S3: el modelo se usa — puntuar datos nuevos y exportar como archivo. */}
@@ -367,5 +248,168 @@ export function ResultsScreen({
         </Button>
       </div>
     </div>
+  );
+}
+
+/** El veredicto de clasificación (S1–S5, sin cambios de lógica en el S6). */
+function BinaryVerdict({
+  result,
+  hasLeak,
+}: {
+  result: BinaryResult;
+  hasLeak: boolean;
+}) {
+  const t = useT();
+  const { verdict } = result;
+  const fmt = (value: number) => value.toFixed(2);
+  const metricLabel = (metric: MetricName) => t(`results.metrics.${metric}`);
+
+  // Gate ⭐ S4 (bloque B): el veredicto nombra al modelo ganador — "el modelo"
+  // a secas dejaba la duda de CUÁL superó al baseline.
+  const winnerName = t(`results.candidates.short.${result.modelName}`);
+
+  // S5 (R2): la logística es baseline Y miembro — si gana la liga y EMPATA, empata
+  // consigo misma y se dice así. Si PIERDE (la clase mayoritaria rinde mejor), el
+  // veredicto franco «NO supera» no se reemplaza (regla dura 3). S6 (AU-S6-18):
+  // solo si el baseline que decide es la logística; si decide la clase
+  // mayoritaria, el titular normal la nombra.
+  const logisticWon =
+    (BASELINE_IDS as readonly string[]).includes(result.modelName) &&
+    result.selection.by === "cv" &&
+    verdict.level === "ties" &&
+    pickBestBaseline(
+      BASELINE_IDS_BY_TASK.binaria.map((id) => result.baselines[id]),
+      verdict.primaryMetric,
+    ) === result.baselines.logistic;
+  const banner: Banner = hasLeak
+    ? suspiciousBanner(t)
+    : logisticWon
+      ? {
+          ...LEVEL_MARK.ties,
+          headline: t("results.verdict.logisticTie"),
+          detail: t("results.verdict.logisticTieDetail"),
+        }
+      : {
+          ...LEVEL_MARK[verdict.level],
+          headline: t(`results.verdict.${verdict.level}`, { name: winnerName }),
+          detail: t(`results.verdict.${verdict.level}Detail`, {
+            delta: `+${fmt(verdict.delta)}`,
+            metric: metricLabel(verdict.primaryMetric),
+            model: fmt(verdict.modelScore),
+            baseline: fmt(verdict.baselineScore),
+          }),
+        };
+
+  return (
+    <VerdictCard banner={banner}>
+      {/* S5 (U1): el veredicto habla del elegido, etiquetado. */}
+      {result.selection.by === "user" && (
+        <p className="mt-2 text-sm font-medium">
+          {t("results.verdict.chosenNote")}
+        </p>
+      )}
+    </VerdictCard>
+  );
+}
+
+function BinaryMetrics({ result }: { result: BinaryResult }) {
+  const t = useT();
+  const { verdict, model } = result;
+  const metricLabel = (metric: MetricName) => t(`results.metrics.${metric}`);
+  return (
+    <section className="flex flex-col gap-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+        {t("results.primaryMetric", {
+          metric: metricLabel(verdict.primaryMetric),
+        })}
+      </p>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+        {METRIC_KEYS.map((metric) => (
+          <MetricTile
+            key={metric}
+            label={metricLabel(metric)}
+            value={model[metric].toFixed(2)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BinaryDetail({ result }: { result: BinaryResult }) {
+  const t = useT();
+  const { verdict, confusionMatrix } = result;
+  return (
+    <section className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-start">
+      <Card className="w-fit p-4">
+        <table className="border-collapse font-mono text-sm tabular-nums">
+          <caption className="mb-2 text-left font-sans text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            {t("results.confusion.title")}
+          </caption>
+          <thead>
+            <tr>
+              <td />
+              <th className="px-3 py-1 text-xs font-normal text-ink-muted">
+                {t("results.confusion.pred", { label: 0 })}
+              </th>
+              <th className="px-3 py-1 text-xs font-normal text-ink-muted">
+                {t("results.confusion.pred", { label: 1 })}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {confusionMatrix.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                <th className="px-3 py-1 text-left text-xs font-normal text-ink-muted">
+                  {t("results.confusion.real", { label: rowIndex })}
+                </th>
+                {row.map((count, colIndex) => (
+                  <td
+                    key={colIndex}
+                    className={`border border-hairline px-4 py-2 text-center ${
+                      rowIndex === colIndex
+                        ? "bg-positive/10 font-semibold"
+                        : ""
+                    }`}
+                  >
+                    {count}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      <div className="flex flex-col gap-3 text-sm">
+        <p className="text-ink-muted">
+          {t("results.confusion.positive", { label: result.positiveClass })}
+        </p>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            {t("results.baselines.title")}
+          </p>
+          {/* S5 (E3): cada baseline abre su ficha — juzgan la liga, no compiten. */}
+          <ul className="mt-1 flex flex-col">
+            {BASELINE_IDS.map((id) => (
+              <li key={id} className="flex flex-wrap items-center gap-x-2">
+                <FichaButton
+                  target={{ id, status: { kind: "baseline" } }}
+                  label={t("league.fichaAria", {
+                    model: t(`results.baselines.${id}`),
+                  })}
+                >
+                  {t(`results.baselines.${id}`)}
+                </FichaButton>
+                <span className="font-mono tabular-nums">
+                  {result.baselines[id][verdict.primaryMetric].toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-ink-muted">{t("results.testNote")}</p>
+      </div>
+    </section>
   );
 }

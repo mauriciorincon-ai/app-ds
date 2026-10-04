@@ -36,6 +36,10 @@
       "clientes": {
         "name": "Clientes (datos sucios)",
         "desc": "Nulos, basura, un ID y duplicados: mira el saneamiento en acción."
+      },
+      "consumo": {
+        "name": "Consumo de energía",
+        "desc": "¿Cuántos kWh gasta una casa? Estima una cantidad y mira cuánto se equivoca."
       }
     },
     "import": {
@@ -61,13 +65,15 @@
         },
         "chosen": "◆ Elegido por ti, no por la validación cruzada (el ganador de la validación cruzada era {winner}). Si se eligió mirando la prueba, la métrica puede ser optimista.",
         "cv": "Elegido por validación cruzada de {k} pliegues entre {count} modelos.",
-        "cv_one": "Elegido por validación cruzada de {k} pliegues (compitió 1 modelo)."
+        "cv_one": "Elegido por validación cruzada de {k} pliegues (compitió 1 modelo).",
+        "targetQuantity": "Estima «{target}», una cantidad"
       },
       "errors": {
         "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
         "invalid-json": "Ese archivo no es un JSON válido.",
         "invalid-format": "Ese archivo no parece un modelo exportado por Probeta.",
         "unsupported-version": "Ese archivo viene de una versión del formato de Probeta que esta app no soporta.",
+        "unsupported-task": "Ese archivo declara un modelo de Probeta para «{task}», un tipo de tarea que esta versión no abre. No se cargó.",
         "hash-mismatch": "El contenido del archivo no coincide con su manifiesto (pudo corromperse o ser modificado). Por seguridad no se cargó.",
         "hint": "Solo carga archivos .probeta.json exportados por Probeta. El contenido del archivo no se tocó."
       },
@@ -81,7 +87,7 @@
     "target": {
       "label": "¿Qué quieres predecir?",
       "placeholder": "Elige una columna…",
-      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. Esta versión entrena las de dos categorías (sí/no, 0/1).",
+      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. Esta versión entrena las de dos categorías (sí/no, 0/1) y las cantidades (un precio, un consumo, un tiempo).",
       "option": "{column} · {task}"
     },
     "profile": {
@@ -111,6 +117,8 @@
       "title": "Antes de entrenar, revisa estas señales:",
       "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo.",
       "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
+      "target-skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores muy grandes pesan mucho. El error medio (MAE) trata cada error igual; el RMSE castiga más los errores en esos valores grandes.",
+      "target-outliers": "{share} % de los valores del objetivo están muy lejos del resto (más de 3 rangos intercuartílicos). Revisa si son errores de captura antes de entrenar: pueden mover mucho al modelo.",
       "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
     },
     "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
@@ -150,7 +158,12 @@
       "precision": "Precisión",
       "recall": "Sensibilidad",
       "f1": "F1",
-      "auc": "AUC"
+      "auc": "AUC",
+      "mae": "MAE",
+      "rmse": "RMSE",
+      "r2": "R²",
+      "medae": "MedAE",
+      "mape": "MAPE"
     },
     "confusion": {
       "title": "Matriz de confusión (prueba)",
@@ -161,7 +174,9 @@
     "baselines": {
       "title": "Baselines",
       "majority": "Clase mayoritaria",
-      "logistic": "Regresión logística"
+      "logistic": "Regresión logística",
+      "median": "Mediana",
+      "linear": "Regresión lineal"
     },
     "testNote": "Las métricas del veredicto, la matriz de confusión y los baselines se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento. La tabla de la liga usa validación cruzada dentro del entrenamiento: sirve para elegir.",
     "leakage": {
@@ -186,6 +201,8 @@
       "model": {
         "logistic": "Regresión logística",
         "logistic_balanced": "Regresión logística (clases balanceadas)",
+        "linear": "Regresión lineal",
+        "lasso": "Regresión Lasso",
         "ridge": "Clasificador Ridge",
         "naive_bayes": "Naive Bayes (gaussiano)",
         "linear_svc": "Máquina de vectores de soporte lineal",
@@ -202,6 +219,8 @@
       "short": {
         "logistic": "Regresión logística",
         "logistic_balanced": "Logística balanceada",
+        "linear": "Lineal",
+        "lasso": "Lasso",
         "ridge": "Ridge",
         "naive_bayes": "Naive Bayes",
         "linear_svc": "SVM lineal",
@@ -214,7 +233,53 @@
         "forest": "Random Forest",
         "forest_balanced": "Random Forest balanceado",
         "mlp": "Red neuronal"
+      },
+      "regressionModel": {
+        "ridge": "Regresión Ridge"
       }
+    },
+    "regression": {
+      "verdict": {
+        "beatsDetail": "En promedio se equivoca por ±{model}; {baseline} se equivoca por ±{reference}: un {pct} % menos de error.",
+        "tiesDetail": "En promedio se equivoca por ±{model}; {baseline} se equivoca por ±{reference}: prácticamente lo mismo. Con estas columnas no hay señal extra que aprender — suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.",
+        "losesDetail": "En promedio se equivoca por ±{model}; {baseline} se equivoca menos: ±{reference}. Tus columnas actuales no aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con lo que quieres estimar.",
+        "linearTie": "La liga no encontró nada mejor que la regresión lineal de referencia",
+        "linearTieDetail": "Ningún modelo superó en validación cruzada, por más de un error estándar, a la regresión lineal, que también es el baseline. En promedio se equivoca por ±{model}. Con estas columnas no hay señal extra que aprender: suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.",
+        "baseline": {
+          "median": "adivinar siempre la mediana ({value})",
+          "linear": "una regresión lineal"
+        },
+        "units": "Las cifras están en las unidades de «{column}»: su nombre no trae una unidad que la app reconozca."
+      },
+      "primaryMetric": "Métrica principal: MAE, el error promedio en las unidades del objetivo",
+      "guide": "Cuál mirar: el MAE dice cuánto se equivoca en promedio. El RMSE castiga más los errores grandes: si es mucho mayor que el MAE, de vez en cuando falla por mucho. El R² dice qué parte de la variación explica: 1 es toda, 0 es lo mismo que adivinar el promedio, y es negativo si lo hace peor. La MedAE es el error típico, sin que pesen los casos extremos.",
+      "chart": {
+        "title": "Estimado frente a real, en el conjunto de prueba",
+        "axisReal": "Real",
+        "axisPredicted": "Estimado",
+        "diagonal": "Diagonal: estimación perfecta",
+        "band": "Franja: ±MAE ({mae})",
+        "inside": "dentro de la franja",
+        "outside": "fuera de la franja",
+        "label": "Gráfico de dispersión de {shown} filas de prueba: en el eje horizontal el valor real, en el vertical el estimado. {inside} de cada 100 quedan a menos de ±{mae} de su valor real.",
+        "sample": "El gráfico muestra {shown} de las {total} filas de prueba (una muestra fija, repartida por todo el rango). Lo de abajo usa las {total}."
+      },
+      "residuals": {
+        "title": "Cómo se reparten los errores",
+        "middle": "La mitad de las estimaciones se equivoca entre {p25} y {p75}.",
+        "abs90": "9 de cada 10 se equivocan por menos de ±{abs90}.",
+        "median": {
+          "over": "El error mediano es {p50}: tiende a estimar de más.",
+          "under": "El error mediano es {p50}: tiende a estimar de menos.",
+          "none": "El error mediano es {p50}: no se ve una inclinación clara hacia un lado."
+        },
+        "sign": "Error = estimado − real: positivo es estimar de más; negativo, de menos.",
+        "tableCaption": "Percentiles del error en las {total} filas de prueba",
+        "percentile": "Percentil",
+        "error": "Error"
+      },
+      "baselinesNote": "Los baselines no compiten: miden si la liga aporta algo. La mediana es la constante que menos se equivoca en promedio; la regresión lineal, la recta más simple.",
+      "testNote": "El veredicto, las métricas, el gráfico y los baselines se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento. La tabla de la liga usa validación cruzada dentro del entrenamiento: sirve para elegir."
     }
   },
   "score": {
@@ -252,7 +317,9 @@
       "categorical": "«{column}»: {count} valores con categorías nunca vistas en el entrenamiento",
       "summary": "El modelo está adivinando en {affected} de {total} filas ({percent}%).",
       "hint": "En esas filas la predicción es menos confiable: el modelo nunca vio valores así al entrenar.",
-      "none": "Sin novedades: todos los valores están dentro de lo que el modelo vio al entrenar."
+      "none": "Sin novedades: todos los valores están dentro de lo que el modelo vio al entrenar.",
+      "numeric_one": "«{column}»: 1 valor fuera del rango visto en el entrenamiento",
+      "categorical_one": "«{column}»: 1 valor con una categoría nunca vista en el entrenamiento"
     },
     "distribution": {
       "title": "Predicciones ({rows} filas)"
@@ -262,7 +329,8 @@
     },
     "columns": {
       "prediction": "prediccion",
-      "probability": "probabilidad_{label}"
+      "probability": "probabilidad_{label}",
+      "estimate": "{target}_estimado"
     },
     "fileSuffix": "puntuado",
     "download": "Descargar CSV puntuado",
@@ -273,7 +341,17 @@
       "runtime": "No se pudo puntuar. Revisa que las columnas tengan el mismo tipo de datos que en el entrenamiento e inténtalo de nuevo.",
       "import-failed": "No se pudo restaurar el modelo guardado. El archivo puede venir de una versión incompatible; re-entrena y exporta de nuevo."
     },
-    "noProbabilities": "Este modelo decide la clase pero no da una probabilidad, así que la columna de probabilidad no se incluye. Si necesitas ordenar las filas por riesgo, elige un modelo que sí la dé."
+    "noProbabilities": "Este modelo decide la clase pero no da una probabilidad, así que la columna de probabilidad no se incluye. Si necesitas ordenar las filas por riesgo, elige un modelo que sí la dé.",
+    "subtitleQuantity": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la cantidad estimada para cada fila. Todo ocurre en tu navegador.",
+    "modelLineQuantity": "Modelo: {dataset} · estima: {target}",
+    "quantity": {
+      "title": "Estimaciones ({count} filas)",
+      "title_one": "Estimaciones (1 fila)",
+      "min": "Mínimo",
+      "median": "Mediana",
+      "max": "Máximo"
+    },
+    "quantityNote": "Estimar no da una probabilidad: cada fila trae su cantidad estimada, con los decimales con que escribiste el objetivo."
   },
   "why": {
     "title": "¿Por qué predice así?",
@@ -301,10 +379,16 @@
         "unavailable": "La narración con IA no está configurada en este despliegue.",
         "provider": "El proveedor de IA no respondió. Puedes volver a intentarlo.",
         "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad no se muestra. Puedes volver a intentarlo."
-      }
+      },
+      "aiNotForQuantity": "La narración con IA solo cubre la clasificación en dos categorías. Al estimar una cantidad, la lectura es el texto estándar de arriba, que sale de los mismos números."
     },
     "legend": "La barra mide cuánto IMPORTA cada variable; la línea de abajo dice hacia dónde EMPUJA. Una variable puede pesar mucho y no tener una sola dirección: eso no la hace irrelevante.",
-    "positiveClass": "El modelo predice la columna «{target}». La clase que intenta detectar (la menos frecuente) es «{positive}»."
+    "positiveClass": "El modelo predice la columna «{target}». La clase que intenta detectar (la menos frecuente) es «{positive}».",
+    "directionQuantity": {
+      "positive": "▲ a mayor valor, mayor «{target}»",
+      "negative": "▼ a mayor valor, menor «{target}»"
+    },
+    "quantityNote": "El modelo estima la columna «{target}». La barra mide cuánto crece su error (MAE) si se rompe la relación de esa variable con el objetivo."
   },
   "card": {
     "title": "Model card",
@@ -339,7 +423,21 @@
         "f1": "equilibrio entre precisión y sensibilidad, de 0 a 1",
         "auc": "qué tan bien separa las dos clases: 0.50 sería azar y 1.00 perfecto"
       },
-      "metricNote": "La métrica principal aquí es {metric} ({help})."
+      "metricNote": "La métrica principal aquí es {metric} ({help}).",
+      "regression": {
+        "verdict": {
+          "beats": "El modelo se equivoca en promedio por ±{model}, frente a ±{baseline} del mejor baseline: un {pct} % menos de error.",
+          "ties": "El modelo se equivoca en promedio por ±{model}, prácticamente lo mismo que el mejor baseline (±{baseline}); una regla simple rinde igual.",
+          "loses": "El modelo se equivoca en promedio por ±{model}, más que el mejor baseline (±{baseline}); con estas variables no aporta."
+        },
+        "metricNote": "El MAE es el error promedio en las unidades del objetivo (0 sería acertar siempre). El R² es {r2}: qué parte de la variación explica, donde 1 es toda y 0 es lo mismo que adivinar el promedio.",
+        "direction": {
+          "positive": "a mayor valor, mayor objetivo",
+          "negative": "a mayor valor, menor objetivo"
+        },
+        "skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores grandes pesan mucho en el error.",
+        "outliers": "El {share} % de los valores del objetivo están muy lejos del resto: el RMSE los castiga más que el MAE."
+      }
     }
   },
   "modelcard": {
@@ -356,28 +454,34 @@
       "narrative": "Narración verificada",
       "limits": "Límites",
       "sanitation": "Saneamiento",
-      "selection": "Selección del modelo"
+      "selection": "Selección del modelo",
+      "estimate": "Estimación"
     },
     "data": {
       "dataset": "Dataset: {name}",
       "shape": "{rows} filas × {cols} columnas ({numeric} predictores numéricos, {categorical} categóricos)",
-      "target": "Objetivo: «{target}» (clasificación binaria; clase positiva: «{positive}»)"
+      "target": "Objetivo: «{target}» (clasificación binaria; clase positiva: «{positive}»)",
+      "targetQuantity": "Objetivo: «{target}» (estimar una cantidad)"
     },
     "split": {
       "sizes": "Entrenamiento: {train} filas · Prueba: {test} filas (estratificado, semilla {seed}).",
-      "rule": "El preprocesamiento se ajustó SOLO con el entrenamiento (anti-fuga por construcción)."
+      "rule": "El preprocesamiento se ajustó SOLO con el entrenamiento (anti-fuga por construcción).",
+      "sizesQuantity": "Entrenamiento: {train} filas · Prueba: {test} filas (estratificado por 5 bandas del objetivo, semilla {seed})."
     },
     "method": {
       "pipeline": "Imputación (mediana / más frecuente), agrupación de categorías raras, escalado y one-hot dentro de un Pipeline de scikit-learn.",
-      "models": "Baselines: clase mayoritaria y regresión logística. Candidatos comparados: {candidates}. Modelo elegido: {model}.",
-      "rareCategories": "Categorías raras agrupadas (aprendido solo de entrenamiento): {cols}."
+      "models": "Candidatos comparados: {candidates}. Modelo elegido: {model}.",
+      "rareCategories": "Categorías raras agrupadas (aprendido solo de entrenamiento): {cols}.",
+      "baselines": "Baselines: clase mayoritaria y regresión logística.",
+      "baselinesQuantity": "Baselines: la mediana del objetivo y la regresión lineal."
     },
     "metrics": {
       "metric": "Métrica",
       "model": "Modelo"
     },
     "verdict": {
-      "primary": "Métrica principal: {metric}."
+      "primary": "Métrica principal: {metric}.",
+      "primaryQuantity": "Métrica principal: MAE, el error promedio en las unidades del objetivo (menor es mejor); empata si queda a menos del 1 % del mejor baseline."
     },
     "leakage": {
       "found": "Columnas sospechosas de fuga: {columns}. Las métricas pueden estar infladas; quítalas y vuelve a entrenar.",
@@ -392,10 +496,10 @@
       "notVerified": "No se incluye narración IA: no se generó o no pasó la verificación numérica."
     },
     "limits": {
-      "binary": "Solo clasificación binaria en esta versión.",
       "leakage": "El chequeo de fuga atrapa casos evidentes; no es una garantía.",
       "explainability": "La importancia por permutación es global (no por predicción) y puede repartirse entre variables correlacionadas; la dirección es univariada y no captura interacciones.",
-      "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal)."
+      "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal).",
+      "tasks": "Esta versión entrena dos tareas: la clasificación en dos categorías y la estimación de una cantidad. Varias categorías llegan en una próxima versión."
     },
     "sanitation": {
       "duplicates": "Se quitaron {count} filas duplicadas exactas (previene fuga por duplicación).",
@@ -414,6 +518,15 @@
       "time": "Tiempo de la liga en este equipo: {seconds} s.",
       "smallSample": "Muestra pequeña: con menos de {rows} filas, los puntajes de validación cruzada varían mucho de un pliegue a otro.",
       "league_one": "Compitió 1 modelo con validación cruzada de {k} pliegues dentro del entrenamiento (el preprocesamiento se reajustó en cada pliegue). Métrica: {metric}."
+    },
+    "estimate": {
+      "task": "Tarea: estimar una cantidad (regresión). Se compara contra el baseline que menos se equivoca: la mediana o la regresión lineal.",
+      "unit": "Unidad: {unit}, leída del nombre de la columna.",
+      "noUnit": "Unidad: el nombre de la columna no trae una que la app reconozca; las cifras están en las unidades de «{column}».",
+      "targetStats": "El objetivo en el entrenamiento: media {mean}, desviación {std}, mínimo {min}, mediana {median}, máximo {max} (escrito con {count} decimales).",
+      "targetStats_one": "El objetivo en el entrenamiento: media {mean}, desviación {std}, mínimo {min}, mediana {median}, máximo {max} (escrito con 1 decimal).",
+      "errors": "Errores en las {total} filas de prueba (estimado − real): la mitad queda entre {p25} y {p75}; 9 de cada 10 se equivocan por menos de ±{abs90}.",
+      "noAi": "Narración con IA: no aplica a estimar una cantidad (solo cubre la clasificación en dos categorías)."
     }
   },
   "errors": {
@@ -425,12 +538,15 @@
     "csv-semicolon": "Tu archivo separa las columnas con punto y coma (;), no con comas, así que no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "csv-tab": "Tu archivo separa las columnas con tabulaciones, no con comas, así que no se reconoce ninguna columna. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
+    "target-not-numeric": "Para estimar una cantidad, el objetivo tiene que ser un número en todas las filas, y esta columna trae valores que no lo son. Revísala en tu CSV o elige otra columna.",
+    "target-ambiguous": "Esta columna puede guardar categorías o una cantidad, y falta tu respuesta. Responde la pregunta de la tarjeta «Tipo de predicción» y vuelve a entrenar.",
     "no-features": "No hay columnas utilizables como predictores.",
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
     "worker-dead": "El motor de cómputo se detuvo de forma inesperada (pudo quedarse sin memoria, o falló la carga de sus componentes). Intenta de nuevo; si persiste, prueba con un archivo más pequeño.",
     "retry": "Volver a empezar",
     "csv-unusable": "Tras sanear el dataset no queda nada para modelar (todo eran identificadores, constantes o filas repetidas). Prueba con otro archivo.",
     "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
+    "too-few-rows-quantity": "Hay muy pocas filas para estimar una cantidad con honestidad: la prueba necesita al menos 2 filas que el modelo no vio al entrenar. Prueba con más filas.",
     "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo.",
     "target-mixed-notation": "Tu objetivo tiene 2 valores, pero escritos de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalos en tu CSV y vuelve a cargarlo.",
     "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas."
@@ -456,7 +572,27 @@
     "suggested": "Lo más probable: {task}.",
     "blocked": "Es un tipo de predicción que la app entrena, pero con estos datos no se pueden comparar modelos con honestidad (el motivo está abajo).",
     "trainable": "Se puede entrenar.",
-    "notYet": "Esta versión todavía no entrena este tipo de predicción: llega en una próxima versión. Por ahora, elige una columna con dos categorías."
+    "notYet": "Esta versión todavía no entrena este tipo de predicción: llega en una próxima versión. Por ahora, elige una columna con dos categorías o con una cantidad.",
+    "notUsable": "Esta columna no sirve como objetivo. Elige una columna con dos categorías o con una cantidad.",
+    "estimate": {
+      "unit": "Vas a estimar una cantidad, en {unit}. El veredicto dirá cuánto se equivoca en promedio, en {unit}.",
+      "noUnit": "Vas a estimar una cantidad. Su nombre no trae una unidad que la app reconozca, así que las cifras se dirán en las unidades de «{column}»."
+    },
+    "ask": {
+      "question": "¿«{column}» guarda categorías o una cantidad?",
+      "help": "Con estos datos no se puede saber; tú conoces la columna.",
+      "suggested": "Sugerida",
+      "numerica": {
+        "label": "Una cantidad",
+        "desc": "Se estima el número. El veredicto dice cuánto se equivoca en promedio, en las unidades de la columna."
+      },
+      "multiclase": {
+        "label": "Categorías",
+        "desc": "Cada número es una clase, como una nota del 1 al 5. Esta versión todavía no entrena varias clases: llega en una próxima versión."
+      },
+      "answered": "Respondiste: {answer}.",
+      "change": "Cambiar la respuesta"
+    }
   },
   "roster": {
     "title": "Quién compite",
@@ -513,7 +649,8 @@
     "time": "La liga tardó {seconds} s en este equipo.",
     "testShort": "prueba",
     "fichaAria": "Ficha de {model}",
-    "title_one": "La liga: 1 modelo"
+    "title_one": "La liga: 1 modelo",
+    "lowerIsBetter": "En esta tabla, menor es mejor: es el error promedio (MAE) en las unidades del objetivo."
   },
   "ficha": {
     "eyebrow": "Ficha del modelo",

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TRAIN_TASKS } from "@/engine/tarea";
 
 const captureMessage = vi.fn();
 const addBreadcrumb = vi.fn();
@@ -37,6 +38,7 @@ describe("recordLeagueRun (S5, privacidad)", () => {
 
   it("deja un breadcrumb con SOLO metadatos de la corrida (ni valores ni nombres)", () => {
     recordLeagueRun({
+      task: "numerica",
       rows: 5000,
       cols: 12,
       competitors: 14,
@@ -49,6 +51,7 @@ describe("recordLeagueRun (S5, privacidad)", () => {
       level: "info",
       message: "league-run",
       data: {
+        task: "numerica",
         rows: 5000,
         cols: 12,
         competitors: 14,
@@ -61,6 +64,7 @@ describe("recordLeagueRun (S5, privacidad)", () => {
 
   it("la cancelación se nombra como tal y sin tiempo", () => {
     recordLeagueRun({
+      task: "binaria",
       competitors: 10,
       level: 2,
       elapsedMs: null,
@@ -81,6 +85,7 @@ describe("recordLeagueRun (S5, privacidad)", () => {
 
   it("la forma de los datos es cerrada: ninguna clave fuera de los metadatos", () => {
     recordLeagueRun({
+      task: "binaria",
       competitors: 1,
       level: 1,
       elapsedMs: 10,
@@ -91,9 +96,20 @@ describe("recordLeagueRun (S5, privacidad)", () => {
       unknown
     >;
     expect(Object.keys(data).sort()).toEqual(
-      ["cancelled", "cols", "competitors", "elapsedMs", "level", "rows"].sort(),
+      [
+        "cancelled",
+        "cols",
+        "competitors",
+        "elapsedMs",
+        "level",
+        "rows",
+        "task",
+      ].sort(),
     );
-    for (const value of Object.values(data)) {
+    // S6: la tarea es el único texto, y es un nombre cerrado de la app.
+    const { task, ...rest } = data;
+    expect(TRAIN_TASKS).toContain(task);
+    for (const value of Object.values(rest)) {
       expect(["number", "boolean"]).toContain(
         value === null ? "number" : typeof value,
       );

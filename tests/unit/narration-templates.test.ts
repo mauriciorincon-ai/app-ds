@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { NarrationPayload } from "@/lib/ia/schemas";
-import { buildTemplateNarrative } from "@/lib/narration/templates";
+import {
+  buildRegressionTemplate,
+  buildTemplateNarrative,
+} from "@/lib/narration/templates";
+import { regressionResult } from "./factories";
 
 function payload(overrides: Partial<NarrationPayload> = {}): NarrationPayload {
   return {
@@ -122,5 +126,20 @@ describe("buildTemplateNarrative", () => {
     const plain = buildTemplateNarrative(payload());
     expect(plain).not.toContain("parece un identificador");
     expect(plain).not.toContain("desbalanceado");
+  });
+});
+
+describe("plantilla de estimar (S6)", () => {
+  it("las columnas con pinta de identificador van en UNA frase, como en la binaria (AU-S6-40)", () => {
+    const text = buildRegressionTemplate({
+      result: regressionResult(),
+      locale: "es",
+      edaAlerts: [
+        { kind: "id-like", column: "a", score: 0.97 },
+        { kind: "id-like", column: "b", score: 0.99 },
+      ],
+    });
+    expect(text.match(/parece un identificador/g)).toHaveLength(1);
+    expect(text).toContain("Además, a, b parece un identificador");
   });
 });

@@ -10,8 +10,13 @@ import { isFeatureUsed } from "@/engine/explainability";
 import { useT } from "@/i18n/use-translation";
 // SOLO tipo (un import runtime de schemas.ts metería zod al bundle del cliente).
 import type { FallbackReason } from "@/lib/ia/schemas";
+import { importanceFormatter } from "@/lib/regression-text";
 import type { AiNarrationState } from "@/lib/useNarration";
-import type { Explainability, FeatureImportance } from "@/workers/protocol";
+import type {
+  Explainability,
+  FeatureImportance,
+  TargetUnit,
+} from "@/workers/protocol";
 import { Badge, Button, Card } from "./ui";
 
 const MAX_BARS = 8;
@@ -39,18 +44,41 @@ function directionKey(feature: FeatureImportance): string {
   return feature.direction;
 }
 
+/** S6: al estimar, la dirección se lee contra la cantidad («mayor consumo»). */
+function directionText(
+  t: (key: string, params?: Record<string, string | number>) => string,
+  feature: FeatureImportance,
+  target: string,
+  positiveClass: string | null,
+): string {
+  const key = directionKey(feature);
+  if (positiveClass === null && (key === "positive" || key === "negative")) {
+    return t(`why.directionQuantity.${key}`, { target });
+  }
+  return t(`why.direction.${key}`, { target, positive: positiveClass ?? "" });
+}
+
 function ImportanceChart({
   explain,
   target,
   positiveClass,
+  unit,
 }: {
   explain: Explainability;
   target: string;
-  positiveClass: string;
+  positiveClass: string | null;
+  unit: TargetUnit | null;
 }) {
   const t = useT();
   const features = explain.features.slice(0, MAX_BARS);
   const max = Math.max(...features.map((f) => f.importance), 0);
+  // Al estimar, la importancia está en las unidades del objetivo (AU-S6-21).
+  const fmt = unit
+    ? importanceFormatter(
+        { unit },
+        features.map((f) => f.importance),
+      )
+    : (value: number) => value.toFixed(3);
 
   if (features.length === 0 || max <= 0) {
     return <p className="text-sm text-ink-muted">{t("why.empty")}</p>;
@@ -70,7 +98,7 @@ function ImportanceChart({
                 {feature.name}
               </span>
               <span className="shrink-0 font-mono text-xs tabular-nums text-ink-muted">
-                {feature.importance.toFixed(3)}
+                {fmt(feature.importance)}
               </span>
             </div>
             <div
@@ -78,7 +106,7 @@ function ImportanceChart({
               role="img"
               aria-label={t("why.barLabel", {
                 name: feature.name,
-                value: feature.importance.toFixed(3),
+                value: fmt(feature.importance),
               })}
             >
               <div
@@ -87,10 +115,7 @@ function ImportanceChart({
               />
             </div>
             <p className="mt-0.5 text-xs text-ink-muted">
-              {t(`why.direction.${directionKey(feature)}`, {
-                target,
-                positive: positiveClass,
-              })}
+              {directionText(t, feature, target, positiveClass)}
             </p>
           </li>
         );
@@ -105,16 +130,23 @@ export function WhySection({
   positiveClass,
   template,
   ai,
+  aiAvailable = true,
   onRequestNarration,
+  unit = null,
 }: {
   explain: Explainability;
   /** Columna objetivo — las direcciones se leen contra ella (no contra "«0»"). */
   target: string;
-  /** Etiqueta real de la clase positiva — las direcciones se leen contra ella. */
-  positiveClass: string;
+  /** Etiqueta real de la clase positiva — las direcciones se leen contra ella.
+   *  S6: null al estimar una cantidad (no hay clases). */
+  positiveClass: string | null;
   /** Texto determinista local: siempre presente, jamás depende de la red. */
   template: string;
   ai: AiNarrationState;
+  /** S6 (P7): false al estimar — la IA solo narra clasificación binaria. */
+  aiAvailable?: boolean;
+  /** S6: al estimar, la unidad del objetivo (las importancias están en ella). */
+  unit?: TargetUnit | null;
   onRequestNarration: () => void;
 }) {
   const t = useT();
@@ -136,11 +168,14 @@ export function WhySection({
           explain={explain}
           target={target}
           positiveClass={positiveClass}
+          unit={unit}
         />
         {/* Qué es la clase detectada + qué significan barra y dirección: sin
             esto, «0» no le dice nada a nadie (gate ⭐ S4, bloque C). */}
         <p className="mt-4 border-t border-hairline pt-3 text-xs text-ink-muted">
-          {t("why.positiveClass", { target, positive: positiveClass })}
+          {positiveClass === null
+            ? t("why.quantityNote", { target })
+            : t("why.positiveClass", { target, positive: positiveClass })}
         </p>
         <p className="mt-1 text-xs text-ink-muted">{t("why.legend")}</p>
       </Card>
@@ -156,54 +191,64 @@ export function WhySection({
         <p className="text-sm leading-relaxed">{template}</p>
       </Card>
 
-      {/* Bloque 2 — la IA, SEPARADA y a demanda. */}
-      <Card className="p-5">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold">
-            {t("why.narration.aiTitle")}
-          </h3>
-          {ai.kind === "verified" && (
-            <Badge tone="positive">
-              <span aria-hidden>✓</span> {t("why.narration.verifiedBadge")}
-            </Badge>
-          )}
-        </div>
-
-        <p className="text-sm text-ink-muted">{t("why.narration.aiIntro")}</p>
-
-        <div aria-live="polite">
-          {ai.kind === "loading" && (
-            <p className="mt-3 text-sm text-ink-muted">
-              {t("why.narration.loading")}
-            </p>
-          )}
-          {ai.kind === "verified" && (
-            <p className="mt-3 text-sm leading-relaxed">{ai.text}</p>
-          )}
-          {ai.kind === "failed" && (
-            <p className="mt-3 text-sm text-caution">
-              <span aria-hidden className="mr-1">
-                ⚠
-              </span>
-              {t(`why.narration.fallback.${FALLBACK_NOTICE[ai.reason]}`)}
-            </p>
-          )}
-        </div>
-
-        {ai.kind !== "loading" && (
-          <div className="mt-3">
-            <Button
-              variant="secondary"
-              icon="sparkle"
-              onClick={onRequestNarration}
-            >
-              {ai.kind === "idle"
-                ? t("why.narration.request")
-                : t("why.narration.again")}
-            </Button>
+      {/* Bloque 2 — la IA, SEPARADA y a demanda. S6 (P7): al estimar no hay IA, y
+          se dice de frente en vez de mostrar un botón que no haría nada. */}
+      {!aiAvailable ? (
+        <p className="rounded-md border border-hairline bg-sunken p-3 text-sm text-ink-muted">
+          <span aria-hidden className="mr-1">
+            ·
+          </span>
+          {t("why.narration.aiNotForQuantity")}
+        </p>
+      ) : (
+        <Card className="p-5">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold">
+              {t("why.narration.aiTitle")}
+            </h3>
+            {ai.kind === "verified" && (
+              <Badge tone="positive">
+                <span aria-hidden>✓</span> {t("why.narration.verifiedBadge")}
+              </Badge>
+            )}
           </div>
-        )}
-      </Card>
+
+          <p className="text-sm text-ink-muted">{t("why.narration.aiIntro")}</p>
+
+          <div aria-live="polite">
+            {ai.kind === "loading" && (
+              <p className="mt-3 text-sm text-ink-muted">
+                {t("why.narration.loading")}
+              </p>
+            )}
+            {ai.kind === "verified" && (
+              <p className="mt-3 text-sm leading-relaxed">{ai.text}</p>
+            )}
+            {ai.kind === "failed" && (
+              <p className="mt-3 text-sm text-caution">
+                <span aria-hidden className="mr-1">
+                  ⚠
+                </span>
+                {t(`why.narration.fallback.${FALLBACK_NOTICE[ai.reason]}`)}
+              </p>
+            )}
+          </div>
+
+          {ai.kind !== "loading" && (
+            <div className="mt-3">
+              <Button
+                variant="secondary"
+                icon="sparkle"
+                onClick={onRequestNarration}
+              >
+                {ai.kind === "idle"
+                  ? t("why.narration.request")
+                  : t("why.narration.again")}
+              </Button>
+            </div>
+          )}
+        </Card>
+      )}
     </section>
   );
 }

@@ -39,8 +39,36 @@ export const AMBIGUOUS_MAX_DISTINCT = 10;
 /** Texto con más categorías que esto no se trata como clases. */
 export const MULTICLASS_MAX_CLASSES = 20;
 
-/** Las tareas que el S5 sabe entrenar. */
-export const TRAINABLE_TASKS: readonly Task[] = ["binaria"];
+/** Todas las tareas que E1 nombra. Un `Record` completo: sumar una tarea a `Task`
+ *  sin listarla aquí no compila. */
+const TASK_NAMES: Record<Task, true> = {
+  binaria: true,
+  multiclase: true,
+  numerica: true,
+  "sin-objetivo": true,
+  ambigua: true,
+};
+
+/** ¿Es un nombre de tarea de esta versión? (p. ej. el que declara un archivo). */
+export function isTask(name: string): name is Task {
+  return Object.hasOwn(TASK_NAMES, name);
+}
+
+/** Cierre exhaustivo de un `switch` por tarea: si la unión crece, el caso que
+ *  falta no compila; si llega igual en runtime, falla nombrándola (AU-S6-03). */
+export function assertNever(value: never): never {
+  throw new Error(`tarea sin rama propia: ${String(value)}`);
+}
+
+/** Las tareas que el MOTOR sabe entrenar (S6: también estimar una cantidad). */
+export type TrainTask = "binaria" | "numerica";
+export const TRAIN_TASKS: readonly TrainTask[] = ["binaria", "numerica"];
+
+/** Las tareas que la UI ofrece entrenar (S6 F2: también estimar una cantidad). */
+export const TRAINABLE_TASKS: readonly Task[] = ["binaria", "numerica"];
+
+/** Respuesta del usuario a la pregunta de una columna ambigua (D2 del S6). */
+export type AmbiguousChoice = "multiclase" | "numerica";
 
 export function detectTask(values: readonly string[]): TaskDetection {
   const distinct = new Set<string>();
@@ -93,5 +121,26 @@ export function detectTask(values: readonly string[]): TaskDetection {
 }
 
 export function isTrainable(detection: TaskDetection): boolean {
-  return TRAINABLE_TASKS.includes(detection.task);
+  return isTrainableTask(detection.task);
+}
+
+/** S6: lo mismo para una tarea ya resuelta (la ambigua, tras la respuesta del usuario). */
+export function isTrainableTask(task: Task): boolean {
+  return TRAINABLE_TASKS.includes(task);
+}
+
+/**
+ * La tarea con que se entrena: la detectada, salvo que sea ambigua y el usuario
+ * haya respondido «¿clases o cantidad?» (D2 del S6). Sin respuesta, una ambigua
+ * sigue siendo ambigua: la app pregunta, no adivina.
+ */
+export function resolveTask(
+  detection: TaskDetection,
+  choice?: AmbiguousChoice | null,
+): Task {
+  return detection.task === "ambigua" && choice ? choice : detection.task;
+}
+
+export function isTrainTask(task: Task): task is TrainTask {
+  return (TRAIN_TASKS as readonly Task[]).includes(task);
 }

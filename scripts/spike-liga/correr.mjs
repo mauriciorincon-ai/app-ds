@@ -4,6 +4,7 @@
 // spike.py sobre los payloads armados por prepareRun. Mide en Chromium (referencia) y WebKit
 // (motor de Safari/iPhone). Uso:
 //   SPIKE_OUT=<dir> node scripts/spike-liga/correr.mjs chromium|webkit [ids,separados,por,coma]
+//   SPIKE_PY=scripts/spike-regresion/spike.py SPIKE_OUT=<dir> node scripts/spike-liga/correr.mjs chromium   (S6)
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium, webkit } from "@playwright/test";
@@ -18,7 +19,11 @@ const tag = variants ? `${browserName}-variantes` : browserName;
 const payloads = JSON.parse(
   readFileSync(join(out, "payloads.json"), "utf8"),
 ).filter((p) => !onlyIds || onlyIds.includes(p.id));
-const spikePy = readFileSync(new URL("./spike.py", import.meta.url), "utf8");
+// S6: SPIKE_PY apunta a otro spike (p. ej. scripts/spike-regresion/spike.py) con el mismo corredor.
+const spikePy = readFileSync(
+  process.env.SPIKE_PY ?? new URL("./spike.py", import.meta.url),
+  "utf8",
+);
 
 // Código del worker (module worker desde un Blob). Repite la carga del runner a propósito.
 const WORKER = `
@@ -167,7 +172,7 @@ for (const p of payloads) {
     ...r.res,
   });
   console.log(
-    `[${browserName}] ${p.id}: ${(r.wallMs / 1000).toFixed(1)} s · heap ${r.heapMB} MB · S5 ${r.res.s5?.winner} (H1 ${r.res.h1?.winner})`,
+    `[${browserName}] ${p.id}: ${(r.wallMs / 1000).toFixed(1)} s · heap ${r.heapMB} MB · ganador ${r.res.winner ?? r.res.s5?.winner}${r.res.h1 ? ` (H1 ${r.res.h1.winner})` : ""}`,
   );
   writeFileSync(
     join(out, `resultados-${tag}.json`),

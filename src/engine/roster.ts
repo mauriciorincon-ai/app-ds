@@ -3,6 +3,14 @@
 // encarrilador llena el Nivel 1 y el desempate de la regla de un error estándar),
 // y qué sabe la app de cada uno. Ningún «12» ni «14» se escribe a mano: todo se
 // deriva de MEMBER_IDS. Paridad de ids con pipeline.py: tests/unit/roster.test.ts.
+//
+// S6 (ADR-013): un roster POR TAREA sobre UN solo espacio de ids. Un modelo que
+// existe en las dos tareas comparte id (y ficha); `linear` y `lasso` solo estiman.
+// `MEMBER_IDS` sigue siendo el roster de clasificación binaria (el S5 lo usa por
+// nombre); ALL_MEMBER_IDS fija la prioridad GLOBAL y cada roster es una
+// subsecuencia suya (invariante con test), así `byPriority` sirve a las dos.
+import type { TrainTask } from "@/engine/tarea";
+import type { Direction } from "@/engine/verdict";
 
 export const MEMBER_IDS = [
   "logistic",
@@ -21,10 +29,58 @@ export const MEMBER_IDS = [
   "mlp",
 ] as const;
 
-export type MemberId = (typeof MEMBER_IDS)[number];
+/** Roster de REGRESIÓN (S6), en orden de prioridad medido en el spike de la F0. */
+export const REGRESSION_MEMBER_IDS = [
+  "linear",
+  "ridge",
+  "lasso",
+  "decision_tree",
+  "knn",
+  "hgb",
+  "lightgbm",
+  "xgboost",
+  "extra_trees",
+  "forest",
+  "mlp",
+] as const;
+
+/** Prioridad global: cada roster por tarea es una subsecuencia de esta lista. */
+export const ALL_MEMBER_IDS = [
+  "logistic",
+  "logistic_balanced",
+  "linear",
+  "ridge",
+  "lasso",
+  "naive_bayes",
+  "linear_svc",
+  "decision_tree",
+  "knn",
+  "hgb",
+  "lightgbm",
+  "xgboost",
+  "extra_trees",
+  "forest",
+  "forest_balanced",
+  "mlp",
+] as const;
+
+export type BinaryMemberId = (typeof MEMBER_IDS)[number];
+export type RegressionMemberId = (typeof REGRESSION_MEMBER_IDS)[number];
+export type MemberId = (typeof ALL_MEMBER_IDS)[number];
+
+export const ROSTER_BY_TASK: Record<TrainTask, readonly MemberId[]> = {
+  binaria: MEMBER_IDS,
+  numerica: REGRESSION_MEMBER_IDS,
+};
 
 /** Rivales honestos del veredicto (no compiten en la liga: la juzgan). */
 export const BASELINE_IDS = ["majority", "logistic"] as const;
+/** S6 (decisión del usuario en el STOP de la F0): con MAE, la mediana + la lineal. */
+export const REGRESSION_BASELINE_IDS = ["median", "linear"] as const;
+export const BASELINE_IDS_BY_TASK = {
+  binaria: BASELINE_IDS,
+  numerica: REGRESSION_BASELINE_IDS,
+} as const satisfies Record<TrainTask, readonly string[]>;
 
 export type Family =
   | "linear"
@@ -39,7 +95,8 @@ export type MemberInfo = {
   family: Family;
   /** Ficha de lectura que comparte (las variantes balanceadas usan la de su base). */
   base: MemberId;
-  /** false ⇒ decide la clase sin dar una probabilidad (ridge, SVM lineal). */
+  /** false ⇒ decide la clase sin dar una probabilidad (ridge, SVM lineal).
+   *  En los que solo estiman una cantidad (S6) no aplica: false. */
   probabilities: boolean;
   /** Variante con `class_weight="balanced"` (D4). */
   balanced: boolean;
@@ -58,9 +115,21 @@ export const MEMBERS: Record<MemberId, MemberInfo> = {
     probabilities: true,
     balanced: true,
   },
+  linear: {
+    family: "linear",
+    base: "linear",
+    probabilities: false,
+    balanced: false,
+  },
   ridge: {
     family: "linear",
     base: "ridge",
+    probabilities: false,
+    balanced: false,
+  },
+  lasso: {
+    family: "linear",
+    base: "lasso",
     probabilities: false,
     balanced: false,
   },
@@ -127,10 +196,34 @@ export const MEMBERS: Record<MemberId, MemberInfo> = {
   mlp: { family: "neural", base: "mlp", probabilities: true, balanced: false },
 };
 
-const PRIORITY = new Map<string, number>(MEMBER_IDS.map((id, i) => [id, i]));
+const PRIORITY = new Map<string, number>(
+  ALL_MEMBER_IDS.map((id, i) => [id, i]),
+);
 
 export function isMemberId(value: unknown): value is MemberId {
   return typeof value === "string" && PRIORITY.has(value);
+}
+
+/** ¿Compite este id en el roster de esa tarea? (un `logistic` no estima cantidades). */
+export function isMemberOf(task: TrainTask, value: unknown): value is MemberId {
+  return (ROSTER_BY_TASK[task] as readonly unknown[]).includes(value);
+}
+
+/**
+ * S6: los ids compartidos cuyo nombre largo cambia al estimar una cantidad (el
+ * mismo Ridge es «Clasificador Ridge» al clasificar y «Regresión Ridge» al
+ * estimar). Los demás se llaman igual en las dos tareas.
+ */
+export const REGRESSION_NAMED_IDS = [
+  "ridge",
+] as const satisfies readonly MemberId[];
+
+/** La clave i18n del nombre largo de un miembro en esa tarea. */
+export function memberNameKey(id: MemberId, task: TrainTask): string {
+  return task === "numerica" &&
+    (REGRESSION_NAMED_IDS as readonly MemberId[]).includes(id)
+    ? `results.candidates.regressionModel.${id}`
+    : `results.candidates.model.${id}`;
 }
 
 /** Ordena (sin duplicados) por prioridad: el orden que Python recibe y no re-deriva. */
@@ -167,15 +260,22 @@ export type OneSeSelection = {
 export function selectOneSe(
   league: readonly CvRowLike[],
   k: number,
+  // S6: el MAE es «menor es mejor» (METRIC_RULES): el mejor es el mínimo y el
+  // umbral suma. Obligatoria: ninguna métrica hereda la dirección por descarte.
+  direction: Direction,
 ): OneSeSelection | null {
   const eligible = league.filter(
     (row): row is CvRowLike & { cv: { mean: number; std: number } } =>
       row.status === "ok" && row.cv !== null,
   );
   if (eligible.length === 0) return null;
-  const best = eligible.reduce((a, b) => (b.cv.mean > a.cv.mean ? b : a));
+  const lower = direction === "lower";
+  const best = eligible.reduce((a, b) =>
+    (lower ? b.cv.mean < a.cv.mean : b.cv.mean > a.cv.mean) ? b : a,
+  );
   const se = best.cv.std / Math.sqrt(k);
-  const threshold = best.cv.mean - se;
-  const winner = eligible.find((row) => row.cv.mean >= threshold)!;
+  const winner = lower
+    ? eligible.find((row) => row.cv.mean <= best.cv.mean + se)!
+    : eligible.find((row) => row.cv.mean >= best.cv.mean - se)!;
   return { best: best.name, winner: winner.name, se };
 }

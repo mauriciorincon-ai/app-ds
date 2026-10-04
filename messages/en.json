@@ -36,6 +36,10 @@
       "clientes": {
         "name": "Customers (messy data)",
         "desc": "Nulls, junk, an ID and duplicates: see the cleanup in action."
+      },
+      "consumo": {
+        "name": "Energy use",
+        "desc": "How many kWh does a home use? Estimate a quantity and see how far off it is."
       }
     },
     "import": {
@@ -61,13 +65,15 @@
         },
         "chosen": "◆ Chosen by you, not by cross-validation (the cross-validation winner was {winner}). If it was chosen by looking at the test set, the metric may be optimistic.",
         "cv": "Chosen by {k}-fold cross-validation among {count} models.",
-        "cv_one": "Chosen by {k}-fold cross-validation (1 model competed)."
+        "cv_one": "Chosen by {k}-fold cross-validation (1 model competed).",
+        "targetQuantity": "Estimates «{target}», a quantity"
       },
       "errors": {
         "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
         "invalid-json": "That file isn't valid JSON.",
         "invalid-format": "That file doesn't look like a model exported by Probeta.",
         "unsupported-version": "That file comes from a Probeta format version this app doesn't support.",
+        "unsupported-task": "That file declares a Probeta model for «{task}», a kind of task this version doesn't open. It was not loaded.",
         "hash-mismatch": "The file's content doesn't match its manifest (it may be corrupted or modified). For safety it was not loaded.",
         "hint": "Only load .probeta.json files exported by Probeta. The file's payload was never touched."
       },
@@ -81,7 +87,7 @@
     "target": {
       "label": "What do you want to predict?",
       "placeholder": "Pick a column…",
-      "help": "You can pick any column: we tell you what kind of prediction it would be. This version trains two-category columns (yes/no, 0/1).",
+      "help": "You can pick any column: we tell you what kind of prediction it would be. This version trains two-category columns (yes/no, 0/1) and quantities (a price, a consumption, a duration).",
       "option": "{column} · {task}"
     },
     "profile": {
@@ -111,6 +117,8 @@
       "title": "Before training, look at these signals:",
       "possible-leak": "«{column}» predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again.",
       "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
+      "target-skewed": "The target is heavily skewed (skewness {skew}): a few very large values carry a lot of weight. The mean absolute error (MAE) treats every miss alike; RMSE punishes misses on those large values harder.",
+      "target-outliers": "{share}% of the target's values sit far from the rest (beyond 3 interquartile ranges). Check whether they are data-entry mistakes before training: they can pull the model a long way.",
       "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
     },
     "trainHint": "Level 1: {count} models · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
@@ -150,7 +158,12 @@
       "precision": "Precision",
       "recall": "Recall",
       "f1": "F1",
-      "auc": "AUC"
+      "auc": "AUC",
+      "mae": "MAE",
+      "rmse": "RMSE",
+      "r2": "R²",
+      "medae": "MedAE",
+      "mape": "MAPE"
     },
     "confusion": {
       "title": "Confusion matrix (test)",
@@ -161,7 +174,9 @@
     "baselines": {
       "title": "Baselines",
       "majority": "Majority class",
-      "logistic": "Logistic regression"
+      "logistic": "Logistic regression",
+      "median": "Median",
+      "linear": "Linear regression"
     },
     "testNote": "The verdict metrics, the confusion matrix and the baselines are computed on the test set, never on the training set. The league table uses cross-validation inside the training set: it is for choosing.",
     "leakage": {
@@ -186,6 +201,8 @@
       "model": {
         "logistic": "Logistic regression",
         "logistic_balanced": "Logistic regression (balanced classes)",
+        "linear": "Linear regression",
+        "lasso": "Lasso regression",
         "ridge": "Ridge classifier",
         "naive_bayes": "Naive Bayes (Gaussian)",
         "linear_svc": "Linear support vector machine",
@@ -202,6 +219,8 @@
       "short": {
         "logistic": "Logistic regression",
         "logistic_balanced": "Balanced logistic",
+        "linear": "Linear",
+        "lasso": "Lasso",
         "ridge": "Ridge",
         "naive_bayes": "Naive Bayes",
         "linear_svc": "Linear SVM",
@@ -214,7 +233,53 @@
         "forest": "Random Forest",
         "forest_balanced": "Balanced Random Forest",
         "mlp": "Neural network"
+      },
+      "regressionModel": {
+        "ridge": "Ridge regression"
       }
+    },
+    "regression": {
+      "verdict": {
+        "beatsDetail": "On average it is off by ±{model}; {baseline} is off by ±{reference}: {pct}% less error.",
+        "tiesDetail": "On average it is off by ±{model}; {baseline} is off by ±{reference}: practically the same. There is no extra signal to learn from these columns — adding variables related to the target usually helps more than switching models.",
+        "losesDetail": "On average it is off by ±{model}; {baseline} is off by less: ±{reference}. Your current columns don't carry enough signal about the target — try variables more related to what you want to estimate.",
+        "linearTie": "The league found nothing better than the reference linear regression",
+        "linearTieDetail": "No model beat linear regression in cross-validation by more than one standard error, and linear regression is also the baseline. On average it is off by ±{model}. With these columns there is no extra signal to learn: adding variables related to the target usually helps more than changing the model.",
+        "baseline": {
+          "median": "always guessing the median ({value})",
+          "linear": "a linear regression"
+        },
+        "units": "Figures are in the units of «{column}»: its name carries no unit the app recognizes."
+      },
+      "primaryMetric": "Main metric: MAE, the average error in the target's units",
+      "guide": "Which one to read: MAE says how far off it is on average. RMSE punishes large errors more: if it is much larger than MAE, it misses by a lot now and then. R² says how much of the variation it explains: 1 is all of it, 0 is the same as guessing the average, and it goes negative when it does worse. MedAE is the typical error, without extreme cases weighing in.",
+      "chart": {
+        "title": "Estimated vs actual, on the test set",
+        "axisReal": "Actual",
+        "axisPredicted": "Estimated",
+        "diagonal": "Diagonal: perfect estimate",
+        "band": "Band: ±MAE ({mae})",
+        "inside": "inside the band",
+        "outside": "outside the band",
+        "label": "Scatter plot of {shown} test rows: actual value on the horizontal axis, estimate on the vertical one. {inside} in every 100 land within ±{mae} of their actual value.",
+        "sample": "The chart shows {shown} of the {total} test rows (a fixed sample spread across the whole range). What follows uses all {total}."
+      },
+      "residuals": {
+        "title": "How the errors are spread",
+        "middle": "Half of the estimates are off by between {p25} and {p75}.",
+        "abs90": "9 in 10 are off by less than ±{abs90}.",
+        "median": {
+          "over": "The median error is {p50}: it tends to overestimate.",
+          "under": "The median error is {p50}: it tends to underestimate.",
+          "none": "The median error is {p50}: no clear lean to either side."
+        },
+        "sign": "Error = estimate − actual: positive means overestimating; negative, underestimating.",
+        "tableCaption": "Error percentiles over the {total} test rows",
+        "percentile": "Percentile",
+        "error": "Error"
+      },
+      "baselinesNote": "Baselines don't compete: they measure whether the league adds anything. The median is the constant with the smallest average error; linear regression, the simplest straight line.",
+      "testNote": "The verdict, metrics, chart and baselines are computed on the test set, never on the training set. The league table uses cross-validation inside training: it is for choosing."
     }
   },
   "score": {
@@ -252,7 +317,9 @@
       "categorical": "“{column}”: {count} values with categories never seen in training",
       "summary": "The model is guessing on {affected} of {total} rows ({percent}%).",
       "hint": "On those rows the prediction is less reliable: the model never saw values like these while training.",
-      "none": "Nothing new: every value falls within what the model saw while training."
+      "none": "Nothing new: every value falls within what the model saw while training.",
+      "numeric_one": "“{column}”: 1 value outside the range seen in training",
+      "categorical_one": "“{column}”: 1 value with a category never seen in training"
     },
     "distribution": {
       "title": "Predictions ({rows} rows)"
@@ -262,7 +329,8 @@
     },
     "columns": {
       "prediction": "prediction",
-      "probability": "probability_{label}"
+      "probability": "probability_{label}",
+      "estimate": "{target}_estimate"
     },
     "fileSuffix": "scored",
     "download": "Download scored CSV",
@@ -273,7 +341,17 @@
       "runtime": "Scoring failed. Check that the columns hold the same kind of data as in training and try again.",
       "import-failed": "The saved model could not be restored. The file may come from an incompatible version; retrain and export again."
     },
-    "noProbabilities": "This model decides the class but does not give a probability, so the probability column is left out. If you need to rank rows by risk, choose a model that gives one."
+    "noProbabilities": "This model decides the class but does not give a probability, so the probability column is left out. If you need to rank rows by risk, choose a model that gives one.",
+    "subtitleQuantity": "Upload a new CSV with the columns the model knows (without the target column) and get the estimated quantity for each row. Everything happens in your browser.",
+    "modelLineQuantity": "Model: {dataset} · estimates: {target}",
+    "quantity": {
+      "title": "Estimates ({count} rows)",
+      "title_one": "Estimates (1 row)",
+      "min": "Minimum",
+      "median": "Median",
+      "max": "Maximum"
+    },
+    "quantityNote": "Estimating gives no probability: each row gets its estimated quantity, with the decimals you used for the target."
   },
   "why": {
     "title": "Why does it predict this way?",
@@ -301,10 +379,16 @@
         "unavailable": "AI narration isn't configured in this deployment.",
         "provider": "The AI provider didn't respond. You can try again.",
         "rejected": "The AI narrative didn't pass verification against the numbers; for honesty it isn't shown. You can try again."
-      }
+      },
+      "aiNotForQuantity": "AI narration only covers classification into two categories. When estimating a quantity, the reading is the standard text above, built from the same numbers."
     },
     "legend": "The bar measures how much each variable MATTERS; the line below says which way it PUSHES. A variable can matter a lot and still have no single direction — that doesn't make it irrelevant.",
-    "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”."
+    "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”.",
+    "directionQuantity": {
+      "positive": "▲ the higher the value, the higher «{target}»",
+      "negative": "▼ the higher the value, the lower «{target}»"
+    },
+    "quantityNote": "The model estimates the column «{target}». The bar measures how much its error (MAE) grows when that variable's link to the target is broken."
   },
   "card": {
     "title": "Model card",
@@ -339,7 +423,21 @@
         "f1": "balance between precision and recall, from 0 to 1",
         "auc": "how well it separates the two classes: 0.50 would be chance and 1.00 perfect"
       },
-      "metricNote": "The primary metric here is {metric} ({help})."
+      "metricNote": "The primary metric here is {metric} ({help}).",
+      "regression": {
+        "verdict": {
+          "beats": "The model is off by ±{model} on average, against ±{baseline} for the best baseline: {pct}% less error.",
+          "ties": "The model is off by ±{model} on average, practically the same as the best baseline (±{baseline}); a simple rule does just as well.",
+          "loses": "The model is off by ±{model} on average, more than the best baseline (±{baseline}); with these variables it adds nothing."
+        },
+        "metricNote": "MAE is the average error in the target's units (0 would be always right). R² is {r2}: how much of the variation it explains, where 1 is all of it and 0 is the same as guessing the average.",
+        "direction": {
+          "positive": "the higher the value, the higher the target",
+          "negative": "the higher the value, the lower the target"
+        },
+        "skewed": "The target is heavily skewed (skew {skew}): a few large values weigh heavily on the error.",
+        "outliers": "{share}% of the target values sit far from the rest: RMSE punishes them more than MAE."
+      }
     }
   },
   "modelcard": {
@@ -356,28 +454,34 @@
       "narrative": "Verified narrative",
       "limits": "Limits",
       "sanitation": "Sanitization",
-      "selection": "Model selection"
+      "selection": "Model selection",
+      "estimate": "Estimation"
     },
     "data": {
       "dataset": "Dataset: {name}",
       "shape": "{rows} rows × {cols} columns ({numeric} numeric predictors, {categorical} categorical)",
-      "target": "Target: “{target}” (binary classification; positive class: “{positive}”)"
+      "target": "Target: “{target}” (binary classification; positive class: “{positive}”)",
+      "targetQuantity": "Target: «{target}» (estimating a quantity)"
     },
     "split": {
       "sizes": "Training: {train} rows · Test: {test} rows (stratified, seed {seed}).",
-      "rule": "Preprocessing was fitted ONLY on the training set (anti-leakage by construction)."
+      "rule": "Preprocessing was fitted ONLY on the training set (anti-leakage by construction).",
+      "sizesQuantity": "Training: {train} rows · Test: {test} rows (stratified by 5 target bands, seed {seed})."
     },
     "method": {
       "pipeline": "Imputation (median / most frequent), rare-category grouping, scaling and one-hot inside a scikit-learn Pipeline.",
-      "models": "Baselines: majority class and logistic regression. Candidates compared: {candidates}. Chosen model: {model}.",
-      "rareCategories": "Rare categories grouped (learned from training only): {cols}."
+      "models": "Candidates compared: {candidates}. Chosen model: {model}.",
+      "rareCategories": "Rare categories grouped (learned from training only): {cols}.",
+      "baselines": "Baselines: majority class and logistic regression.",
+      "baselinesQuantity": "Baselines: the target's median and linear regression."
     },
     "metrics": {
       "metric": "Metric",
       "model": "Model"
     },
     "verdict": {
-      "primary": "Primary metric: {metric}."
+      "primary": "Primary metric: {metric}.",
+      "primaryQuantity": "Primary metric: MAE, the average error in the target's units (lower is better); it ties when within 1% of the best baseline."
     },
     "leakage": {
       "found": "Columns suspected of leakage: {columns}. Metrics may be inflated; remove them and retrain.",
@@ -392,10 +496,10 @@
       "notVerified": "No AI narrative is included: it was not generated or it failed the numeric verification."
     },
     "limits": {
-      "binary": "Binary classification only in this version.",
       "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
       "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
-      "dates": "Date columns are detected but not used yet (no temporal split)."
+      "dates": "Date columns are detected but not used yet (no temporal split).",
+      "tasks": "This version trains two tasks: classification into two categories and estimating a quantity. Several categories come in a later version."
     },
     "sanitation": {
       "duplicates": "Removed {count} exact duplicate rows (prevents leakage by duplication).",
@@ -414,6 +518,15 @@
       "time": "League time on this device: {seconds} s.",
       "smallSample": "Small sample: with fewer than {rows} rows, cross-validation scores vary a lot from one fold to another.",
       "league_one": "1 model competed with {k}-fold cross-validation inside the training set (preprocessing was refit in every fold). Metric: {metric}."
+    },
+    "estimate": {
+      "task": "Task: estimating a quantity (regression). It is compared against the baseline with the smallest error: the median or linear regression.",
+      "unit": "Unit: {unit}, read from the column name.",
+      "noUnit": "Unit: the column name carries none the app recognizes; figures are in the units of «{column}».",
+      "targetStats": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with {count} decimals).",
+      "targetStats_one": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with 1 decimal).",
+      "errors": "Errors over the {total} test rows (estimate − actual): half fall between {p25} and {p75}; 9 in 10 are off by less than ±{abs90}.",
+      "noAi": "AI narration: does not apply to estimating a quantity (it only covers classification into two categories)."
     }
   },
   "errors": {
@@ -425,12 +538,15 @@
     "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
     "csv-tab": "Your file separates columns with tabs rather than commas, so no column is recognised. Save it again as “CSV (comma delimited)” and upload it once more.",
     "target-not-binary": "The target must have exactly two categories.",
+    "target-not-numeric": "To estimate a quantity, the target has to be a number in every row, and this column has values that are not. Check it in your CSV or pick another column.",
+    "target-ambiguous": "This column could hold categories or a quantity, and your answer is missing. Answer the question on the «Kind of prediction» card and train again.",
     "no-features": "There are no usable columns as predictors.",
     "runtime": "Something went wrong while processing. Please try again.",
     "worker-dead": "The compute engine stopped unexpectedly (it may have run out of memory, or its components failed to load). Try again; if it persists, try a smaller file.",
     "retry": "Start over",
     "csv-unusable": "After cleaning the dataset there's nothing left to model (all identifiers, constants, or repeated rows). Try another file.",
     "too-few-rows": "There are too few examples of one of the two classes to compare models honestly: cross-validation needs at least 2 of each class in the training set. Try with more rows.",
+    "too-few-rows-quantity": "There are too few rows to estimate a quantity honestly: the test set needs at least 2 rows the model never saw in training. Try with more rows.",
     "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file.",
     "target-mixed-notation": "Your target has 2 values, but written in more than one way (for example «1» and «1.0»): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
     "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns."
@@ -456,7 +572,27 @@
     "suggested": "Most likely: {task}.",
     "blocked": "The app trains this kind of prediction, but with this data models cannot be compared honestly (the reason is below).",
     "trainable": "Ready to train.",
-    "notYet": "This version does not train this kind of prediction yet: it comes in a later version. For now, pick a column with two categories."
+    "notYet": "This version does not train this kind of prediction yet: it comes in a later version. For now, pick a column with two categories or with a quantity.",
+    "notUsable": "This column is not usable as a target. Pick a column with two categories or with a quantity.",
+    "estimate": {
+      "unit": "You are going to estimate a quantity, in {unit}. The verdict will say how far off it is on average, in {unit}.",
+      "noUnit": "You are going to estimate a quantity. Its name carries no unit the app recognizes, so figures will be given in the units of «{column}»."
+    },
+    "ask": {
+      "question": "Does «{column}» hold categories or a quantity?",
+      "help": "This data alone cannot tell; you know the column.",
+      "suggested": "Suggested",
+      "numerica": {
+        "label": "A quantity",
+        "desc": "The number is estimated. The verdict says how far off it is on average, in the column's units."
+      },
+      "multiclase": {
+        "label": "Categories",
+        "desc": "Each number is a class, like a 1-to-5 rating. This version does not train several classes yet: it comes in a later version."
+      },
+      "answered": "You answered: {answer}.",
+      "change": "Change the answer"
+    }
   },
   "roster": {
     "title": "Who competes",
@@ -513,7 +649,8 @@
     "time": "The league took {seconds} s on this device.",
     "testShort": "test",
     "fichaAria": "About {model}",
-    "title_one": "The league: 1 model"
+    "title_one": "The league: 1 model",
+    "lowerIsBetter": "In this table, lower is better: it is the average error (MAE) in the target's units."
   },
   "ficha": {
     "eyebrow": "Model sheet",

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { EdaAlert } from "@/engine/eda";
 import type { SanitationReport } from "@/engine/sanitize";
-import { isTrainable } from "@/engine/tarea";
+import { isTrainableTask, type AmbiguousChoice } from "@/engine/tarea";
 import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
 import type { TargetPlan } from "@/lib/useExperiment";
@@ -18,6 +18,7 @@ export function ConfigScreen({
   edaAlerts,
   plan,
   onSelectTarget,
+  onAnswerTask,
   onRun,
   onBack,
 }: {
@@ -27,6 +28,8 @@ export function ConfigScreen({
   /** S5: E1 + E2 del objetivo elegido (null mientras no hay objetivo). */
   plan: TargetPlan | null;
   onSelectTarget: (target: string) => void;
+  /** S6 (D2): la respuesta a «¿categorías o una cantidad?». */
+  onAnswerTask?: (choice: AmbiguousChoice | null) => void;
   onRun: (target: string) => void;
   onBack: () => void;
 }) {
@@ -34,11 +37,12 @@ export function ConfigScreen({
   const [target, setTarget] = useState("");
   const profileByName = new Map(dataset.profiles.map((p) => [p.name, p]));
 
-  // Solo se entrena lo que E1 reconoce como binaria y prepareRun pudo armar.
+  // Solo se entrena lo que E1 reconoce (o el usuario respondió) como una tarea
+  // entrenable y prepareRun pudo armar.
   const trainable =
     plan !== null &&
     plan.target === target &&
-    isTrainable(plan.task) &&
+    isTrainableTask(plan.resolved) &&
     plan.routing !== null;
 
   const handleTargetChange = (value: string) => {
@@ -103,14 +107,24 @@ export function ConfigScreen({
 
       {/* S5 (E1): qué tarea plantea el objetivo elegido, con su razón. */}
       {target !== "" && plan && (
-        <TaskCard detection={plan.task} blocked={plan.blocked !== null} />
+        <TaskCard
+          // Otra columna, otra tarjeta: el foco solo se mueve tras responder.
+          key={plan.target}
+          detection={plan.task}
+          blocked={plan.blocked !== null}
+          target={plan.target}
+          resolved={plan.resolved}
+          choice={plan.choice}
+          unit={plan.unit}
+          onAnswer={onAnswerTask}
+        />
       )}
 
       {/* Alertas EDA del objetivo elegido — role="status" (no "alert": no
           interrumpe; el route announcer de Next reserva alert — regla 7). */}
       {target !== "" &&
         edaAlerts &&
-        (plan === null || isTrainable(plan.task)) && (
+        (plan === null || isTrainableTask(plan.resolved)) && (
           <EdaBlock alerts={edaAlerts} />
         )}
 
@@ -323,7 +337,13 @@ function EdaBlock({ alerts }: { alerts: EdaAlert[] }) {
               ? t("config.eda.imbalance", {
                   rate: (alert.minorityRate * 100).toFixed(0),
                 })
-              : t(`config.eda.${alert.kind}`, { column: alert.column })}
+              : alert.kind === "target-skewed"
+                ? t("config.eda.target-skewed", { skew: alert.skew.toFixed(1) })
+                : alert.kind === "target-outliers"
+                  ? t("config.eda.target-outliers", {
+                      share: (alert.share * 100).toFixed(1),
+                    })
+                  : t(`config.eda.${alert.kind}`, { column: alert.column })}
           </li>
         ))}
       </ul>

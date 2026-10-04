@@ -18,7 +18,9 @@ export type IconName =
   | "sparkle"
   | "eye"
   | "info"
-  | "stop";
+  | "stop"
+  | "ruler"
+  | "tag";
 
 const ICON_PATHS: Record<IconName, ReactNode> = {
   upload: (
@@ -88,6 +90,22 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="9" />
       <rect x="9" y="9" width="6" height="6" rx="1" />
+    </>
+  ),
+  // S6: «una cantidad» (regla graduada) y «categorías» (etiqueta).
+  ruler: (
+    <>
+      <rect x="2.5" y="8" width="19" height="8" rx="1.5" />
+      <path d="M7 8v3" />
+      <path d="M11 8v4" />
+      <path d="M15 8v3" />
+      <path d="M19 8v4" />
+    </>
+  ),
+  tag: (
+    <>
+      <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" />
+      <circle cx="7.5" cy="7.5" r="1.5" />
     </>
   ),
   sparkle: (

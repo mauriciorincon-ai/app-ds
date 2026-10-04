@@ -1,0 +1,118 @@
+{
+  "emitted_by": "pipeline.py del S5 (main 96c8896 + F0 del S6, sin cambios en pipeline.py), 2026-10-04",
+  "score_payload": {
+    "headers": [
+      "edad",
+      "ingreso_mensual",
+      "visitas_web",
+      "correos_abiertos",
+      "region",
+      "dispositivo"
+    ],
+    "rows": [
+      [
+        "34",
+        "5000",
+        "10",
+        "5",
+        "sur",
+        "movil"
+      ],
+      [
+        "41",
+        "6000",
+        "3",
+        "2",
+        "sur",
+        "escritorio"
+      ],
+      [
+        "29",
+        "5200",
+        "25",
+        "9",
+        "norte",
+        "movil"
+      ],
+      [
+        "52",
+        "4800",
+        "1",
+        "1",
+        "este",
+        "escritorio"
+      ],
+      [
+        "38",
+        "5500",
+        "30",
+        "14",
+        "oeste",
+        "movil"
+      ],
+      [
+        "999",
+        "4500",
+        "7",
+        "4",
+        "oeste",
+        "movil"
+      ],
+      [
+        "27",
+        "6100",
+        "18",
+        "11",
+        "sur",
+        "holograma"
+      ],
+      [
+        "45",
+        "5300",
+        "5",
+        "3",
+        "norte",
+        "holograma"
+      ]
+    ]
+  },
+  "score": {
+    "predictions": [
+      "0",
+      "0",
+      "1",
+      "0",
+      "1",
+      "1",
+      "1",
+      "0"
+    ],
+    "probabilities": [
+      0.7587894309299056,
+      0.8722660238190143,
+      0.4602528312366273,
+      0.8894139660669197,
+      0.10016766783705842,
+      0.21969053674726127,
+      0.4751882597243164,
+      0.8592267305911981
+    ],
+    "positive_class": "0",
+    "novelty": {
+      "columns": [
+        {
+          "column": "edad",
+          "kind": "numeric",
+          "count": 1
+        },
+        {
+          "column": "dispositivo",
+          "kind": "categorical",
+          "count": 2
+        }
+      ],
+      "affected_rows": 3,
+      "n_rows": 8
+    }
+  }
+}

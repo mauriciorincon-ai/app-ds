@@ -1,4 +1,5 @@
 {
+  "task": "binaria",
   "headers": [
     "ingreso_mensual",
     "monto_prestamo",

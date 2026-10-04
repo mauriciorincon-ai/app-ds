@@ -77,8 +77,10 @@ describe("detectTask (E1)", () => {
     );
   });
 
-  it("solo la binaria entrena en el S5", () => {
+  it("entrenan la binaria y, desde el S6, la cantidad; la multiclase todavía no", () => {
     expect(isTrainable(detectTask(["si", "no"]))).toBe(true);
+    const many = Array.from({ length: 30 }, (_, i) => String(i * 1.5));
+    expect(isTrainable(detectTask(many))).toBe(true);
     expect(isTrainable(detectTask(["a", "b", "c"]))).toBe(false);
   });
 });

@@ -47,7 +47,7 @@ export function Level2Card({
     t(`roster.reason.${p.outReason ?? p.reason}`, {
       rows: profile.rows,
       min: MLP_MIN_ROWS,
-      share: Math.round(profile.minorityShare * 100),
+      share: Math.round((profile.minorityShare ?? 0) * 100),
     });
   const toggle = (id: MemberId) =>
     setExtra((current) =>

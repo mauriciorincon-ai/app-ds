@@ -3,7 +3,7 @@
 // ti con texto, nunca solo color), el veredicto del elegido y el progreso.
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ConfigScreen } from "@/components/ConfigScreen";
 import { LeagueTable } from "@/components/LeagueTable";
 import { ResultsScreen } from "@/components/ResultsScreen";
@@ -12,11 +12,11 @@ import { TaskCard } from "@/components/TaskCard";
 import { TrainingScreen } from "@/components/TrainingScreen";
 import { routeModels, type RouteProfile } from "@/engine/encarrilador";
 import { selectOneSe } from "@/engine/roster";
-import { detectTask } from "@/engine/tarea";
+import { detectTask, type AmbiguousChoice } from "@/engine/tarea";
 import { I18nProvider } from "@/i18n/provider";
 import { assembleResult, summarizeDataset } from "@/lib/experiment";
 import type { ChoiceState, TargetPlan } from "@/lib/useExperiment";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { BinaryResult } from "@/workers/protocol";
 import { pipelineResult } from "./factories";
 
 function ui(children: ReactNode) {
@@ -24,6 +24,7 @@ function ui(children: ReactNode) {
 }
 
 const KIT: RouteProfile = {
+  task: "binaria",
   rows: 200,
   nTrain: 150,
   width: 10,
@@ -31,6 +32,7 @@ const KIT: RouteProfile = {
   k: 5,
 };
 const MEDIANA: RouteProfile = {
+  task: "binaria",
   rows: 5000,
   nTrain: 3750,
   width: 33,
@@ -40,7 +42,7 @@ const MEDIANA: RouteProfile = {
 
 /** Liga de rotación (F0): NB tiene el máximo con un EE ancho; la logística,
  *  primera del orden y dentro del EE, gana. El ganador sale de la regla real. */
-function rotationResult(): ExperimentResult {
+function rotationResult(): BinaryResult {
   const py = pipelineResult(
     { roster: ["logistic", "ridge", "naive_bayes", "hgb", "forest"], cv_k: 5 },
     {
@@ -53,7 +55,7 @@ function rotationResult(): ExperimentResult {
   );
   const nb = py.league[2]!;
   nb.cv = { ...nb.cv!, std: 0.04 * Math.sqrt(5) };
-  const sel = selectOneSe(py.league, 5)!;
+  const sel = selectOneSe(py.league, 5, "higher")!;
   const winner = py.league.find((row) => row.name === sel.winner)!;
   return assembleResult(
     {
@@ -70,7 +72,7 @@ function rotationResult(): ExperimentResult {
 const IDLE: ChoiceState = { status: "idle" };
 
 function table(
-  result: ExperimentResult,
+  result: BinaryResult,
   opts: {
     choice?: ChoiceState;
     onChoose?: (m: string) => void;
@@ -97,20 +99,164 @@ describe("TaskCard (E1)", () => {
   });
 
   it("otras tareas: se nombran y se dice que llegan en una próxima versión (no se esconden)", () => {
-    const values = Array.from({ length: 30 }, (_, i) => String(i * 1.5));
-    ui(<TaskCard detection={detectTask(values)} />);
+    ui(<TaskCard detection={detectTask(["a", "b", "c", "a"])} />);
     expect(
-      screen.getByText(/30 números distintos → predicción de una cantidad/),
+      screen.getByText(
+        /3 categorías distintas → clasificación en varias categorías/,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/llega en una próxima versión/),
     ).toBeInTheDocument();
   });
 
+  // S6: estimar una cantidad se entrena, y la tarjeta dice en qué unidades.
+  it("una cantidad: se entrena, con la unidad si el nombre la trae y franqueza si no", () => {
+    const values = Array.from({ length: 30 }, (_, i) => String(i * 1.5));
+    const { unmount } = ui(
+      <TaskCard
+        detection={detectTask(values)}
+        target="consumo_kwh"
+        unit={{ symbol: "kWh" }}
+      />,
+    );
+    expect(
+      screen.getByText(/30 números distintos → predicción de una cantidad/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Vas a estimar una cantidad, en kWh/),
+    ).toBeInTheDocument();
+    unmount();
+    ui(
+      <TaskCard
+        detection={detectTask(values)}
+        target="edad"
+        unit={{ symbol: null }}
+      />,
+    );
+    expect(screen.getByText(/en las unidades de «edad»/)).toBeInTheDocument();
+  });
+
   it("ambigua: sugiere la lectura más probable", () => {
     ui(<TaskCard detection={detectTask(["1", "2", "3", "4", "5", "1"])} />);
     expect(
       screen.getByText("Lo más probable: clasificación en varias categorías."),
+    ).toBeInTheDocument();
+  });
+
+  // S6 (D2): la app pregunta, no adivina — dos botones, la sugerida con ★ + texto.
+  it("ambigua con pregunta: dos respuestas por teclado, la sugerida marcada", () => {
+    const onAnswer = vi.fn();
+    const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
+    ui(
+      <TaskCard detection={detection} target="ocupantes" onAnswer={onAnswer} />,
+    );
+    const group = screen.getByRole("group", {
+      name: "¿«ocupantes» guarda categorías o una cantidad?",
+    });
+    const buttons = within(group).getAllByRole("button");
+    expect(buttons).toHaveLength(2);
+    const suggested = detection.suggested === "numerica" ? 0 : 1;
+    expect(buttons[suggested]).toHaveTextContent("★Sugerida");
+    expect(buttons[1 - suggested]).not.toHaveTextContent("Sugerida");
+    fireEvent.click(
+      within(group).getByRole("button", { name: /Una cantidad/ }),
+    );
+    expect(onAnswer).toHaveBeenCalledWith("numerica");
+  });
+
+  it("responder y cambiar la respuesta: el foco va a lo que aparece (AU-S6-04)", () => {
+    const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
+    function Harness() {
+      const [choice, setChoice] = useState<AmbiguousChoice | null>(null);
+      return (
+        <TaskCard
+          detection={detection}
+          target="ocupantes"
+          resolved={choice ?? "ambigua"}
+          choice={choice}
+          unit={{ symbol: null }}
+          onAnswer={setChoice}
+        />
+      );
+    }
+    ui(<Harness />);
+    // Al montar no se roba el foco.
+    expect(document.activeElement).toBe(document.body);
+    const answer = screen.getByRole("button", { name: /Una cantidad/ });
+    answer.focus();
+    fireEvent.click(answer);
+    // El párrafo de la respuesta, no el body (que también contiene el texto).
+    const head = document.activeElement as HTMLElement;
+    expect(head.tagName).toBe("P");
+    expect(head).toHaveTextContent("Respondiste: Una cantidad.");
+    fireEvent.click(
+      screen.getByRole("button", { name: /Cambiar la respuesta/ }),
+    );
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: /Una cantidad/ }),
+    );
+  });
+
+  it("cada respuesta se nombra por su etiqueta y se describe una sola vez (AU-S6-38)", () => {
+    const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
+    ui(
+      <TaskCard detection={detection} target="ocupantes" onAnswer={vi.fn()} />,
+    );
+    const quantity = screen.getByRole("button", { name: /Una cantidad/ });
+    expect(quantity).toHaveAccessibleName(/^Una cantidad( Sugerida)?$/);
+    expect(quantity).toHaveAccessibleDescription(/^Se estima el número/);
+  });
+
+  it("una columna que no sirve como objetivo no promete una próxima versión (AU-S6-05)", () => {
+    ui(
+      <TaskCard
+        detection={detectTask(
+          Array.from({ length: 50 }, (_, i) => `c${i % 25}`),
+        )}
+      />,
+    );
+    expect(screen.getByText(/no algo que predecir/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Esta columna no sirve como objetivo. Elige una columna con dos categorías o con una cantidad.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/próxima versión/)).toBeNull();
+  });
+
+  it("ambigua respondida: dice la respuesta, la tarea que resulta y deja cambiarla", () => {
+    const onAnswer = vi.fn();
+    const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
+    const { unmount } = ui(
+      <TaskCard
+        detection={detection}
+        target="ocupantes"
+        resolved="numerica"
+        choice="numerica"
+        unit={{ symbol: null }}
+        onAnswer={onAnswer}
+      />,
+    );
+    expect(screen.getByText("Respondiste: Una cantidad.")).toBeInTheDocument();
+    expect(screen.getByText(/Vas a estimar una cantidad/)).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Cambiar la respuesta/ }),
+    );
+    expect(onAnswer).toHaveBeenCalledWith(null);
+    unmount();
+    ui(
+      <TaskCard
+        detection={detection}
+        target="ocupantes"
+        resolved="multiclase"
+        choice="multiclase"
+        onAnswer={onAnswer}
+      />,
+    );
+    expect(screen.getByText("Respondiste: Categorías.")).toBeInTheDocument();
+    expect(
+      screen.getByText(/llega en una próxima versión/),
     ).toBeInTheDocument();
   });
 });
@@ -192,6 +338,9 @@ describe("ConfigScreen con el plan (E1 + E2)", () => {
   ): TargetPlan => ({
     target,
     task: dataset.targetTasks[target]!,
+    choice: null,
+    resolved: dataset.targetTasks[target]!.task,
+    unit: null,
     routing,
     profile: routing ? KIT : null,
     smallSample: false,
@@ -322,7 +471,7 @@ describe("LeagueTable", () => {
   it("elegido por ti: ◆ con texto, y el ganador ofrece volver", () => {
     const onChoose = vi.fn();
     const base = rotationResult();
-    const chosen: ExperimentResult = {
+    const chosen: BinaryResult = {
       ...base,
       modelName: "forest",
       selection: { ...base.selection, by: "user" },
@@ -337,7 +486,7 @@ describe("LeagueTable", () => {
 
   it("ninguno se omite: pendientes del Nivel 2 y «fuera» con su razón; un error, con su tipo", () => {
     const base = rotationResult();
-    const withError: ExperimentResult = {
+    const withError: BinaryResult = {
       ...base,
       league: base.league.map((row) =>
         row.name === "hgb"
@@ -373,7 +522,7 @@ describe("ResultsScreen — el veredicto de la liga", () => {
     categoricalFeatures: 1,
     seed: 42,
   };
-  const screenWith = (result: ExperimentResult, modelReady = true) =>
+  const screenWith = (result: BinaryResult, modelReady = true) =>
     ui(
       <ResultsScreen
         result={result}
@@ -425,6 +574,33 @@ describe("ResultsScreen — el veredicto de la liga", () => {
     ).toBeNull();
     expect(
       screen.getByRole("heading", { level: 1, name: /NO supera al baseline/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("R2: si gana la logística y empata con la CLASE MAYORITARIA, el titular normal la nombra (AU-S6-18)", () => {
+    const result = rotationResult();
+    screenWith({
+      ...result,
+      // La logística de referencia rinde peor que el azar: decide la mayoritaria.
+      baselines: {
+        ...result.baselines,
+        logistic: { ...result.baselines.logistic, auc: 0.45 },
+      },
+      verdict: {
+        ...result.verdict,
+        level: "ties",
+        delta: -0.005,
+        modelScore: 0.495,
+        baselineScore: 0.5,
+      },
+    });
+    expect(
+      screen.queryByText(
+        "La liga no encontró nada mejor que la regresión de referencia",
+      ),
+    ).toBeNull();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /empata con el baseline/ }),
     ).toBeInTheDocument();
   });
 

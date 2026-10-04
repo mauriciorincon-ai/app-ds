@@ -19,7 +19,11 @@ describe("computeEdaAlerts — silencio en dataset limpio", () => {
       ["norte", "sur", "este"][i % 3],
       i % 2 === 0 ? "0" : "1",
     ]);
-    const alerts = computeEdaAlerts(table(["edad", "region", "y"], rows), "y");
+    const alerts = computeEdaAlerts(
+      table(["edad", "region", "y"], rows),
+      "y",
+      "binaria",
+    );
     expect(alerts).toEqual([]);
   });
 });
@@ -30,7 +34,11 @@ describe("computeEdaAlerts — posible fuga", () => {
       const positivo = i % 2 === 0;
       return [positivo ? "p" : "q", positivo ? "1" : "0"];
     });
-    const alerts = computeEdaAlerts(table(["proxy", "y"], rows), "y");
+    const alerts = computeEdaAlerts(
+      table(["proxy", "y"], rows),
+      "y",
+      "binaria",
+    );
     const leak = alerts.find((a) => a.kind === "possible-leak");
     expect(leak).toBeDefined();
     if (leak?.kind === "possible-leak") expect(leak.column).toBe("proxy");
@@ -42,7 +50,7 @@ describe("computeEdaAlerts — posible fuga", () => {
       `cliente-${i}`,
       i % 2 === 0 ? "0" : "1",
     ]);
-    const alerts = computeEdaAlerts(table(["ref", "y"], rows), "y");
+    const alerts = computeEdaAlerts(table(["ref", "y"], rows), "y", "binaria");
     expect(kinds(alerts)).toContain("id-like");
     expect(kinds(alerts)).not.toContain("possible-leak");
   });
@@ -55,7 +63,7 @@ describe("computeEdaAlerts — desbalance", () => {
       String(i),
       i < 2 ? "1" : "0",
     ]);
-    const alerts = computeEdaAlerts(table(["x", "y"], rows), "y");
+    const alerts = computeEdaAlerts(table(["x", "y"], rows), "y", "binaria");
     const imb = alerts.find((a) => a.kind === "class-imbalance");
     expect(imb).toBeDefined();
     if (imb?.kind === "class-imbalance")
@@ -67,7 +75,7 @@ describe("computeEdaAlerts — desbalance", () => {
       String(i),
       i % 2 === 0 ? "0" : "1",
     ]);
-    const alerts = computeEdaAlerts(table(["x", "y"], rows), "y");
+    const alerts = computeEdaAlerts(table(["x", "y"], rows), "y", "binaria");
     expect(kinds(alerts)).not.toContain("class-imbalance");
   });
 });
@@ -82,7 +90,7 @@ describe("computeEdaAlerts — objetivo no binario", () => {
         ["3", "c"],
       ],
     );
-    expect(computeEdaAlerts(t, "y")).toEqual([]);
+    expect(computeEdaAlerts(t, "y", "binaria")).toEqual([]);
   });
 });
 
@@ -97,7 +105,11 @@ describe("computeEdaAlerts — orden por severidad", () => {
         positivo ? "1" : "0",
       ];
     });
-    const alerts = computeEdaAlerts(table(["proxy", "ref", "y"], rows), "y");
+    const alerts = computeEdaAlerts(
+      table(["proxy", "ref", "y"], rows),
+      "y",
+      "binaria",
+    );
     expect(kinds(alerts)).toEqual([
       "possible-leak",
       "id-like",

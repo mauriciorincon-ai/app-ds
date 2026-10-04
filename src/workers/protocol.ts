@@ -3,8 +3,14 @@
 // métricas. La UI no habla WASM: lee el estado de useExperiment.
 import type { LeakageFinding } from "@/engine/leakage";
 import type { MemberId } from "@/engine/roster";
-import type { TaskDetection } from "@/engine/tarea";
-import type { MetricName, Metrics, Verdict } from "@/engine/verdict";
+import type { TaskDetection, TrainTask } from "@/engine/tarea";
+import type {
+  MetricName,
+  Metrics,
+  PrimaryMetric,
+  RegressionMetrics,
+  Verdict,
+} from "@/engine/verdict";
 import type { ColumnProfile } from "@/lib/ds/csv";
 
 export type ProgressStage =
@@ -25,12 +31,19 @@ export type WorkerErrorKind =
   | "csv-semicolon"
   | "csv-tab"
   | "target-not-binary"
+  // S6: se eligió estimar una cantidad pero el objetivo trae valores no numéricos.
+  | "target-not-numeric"
+  // S6 (D2): la columna puede ser clases o cantidad y el usuario aún no respondió.
+  | "target-ambiguous"
   // S5: el objetivo tiene 2 valores para E1 pero escritos de más de una forma («1» y «1.0»).
   | "target-mixed-notation"
   | "no-features"
   // S5: la clase minoritaria de train no alcanza para 2 pliegues de validación
   // cruzada (hay que tener al menos 2 ejemplos de cada clase en train).
   | "too-few-rows"
+  // S6 (AU-S6-08): al estimar una cantidad, la prueba quedaría con menos de
+  // MIN_REGRESSION_TEST_ROWS filas (el texto de «too-few-rows» habla de clases).
+  | "too-few-rows-quantity"
   // S5 (regla 15): el resultado del motor no tiene la forma del contrato; se
   // nombra el campo y no se muestra nada que no se pueda verificar.
   | "contract"
@@ -58,6 +71,8 @@ export type DatasetSummary = {
 
 // Lo que se envía al runner de Pyodide (nombres en snake_case: los consume pipeline.py).
 export type PipelinePayload = {
+  /** S6 (P1): la tarea viaja explícita; Python la valida y la devuelve. */
+  task: TrainTask;
   headers: string[];
   rows: string[][];
   target: string;
@@ -69,7 +84,7 @@ export type PipelinePayload = {
   // S4: la regla de métrica primaria vive SOLO en verdict.ts (pickPrimaryMetric es
   // simétrica en p↔1−p ⇒ TS la resuelve sin conocer cuál clase es la positiva de
   // Python). S5: es también el scorer de la validación cruzada — no la re-deriva.
-  primary_metric: MetricName;
+  primary_metric: PrimaryMetric;
   /** S5 (E2): quiénes compiten, en orden de prioridad (Python no lo re-deriva). */
   roster: MemberId[];
   /** S5: pliegues de la validación cruzada (≤ minoritaria de train, ≥ 2). */
@@ -101,10 +116,10 @@ export type Explainability = {
 
 // S4: cada candidato entrenado (mismo preprocesador) con sus métricas sobre test.
 // S5: derivado de la liga (filas con test); lo lista la model card («Candidatos comparados»).
-export type ModelCandidate = {
+export type ModelCandidate<M = Metrics> = {
   /** Clave estable e independiente de idioma; la UI la traduce por i18n. */
   name: MemberId;
-  metrics: Metrics;
+  metrics: M;
 };
 
 // --- S5: la liga ------------------------------------------------------------
@@ -120,13 +135,13 @@ export type CvScore = {
   folds: number[];
 };
 
-export type LeagueRow = {
+export type LeagueRow<M = Metrics> = {
   name: MemberId;
   status: MemberStatus;
-  /** null ⇔ status "error". «Sirve para elegir.» */
+  /** null ⇔ status "error". «Sirve para elegir.» (S6: con MAE, en unidades; menor es mejor.) */
   cv: CvScore | null;
   /** Métricas en test («no sirve para elegir»); null ⇔ status "error". */
-  test: Metrics | null;
+  test: M | null;
   /** CV + ajuste en train + test de ESTE miembro, en ms (calibra el Nivel 2: ver planLevel2). */
   elapsed_ms: number;
   error_type: string | null;
@@ -153,6 +168,8 @@ export type ProgressDetail = {
 
 // Lo que devuelve pipeline.py (JSON).
 export type PipelineResult = {
+  /** S6: la tarea (aditivo en la binaria; el lector la coteja con la enviada). */
+  task: "binaria";
   /** Las 2 clases del objetivo, orden lexicográfico (S3: esquema del modelo). */
   classes: string[];
   positive_class: string;
@@ -180,8 +197,75 @@ export type Preprocessing = {
   rare_categories: Record<string, string[]>;
 };
 
+// --- S6: estimar una cantidad (ADR-013) ------------------------------------
+
+/** El objetivo en TRAIN (jamás test): veredicto en unidades y formato de las
+ *  predicciones. Son valores del objetivo: viven solo en el navegador (regla dura 2). */
+export type TargetStats = {
+  mean: number;
+  std: number;
+  min: number;
+  max: number;
+  median: number;
+  /** Decimales con que el usuario escribió el objetivo (tope 6). */
+  decimals: number;
+};
+
+/** Muestra determinista del test para el gráfico, ordenada por el valor real. */
+export type PredVsReal = {
+  real: number[];
+  predicted: number[];
+  /** Filas de test en total (la muestra puede ser menor: tope de despliegue). */
+  n_total: number;
+};
+
+/** Cuantiles del residuo (predicho − real) sobre TODO el test. */
+export type Residuals = {
+  p05: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p95: number;
+  /** Percentil 90 del error absoluto: «9 de cada 10 se equivocan menos que…». */
+  abs_p90: number;
+};
+
+export type RegressionBaselines = {
+  median: RegressionMetrics;
+  linear: RegressionMetrics;
+};
+
+export type RegressionPipelineResult = {
+  task: "numerica";
+  target_stats: TargetStats;
+  n_train: number;
+  n_test: number;
+  baselines: RegressionBaselines;
+  model: RegressionMetrics;
+  model_name: MemberId;
+  winner: MemberId;
+  league: LeagueRow<RegressionMetrics>[];
+  cv: CvSummary;
+  elapsed_ms: number;
+  pred_vs_real: PredVsReal;
+  residuals: Residuals;
+  explainability: Explainability;
+  preprocessing: Preprocessing;
+};
+
+export type RegressionMemberFitResult = {
+  task: "numerica";
+  model: RegressionMetrics;
+  model_name: MemberId;
+  pred_vs_real: PredVsReal;
+  residuals: Residuals;
+  explainability: Explainability;
+  preprocessing: Preprocessing;
+};
+
 /** S5 (U1): el miembro elegido a mano, ajustado en train completo. */
 export type MemberFitResult = {
+  task: "binaria";
   model: Metrics;
   model_name: MemberId;
   confusion_matrix: number[][];
@@ -190,13 +274,13 @@ export type MemberFitResult = {
 };
 
 /** S5: cómo se eligió el modelo activo (lo registran la model card y el manifiesto). */
-export type Selection = {
+export type Selection<M extends PrimaryMetric = MetricName> = {
   /** "cv" = ganador de la validación cruzada · "user" = «elegido por ti» (U1). */
   by: "cv" | "user";
   cvWinner: MemberId;
   best: MemberId;
   k: number;
-  metric: MetricName;
+  metric: M;
   rule: "one-se";
   se: number;
   /** Cuántos compitieron. */
@@ -204,7 +288,9 @@ export type Selection = {
   elapsedMs: number;
 };
 
-export type ExperimentResult = {
+export type BinaryResult = {
+  /** S6: ausente = binaria (los resultados y archivos del S5 no la traen). */
+  task?: "binaria";
   positiveClass: string;
   positiveRate: number;
   nTrain: number;
@@ -227,18 +313,59 @@ export type ExperimentResult = {
   explainability: Explainability;
 };
 
+/** Unidad del objetivo inferida del NOMBRE de la columna (tabla cerrada de sufijos;
+ *  sin sufijo conocido no se inventa: `symbol` null y la UI dice «en las unidades de…»). */
+export type TargetUnit = { symbol: string | null };
+
+/** S6: el resultado de estimar una cantidad. El veredicto habla en unidades. */
+export type RegressionResult = {
+  task: "numerica";
+  nTrain: number;
+  nTest: number;
+  targetStats: TargetStats;
+  unit: TargetUnit;
+  baselines: RegressionBaselines;
+  model: RegressionMetrics;
+  modelName: MemberId;
+  candidates: ModelCandidate<RegressionMetrics>[];
+  league: LeagueRow<RegressionMetrics>[];
+  selection: Selection<"mae">;
+  smallSample: boolean;
+  rareCategories?: Record<string, string[]>;
+  predVsReal: PredVsReal;
+  residuals: Residuals;
+  verdict: Verdict<"mae">;
+  leakage: LeakageFinding[];
+  explainability: Explainability;
+};
+
+export type ExperimentResult = BinaryResult | RegressionResult;
+
 // --- Scoring + export/import (S3) ------------------------------------------
 // El modelo fitted vive a nivel de módulo en pipeline.py (_MODEL) dentro del
 // worker; `score`/`export-model` operan sobre él e `import-model` lo repuebla.
 
 /** Esquema del modelo: qué columnas espera y qué clases aprendió. */
-export type ModelSchema = {
+export type BinaryModelSchema = {
   numeric: string[];
   categorical: string[];
   target: string;
   classes: string[];
   positive_class: string;
+  /** S6: aditivo; ausente en los archivos del S5 (= binaria). */
+  task?: "binaria";
 };
+
+/** S6: un modelo que estima una cantidad no tiene clases; trae su objetivo en train. */
+export type RegressionModelSchema = {
+  numeric: string[];
+  categorical: string[];
+  target: string;
+  task: "numerica";
+  target_stats: TargetStats;
+};
+
+export type ModelSchema = BinaryModelSchema | RegressionModelSchema;
 
 /** Perfil de TRAIN (nunca de test) — base del reporte honesto de novedad.
  *  min/max null ⇔ la columna quedó sin valores numéricos en train. */
@@ -268,7 +395,9 @@ export type NoveltyReport = {
   n_rows: number;
 };
 
-export type ScoreResult = {
+export type BinaryScoreResult = {
+  /** S6: aditivo (Python lo emite desde el S6). */
+  task?: "binaria";
   /** Etiqueta ORIGINAL de la clase por fila (jamás 0/1). */
   predictions: string[];
   /** Probabilidad de la clase positiva por fila; null si el modelo no la da
@@ -277,6 +406,17 @@ export type ScoreResult = {
   positive_class: string;
   novelty: NoveltyReport;
 };
+
+/** S6: la cantidad estimada por fila, en las unidades del objetivo. */
+export type RegressionScoreResult = {
+  task: "numerica";
+  predictions: number[];
+  /** Siempre null: estimar no da una probabilidad (no se inventa). */
+  probabilities: null;
+  novelty: NoveltyReport;
+};
+
+export type ScoreResult = BinaryScoreResult | RegressionScoreResult;
 
 export type RuntimeVersions = {
   pyodide: string;

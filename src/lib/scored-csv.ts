@@ -1,11 +1,13 @@
 // Ensamblador del CSV puntuado (motor puro, sin i18n): toma la tabla original
 // del usuario y le añade dos columnas — predicción (etiqueta original de la
-// clase) y probabilidad de la clase positiva. Los NOMBRES de esas columnas
+// clase) y probabilidad de la clase positiva. S6: al estimar, una sola columna
+// (`<objetivo>_estimado`, ya formateada con formatEstimates) y sin probabilidad. Los NOMBRES de esas columnas
 // llegan localizados por parámetro (el CSV descargado sale en el idioma
 // activo); si colisionan con columnas del usuario se les añade un sufijo
 // determinista (_2, _3, …) — jamás se pisa una columna existente.
-import type { CsvTable } from "@/lib/ds/csv";
+import { parseNumber, type CsvTable } from "@/lib/ds/csv";
 import { datasetSlug } from "@/lib/files";
+import { TARGET_DECIMALS_MAX } from "@/workers/contract";
 
 export type ScoredColumnNames = {
   prediction: string;
@@ -41,6 +43,21 @@ function escapeField(value: string): string {
 }
 
 /**
+ * Inyección de fórmulas (OWASP «CSV injection», pagado en el S6: AU-S6-33). Una
+ * celda que empieza con =, +, -, @, tabulador o retorno se EJECUTA como fórmula al
+ * abrir la descarga en una hoja de cálculo (`=HYPERLINK(…)`). Se escribe con un
+ * apóstrofo delante, que la hoja muestra como texto. Un número («-12.5», «+3») no
+ * es fórmula y no se toca: el archivo sigue siendo la tabla del usuario.
+ */
+export function neutralizeFormula(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) && parseNumber(value) === null
+    ? `'${value}`
+    : value;
+}
+
+const cell = (value: string) => escapeField(neutralizeFormula(value));
+
+/**
  * Serializa la tabla original + predicción + probabilidad como CSV RFC-4180.
  * Preserva TODAS las columnas y filas del usuario (incluidas las que el modelo
  * ignoró: el archivo descargado es su tabla completa, puntuada). S5: si el modelo
@@ -70,7 +87,7 @@ export function buildScoredCsv(
     resolved.prediction,
     ...(probabilities ? [resolved.probability] : []),
   ]
-    .map(escapeField)
+    .map(cell)
     .join(",");
   const lines = rows.map((row, i) =>
     [
@@ -80,7 +97,7 @@ export function buildScoredCsv(
         ? [probabilities[i]!.toFixed(PROBABILITY_DECIMALS)]
         : []),
     ]
-      .map(escapeField)
+      .map(cell)
       .join(","),
   );
   return [header, ...lines].join("\n") + "\n";
@@ -93,4 +110,34 @@ export function scoredCsvFileName(
 ): string {
   const slug = datasetSlug(datasetName) || "datos";
   return `${slug}-${localizedSuffix}.csv`;
+}
+
+/**
+ * S6 (AU-S6-41): el resumen de las estimaciones (mínimo · mediana · máximo), puro
+ * y probado, fuera del componente. null sin estimaciones.
+ */
+export function estimateSummary(
+  values: readonly number[],
+): { min: number; median: number; max: number } | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  const median =
+    n % 2 === 1
+      ? sorted[(n - 1) / 2]!
+      : (sorted[n / 2 - 1]! + sorted[n / 2]!) / 2;
+  return { min: sorted[0]!, median, max: sorted[n - 1]! };
+}
+
+/**
+ * S6: las cantidades estimadas, escritas con los decimales con que el usuario
+ * anotó su objetivo (TargetStats.decimals): un consumo anotado con 1 decimal se
+ * estima con 1, un precio entero sale entero. No se inventa precisión.
+ */
+export function formatEstimates(
+  predictions: readonly number[],
+  decimals: number,
+): string[] {
+  const d = Math.min(Math.max(Math.trunc(decimals), 0), TARGET_DECIMALS_MAX);
+  return predictions.map((value) => value.toFixed(d));
 }

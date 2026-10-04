@@ -5,7 +5,11 @@
 // Se carga con import() dinámico junto con FichaModelo (budget de script).
 // Paridad (ids = roster, ambos idiomas completos): tests/unit/modelos.test.ts.
 import { MLP_MIN_ROWS } from "@/engine/encarrilador";
-import type { MemberId } from "@/engine/roster";
+import type {
+  BinaryMemberId,
+  MemberId,
+  RegressionMemberId,
+} from "@/engine/roster";
 
 export type Bilingual = { es: string; en: string };
 
@@ -25,7 +29,9 @@ export type Ficha = {
 /** Variantes con `class_weight="balanced"`: comparten la ficha de su base. */
 export type BalancedId = "logistic_balanced" | "forest_balanced";
 export type BaseId = Exclude<MemberId, BalancedId>;
-export type FichaId = BaseId | "majority";
+/** Los baselines que tienen ficha y no compiten: uno por tarea que no es miembro (S6). */
+export type BaselineFichaId = "majority" | "median";
+export type FichaId = BaseId | BaselineFichaId;
 
 export const FICHAS: Record<FichaId, Ficha> = {
   logistic: {
@@ -50,6 +56,29 @@ export const FICHAS: Record<FichaId, Ficha> = {
       en: "Next to nothing: milliseconds, even with thousands of rows.",
     },
   },
+  // S6 (ADR-013): solo estima cantidades. También es baseline del veredicto de regresión.
+  linear: {
+    what: {
+      es: "Una suma ponderada de tus columnas que da directamente la cantidad estimada: cada columna suma o resta con un peso fijo.",
+      en: "A weighted sum of your columns that gives the estimate directly: each column adds or subtracts with one fixed weight.",
+    },
+    goodFor: {
+      es: "Relaciones del tipo «a más de esto, más cantidad»; pocos datos; cuando tienes que poder explicar de dónde sale cada número.",
+      en: "Relationships of the «more of this, more of that» kind; small datasets; any time you need to explain where each number comes from.",
+    },
+    notFor: {
+      es: "Combinaciones («esto pesa solo si además pasa aquello») y curvas: si nadie se las construye, no las ve.",
+      en: "Combinations («this matters only when that happens too») and curves: it cannot see them unless someone builds them in.",
+    },
+    watch: {
+      es: "También es baseline del veredicto. Si gana la liga, ningún modelo más complejo aportó algo: eso es un resultado, no un fracaso.",
+      en: "It is also one of the verdict's baselines. If it wins the league, no fancier model added anything — that is a finding, not a failure.",
+    },
+    cost: {
+      es: "Casi nada: milisegundos, incluso con miles de filas.",
+      en: "Next to nothing: milliseconds, even with thousands of rows.",
+    },
+  },
   ridge: {
     what: {
       es: "Un modelo lineal, pariente de la logística, que traza una frontera recta y le pone freno a los pesos demasiado grandes.",
@@ -66,6 +95,29 @@ export const FICHAS: Record<FichaId, Ficha> = {
     watch: {
       es: "Su AUC se calcula con su puntaje de decisión, no con una probabilidad: sirve para ordenar filas, no para leerlo como porcentaje.",
       en: "Its AUC comes from a decision score rather than a probability: good for ranking rows, meaningless as a percentage.",
+    },
+    cost: {
+      es: "Casi nada.",
+      en: "Next to nothing.",
+    },
+  },
+  // S6 (ADR-013): solo estima cantidades.
+  lasso: {
+    what: {
+      es: "Una regresión lineal que castiga sus pesos y puede dejar en cero los de las columnas que no aportan: elige columnas mientras ajusta.",
+      en: "A linear regression that penalises its weights and can push the useless ones all the way to zero — it picks columns as it fits.",
+    },
+    goodFor: {
+      es: "Muchas columnas de las que sospechas que solo unas pocas importan.",
+      en: "Lots of columns when you suspect only a handful really matter.",
+    },
+    notFor: {
+      es: "Lo mismo que la lineal: no ve combinaciones ni curvas. Con columnas casi iguales entre sí, se queda con una casi al azar.",
+      en: "Same blind spots as plain linear regression: no combinations, no curves. Given near-duplicate columns, it keeps one of them almost arbitrarily.",
+    },
+    watch: {
+      es: "Si empata con la lineal, la penalización no tuvo nada que podar: todas tus columnas aportan un poco.",
+      en: "If it ties with linear regression, the penalty found nothing to prune: every column pulls a little weight.",
     },
     cost: {
       es: "Casi nada.",
@@ -314,6 +366,29 @@ export const FICHAS: Record<FichaId, Ficha> = {
       en: "None.",
     },
   },
+  // S6: el baseline constante de estimar una cantidad (decidido en el STOP de la F0).
+  median: {
+    what: {
+      es: "Predice siempre el mismo número: la mediana del objetivo en el entrenamiento, el valor que queda en el medio. No aprende nada de tus columnas.",
+      en: "Always predicts the same number: the target's median in training, the value right in the middle. It learns nothing from your columns.",
+    },
+    goodFor: {
+      es: "Como vara mínima: si la liga no se equivoca menos que adivinar siempre la mediana, tus columnas no aportan señal sobre el objetivo.",
+      en: "As the floor: if the league is not off by less than always guessing the median, your columns carry no signal about the target.",
+    },
+    notFor: {
+      es: "Usarla como modelo: da la misma respuesta para cada fila.",
+      en: "Actual use: it gives every row the same answer.",
+    },
+    watch: {
+      es: "Es la constante que menos se equivoca en promedio. Por eso se usa en vez del promedio: con un objetivo sesgado, adivinar el promedio se equivoca más y le regalaría al modelo una victoria fácil.",
+      en: "It is the constant with the smallest average error. That is why it is used instead of the mean: with a skewed target, guessing the mean is off by more and would hand the model an easy win.",
+    },
+    cost: {
+      es: "Ninguno.",
+      en: "None.",
+    },
+  },
 };
 
 /** El párrafo propio de cada variante balanceada (D4). */
@@ -325,5 +400,89 @@ export const BALANCED_NOTES: Record<BalancedId, Bilingual> = {
   forest_balanced: {
     es: "Variante balanceada: cada árbol pesa más los ejemplos de la clase menos frecuente. Compite solo cuando tus clases están desequilibradas; con clases parejas repetiría al bosque normal.",
     en: "Balanced variant: every tree weighs the rarer class more heavily. It only competes when your classes are imbalanced; with even classes it would just repeat the regular forest.",
+  },
+};
+
+/**
+ * S6: los modelos que compiten en las DOS tareas comparten id y ficha; al estimar
+ * una cantidad, la ficha suma este párrafo (cómo estima, qué cambia). Las fichas
+ * de `linear` y `lasso` ya hablan de estimar: solo compiten ahí.
+ */
+export type SharedId = Extract<BinaryMemberId, RegressionMemberId>;
+
+export const REGRESSION_NOTES: Record<SharedId, Bilingual> = {
+  ridge: {
+    es: "Al estimar, Ridge compite con su versión sin freno (la regresión lineal) y con Lasso, que además puede dejar columnas en cero.",
+    en: "When estimating, Ridge competes with its unbraked version (linear regression) and with Lasso, which can also switch columns off entirely.",
+  },
+  decision_tree: {
+    es: "Al estimar, cada hoja del árbol predice el promedio de las filas de entrenamiento que caen en ella: la estimación sube en escalones, nunca en curva suave. Con hojas de al menos 5 filas no memoriza cada caso.",
+    en: "When estimating, each leaf predicts the average of the training rows that land in it: estimates move in steps, never along a smooth curve. Leaves of at least 5 rows keep it from memorising every case.",
+  },
+  knn: {
+    es: "Al estimar, promedia el valor del objetivo de las 5 filas de entrenamiento más parecidas. Nunca estima por fuera del rango que vio: si los datos nuevos son más extremos, se queda corto.",
+    en: "When estimating, it averages the target of the 5 most similar training rows. It never estimates outside the range it saw: with more extreme new data, it falls short.",
+  },
+  hgb: {
+    es: "Al estimar, suma árboles pequeños que corrigen, uno tras otro, el error de los anteriores. Suele estar entre los más precisos en tablas medianas y grandes.",
+    en: "When estimating, it adds up small trees that each correct the error left by the ones before. It is often among the most accurate on medium and large tables.",
+  },
+  lightgbm: {
+    es: "Al estimar funciona igual que al clasificar: 200 árboles que se corrigen entre sí, ahora achicando el error en las unidades del objetivo.",
+    en: "When estimating it works as it does when classifying: 200 trees correcting one another, now shrinking the error in the target's units.",
+  },
+  xgboost: {
+    es: "Al estimar, sus 200 árboles se ajustan uno tras otro para achicar el error de la suma, con una penalización que frena a los árboles demasiado detallados.",
+    en: "When estimating, its 200 trees are fitted one after another to shrink the error of the sum, with a penalty that holds back overly detailed trees.",
+  },
+  extra_trees: {
+    es: "Al estimar, promedia lo que estiman sus 200 árboles, cada uno con cortes elegidos al azar. Ese azar suaviza la estimación y suele resistir bien el ruido.",
+    en: "When estimating, it averages what its 200 trees estimate, each built with randomly chosen splits. That randomness smooths the estimate and usually copes well with noise.",
+  },
+  forest: {
+    es: "Al estimar, promedia lo que estiman sus 200 árboles, cada uno entrenado con una muestra distinta de filas. Como todo árbol, no estima por fuera del rango que vio en el entrenamiento.",
+    en: "When estimating, it averages the estimates of its 200 trees, each trained on a different sample of rows. Like any tree, it never estimates outside the range it saw in training.",
+  },
+  mlp: {
+    es: "Al estimar, la red aprende con el objetivo estandarizado (restada la media y dividido por la desviación) y la app devuelve la estimación a las unidades originales. Se detiene sola cuando deja de mejorar en una parte reservada del entrenamiento.",
+    en: "When estimating, the network learns from a standardised target (mean removed, divided by the spread) and the app converts the estimate back to the original units. It stops on its own once it no longer improves on a held-out slice of training.",
+  },
+};
+
+/**
+ * S6: los apartados de una ficha compartida que hablan SOLO de clasificar
+ * (probabilidad, AUC, «decide la clase») se reemplazan al estimar — si no, la ficha
+ * diría dos cosas que se contradicen. Hoy los tienen Ridge, kNN y Random Forest
+ * (los que «votan» al clasificar promedian al estimar); un test vigila que ninguna
+ * ficha compartida hable de clases, votos ni probabilidad al estimar (AU-S6-19).
+ */
+export const REGRESSION_FICHA_FIELDS: Partial<
+  Record<SharedId, Partial<Ficha>>
+> = {
+  ridge: {
+    what: {
+      es: "Una regresión lineal con freno: ajusta una recta (un plano, con varias columnas) y no deja que ningún peso crezca demasiado.",
+      en: "A linear regression with a brake: it fits a straight line (a plane, with several columns) and keeps any single weight from growing too large.",
+    },
+    notFor: {
+      es: "Cuando la relación con el objetivo es curva o depende de combinaciones de columnas: una recta no la sigue.",
+      en: "When the link to the target is curved or depends on combinations of columns: a straight line cannot follow it.",
+    },
+    watch: {
+      es: "Compárala con la regresión lineal: si quedan casi iguales, el freno no hacía falta; si Ridge gana, había columnas que se pisaban entre sí.",
+      en: "Compare it with plain linear regression: if they come out nearly equal, the brake was not needed; if Ridge wins, some columns were stepping on each other.",
+    },
+  },
+  knn: {
+    what: {
+      es: "Para estimar una fila nueva, busca las 5 filas de entrenamiento más parecidas y promedia su valor del objetivo.",
+      en: "To estimate a new row it finds the 5 most similar training rows and averages their target values.",
+    },
+  },
+  forest: {
+    what: {
+      es: "200 árboles, cada uno entrenado con una muestra distinta de filas y columnas; la estimación es el promedio de lo que estiman.",
+      en: "200 trees, each trained on a different sample of rows and columns; the estimate is the average of theirs.",
+    },
   },
 };

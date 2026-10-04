@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // El export que consume la vitrina de hoja-de-vida (contrato v1.0.0 del portafolio).
@@ -6,16 +6,35 @@ import { describe, expect, it } from "vitest";
 // MANUAL") se verifica UNA vez a mano y se desincroniza en silencio la primera vez que
 // alguien toque una feature sin acordarse del JSON. Aquí queda permanente.
 
-type Feature = { id: string; nombre: string; que_hace: string; seccion_manual: string };
-type Grupo = { orden: number; estrella: boolean; nombre: string; features: Feature[] };
-type Metrica = { clave: string; valor: number; fuente: string; detalle: string };
+type Feature = {
+  id: string;
+  nombre: string;
+  que_hace: string;
+  seccion_manual: string;
+};
+type Grupo = {
+  orden: number;
+  estrella: boolean;
+  nombre: string;
+  features: Feature[];
+};
+type Metrica = {
+  clave: string;
+  valor: number;
+  fuente: string;
+  detalle: string;
+};
 
 const exportado = JSON.parse(
   readFileSync("docs/brochure-export.json", "utf8"),
 ) as {
   schema_version: string;
   app: { estado: string; sellado_en: string | null };
-  funcionalidades: { total: number; fuente_del_conteo: string; grupos: Grupo[] };
+  funcionalidades: {
+    total: number;
+    fuente_del_conteo: string;
+    grupos: Grupo[];
+  };
   metricas: Metrica[];
   enlaces: { produccion: string | null; repositorio: string | null };
 };
@@ -37,11 +56,34 @@ describe("brochure-export.json", () => {
     expect(suma).toBe(exportado.funcionalidades.total);
   });
 
+  // S6 (AU-S6-06): el export decía «8 ADR» con 14 y un peso viejo del brochure,
+  // todo con `fuente: "medido"`. Lo que se puede recontar desde el repo, se recuenta.
+  it("las métricas que se recuentan desde el repo cuadran (ADR, peso del brochure, dependencias)", () => {
+    const valor = (clave: string) =>
+      exportado.metricas.find((m) => m.clave === clave)!.valor;
+    const adrs = readdirSync("decisions").filter((f) =>
+      /^\d{3}-.+\.md$/.test(f),
+    );
+    expect(valor("decisiones_registradas")).toBe(adrs.length);
+    expect(valor("peso_brochure")).toBe(
+      readFileSync("docs/BROCHURE.html").length,
+    );
+    const pkg = JSON.parse(readFileSync("package.json", "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    expect(valor("dependencias_runtime")).toBe(
+      Object.keys(pkg.dependencies).length,
+    );
+  });
+
   it("toda métrica lleva su fuente, y de las cuatro admitidas", () => {
     const admitidas = ["medido", "calculada", "declarado", "estimacion"];
     for (const metrica of exportado.metricas) {
       expect(admitidas, `métrica «${metrica.clave}»`).toContain(metrica.fuente);
-      expect(metrica.detalle.length, `métrica «${metrica.clave}»`).toBeGreaterThan(0);
+      expect(
+        metrica.detalle.length,
+        `métrica «${metrica.clave}»`,
+      ).toBeGreaterThan(0);
     }
   });
 
