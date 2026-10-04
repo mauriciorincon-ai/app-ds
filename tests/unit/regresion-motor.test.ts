@@ -367,6 +367,29 @@ describe("EDA de un objetivo numérico (umbrales del STOP de la F0)", () => {
     ).toEqual(["target-outliers"]);
   });
 
+  it("bordes: pocas filas, objetivo constante o con texto, fechas y nulos", () => {
+    expect(skewness([1, 2])).toBe(0);
+    expect(skewness([4, 4, 4, 4])).toBe(0);
+    expect(farOutShare([1, 2, 1000])).toBe(0);
+    const table: CsvTable = {
+      headers: ["fecha", "zona", "objetivo"],
+      rows: Array.from({ length: 40 }, (_, i) => [
+        `2026-01-${String((i % 28) + 1).padStart(2, "0")}`,
+        i % 5 === 0 ? "" : ["norte", "sur"][i % 2],
+        String(100 + (i % 7)),
+      ]),
+    };
+    expect(computeEdaAlerts(table, "no-existe", "numerica")).toEqual([]);
+    expect(computeEdaAlerts(table, "objetivo", "numerica")).toEqual([]);
+    const conTexto: CsvTable = {
+      ...table,
+      rows: table.rows.map((row, i) =>
+        i === 3 ? [row[0], row[1], "n/d"] : row,
+      ),
+    };
+    expect(computeEdaAlerts(conTexto, "objetivo", "numerica")).toEqual([]);
+  });
+
   it("sin la tarea, el comportamiento del S5 (un objetivo numérico no da alertas)", () => {
     expect(
       computeEdaAlerts(kit("precio-fuga-plantada.csv"), "precio_usd"),
