@@ -303,10 +303,16 @@ El usuario dio el «continúa» de la Fase 1 el 2026-10-04.
 Una sola parada de **FORMA**, con dos filas. Las miradas de **TEXTO** (la línea «cuál mirar», la
 FAQ de R² negativo) no paran: quedan «maquetadas, no vistas» y viajan al gate ⭐ del ciclo.
 
-| #   | Archivo / lugar                                                                        | Botón / estado                                                     | Qué mirar                                                                                                                                                        | Respuesta esperada              | Registro                      |
-| --- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------- |
-| M1  | Preview del PR #17 → Inicio → «Consumo de energía» → objetivo `consumo_kwh` → Entrenar | Resultados: veredicto en unidades · tabla de la liga · gráfico     | ¿Se entiende cuánto se equivoca y contra qué se compara? ¿El gráfico se lee sin color?                                                                           | «lo abrí y apruebo» o el ajuste | pendiente (pedida 2026-10-04) |
-| M2  | Preview del PR #17 → Inicio → «Consumo de energía» → objetivo `ocupantes`              | La pregunta «¿categorías o una cantidad?», con la sugerida marcada | ¿Se entiende la pregunta y qué pasa con cada respuesta? (la sugerida es «Categorías»: la regla de E1 del S5 sugiere clases cuando todos los valores son enteros) | «lo abrí y apruebo» o el ajuste | pendiente (pedida 2026-10-04) |
+| #   | Archivo / lugar                                                                        | Botón / estado                                                     | Qué mirar                                                                                                                                                        | Respuesta esperada              | Registro                            |
+| --- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------- |
+| M1  | Preview del PR #17 → Inicio → «Consumo de energía» → objetivo `consumo_kwh` → Entrenar | Resultados: veredicto en unidades · tabla de la liga · gráfico     | ¿Se entiende cuánto se equivoca y contra qué se compara? ¿El gráfico se lee sin color?                                                                           | «lo abrí y apruebo» o el ajuste | **aprobada** 2026-10-04 (ver abajo) |
+| M2  | Preview del PR #17 → Inicio → «Consumo de energía» → objetivo `ocupantes`              | La pregunta «¿categorías o una cantidad?», con la sugerida marcada | ¿Se entiende la pregunta y qué pasa con cada respuesta? (la sugerida es «Categorías»: la regla de E1 del S5 sugiere clases cuando todos los valores son enteros) | «lo abrí y apruebo» o el ajuste | **aprobada** 2026-10-04 (ver abajo) |
+
+**Veredicto del usuario (2026-10-04), textual:** «M1 Esta grafica esta espectacular Estimado frente
+a real, claro que es evidente cuánto se equivoca y contra qué se compara muy bien. M2 Muy bien se
+entiende claramente y muy oportuno mensaje. ambos los abrí y apruebo». Es un «lo abrí y apruebo» con
+comentario del artefacto (el gráfico y el mensaje de la pregunta). Pasan M1 y M2 sin ajustes; la
+sugerida «Categorías» de la regla de E1 queda como está.
 
 ### Qué se construyó antes de la parada
 
