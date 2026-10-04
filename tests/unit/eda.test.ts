@@ -97,8 +97,9 @@ describe("computeEdaAlerts — objetivo no binario", () => {
 describe("computeEdaAlerts — orden por severidad", () => {
   it("fuga antes que id-like antes que desbalance", () => {
     // proxy (fuga) + ref (id-like) + minoría 10% (desbalance), todo a la vez.
-    const rows = Array.from({ length: 20 }, (_, i) => {
-      const positivo = i < 2; // 2/20 = 0.10 ⇒ desbalance
+    // S7 (D8): 5 de 50 (antes 2 de 20) — la fuga exige 5 filas por clase.
+    const rows = Array.from({ length: 50 }, (_, i) => {
+      const positivo = i < 5; // 5/50 = 0.10 ⇒ desbalance
       return [
         positivo ? "p" : "q", // proxy perfecto del objetivo
         `ref-${i}`, // casi-único

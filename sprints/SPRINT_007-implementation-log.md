@@ -302,6 +302,47 @@ completo. Se le sumó una hermana (la de `dispatch-incomplete`).
 - `pnpm test:integration`: 67 pasan y 1 se salta, en 8 archivos (la binaria y la regresión
   completas, con Pyodide real).
 
+### Segundo commit: fuga por clase con soporte mínimo (D8, P6)
+
+Decisión 3 del STOP de la F0: umbral 0,98, soporte mínimo 5 de cada lado, pureza normalizada en
+las categóricas, y la binaria adopta la regla.
+
+- **`src/engine/leakage.ts`**:
+  - `LEAKAGE_CLASS_MIN_SUPPORT = 5`, exportada con su prueba;
+  - `normalizedPurity`: 0 = lo que da la clase mayoritaria, 1 = cada categoría determina la clase;
+  - `detectLeakageByClass` (varias categorías): cada clase contra el resto, y el hallazgo nombra
+    la columna y la clase que más delata (`class`, valor del objetivo: solo en el navegador);
+  - `detectLeakage` (binaria): la misma regla con K = 2. Las dos clases dan el mismo puntaje,
+    así que se evalúa una, y el hallazgo conserva su forma (sin `class`).
+- **Cambio esperado en pruebas heredadas (R3: «si algún heredado cambia, se para y se declara»).**
+  Seis pruebas usaban datos de juguete con menos de 5 filas por clase, por debajo del soporte que
+  decidió el usuario. Se agrandaron a 5 por clase sin cambiar lo que prueba cada una:
+  - `tests/unit/leakage.test.ts`: proxy numérico, inversa, categórica proxy y nulos (de 3 a 5
+    por clase);
+  - `tests/unit/eda.test.ts`: «fuga antes que id-like antes que desbalance» (de 2 de 20 a 5 de
+    50; sigue siendo un 10 % de minoría);
+  - `tests/unit/experiment.test.ts`: la categórica proxy de `prepareRun` (de 4 a 10 por clase,
+    para que en train queden ≥ 5).
+
+  En datos reales no cambia nada: 0 de los 11 objetivos binarios del kit cambian de veredicto
+  (spike, anexo C), y `tests/unit/leakage-datasets.test.ts` (credito con `monto_recuperado`
+  marcada y los limpios sin marcas) quedó en verde sin tocarlo.
+- **Pruebas nuevas** (8): la constante; el borde (4 no marca, 5 sí); los nulos no suman soporte;
+  la pureza normalizada frente a la cruda; una categórica al azar con 5 de 300 no se marca (la
+  cruda daría 0,983); la multiclase nombra la clase; una clase de 4 filas no se evalúa; y con dos
+  clases la regla binaria y la por clase marcan lo mismo.
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-04):
+
+| Mutación                                                   | Rojo (lo que nombró)                                                                                                                                                         | Verde        |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `LEAKAGE_CLASS_MIN_SUPPORT = 5` → `4`                      | 4 de 21: «el soporte mínimo es 5», «borde: con 4 filas en la clase chica NO se evalúa», «el soporte se cuenta en filas CON valor», «una clase con 4 filas no se evalúa»        | 21 de 21     |
+| La categórica puntúa con `categoryPurity` (cruda)          | 1 de 21: «una categórica al azar con una clase chica (5 de 300) no se marca»                                                                                                  | 21 de 21     |
+
+**Verde del árbol completo** (2026-10-04, después de los rojos): `pnpm lint` sin avisos;
+`pnpm typecheck` sin errores; `pnpm test` 550 de 550 en 50 archivos; `pnpm test:integration`
+67 pasan y 1 se salta, en 8 archivos.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

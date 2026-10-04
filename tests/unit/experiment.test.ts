@@ -155,18 +155,10 @@ describe("prepareRun", () => {
   });
 
   it("marca una feature categórica que es proxy del objetivo", () => {
+    // S7 (D8): 10 por clase (antes 4) — en train quedan ≥ 5 de cada una.
     const leaky = table(
       ["proxy", "y"],
-      [
-        ["p", "0"],
-        ["p", "0"],
-        ["q", "1"],
-        ["q", "1"],
-        ["p", "0"],
-        ["p", "0"],
-        ["q", "1"],
-        ["q", "1"],
-      ],
+      Array.from({ length: 20 }, (_, i) => (i % 2 ? ["q", "1"] : ["p", "0"])),
     );
     const prepared = prepareRun(leaky, "y", 42);
     expect(prepared.ok).toBe(true);
