@@ -18,6 +18,8 @@ import { TRAINABLE_TASKS, type Task, type TrainTask } from "@/engine/tarea";
 import type {
   MetricName,
   Metrics,
+  MulticlassMetrics,
+  PrimaryMetric,
   RegressionMetrics,
   Verdict,
 } from "@/engine/verdict";
@@ -37,6 +39,8 @@ import {
 } from "@/lib/validate";
 import {
   metricsV,
+  multiclassClassesV,
+  multiclassMetricsV,
   regressionMetricsV,
   targetStatsV,
   trainingProfileV,
@@ -46,6 +50,7 @@ import type {
   ExperimentResult,
   ExportResult,
   MemberStatus,
+  MulticlassModelSchema,
   RegressionModelSchema,
   RuntimeVersions,
   TrainingProfile,
@@ -86,7 +91,7 @@ export type ManifestLeagueRow<M = Metrics> = {
 };
 
 /** S5: cómo se eligió el modelo del archivo (U1: «elegido por ti»). */
-export type ManifestSelection<P extends MetricName | "mae" = MetricName> = {
+export type ManifestSelection<P extends PrimaryMetric = MetricName> = {
   by: "cv" | "user";
   cv_winner: MemberId;
   k: number;
@@ -152,13 +157,41 @@ export type RegressionManifest = {
   selection: ManifestSelection<"mae">;
 };
 
-export type ModelManifest = BinaryManifest | RegressionManifest;
+/** S7 (P9): el manifiesto de un modelo de VARIAS categorías — sus clases en el
+ *  esquema, sin «clase positiva». Nace con la liga y la selección obligatorias. */
+export type MulticlassManifest = {
+  task: "multiclase";
+  app: { name: typeof APP_NAME; version: string };
+  created_at: string;
+  dataset: { name: string; n_train: number; n_test: number };
+  schema: MulticlassModelSchema;
+  training_profile: TrainingProfile;
+  metrics: {
+    model: MulticlassMetrics;
+    baselines: { majority: MulticlassMetrics; logistic: MulticlassMetrics };
+  };
+  verdict: Verdict<"balanced_accuracy">;
+  leakage: LeakageFinding[];
+  versions: RuntimeVersions;
+  payload_sha256: string;
+  payload_encoding: typeof PAYLOAD_ENCODING;
+  model_name: MemberId;
+  sanitation?: BinaryManifest["sanitation"];
+  league: ManifestLeagueRow<MulticlassMetrics>[];
+  selection: ManifestSelection<"balanced_accuracy">;
+};
+
+export type ModelManifest =
+  | BinaryManifest
+  | MulticlassManifest
+  | RegressionManifest;
 
 export function isBinaryManifest(
   manifest: ModelManifest,
 ): manifest is BinaryManifest {
   return matchByTask(manifest, {
     binaria: () => true,
+    multiclase: () => false,
     numerica: () => false,
   });
 }
@@ -180,6 +213,8 @@ export type ModelFile = {
 // devuelve la RUTA del campo que no cuadra (carnadas del contrato, regla 15).
 
 const member: Validator = (v, path) => (isMemberOf("binaria", v) ? null : path);
+const multiclassMember: Validator = (v, path) =>
+  isMemberOf("multiclase", v) ? null : path;
 const regressionMember: Validator = (v, path) =>
   isMemberOf("numerica", v) ? null : path;
 const METRIC_NAMES = ["accuracy", "precision", "recall", "f1", "auc"];
@@ -316,10 +351,66 @@ const regressionManifestV = obj({
   }),
 });
 
+// S7 (P9): carnadas en tests/unit/model-file.test.ts — una por campo nuevo.
+const multiclassManifestV = obj({
+  task: oneOf(["multiclase"]),
+  app: obj({ name: oneOf([APP_NAME]), version: str }),
+  created_at: str,
+  dataset: obj({ name: str, n_train: num, n_test: num }),
+  schema: obj({
+    numeric: arr(str),
+    categorical: arr(str),
+    target: str,
+    classes: multiclassClassesV,
+    task: oneOf(["multiclase"]),
+  }),
+  training_profile: trainingProfileV,
+  metrics: obj({
+    model: multiclassMetricsV,
+    baselines: obj({
+      majority: multiclassMetricsV,
+      logistic: multiclassMetricsV,
+    }),
+  }),
+  verdict: verdictOf(["balanced_accuracy"]),
+  // La fuga por clase nombra la clase que la columna delata (P6).
+  leakage: arr(
+    obj({
+      column: str,
+      score: num,
+      reason: oneOf(["near-perfect-separation", "category-purity"]),
+      class: optional(str),
+    }),
+  ),
+  versions: versionsV,
+  payload_sha256: str,
+  payload_encoding: oneOf([PAYLOAD_ENCODING]),
+  model_name: multiclassMember,
+  sanitation: sanitationV,
+  league: arr(
+    obj({
+      name: multiclassMember,
+      status: oneOf(["ok", "no-converge", "error"]),
+      cv_mean: nullable(num),
+      cv_std: nullable(num),
+      test: nullable(multiclassMetricsV),
+    }),
+    1,
+  ),
+  selection: obj({
+    by: oneOf(["cv", "user"]),
+    cv_winner: multiclassMember,
+    k: refine(int, (v) => (v as number) >= 2),
+    metric: oneOf(["balanced_accuracy"]),
+    rule: oneOf(["one-se"]),
+  }),
+});
+
 /** El validador del manifiesto de cada tarea que el motor entrena. Es un `Record`
  *  completo: sumar una tarea a `TrainTask` sin su validador no compila (AU-S6-03). */
 const MANIFEST_V_BY_TASK: ByTask<Validator> = {
   binaria: binaryManifestV,
+  multiclase: multiclassManifestV,
   numerica: regressionManifestV,
 };
 
@@ -431,6 +522,7 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
       ...common,
       schema: matchByTask(exported.schema, {
         binaria: (schema) => schema,
+        multiclase: mismatch,
         numerica: mismatch,
       }),
       metrics: { model: binary.model, baselines: binary.baselines },
@@ -439,11 +531,25 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
       league: league(binary.league),
       selection: { ...selection, metric: binary.selection.metric },
     }),
+    multiclase: (multi): MulticlassManifest => ({
+      task: "multiclase",
+      ...common,
+      schema: matchByTask(exported.schema, {
+        binaria: mismatch,
+        multiclase: (schema) => schema,
+        numerica: mismatch,
+      }),
+      metrics: { model: multi.model, baselines: multi.baselines },
+      verdict: multi.verdict,
+      league: league(multi.league),
+      selection: { ...selection, metric: multi.selection.metric },
+    }),
     numerica: (regression): RegressionManifest => ({
       task: "numerica",
       ...common,
       schema: matchByTask(exported.schema, {
         binaria: mismatch,
+        multiclase: mismatch,
         numerica: (schema) => schema,
       }),
       metrics: { model: regression.model, baselines: regression.baselines },

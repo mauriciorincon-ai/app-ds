@@ -6,7 +6,7 @@
 // SIEMPRE se muestra antes de descargar. El encabezado es el candidato LCP y
 // nace estático (patrón lcp-nace-estatico: sin motion, sin opacity inicial).
 import { useRef, useState } from "react";
-import { matchByTask } from "@/engine/despacho";
+import { matchByTask, pendingSurface } from "@/engine/despacho";
 import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
 import { modelFeatures } from "@/lib/ds/schema-check";
@@ -83,6 +83,8 @@ export function ScoreScreen({
         positive: schema.positive_class,
       }),
     }),
+    // S7 (D3): puntuar con varias categorías llega a la pantalla en la F3.
+    multiclase: () => pendingSurface("ScoreScreen.header", "multiclase"),
     numerica: (schema) => ({
       subtitle: t("score.subtitleQuantity"),
       modelLine: t("score.modelLineQuantity", {
@@ -328,15 +330,18 @@ function ScoredResults({
   // con que el usuario escribió su objetivo; no hay probabilidad (no se inventa).
   const decimals = matchByTask(schema, {
     binaria: () => null,
+    multiclase: () => pendingSurface("ScoreScreen.decimals", "multiclase"),
     numerica: (quantitySchema) => quantitySchema.target_stats.decimals,
   });
   const quantity = matchByTask(score, {
     binaria: () => null,
+    multiclase: () => pendingSurface("ScoreScreen.quantity", "multiclase"),
     numerica: (estimated) =>
       decimals === null ? null : { values: estimated.predictions, decimals },
   });
   const predictions = matchByTask(score, {
     binaria: (classified) => classified.predictions,
+    multiclase: () => pendingSurface("ScoreScreen.predictions", "multiclase"),
     numerica: (estimated) =>
       formatEstimates(estimated.predictions, quantity?.decimals ?? 0),
   });
@@ -348,6 +353,7 @@ function ScoredResults({
         label: binarySchema.positive_class,
       }),
     }),
+    multiclase: () => pendingSurface("ScoreScreen.columns", "multiclase"),
     numerica: (quantitySchema) => ({
       prediction: t("score.columns.estimate", {
         target: quantitySchema.target,

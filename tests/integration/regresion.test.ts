@@ -411,7 +411,9 @@ describe("TS → Python: _validate_payload rechaza cada carnada de regresión NO
     const base = consumo().payload;
     const baits: Bait[] = [
       ["task", "train", (p) => delete p.task],
-      ["task", "train", (p) => (p.task = "multiclase")],
+      // S7 (cambio esperado): «multiclase» ya es una tarea registrada (sus carnadas
+      // viven en multiclase.test.ts); una que nadie entrena se rechaza nombrándola.
+      ["task", "train", (p) => (p.task = "serie-tiempo")],
       ["task", "train", (p) => (p.task = 1)],
       ["roster", "train", (p) => (p.roster = ["linear", "logistic"])],
       ["primary_metric", "train", (p) => (p.primary_metric = "auc")],
@@ -483,9 +485,10 @@ describe("el emisor en los bordes del objetivo", () => {
 
 describe("una tarea registrada sin ramas propias (AU-S6-03)", () => {
   it("se rechaza NOMBRANDO «task», jamás se binariza en silencio", () => {
-    // El día que alguien registre «multiclase» en _FACTORIES_BY_TASK sin escribir
+    // El día que alguien registre una tarea en _FACTORIES_BY_TASK sin escribir
     // sus ramas, un objetivo de tres clases NO puede volver como `task: "binaria"`
-    // (la minoritaria contra el resto): cada rama pasa por _is_regression.
+    // (la minoritaria contra el resto). S7 (cambio esperado): la tarea de la
+    // prueba era «multiclase», que ahora SÍ tiene ramas; pasa a una inventada.
     const base = consumo().payload;
     const targetIndex = base.headers.indexOf(base.target);
     const rows = base.rows.map((row, i) =>
@@ -494,12 +497,12 @@ describe("una tarea registrada sin ramas propias (AU-S6-03)", () => {
     const payload = {
       ...base,
       rows,
-      task: "multiclase",
+      task: "serie-tiempo",
       primary_metric: "accuracy",
       roster: ["logistic"],
     };
     py.runPython(
-      '_FACTORIES_BY_TASK["multiclase"] = _FACTORIES\nTASK_METRICS["multiclase"] = ("accuracy",)',
+      '_FACTORIES_BY_TASK["serie-tiempo"] = _FACTORIES\nTASK_METRICS["serie-tiempo"] = ("accuracy",)',
     );
     let got: string | null = "aceptada";
     try {
@@ -508,7 +511,7 @@ describe("una tarea registrada sin ramas propias (AU-S6-03)", () => {
       got = pythonContractField(String((error as Error).message));
     } finally {
       py.runPython(
-        'del _FACTORIES_BY_TASK["multiclase"]\ndel TASK_METRICS["multiclase"]',
+        'del _FACTORIES_BY_TASK["serie-tiempo"]\ndel TASK_METRICS["serie-tiempo"]',
       );
     }
     expect(got).toBe("task");

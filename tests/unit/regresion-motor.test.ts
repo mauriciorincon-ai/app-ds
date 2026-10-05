@@ -466,10 +466,15 @@ describe("prepareRun por tarea", () => {
       ambiguousChoice: "numerica",
     });
     expect(asQuantity.ok && asQuantity.payload.task).toBe("numerica");
-    // «Clases» lleva a multiclase, que todavía no entrena (D2): se dice, no se adivina.
-    expect(
-      prepareRun(table, "ocupantes", 42, { ambiguousChoice: "multiclase" }),
-    ).toEqual({ ok: false, error: "target-not-binary" });
+    // S7 (D2 pagada; cambio esperado, R13): «Categorías» entrena como varias
+    // categorías — el motor ya la sabe entrenar.
+    const asClasses = prepareRun(table, "ocupantes", 42, {
+      ambiguousChoice: "multiclase",
+    });
+    expect(asClasses.ok && asClasses.payload.task).toBe("multiclase");
+    expect(asClasses.ok && asClasses.payload.primary_metric).toBe(
+      "balanced_accuracy",
+    );
   });
 
   it("precio SIN la columna plantada: entrena sin aviso de fuga (AC2, AU-S6-22)", () => {

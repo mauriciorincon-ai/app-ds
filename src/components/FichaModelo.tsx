@@ -13,7 +13,7 @@ import {
   type SharedId,
 } from "@/content/modelos";
 import { MEMBERS, memberNameKey, type MemberId } from "@/engine/roster";
-import { matchTask, taskOf } from "@/engine/despacho";
+import { matchTask, pendingSurface, taskOf } from "@/engine/despacho";
 import type { TrainTask } from "@/engine/tarea";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "./ui";
@@ -85,6 +85,8 @@ export default function FichaModelo({
   // los modelos compartidos suman cómo estiman.
   const { ficha, regressionNote } = matchTask(task, {
     binaria: () => ({ ficha: FICHAS[fichaId], regressionNote: null }),
+    // S7 (D3): los reemplazos de «la clase positiva» llegan con la UI (F3).
+    multiclase: () => pendingSurface("FichaModelo", "multiclase"),
     numerica: () => ({
       ficha:
         id in REGRESSION_FICHA_FIELDS

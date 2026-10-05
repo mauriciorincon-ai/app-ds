@@ -27,6 +27,14 @@ S6 — estimar una cantidad (ADR-013): el payload trae `task` ("binaria" |
 (`_REGRESSORS`), KFold, MAE en unidades (menor es mejor) y baselines mediana +
 lineal; devuelve además una muestra predicho-vs-real y los cuantiles de residuos
 de TODO el test (valores del objetivo: viven solo en el navegador).
+
+S7 — clasificar en varias categorías (ADR 015): `task: "multiclase"` reusa los 14
+miembros de la binaria en su forma nativa (sklearn, LightGBM y XGBoost resuelven K
+clases solos), con el objetivo codificado 0..K−1 en el orden de `classes` (lo manda
+TS y se coteja con los datos), CV estratificada con k ≤ la clase más chica de train,
+la exactitud balanceada como métrica primaria (decisión del usuario en el STOP de la
+F0) y baselines mayoritaria + logística multinomial. Todo decide por `_by_task`: una
+tarea registrada sin sus ramas no corre (S7, P2).
 """
 
 import base64
@@ -64,12 +72,15 @@ from sklearn.linear_model import (
 )
 from sklearn.metrics import (
     accuracy_score,
+    balanced_accuracy_score,
     confusion_matrix,
     f1_score,
+    log_loss,
     mean_absolute_error,
     mean_absolute_percentage_error,
     mean_squared_error,
     median_absolute_error,
+    precision_recall_fscore_support,
     precision_score,
     r2_score,
     recall_score,
@@ -225,18 +236,21 @@ def _explainability(pipe, X_test, y_test, features, numeric, seed, task):
     S6: en regresión la importancia es cuánto SUBE el MAE al permutar la columna
     (en unidades del objetivo) y la dirección es la de Spearman.
     """
+    # S7: con K clases no hay UNA dirección («sube la probabilidad de…» depende de la
+    # clase): la importancia se mide con la primaria y la dirección no se afirma.
     scoring, method = _by_task(task, {
         "binaria": lambda: (
             "roc_auc" if len(np.unique(y_test)) > 1 else "accuracy",
             "pearson",
         ),
+        "multiclase": lambda: ("balanced_accuracy", None),
         "numerica": lambda: ("neg_mean_absolute_error", "spearman"),
     })()
     pi = permutation_importance(
         pipe, X_test, y_test,
         n_repeats=10, random_state=seed, scoring=scoring, n_jobs=1,
     )
-    directions = _feature_directions(X_test, y_test, numeric, method)
+    directions = {} if method is None else _feature_directions(X_test, y_test, numeric, method)
     numeric_set = set(numeric)
     order = np.argsort(pi.importances_mean)[::-1]
     return {
@@ -315,6 +329,8 @@ SCORER = {
     # S6: sklearn maximiza; el signo se invierte al leer los folds ⇒ cv.mean es el
     # MAE en las unidades del objetivo (menor es mejor).
     "mae": "neg_mean_absolute_error",
+    # S7: la primaria de varias categorías (cuenta cada clase por igual).
+    "balanced_accuracy": "balanced_accuracy",
 }
 
 # Espejo de METRIC_RULES (engine/verdict.ts): la dirección de cada métrica primaria.
@@ -326,6 +342,7 @@ METRIC_DIRECTION = {
     "precision": "higher",
     "recall": "higher",
     "mae": "lower",
+    "balanced_accuracy": "higher",
 }
 
 # Qué métricas primarias admite cada tarea (la elige TS; Python no la re-deriva).
@@ -335,8 +352,15 @@ MIN_REGRESSION_TEST_ROWS = 2
 
 TASK_METRICS = {
     "binaria": ("auc", "f1", "accuracy", "precision", "recall"),
+    "multiclase": ("balanced_accuracy",),
     "numerica": ("mae",),
 }
+
+# S7: cuántas clases admite una tarea de varias categorías. Espejo de
+# MULTICLASS_MAX_CLASSES en engine/tarea.ts (paridad en tests/unit/roster.test.ts);
+# con dos es binaria.
+MULTICLASS_MIN_CLASSES = 3
+MULTICLASS_MAX_CLASSES = 20
 
 
 def _xgboost(seed):
@@ -444,8 +468,13 @@ _REGRESSORS = {
 }
 
 # Un roster por tarea. `_FACTORIES` sigue siendo el de clasificación (el S5 lo
-# referencia por nombre); este mapa los reúne sin copiarlos.
-_FACTORIES_BY_TASK = {"binaria": _FACTORIES, "numerica": _REGRESSORS}
+# referencia por nombre); este mapa los reúne sin copiarlos. S7: la multiclase usa
+# los MISMOS 14 clasificadores (cada uno resuelve K clases en su forma nativa).
+_FACTORIES_BY_TASK = {
+    "binaria": _FACTORIES,
+    "multiclase": _FACTORIES,
+    "numerica": _REGRESSORS,
+}
 
 
 def roster_ids(payload_json="{}"):
@@ -513,9 +542,20 @@ def _validate_payload(p, *, league=True):
     # S6 (AU-S6-08): con menos filas de prueba no hay métricas que creer (el R² de
     # una sola fila es NaN y rompe el JSON). TS lo rechaza antes con su propio texto.
     # La binaria no tenía tope propio (su texto vive en TS): 0 conserva la conducta.
-    min_test = _by_task(task, {"binaria": 0, "numerica": MIN_REGRESSION_TEST_ROWS})
+    min_test = _by_task(task, {
+        "binaria": 0,
+        "multiclase": 0,
+        "numerica": MIN_REGRESSION_TEST_ROWS,
+    })
     if len(p["test_idx"]) < min_test:
         _contract("test_idx")
+    # S7: las clases viajan SOLO con varias categorías (TS las calcula y Python las
+    # coteja con los datos en _multiclass_target).
+    _by_task(task, {
+        "binaria": lambda: "classes" in p and _contract("classes"),
+        "multiclase": lambda: _validate_classes(p.get("classes")),
+        "numerica": lambda: "classes" in p and _contract("classes"),
+    })()
     if league:
         roster = p.get("roster")
         if (
@@ -529,6 +569,19 @@ def _validate_payload(p, *, league=True):
             _contract("cv_k")
     elif p.get("member") not in factories:
         _contract("member")
+
+
+def _validate_classes(classes):
+    """S7: una lista de 3 a MULTICLASS_MAX_CLASSES textos, antes de tocar los datos.
+    Que sean distintas, en orden y LAS de los datos lo exige _multiclass_target (son
+    exactamente los valores distintos ordenados): repetirlo aquí no podría fallar
+    nunca por sí solo («¿puede fallar siquiera?»)."""
+    if (
+        not isinstance(classes, list)
+        or not all(isinstance(c, str) for c in classes)
+        or not MULTICLASS_MIN_CLASSES <= len(classes) <= MULTICLASS_MAX_CLASSES
+    ):
+        _contract("classes")
 
 
 def _decimals(text):
@@ -575,6 +628,19 @@ def _binary_target(df, p):
     return y, classes, positive, None
 
 
+def _multiclass_target(df, p):
+    """S7: el objetivo 0..K−1 en el orden de `classes` (XGBoost exige esa forma).
+    Las clases las manda TS; si los datos traen otras, el contrato se rompe
+    nombrando el campo (sin valores: regla dura 2)."""
+    target = df[p["target"]].astype("string")
+    classes = list(p["classes"])
+    if sorted(target.dropna().unique().tolist()) != classes:
+        _contract("classes")
+    index = {c: i for i, c in enumerate(classes)}
+    y = target.map(index).astype(int).to_numpy()
+    return y, classes, None, None
+
+
 def _numeric_target(df, p, train_idx):
     """S6: el objetivo en sus unidades (float) y su resumen en TRAIN."""
     y = pd.to_numeric(df[p["target"]], errors="coerce").to_numpy(dtype=float)
@@ -599,6 +665,7 @@ def _prepare(p):
 
     y, classes, positive, stats = _by_task(task, {
         "binaria": lambda: _binary_target(df, p),
+        "multiclase": lambda: _multiclass_target(df, p),
         "numerica": lambda: _numeric_target(df, p, train_idx),
     })()
 
@@ -639,6 +706,7 @@ def _cross_validate(name, ctx, k):
     de una métrica «menor es mejor» se devuelven en sus unidades (signo invertido)."""
     splitter = _by_task(ctx["task"], {
         "binaria": lambda: StratifiedKFold(k, shuffle=True, random_state=ctx["seed"]),
+        "multiclase": lambda: StratifiedKFold(k, shuffle=True, random_state=ctx["seed"]),
         "numerica": lambda: KFold(k, shuffle=True, random_state=ctx["seed"]),
     })()
     with warnings.catch_warnings(record=True) as caught:
@@ -721,6 +789,7 @@ def _selected_details(pipe, y_pred, ctx):
         "binaria": lambda: {
             "confusion_matrix": confusion_matrix(ctx["y_test"], y_pred, labels=[0, 1]).tolist()
         },
+        "multiclase": lambda: _multiclass_details(ctx["y_test"], y_pred, len(ctx["classes"])),
         "numerica": lambda: {
             "pred_vs_real": _pred_vs_real(ctx["y_test"], y_pred),
             "residuals": _residuals(ctx["y_test"], y_pred),
@@ -755,6 +824,27 @@ def _selected_details(pipe, y_pred, ctx):
     }
 
 
+def _multiclass_details(y_true, y_pred, n_classes):
+    """S7: la matriz K×K (filas = clase real, columnas = predicha, en el orden de
+    `classes`) y las métricas de cada clase sobre TEST."""
+    labels = list(range(n_classes))
+    precision, recall, f1, support = precision_recall_fscore_support(
+        y_true, y_pred, labels=labels, zero_division=0
+    )
+    return {
+        "confusion_matrix": confusion_matrix(y_true, y_pred, labels=labels).tolist(),
+        "per_class": [
+            {
+                "precision": float(precision[i]),
+                "recall": float(recall[i]),
+                "f1": float(f1[i]),
+                "support": int(support[i]),
+            }
+            for i in labels
+        ],
+    }
+
+
 def _retain(pipe, ctx, target):
     """S3/S4: retener el modelo SELECCIONADO (el que recibe el veredicto) + esquema
     + perfil de train — lo que score_new_data y export_model necesitan."""
@@ -767,6 +857,13 @@ def _retain(pipe, ctx, target):
             "classes": ctx["classes"],
             "positive_class": ctx["positive"],
             "task": "binaria",
+        },
+        "multiclase": lambda: {
+            "numeric": ctx["numeric"],
+            "categorical": ctx["categorical"],
+            "target": target,
+            "classes": ctx["classes"],
+            "task": "multiclase",
         },
         "numerica": lambda: {
             "numeric": ctx["numeric"],
@@ -797,6 +894,53 @@ def _binary_baselines(ctx):
         )
         baselines[name] = _metrics(ctx["y_test"], y_pred, y_score)
     return baselines
+
+
+def _multiclass_baselines(ctx):
+    """S7: la clase mayoritaria y la logística multinomial — la MISMA fábrica que el
+    miembro `logistic`, así su puntaje de prueba como miembro es el del baseline (TS
+    lo coteja, como la lineal del S6)."""
+    baselines = {}
+    for name, estimator in (
+        ("majority", DummyClassifier(strategy="most_frequent")),
+        ("logistic", _FACTORIES["logistic"](ctx["seed"])),
+    ):
+        pipe = Pipeline([("prep", clone(ctx["preprocessor"])), ("model", estimator)])
+        pipe.fit(ctx["X_train"], ctx["y_train"])  # <-- ajuste SOLO sobre train
+        baselines[name] = _multiclass_metrics(
+            ctx["y_test"], pipe.predict(ctx["X_test"]), _proba(pipe, ctx["X_test"]),
+            len(ctx["classes"]),
+        )
+    return baselines
+
+
+def _proba(pipe, X):
+    """La matriz de probabilidades, o None si el modelo decide sin darlas (ridge, SVM
+    lineal): no se inventan (S5)."""
+    return pipe.predict_proba(X) if hasattr(pipe, "predict_proba") else None
+
+
+def _multiclass_metrics(y_true, y_pred, proba, n_classes):
+    """S7: métricas de TEST con K clases (las del spike de la F0). `log_loss` y
+    `auc_ovr` necesitan probabilidades (null sin ellas); el AUC uno contra el resto,
+    además, que la prueba tenga filas de todas las clases."""
+    labels = list(range(n_classes))
+    metrics = {
+        "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
+        "f1_macro": float(
+            f1_score(y_true, y_pred, average="macro", labels=labels, zero_division=0)
+        ),
+        "accuracy": float(accuracy_score(y_true, y_pred)),
+        "log_loss": None,
+        "auc_ovr": None,
+    }
+    if proba is not None:
+        metrics["log_loss"] = float(log_loss(y_true, proba, labels=labels))
+        if len(np.unique(y_true)) == n_classes:
+            metrics["auc_ovr"] = float(
+                roc_auc_score(y_true, proba, multi_class="ovr", average="macro", labels=labels)
+            )
+    return metrics
 
 
 def _regression_baselines(ctx):
@@ -830,8 +974,12 @@ def run_experiment(payload_json, on_progress=None):
     k = int(p["cv_k"])
     # Binaria: k > clase minoritaria de train ⇒ hay folds sin positivos. Numérica:
     # k > filas de train ⇒ hay folds vacíos. TS ya lo acota; aquí se verifica.
+    # Multiclase (S7): k > la clase más chica de train ⇒ hay folds sin esa clase.
     k_max = _by_task(ctx["task"], {
         "binaria": lambda: int(np.bincount(ctx["y_train"], minlength=2).min()),
+        "multiclase": lambda: int(
+            np.bincount(ctx["y_train"], minlength=len(ctx["classes"])).min()
+        ),
         "numerica": lambda: len(ctx["train_idx"]),
     })()
     if k > k_max:
@@ -871,6 +1019,7 @@ def run_experiment(payload_json, on_progress=None):
     X_train, y_train, X_test = ctx["X_train"], ctx["y_train"], ctx["X_test"]
     baselines = _by_task(ctx["task"], {
         "binaria": lambda: _binary_baselines(ctx),
+        "multiclase": lambda: _multiclass_baselines(ctx),
         "numerica": lambda: _regression_baselines(ctx),
     })()
 
@@ -908,6 +1057,7 @@ def run_experiment(payload_json, on_progress=None):
             "positive_class": ctx["positive"],
             "positive_rate": float(ctx["y"].mean()),
         },
+        "multiclase": lambda: {"task": "multiclase", "classes": ctx["classes"]},
         "numerica": lambda: {"task": "numerica", "target_stats": ctx["target_stats"]},
     })()
     return json.dumps(
@@ -938,6 +1088,9 @@ def _test_metrics(pipe, y_pred, ctx):
     """Métricas de TEST según la tarea (binaria: necesita el puntaje continuo)."""
     return _by_task(ctx["task"], {
         "binaria": lambda: _metrics(ctx["y_test"], y_pred, _scores(pipe, ctx["X_test"])),
+        "multiclase": lambda: _multiclass_metrics(
+            ctx["y_test"], y_pred, _proba(pipe, ctx["X_test"]), len(ctx["classes"])
+        ),
         "numerica": lambda: _reg_metrics(ctx["y_test"], y_pred),
     })()
 
@@ -1014,6 +1167,7 @@ def score_new_data(payload_json):
     }
     scored = _by_task(_task_of(schema), {
         "binaria": lambda: _score_binary(pipe, X, schema),
+        "multiclase": lambda: _score_multiclass(pipe, X, schema),
         "numerica": lambda: _score_numeric(pipe, X),
     })()
     return json.dumps({**scored, "novelty": novelty})
@@ -1032,6 +1186,18 @@ def _score_binary(pipe, X, schema):
         "predictions": [positive if v == 1 else negative for v in pred01],
         "probabilities": None if proba is None else [float(v) for v in proba],
         "positive_class": positive,
+    }
+
+
+def _score_multiclass(pipe, X, schema):
+    """S7: la etiqueta ORIGINAL de la clase predicha y la probabilidad de ESA clase
+    (null si el modelo no da probabilidades: no se inventa)."""
+    classes = schema["classes"]
+    proba = _proba(pipe, X)
+    return {
+        "task": "multiclase",
+        "predictions": [classes[int(v)] for v in pipe.predict(X)],
+        "probabilities": None if proba is None else [float(v) for v in proba.max(axis=1)],
     }
 
 

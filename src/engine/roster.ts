@@ -71,6 +71,8 @@ export type MemberId = (typeof ALL_MEMBER_IDS)[number];
 
 export const ROSTER_BY_TASK: Record<TrainTask, readonly MemberId[]> = {
   binaria: MEMBER_IDS,
+  // S7: los MISMOS 14 en su forma nativa de K clases (P3).
+  multiclase: MEMBER_IDS,
   numerica: REGRESSION_MEMBER_IDS,
 };
 
@@ -80,6 +82,8 @@ export const BASELINE_IDS = ["majority", "logistic"] as const;
 export const REGRESSION_BASELINE_IDS = ["median", "linear"] as const;
 export const BASELINE_IDS_BY_TASK = {
   binaria: BASELINE_IDS,
+  // S7: la clase mayoritaria y la logística multinomial.
+  multiclase: BASELINE_IDS,
   numerica: REGRESSION_BASELINE_IDS,
 } as const satisfies Record<TrainTask, readonly string[]>;
 
@@ -224,6 +228,7 @@ export function memberNameKey(id: MemberId, task: TrainTask): string {
   const shared = `results.candidates.model.${id}`;
   return matchTask(task, {
     binaria: () => shared,
+    multiclase: () => shared,
     numerica: () =>
       (REGRESSION_NAMED_IDS as readonly MemberId[]).includes(id)
         ? `results.candidates.regressionModel.${id}`

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
-import { matchByTask, matchTask } from "@/engine/despacho";
+import { matchByTask, matchTask, pendingSurface } from "@/engine/despacho";
 import { memberNameKey } from "@/engine/roster";
 import { isTask } from "@/engine/tarea";
 import { inferUnit } from "@/lib/experiment";
@@ -292,6 +292,8 @@ function ImportSummary({
   const fmt = (value: number) =>
     matchTask(task, {
       binaria: () => value.toFixed(2),
+      // S7 (D3): el import multiclase se abre con la UI (F3).
+      multiclase: () => pendingSurface("ImportSummary.metric", "multiclase"),
       numerica: () =>
         withUnit(
           formatQuantity(value, quantityDecimals([value])),
@@ -322,6 +324,8 @@ function ImportSummary({
                 target: binary.schema.target,
                 positive: binary.schema.positive_class,
               }),
+            multiclase: () =>
+              pendingSurface("ImportSummary.target", "multiclase"),
             numerica: (regression) =>
               t("start.import.summary.targetQuantity", {
                 target: regression.schema.target,

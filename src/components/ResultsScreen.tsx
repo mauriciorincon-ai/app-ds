@@ -1,6 +1,6 @@
 "use client";
 
-import { matchByTask } from "@/engine/despacho";
+import { matchByTask, pendingSurface } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
 import {
@@ -108,6 +108,8 @@ export function ResultsScreen({
       positiveClass: binary.positiveClass,
       unit: null,
     }),
+    // S7 (D3): la pantalla de varias categorías llega en la F3.
+    multiclase: () => pendingSurface("ResultsScreen", "multiclase"),
     numerica: (regression) => ({
       verdict: (
         <RegressionVerdict

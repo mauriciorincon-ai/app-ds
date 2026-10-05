@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { assembleRegressionResult } from "@/lib/experiment";
+import {
+  assembleMulticlassResult,
+  assembleRegressionResult,
+} from "@/lib/experiment";
 import type {
   ExperimentResult,
   ExportResult,
+  MulticlassPipelineResult,
   RegressionPipelineResult,
 } from "@/workers/protocol";
 import {
@@ -427,7 +431,8 @@ describe("S6 — manifiesto por tarea (P8)", () => {
   });
 
   it("una tarea que esta versión NO CONOCE también se rechaza nombrándola, no como «no parece un modelo» (ADR 014 §3, AU-S6-02)", async () => {
-    for (const task of ["multiclase", "agrupar"]) {
+    // S7 (cambio esperado): «multiclase» ya es conocida (bloque siguiente).
+    for (const task of ["serie-tiempo", "agrupar"]) {
       const raw = JSON.parse(JSON.stringify(await packRegression())) as {
         manifest: Record<string, unknown>;
       };
@@ -496,6 +501,125 @@ describe("S6 — manifiesto por tarea (P8)", () => {
     }
     console.log(
       `[contrato manifiesto regresión] validateModelFile detectó ${detected} de ${baits.length} carnadas`,
+    );
+    expect(detected).toBe(baits.length);
+  });
+});
+
+describe("S7 — manifiesto de VARIAS CATEGORÍAS (P9)", () => {
+  const fixture = (path: string) =>
+    readFileSync(resolve(process.cwd(), "tests/fixtures", path), "utf8");
+
+  async function packMulticlass() {
+    const py = JSON.parse(
+      fixture("contrato/train-result-multiclase.json"),
+    ) as MulticlassPipelineResult;
+    const exported = JSON.parse(
+      fixture("contrato/export-result-multiclase.json"),
+    ) as ExportResult;
+    return packModelFile({
+      datasetName: "planes-suscripcion.csv",
+      result: assembleMulticlassResult(py, [
+        // La fuga por clase viaja con la clase que delata (P6).
+        {
+          column: "cargo_corporativo_usd",
+          score: 1,
+          reason: "near-perfect-separation",
+          class: "empresa",
+        },
+      ]),
+      exported,
+      date: DATE,
+    });
+  }
+
+  it("declara su tarea y sus clases, sin «clase positiva»", async () => {
+    const file = await packMulticlass();
+    expect(manifestTask(file.manifest)).toBe("multiclase");
+    expect(isBinaryManifest(file.manifest)).toBe(false);
+    expect(file.manifest.schema).toMatchObject({
+      task: "multiclase",
+      classes: ["basico", "empresa", "estandar", "estudiante", "premium"],
+    });
+    expect(file.manifest.schema).not.toHaveProperty("positive_class");
+  });
+
+  it("D3: la UI todavía no lo abre (se rechaza NOMBRÁNDOLA); con la tarea usable, importa", async () => {
+    const text = JSON.stringify(await packMulticlass());
+    expect(await validateModelFile(text)).toEqual({
+      ok: false,
+      error: "unsupported-task",
+      task: "multiclase",
+    });
+    const usable = await validateModelFile(text, ["multiclase"]);
+    expect(usable.ok).toBe(true);
+    if (usable.ok) {
+      expect(usable.file.manifest.leakage[0]!.class).toBe("empresa");
+    }
+  });
+
+  it("carnadas del manifiesto multiclase: cada campo nuevo se rechaza NOMBRÁNDOLO — detectó k de n", async () => {
+    const file = await packMulticlass();
+    type Mutation = [field: string, mutate: (m: Record<string, any>) => void]; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const baits: Mutation[] = [
+      ["manifest.schema.classes", (m) => delete m.schema.classes],
+      ["manifest.schema.classes", (m) => (m.schema.classes = ["a", "b"])],
+      [
+        "manifest.schema.classes",
+        (m) => (m.schema.classes[1] = m.schema.classes[0]),
+      ],
+      ["manifest.schema.task", (m) => (m.schema.task = "binaria")],
+      // Métricas de la binaria en un archivo multiclase: un archivo disfrazado.
+      [
+        "manifest.metrics.model.balanced_accuracy",
+        (m) => (m.metrics.model = { ...METRICS }),
+      ],
+      ["manifest.metrics.model.f1_macro", (m) => (m.metrics.model.f1_macro = 2)],
+      [
+        "manifest.metrics.baselines.majority",
+        (m) => delete m.metrics.baselines.majority,
+      ],
+      [
+        "manifest.verdict.primaryMetric",
+        (m) => (m.verdict.primaryMetric = "auc"),
+      ],
+      ["manifest.selection.metric", (m) => (m.selection.metric = "f1_macro")],
+      ["manifest.league[0].name", (m) => (m.league[0].name = "linear")],
+      [
+        "manifest.league[0].test.balanced_accuracy",
+        (m) => delete m.league[0].test.balanced_accuracy,
+      ],
+      ["manifest.model_name", (m) => (m.model_name = "lasso")],
+      ["manifest.leakage[0].class", (m) => (m.leakage[0].class = 7)],
+      [
+        "manifest.leakage[0].reason",
+        (m) => (m.leakage[0].reason = "near-perfect-rank-correlation"),
+      ],
+    ];
+    let detected = 0;
+    for (const [field, mutate] of baits) {
+      const raw = JSON.parse(JSON.stringify(file)) as {
+        manifest: Record<string, unknown>;
+      };
+      mutate(raw.manifest);
+      const validation = await validateModelFile(JSON.stringify(raw), [
+        "multiclase",
+      ]);
+      if (
+        !validation.ok &&
+        validation.error === "invalid-format" &&
+        validation.field === field
+      ) {
+        detected += 1;
+      } else {
+        console.log(
+          `[manifiesto multiclase] carnada NO detectada: ${field}`,
+          validation,
+        );
+      }
+    }
+    console.log(
+      `[contrato manifiesto multiclase] validateModelFile detectó ${detected} de ${baits.length} carnadas`,
     );
     expect(detected).toBe(baits.length);
   });

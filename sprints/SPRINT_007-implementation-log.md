@@ -273,14 +273,14 @@ si no, la binaria». Una tarea nueva habría caído en silencio en la rama binar
 
 **Los gates y sus rojos** (`scripts/demo-rojo.sh`, corridos el 2026-10-04 antes del commit):
 
-| Gate                                                     | Mutación                                                                                              | Rojo (lo que nombró)                                                                                                                                         | Verde al restaurar                    |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
-| 1 · tipos (`ByTask`)                                     | `despacho.ts`: `readonly [P in K]: T;` → `?: T;`                                                       | `pnpm typecheck`: «tests/unit/despacho.test.ts(37,7) / (39,7): Unused '@ts-expect-error' directive», más dos sitios de producción que invocan una rama posiblemente ausente | `pnpm typecheck` sin errores          |
-| 1 · tipos (`TaskBranches`)                               | `despacho.ts`: las ramas de `matchByTask` opcionales                                                   | «tests/unit/despacho.test.ts(41,7): Unused '@ts-expect-error' directive» (solo la prueba lo vio: ningún sitio de producción falla)                              | `pnpm typecheck` sin errores          |
-| 2 · fuente TS                                            | `modelcard.ts`: `taskOf(result)` → `result.task ?? "binaria"`                                          | «src/lib/modelcard.ts:221 («?? binaria»)»                                                                                                                     | 9 de 9                                |
-| 2 · fuente Python (comparación)                          | `pipeline.py`: `if k > k_max:` → `if ctx["task"] == "binaria" and k > k_max:`                          | «src/lib/ds/pipeline.py:837 (comparación)»                                                                                                                    | 9 de 9                                |
-| 2 · fuente Python (rama faltante)                        | `pipeline.py`: se borra la rama `"numerica"` del `KFold`                                                | «src/lib/ds/pipeline.py:640 escribe [binaria], registradas [binaria, numerica]»                                                                               | 9 de 9                                |
-| 3 · conducta Python (runtime)                            | `pipeline.py`: se quita el chequeo de despacho completo de `_by_task`                                  | La integración nueva «…y rompe también las tareas que SÍ tienen ramas»: la corrida fue «aceptada» en vez de `dispatch-incomplete`                              | 1 prueba (filtrada) en verde          |
+| Gate                              | Mutación                                                                      | Rojo (lo que nombró)                                                                                                                                                        | Verde al restaurar           |
+| --------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| 1 · tipos (`ByTask`)              | `despacho.ts`: `readonly [P in K]: T;` → `?: T;`                              | `pnpm typecheck`: «tests/unit/despacho.test.ts(37,7) / (39,7): Unused '@ts-expect-error' directive», más dos sitios de producción que invocan una rama posiblemente ausente | `pnpm typecheck` sin errores |
+| 1 · tipos (`TaskBranches`)        | `despacho.ts`: las ramas de `matchByTask` opcionales                          | «tests/unit/despacho.test.ts(41,7): Unused '@ts-expect-error' directive» (solo la prueba lo vio: ningún sitio de producción falla)                                          | `pnpm typecheck` sin errores |
+| 2 · fuente TS                     | `modelcard.ts`: `taskOf(result)` → `result.task ?? "binaria"`                 | «src/lib/modelcard.ts:221 («?? binaria»)»                                                                                                                                   | 9 de 9                       |
+| 2 · fuente Python (comparación)   | `pipeline.py`: `if k > k_max:` → `if ctx["task"] == "binaria" and k > k_max:` | «src/lib/ds/pipeline.py:837 (comparación)»                                                                                                                                  | 9 de 9                       |
+| 2 · fuente Python (rama faltante) | `pipeline.py`: se borra la rama `"numerica"` del `KFold`                      | «src/lib/ds/pipeline.py:640 escribe [binaria], registradas [binaria, numerica]»                                                                                             | 9 de 9                       |
+| 3 · conducta Python (runtime)     | `pipeline.py`: se quita el chequeo de despacho completo de `_by_task`         | La integración nueva «…y rompe también las tareas que SÍ tienen ramas»: la corrida fue «aceptada» en vez de `dispatch-incomplete`                                           | 1 prueba (filtrada) en verde |
 
 **¿Puede fallar siquiera?** Sí: los seis rojos de arriba. El de fuente de Python exige además
 al menos 10 llamadas a `_by_task`, para no probar nada sobre un archivo vacío.
@@ -301,6 +301,10 @@ completo. Se le sumó una hermana (la de `dispatch-incomplete`).
 - `pnpm test`: 542 de 542 en 50 archivos (533 + las 9 de `despacho.test.ts`);
 - `pnpm test:integration`: 67 pasan y 1 se salta, en 8 archivos (la binaria y la regresión
   completas, con Pyodide real).
+
+**CI del primer commit** (`ccb564b`, run 37244716613, `gh pr checks 19`): 6 de 6 `success`
+(`quality`, `integration`, `e2e`, `lighthouse`, Vercel, Vercel Preview Comments). El margen de
+Lighthouse: «✓ ninguna mediana a menos del 10 % de su presupuesto».
 
 ### Segundo commit: fuga por clase con soporte mínimo (D8, P6)
 
@@ -327,6 +331,7 @@ las categóricas, y la binaria adopta la regla.
   En datos reales no cambia nada: 0 de los 11 objetivos binarios del kit cambian de veredicto
   (spike, anexo C), y `tests/unit/leakage-datasets.test.ts` (credito con `monto_recuperado`
   marcada y los limpios sin marcas) quedó en verde sin tocarlo.
+
 - **Pruebas nuevas** (8): la constante; el borde (4 no marca, 5 sí); los nulos no suman soporte;
   la pureza normalizada frente a la cruda; una categórica al azar con 5 de 300 no se marca (la
   cruda daría 0,983); la multiclase nombra la clase; una clase de 4 filas no se evalúa; y con dos
@@ -334,14 +339,153 @@ las categóricas, y la binaria adopta la regla.
 
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-04):
 
-| Mutación                                                   | Rojo (lo que nombró)                                                                                                                                                         | Verde        |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `LEAKAGE_CLASS_MIN_SUPPORT = 5` → `4`                      | 4 de 21: «el soporte mínimo es 5», «borde: con 4 filas en la clase chica NO se evalúa», «el soporte se cuenta en filas CON valor», «una clase con 4 filas no se evalúa»        | 21 de 21     |
-| La categórica puntúa con `categoryPurity` (cruda)          | 1 de 21: «una categórica al azar con una clase chica (5 de 300) no se marca»                                                                                                  | 21 de 21     |
+| Mutación                                          | Rojo (lo que nombró)                                                                                                                                                    | Verde    |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `LEAKAGE_CLASS_MIN_SUPPORT = 5` → `4`             | 4 de 21: «el soporte mínimo es 5», «borde: con 4 filas en la clase chica NO se evalúa», «el soporte se cuenta en filas CON valor», «una clase con 4 filas no se evalúa» | 21 de 21 |
+| La categórica puntúa con `categoryPurity` (cruda) | 1 de 21: «una categórica al azar con una clase chica (5 de 300) no se marca»                                                                                            | 21 de 21 |
 
 **Verde del árbol completo** (2026-10-04, después de los rojos): `pnpm lint` sin avisos;
 `pnpm typecheck` sin errores; `pnpm test` 550 de 550 en 50 archivos; `pnpm test:integration`
 67 pasan y 1 se salta, en 8 archivos.
+
+**CI del segundo commit** (`4d65812`, run 37245439053, `gh pr checks 19`): 6 de 6 `success`
+(`quality`, `integration`, `e2e`, `lighthouse`, Vercel, Vercel Preview Comments). El margen de
+Lighthouse: «✓ ninguna mediana a menos del 10 % de su presupuesto».
+
+### Tercer commit: el motor multiclase (P3, P4, P7, P9, P10; D2 en el motor, D3)
+
+La multiclase entra al **motor** de punta a punta. La UI la recibe en la F3 (D3): `TRAINABLE_TASKS`
+sigue sin ella, y el import de un archivo multiclase se rechaza nombrando la tarea.
+
+**Python (`pipeline.py`):**
+
+- **Ramas propias.** La rama `"multiclase"` está en los 12 `_by_task`. El objetivo se codifica
+  0..K−1 en el orden que manda TS, y `_multiclass_target` exige que sean exactamente los valores
+  distintos ordenados de los datos.
+- **Partición y métricas.** `StratifiedKFold`, con k acotado por la clase más chica de train. Las
+  métricas sobre la prueba son la exactitud balanceada, F1 macro y la exactitud; la pérdida
+  logarítmica y el AUC uno contra el resto quedan en `null` sin probabilidades.
+- **Detalles del resultado.** Matriz K×K y métricas por clase.
+- **Baselines.** La mayoritaria y la logística, con la misma fábrica que el miembro `logistic`.
+- **Puntuar.** Devuelve la clase predicha y la probabilidad de esa clase.
+
+**TypeScript, motor y contrato:**
+
+- **Costos y reparto.** `costos.ts` usa los coeficientes del anexo A con el factor `(K/5)^d`; sin K
+  no estima. `encarrilador.ts` deja fuera las balanceadas cuando minoritaria × K ≥ 0,4 × 2, y sin K
+  no reparte.
+- **EDA (`eda.ts`).** La fuga se mide por clase y nombra la clase. El desbalance mira la clase más
+  chica con la frontera re-expresada: cuota × K < 0,15 × 2.
+- **Preparar y ensamblar (`experiment.ts`).**
+  - `prepareMulticlass` usa la partición estratificada, mide la fuga por clase en train y devuelve
+    `too-few-rows-per-class` con la clase más chica, para nombrarla en pantalla.
+  - `byCodePoint` ordena las clases como `sorted()` de Python, también fuera del plano básico.
+  - `testClassCounts`, `assembleMulticlassResult`, `applyMulticlassMemberFit` y
+    `bestMulticlassBaseline` completan la rama.
+- **Lector y manifiesto.**
+  - El lector (`contract.ts`) suma su rama.
+  - Nueva regla: un `n_test` que no coincide con las filas de prueba que TS envió se nombra como
+    `n_test`. Antes caía como `confusion_matrix`.
+  - El manifiesto (`model-file.ts`) suma `MulticlassManifest` y su validador; su fuga lleva `class`.
+- **Hook.** `useExperiment` envía las clases y las filas de prueba por clase al lector. Al puntuar,
+  el lector exige la forma del esquema activo.
+- **Narración.** Con varias categorías, la narración no arma payload para la IA y usa una plantilla
+  local `{es, en}` (P10).
+- **Textos ES/EN.** Las cuatro métricas nuevas y `errors.too-few-rows-per-class`.
+  `errors.target-mixed-notation` dejaba de ser cierto con K clases («tiene 2 valores»): ahora dice
+  «clases escritas de más de una forma».
+- **Superficies de la UI (D3).**
+  - `pendingSurface(superficie, tarea)` falla nombrando superficie y tarea, en vez de pintar la rama
+    binaria.
+  - Quedan 13 para la F3: `FichaModelo`, `LeagueTable` ×2, `ResultsScreen`, `ScoreScreen` ×5,
+    `ImportSummary` ×2, `TaskCard` y `modelcard`.
+  - Una regla de fuente impide que vivan fuera de la UI y de la model card.
+
+**Hallazgos de la construcción:**
+
+- **La paridad `SCORER` / `METRIC_DIRECTION` de `roster.test.ts` tenía un punto ciego.** Su patrón
+  (`[a-z0-9]+`) no aceptaba claves con «_», así que no veía `balanced_accuracy`. Lo descubrió el
+  rojo al sumar la clave, y el patrón pasa a `[a-z0-9_]+`.
+- **«¿Puede fallar siquiera?» sobre `_validate_classes`.** Sus condiciones de orden y unicidad nunca
+  podían ponerse rojas solas: `_multiclass_target` las implica. Se retiran y queda anotado qué las
+  cubre. El tope de 3 a 20 clases sí es un gate y nace con carnada y rojo.
+- **Naive Bayes gaussiano sale por debajo de adivinar** en el sintético de 5 clases y 300 filas: 0,154
+  de exactitud balanceada en CV, donde adivinar da 0,2. La liga lo muestra tal cual (regla dura 3) y
+  el ganador sí supera el azar. No hay regla medida para dejarlo fuera.
+- **Frase caducada para la F3.** `errors.target-not-binary` dice «El objetivo debe tener exactamente
+  dos categorías», y ya no es cierto desde el S6. Se reescribe con la UI de la F3, y la casilla 4 la
+  barre.
+
+**Cambios esperados en pruebas heredadas (R13; se registran, no son lógica):**
+
+- `experiment.test.ts` · «rechaza un objetivo no binario». Tres categorías ya entrenan. Ese caso
+  pasa a «faltan filas POR CLASE» (nombra la clase), y `target-not-binary` se prueba con 21
+  categorías.
+- `regresion-motor.test.ts` · `ocupantes` respondida como «Categorías» ahora entrena (D2 en el motor).
+- `contract.test.ts` · carnada del export de regresión. `schema.task = "multiclase"` se lee ahora
+  con la forma multiclase y nombra `schema.classes`. La tarea desconocida pasa a `"serie-tiempo"`,
+  que sigue nombrando `schema.task`. Las dos quedan como carnadas.
+- `model-file.test.ts` · «una tarea que esta versión NO CONOCE» pasa de `multiclase` a
+  `serie-tiempo`.
+- `regresion.test.ts` (integración) · la carnada `task` y la prueba AU-S6-03 usan `"serie-tiempo"`.
+  Si la prueba hubiera borrado `_FACTORIES_BY_TASK["multiclase"]`, habría roto las siguientes.
+- `roster.test.ts` · el patrón de paridad de arriba.
+
+**Contrato «detectó k de n»** (corrida fresca sobre el árbol final, 2026-10-04):
+
+| Dirección                                       | Carnadas nuevas                                                                     | Heredadas, sin cambio                                                                                       |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| TS → Python (`_validate_payload`, Pyodide real) | multiclase **13 de 13**                                                             | binaria 16 de 16 · regresión 9 de 9                                                                         |
+| Python → TS (`contract.ts`)                     | train **30 de 30** · fit-member **7 de 7** · export **4 de 4** · puntuar **8 de 8** | train 27/27 · fit-member 6/6 · progreso 5/5 · export 6/6 · puntuar 5/5 · regresión 36/36, 6/6, **5/5**, 4/4 |
+| Archivo → import (`validateModelFile`)          | manifiesto multiclase **14 de 14**                                                  | 16 de 16 · regresión 12 de 12                                                                               |
+
+El export de regresión pasa de 4 a 5 carnadas por la que nombra `schema.classes`. Los cinco fixtures
+`*-multiclase` los escribió Pyodide real con `CONTRATO_ACTUALIZAR=1`
+(`tests/integration/multiclase.test.ts`).
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-04; cada uno restaurado con Python + `cmp` y en verde
+después). Las salidas completas quedaron en el scratchpad de la sesión.
+
+| Gate                                                      | Mutación                                           | Rojo (lo que nombró)                                                         | Verde |
+| --------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------- | ----- |
+| Superficies pendientes solo en la UI (`despacho.test.ts`) | `pendingSurface` en `useExperiment.planTarget`     | `src/lib/useExperiment.ts:` (archivo:línea)                                  | 12/12 |
+| La UI no ofrece la multiclase todavía (D3)                | `TRAINABLE_TASKS` con `multiclase`                 | «la UI todavía no ofrece entrenar varias categorías»                         | 12/12 |
+| Paridad `SCORER`                                          | `"balanced_accuracy": "accuracy"` en `pipeline.py` | «SCORER de pipeline.py…»                                                     | 13/13 |
+| Paridad `MULTICLASS_MIN_CLASSES`                          | `= 4` en `pipeline.py`                             | `MULTICLASS_MIN_CLASSES`                                                     | 13/13 |
+| Paridad de la primaria multiclase                         | `TASK_METRICS["multiclase"] = ("f1_macro",)`       | «solo admite la primaria»                                                    | 13/13 |
+| Lector: filas de la matriz = filas de prueba              | sin el cotejo con `testCounts`                     | `confusion_matrix →` (la carnada de filas cruzadas)                          | 31/31 |
+| Lector: `n_test`                                          | sin el cotejo de `n_test`                          | `n_test →`                                                                   | 31/31 |
+| Lector: probabilidad ∈ [1/K, 1]                           | piso 0                                             | `probabilities → aceptada`                                                   | 31/31 |
+| Manifiesto: `leakage[].class`                             | sin `class: optional(str)`                         | `manifest.leakage[0].class` (13 de 14)                                       | 26/26 |
+| Python: las clases son LAS de los datos                   | sin el cotejo de `_multiclass_target`              | `train:classes →` ×3: `aceptada` (clases al revés), `cv_k` y `null`          | 1/1   |
+| Python: k ≤ la clase más chica de train                   | `k_max` = filas de train                           | `train:cv_k → aceptada`                                                      | 1/1   |
+| Python: tope de 3 clases                                  | tope en 2                                          | `train:classes → null` (revienta dentro de Python, no se acepta en silencio) | 1/1   |
+| Costos: factor `(K/5)^d`                                  | `REFERENCE_CLASSES = 4`                            | «con K = 5 (la referencia) el factor es 1»                                   | 18/18 |
+| E2: regla de balanceadas con K                            | la regla vieja (minoritaria ≥ 0,4)                 | «con K clases…»                                                              | 18/18 |
+| E2: equivalencia en la binaria                            | `× 3` en lugar de `× 2`                            | «con dos clases la regla es IDÉNTICA…» (y la de K clases)                    | 18/18 |
+| EDA: desbalance de la clase más chica                     | `minorityRate < 0,15` sin K                        | «el desbalance mira la clase MÁS CHICA…»                                     | 18/18 |
+| Orden de las clases (`byCodePoint`)                       | comparar unidades UTF-16 (`split("")`)             | «…fuera del plano básico»                                                    | 18/18 |
+| Cerrojo de la narración (P10)                             | `multiclase: (m) => m as never` (payload no nulo)  | «pedir la narración NO llama al route»                                       | 2/2   |
+| Superficie pendiente falla nombrándose                    | `pendingSurface` devuelve en vez de lanzar         | «superficie sin rama todavía» (la model card)                                | 2/2   |
+
+**Dos demos que la herramienta corrigió:**
+
+- La del manifiesto salió con exit 1 la primera vez porque le pedí un mínimo de 29 pruebas en verde
+  y el archivo tiene 26. El rojo había sido correcto; se repitió con 26.
+- La del tope de 3 clases salió con exit 1 la primera vez porque predije que se aceptaría en
+  silencio («→ aceptada»), y en realidad revienta dentro de Python («→ null»). `demo-rojo` lo
+  rechazó por no nombrar lo esperado (K-S6-5); se repitió nombrando lo que de verdad dice la
+  aserción.
+
+**Verde del árbol completo** (2026-10-04, después de los rojos):
+
+- `pnpm lint`: sin avisos;
+- `pnpm typecheck`: sin errores;
+- `pnpm test`: 587 de 587 en 52 archivos. El motor (`engine/`) está al 97,57 % de sentencias y al
+  99,18 % de líneas;
+- `pnpm test:integration`: 83 pasan y 1 se salta, en 9 archivos. Incluye la binaria (`liga`,
+  `pipeline`, `scoring`, `sanitation-pipeline`) y la regresión (`regresion`, `modelo-s6`)
+  completas; el archivo del S5 y el del S6 importan y puntúan igual.
 
 ## Fricciones del kit (SEPARADAS del producto)
 

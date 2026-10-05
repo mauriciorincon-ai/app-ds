@@ -20,12 +20,19 @@
 //     error igual, pero los valores grandes dominan el RMSE.
 //   • target-outliers — ≥ 1 % de las filas fuera de 3·IQR (Tukey: «lejanos»).
 //
+// S7 — con VARIAS categorías: la fuga es por clase (cada clase contra el resto,
+// con soporte mínimo — D8) y el aviso nombra la columna Y la clase; el desbalance
+// mira la clase más chica con la misma frontera re-expresada para K clases
+// (cuota × K < 0,15 × 2: con dos clases es idéntica). La clase nombrada es un
+// valor del objetivo: se muestra en pantalla y jamás sale a un log.
+//
 // `EdaAlert` es un tipo DISTINTO de `LeakageFinding`: no toca el array `leakage`
 // del manifiesto ni la validación `isLeakage` del archivo exportado.
 
 import {
   DEFAULT_LEAKAGE_THRESHOLD,
   detectLeakage,
+  detectLeakageByClass,
   detectLeakageContinuous,
   type LeakageColumn,
 } from "@/engine/leakage";
@@ -40,9 +47,20 @@ import {
 } from "@/lib/ds/csv";
 
 export type EdaAlert =
-  | { kind: "possible-leak"; column: string; score: number }
+  | {
+      kind: "possible-leak";
+      column: string;
+      score: number;
+      /** S7: con varias categorías, la clase que la columna delata. */
+      class?: string;
+    }
   | { kind: "id-like"; column: string; score: number }
-  | { kind: "class-imbalance"; minorityRate: number }
+  | {
+      kind: "class-imbalance";
+      minorityRate: number;
+      /** S7: con varias categorías, la clase más chica. */
+      class?: string;
+    }
   | { kind: "target-skewed"; skew: number }
   | { kind: "target-outliers"; share: number };
 
@@ -83,6 +101,8 @@ export function computeEdaAlerts(
   if (n === 0) return [];
   return matchTask(task, {
     binaria: () => binaryAlerts(table, targetIndex, rowsWithTarget, labels),
+    multiclase: () =>
+      multiclassAlerts(table, targetIndex, rowsWithTarget, labels),
     numerica: () =>
       regressionAlerts(table, targetIndex, rowsWithTarget, labels),
   });
@@ -150,6 +170,47 @@ function binaryAlerts(
   const imbalanceAlerts: EdaAlert[] =
     minorityRate < EDA_IMBALANCE_THRESHOLD
       ? [{ kind: "class-imbalance", minorityRate }]
+      : [];
+
+  return [...leakAlerts, ...idAlerts, ...imbalanceAlerts];
+}
+
+/** S7: fuga por clase → id-like → desbalance de la clase más chica. */
+function multiclassAlerts(
+  table: CsvTable,
+  targetIndex: number,
+  rowsWithTarget: readonly string[][],
+  labels: readonly string[],
+): EdaAlert[] {
+  const trimmed = labels.map((v) => v.trim());
+  const classes = targetClasses(trimmed).sort();
+  if (classes.length < 3) return [];
+  const { idLike, idAlerts } = idLikeColumns(
+    table,
+    targetIndex,
+    rowsWithTarget,
+  );
+  const leakAlerts: EdaAlert[] = detectLeakageByClass(
+    candidateColumns(table, targetIndex, rowsWithTarget, idLike),
+    trimmed,
+    DEFAULT_LEAKAGE_THRESHOLD,
+  ).map((finding) => ({
+    kind: "possible-leak",
+    column: finding.column,
+    score: finding.score,
+    ...(finding.class === undefined ? {} : { class: finding.class }),
+  }));
+
+  const counts = new Map<string, number>();
+  for (const label of trimmed) counts.set(label, (counts.get(label) ?? 0) + 1);
+  // La más chica; a igual conteo, la primera en orden (determinista).
+  const [smallest, smallestCount] = classes
+    .map((c) => [c, counts.get(c)!] as const)
+    .reduce((a, b) => (b[1] < a[1] ? b : a));
+  const minorityRate = smallestCount / trimmed.length;
+  const imbalanceAlerts: EdaAlert[] =
+    minorityRate * classes.length < EDA_IMBALANCE_THRESHOLD * 2
+      ? [{ kind: "class-imbalance", minorityRate, class: smallest }]
       : [];
 
   return [...leakAlerts, ...idAlerts, ...imbalanceAlerts];

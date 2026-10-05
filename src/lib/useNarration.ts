@@ -13,10 +13,11 @@
 // una pulsación nueva. Pase lo que pase (kill-switch, proveedor caído,
 // verificación fallida) SIEMPRE hay texto: la plantilla nunca desaparece.
 //
-// S6 (P7): la narración con IA NO narra regresión. Primer cerrojo (este): con un
-// resultado de estimar no se arma payload y el hook jamás llama al route
-// (`aiAvailable` false; pedirla no hace nada). Segundo cerrojo: el route rechaza
-// todo payload que no sea de clasificación binaria. La plantilla sí existe.
+// S6 (P7): la narración con IA NO narra regresión — y S7 (P10), tampoco varias
+// categorías. Primer cerrojo (este): con un resultado que no es binario no se arma
+// payload y el hook jamás llama al route (`aiAvailable` false; pedirla no hace
+// nada). Segundo cerrojo: el route rechaza todo payload que no sea de
+// clasificación binaria. La plantilla sí existe.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { matchByTask } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
@@ -27,6 +28,7 @@ import { useI18n } from "@/i18n/provider";
 import type { FallbackReason, NarrationPayload } from "@/lib/ia/schemas";
 import { buildNarrationPayload } from "@/lib/narration/payload";
 import {
+  buildMulticlassTemplate,
   buildRegressionTemplate,
   buildTemplateNarrative,
 } from "@/lib/narration/templates";
@@ -83,7 +85,7 @@ export function useNarration(input: {
 }): {
   template: string;
   ai: AiNarrationState;
-  /** S6: false al estimar una cantidad (la IA solo narra clasificación binaria). */
+  /** S6/S7: false fuera de la binaria (la IA solo narra clasificación binaria). */
   aiAvailable: boolean;
   requestNarration: () => void;
 } {
@@ -103,6 +105,7 @@ export function useNarration(input: {
             locale,
             edaAlerts,
           }),
+        multiclase: () => null,
         numerica: () => null,
       }),
     [result, target, cols, locale, edaAlerts],
@@ -111,6 +114,8 @@ export function useNarration(input: {
     () =>
       matchByTask(result, {
         binaria: () => (payload ? buildTemplateNarrative(payload) : ""),
+        multiclase: (multi) =>
+          buildMulticlassTemplate({ result: multi, locale, edaAlerts }),
         numerica: (regression) =>
           buildRegressionTemplate({ result: regression, locale, edaAlerts }),
       }),

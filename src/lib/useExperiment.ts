@@ -32,12 +32,15 @@ import {
 } from "@/engine/tarea";
 import {
   applyMemberFit,
+  applyMulticlassMemberFit,
   applyRegressionMemberFit,
+  assembleMulticlassResult,
   assembleRegressionResult,
   assembleResult,
   inferUnit,
   prepareRun,
   summarizeDataset,
+  testClassCounts,
   withoutLeague,
   type PreparedRun,
 } from "@/lib/experiment";
@@ -72,6 +75,7 @@ import type {
   ExperimentResult,
   ExportResult,
   ModelSchema,
+  MulticlassModelSchema,
   PipelinePayload,
   ProgressDetail,
   ProgressStage,
@@ -259,7 +263,9 @@ type Pending =
   | { kind: "restore" }
   | {
       kind: "score";
-      task: TrainTask;
+      /** El esquema del modelo activo: su tarea (y, con varias categorías, sus
+       *  clases) dice qué forma exige el lector. */
+      schema: ModelSchema;
       check: SchemaCheck;
       fileName: string;
       table: CsvTable;
@@ -288,17 +294,17 @@ function trainPending(
       roster: payload.roster,
       cv_k: payload.cv_k,
       primary_metric: payload.primary_metric,
+      // S7: con varias categorías, las clases enviadas y las filas de prueba de
+      // cada una (el lector coteja con ellas la matriz K×K).
+      ...(payload.classes
+        ? { classes: payload.classes, testCounts: testClassCounts(payload) }
+        : {}),
     },
     smallSample: prepared.smallSample,
     level,
     routing: prepared.routing,
     forced,
   };
-}
-
-/** La tarea de un esquema de modelo (los archivos del S5 no la traen: binaria). */
-function schemaTask(schema: ModelSchema): TrainTask {
-  return taskOf(schema);
 }
 
 /**
@@ -319,6 +325,20 @@ function applyFit(
       const checked = validateMemberFit(raw, { member });
       return checked.ok
         ? { ok: true, value: applyMemberFit(binary, checked.value) }
+        : checked;
+    },
+    multiclase: (multi): Applied => {
+      const checked = validateMemberFit(raw, {
+        member,
+        task: "multiclase",
+        nTest: multi.nTest,
+        classes: multi.classes,
+        // Filas de prueba por clase = filas de la matriz vigente (la partición
+        // no cambia al elegir a mano).
+        testCounts: multi.perClass.map((c) => c.support),
+      });
+      return checked.ok
+        ? { ok: true, value: applyMulticlassMemberFit(multi, checked.value) }
         : checked;
     },
     numerica: (regression): Applied => {
@@ -358,6 +378,7 @@ function planTarget(
     unit: isTrainTask(resolved)
       ? matchTask(resolved, {
           binaria: () => null,
+          multiclase: () => null,
           numerica: () => inferUnit(target),
         })
       : null,
@@ -381,7 +402,11 @@ function planTarget(
 /** Las alertas EDA hablan de la tarea con que se entrenaría. Sin una tarea que se
  *  entrene, solo las que no dependen de ella (ninguna se supone por descarte). */
 function edaFor(table: CsvTable, plan: TargetPlan | null, target: string) {
-  if (!plan || !isTrainTask(plan.resolved)) return idLikeAlerts(table, target);
+  // S7 (D3): la multiclase ya entrena en el MOTOR, pero sus avisos llegan a la
+  // pantalla con su UI (F3): hasta entonces, la que la UI no entrena solo ve id-like.
+  if (!plan || !isTrainTask(plan.resolved) || !isTrainableTask(plan.resolved)) {
+    return idLikeAlerts(table, target);
+  }
   return computeEdaAlerts(table, target, plan.resolved);
 }
 
@@ -634,6 +659,18 @@ export function useExperiment() {
               positive_class: binary.positive_class,
             } satisfies BinaryModelSchema,
           }),
+          multiclase: (multi) => ({
+            assembled: assembleMulticlassResult(
+              multi,
+              pending.leakage,
+              pending.smallSample,
+            ),
+            schema: {
+              ...pending.features,
+              classes: multi.classes,
+              task: "multiclase",
+            } satisfies MulticlassModelSchema,
+          }),
           numerica: (regression) => ({
             assembled: assembleRegressionResult(
               regression,
@@ -710,8 +747,13 @@ export function useExperiment() {
         setState((s) => ({ ...s, modelReady: true }));
       } else if (message.command === "score" && pending.kind === "score") {
         // S6: el lector exige la forma de la tarea del modelo activo.
-        const checked = matchTask(pending.task, {
+        const checked = matchByTask(pending.schema, {
           binaria: () => validateScoreResult(message.result),
+          multiclase: ({ classes }) =>
+            validateScoreResult(message.result, {
+              task: "multiclase",
+              classes,
+            }),
           numerica: () =>
             validateScoreResult(message.result, { task: "numerica" }),
         });
@@ -1173,7 +1215,7 @@ export function useExperiment() {
     const id = nextId.current++;
     pendingRef.current.set(id, {
       kind: "score",
-      task: schemaTask(meta.schema),
+      schema: meta.schema,
       check,
       fileName,
       table: parsed.table,

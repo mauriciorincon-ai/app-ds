@@ -7,6 +7,7 @@ import type { TaskDetection, TrainTask } from "@/engine/tarea";
 import type {
   MetricName,
   Metrics,
+  MulticlassMetrics,
   PrimaryMetric,
   RegressionMetrics,
   Verdict,
@@ -36,11 +37,15 @@ export type WorkerErrorKind =
   // S6 (D2): la columna puede ser clases o cantidad y el usuario aún no respondió.
   | "target-ambiguous"
   // S5: el objetivo tiene 2 valores para E1 pero escritos de más de una forma («1» y «1.0»).
+  // S7: lo mismo con varias categorías (E1 cuenta K números; el texto, más).
   | "target-mixed-notation"
   | "no-features"
   // S5: la clase minoritaria de train no alcanza para 2 pliegues de validación
   // cruzada (hay que tener al menos 2 ejemplos de cada clase en train).
   | "too-few-rows"
+  // S7 (P4): con varias categorías, la clase MÁS CHICA de train no alcanza para 2
+  // pliegues. La clase se nombra en pantalla (dato del usuario), jamás en logs.
+  | "too-few-rows-per-class"
   // S6 (AU-S6-08): al estimar una cantidad, la prueba quedaría con menos de
   // MIN_REGRESSION_TEST_ROWS filas (el texto de «too-few-rows» habla de clases).
   | "too-few-rows-quantity"
@@ -89,6 +94,9 @@ export type PipelinePayload = {
   roster: MemberId[];
   /** S5: pliegues de la validación cruzada (≤ minoritaria de train, ≥ 2). */
   cv_k: number;
+  /** S7: SOLO con varias categorías — las clases en orden (el de la codificación
+   *  0..K−1). Python las coteja con los datos; en otra tarea, su presencia se rechaza. */
+  classes?: string[];
 };
 
 /** S5 (U1): ajustar UN miembro elegido por el usuario (sin CV: ya eligió). */
@@ -263,6 +271,52 @@ export type RegressionMemberFitResult = {
   preprocessing: Preprocessing;
 };
 
+// --- S7: clasificar en varias categorías (ADR 015) ---------------------------
+
+/** Métricas de una clase sobre TEST (en el orden de `classes`). */
+export type PerClassMetrics = {
+  precision: number;
+  recall: number;
+  f1: number;
+  /** Filas de prueba de esa clase. */
+  support: number;
+};
+
+export type MulticlassBaselines = {
+  majority: MulticlassMetrics;
+  logistic: MulticlassMetrics;
+};
+
+export type MulticlassPipelineResult = {
+  task: "multiclase";
+  /** Las K clases, en orden (las que envió TS). */
+  classes: string[];
+  n_train: number;
+  n_test: number;
+  baselines: MulticlassBaselines;
+  model: MulticlassMetrics;
+  model_name: MemberId;
+  winner: MemberId;
+  league: LeagueRow<MulticlassMetrics>[];
+  cv: CvSummary;
+  elapsed_ms: number;
+  /** K×K: filas = clase real, columnas = predicha. */
+  confusion_matrix: number[][];
+  per_class: PerClassMetrics[];
+  explainability: Explainability;
+  preprocessing: Preprocessing;
+};
+
+export type MulticlassMemberFitResult = {
+  task: "multiclase";
+  model: MulticlassMetrics;
+  model_name: MemberId;
+  confusion_matrix: number[][];
+  per_class: PerClassMetrics[];
+  explainability: Explainability;
+  preprocessing: Preprocessing;
+};
+
 /** S5 (U1): el miembro elegido a mano, ajustado en train completo. */
 export type MemberFitResult = {
   task: "binaria";
@@ -339,7 +393,29 @@ export type RegressionResult = {
   explainability: Explainability;
 };
 
-export type ExperimentResult = BinaryResult | RegressionResult;
+/** S7: el resultado de clasificar en varias categorías. Las clases, la matriz y las
+ *  métricas por clase son datos del usuario: viven solo en memoria (P13). */
+export type MulticlassResult = {
+  task: "multiclase";
+  classes: string[];
+  nTrain: number;
+  nTest: number;
+  baselines: MulticlassBaselines;
+  model: MulticlassMetrics;
+  modelName: MemberId;
+  candidates: ModelCandidate<MulticlassMetrics>[];
+  league: LeagueRow<MulticlassMetrics>[];
+  selection: Selection<"balanced_accuracy">;
+  smallSample: boolean;
+  rareCategories?: Record<string, string[]>;
+  confusionMatrix: number[][];
+  perClass: PerClassMetrics[];
+  verdict: Verdict<"balanced_accuracy">;
+  leakage: LeakageFinding[];
+  explainability: Explainability;
+};
+
+export type ExperimentResult = BinaryResult | MulticlassResult | RegressionResult;
 
 // --- Scoring + export/import (S3) ------------------------------------------
 // El modelo fitted vive a nivel de módulo en pipeline.py (_MODEL) dentro del
@@ -365,7 +441,19 @@ export type RegressionModelSchema = {
   target_stats: TargetStats;
 };
 
-export type ModelSchema = BinaryModelSchema | RegressionModelSchema;
+/** S7: un modelo de varias categorías trae sus clases (sin «clase positiva»). */
+export type MulticlassModelSchema = {
+  numeric: string[];
+  categorical: string[];
+  target: string;
+  classes: string[];
+  task: "multiclase";
+};
+
+export type ModelSchema =
+  | BinaryModelSchema
+  | MulticlassModelSchema
+  | RegressionModelSchema;
 
 /** Perfil de TRAIN (nunca de test) — base del reporte honesto de novedad.
  *  min/max null ⇔ la columna quedó sin valores numéricos en train. */
@@ -416,7 +504,19 @@ export type RegressionScoreResult = {
   novelty: NoveltyReport;
 };
 
-export type ScoreResult = BinaryScoreResult | RegressionScoreResult;
+/** S7: la clase predicha por fila (etiqueta ORIGINAL) y la probabilidad de ESA
+ *  clase; null si el modelo no da probabilidades (no se inventa). */
+export type MulticlassScoreResult = {
+  task: "multiclase";
+  predictions: string[];
+  probabilities: number[] | null;
+  novelty: NoveltyReport;
+};
+
+export type ScoreResult =
+  | BinaryScoreResult
+  | MulticlassScoreResult
+  | RegressionScoreResult;
 
 export type RuntimeVersions = {
   pyodide: string;

@@ -86,3 +86,14 @@ export function matchByTask<
 >(value: T, branches: B): Returned<B> {
   return branchOf<(value: T) => Returned<B>>(branches, taskOf(value))(value);
 }
+
+/**
+ * S7 (D3 del plan): una superficie de la UI que todavía no sabe mostrar una tarea
+ * que el MOTOR ya entrena. La UI no puede llegar a ella (TRAINABLE_TASKS cierra el
+ * entrenamiento y validateModelFile el import); si llega igual, falla NOMBRANDO la
+ * superficie y la tarea, en vez de pintar la rama de otra tarea. La F3 las retira
+ * una a una (tests/unit/despacho.test.ts dice dónde quedan).
+ */
+export function pendingSurface(surface: string, task: TrainTask): never {
+  throw new Error(`superficie sin rama todavía: ${surface} (${task})`);
+}

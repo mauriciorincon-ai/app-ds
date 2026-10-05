@@ -112,7 +112,21 @@ describe("prepareRun", () => {
     expect(prepared.payload.primary_metric).toBe("auc");
   });
 
-  it("rechaza un objetivo no binario", () => {
+  it("rechaza un objetivo que no sirve como objetivo (más de 20 categorías)", () => {
+    // S7 (cambio esperado, R13): tres categorías ya no se rechazan por «no
+    // binarias» — entrenan como varias categorías (ver el caso siguiente). Lo que
+    // el motor no entrena es una columna con demasiadas categorías para ser clases.
+    const t = table(
+      ["x", "t"],
+      Array.from({ length: 21 }, (_, i) => [String(i), `c${i}`]),
+    );
+    expect(prepareRun(t, "t", 1)).toEqual({
+      ok: false,
+      error: "target-not-binary",
+    });
+  });
+
+  it("S7 (P4): varias categorías con una fila por clase ⇒ faltan filas POR CLASE, y nombra la más chica", () => {
     const t = table(
       ["x", "t"],
       [
@@ -123,7 +137,8 @@ describe("prepareRun", () => {
     );
     expect(prepareRun(t, "t", 1)).toEqual({
       ok: false,
-      error: "target-not-binary",
+      error: "too-few-rows-per-class",
+      smallestClass: { name: "a", trainRows: 1 },
     });
   });
 

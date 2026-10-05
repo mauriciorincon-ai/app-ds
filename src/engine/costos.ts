@@ -9,6 +9,11 @@
 // Un equipo concreto tarda distinto (WebKit ~1,4× en 2.000–5.000 filas; un móvil
 // 2–4×): por eso la estimación del Nivel 2 se CALIBRA con lo que el Nivel 1 tardó
 // de verdad en el equipo del usuario.
+//
+// S7: con varias categorías el costo crece con el número de clases K, y la forma
+// gana un factor (K/5)^d medido por miembro (sprints/SPRINT_007-spike-catalogo.md,
+// anexo A).
+import { matchTask } from "@/engine/despacho";
 import type {
   BinaryMemberId,
   MemberId,
@@ -17,6 +22,8 @@ import type {
 import type { TrainTask } from "@/engine/tarea";
 
 export type CostCoefficients = { t0: number; a: number; b: number; c: number };
+/** S7: los de varias categorías llevan además el exponente del número de clases. */
+export type MulticlassCostCoefficients = CostCoefficients & { d: number };
 
 export const COST_COEFFICIENTS: Record<BinaryMemberId, CostCoefficients> = {
   logistic: { t0: 0.037, a: 0.0243, b: 0.833, c: 0.593 },
@@ -59,10 +66,38 @@ export const REGRESSION_COST_COEFFICIENTS: Record<
   mlp: { t0: 0.153, a: 0.6372, b: 1.21, c: 1.158 },
 };
 
+/**
+ * S7: los mismos 14 en su forma nativa de K clases, ajustados en el spike de la F0
+ * (sprints/SPRINT_007-spike-catalogo.md, anexo A, Chromium sobre el build de
+ * producción) con un factor más: t_cv5 ≈ t0 + a·(n/1000)^b·(ancho/33)^c·(K/5)^d.
+ * `d` ~1 en la logística y HGB, ~0,8 en los boosting, ~0,3 en los bosques y ~0 en
+ * Ridge, Naive Bayes, el árbol y KNN.
+ */
+export const MULTICLASS_COST_COEFFICIENTS: Record<
+  BinaryMemberId,
+  MulticlassCostCoefficients
+> = {
+  logistic: { t0: 0.046, a: 0.0736, b: 0.794, c: 0.495, d: 1.002 },
+  logistic_balanced: { t0: 0.05, a: 0.0722, b: 0.796, c: 0.421, d: 0.942 },
+  ridge: { t0: 0.046, a: 0.0207, b: 0.956, c: 0.965, d: -0.029 },
+  naive_bayes: { t0: 0.04, a: 0.0177, b: 0.964, c: 0.267, d: 0.039 },
+  linear_svc: { t0: 0.043, a: 0.0248, b: 1.012, c: 0.572, d: 0.457 },
+  decision_tree: { t0: 0.043, a: 0.0291, b: 1.218, c: 0.682, d: 0.072 },
+  knn: { t0: 0.043, a: 0.0204, b: 1.641, c: 0.247, d: 0.108 },
+  hgb: { t0: 0.421, a: 3.696, b: 0.034, c: 0.496, d: 0.982 },
+  lightgbm: { t0: 0.458, a: 4.0262, b: 0.316, c: 0.158, d: 0.763 },
+  xgboost: { t0: 0.296, a: 2.2642, b: 0.478, c: 0.638, d: 0.859 },
+  extra_trees: { t0: 0.619, a: 0.5509, b: 1.106, c: 0.034, d: 0.336 },
+  forest: { t0: 0.826, a: 0.6017, b: 1.16, c: 0.362, d: 0.305 },
+  forest_balanced: { t0: 0.819, a: 0.5979, b: 1.163, c: 0.341, d: 0.312 },
+  mlp: { t0: 0.083, a: 0.694, b: 0.666, c: 0.667, d: 0.415 },
+};
+
 /** Los coeficientes de cada tarea. Un `Record` completo por tarea: sumar una a
  *  `TrainTask` sin sus coeficientes no compila (AU-S6-03). */
 export const COST_COEFFICIENTS_BY_TASK = {
   binaria: COST_COEFFICIENTS,
+  multiclase: MULTICLASS_COST_COEFFICIENTS,
   numerica: REGRESSION_COST_COEFFICIENTS,
 } as const satisfies Record<
   TrainTask,
@@ -87,6 +122,8 @@ export function costCoefficients(
 const REFERENCE_WIDTH = 33;
 /** Fracción de train con que se ajusta cada fold en la CV de referencia (k=5). */
 const REFERENCE_FRACTION = 4 / 5;
+/** S7: número de clases de referencia del ajuste multiclase. */
+const REFERENCE_CLASSES = 5;
 
 export type CostInput = {
   /** Filas de entrenamiento. */
@@ -95,7 +132,33 @@ export type CostInput = {
   width: number;
   /** Pliegues de la CV. */
   k: number;
+  /** S7: clases del objetivo (solo con varias categorías; sin él, no se estima). */
+  classes?: number;
 };
+
+/** El factor (K/5)^d de varias categorías; las demás tareas no lo tienen. */
+function classFactor(
+  member: MemberId,
+  input: CostInput,
+  task: TrainTask,
+): number {
+  return matchTask(task, {
+    binaria: () => 1,
+    numerica: () => 1,
+    multiclase: () => {
+      if (input.classes === undefined) {
+        throw new Error("costos: la multiclase necesita el número de clases");
+      }
+      const table: Partial<Record<MemberId, MulticlassCostCoefficients>> =
+        MULTICLASS_COST_COEFFICIENTS;
+      const d = table[member]?.d;
+      if (d === undefined) {
+        throw new Error(`costos: ${member} no compite en la tarea multiclase`);
+      }
+      return (input.classes / REFERENCE_CLASSES) ** d;
+    },
+  });
+}
 
 /**
  * Segundos estimados para UN miembro: su CV con k pliegues + el ajuste en train
@@ -111,7 +174,11 @@ export function estimateMemberSeconds(
   const { t0, a, b, c } = costCoefficients(member, task);
   const nTrain = Math.max(input.nTrain, 1);
   const width = Math.max(input.width, 1);
-  const variable = a * (nTrain / 1000) ** b * (width / REFERENCE_WIDTH) ** c;
+  const variable =
+    a *
+    (nTrain / 1000) ** b *
+    (width / REFERENCE_WIDTH) ** c *
+    classFactor(member, input, task);
   const fit = (fraction: number) =>
     t0 / 5 + (variable / 5) * (fraction / REFERENCE_FRACTION) ** b;
   const cv = input.k * fit((input.k - 1) / input.k);

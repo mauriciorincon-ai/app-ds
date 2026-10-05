@@ -10,7 +10,12 @@
 // forma, las métricas y la selección se validan con las reglas de ESA tarea.
 import { byTask, matchByTask, taskOf, type ByTask } from "@/engine/despacho";
 import { isMemberOf, selectOneSe, type MemberId } from "@/engine/roster";
-import { TRAIN_TASKS, type TrainTask } from "@/engine/tarea";
+import {
+  MULTICLASS_MAX_CLASSES,
+  MULTICLASS_MIN_CLASSES,
+  TRAIN_TASKS,
+  type TrainTask,
+} from "@/engine/tarea";
 import { METRIC_RULES, type PrimaryMetric } from "@/engine/verdict";
 import {
   arr,
@@ -31,6 +36,10 @@ import type {
   BinaryScoreResult,
   ExportResult,
   MemberFitResult,
+  MulticlassMemberFitResult,
+  MulticlassPipelineResult,
+  MulticlassScoreResult,
+  PerClassMetrics,
   PipelineResult,
   ProgressDetail,
   RegressionMemberFitResult,
@@ -46,6 +55,14 @@ export const REGRESSION_METRIC_KEYS = [
   "r2",
   "medae",
   "mape",
+] as const;
+/** S7: las métricas de varias categorías que viajan (y que el lector compara). */
+export const MULTICLASS_METRIC_KEYS = [
+  "balanced_accuracy",
+  "f1_macro",
+  "accuracy",
+  "log_loss",
+  "auc_ovr",
 ] as const;
 /** S6 (P6): espejo de PRED_VS_REAL_MAX de pipeline.py (paridad en roster.test.ts). */
 export const PRED_VS_REAL_MAX = 200;
@@ -65,11 +82,14 @@ export const SCORER: Record<PrimaryMetric, string> = {
   accuracy: "accuracy",
   precision: "precision",
   recall: "recall",
+  balanced_accuracy: "balanced_accuracy",
   mae: "neg_mean_absolute_error",
 };
 
 const nonNegInt = refine(int, (v) => (v as number) >= 0);
 const nonNeg = refine(num, (v) => (v as number) >= 0);
+/** S7: una proporción (las métricas de clasificación viven entre 0 y 1). */
+const unit01 = refine(num, (v) => (v as number) >= 0 && (v as number) <= 1);
 
 export const metricsV = obj(
   Object.fromEntries(METRIC_KEYS.map((k) => [k, num])),
@@ -168,6 +188,120 @@ const pipelineResultV = obj({
   explainability: explainabilityV,
   preprocessing: preprocessingV,
 });
+
+// --- S7: varias categorías -------------------------------------------------
+
+/** Exactitud balanceada, F1 macro y exactitud en [0, 1]; log-loss ≥ 0 y AUC uno
+ *  contra el resto en [0, 1], los dos null sin probabilidades. */
+export const multiclassMetricsV = obj({
+  balanced_accuracy: unit01,
+  f1_macro: unit01,
+  accuracy: unit01,
+  log_loss: nullable(nonNeg),
+  auc_ovr: nullable(unit01),
+});
+
+const perClassV = arr(
+  obj({ precision: unit01, recall: unit01, f1: unit01, support: nonNegInt }),
+  3,
+);
+
+const multiclassResultV = obj({
+  task: oneOf(["multiclase"]),
+  classes: arr(str, 3),
+  n_train: nonNegInt,
+  n_test: nonNegInt,
+  baselines: obj({ majority: multiclassMetricsV, logistic: multiclassMetricsV }),
+  model: multiclassMetricsV,
+  model_name: member,
+  winner: member,
+  league: arr(leagueRowOf(member, multiclassMetricsV), 1),
+  cv: cvSummaryOf(member),
+  elapsed_ms: nonNegInt,
+  confusion_matrix: arr(arr(nonNegInt)),
+  per_class: perClassV,
+  explainability: explainabilityV,
+  preprocessing: preprocessingV,
+});
+
+/** Lo que TS envió (o sabe de su partición) con varias categorías. */
+type MulticlassSent = {
+  classes?: readonly string[];
+  /** Filas de prueba por clase, en el orden de `classes`. */
+  testCounts?: readonly number[];
+};
+
+/**
+ * S7: la matriz K×K y las métricas por clase, contra lo que solo TS sabe: las
+ * clases que mandó y cuántas filas de prueba tiene cada una. Filas de la matriz =
+ * clase real ⇒ cada fila suma los conteos de prueba de su clase, el total es el
+ * tamaño de la prueba, y el soporte de cada clase es su fila.
+ */
+function multiclassDetailsField(
+  r: { confusion_matrix: number[][]; per_class: PerClassMetrics[] },
+  sent: MulticlassSent,
+  nTest: number | undefined,
+): string | null {
+  const k = sent.classes?.length ?? r.per_class.length;
+  const m = r.confusion_matrix;
+  if (m.length !== k || m.some((row) => row.length !== k))
+    return "confusion_matrix";
+  const rowSums = m.map((row) => row.reduce((a, b) => a + b, 0));
+  if (
+    sent.testCounts &&
+    rowSums.some((sum, i) => sum !== sent.testCounts![i])
+  ) {
+    return "confusion_matrix";
+  }
+  if (nTest !== undefined && rowSums.reduce((a, b) => a + b, 0) !== nTest)
+    return "confusion_matrix";
+  if (
+    r.per_class.length !== k ||
+    r.per_class.some((c, i) => c.support !== rowSums[i])
+  ) {
+    return "per_class";
+  }
+  return null;
+}
+
+/** S7: lo que solo una liga multiclase puede incumplir. */
+function multiclassTrainField(
+  r: MulticlassPipelineResult,
+  sent: MulticlassSent,
+): string | null {
+  const sentClasses = sent.classes ?? [];
+  if (
+    r.classes.length !== sentClasses.length ||
+    r.classes.some((c, i) => c !== sentClasses[i])
+  ) {
+    return "classes";
+  }
+  // El tamaño de la prueba lo sabe TS: la suma de sus filas por clase.
+  if (
+    sent.testCounts &&
+    r.n_test !== sent.testCounts.reduce((a, b) => a + b, 0)
+  ) {
+    return "n_test";
+  }
+  const details = multiclassDetailsField(r, sent, r.n_test);
+  if (details) return details;
+  // La logística es baseline Y miembro: la misma fábrica sobre el mismo train,
+  // así que sus métricas de prueba coinciden (como la lineal del S6, AU-S6-39).
+  const logistic = r.league.find((row) => row.name === "logistic")?.test;
+  if (
+    logistic &&
+    MULTICLASS_METRIC_KEYS.some((k) => {
+      const a = logistic[k];
+      const b = r.baselines.logistic[k];
+      return a === null || b === null
+        ? a !== b
+        : Math.abs(a - b) > 1e-9 * Math.max(1, Math.abs(b));
+    })
+  ) {
+    return "baselines.logistic";
+  }
+  return null;
+}
 
 // --- S6: regresión ---------------------------------------------------------
 
@@ -291,9 +425,12 @@ export type TrainSent = {
   roster: readonly MemberId[];
   cv_k: number;
   primary_metric: PrimaryMetric;
-};
+} & MulticlassSent;
 
-type AnyTrainResult = PipelineResult | RegressionPipelineResult;
+type AnyTrainResult =
+  | PipelineResult
+  | MulticlassPipelineResult
+  | RegressionPipelineResult;
 
 /**
  * Valida el resultado de la liga. Además de la forma, cruza lo que solo el lector
@@ -306,6 +443,10 @@ export function validateTrainResult(
   raw: unknown,
   sent: TrainSent & { task: "numerica" },
 ): Checked<RegressionPipelineResult>;
+export function validateTrainResult(
+  raw: unknown,
+  sent: TrainSent & { task: "multiclase" },
+): Checked<MulticlassPipelineResult>;
 export function validateTrainResult(
   raw: unknown,
   sent: TrainSent & { task?: "binaria" },
@@ -322,7 +463,11 @@ export function validateTrainResult(
   // La tarea primero: con otra tarea, todo lo demás tiene otra forma.
   if (!isRecord(raw) || raw.task !== task) return { ok: false, field: "task" };
   const shaped = check<AnyTrainResult>(
-    byTask(task, { binaria: pipelineResultV, numerica: regressionResultV }),
+    byTask(task, {
+      binaria: pipelineResultV,
+      multiclase: multiclassResultV,
+      numerica: regressionResultV,
+    }),
     raw,
   );
   if (!shaped.ok) return shaped;
@@ -330,6 +475,7 @@ export function validateTrainResult(
   // Lo que solo puede cotejarse dentro de cada tarea.
   const taskField: string | null = matchByTask(r, {
     binaria: () => null,
+    multiclase: (multi) => multiclassTrainField(multi, sent),
     numerica: (reg) => regressionTrainField(reg),
   });
   if (taskField) return { ok: false, field: taskField };
@@ -373,6 +519,7 @@ export function validateTrainResult(
     .test as Record<string, unknown> | null;
   const keys: readonly string[] = byTask(task, {
     binaria: METRIC_KEYS,
+    multiclase: MULTICLASS_METRIC_KEYS,
     numerica: REGRESSION_METRIC_KEYS,
   });
   const model = r.model as Record<string, unknown>;
@@ -387,6 +534,16 @@ const memberFitV = obj({
   model: metricsV,
   model_name: member,
   confusion_matrix: confusionV,
+  explainability: explainabilityV,
+  preprocessing: preprocessingV,
+});
+
+const multiclassMemberFitV = obj({
+  task: oneOf(["multiclase"]),
+  model: multiclassMetricsV,
+  model_name: member,
+  confusion_matrix: arr(arr(nonNegInt)),
+  per_class: perClassV,
   explainability: explainabilityV,
   preprocessing: preprocessingV,
 });
@@ -409,22 +566,35 @@ export function validateMemberFit(
 ): Checked<RegressionMemberFitResult>;
 export function validateMemberFit(
   raw: unknown,
+  sent: { member: MemberId; task: "multiclase"; nTest: number } & MulticlassSent,
+): Checked<MulticlassMemberFitResult>;
+export function validateMemberFit(
+  raw: unknown,
   sent: { member: MemberId; task?: "binaria" },
 ): Checked<MemberFitResult>;
 export function validateMemberFit(
   raw: unknown,
-  sent: { member: MemberId; task?: TrainTask; nTest?: number },
-): Checked<MemberFitResult | RegressionMemberFitResult> {
+  sent: { member: MemberId; task?: TrainTask; nTest?: number } & MulticlassSent,
+): Checked<
+  MemberFitResult | MulticlassMemberFitResult | RegressionMemberFitResult
+> {
   const task = taskOf(sent);
   if (!isRecord(raw) || raw.task !== task) return { ok: false, field: "task" };
-  const shaped = check<MemberFitResult | RegressionMemberFitResult>(
-    byTask(task, { binaria: memberFitV, numerica: regressionMemberFitV }),
+  const shaped = check<
+    MemberFitResult | MulticlassMemberFitResult | RegressionMemberFitResult
+  >(
+    byTask(task, {
+      binaria: memberFitV,
+      multiclase: multiclassMemberFitV,
+      numerica: regressionMemberFitV,
+    }),
     raw,
   );
   if (!shaped.ok) return shaped;
   const { nTest } = sent;
   const taskField: string | null = matchByTask(shaped.value, {
     binaria: () => null,
+    multiclase: (fit) => multiclassDetailsField(fit, sent, nTest),
     numerica: (fit) =>
       nTest === undefined ? null : predVsRealField(fit.pred_vs_real, nTest),
   });
@@ -475,10 +645,29 @@ const regressionSchemaV = obj({
   target_stats: targetStatsV,
 });
 
+/** S7: de 3 a MULTICLASS_MAX_CLASSES clases distintas. */
+export const multiclassClassesV = refine(arr(str), (v) => {
+  const classes = v as string[];
+  return (
+    classes.length >= MULTICLASS_MIN_CLASSES &&
+    classes.length <= MULTICLASS_MAX_CLASSES &&
+    new Set(classes).size === classes.length
+  );
+});
+
+const multiclassSchemaV = obj({
+  numeric: arr(str),
+  categorical: arr(str),
+  target: str,
+  classes: multiclassClassesV,
+  task: oneOf(["multiclase"]),
+});
+
 /** S6: el esquema exportado dice su tarea; la binaria exige sus clases, la
  *  numérica su objetivo. Una tarea que no es ninguna se nombra como tal. */
 const SCHEMA_V_BY_TASK: ByTask<Validator> = {
   binaria: binarySchemaV,
+  multiclase: multiclassSchemaV,
   numerica: regressionSchemaV,
 };
 const exportSchemaV: Validator = (v, path) => {
@@ -526,6 +715,36 @@ const scoreV = obj({
   novelty: noveltyV,
 });
 
+/** S7: la clase predicha y la probabilidad de esa clase (null sin probabilidades). */
+const multiclassScoreV = obj({
+  task: oneOf(["multiclase"]),
+  predictions: arr(str),
+  probabilities: nullable(arr(num)),
+  novelty: noveltyV,
+});
+
+/** S7: cada predicción es una de las clases del modelo y su probabilidad es la de
+ *  la clase predicha — la más alta de K, así que está en [1/K, 1] (un control de
+ *  dominio gratis: una probabilidad de otra clase o de una binaria no pasa). */
+function multiclassScoreField(
+  s: MulticlassScoreResult,
+  classes: readonly string[] | undefined,
+): string | null {
+  if (s.predictions.length !== s.novelty.n_rows) return "predictions";
+  if (classes && s.predictions.some((p) => !classes.includes(p)))
+    return "predictions";
+  if (s.probabilities) {
+    const floor = classes ? 1 / classes.length - 1e-9 : 0;
+    if (
+      s.probabilities.length !== s.predictions.length ||
+      s.probabilities.some((p) => p < floor || p > 1 + 1e-9)
+    ) {
+      return "probabilities";
+    }
+  }
+  return null;
+}
+
 /** S6: la cantidad estimada por fila (finita) y ninguna probabilidad inventada. */
 const regressionScoreV = obj({
   task: oneOf(["numerica"]),
@@ -540,16 +759,26 @@ export function validateScoreResult(
 ): Checked<RegressionScoreResult>;
 export function validateScoreResult(
   raw: unknown,
+  sent: { task: "multiclase"; classes: readonly string[] },
+): Checked<MulticlassScoreResult>;
+export function validateScoreResult(
+  raw: unknown,
   sent?: { task?: "binaria" },
 ): Checked<BinaryScoreResult>;
 export function validateScoreResult(
   raw: unknown,
-  sent: { task?: TrainTask } = {},
-): Checked<BinaryScoreResult | RegressionScoreResult> {
+  sent: { task?: TrainTask; classes?: readonly string[] } = {},
+): Checked<BinaryScoreResult | MulticlassScoreResult | RegressionScoreResult> {
   const task = taskOf(sent);
   if (!isRecord(raw) || raw.task !== task) return { ok: false, field: "task" };
-  const shaped = check<BinaryScoreResult | RegressionScoreResult>(
-    byTask(task, { binaria: scoreV, numerica: regressionScoreV }),
+  const shaped = check<
+    BinaryScoreResult | MulticlassScoreResult | RegressionScoreResult
+  >(
+    byTask(task, {
+      binaria: scoreV,
+      multiclase: multiclassScoreV,
+      numerica: regressionScoreV,
+    }),
     raw,
   );
   if (!shaped.ok) return shaped;
@@ -558,6 +787,7 @@ export function validateScoreResult(
       probabilities && probabilities.length !== predictions.length
         ? "probabilities"
         : null,
+    multiclase: (multi) => multiclassScoreField(multi, sent.classes),
     numerica: ({ predictions, novelty }) =>
       predictions.length !== novelty.n_rows ? "predictions" : null,
   });

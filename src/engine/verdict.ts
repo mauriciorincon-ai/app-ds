@@ -25,8 +25,26 @@ export type RegressionMetrics = {
   mape: number | null;
 };
 
-/** La métrica que decide (liga y veredicto): de clasificación, o el MAE (S6). */
-export type PrimaryMetric = MetricName | "mae";
+/** S7: métricas de clasificación en varias categorías sobre TEST. `log_loss` y
+ *  `auc_ovr` son null sin probabilidades (Ridge, SVM lineal) — y el AUC, también si
+ *  la prueba no tiene filas de todas las clases. */
+export type MulticlassMetrics = {
+  balanced_accuracy: number;
+  f1_macro: number;
+  accuracy: number;
+  log_loss: number | null;
+  auc_ovr: number | null;
+};
+
+/** La métrica que decide (liga y veredicto): de clasificación binaria, la
+ *  exactitud balanceada de varias categorías (S7) o el MAE (S6). */
+export type PrimaryMetric = MetricName | "balanced_accuracy" | "mae";
+
+/** S7 (decisión del usuario en el STOP de la F0): con varias categorías decide la
+ *  EXACTITUD BALANCEADA — de cada categoría, qué parte acierta, en promedio; adivinar
+ *  da 1/K. En el spike, el ganador saltó entre 2 modelos en 5 particiones (F1 macro,
+ *  entre 3). F1 macro queda a la vista. */
+export const MULTICLASS_PRIMARY_METRIC = "balanced_accuracy" as const;
 
 export type Direction = "higher" | "lower";
 
@@ -72,6 +90,8 @@ export const METRIC_RULES: Record<PrimaryMetric, MetricRule> = {
   accuracy: CLASSIFICATION_RULE,
   precision: CLASSIFICATION_RULE,
   recall: CLASSIFICATION_RULE,
+  // S7: el mismo empate de la binaria, 0,01 absoluto (decisión 2 del STOP de la F0).
+  balanced_accuracy: CLASSIFICATION_RULE,
   mae: {
     direction: "lower",
     tolerance: { kind: "relative", value: REGRESSION_TIE_TOLERANCE },

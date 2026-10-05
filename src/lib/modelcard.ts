@@ -11,7 +11,7 @@
 // errores) y la narración con IA se declara «no aplica».
 import type { Locale } from "@/i18n/config";
 import { translate, type TParams } from "@/i18n/translate";
-import { matchByTask, taskOf } from "@/engine/despacho";
+import { matchByTask, pendingSurface, taskOf } from "@/engine/despacho";
 import { SMALL_SAMPLE_ROWS } from "@/engine/encarrilador";
 import { memberNameKey, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
@@ -221,6 +221,8 @@ export function buildModelCard(input: ModelCardInput): string {
   const task = taskOf(result);
   const blocks = matchByTask(result, {
     binaria: (binary) => binaryBlocks(binary, input, t),
+    // S7 (D3): la model card de varias categorías llega con su UI (F3).
+    multiclase: () => pendingSurface("modelcard", "multiclase"),
     numerica: (regression) => regressionBlocks(regression, input, t),
   });
 

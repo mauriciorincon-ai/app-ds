@@ -12,6 +12,7 @@ import {
   estimateMemberSeconds,
   type CostInput,
 } from "@/engine/costos";
+import { matchTask } from "@/engine/despacho";
 import {
   byPriority,
   MEMBERS,
@@ -24,7 +25,9 @@ import type { TrainTask } from "@/engine/tarea";
 export const LEVEL1_CEILING_S = 5;
 /** Con menos filas, la red neuronal no aprende nada estable (F0: mala con 200 filas). */
 export const MLP_MIN_ROWS = 500;
-/** Con la minoritaria ≥ 40 %, la variante balanceada repite a su modelo base. */
+/** Con la minoritaria ≥ 40 %, la variante balanceada repite a su modelo base.
+ *  S7: con K clases la regla es minoritaria × K ≥ 0,4 × 2 (el mismo número re-expresado:
+ *  con dos clases es idéntica; con K ≥ 3 una minoritaria de 1/K nunca llega al 40 %). */
 export const BALANCED_MIN_MINORITY = 0.4;
 /** Pliegues de la CV (F0-6): 5, y 3 por encima de 20.000 filas. */
 export const CV_K = 5;
@@ -42,8 +45,11 @@ export type RouteProfile = {
   nTrain: number;
   /** Columnas tras one-hot (estimadas). */
   width: number;
-  /** Proporción de la clase minoritaria en train (0..0,5); null sin clases (numérica). */
+  /** Proporción de la clase minoritaria en train (0..1/K); null sin clases (numérica). */
   minorityShare: number | null;
+  /** S7: clases del objetivo, solo con varias categorías (escalan los costos y la
+   *  regla de las balanceadas). */
+  classes?: number;
   /** Pliegues de la CV. */
   k: number;
 };
@@ -95,12 +101,28 @@ export function chooseCvK(
   return k >= 2 ? k : null;
 }
 
+/** Cuántas clases tiene el objetivo; null si no hay clases (estimar). */
+function classCount(profile: RouteProfile): number | null {
+  return matchTask(profile.task, {
+    binaria: () => 2,
+    multiclase: () => {
+      if (profile.classes === undefined) {
+        throw new Error("encarrilador: la multiclase necesita el número de clases");
+      }
+      return profile.classes;
+    },
+    numerica: () => null,
+  });
+}
+
 function outReasonFor(id: MemberId, profile: RouteProfile): OutReason | null {
   if (id === "mlp" && profile.rows < MLP_MIN_ROWS) return "mlp-few-rows";
+  const classes = classCount(profile);
   if (
     MEMBERS[id].balanced &&
     profile.minorityShare !== null &&
-    profile.minorityShare >= BALANCED_MIN_MINORITY
+    classes !== null &&
+    profile.minorityShare * classes >= BALANCED_MIN_MINORITY * 2
   ) {
     return "balanced-not-needed";
   }
@@ -122,6 +144,7 @@ export function routeModels(
     nTrain: profile.nTrain,
     width: profile.width,
     k: profile.k,
+    classes: profile.classes,
   };
   const task = profile.task;
   const forcedSet = new Set(forced);

@@ -163,7 +163,11 @@
       "rmse": "RMSE",
       "r2": "R²",
       "medae": "MedAE",
-      "mape": "MAPE"
+      "mape": "MAPE",
+      "balanced_accuracy": "Exactitud balanceada",
+      "f1_macro": "F1 macro",
+      "log_loss": "Pérdida logarítmica",
+      "auc_ovr": "AUC uno contra el resto"
     },
     "confusion": {
       "title": "Matriz de confusión (prueba)",
@@ -437,6 +441,13 @@
         },
         "skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores grandes pesan mucho en el error.",
         "outliers": "El {share} % de los valores del objetivo están muy lejos del resto: el RMSE los castiga más que el MAE."
+      },
+      "multiclass": {
+        "metricNote": "La métrica principal aquí es la exactitud balanceada: de cada categoría, qué parte acierta, en promedio. Con {k} categorías, adivinar da {chance} y 1.00 sería acertar siempre. El F1 macro es {f1}.",
+        "noDirection": "Con varias categorías una variable no empuja en una sola dirección: puede volver más probable una categoría y menos otra.",
+        "leakage": "Atención: {columns} podría delatar una categoría (posible fuga); estas cifras pueden estar infladas.",
+        "leakageItem": "{column} (categoría «{class}»)",
+        "imbalance": "La categoría más chica, «{class}», es el {rate}% de las filas; por eso la métrica principal es la exactitud balanceada, que pesa igual cada categoría."
       }
     }
   },
@@ -548,8 +559,9 @@
     "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
     "too-few-rows-quantity": "Hay muy pocas filas para estimar una cantidad con honestidad: la prueba necesita al menos 2 filas que el modelo no vio al entrenar. Prueba con más filas.",
     "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo.",
-    "target-mixed-notation": "Tu objetivo tiene 2 valores, pero escritos de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalos en tu CSV y vuelve a cargarlo.",
-    "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas."
+    "target-mixed-notation": "Tu objetivo tiene clases escritas de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalas en tu CSV y vuelve a cargarlo.",
+    "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas.",
+    "too-few-rows-per-class": "Una de las categorías tiene muy pocas filas para comparar modelos con honestidad: la validación cruzada necesita al menos 2 filas de cada categoría en el conjunto de entrenamiento. Prueba con más filas o junta las categorías más raras en una sola."
   },
   "task": {
     "title": "Tipo de predicción",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { matchTask } from "@/engine/despacho";
+import { matchTask, pendingSurface } from "@/engine/despacho";
 import {
   isTrainableTask,
   isTrainTask,
@@ -245,6 +245,8 @@ function TaskStatus({
               : isTrainTask(resolved)
                 ? matchTask(resolved, {
                     binaria: () => t("task.trainable"),
+                    // S7 (D3): la multiclase aún no es `trainable` en la UI.
+                    multiclase: () => pendingSurface("TaskCard", "multiclase"),
                     numerica: () =>
                       unit?.symbol
                         ? t("task.estimate.unit", { unit: unit.symbol })

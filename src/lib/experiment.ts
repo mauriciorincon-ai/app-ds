@@ -4,6 +4,7 @@
 // pesado (entrenar) vive en el runner de Pyodide.
 import {
   detectLeakage,
+  detectLeakageByClass,
   detectLeakageContinuous,
   type LeakageColumn,
   type LeakageFinding,
@@ -28,8 +29,10 @@ import {
 } from "@/engine/tarea";
 import {
   computeVerdict,
+  MULTICLASS_PRIMARY_METRIC,
   pickBestBaseline,
   pickPrimaryMetric,
+  type MulticlassMetrics,
   type RegressionMetrics,
 } from "@/engine/verdict";
 import {
@@ -46,6 +49,10 @@ import type {
   DatasetSummary,
   MemberFitResult,
   ModelCandidate,
+  MulticlassBaselines,
+  MulticlassMemberFitResult,
+  MulticlassPipelineResult,
+  MulticlassResult,
   PipelinePayload,
   PipelineResult,
   RegressionBaselines,
@@ -102,7 +109,13 @@ export type PreparedRun =
       profile: RouteProfile;
       smallSample: boolean;
     }
-  | { ok: false; error: WorkerErrorKind };
+  | {
+      ok: false;
+      error: WorkerErrorKind;
+      /** S7 (P4): con `too-few-rows-per-class`, la clase más chica y sus filas
+       *  de train — se nombra EN PANTALLA (dato del usuario), jamás en un log. */
+      smallestClass?: { name: string; trainRows: number };
+    };
 
 /** El payload de fit-member: el de la liga sin roster ni k (ya no hay CV). */
 export function withoutLeague(
@@ -170,7 +183,8 @@ export function prepareRun(
   const labels = rows.map((row) => row[targetIndex]);
 
   // S6: E1 decide la tarea; una ambigua necesita la respuesta del usuario (D2).
-  const task = resolveTask(detectTask(labels), options.ambiguousChoice);
+  const detection = detectTask(labels);
+  const task = resolveTask(detection, options.ambiguousChoice);
   if (task === "ambigua") return { ok: false, error: "target-ambiguous" };
   // Una tarea que el motor no entrena (o una columna que no sirve de objetivo).
   if (!isTrainTask(task)) return { ok: false, error: "target-not-binary" };
@@ -178,6 +192,16 @@ export function prepareRun(
   return matchTask(task, {
     binaria: () =>
       prepareBinary(table, targetColumn, rows, labels, seed, options),
+    multiclase: () =>
+      prepareMulticlass(
+        table,
+        targetColumn,
+        rows,
+        labels,
+        detection.distinct,
+        seed,
+        options,
+      ),
     numerica: () =>
       prepareRegression(table, targetColumn, rows, seed, options),
   });
@@ -299,6 +323,134 @@ function leakageColumns(
           values: raw.map((v) => (isNullToken(v) ? null : v.trim())),
         };
   });
+}
+
+/**
+ * S7: orden de las clases por punto de código — el de `sorted()` de Python, que
+ * las codifica 0..K−1 y las coteja con las que manda TS. (El `sort()` de JS compara
+ * unidades UTF-16 y difiere fuera del plano básico: un emoji contra «ﬀ».)
+ */
+export function byCodePoint(a: string, b: string): number {
+  const x = [...a];
+  const y = [...b];
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const d = x[i]!.codePointAt(0)! - y[i]!.codePointAt(0)!;
+    if (d !== 0) return d;
+  }
+  return x.length - y.length;
+}
+
+/** S7: filas de PRUEBA por clase, en el orden de `payload.classes` (el lector
+ *  coteja con ellas las filas de la matriz de confusión). */
+export function testClassCounts(payload: PipelinePayload): number[] {
+  const classes = payload.classes ?? [];
+  const targetIndex = payload.headers.indexOf(payload.target);
+  const counts = new Map(classes.map((c) => [c, 0]));
+  for (const i of payload.test_idx) {
+    const label = payload.rows[i]![targetIndex]!.trim();
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  return classes.map((c) => counts.get(c)!);
+}
+
+/**
+ * S7 — clasificar en VARIAS categorías (ADR 015). Las mismas garantías que la
+ * binaria: partición estratificada por índices, fuga por clase SOLO en train
+ * (cada clase contra el resto, con soporte mínimo — D8), y E2 con el roster de
+ * K clases. La métrica primaria es la exactitud balanceada (STOP de la F0) y k
+ * de la CV está acotado por la clase MÁS CHICA de train (P4).
+ */
+function prepareMulticlass(
+  table: CsvTable,
+  targetColumn: string,
+  rows: string[][],
+  labels: readonly string[],
+  detected: number,
+  seed: number,
+  options: RunOptions,
+): PreparedRun {
+  const trimmed = labels.map((l) => l.trim());
+  const classes = targetClasses(trimmed).sort(byCodePoint);
+  // E1 cuenta números («1» = «1.0»); el entrenador, texto: si difieren, el
+  // problema es la notación, y se dice así (como en la binaria, AU-S5-10).
+  if (classes.length !== detected) {
+    return { ok: false, error: "target-mixed-notation" };
+  }
+
+  const { numeric, categorical } = selectFeatures(table, targetColumn);
+  if (numeric.length + categorical.length === 0)
+    return { ok: false, error: "no-features" };
+
+  const { trainIdx, testIdx } = stratifiedSplit(trimmed, TEST_SIZE, seed);
+
+  const trainLabels = trainIdx.map((i) => trimmed[i]!);
+  const leakage = detectLeakageByClass(
+    leakageColumns(table, rows, numeric, categorical, trainIdx),
+    trainLabels,
+  );
+
+  // k acotado por la clase más chica de train: con menos de 2 filas suyas no
+  // hay CV estratificada honesta (P4). La clase viaja para nombrarse en pantalla.
+  const trainCounts = classes.map(
+    (c) => trainLabels.filter((l) => l === c).length,
+  );
+  const smallestTrain = Math.min(...trainCounts);
+  const k = chooseCvK(rows.length, smallestTrain);
+  if (k === null) {
+    return {
+      ok: false,
+      error: "too-few-rows-per-class",
+      smallestClass: {
+        name: classes[trainCounts.indexOf(smallestTrain)]!,
+        trainRows: smallestTrain,
+      },
+    };
+  }
+
+  const profile: RouteProfile = {
+    task: "multiclase",
+    rows: rows.length,
+    nTrain: trainIdx.length,
+    width: estimateEncodedWidth(
+      table.headers,
+      rows,
+      numeric,
+      categorical,
+      trainIdx,
+    ),
+    minorityShare: smallestTrain / trainIdx.length,
+    classes: classes.length,
+    k,
+  };
+  const routing = routeModels(
+    profile,
+    options.ceilingS ?? LEVEL1_CEILING_S,
+    options.forced ?? [],
+  );
+
+  const payload: PipelinePayload = {
+    task: "multiclase",
+    headers: table.headers,
+    rows,
+    target: targetColumn,
+    numeric,
+    categorical,
+    train_idx: trainIdx,
+    test_idx: testIdx,
+    seed,
+    primary_metric: MULTICLASS_PRIMARY_METRIC,
+    roster: rosterFor(routing, options.level ?? 1),
+    cv_k: k,
+    classes,
+  };
+  return {
+    ok: true,
+    payload,
+    leakage,
+    routing,
+    profile,
+    smallSample: rows.length < SMALL_SAMPLE_ROWS,
+  };
 }
 
 /** S6 (AU-S6-08): filas mínimas de PRUEBA para estimar una cantidad. Con una sola,
@@ -589,6 +741,88 @@ export function applyRegressionMemberFit(
     predVsReal: fit.pred_vs_real,
     residuals: fit.residuals,
     verdict: computeVerdict(fit.model, bestBaseline, "mae"),
+    explainability: fit.explainability,
+  };
+}
+
+// --- S7: varias categorías ---------------------------------------------------
+
+/**
+ * El baseline multiclase a batir: el de mayor exactitud balanceada (la regla de
+ * METRIC_RULES vía pickBestBaseline; en empate, la mayoritaria, que es la primera).
+ */
+export function bestMulticlassBaseline(
+  baselines: MulticlassBaselines,
+): keyof MulticlassBaselines {
+  const ids = BASELINE_IDS_BY_TASK.multiclase;
+  const scored = ids.map((id) => baselines[id]);
+  return ids[
+    scored.indexOf(pickBestBaseline(scored, MULTICLASS_PRIMARY_METRIC))
+  ]!;
+}
+
+/**
+ * Ensambla el resultado de VARIAS categorías con lo que el lector (contract.ts)
+ * validó: veredicto en exactitud balanceada contra el mejor baseline (mayoritaria o
+ * logística multinomial), matriz K×K y métricas por clase.
+ */
+export function assembleMulticlassResult(
+  py: MulticlassPipelineResult,
+  leakage: LeakageFinding[],
+  smallSample = false,
+): MulticlassResult {
+  const bestBaseline = py.baselines[bestMulticlassBaseline(py.baselines)];
+  return {
+    task: "multiclase",
+    classes: py.classes,
+    nTrain: py.n_train,
+    nTest: py.n_test,
+    baselines: py.baselines,
+    model: py.model,
+    modelName: py.model_name,
+    candidates: candidatesOf<MulticlassMetrics>(py),
+    league: py.league,
+    selection: {
+      by: "cv",
+      cvWinner: py.winner,
+      best: py.cv.best,
+      k: py.cv.k,
+      metric: MULTICLASS_PRIMARY_METRIC,
+      rule: py.cv.rule,
+      se: py.cv.se,
+      competitors: py.league.length,
+      elapsedMs: py.elapsed_ms,
+    },
+    smallSample,
+    rareCategories: py.preprocessing.rare_categories,
+    confusionMatrix: py.confusion_matrix,
+    perClass: py.per_class,
+    verdict: computeVerdict(py.model, bestBaseline, MULTICLASS_PRIMARY_METRIC),
+    leakage,
+    explainability: py.explainability,
+  };
+}
+
+/** Elección manual con varias categorías (U1): mismo baseline, el veredicto habla
+ *  del elegido; la liga y el ganador de la CV no cambian. */
+export function applyMulticlassMemberFit(
+  result: MulticlassResult,
+  fit: MulticlassMemberFitResult,
+): MulticlassResult {
+  const bestBaseline =
+    result.baselines[bestMulticlassBaseline(result.baselines)];
+  return {
+    ...result,
+    model: fit.model,
+    modelName: fit.model_name,
+    selection: {
+      ...result.selection,
+      by: fit.model_name === result.selection.cvWinner ? "cv" : "user",
+    },
+    rareCategories: fit.preprocessing.rare_categories,
+    confusionMatrix: fit.confusion_matrix,
+    perClass: fit.per_class,
+    verdict: computeVerdict(fit.model, bestBaseline, MULTICLASS_PRIMARY_METRIC),
     explainability: fit.explainability,
   };
 }

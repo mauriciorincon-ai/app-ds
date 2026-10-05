@@ -6,12 +6,13 @@ import {
   type Placement,
   type Routing,
 } from "@/engine/encarrilador";
-import { matchByTask, taskOf } from "@/engine/despacho";
+import { matchByTask, pendingSurface, taskOf } from "@/engine/despacho";
 import { selectOneSe, type MemberId } from "@/engine/roster";
 import {
   METRIC_RULES,
   type MetricName,
   type Metrics,
+  type MulticlassMetrics,
   type RegressionMetrics,
 } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
@@ -33,7 +34,10 @@ import { Badge, Button, Card } from "./ui";
 // mejor», METRIC_RULES): el orden, la banda del error estándar y la marca del
 // mejor siguen esa dirección, y las cifras van en las unidades del objetivo.
 
-type AnyRow = LeagueRow<Metrics> | LeagueRow<RegressionMetrics>;
+type AnyRow =
+  | LeagueRow<Metrics>
+  | LeagueRow<MulticlassMetrics>
+  | LeagueRow<RegressionMetrics>;
 
 type Entry =
   | { kind: "ran"; row: AnyRow }
@@ -61,12 +65,20 @@ export function LeagueTable({
   const lower = METRIC_RULES[metric].direction === "lower";
   const short = (id: MemberId) => t(`results.candidates.short.${id}`);
   // El puntaje de prueba de una fila en la métrica de la liga.
-  const testScore = (m: Metrics | RegressionMetrics): number =>
-    "mae" in m ? m.mae : m[metric as MetricName];
+  const testScore = (
+    m: Metrics | MulticlassMetrics | RegressionMetrics,
+  ): number =>
+    "mae" in m
+      ? m.mae
+      : "balanced_accuracy" in m
+        ? m.balanced_accuracy
+        : m[metric as MetricName];
   // Clasificación: 3 decimales (de 0 a 1). Estimar: unidades del objetivo, con
   // los decimales que pide el puntaje más chico de la tabla (R9).
   const fmt: (v: number) => string = matchByTask(result, {
     binaria: () => (v: number) => v.toFixed(3),
+    // S7 (D3): la liga de varias categorías llega a la pantalla en la F3.
+    multiclase: () => pendingSurface("LeagueTable", "multiclase"),
     numerica: (regression) => {
       const decimals = quantityDecimals(
         league.flatMap((row) => (row.cv ? [row.cv.mean, row.cv.std] : [])),
@@ -109,6 +121,7 @@ export function LeagueTable({
   const rows = result.nTrain + result.nTest;
   const minorityShare = matchByTask(result, {
     binaria: (binary) => Math.min(binary.positiveRate, 1 - binary.positiveRate),
+    multiclase: () => pendingSurface("LeagueTable.minority", "multiclase"),
     numerica: () => 0,
   });
   const outReason = (p: Placement) =>

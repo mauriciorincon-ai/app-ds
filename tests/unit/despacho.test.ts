@@ -6,9 +6,14 @@ import {
   declaredTask,
   matchByTask,
   matchTask,
+  pendingSurface,
   taskOf,
 } from "@/engine/despacho";
-import { TRAIN_TASKS, type TrainTask } from "@/engine/tarea";
+import {
+  TRAIN_TASKS,
+  TRAINABLE_TASKS,
+  type TrainTask,
+} from "@/engine/tarea";
 
 /**
  * S7 (P2 del plan, R1): el despacho por tarea es EXHAUSTIVO. Tres gates, cada uno
@@ -68,24 +73,47 @@ describe("despacho exhaustivo — conducta (gate 3)", () => {
       });
     expect(read(binary)).toBe("clase sí");
     expect(read(regression)).toBe("unidad kWh");
-    expect(byTask("numerica", { binaria: "a", numerica: "b" })).toBe("b");
     expect(
-      matchTask("binaria", { binaria: () => "a", numerica: () => "b" }),
-    ).toBe("a");
+      byTask("numerica", { binaria: "a", multiclase: "c", numerica: "b" }),
+    ).toBe("b");
+    expect(
+      matchTask("multiclase", {
+        binaria: () => "a",
+        multiclase: () => "c",
+        numerica: () => "b",
+      }),
+    ).toBe("c");
   });
 
   it("una tarea sin rama falla NOMBRÁNDOLA (un dato que llegó igual)", () => {
     const unknown = "serie-tiempo" as TrainTask;
-    expect(() =>
-      matchTask(unknown, { binaria: () => 1, numerica: () => 2 }),
-    ).toThrow("tarea sin rama propia: serie-tiempo");
-    expect(() =>
-      matchByTask({ task: unknown }, { binaria: () => 1, numerica: () => 2 }),
-    ).toThrow("serie-tiempo");
+    const branches = { binaria: () => 1, multiclase: () => 3, numerica: () => 2 };
+    expect(() => matchTask(unknown, branches)).toThrow(
+      "tarea sin rama propia: serie-tiempo",
+    );
+    expect(() => matchByTask({ task: unknown }, branches)).toThrow(
+      "serie-tiempo",
+    );
   });
 
   it("TRAIN_TASKS sale de un Record completo (no de una lista a mano)", () => {
-    expect([...TRAIN_TASKS].sort()).toEqual(["binaria", "numerica"]);
+    expect([...TRAIN_TASKS].sort()).toEqual([
+      "binaria",
+      "multiclase",
+      "numerica",
+    ]);
+  });
+
+  it("S7 (D3): una superficie pendiente falla nombrando superficie y tarea", () => {
+    expect(() => pendingSurface("ResultsScreen", "multiclase")).toThrow(
+      "superficie sin rama todavía: ResultsScreen (multiclase)",
+    );
+  });
+
+  it("S7 (D3): la UI todavía no ofrece entrenar varias categorías", () => {
+    // El MOTOR la entrena (F1); la UI, recién con sus pantallas (F3). Mientras
+    // tanto, ninguna pantalla puede llegar a una rama pendiente.
+    expect(TRAINABLE_TASKS).not.toContain("multiclase");
   });
 });
 
@@ -225,6 +253,26 @@ describe("despacho exhaustivo — fuente (gate 2)", () => {
           `src/lib/ds/pipeline.py:${c.line} escribe [${c.keys.join(", ")}], registradas [${tasks.join(", ")}]`,
       );
     expect(incomplete, incomplete.join("\n")).toEqual([]);
+  });
+
+  it("S7 (D3): una superficie pendiente vive solo en la UI o la model card", () => {
+    // El MOTOR entrena la multiclase de punta a punta desde la F1: ninguna rama
+    // del motor, del contrato ni del hook puede quedar «pendiente». La F3 retira
+    // las de la UI una a una.
+    const PENDING_ALLOWED = ["src/components/", "src/lib/modelcard.ts"];
+    const calls = ts
+      .filter((f) => f !== "src/engine/despacho.ts")
+      .flatMap((file) =>
+        readFileSync(file, "utf8")
+          .split("\n")
+          .flatMap((line, i) =>
+            line.includes("pendingSurface(") ? [`${file}:${i + 1}`] : [],
+          ),
+      );
+    const outside = calls.filter(
+      (c) => !PENDING_ALLOWED.some((prefix) => c.startsWith(prefix)),
+    );
+    expect(outside, `superficies pendientes fuera de la UI:\n${outside.join("\n")}`).toEqual([]);
   });
 
   it("las excepciones permitidas siguen existiendo (no son decorado)", () => {

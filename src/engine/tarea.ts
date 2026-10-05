@@ -38,6 +38,9 @@ export type TaskDetection = {
 export const AMBIGUOUS_MAX_DISTINCT = 10;
 /** Texto con más categorías que esto no se trata como clases. */
 export const MULTICLASS_MAX_CLASSES = 20;
+/** S7: con dos valores es binaria; varias categorías empiezan en tres (espejo de
+ *  MULTICLASS_MIN_CLASSES en pipeline.py, paridad en tests/unit/roster.test.ts). */
+export const MULTICLASS_MIN_CLASSES = 3;
 
 /** Todas las tareas que E1 nombra. Un `Record` completo: sumar una tarea a `Task`
  *  sin listarla aquí no compila. */
@@ -63,7 +66,7 @@ export function assertNever(value: never): never {
 /** Las tareas CON objetivo que el motor sabe entrenar (S6: también estimar una
  *  cantidad). S7 (P1): lo que depende de tener un objetivo (la EDA supervisada, el
  *  veredicto contra un baseline) va por esta unión. */
-export type SupervisedTask = "binaria" | "numerica";
+export type SupervisedTask = "binaria" | "multiclase" | "numerica";
 
 /** Todas las tareas que el MOTOR sabe entrenar. Toda decisión por tarea pasa por
  *  engine/despacho.ts, que obliga a escribir la rama de cada una (S7, P2). */
@@ -72,11 +75,14 @@ export type TrainTask = SupervisedTask;
 /** Un `Record` completo: sumar una tarea a `TrainTask` sin listarla aquí no compila. */
 const TRAIN_TASK_NAMES: Record<TrainTask, true> = {
   binaria: true,
+  multiclase: true,
   numerica: true,
 };
 export const TRAIN_TASKS = Object.keys(TRAIN_TASK_NAMES) as TrainTask[];
 
-/** Las tareas que la UI ofrece entrenar (S6 F2: también estimar una cantidad). */
+/** Las tareas que la UI ofrece entrenar (S6 F2: también estimar una cantidad). S7
+ *  (D3 del plan): la multiclase entra al MOTOR en la F1 y a la UI en la F3 — hasta
+ *  entonces ninguna pantalla puede llegar a un resultado multiclase. */
 export const TRAINABLE_TASKS: readonly Task[] = ["binaria", "numerica"];
 
 /** Respuesta del usuario a la pregunta de una columna ambigua (D2 del S6). */
