@@ -16,8 +16,11 @@ export default function Home() {
     state,
     loadCsv,
     selectTarget,
+    selectCluster,
     answerTask,
     run,
+    runCluster,
+    downloadClusterLabels,
     reset,
     goToScoring,
     backToResults,
@@ -42,9 +45,12 @@ export default function Home() {
           sanitation={state.sanitation}
           edaAlerts={state.edaAlerts}
           plan={state.plan}
+          clusterPlan={state.clusterPlan}
           onSelectTarget={selectTarget}
+          onSelectCluster={selectCluster}
           onAnswerTask={answerTask}
           onRun={run}
+          onRunCluster={runCluster}
           onBack={reset}
         />
       )}
@@ -55,6 +61,7 @@ export default function Home() {
           detail={state.progressDetail}
           level2={state.level2.status === "running" ? state.level2 : null}
           estimateS={state.routing?.level1EstimateS ?? null}
+          cluster={state.runMeta?.target === null}
           onCancel={cancelLevel2}
         />
       )}
@@ -79,6 +86,8 @@ export default function Home() {
           forced={state.forced}
           level2={state.level2}
           onRunLevel2={runLevel2}
+          labels={state.labels}
+          onDownloadLabels={downloadClusterLabels}
         />
       )}
 

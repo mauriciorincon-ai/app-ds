@@ -369,14 +369,17 @@ describe("Archivo → import: el manifiesto de AGRUPAR (P9)", () => {
       expect(text).not.toContain(key);
   });
 
-  it("D3: la UI todavía no lo abre (se rechaza NOMBRÁNDOLA); con la tarea usable, importa", async () => {
+  it("S7 (F3): la UI lo abre; una versión que no usa la tarea lo rechaza NOMBRÁNDOLA", async () => {
+    // Cambio esperado (D3 cumplida): con la pantalla de agrupar, se importa.
     const text = JSON.stringify(await packCluster());
-    expect(await validateModelFile(text)).toEqual({
+    expect(
+      await validateModelFile(text, ["binaria", "multiclase", "numerica"]),
+    ).toEqual({
       ok: false,
       error: "unsupported-task",
       task: "agrupar",
     });
-    expect((await validateModelFile(text, ["agrupar"])).ok).toBe(true);
+    expect((await validateModelFile(text)).ok).toBe(true);
   });
 
   it("carnadas del manifiesto de agrupar — detectó k de n", async () => {

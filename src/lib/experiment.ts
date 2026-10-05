@@ -53,9 +53,11 @@ import type { ClusterSent } from "@/workers/contract";
 import type {
   BinaryResult,
   ClusterMemberFitResult,
+  ClusterFitMemberPayload,
   ClusterPayload,
   ClusterPipelineResult,
   ClusterResult,
+  ClusterScoringSchema,
   DatasetSummary,
   MemberFitResult,
   ModelCandidate,
@@ -1009,5 +1011,42 @@ export function applyClusterMemberFit(
     profiles: fit.profiles,
     assignment: fit.assignment,
     rareCategories: fit.preprocessing.rare_categories,
+  };
+}
+
+/** El payload de fit-member al agrupar: el de la liga sin el roster. */
+export function withoutClusterLeague(
+  payload: ClusterPayload,
+  member: MemberId,
+): ClusterFitMemberPayload {
+  const copy: Partial<ClusterPayload> = { ...payload };
+  delete copy.roster;
+  return { ...(copy as Omit<ClusterPayload, "roster">), member };
+}
+
+/**
+ * S7: lo que la app sabe del agrupador ACTIVO para puntuar, sin pedírselo al
+ * worker: las columnas de la distancia (las mismas que retiene pipeline.py), el k
+ * del retenido, si su regla deja filas «fuera de todo grupo» y la regla. Los
+ * centroides viven en el worker y viajan solo en el archivo exportado (P12).
+ */
+export function clusterScoringSchema(
+  result: ClusterResult,
+  payload: Pick<ClusterPayload, "numeric" | "categorical" | "distance">,
+): ClusterScoringSchema {
+  const row = result.league.find((r) => r.name === result.modelName);
+  if (!row || row.k === null) {
+    throw new Error("clusterScoringSchema: el retenido no está en la liga");
+  }
+  return {
+    numeric: [...payload.numeric],
+    categorical: payload.distance === "numeric" ? [] : [...payload.categorical],
+    task: "agrupar",
+    groups: row.k,
+    noise: result.assignment.method === "centroid-radius",
+    assign: {
+      method: result.assignment.method,
+      sample_rows: result.assignment.sample_rows,
+    },
   };
 }

@@ -67,7 +67,15 @@
         "cv": "Chosen by {k}-fold cross-validation among {count} models.",
         "cv_one": "Chosen by {k}-fold cross-validation (1 model competed).",
         "targetQuantity": "Estimates «{target}», a quantity",
-        "targetMulticlass": "Classifies “{target}” into {count} categories"
+        "targetMulticlass": "Classifies “{target}” into {count} categories",
+        "cluster": "Groups rows with no target: {k} groups, with {model}",
+        "reading": {
+          "exist": "Reading at training time: the groups are real",
+          "fragile": "Reading at training time: the groups were fragile",
+          "none": "Reading at training time: there was no group structure"
+        },
+        "clusterChosen": "◆ Chosen by you, not by consensus (the consensus winner was {winner}).",
+        "clusterConsensus": "Chosen by consensus among {count} clusterers ({k} groups)."
       },
       "errors": {
         "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
@@ -88,8 +96,9 @@
     "target": {
       "label": "What do you want to predict?",
       "placeholder": "Pick a column…",
-      "help": "You can pick any column: we tell you what kind of prediction it would be. The app trains two-category columns (yes/no, 0/1), several-category columns (up to 20, like a plan or a region) and quantities (a price, a consumption, a duration).",
-      "option": "{column} · {task}"
+      "help": "You can pick any column: we tell you what kind of prediction it would be. The app trains two-category columns (yes/no, 0/1), several-category columns (up to 20, like a plan or a region) and quantities (a price, a consumption, a duration). If there's nothing to predict, pick “No target” to group similar rows.",
+      "option": "{column} · {task}",
+      "cluster": "No target: group similar rows"
     },
     "profile": {
       "numeric": "numeric",
@@ -123,7 +132,10 @@
       "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
     },
     "trainHint": "Level 1: {count} models · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
-    "trainHint_one": "Level 1: 1 model · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine)."
+    "trainHint_one": "Level 1: 1 model · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
+    "cluster": "Group rows",
+    "clusterHint": "{count} clusterers run now, about {time} on a desktop computer.",
+    "clusterHint_one": "1 clusterer runs now, about {time} on a desktop computer."
   },
   "training": {
     "title": "Training…",
@@ -134,8 +146,11 @@
     "estimate": "About {time} of computing on a desktop computer (on a phone, twice as long or more).",
     "member": {
       "cv": "Cross-validation · model {index} of {total}: {model}",
-      "test": "Test set · model {index} of {total}: {model}"
-    }
+      "test": "Test set · model {index} of {total}: {model}",
+      "cluster": "Looking for groups · clusterer {index} of {total}: {model}",
+      "stability": "Checking whether {model}'s groups are real: against structureless data and by resampling your rows"
+    },
+    "clustering": "Looking for groups: each clusterer tries several group counts; at the end the winner is read against structureless data…"
   },
   "results": {
     "title": "Verdict",
@@ -324,7 +339,8 @@
     },
     "needed": {
       "title": "Columns the model needs",
-      "noTarget": "Don't include “{target}”: the model predicts here, it isn't evaluated. If present, it is ignored."
+      "noTarget": "Don't include “{target}”: the model predicts here, it isn't evaluated. If present, it is ignored.",
+      "cluster": "Grouping has no target: these columns are enough. Any others are ignored."
     },
     "blocked": {
       "title": "Can't score “{name}”",
@@ -359,7 +375,8 @@
       "probability": "probability_{label}",
       "estimate": "{target}_estimate",
       "predicted": "{target}_predicted",
-      "predictedProbability": "{target}_probability"
+      "predictedProbability": "{target}_probability",
+      "groupProbability": "group_probability"
     },
     "fileSuffix": "scored",
     "download": "Download scored CSV",
@@ -383,7 +400,14 @@
     "quantityNote": "Estimating gives no probability: each row gets its estimated quantity, with the decimals you used for the target.",
     "subtitleMulticlass": "Upload a new CSV with the columns the model knows (without the target column) and get the predicted category and its probability for each row. Everything happens in your browser.",
     "modelLineMulticlass": "Model: {dataset} · target: {target} · {count} categories",
-    "multiclassProbabilityNote": "The probability is the predicted category's: how sure the model is about that row. With several categories it can be low even when the predicted one is the most likely."
+    "multiclassProbabilityNote": "The probability is the predicted category's: how sure the model is about that row. With several categories it can be low even when the predicted one is the most likely.",
+    "subtitleCluster": "Upload a new CSV with the columns the grouping uses and the app assigns each row a group, with the same rule. Everything happens in your browser.",
+    "modelLineCluster": "Model: {dataset} · {k} groups",
+    "groups": {
+      "title": "Assigned groups ({rows} rows)",
+      "title_one": "Assigned groups (1 row)"
+    },
+    "groupProbabilityNote": "The probability is the assigned group's, according to the Gaussian mixture."
   },
   "why": {
     "title": "Why does it predict this way?",
@@ -498,7 +522,11 @@
       "sanitation": "Sanitization",
       "selection": "Model selection",
       "estimate": "Estimation",
-      "multiclass": "Categories (on test)"
+      "multiclass": "Categories (on test)",
+      "clusterLeague": "The clusterers (for choosing)",
+      "clusterReading": "Reading (for believing)",
+      "clusterGroups": "The groups",
+      "clusterAssign": "Assigning new rows"
     },
     "data": {
       "dataset": "Dataset: {name}",
@@ -545,7 +573,7 @@
       "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
       "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
       "dates": "Date columns are detected but not used yet (no temporal split).",
-      "tasks": "This version trains three tasks with a target: classification into two categories, classification into several categories (up to 20) and estimating a quantity."
+      "tasks": "This version does four tasks: classification into two categories, classification into several categories (up to 20), estimating a quantity and grouping rows with no target."
     },
     "sanitation": {
       "duplicates": "Removed {count} exact duplicate rows (prevents leakage by duplication).",
@@ -578,6 +606,23 @@
       "confusion": "Confusion matrix: each row is the real category; each column, the one the model predicted. The diagonal holds the hits.",
       "direction": "no single direction (several categories)",
       "noAi": "AI narration: not applicable. It only narrates classification into two categories; with several, the reading is the standard text."
+    },
+    "cluster": {
+      "shape": "{rows} rows × {cols} columns",
+      "task": "Task: grouping similar rows, with no target (no test set and no verdict against a baseline).",
+      "distanceNumeric": "Similarity is measured with {count} numeric columns ({columns}); the categorical ones ({categorical}) only describe the groups.",
+      "distanceAll": "Similarity is measured with every column, numeric and categorical ({columns}), because there are fewer than two numeric ones.",
+      "pipeline": "Imputation, scaling and one-hot inside a scikit-learn Pipeline, fitted on all rows: grouping has no split and no test (seed {seed}).",
+      "members": "{count} clusterers competed, trying {min} to {max} groups: K-Means and hierarchical choose by silhouette (on a sample of {sample} rows), GMM by BIC and HDBSCAN by density.",
+      "consensus": "Won by consensus: {votes} of {voters} clusterers found {k} groups, and among them {model} had the highest score.",
+      "chosen": "◆ Chosen by you: {model} (the consensus winner was {winner}).",
+      "noLeakage": "Not applicable: grouping has no target for a column to give away.",
+      "noAi": "AI narration: not applicable. It only narrates classification into two categories.",
+      "limits": {
+        "cause": "The groups describe your rows; they don't prove there's a cause behind them or that they'll show up in other data.",
+        "silhouette": "The silhouette is measured on a seeded sample of up to {sample} rows, the same for every clusterer.",
+        "agglomerative": "With more than {max} rows, hierarchical fits a sample and assigns the rest to the nearest group, so the browser doesn't run out of memory."
+      }
     }
   },
   "errors": {
@@ -602,7 +647,7 @@
     "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns.",
     "too-few-rows-per-class": "One of the categories has too few rows to compare models honestly: cross-validation needs at least 2 rows of each category in the training set. Try with more rows, or merge the rarest categories into one.",
     "too-few-rows-cluster": "There are too few rows to cluster honestly: to tell whether the groups hold up, the app searches for them again in parts of your data, and each part needs more rows than groups. Try with more rows.",
-    "target-not-usable": "This column can't be used as a target: it has a single value, it's empty, or it has too many distinct values to be categories. Pick another column.",
+    "target-not-usable": "This column can't be used as a target: it has a single value, it's empty, or it has too many distinct values to be categories. Pick another column, or group similar rows with no target.",
     "too-few-rows-per-class-named": "The category “{class}” has only {rows} row(s) in the training set, and cross-validation needs at least 2 of each category to compare models honestly. Try with more rows, or merge the rarest categories into one."
   },
   "task": {
@@ -626,7 +671,7 @@
     "suggested": "Most likely: {task}.",
     "blocked": "The app trains this kind of prediction, but with this data models cannot be compared honestly (the reason is below).",
     "trainable": "Ready to train.",
-    "notUsable": "This column can't be used as a target. Pick a column with categories or with a quantity.",
+    "notUsable": "This column can't be used as a target. Pick a column with categories or with a quantity, or group similar rows with no target.",
     "estimate": {
       "unit": "You are going to estimate a quantity, in {unit}. The verdict will say how far off it is on average, in {unit}.",
       "noUnit": "You are going to estimate a quantity. Its name carries no unit the app recognizes, so figures will be given in the units of «{column}»."
@@ -648,7 +693,8 @@
     },
     "multiclass": {
       "trainable": "You're going to classify into {count} categories. The verdict uses balanced accuracy: every category weighs the same, even one with few rows."
-    }
+    },
+    "clusterInstead": "Group similar rows instead"
   },
   "roster": {
     "title": "Who competes",
@@ -667,7 +713,10 @@
     "smallSample": "Small sample ({rows} rows): cross-validation scores vary quite a bit. That is why, when several are practically tied, the simplest one wins.",
     "note": "Nothing is hidden: «left out» is a recommendation with its reason, and you can include it anyway in Level 2.",
     "level1_one": "Level 1 · now · 1 model · about {time}",
-    "level2_one": "Level 2 · later, if you want · 1 more model"
+    "level2_one": "Level 2 · later, if you want · 1 more model",
+    "clusterK": "K-Means and hierarchical pick how many groups with the silhouette; GMM, with BIC; HDBSCAN doesn't need to be told: it finds them by density.",
+    "clusterNote": "They try 2 to {max} groups on all your rows: with no target there is no cross-validation and no test set. At the end, the winner is compared with structureless data and repeated on parts of your rows.",
+    "clusterSample": "With your {rows} rows, hierarchical fits a sample of {sample} and assigns the rest to the nearest group (the other three use all of them)."
   },
   "league": {
     "title": "The league: {count} models",
@@ -723,7 +772,8 @@
       "failed": "In this league: it did not finish, so it has no score.",
       "pending": "In this league: waiting for Level 2.",
       "out": "In this league: left out, because {reason}.",
-      "baseline": "Verdict baseline: it does not compete in the league — it judges it."
+      "baseline": "Verdict baseline: it does not compete in the league — it judges it.",
+      "consensus": "In this comparison: winner by consensus (the group count most clusterers agree on)."
     }
   },
   "level2": {
@@ -750,5 +800,106 @@
     "running_one": "Level 2 · 1 model · about {time} on this device",
     "runNothing": "Run Level 2",
     "estimateNote": "Calibrated against how long the previous run took."
+  },
+  "cluster": {
+    "title": "Results · grouping",
+    "group": "Group {n}",
+    "reading": {
+      "exist": "The groups are real: {k} stable groups",
+      "existDetail": "{model} separates your rows better than structureless data in the same box: score {score} against {nullScore}, a gap of {gap} (at least {gapMin} is needed). And the groups come back when {fraction}% of your rows are regrouped {runs} times: they match {ari} out of 1 (at least {ariMin} is needed).",
+      "fragile": "There are {k} groups, but they're fragile",
+      "fragileDetail": "{model} separates your rows better than structureless data (score {score} against {nullScore}, gap {gap}), but when {fraction}% of your rows are regrouped {runs} times the groups change: they match {ari} out of 1, below {ariMin}. Read them as one possible split, not as a finding.",
+      "none": "There's no group structure",
+      "noneDetail": "{model} doesn't separate your rows better than structureless data in the same box: score {score} against {nullScore}, a gap of {gap} (at least {gapMin} would be needed). The {k} groups below are one way to split the table, not a finding."
+    },
+    "noTest": "Grouping has no target: there's no test set and no verdict against a baseline. What's worth believing is this comparison with structureless data and the stability under resampling.",
+    "chosenNote": "◆ Chosen by you, not by consensus. The reading above is this clusterer's.",
+    "sample": {
+      "title": "Fitted on a sample of {sample} of your {rows} rows; the rest were assigned to the nearest group.",
+      "why": "Why: with more than {max} rows, hierarchical clustering would need more memory than a browser can give (especially on a phone) without closing the tab. The other three clusterers use all your rows."
+    },
+    "profiles": {
+      "title": "What sets the {count} groups apart",
+      "separating": "What separates the groups most: {list}.",
+      "noSeparating": "No column clearly separates the groups.",
+      "how": "η² (numeric) and Cramér's V (categorical) run from 0 to 1: how much of that column's variation the group explains. Figures are in your columns' units.",
+      "strength": {
+        "numeric": "η²",
+        "categorical": "Cramér's V"
+      },
+      "size": "{size} rows · {share}%",
+      "numeric": "“{column}”: {value} (average across groups: {average})",
+      "categorical": "“{column}”: mostly “{mode}” ({share}% of the group)",
+      "noValue": "“{column}”: no values in this group",
+      "all": "See the other {count} columns",
+      "all_one": "See the other column"
+    },
+    "noise": {
+      "title": "Outside every group",
+      "desc": "HDBSCAN leaves out the rows that don't fall in any dense area: it doesn't force them into a group.",
+      "label": "outside every group"
+    },
+    "league": {
+      "title": "The clusterers: {count}",
+      "title_one": "The clusterers: 1",
+      "rule": "The table compares the clusterers by silhouette on a sample of {sample} rows: it's for choosing. The reading above (against structureless data and by resampling) is for believing.",
+      "consensus": "Consensus: {votes} of {voters} clusterers found {k} groups; among them, the highest score wins.",
+      "cols": {
+        "model": "Clusterer",
+        "k": "Groups",
+        "silhouette": "Silhouette",
+        "noise": "Outside a group",
+        "score": "Score"
+      },
+      "kBy": {
+        "silhouette": "{k} · silhouette",
+        "bic": "{k} · BIC",
+        "density": "{k} · density"
+      },
+      "status": {
+        "ok": "found groups",
+        "no-converge": "didn't converge: it doesn't vote, but you can choose it",
+        "no-structure": "didn't find two groups",
+        "error": "failed ({type})"
+      },
+      "backToWinner": "Back to the winner",
+      "mark": {
+        "winner": "Winner by consensus"
+      },
+      "mobile": "silhouette {silhouette} · outside a group {noise}",
+      "scoreHow": "Score = silhouette × (1 − the share outside a group): HDBSCAN doesn't win by leaving the hard rows out. Silhouette runs from −1 to 1: how much closer each row is to its own group than to the next one."
+    },
+    "labels": {
+      "title": "Your rows with their group",
+      "desc": "Download your table with one more column, “group”, holding each row's group (or “outside every group”). It's built in your browser and isn't stored anywhere else.",
+      "column": "group",
+      "fileSuffix": "grouped",
+      "button": "Download rows with their group",
+      "fetching": "Preparing the file…",
+      "error": "The file couldn't be prepared. Try again.",
+      "unavailable": "The active model no longer keeps your rows' groups (it was restored after cancelling Level 2). Group again to download them."
+    },
+    "use": {
+      "title": "Assign new rows",
+      "button": "Assign new rows",
+      "contents": "The exported file carries the preprocessing and the assignment rule (the group centres), without any of your rows."
+    },
+    "assign": {
+      "nearest-centroid": "Rule for new rows: the group whose centre is nearest.",
+      "gaussian": "Rule for new rows: the Gaussian mixture picks the most likely group and gives its probability.",
+      "centroid-radius": "Rule for new rows: the group whose centre is nearest, unless the row lands further out than that group's furthest member: then it's “outside every group”.",
+      "agreement": "With this rule, {pct}% of your rows land in the same group the clusterer gave them."
+    },
+    "plan": {
+      "title": "Group similar rows, with no target",
+      "what": "There's nothing to predict: the app looks for groups of rows that resemble each other. With no target there's no test set and no verdict against a baseline; what's worth believing is the comparison with structureless data and the repeats on parts of your rows.",
+      "distanceNumeric": "Similarity is measured with your {count} numeric columns: {columns}.",
+      "distanceAll": "There are fewer than two numeric columns, so similarity is measured with all of them: {columns}.",
+      "describeOnly": "The categorical ones ({columns}) describe the groups but don't shape the similarity.",
+      "excluded": {
+        "id-like": "“{column}” is left out: it looks like an identifier.",
+        "date": "“{column}” is left out: it's a date, and dates aren't used for grouping."
+      }
+    }
   }
 }

@@ -31,6 +31,7 @@ export function TaskCard({
   choice = null,
   unit = null,
   onAnswer,
+  onCluster,
 }: {
   detection: TaskDetection;
   blocked?: boolean;
@@ -42,6 +43,8 @@ export function TaskCard({
   /** Solo al estimar: la unidad leída del nombre de la columna. */
   unit?: TargetUnit | null;
   onAnswer?: (choice: AmbiguousChoice | null) => void;
+  /** S7: con una columna que no sirve como objetivo, agrupar en su lugar. */
+  onCluster?: () => void;
 }) {
   // Responder (o cambiar la respuesta) desmonta el control que tenía el foco: el
   // foco va a lo que aparece en su lugar, para que el teclado y el lector de
@@ -72,6 +75,7 @@ export function TaskCard({
       choice={choice}
       unit={unit}
       onAnswer={answer}
+      onCluster={onCluster}
       autoFocus={moveFocus}
     />
   );
@@ -175,6 +179,7 @@ function TaskStatus({
   choice,
   unit,
   onAnswer,
+  onCluster,
   autoFocus,
 }: {
   detection: TaskDetection;
@@ -184,6 +189,7 @@ function TaskStatus({
   choice: AmbiguousChoice | null;
   unit: TargetUnit | null;
   onAnswer?: (choice: AmbiguousChoice | null) => void;
+  onCluster?: () => void;
   autoFocus: boolean;
 }) {
   const t = useT();
@@ -258,6 +264,19 @@ function TaskStatus({
                   })
                 : t("task.trainable")}
         </p>
+        {/* S7 (P5): sin nada que predecir en esta columna, la otra pregunta. */}
+        {!trainable && detection.task === "sin-objetivo" && onCluster && (
+          <div>
+            <Button
+              variant="secondary"
+              icon="plus"
+              onClick={onCluster}
+              className="mt-1"
+            >
+              {t("task.clusterInstead")}
+            </Button>
+          </div>
+        )}
         {answered && onAnswer && (
           <div>
             <Button

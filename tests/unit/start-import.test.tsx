@@ -206,12 +206,11 @@ describe("StartScreen — cargar modelo guardado", () => {
   });
 
   it("un archivo de una tarea que esta versión no abre la NOMBRA (ADR 014 §3, AU-S6-02)", async () => {
-    // S7 (cambio esperado): varias categorías ya se abre (D3 cumplida). Agrupar
-    // se abre con su pantalla; una tarea que esta versión ni conoce se nombra
-    // tal como viene.
+    // S7 (cambio esperado): varias categorías y agrupar ya se abren (D3
+    // cumplida). Una tarea que esta versión ni conoce se nombra tal como viene.
     for (const [task, named] of [
-      ["agrupar", "agrupar"],
       ["serie-tiempo", "serie-tiempo"],
+      ["regresion-temporal", "regresion-temporal"],
     ] as const) {
       const { onImport } = ui();
       const file = await packFixture();

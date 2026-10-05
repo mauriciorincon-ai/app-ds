@@ -656,6 +656,16 @@ export type SupervisedSchema =
 
 export type ModelSchema = SupervisedSchema | ClusterModelSchema;
 
+/** S7: lo que la app necesita del modelo ACTIVO para puntuar. Al agrupar, la regla
+ *  sin sus centroides: viven en el worker (retenidos en pipeline.py) y viajan solo
+ *  en el archivo exportado, así que un modelo recién entrenado no los inventa. Un
+ *  esquema completo (`ClusterModelSchema`, el de un archivo importado) también lo es. */
+export type ClusterScoringSchema = Omit<ClusterModelSchema, "assign"> & {
+  assign: Pick<ClusterModelSchema["assign"], "method" | "sample_rows">;
+};
+
+export type ScoringSchema = SupervisedSchema | ClusterScoringSchema;
+
 /** Perfil de TRAIN (nunca de test) — base del reporte honesto de novedad.
  *  min/max null ⇔ la columna quedó sin valores numéricos en train. */
 export type TrainingProfile = {
@@ -757,6 +767,9 @@ export type RunnerRequest =
       payload: FitMemberPayload | ClusterFitMemberPayload;
     }
   | { id: number; type: "score"; payload: ScorePayload }
+  // S7 (P13): las etiquetas por fila del agrupamiento retenido, solo para el CSV
+  // local del usuario (jamás en un resultado, un esquema ni un archivo).
+  | { id: number; type: "cluster-labels" }
   | { id: number; type: "export-model" }
   | {
       id: number;
@@ -782,6 +795,7 @@ export type RunnerResponse =
   | { id: number; type: "result"; command: "train"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
+  | { id: number; type: "result"; command: "cluster-labels"; result: unknown }
   | {
       id: number;
       type: "result";

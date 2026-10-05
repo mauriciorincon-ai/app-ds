@@ -19,7 +19,7 @@ import {
   type BinaryMemberId,
   type MemberId,
 } from "@/engine/roster";
-import { matchTask, pendingSurface, taskOf } from "@/engine/despacho";
+import { matchTask, taskOf } from "@/engine/despacho";
 import type { TrainTask } from "@/engine/tarea";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "./ui";
@@ -32,6 +32,8 @@ import { Button } from "./ui";
 
 export type FichaStatus =
   | { kind: "winner" }
+  // S7: al agrupar, el ganador por consenso (no hay validación cruzada).
+  | { kind: "consensus" }
   | { kind: "chosen" }
   | { kind: "competitor"; rank: number; total: number }
   | { kind: "failed" }
@@ -59,6 +61,7 @@ const SECTIONS: (keyof Ficha)[] = [
 
 const STATUS_MARK: Partial<Record<FichaStatus["kind"], string>> = {
   winner: "★",
+  consensus: "★",
   chosen: "◆",
 };
 
@@ -102,8 +105,8 @@ export default function FichaModelo({
           : FICHAS[fichaId],
       regressionNote: null,
     }),
-    // S7 (D3): la ficha de un agrupador se abre desde su pantalla (F3).
-    agrupar: () => pendingSurface("FichaModelo", "agrupar"),
+    // S7: los agrupadores tienen su propia ficha (no comparten id con otra tarea).
+    agrupar: () => ({ ficha: FICHAS[fichaId], regressionNote: null }),
     numerica: () => ({
       ficha:
         id in REGRESSION_FICHA_FIELDS

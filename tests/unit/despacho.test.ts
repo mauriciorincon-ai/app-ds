@@ -6,7 +6,6 @@ import {
   declaredTask,
   matchByTask,
   matchTask,
-  pendingSurface,
   taskOf,
 } from "@/engine/despacho";
 import {
@@ -108,12 +107,6 @@ describe("despacho exhaustivo — conducta (gate 3)", () => {
       "multiclase",
       "numerica",
     ]);
-  });
-
-  it("S7 (D3): una superficie pendiente falla nombrando superficie y tarea", () => {
-    expect(() => pendingSurface("ResultsScreen", "multiclase")).toThrow(
-      "superficie sin rama todavía: ResultsScreen (multiclase)",
-    );
   });
 
   it("S7 (F3): la UI ofrece entrenar las tres tareas con objetivo", () => {
@@ -259,26 +252,6 @@ describe("despacho exhaustivo — fuente (gate 2)", () => {
           `src/lib/ds/pipeline.py:${c.line} escribe [${c.keys.join(", ")}], registradas [${tasks.join(", ")}]`,
       );
     expect(incomplete, incomplete.join("\n")).toEqual([]);
-  });
-
-  it("S7 (D3): una superficie pendiente vive solo en la UI o la model card", () => {
-    // El MOTOR entrena la multiclase de punta a punta desde la F1: ninguna rama
-    // del motor, del contrato ni del hook puede quedar «pendiente». La F3 retira
-    // las de la UI una a una.
-    const PENDING_ALLOWED = ["src/components/", "src/lib/modelcard.ts"];
-    const calls = ts
-      .filter((f) => f !== "src/engine/despacho.ts")
-      .flatMap((file) =>
-        readFileSync(file, "utf8")
-          .split("\n")
-          .flatMap((line, i) =>
-            line.includes("pendingSurface(") ? [`${file}:${i + 1}`] : [],
-          ),
-      );
-    const outside = calls.filter(
-      (c) => !PENDING_ALLOWED.some((prefix) => c.startsWith(prefix)),
-    );
-    expect(outside, `superficies pendientes fuera de la UI:\n${outside.join("\n")}`).toEqual([]);
   });
 
   it("las excepciones permitidas siguen existiendo (no son decorado)", () => {

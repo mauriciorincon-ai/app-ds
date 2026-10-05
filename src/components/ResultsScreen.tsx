@@ -1,6 +1,6 @@
 "use client";
 
-import { matchByTask, pendingSurface } from "@/engine/despacho";
+import { matchByTask } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
 import {
@@ -12,9 +12,12 @@ import type { SanitationReport } from "@/engine/sanitize";
 import { pickBestBaseline, type MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { useNarration } from "@/lib/useNarration";
+import { buildModelCard } from "@/lib/modelcard";
 import type {
   ChoiceState,
   ExportState,
+  LabelsNames,
+  LabelsState,
   Level2State,
   RunMeta,
 } from "@/lib/useExperiment";
@@ -23,6 +26,7 @@ import type {
   ExperimentResult,
   SupervisedResult,
 } from "@/workers/protocol";
+import { ClusterResults } from "./ClusterResults";
 import { FichaButton } from "./FichaButton";
 import { LeagueTable } from "./LeagueTable";
 import { Level2Card } from "./Level2Card";
@@ -76,16 +80,35 @@ type ResultsProps<R> = {
   forced?: readonly MemberId[];
   level2?: Level2State;
   onRunLevel2?: (extraForced: MemberId[]) => void;
+  /** S7 (P13): al agrupar, la descarga de las filas con su grupo. */
+  labels?: LabelsState;
+  onDownloadLabels?: (names: LabelsNames) => void;
 };
 
+/** Un resultado con objetivo llega siempre con su objetivo (run lo fija); si no,
+ *  falla nombrándose en vez de pintar un objetivo vacío. */
+function targetOf(runMeta: RunMeta): string {
+  if (runMeta.target === null) {
+    throw new Error("ResultsScreen: un resultado con objetivo llegó sin objetivo");
+  }
+  return runMeta.target;
+}
+
 /** S7 (P2): la pantalla de resultados de cada tarea. Las de objetivo comparten la
- *  de la liga con veredicto; agrupar tendrá la suya (F3, D3). */
+ *  de la liga con veredicto; agrupar tiene la suya (sin prueba ni baseline). */
 export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
+  const supervised = (result: SupervisedResult) => (
+    <SupervisedResults
+      {...props}
+      result={result}
+      target={targetOf(props.runMeta)}
+    />
+  );
   return matchByTask(props.result, {
-    binaria: (result) => <SupervisedResults {...props} result={result} />,
-    multiclase: (result) => <SupervisedResults {...props} result={result} />,
-    numerica: (result) => <SupervisedResults {...props} result={result} />,
-    agrupar: () => pendingSurface("ResultsScreen", "agrupar"),
+    binaria: supervised,
+    multiclase: supervised,
+    numerica: supervised,
+    agrupar: (result) => <ClusterResults {...props} result={result} />,
   });
 }
 
@@ -108,7 +131,8 @@ function SupervisedResults({
   forced = [],
   level2 = { status: "idle" },
   onRunLevel2,
-}: ResultsProps<SupervisedResult>) {
+  target,
+}: ResultsProps<SupervisedResult> & { target: string }) {
   const t = useT();
   const { leakage } = result;
   // Narración a demanda (gate ⭐ S4, bloque C): la plantilla existe siempre;
@@ -116,7 +140,7 @@ function SupervisedResults({
   // al estimar una cantidad no hay IA (el hook no llama al route).
   const { template, ai, aiAvailable, requestNarration } = useNarration({
     result,
-    target: runMeta.target,
+    target,
     cols,
     edaAlerts,
   });
@@ -144,12 +168,12 @@ function SupervisedResults({
       verdict: (
         <RegressionVerdict
           result={regression}
-          target={runMeta.target}
+          target={target}
           hasLeak={hasLeak}
         />
       ),
       metrics: <RegressionMetricsSection result={regression} />,
-      detail: <RegressionDetail result={regression} target={runMeta.target} />,
+      detail: <RegressionDetail result={regression} target={target} />,
       positiveClass: null,
       unit: regression.unit,
       classes: null,
@@ -228,7 +252,7 @@ function SupervisedResults({
       {/* S2: el porqué — gráfico siempre visible + texto estándar + IA a demanda. */}
       <WhySection
         explain={result.explainability}
-        target={runMeta.target}
+        target={target}
         positiveClass={byResult.positiveClass}
         template={template}
         ai={ai}
@@ -276,17 +300,21 @@ function SupervisedResults({
 
       {/* S2: la constancia exportable del experimento. */}
       <ModelCardView
-        result={result}
-        meta={{
-          datasetName: datasetName ?? "dataset",
-          cols,
-          numericFeatures: runMeta.numericFeatures,
-          categoricalFeatures: runMeta.categoricalFeatures,
-          target: runMeta.target,
-          seed: runMeta.seed,
-        }}
-        sanitation={sanitation}
-        verifiedNarrative={ai.kind === "verified" ? ai.text : null}
+        datasetName={datasetName ?? "dataset"}
+        build={(locale) =>
+          buildModelCard({
+            locale,
+            datasetName: datasetName ?? "dataset",
+            cols,
+            numericFeatures: runMeta.numericFeatures,
+            categoricalFeatures: runMeta.categoricalFeatures,
+            target,
+            seed: runMeta.seed,
+            result,
+            sanitation,
+            verifiedNarrative: ai.kind === "verified" ? ai.text : null,
+          })
+        }
       />
 
       <div>

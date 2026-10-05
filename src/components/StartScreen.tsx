@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
-import { matchByTask, matchTask, pendingSurface } from "@/engine/despacho";
+import { matchByTask, matchTask } from "@/engine/despacho";
 import { memberNameKey } from "@/engine/roster";
 import { isTask } from "@/engine/tarea";
 import { inferUnit } from "@/lib/experiment";
@@ -11,6 +11,7 @@ import {
   manifestTask,
   MAX_MODEL_FILE_BYTES,
   validateModelFile,
+  type ClusterManifest,
   type ModelFile,
   type ModelManifest,
   type SupervisedManifest,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/model-file";
 import { reportImportError } from "@/lib/observability";
 import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
+import { thousands } from "@/content/modelos";
 import { Button, Card, Icon } from "./ui";
 
 const EXAMPLES = [
@@ -277,7 +279,7 @@ type ImportSummaryProps<M> = {
 
 // Resumen honesto del manifiesto ANTES de continuar: qué modelo es, de qué
 // dataset, con qué veredicto — y la advertencia franca si las versiones del
-// archivo no son las de esta app. S7: el de agrupar tiene su resumen (F3, D3).
+// archivo no son las de esta app. S7: el de agrupar dice sus grupos y su lectura.
 function ImportSummary({
   file,
   ...rest
@@ -290,8 +292,105 @@ function ImportSummary({
     numerica: (manifest) => (
       <SupervisedImportSummary {...rest} manifest={manifest} />
     ),
-    agrupar: () => pendingSurface("ImportSummary", "agrupar"),
+    agrupar: (manifest) => <ClusterImportSummary {...rest} manifest={manifest} />,
   });
+}
+
+/** La fecha de creación de un archivo, en el idioma activo. */
+const createdOn = (createdAt: string, locale: string) =>
+  new Date(createdAt).toLocaleDateString(locale === "es" ? "es-ES" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+function VersionWarningLine({ warnings }: { warnings: VersionWarning[] }) {
+  const t = useT();
+  if (warnings.length === 0) return null;
+  return (
+    <p className="rounded-md border border-caution/40 bg-caution/10 p-3 text-caution">
+      <span aria-hidden className="mr-1">
+        ⚠
+      </span>
+      {t("start.import.summary.versionWarning", {
+        list: warnings
+          .map((w) => `${w.component} ${w.file} → ${w.runtime}`)
+          .join(", "),
+      })}
+    </p>
+  );
+}
+
+/** S7 (ADR 016): un archivo de AGRUPAR — sin objetivo ni veredicto: sus grupos,
+ *  su lectura, cómo se eligió y con qué regla asignará las filas nuevas. */
+function ClusterImportSummary({
+  manifest,
+  warnings,
+  locale,
+  onConfirm,
+  onCancel,
+}: ImportSummaryProps<ClusterManifest>) {
+  const t = useT();
+  const n = (value: number) => thousands(value, locale === "es" ? "." : ",");
+  const model = t(memberNameKey(manifest.model_name, "agrupar"));
+  return (
+    <div className="flex flex-col gap-2 text-sm">
+      <p className="font-medium">
+        <span aria-hidden className="mr-1 text-positive">
+          ✓
+        </span>
+        {t("start.import.summary.title")}
+      </p>
+      <ul className="ml-5 list-disc">
+        <li>
+          {t("start.import.summary.dataset", {
+            name: manifest.dataset.name,
+            rows: manifest.dataset.n_rows,
+            date: createdOn(manifest.created_at, locale),
+          })}
+        </li>
+        <li>
+          {t("start.import.summary.cluster", {
+            k: manifest.groups,
+            model,
+          })}
+        </li>
+        <li>{t(`start.import.summary.reading.${manifest.reading.level}`)}</li>
+        <li>
+          {manifest.selection.by === "user"
+            ? t("start.import.summary.clusterChosen", {
+                winner: t(
+                  `results.candidates.short.${manifest.selection.consensus_winner}`,
+                ),
+              })
+            : t("start.import.summary.clusterConsensus", {
+                k: manifest.selection.k,
+                count: manifest.league.length,
+              })}
+        </li>
+        <li>{t(`cluster.assign.${manifest.assignment.method}`)}</li>
+        {manifest.assignment.sample_rows !== null && (
+          <li>
+            {t("cluster.sample.title", {
+              sample: n(manifest.assignment.sample_rows),
+              rows: n(manifest.dataset.n_rows),
+            })}
+          </li>
+        )}
+      </ul>
+
+      <VersionWarningLine warnings={warnings} />
+
+      <div className="mt-1 flex flex-wrap gap-3">
+        <Button icon="check" onClick={onConfirm}>
+          {t("start.import.summary.use")}
+        </Button>
+        <Button variant="secondary" icon="x" onClick={onCancel}>
+          {t("start.import.summary.cancel")}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 function SupervisedImportSummary({
@@ -302,10 +401,7 @@ function SupervisedImportSummary({
   onCancel,
 }: ImportSummaryProps<SupervisedManifest>) {
   const t = useT();
-  const date = new Date(manifest.created_at).toLocaleDateString(
-    locale === "es" ? "es-ES" : "en-US",
-    { year: "numeric", month: "long", day: "numeric" },
-  );
+  const date = createdOn(manifest.created_at, locale);
   const task = manifestTask(manifest);
   // S6: el MAE se lee en las unidades del objetivo; las métricas de clase, de 0 a 1.
   const fmt = (value: number) =>
@@ -397,18 +493,7 @@ function SupervisedImportSummary({
         </li>
       </ul>
 
-      {warnings.length > 0 && (
-        <p className="rounded-md border border-caution/40 bg-caution/10 p-3 text-caution">
-          <span aria-hidden className="mr-1">
-            ⚠
-          </span>
-          {t("start.import.summary.versionWarning", {
-            list: warnings
-              .map((w) => `${w.component} ${w.file} → ${w.runtime}`)
-              .join(", "),
-          })}
-        </p>
-      )}
+      <VersionWarningLine warnings={warnings} />
 
       <div className="mt-1 flex flex-wrap gap-3">
         <Button icon="check" onClick={onConfirm}>

@@ -221,7 +221,7 @@ describe("TaskCard (E1)", () => {
     expect(screen.getByText(/no algo que predecir/)).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Esta columna no sirve como objetivo. Elige una columna con categorías o con una cantidad.",
+        "Esta columna no sirve como objetivo. Elige una columna con categorías o con una cantidad, o agrupa filas parecidas sin objetivo.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/próxima versión/)).toBeNull();

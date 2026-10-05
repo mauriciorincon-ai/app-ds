@@ -49,6 +49,7 @@ import type {
   ClusterMemberFitResult,
   ClusterMemberRow,
   ClusterModelSchema,
+  ClusterScoringSchema,
   ClusterPipelineResult,
   ClusterProfiles,
   ClusterReadingResult,
@@ -1223,7 +1224,8 @@ const clusterScoreV = obj({
  *  probabilidad solo con la mezcla gaussiana. */
 export function validateClusterScore(
   raw: unknown,
-  schema: Pick<ClusterModelSchema, "groups" | "noise" | "assign">,
+  // S7: un esquema completo (archivo importado) o el de puntuar (recién entrenado).
+  schema: Pick<ClusterScoringSchema, "groups" | "noise" | "assign">,
 ): Checked<ClusterScoreResult> {
   if (!isRecord(raw) || raw.task !== CLUSTER_TASK)
     return { ok: false, field: "task" };

@@ -5,8 +5,8 @@
 // puntuado. El panel de novedad (categorías nunca vistas / fuera de rango)
 // SIEMPRE se muestra antes de descargar. El encabezado es el candidato LCP y
 // nace estático (patrón lcp-nace-estatico: sin motion, sin opacity inicial).
-import { useRef, useState } from "react";
-import { matchByTask, pendingSurface } from "@/engine/despacho";
+import { useRef, useState, type ReactNode } from "react";
+import { matchByTask } from "@/engine/despacho";
 import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
 import { modelFeatures } from "@/lib/ds/schema-check";
@@ -20,7 +20,15 @@ import {
   scoredCsvFileName,
 } from "@/lib/scored-csv";
 import type { ExportState, ModelMeta, ScoringState } from "@/lib/useExperiment";
-import type { ProgressStage, SupervisedSchema } from "@/workers/protocol";
+import type {
+  BinaryScoreResult,
+  ClusterScoringSchema,
+  MulticlassScoreResult,
+  ProgressStage,
+  RegressionScoreResult,
+  ScoreResult,
+  SupervisedSchema,
+} from "@/workers/protocol";
 import { Button, Card, Icon, MetricTile } from "./ui";
 
 const PREVIEW_ROWS = 10;
@@ -47,53 +55,60 @@ type ScoreScreenProps<M> = {
 /** El modelo activo de una tarea con objetivo. */
 type SupervisedMeta = Omit<ModelMeta, "schema"> & { schema: SupervisedSchema };
 
-/** S7 (P2): puntuar con el modelo de cada tarea. Agrupar asigna grupos, no
- *  predice un objetivo: tendrá su pantalla (F3, D3). */
+type Scored = Extract<ScoringState, { status: "scored" }>;
+
+/** S7 (P2): puntuar con el modelo de cada tarea. Con objetivo se predice; al
+ *  agrupar se ASIGNA un grupo a cada fila nueva con la regla del modelo (P12). */
 export function ScoreScreen(props: ScoreScreenProps<ModelMeta>) {
-  const supervised = (schema: SupervisedSchema) => (
-    <SupervisedScoreScreen {...props} meta={{ ...props.meta, schema }} />
-  );
+  const t = useT();
+  const supervised = (schema: SupervisedSchema) => {
+    const meta: SupervisedMeta = { ...props.meta, schema };
+    return (
+      <ScoreShell
+        {...props}
+        header={supervisedHeader(t, meta)}
+        neededNote={t("score.needed.noTarget", { target: schema.target })}
+        scored={(scoring) => (
+          <ScoredResults
+            meta={meta}
+            scoring={scoring}
+            onScoreAnother={props.onScoreAnother}
+          />
+        )}
+      />
+    );
+  };
   return matchByTask(props.meta.schema, {
     binaria: supervised,
     multiclase: supervised,
     numerica: supervised,
-    agrupar: () => pendingSurface("ScoreScreen", "agrupar"),
+    agrupar: (schema) => (
+      <ScoreShell
+        {...props}
+        header={{
+          subtitle: t("score.subtitleCluster"),
+          modelLine: t("score.modelLineCluster", {
+            dataset: props.meta.datasetName,
+            k: schema.groups,
+          }),
+        }}
+        neededNote={t("score.needed.cluster")}
+        scored={(scoring) => (
+          <ClusterScoredResults
+            schema={schema}
+            scoring={scoring}
+            onScoreAnother={props.onScoreAnother}
+          />
+        )}
+      />
+    ),
   });
 }
 
-function SupervisedScoreScreen({
-  meta,
-  ready,
-  progress,
-  scoring,
-  exportState,
-  onScoreFile,
-  onScoreAnother,
-  onBackToResults,
-  onExit,
-  onExportModel,
-}: ScoreScreenProps<SupervisedMeta>) {
-  const t = useT();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
+type Translate = ReturnType<typeof useT>;
 
-  const features = modelFeatures(meta.schema);
-  const backButton =
-    meta.source === "trained" ? (
-      <Button variant="secondary" icon="back" onClick={onBackToResults}>
-        {t("score.backResults")}
-      </Button>
-    ) : (
-      <Button variant="secondary" icon="plus" onClick={onExit}>
-        {t("score.backStart")}
-      </Button>
-    );
-
-  async function handleFile(file: File) {
-    onScoreFile(await file.text(), file.name);
-  }
-
-  const header = matchByTask(meta.schema, {
+function supervisedHeader(t: Translate, meta: SupervisedMeta) {
+  return matchByTask(meta.schema, {
     binaria: (schema) => ({
       subtitle: t("score.subtitle"),
       modelLine: t("score.modelLine", {
@@ -118,6 +133,49 @@ function SupervisedScoreScreen({
       }),
     }),
   });
+}
+
+/** Lo común de puntuar en todas las tareas: preparar el modelo, subir el CSV, el
+ *  bloqueo honesto por columnas, el error y exportar. Lo propio de cada tarea
+ *  llega por `header`, `neededNote` y `scored`. */
+function ScoreShell({
+  meta,
+  ready,
+  progress,
+  scoring,
+  exportState,
+  onScoreFile,
+  onScoreAnother,
+  onBackToResults,
+  onExit,
+  onExportModel,
+  header,
+  neededNote,
+  scored,
+}: ScoreScreenProps<ModelMeta> & {
+  header: { subtitle: string; modelLine: string };
+  neededNote: string;
+  scored: (scoring: Scored) => ReactNode;
+}) {
+  const t = useT();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const features = modelFeatures(meta.schema);
+  const backButton =
+    meta.source === "trained" ? (
+      <Button variant="secondary" icon="back" onClick={onBackToResults}>
+        {t("score.backResults")}
+      </Button>
+    ) : (
+      <Button variant="secondary" icon="plus" onClick={onExit}>
+        {t("score.backStart")}
+      </Button>
+    );
+
+  async function handleFile(file: File) {
+    onScoreFile(await file.text(), file.name);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -197,9 +255,7 @@ function SupervisedScoreScreen({
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-ink-muted">
-              {t("score.needed.noTarget", { target: meta.schema.target })}
-            </p>
+            <p className="text-sm text-ink-muted">{neededNote}</p>
           </section>
         </>
       )}
@@ -238,13 +294,7 @@ function SupervisedScoreScreen({
         </p>
       )}
 
-      {scoring.status === "scored" && (
-        <ScoredResults
-          meta={meta}
-          scoring={scoring}
-          onScoreAnother={onScoreAnother}
-        />
-      )}
+      {scoring.status === "scored" && scored(scoring)}
 
       {scoring.status === "error" && (
         <div role="alert" className="flex flex-col items-start gap-3">
@@ -337,17 +387,37 @@ function PreparingModel({ progress }: { progress: ProgressStage | null }) {
   );
 }
 
+type SupervisedScore =
+  | BinaryScoreResult
+  | MulticlassScoreResult
+  | RegressionScoreResult;
+
+/** El lector valida el puntaje con el esquema del modelo activo: un puntaje de
+ *  agrupar para un modelo con objetivo no puede llegar; si llega, falla
+ *  nombrándose en vez de pintar grupos como clases. */
+function supervisedScore(score: ScoreResult): SupervisedScore {
+  return matchByTask(score, {
+    binaria: (s): SupervisedScore => s,
+    multiclase: (s): SupervisedScore => s,
+    numerica: (s): SupervisedScore => s,
+    agrupar: () => {
+      throw new Error("ScoreScreen: un puntaje de agrupar para un modelo con objetivo");
+    },
+  });
+}
+
 function ScoredResults({
   meta,
   scoring,
   onScoreAnother,
 }: {
   meta: SupervisedMeta;
-  scoring: Extract<ScoringState, { status: "scored" }>;
+  scoring: Scored;
   onScoreAnother: () => void;
 }) {
   const t = useT();
-  const { check, table, score, fileName } = scoring;
+  const { check, table, fileName } = scoring;
+  const score = supervisedScore(scoring.score);
   const { probabilities, novelty } = score;
   const { schema } = meta;
 
@@ -361,14 +431,12 @@ function ScoredResults({
   const quantity = matchByTask(score, {
     binaria: () => null,
     multiclase: () => null,
-    agrupar: () => pendingSurface("ScoreScreen.quantity", "agrupar"),
     numerica: (estimated) =>
       decimals === null ? null : { values: estimated.predictions, decimals },
   });
   const predictions = matchByTask(score, {
     binaria: (classified) => classified.predictions,
     multiclase: (classified) => classified.predictions,
-    agrupar: () => pendingSurface("ScoreScreen.predictions", "agrupar"),
     numerica: (estimated) =>
       formatEstimates(estimated.predictions, quantity?.decimals ?? 0),
   });
@@ -422,10 +490,6 @@ function ScoredResults({
     );
   };
 
-  const noveltyPercent = Math.round(
-    (100 * novelty.affected_rows) / Math.max(novelty.n_rows, 1),
-  );
-
   return (
     <div className="flex flex-col gap-5">
       {(check.extra.length > 0 || check.targetPresent) && (
@@ -454,43 +518,7 @@ function ScoredResults({
       )}
 
       {/* Panel de novedad: SIEMPRE visible antes de descargar. */}
-      <Card className="p-4">
-        {novelty.columns.length > 0 ? (
-          <div className="text-sm">
-            <p className="font-medium text-caution">
-              <span aria-hidden className="mr-1">
-                ⚠
-              </span>
-              {t("score.novelty.title")}
-            </p>
-            <ul className="mt-1 ml-5 list-disc">
-              {novelty.columns.map((column) => (
-                <li key={column.column}>
-                  {t(`score.novelty.${column.kind}`, {
-                    column: column.column,
-                    count: column.count,
-                  })}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 font-mono tabular-nums">
-              {t("score.novelty.summary", {
-                affected: novelty.affected_rows,
-                total: novelty.n_rows,
-                percent: noveltyPercent,
-              })}
-            </p>
-            <p className="mt-1 text-ink-muted">{t("score.novelty.hint")}</p>
-          </div>
-        ) : (
-          <p className="text-sm">
-            <span aria-hidden className="mr-1 text-positive">
-              ✓
-            </span>
-            {t("score.novelty.none")}
-          </p>
-        )}
-      </Card>
+      <NoveltyPanel novelty={novelty} />
 
       {quantity ? (
         <QuantitySummary
@@ -634,4 +662,234 @@ function QuantitySummary({
       )}
     </section>
   );
+}
+
+/** Valores que el modelo nunca vio (categorías nuevas, números fuera de rango):
+ *  SIEMPRE visible antes de descargar, en todas las tareas. */
+function NoveltyPanel({ novelty }: { novelty: ScoreResult["novelty"] }) {
+  const t = useT();
+  const noveltyPercent = Math.round(
+    (100 * novelty.affected_rows) / Math.max(novelty.n_rows, 1),
+  );
+  return (
+  <Card className="p-4">
+    {novelty.columns.length > 0 ? (
+      <div className="text-sm">
+        <p className="font-medium text-caution">
+          <span aria-hidden className="mr-1">
+            ⚠
+          </span>
+          {t("score.novelty.title")}
+        </p>
+        <ul className="mt-1 ml-5 list-disc">
+          {novelty.columns.map((column) => (
+            <li key={column.column}>
+              {t(`score.novelty.${column.kind}`, {
+                column: column.column,
+                count: column.count,
+              })}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 font-mono tabular-nums">
+          {t("score.novelty.summary", {
+            affected: novelty.affected_rows,
+            total: novelty.n_rows,
+            percent: noveltyPercent,
+          })}
+        </p>
+        <p className="mt-1 text-ink-muted">{t("score.novelty.hint")}</p>
+      </div>
+    ) : (
+      <p className="text-sm">
+        <span aria-hidden className="mr-1 text-positive">
+          ✓
+        </span>
+        {t("score.novelty.none")}
+      </p>
+    )}
+  </Card>
+  );
+}
+
+/**
+ * S7 (P12): las filas nuevas con su GRUPO, asignado con la regla del agrupador
+ * (el centro más cercano, la mezcla gaussiana o el centro con su radio). Los
+ * grupos se numeran desde 1, como en Resultados; «fuera de todo grupo» solo
+ * existe si la regla lo admite (HDBSCAN). Solo la mezcla gaussiana da una
+ * probabilidad, la del grupo asignado.
+ */
+function ClusterScoredResults({
+  schema,
+  scoring,
+  onScoreAnother,
+}: {
+  schema: ClusterScoringSchema;
+  scoring: Scored;
+  onScoreAnother: () => void;
+}) {
+  const t = useT();
+  const { check, table, fileName } = scoring;
+  const score = matchByTask(scoring.score, {
+    agrupar: (s) => s,
+    binaria: () => clusterMismatch(),
+    multiclase: () => clusterMismatch(),
+    numerica: () => clusterMismatch(),
+  });
+  const { probabilities, novelty } = score;
+  const noise = t("cluster.noise.label");
+  const labels = score.predictions.map((g) =>
+    g === -1 ? noise : String(g + 1),
+  );
+  const names = {
+    prediction: t("cluster.labels.column"),
+    probability: t("score.columns.groupProbability"),
+  };
+  const resolved = resolveScoredColumnNames(table.headers, names);
+  const total = labels.length;
+  const percent = (n: number) => Math.round((100 * n) / Math.max(total, 1));
+  const counts = Array.from({ length: schema.groups }, (_, g) => ({
+    label: t("cluster.group", { n: g + 1 }),
+    count: score.predictions.filter((p) => p === g).length,
+  }));
+  const outside = score.predictions.filter((p) => p === -1).length;
+
+  const download = () => {
+    const csv = buildScoredCsv(table, labels, probabilities, names);
+    downloadTextFile(
+      scoredCsvFileName(fileName, t("score.fileSuffix")),
+      csv,
+      "text/csv;charset=utf-8",
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      {check.extra.length > 0 && (
+        <div className="rounded-md border border-caution/40 bg-caution/10 p-4 text-sm">
+          <p className="font-medium text-caution">
+            <span aria-hidden className="mr-1">
+              ⚠
+            </span>
+            {t("score.warnings.title")}
+          </p>
+          <ul className="mt-1 ml-5 list-disc">
+            <li>
+              {t("score.warnings.extra", {
+                columns: check.extra.map((c) => `«${c}»`).join(", "),
+              })}
+            </li>
+          </ul>
+        </div>
+      )}
+
+      <NoveltyPanel novelty={novelty} />
+
+      <p className="max-w-prose text-sm text-ink-muted">
+        {t(`cluster.assign.${schema.assign.method}`)}
+      </p>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
+          {t("score.groups.title", { rows: total })}
+        </h2>
+        <div className="grid grid-cols-2 gap-2 sm:max-w-md">
+          {counts.map(({ label, count }) => (
+            <MetricTile
+              key={label}
+              label={label}
+              value={`${count} (${percent(count)}%)`}
+            />
+          ))}
+          {schema.noise && (
+            <MetricTile
+              label={noise}
+              value={`${outside} (${percent(outside)}%)`}
+            />
+          )}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
+          {t("score.preview.title", {
+            shown: Math.min(PREVIEW_ROWS, table.rows.length),
+            total: table.rows.length,
+          })}
+        </h2>
+        {probabilities && (
+          <p className="text-sm text-ink-muted">
+            {t("score.groupProbabilityNote")}
+          </p>
+        )}
+        <div
+          className="overflow-x-auto rounded-md border border-hairline"
+          role="region"
+          tabIndex={0}
+          aria-label={t("score.preview.title", {
+            shown: Math.min(PREVIEW_ROWS, table.rows.length),
+            total: table.rows.length,
+          })}
+        >
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-sunken text-left">
+                <th className="px-3 py-2 font-mono text-xs font-semibold">
+                  {resolved.prediction}
+                </th>
+                {probabilities && (
+                  <th className="px-3 py-2 font-mono text-xs font-semibold">
+                    {resolved.probability}
+                  </th>
+                )}
+                {table.headers.map((header) => (
+                  <th
+                    key={header}
+                    className="px-3 py-2 font-mono text-xs font-normal text-ink-muted"
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {table.rows.slice(0, PREVIEW_ROWS).map((row, index) => (
+                <tr key={index} className="border-t border-hairline">
+                  <td className="px-3 py-1.5 font-medium">{labels[index]}</td>
+                  {probabilities && (
+                    <td className="px-3 py-1.5 font-mono tabular-nums">
+                      {probabilities[index]!.toFixed(4)}
+                    </td>
+                  )}
+                  {row.map((cell, cellIndex) => (
+                    <td
+                      key={cellIndex}
+                      className="px-3 py-1.5 font-mono text-xs tabular-nums text-ink-muted"
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap gap-3">
+        <Button icon="download" onClick={download}>
+          {t("score.download")}
+        </Button>
+        <Button variant="secondary" icon="upload" onClick={onScoreAnother}>
+          {t("score.another")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** El lector valida el puntaje con el esquema del modelo activo: un puntaje con
+ *  objetivo para un agrupador no puede llegar; si llega, falla nombrándose. */
+function clusterMismatch(): never {
+  throw new Error("ScoreScreen: un puntaje con objetivo para un agrupador");
 }

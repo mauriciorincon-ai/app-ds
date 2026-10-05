@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import type { Metrics } from "@/engine/verdict";
 import { I18nProvider } from "@/i18n/provider";
 import { summarizeDataset } from "@/lib/experiment";
+import { buildModelCard } from "@/lib/modelcard";
 import type { BinaryResult } from "@/workers/protocol";
 import { ConfigScreen } from "@/components/ConfigScreen";
 import { ErrorScreen } from "@/components/ErrorScreen";
@@ -189,10 +190,18 @@ describe("ModelCardView", () => {
   it("ofrece la descarga; la vista previa se monta SOLO al abrir (sin duplicar títulos)", () => {
     const { container } = ui(
       <ModelCardView
-        result={result()}
-        meta={{ datasetName: "marketing.csv", cols: 7, ...RUN_META }}
-        sanitation={null}
-        verifiedNarrative={null}
+        datasetName="marketing.csv"
+        build={(locale) =>
+          buildModelCard({
+            locale,
+            datasetName: "marketing.csv",
+            cols: 7,
+            ...RUN_META,
+            result: result(),
+            sanitation: null,
+            verifiedNarrative: null,
+          })
+        }
       />,
     );
     expect(

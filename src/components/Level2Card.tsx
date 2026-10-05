@@ -12,7 +12,7 @@ import { byPriority, type MemberId } from "@/engine/roster";
 import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
 import type { Level2State } from "@/lib/useExperiment";
-import type { SupervisedResult } from "@/workers/protocol";
+import type { ExperimentResult } from "@/workers/protocol";
 import { Button, Card, Icon } from "./ui";
 
 // S5 (D5 + U3 + R1): el Nivel 2. Suma lo que no cupo en el techo, deja incluir
@@ -27,7 +27,8 @@ export function Level2Card({
   busy,
   onRun,
 }: {
-  result: SupervisedResult;
+  /** S7: también al agrupar (la misma unión, con su modelo de costos). */
+  result: ExperimentResult;
   profile: RouteProfile;
   /** Los ya incluidos de todos modos en la liga vigente. */
   forced: readonly MemberId[];

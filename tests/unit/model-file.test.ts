@@ -433,8 +433,8 @@ describe("S6 — manifiesto por tarea (P8)", () => {
   });
 
   it("una tarea que esta versión NO CONOCE también se rechaza nombrándola, no como «no parece un modelo» (ADR 014 §3, AU-S6-02)", async () => {
-    // S7 (cambio esperado): «multiclase» ya es conocida (bloque siguiente).
-    for (const task of ["serie-tiempo", "agrupar"]) {
+    // S7 (cambio esperado): «multiclase» y «agrupar» ya se abren (sus bloques).
+    for (const task of ["serie-tiempo", "regresion-temporal"]) {
       const raw = JSON.parse(JSON.stringify(await packRegression())) as {
         manifest: Record<string, unknown>;
       };

@@ -5,9 +5,11 @@ import {
   type Placement,
   type Routing,
 } from "@/engine/encarrilador";
-import { useT } from "@/i18n/use-translation";
+import { thousands } from "@/content/modelos";
+import { AGGLO_MAX_ROWS } from "@/engine/verdict";
+import { useI18n } from "@/i18n/provider";
 import { formatEstimate } from "@/lib/duration";
-import { Card } from "./ui";
+import { Card, Icon } from "./ui";
 
 // E2 (S5): quién compite y en qué nivel, con una razón por modelo. Lo que queda
 // fuera es una RECOMENDACIÓN con su razón (regla dura 3: no se esconde).
@@ -17,6 +19,7 @@ export function RosterCard({
   minorityShare,
   k,
   smallSample,
+  cluster = false,
 }: {
   routing: Routing;
   rows: number;
@@ -24,8 +27,11 @@ export function RosterCard({
   minorityShare: number | null;
   k: number;
   smallSample: boolean;
+  /** S7: agrupar — sin validación cruzada; cada agrupador elige su k. */
+  cluster?: boolean;
 }) {
-  const t = useT();
+  const { locale, t } = useI18n();
+  const n = (value: number) => thousands(value, locale === "es" ? "." : ",");
   const name = (id: Placement["id"]) => t(`results.candidates.short.${id}`);
   const level2 = routing.placements.filter((p) => p.level === 2);
   const out = routing.placements.filter((p) => p.level === "out");
@@ -105,7 +111,26 @@ export function RosterCard({
         </section>
       )}
 
-      <p className="text-xs text-ink-muted">{t("roster.cv", { k })}</p>
+      {cluster ? (
+        <>
+          <p className="text-xs text-ink-muted">{t("roster.clusterK")}</p>
+          <p className="text-xs text-ink-muted">
+            {t("roster.clusterNote", { max: k })}
+          </p>
+          {/* Decisión 8 del usuario: la muestra del jerárquico, antes de correr. */}
+          {rows > AGGLO_MAX_ROWS && (
+            <p className="flex items-start gap-1 text-xs">
+              <Icon name="info" className="mt-0.5 shrink-0 text-ink-muted" />
+              {t("roster.clusterSample", {
+                sample: n(AGGLO_MAX_ROWS),
+                rows: n(rows),
+              })}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="text-xs text-ink-muted">{t("roster.cv", { k })}</p>
+      )}
       {smallSample && (
         <p className="text-xs text-caution">
           <span aria-hidden className="mr-1">

@@ -23,8 +23,18 @@ import {
   quantityFormatter,
   regressionVerdictText,
 } from "@/lib/regression-text";
+import { thousands } from "@/content/modelos";
+import {
+  AGGLO_MAX_ROWS,
+  CLUSTER_GAP_MIN,
+  CLUSTER_K_MIN,
+  CLUSTER_STABILITY_MIN,
+  SILHOUETTE_SAMPLE,
+} from "@/engine/verdict";
+import type { ClusterExclusion } from "@/lib/experiment";
 import type {
   BinaryResult,
+  ClusterResult,
   MulticlassResult,
   SupervisedResult,
   RegressionResult,
@@ -496,4 +506,236 @@ export function buildModelCard(input: ModelCardInput): string {
 
 export function modelCardFileName(datasetName: string): string {
   return `model-card-${datasetSlug(datasetName) || "experimento"}.md`;
+}
+
+// --- S7: la model card de AGRUPAR (ADR 016) ----------------------------------
+
+export type ClusterCardInput = {
+  locale: Locale;
+  datasetName: string;
+  cols: number;
+  seed: number;
+  /** Las columnas que no entraron, con su razón (P5). */
+  excluded: readonly ClusterExclusion[];
+  result: ClusterResult;
+  sanitation?: SanitationReport | null;
+  date?: Date;
+};
+
+/**
+ * La constancia de un AGRUPAMIENTO: sin objetivo, sin prueba y sin veredicto
+ * contra un baseline. Lo que sirve para creer es la lectura (contra datos sin
+ * estructura + la estabilidad). Los perfiles (medias, modas, columnas) aparecen,
+ * como la clase positiva en la binaria: el documento no sale del equipo salvo que
+ * el usuario lo comparta. Las etiquetas por fila, jamás (P13).
+ */
+export function buildClusterCard(input: ClusterCardInput): string {
+  const { locale, result } = input;
+  const t = (key: string, params?: TParams) => translate(locale, key, params);
+  const section = (key: string) => `## ${t(`modelcard.sections.${key}`)}`;
+  const n = (value: number) => thousands(value, locale === "es" ? "." : ",");
+  const two = (value: number) => value.toFixed(2);
+  const pct = (share: number) => Math.round(share * 100);
+  const short = (id: MemberId) => t(`results.candidates.short.${id}`);
+  const modelLabel = (id: MemberId) => t(memberNameKey(id, "agrupar"));
+  const date = (input.date ?? new Date()).toLocaleDateString(
+    locale === "es" ? "es-ES" : "en-US",
+    { year: "numeric", month: "long", day: "numeric" },
+  );
+  const { reading, selection, profiles, assignment, league } = result;
+  const retained = league.find((r) => r.name === result.modelName);
+  const k = retained?.k ?? profiles.groups.length;
+  const first = profiles.groups[0];
+  const numeric = first ? Object.keys(first.numeric) : [];
+  const categorical = first ? Object.keys(first.categorical) : [];
+  const readingParams = {
+    k,
+    model: short(result.modelName),
+    score: two(reading.score),
+    nullScore: two(reading.null_score),
+    gap: two(reading.gap),
+    gapMin: two(CLUSTER_GAP_MIN),
+    ari: two(reading.stability.ari_mean),
+    ariMin: two(CLUSTER_STABILITY_MIN),
+    runs: reading.stability.runs,
+    fraction: pct(reading.stability.fraction),
+  };
+  const cell = (text: string) => text.replace(/\|/g, "\\|");
+
+  const leagueTable = [
+    `| ${t("cluster.league.cols.model")} | ${t("cluster.league.cols.k")} | ${t("cluster.league.cols.silhouette")} | ${t("cluster.league.cols.noise")} | ${t("cluster.league.cols.score")} |`,
+    "| --- | --- | --- | --- | --- |",
+    ...league.map(
+      (row) =>
+        `| ${modelLabel(row.name)} | ${
+          row.k === null
+            ? "—"
+            : t(`cluster.league.kBy.${row.k_by}`, { k: row.k })
+        } | ${row.silhouette === null ? "—" : two(row.silhouette)} | ${
+          row.noise_share === null ? "—" : `${pct(row.noise_share)} %`
+        } | ${row.score === null ? t(`cluster.league.status.${row.status}`, { type: row.error_type ?? "" }) : two(row.score)} |`,
+    ),
+  ].join("\n");
+
+  const groupLines = profiles.groups.map((group) => {
+    const parts = profiles.separating.map((s) => {
+      if (s.kind === "numeric") {
+        const value = group.numeric[s.column];
+        return `«${cell(s.column)}» ${value === null || value === undefined ? "—" : formatQuantity(value, 2)}`;
+      }
+      const mode = group.categorical[s.column];
+      return `«${cell(s.column)}» ${mode ? `${cell(mode.mode)} (${pct(mode.share)} %)` : "—"}`;
+    });
+    return `- ${t("cluster.group", { n: group.group + 1 })}: ${t(
+      "cluster.profiles.size",
+      { size: n(group.size), share: pct(group.share) },
+    )}${parts.length ? ` — ${parts.join("; ")}` : ""}`;
+  });
+
+  const san = input.sanitation;
+  const sanitationSection =
+    san && !san.clean
+      ? [
+          section("sanitation"),
+          "",
+          ...(san.duplicateRowsRemoved > 0
+            ? [
+                `- ${t("modelcard.sanitation.duplicates", {
+                  count: san.duplicateRowsRemoved,
+                })}`,
+              ]
+            : []),
+          ...san.exclusions.map(
+            (ex) =>
+              `- ${t(`modelcard.sanitation.exclusion.${ex.reason}`, {
+                column: ex.column,
+              })}`,
+          ),
+          ...san.coercions.map(
+            (co) =>
+              `- ${t("modelcard.sanitation.coercion", {
+                column: co.column,
+                count: co.cellsNulled,
+              })}`,
+          ),
+          "",
+        ]
+      : [section("sanitation"), "", t("modelcard.sanitation.none"), ""];
+
+  const sampled = league.find((row) => row.sample_rows !== null);
+
+  return [
+    `# ${t("modelcard.title", { name: input.datasetName })}`,
+    "",
+    t("modelcard.generated", { date }),
+    "",
+    section("data"),
+    "",
+    `- ${t("modelcard.data.dataset", { name: input.datasetName })}`,
+    `- ${t("modelcard.cluster.shape", { rows: n(result.nRows), cols: input.cols })}`,
+    `- ${t("modelcard.cluster.task")}`,
+    `- ${
+      result.distance === "numeric"
+        ? t("modelcard.cluster.distanceNumeric", {
+            count: numeric.length,
+            columns: numeric.map((c) => `«${c}»`).join(", "),
+            categorical: categorical.length
+              ? categorical.map((c) => `«${c}»`).join(", ")
+              : "—",
+          })
+        : t("modelcard.cluster.distanceAll", {
+            columns: [...numeric, ...categorical].map((c) => `«${c}»`).join(", "),
+          })
+    }`,
+    ...input.excluded.map(
+      (ex) =>
+        `- ${t(`cluster.plan.excluded.${ex.reason}`, { column: ex.column })}`,
+    ),
+    "",
+    ...sanitationSection,
+    section("method"),
+    "",
+    `- ${t("modelcard.cluster.pipeline", { seed: input.seed })}`,
+    `- ${t("modelcard.cluster.members", {
+      count: selection.competitors,
+      sample: n(result.silhouetteSample),
+      min: CLUSTER_K_MIN,
+      max: result.kRange[1],
+    })}`,
+    `- ${
+      selection.by === "user"
+        ? t("modelcard.cluster.chosen", {
+            model: modelLabel(result.modelName),
+            winner: modelLabel(selection.consensusWinner),
+          })
+        : t("modelcard.cluster.consensus", {
+            votes: selection.votes,
+            voters: selection.voters,
+            k: selection.k,
+            model: modelLabel(result.modelName),
+          })
+    }`,
+    ...(sampled && sampled.sample_rows !== null
+      ? [
+          `- ${t("cluster.sample.title", {
+            sample: n(sampled.sample_rows),
+            rows: n(result.nRows),
+          })} ${t("cluster.sample.why", { max: n(AGGLO_MAX_ROWS) })}`,
+        ]
+      : []),
+    `- ${t("modelcard.selection.time", {
+      seconds: (selection.elapsedMs / 1000).toFixed(1),
+    })}`,
+    ...(result.smallSample
+      ? [`- ${t("modelcard.selection.smallSample", { rows: SMALL_SAMPLE_ROWS })}`]
+      : []),
+    "",
+    section("clusterLeague"),
+    "",
+    leagueTable,
+    "",
+    t("cluster.league.scoreHow"),
+    "",
+    section("clusterReading"),
+    "",
+    `**${t(`cluster.reading.${reading.level}`, readingParams)}** — ${t(
+      `cluster.reading.${reading.level}Detail`,
+      readingParams,
+    )}`,
+    "",
+    t("cluster.noTest"),
+    "",
+    section("clusterGroups"),
+    "",
+    ...groupLines,
+    ...(profiles.noise
+      ? [
+          `- ${t("cluster.noise.title")}: ${t("cluster.profiles.size", {
+            size: n(profiles.noise.size),
+            share: pct(profiles.noise.share),
+          })}`,
+        ]
+      : []),
+    "",
+    section("clusterAssign"),
+    "",
+    `- ${t(`cluster.assign.${assignment.method}`)}`,
+    `- ${t("cluster.assign.agreement", { pct: pct(assignment.train_agreement) })}`,
+    "",
+    section("leakage"),
+    "",
+    t("modelcard.cluster.noLeakage"),
+    "",
+    section("narrative"),
+    "",
+    t("modelcard.cluster.noAi"),
+    "",
+    section("limits"),
+    "",
+    `- ${t("modelcard.cluster.limits.cause")}`,
+    `- ${t("modelcard.cluster.limits.silhouette", { sample: n(SILHOUETTE_SAMPLE) })}`,
+    `- ${t("modelcard.cluster.limits.agglomerative", { max: n(AGGLO_MAX_ROWS) })}`,
+    `- ${t("modelcard.limits.dates")}`,
+    "",
+  ].join("\n");
 }

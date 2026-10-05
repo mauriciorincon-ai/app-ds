@@ -766,6 +766,136 @@ después):
   `multiclase`, `multiclase-score`, `tarea-ambigua` y `liga`, 10 de 10 al primer intento, con axe
   en los dos temas.
 
+**CI del quinto commit** (`ca703ad`, run 37253919481, `gh pr checks 19` y `statusCheckRollup`): 6 de
+6 `success`. El margen de Lighthouse: «✓ ninguna mediana a menos del 10 % de su presupuesto».
+
+### Sexto commit: agrupar en la app (D3 y D6 cumplidas)
+
+Agrupar sin objetivo llega a la interfaz de punta a punta: elegirlo, correrlo, leerlo, elegir otro
+agrupador, el Nivel 2, descargar las filas con su grupo, exportar, importar y asignar filas
+nuevas.
+
+**Qué cambia en la app:**
+
+- **Configuración.**
+  - «Sin objetivo: agrupar filas parecidas» es la primera opción del selector (P5). Su valor no
+    choca con una columna que se llame igual: se alarga hasta que ninguna coincida, con prueba.
+    Las columnas conservan su nombre como valor, así que las pruebas y los arneses heredados no
+    cambian.
+  - La tarjeta del plan de agrupar dice qué columnas forman el parecido, cuáles solo describen y
+    cuáles quedan fuera, con su razón.
+  - La tarjeta de quién compite explica cómo elige k cada agrupador.
+  - **Con más de 8.000 filas, la nota de la muestra del jerárquico se ve antes de correr**
+    (decisión 8).
+  - Una columna que no sirve como objetivo ofrece «Agrupar filas parecidas en su lugar».
+- **Hook (`useExperiment`).**
+  - La liga en vuelo (`TrainPending`) sirve a las dos ramas. `acceptTrain` valida y arma el
+    resultado según la tarea.
+  - `selectCluster`, `runCluster` y `downloadClusterLabels`.
+  - Elegir otro agrupador manda el payload de agrupar sin roster, y el esquema con que se puntúa
+    pasa a ser el del elegido.
+  - El Nivel 2 arma la unión de agrupar.
+- **Etiquetas por fila (P13, D6).** El runner suma el comando `cluster-labels`. Las etiquetas se
+  piden al worker al descargar, se validan, se escriben al CSV y se olvidan: nunca pasan por el
+  estado (con prueba).
+- **El esquema para puntuar** (`ClusterScoringSchema`): un agrupador recién entrenado no inventa
+  sus centroides (viven en el worker y viajan solo en el archivo). Para puntuar basta con las
+  columnas, el k, el ruido y la regla.
+- **Resultados (`ClusterResults.tsx`):**
+  - la LECTURA es el h1: «existen», «son frágiles» o «no hay estructura», con símbolo y texto, el
+    puntaje contra la referencia nula y la estabilidad en cifras, y la frase de que no hay prueba
+    ni baseline;
+  - **la nota de la muestra del jerárquico** junto a la lectura (si gana) y en su fila, con el
+    porqué en llano (decisión 8);
+  - qué distingue a cada grupo: las columnas que separan (η² o V de Cramér), las cifras en las
+    unidades del usuario (notación científica si son diminutas) y «Ver las otras columnas»;
+  - «fuera de todo grupo» (HDBSCAN);
+  - la tabla de agrupadores, que sirve para elegir: el consenso, el ganador ★, «elegido por ti» ◆,
+    el puntaje explicado y los pendientes del Nivel 2;
+  - las filas con su grupo como CSV local;
+  - asignar filas nuevas y exportar, con la regla y su acuerdo con el ajuste;
+  - la model card de agrupar.
+- **Puntuar:** la pantalla se separa en una carcasa común y lo propio de cada tarea. Al agrupar:
+  el grupo de cada fila desde 1, «fuera de todo grupo», la regla, la distribución y el CSV con
+  `grupo` (y `grupo_probabilidad` con la mezcla gaussiana).
+- **Import:** el resumen dice los grupos, la lectura al entrenar, cómo se eligió, la regla y la
+  muestra del jerárquico. `USABLE_TASKS` suma `agrupar`.
+- **Ficha:** los agrupadores abren la suya, con el estado «ganador por consenso».
+- **Progreso:** el barrido de cada agrupador y la lectura del ganador, con su texto propio.
+- **Model card de agrupar** (`buildClusterCard`): datos, columnas fuera, método con semilla,
+  consenso, la tabla, la lectura, los grupos, la regla, la muestra del jerárquico y los límites.
+  La fuga y la IA dicen «no aplica».
+
+**Gate retirado (¿puede fallar siquiera?).** `pendingSurface` y sus dos pruebas (la que fallaba
+nombrando la superficie y la regla de fuente de dónde podía vivir) se retiran: no queda ninguna
+superficie pendiente, y una llamada nueva ni compilaría. Lo cubre el despacho exhaustivo:
+`matchByTask` obliga a escribir la rama de cada tarea y `tsc` cae si falta una.
+
+**Cambios esperados en pruebas heredadas:**
+
+- `contract-agrupar`, `model-file` y `start-import`: el archivo de agrupar se abre. La tarea
+  desconocida pasa a dos inventadas;
+- `league-ui`: el texto de una columna que no sirve como objetivo suma «o agrupa filas
+  parecidas»;
+- `components`: la model card se arma con `build`.
+
+**Pruebas nuevas** (`agrupar-ui.test.tsx`, 24):
+
+- la lectura en sus tres niveles;
+- los perfiles y la cifra diminuta;
+- la tabla con el consenso y elegir otro;
+- descargar las etiquetas con los nombres del idioma, y «ya no guarda» si no están;
+- la nota de la muestra en la lectura, en la fila, en inglés, ausente sin muestra, y en la model
+  card;
+- la model card en ES y EN;
+- asignar filas nuevas con su CSV;
+- el import;
+- la ficha;
+- la opción de agrupar, primera y sin choque;
+- el progreso;
+- el hook de punta a punta con el fixture real de Pyodide, el lector rechazando `n_rows`, y
+  elegir la mezcla gaussiana.
+
+**e2e:**
+
+- `agrupar.spec.ts`: segmentos → «Los grupos existen: 3 grupos estables», con perfiles, tabla,
+  ficha y el CSV de 301 líneas con `grupo`; sin-grupos → «No hay estructura de grupos» con la
+  tabla visible; y 9.000 filas sembradas → la nota antes de correr y, tras el Nivel 2, en la fila
+  del jerárquico;
+- `agrupar-score.spec.ts`: exportar (sin `labels` ni filas) → recargar → importar → asignar, sin el
+  payload ni el CSV en la red.
+
+**Hallazgo de la construcción:** el CSV sintético de 9.000 filas traía una fila repetida y el
+saneamiento la quitó (8.999). El e2e lee la cifra de la nota en vez de suponerla.
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-04; cada uno restaurado con Python + `cmp` y en verde
+después, 24 de 24):
+
+| Gate | Mutación | Rojo (lo que nombró) |
+| --- | --- | --- |
+| P13: las etiquetas no pasan por el estado | el estado guarda lo validado | «planear → agrupar → resultado validado → descargar las filas con su grupo» |
+| Decisión 8: la nota junto a la lectura | la nota apagada | «junto a la lectura (si gana) y en su fila» |
+| Decisión 8: la nota en la fila | la nota de la fila apagada | «junto a la lectura (si gana) y en su fila» |
+| Una cifra diminuta no es «0» | sin notación científica | «una cifra diminuta (~1e-11) no se muestra como «0»» |
+| El esquema dice si hay «fuera de grupo» | `noise: true` siempre | «planear → agrupar → resultado validado» |
+| Los grupos se cuentan desde 1 | `String(g)` | «el grupo de cada fila (desde 1)» |
+| La opción de agrupar no choca | `if` en vez de `while` | «una columna llamada como la opción de agrupar no choca» |
+| El esquema del elegido | el esquema del ganador se queda | «el esquema pasa a ser el suyo» |
+
+**Verde del árbol completo** (2026-10-04, después de los rojos):
+
+- `pnpm lint`: sin avisos;
+- `pnpm typecheck`: sin errores;
+- `pnpm test`: 655 de 655 en 55 archivos. El motor (`engine/`) está al 97,42 % de sentencias y al
+  98,96 % de líneas;
+- `pnpm test:integration`: 98 pasan y 1 se salta, en 10 archivos;
+- e2e, la suite entera sobre el build de producción (Chromium móvil y escritorio, 3 workers, con
+  carga de 8,5 al empezar): 58 de 58 al primer intento.
+
+**Pausa** (2026-10-04): el usuario pidió parar hasta el día siguiente después del sexto commit. Lo
+que falta de la F3, en orden: el LCP y los botones de ejemplo (decisión 7), los documentos, la
+pasada de capturas con extremos y el e2e de reduced-motion de las pantallas nuevas; después, el STOP.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

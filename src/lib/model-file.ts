@@ -16,6 +16,7 @@ import type { LeakageFinding } from "@/engine/leakage";
 import { isMemberOf, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import {
+  CLUSTER_TASK,
   isTrainTask,
   TRAINABLE_TASKS,
   type TrainTask,
@@ -731,9 +732,12 @@ export type ModelFileErrorKind =
 /** Largo máximo con que se nombra una tarea desconocida (texto del archivo). */
 const MAX_TASK_NAME = 40;
 
-/** Las tareas cuyos archivos la UI sabe abrir: las que ofrece entrenar. S7 (D3):
- *  la multiclase y agrupar se suman con su UI, en la F3. */
-const USABLE_TASKS: readonly TrainTask[] = TRAINABLE_TASKS.filter(isTrainTask);
+/** Las tareas cuyos archivos la UI sabe abrir: las que ofrece entrenar (S7 F3:
+ *  también varias categorías) y agrupar, que se elige sin columna objetivo. */
+const USABLE_TASKS: readonly TrainTask[] = [
+  ...TRAINABLE_TASKS.filter(isTrainTask),
+  CLUSTER_TASK,
+];
 
 export type VersionWarning = {
   component: "pyodide" | "sklearn" | "xgboost" | "lightgbm";

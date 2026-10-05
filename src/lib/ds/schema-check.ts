@@ -7,7 +7,7 @@
 // fuera de rango) no se decide aquí: la calcula score_new_data en Python contra
 // el training_profile.
 import { matchByTask } from "@/engine/despacho";
-import type { ModelSchema } from "@/workers/protocol";
+import type { ScoringSchema } from "@/workers/protocol";
 
 export type SchemaCheck = {
   /** true ⇔ no falta ninguna columna del modelo (extras/objetivo no bloquean). */
@@ -22,13 +22,13 @@ export type SchemaCheck = {
 };
 
 /** Columnas que el modelo espera, en orden determinista (numéricas primero). */
-export function modelFeatures(schema: ModelSchema): string[] {
+export function modelFeatures(schema: ScoringSchema): string[] {
   return [...schema.numeric, ...schema.categorical];
 }
 
 export function checkSchema(
   headers: readonly string[],
-  schema: ModelSchema,
+  schema: ScoringSchema,
 ): SchemaCheck {
   const present = new Set(headers);
   const features = modelFeatures(schema);
