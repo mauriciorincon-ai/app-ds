@@ -18,7 +18,11 @@ import type {
   Level2State,
   RunMeta,
 } from "@/lib/useExperiment";
-import type { BinaryResult, ExperimentResult } from "@/workers/protocol";
+import type {
+  BinaryResult,
+  ExperimentResult,
+  SupervisedResult,
+} from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import { LeagueTable } from "./LeagueTable";
 import { Level2Card } from "./Level2Card";
@@ -45,27 +49,8 @@ const METRIC_KEYS: MetricName[] = [
   "auc",
 ];
 
-export function ResultsScreen({
-  result,
-  datasetName,
-  cols,
-  runMeta,
-  sanitation,
-  edaAlerts,
-  onAgain,
-  onUseModel,
-  onExportModel,
-  exportState,
-  routing,
-  choice,
-  onChoose,
-  modelReady = true,
-  profile = null,
-  forced = [],
-  level2 = { status: "idle" },
-  onRunLevel2,
-}: {
-  result: ExperimentResult;
+type ResultsProps<R> = {
+  result: R;
   datasetName: string | null;
   cols: number;
   runMeta: RunMeta;
@@ -86,7 +71,39 @@ export function ResultsScreen({
   forced?: readonly MemberId[];
   level2?: Level2State;
   onRunLevel2?: (extraForced: MemberId[]) => void;
-}) {
+};
+
+/** S7 (P2): la pantalla de resultados de cada tarea. Las de objetivo comparten la
+ *  de la liga con veredicto; agrupar tendrá la suya (F3, D3). */
+export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
+  return matchByTask(props.result, {
+    binaria: (result) => <SupervisedResults {...props} result={result} />,
+    multiclase: (result) => <SupervisedResults {...props} result={result} />,
+    numerica: (result) => <SupervisedResults {...props} result={result} />,
+    agrupar: () => pendingSurface("ResultsScreen", "agrupar"),
+  });
+}
+
+function SupervisedResults({
+  result,
+  datasetName,
+  cols,
+  runMeta,
+  sanitation,
+  edaAlerts,
+  onAgain,
+  onUseModel,
+  onExportModel,
+  exportState,
+  routing,
+  choice,
+  onChoose,
+  modelReady = true,
+  profile = null,
+  forced = [],
+  level2 = { status: "idle" },
+  onRunLevel2,
+}: ResultsProps<SupervisedResult>) {
   const t = useT();
   const { leakage } = result;
   // Narración a demanda (gate ⭐ S4, bloque C): la plantilla existe siempre;

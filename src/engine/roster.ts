@@ -9,6 +9,10 @@
 // `MEMBER_IDS` sigue siendo el roster de clasificación binaria (el S5 lo usa por
 // nombre); ALL_MEMBER_IDS fija la prioridad GLOBAL y cada roster es una
 // subsecuencia suya (invariante con test), así `byPriority` sirve a las dos.
+//
+// S7 (ADR 016): agrupar suma su roster en el MISMO espacio de ids (P1: un solo
+// espacio, `MemberId`): los cuatro agrupadores van al final de la prioridad global
+// y solo compiten al agrupar.
 import { matchTask } from "@/engine/despacho";
 import type { TrainTask } from "@/engine/tarea";
 import type { Direction } from "@/engine/verdict";
@@ -45,6 +49,15 @@ export const REGRESSION_MEMBER_IDS = [
   "mlp",
 ] as const;
 
+/** S7: los agrupadores, del más simple al más caro (el orden en que E2 llena el
+ *  Nivel 1 y el último desempate del consenso). Paridad con `_CLUSTERERS`. */
+export const CLUSTER_MEMBER_IDS = [
+  "kmeans",
+  "agglomerative",
+  "gmm",
+  "hdbscan",
+] as const;
+
 /** Prioridad global: cada roster por tarea es una subsecuencia de esta lista. */
 export const ALL_MEMBER_IDS = [
   "logistic",
@@ -63,10 +76,12 @@ export const ALL_MEMBER_IDS = [
   "forest",
   "forest_balanced",
   "mlp",
+  ...CLUSTER_MEMBER_IDS,
 ] as const;
 
 export type BinaryMemberId = (typeof MEMBER_IDS)[number];
 export type RegressionMemberId = (typeof REGRESSION_MEMBER_IDS)[number];
+export type ClusterMemberId = (typeof CLUSTER_MEMBER_IDS)[number];
 export type MemberId = (typeof ALL_MEMBER_IDS)[number];
 
 export const ROSTER_BY_TASK: Record<TrainTask, readonly MemberId[]> = {
@@ -74,6 +89,7 @@ export const ROSTER_BY_TASK: Record<TrainTask, readonly MemberId[]> = {
   // S7: los MISMOS 14 en su forma nativa de K clases (P3).
   multiclase: MEMBER_IDS,
   numerica: REGRESSION_MEMBER_IDS,
+  agrupar: CLUSTER_MEMBER_IDS,
 };
 
 /** Rivales honestos del veredicto (no compiten en la liga: la juzgan). */
@@ -85,6 +101,9 @@ export const BASELINE_IDS_BY_TASK = {
   // S7: la clase mayoritaria y la logística multinomial.
   multiclase: BASELINE_IDS,
   numerica: REGRESSION_BASELINE_IDS,
+  // S7: agrupar no tiene baseline (no hay objetivo que adivinar): la vara es la
+  // referencia nula del mismo agrupador (decisión 5 del STOP de la F0).
+  agrupar: [],
 } as const satisfies Record<TrainTask, readonly string[]>;
 
 export type Family =
@@ -94,7 +113,12 @@ export type Family =
   | "neighbors"
   | "boosting"
   | "ensemble"
-  | "neural";
+  | "neural"
+  // S7: agrupadores.
+  | "centroid"
+  | "hierarchical"
+  | "mixture"
+  | "density";
 
 export type MemberInfo = {
   family: Family;
@@ -199,6 +223,27 @@ export const MEMBERS: Record<MemberId, MemberInfo> = {
     balanced: true,
   },
   mlp: { family: "neural", base: "mlp", probabilities: true, balanced: false },
+  // S7: `probabilities` = la regla de asignación da una probabilidad por fila
+  // (solo la mezcla gaussiana).
+  kmeans: {
+    family: "centroid",
+    base: "kmeans",
+    probabilities: false,
+    balanced: false,
+  },
+  agglomerative: {
+    family: "hierarchical",
+    base: "agglomerative",
+    probabilities: false,
+    balanced: false,
+  },
+  gmm: { family: "mixture", base: "gmm", probabilities: true, balanced: false },
+  hdbscan: {
+    family: "density",
+    base: "hdbscan",
+    probabilities: false,
+    balanced: false,
+  },
 };
 
 const PRIORITY = new Map<string, number>(
@@ -229,6 +274,7 @@ export function memberNameKey(id: MemberId, task: TrainTask): string {
   return matchTask(task, {
     binaria: () => shared,
     multiclase: () => shared,
+    agrupar: () => shared,
     numerica: () =>
       (REGRESSION_NAMED_IDS as readonly MemberId[]).includes(id)
         ? `results.candidates.regressionModel.${id}`

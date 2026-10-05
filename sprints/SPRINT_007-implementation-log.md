@@ -46,6 +46,18 @@ Aprobadas con el plan el 2026-10-04. La planeadora las lee aquí; no se escribe 
   maquetada, sin parada. La regla de tres clases dice «en duda, DECISIÓN». Se sigue la orden (G-Plan
   aprobado). El usuario no pidió convertir la de agrupar en parada al aprobar el plan.
 
+Surgidas en la construcción (2026-10-04, F2), se declaran aquí antes del STOP de la F2:
+
+- **D5 · Modelo de costos de agrupar en dos partes.** P7 decía «costo por número de ajustes». La
+  primera medición mostró que contar cada agrupador «como si ganara» sumaba cuatro lecturas cuando
+  solo corre una (9,0 s estimados frente a 2,1 s reales). Ahora el barrido de cada agrupador (corre
+  siempre) se suma, más la lectura más cara posible entre los que corren (solo la del retenido
+  corre). Para las tareas con objetivo la reserva es 0 y su reparto no cambia (probado).
+- **D6 · El flujo de agrupar en el hook (`labelsRef` y el comando de etiquetas) pasa a la F3.** El
+  motor ya entrega las etiquetas por fila SOLO por `cluster_labels`, con su lector y su prueba de
+  que no viajan en el resultado, el esquema ni el archivo (P13). Lo que falta es cablearlo a la
+  pantalla, que llega en la F3 (D3).
+
 ## Fase 0 — constitución + delta del kit + deuda con sitio + datasets + spike
 
 ### Constitución sincronizada (2026-10-04)
@@ -486,6 +498,166 @@ después). Las salidas completas quedaron en el scratchpad de la sesión.
 - `pnpm test:integration`: 83 pasan y 1 se salta, en 9 archivos. Incluye la binaria (`liga`,
   `pipeline`, `scoring`, `sanitation-pipeline`) y la regresión (`regresion`, `modelo-s6`)
   completas; el archivo del S5 y el del S6 importan y puntúan igual.
+
+**CI del tercer commit** (`a38498f`, run 37247919549, `gh pr checks 19`): 6 de 6 `success`
+(`quality`, `integration`, `e2e`, `lighthouse`, Vercel, Vercel Preview Comments). El margen de
+Lighthouse: «✓ ninguna mediana a menos del 10 % de su presupuesto».
+
+**STOP de la F1** (2026-10-04): el usuario respondió «continúa» (después de «Que falta»).
+
+## Fase 2 — motor de agrupar sin objetivo
+
+### Cuarto commit: el motor de agrupar (P5, P7, P8, P11 con consenso, P12, P13; D3)
+
+Agrupar entra al **motor** de punta a punta. La UI lo recibe en la F3 (D3): las pantallas que
+recibirían un resultado de agrupar (`ResultsScreen`, `ScoreScreen` y el resumen del import) lo
+despachan a una rama `pendingSurface`, y el import de un archivo de agrupar se rechaza nombrando la
+tarea.
+
+**Python (`pipeline.py`):**
+
+- `run_experiment` y `fit_member` despachan por tarea con `_by_task`, así que el runner del
+  navegador no cambia. Los caminos supervisados tienen una rama de agrupar que la rechaza nombrando
+  la tarea (`_supervised_only`).
+- **`run_clustering`:** valida su propio payload. Lo rechaza si trae `target`, `train_idx`,
+  `test_idx`, `primary_metric`, `cv_k` o `classes`, nombrándolo. También rechaza un `k_range` fuera
+  del tope, una `distance` que contradice las columnas o un roster con un id supervisado.
+- **Barrido.** El preprocesador se ajusta sobre TODAS las filas (no hay prueba). Los cuatro
+  agrupadores eligen su k:
+  - K-Means y Agglomerative por silueta, sobre UNA muestra sembrada compartida;
+  - GMM por BIC;
+  - HDBSCAN por densidad, con tamaño mínimo max(5, n/50).
+- **Ganador y lectura.** El ganador sale por consenso (`select_consensus`). Después vienen la
+  lectura contra la referencia nula y la estabilidad (R = 10, f = 0,8), los perfiles en las unidades
+  del usuario y la regla de asignación.
+- **Agglomerative con más de 8.000 filas:** se ajusta sobre una muestra sembrada de 8.000. El resto
+  va al centroide más cercano, y `sample_rows` lo declara en la fila, la regla y el esquema.
+- **Exportar e importar.** Viaja la regla de asignación (centroides, radios o la mezcla gaussiana),
+  sin filas de entrenamiento. Las etiquetas por fila solo salen por `cluster_labels` (P13); un
+  modelo importado no las trae.
+
+**TypeScript:**
+
+- **Tareas y despacho.** `TrainTask` suma `agrupar` (`Task`, lo que E1 detecta, no cambia).
+  `taskOf` devuelve la etiqueta del propio valor, así que lo que solo puede ser supervisado no pide
+  la rama de agrupar.
+- **Roster.** Los cuatro agrupadores van al final de `ALL_MEMBER_IDS`, en un solo espacio de ids.
+  Sus fichas `{es, en}` citan las constantes reales.
+- **`verdict.ts`:**
+  - las constantes de agrupar con paridad Python;
+  - `computeClusterReading`;
+  - `selectClusterWinner` (consenso, espejo de Python);
+  - `clusterKCap`.
+- **`prepareClusterRun` (P5)** va aparte de `prepareRun`:
+  - excluye las fechas y las columnas tipo identificador, listadas con su razón;
+  - usa la distancia numérica con ≥ 2 numéricas;
+  - devuelve `too-few-rows-cluster` cuando el tope de k baja de 2.
+- **Lectores.** `validateClusterResult`, `validateClusterMemberFit`, `validateClusterScore` y
+  `validateClusterLabels` recalculan el k de cada criterio, el puntaje comparable, el consenso y la
+  lectura. Rechazan toda etiqueta por fila. `ClusterManifest` rechaza un objetivo o métricas
+  supervisadas coladas.
+- **Pantallas y hook.** `SupervisedResult` y `SupervisedSchema` separan lo que solo una tarea con
+  objetivo tiene. `ResultsScreen`, `ScoreScreen` y el resumen del import despachan por tarea, y
+  `useExperiment` valida la elección manual y la puntuación al agrupar.
+- **Costos en dos partes (D5),** medidos en el flujo real.
+
+**Medición de costos de agrupar** (`scripts/costos-agrupar/`, Chromium 153 sobre el build de
+producción, 12 datasets, 3 corridas por celda salvo 8.000, 12.000 y 20.000 filas).
+
+| Intento | Carga | Qué se tomó |
+| --- | --- | --- |
+| 1 | Los 12 datasets con carga: 17 a 23 con 10 núcleos al empezar, umbral 5 | Nada: se descartó |
+| 2 | 11 de 12 bajo el umbral (2,9 a 4,9); `nubes-20000` terminó en 5,21 ⚠ | Por dataset, el intento limpio (regla de `elegir-intento`) |
+
+- **Sin pedirte nada:** la carga venía de las otras ventanas del usuario; no se le pidió cerrar
+  nada.
+- **Una mancha propia en el intento 2:** al empezar, corrí un `typecheck` de unos segundos (sobre
+  los datasets chicos, con carga registrada de 4,4).
+
+| Agrupador | Barrido (t0 · a · b · c) | Lectura (t0 · a · b · c) |
+| --- | --- | --- |
+| K-Means | 0,026 · 0,0604 · 0,925 · 0,318 | 0,035 · 0,0138 · 1,373 · 0,398 |
+| Agglomerative | 0,008 · 0,0535 · 1,609 · 0,359 | 0,024 · 0,0928 · 1,981 · 0,547 |
+| GMM | 0,047 · 0,042 · 0,997 · 2,482 | 0,047 · 0,0259 · 1,308 · 0,958 |
+| HDBSCAN | 0,002 · 0,0125 · 1,834 · 0,911 | 0,033 · 0,0653 · 2,006 · 0,709 |
+
+- **Error contra el flujo entero medido** (con la lectura del ganador real): de −31 % a +34 %.
+- **Reparto con el techo de 5 s:**
+  - hasta 5.000 filas entran los cuatro (3,78 s estimados con 5.000);
+  - desde 8.000, Agglomerative y HDBSCAN pasan al Nivel 2, porque su lectura crece ~n²;
+  - nadie queda «fuera».
+- **Contra la previsión del spike:** con 12.000 filas el flujo midió 14,6 s, porque ganó HDBSCAN y
+  su lectura tardó 12,6 s. Es justo el caso que el reparto deja para el Nivel 2.
+
+**Prueba de humo con Pyodide real.** Reproduce las celdas del spike:
+
+- `segmentos`: Agglomerative con k = 3 por consenso (3 de 4), gap 0,251 y ARI 0,876, así que la
+  lectura es «existen»;
+- `sin-grupos`: K-Means con k = 10, gap −0,029, así que la lectura es «no hay estructura».
+
+**Cambios esperados en pruebas heredadas:**
+
+- `regresion-motor.test.ts`: la unión de rosters suma el de agrupar.
+- `model-file.test.ts` y `use-hooks.test.tsx`: leen campos supervisados de uniones que ahora
+  incluyen agrupar, y se estrechan con su guarda.
+- `despacho.test.ts`: las ramas de prueba suman `agrupar` y `TRAIN_TASKS` tiene 4.
+
+**Contrato «detectó k de n»** (corrida fresca sobre el árbol final, 2026-10-04):
+
+| Dirección | Carnadas |
+| --- | --- |
+| TS → Python (`_cluster_validate`, Pyodide real) | **16 de 16** |
+| Python → TS | liga **46 de 46** · elegido a mano **8 de 8** · export **8 de 8** · puntuar **8 de 8** · puntuar con ruido **2 de 2** · etiquetas **4 de 4** |
+| Archivo → import | manifiesto de agrupar **14 de 14** |
+
+Los siete fixtures `*-agrupar` los escribió Pyodide real con `CONTRATO_ACTUALIZAR=1`.
+
+**Hallazgos de la construcción:**
+
+- **El gate de fuente del despacho cazó tres comparaciones `raw.task !== "agrupar"`** que escribí
+  en los lectores de agrupar. Pasan a la constante `CLUSTER_TASK`, como los supervisados cotejan
+  contra su `task`.
+- **Una carnada mal nombrada.** Mover la cuota de ruido de HDBSCAN se nombraba `score`, porque el
+  puntaje se recalcula con el ruido. Ahora el ruido se coteja con los tamaños antes que el puntaje.
+- **`next build` regeneró `next-env.d.ts`** (las rutas de tipos del modo producción). Ese archivo
+  no se edita, y volvió a su versión comiteada.
+- **El parser de Turbopack no acepta un `in` dentro de un parámetro por defecto.** `clusterSent`
+  quedó con un solo parámetro.
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-04; cada uno restaurado con Python + `cmp` y en verde
+después):
+
+| Gate | Mutación | Rojo (lo que nombró) | Verde |
+| --- | --- | --- | --- |
+| Lector: ninguna etiqueta por fila (P13) | sin `"labels" in r` | `labels → aceptada` | 11/11 |
+| Lector: el consenso recalculado | sin el cotejo de `winner` | `winner →` | 11/11 |
+| Lector: la lectura recalculada | sin el cotejo de `reading.level` | `reading.level → aceptada` | 11/11 |
+| Lector: el puntaje = silueta × (1 − ruido) | sin el recálculo | `league[0].score → aceptada` | 11/11 |
+| Manifiesto: sin objetivo colado | `target` fuera de `SUPERVISED_ONLY` | `manifest.target` | 11/11 |
+| Regla de la lectura (gap) | `CLUSTER_GAP_MIN = 0.05` | «el borde: justo en el umbral cuenta» | 18/18 |
+| Consenso: a igual votos y puntaje, el k menor | `k` en vez de `-k` | «…luego el k menor» | 18/18 |
+| Tope de k | sin el `- 1` | «…acotado para que cada re-muestreo…» | 18/18 |
+| Distancia numérica con ≥ 2 numéricas | `>= 1` | «con menos de dos numéricas…» | 18/18 |
+| Reserva de la lectura al agrupar | la reserva × 0 | «…los de lectura cara pasan al Nivel 2» | 18/18 |
+| La reserva no toca a las tareas con objetivo | reserva 1 s con objetivo | 4 pruebas de `planLevel2` de `encarrilador.test.ts` | 19/19 |
+| Paridad de constantes | `CLUSTER_GAP_MIN = 0.15` en Python | «las constantes de agrupar…» | 15/15 |
+| Paridad de constantes | `AGGLO_MAX_ROWS = 12000` en Python | «las constantes de agrupar…» | 15/15 |
+| Paridad del roster y su orden | `agglomerative` antes que `kmeans` | «…los agrupadores de CLUSTER_MEMBER_IDS» | 15/15 |
+| Despacho de Python con 4 tareas | sin la rama `agrupar` de `_test_metrics` | `src/lib/ds/pipeline.py:` (archivo:línea) | 12/12 |
+| Python: sin objetivo | `target` fuera de la lista prohibida | `train:target → aceptada` | 1/1 |
+| Python: tope de k | sin `_k_cap` | `train:k_range → aceptada` | 1/1 |
+| Python: el radio de HDBSCAN al puntuar | radio infinito | «fuera de todo grupo» (la fila lejana dio 1, no −1) | 1/1 |
+| Python: Agglomerative en modo muestra | sin el modo muestra | «modo muestra» (el lector rechazó la fila) | 1/1 |
+| Python: P13 | `"labels"` en el resultado | «P13» (el resultado contenía `"labels"`) | 1/1 |
+
+**Verde del árbol completo** (2026-10-04, después de los rojos):
+
+- `pnpm lint`: sin avisos;
+- `pnpm typecheck`: sin errores;
+- `pnpm test`: 621 de 621 en 54 archivos. El motor (`engine/`) está al 97,16 % de sentencias y al
+  98,66 % de líneas;
+- `pnpm test:integration`: 98 pasan y 1 se salta, en 10 archivos. Incluye la binaria, la
+  regresión, la multiclase y agrupar.
 
 ## Fricciones del kit (SEPARADAS del producto)
 

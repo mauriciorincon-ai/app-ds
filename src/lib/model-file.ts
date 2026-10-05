@@ -10,18 +10,24 @@ import {
   matchByTask,
   taskOf,
   type ByTask,
+  type TagOf,
 } from "@/engine/despacho";
 import type { LeakageFinding } from "@/engine/leakage";
 import { isMemberOf, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
-import { TRAINABLE_TASKS, type Task, type TrainTask } from "@/engine/tarea";
-import type {
-  MetricName,
-  Metrics,
-  MulticlassMetrics,
-  PrimaryMetric,
-  RegressionMetrics,
-  Verdict,
+import {
+  isTrainTask,
+  TRAINABLE_TASKS,
+  type TrainTask,
+} from "@/engine/tarea";
+import {
+  computeClusterReading,
+  type MetricName,
+  type Metrics,
+  type MulticlassMetrics,
+  type PrimaryMetric,
+  type RegressionMetrics,
+  type Verdict,
 } from "@/engine/verdict";
 import {
   arr,
@@ -38,6 +44,9 @@ import {
   type Validator,
 } from "@/lib/validate";
 import {
+  clusterAssignmentV,
+  clusterReadingV,
+  clusterSchemaV,
   metricsV,
   multiclassClassesV,
   multiclassMetricsV,
@@ -47,9 +56,14 @@ import {
 } from "@/workers/contract";
 import type {
   BinaryModelSchema,
+  ClusterAssignment,
+  ClusterMemberStatus,
+  ClusterModelSchema,
+  ClusterReadingResult,
   ExperimentResult,
   ExportResult,
   MemberStatus,
+  SupervisedResult,
   MulticlassModelSchema,
   RegressionModelSchema,
   RuntimeVersions,
@@ -181,10 +195,44 @@ export type MulticlassManifest = {
   selection: ManifestSelection<"balanced_accuracy">;
 };
 
-export type ModelManifest =
+/** S7 (P9): el manifiesto de un AGRUPAMIENTO. Sin objetivo, sin prueba, sin fuga
+ *  y sin métricas de clase; la regla de asignación vive en el esquema (centroides,
+ *  radios) y la lectura dice cuánto creerle. Ni etiquetas ni perfiles (P13). */
+export type ClusterManifest = {
+  task: "agrupar";
+  app: { name: typeof APP_NAME; version: string };
+  created_at: string;
+  dataset: { name: string; n_rows: number };
+  schema: ClusterModelSchema;
+  training_profile: TrainingProfile;
+  groups: number;
+  reading: ClusterReadingResult;
+  assignment: ClusterAssignment;
+  versions: RuntimeVersions;
+  payload_sha256: string;
+  payload_encoding: typeof PAYLOAD_ENCODING;
+  model_name: MemberId;
+  sanitation?: BinaryManifest["sanitation"];
+  league: {
+    name: MemberId;
+    status: ClusterMemberStatus;
+    k: number | null;
+    score: number | null;
+  }[];
+  selection: {
+    by: "consensus" | "user";
+    consensus_winner: MemberId;
+    k: number;
+  };
+};
+
+/** Los manifiestos de una tarea con objetivo (partición, fuga, veredicto). */
+export type SupervisedManifest =
   | BinaryManifest
   | MulticlassManifest
   | RegressionManifest;
+
+export type ModelManifest = SupervisedManifest | ClusterManifest;
 
 export function isBinaryManifest(
   manifest: ModelManifest,
@@ -193,11 +241,12 @@ export function isBinaryManifest(
     binaria: () => true,
     multiclase: () => false,
     numerica: () => false,
+    agrupar: () => false,
   });
 }
 
 /** La tarea de un manifiesto (sin `task` = binaria, P8). */
-export function manifestTask(manifest: ModelManifest): TrainTask {
+export function manifestTask<M extends ModelManifest>(manifest: M): TagOf<M> {
   return taskOf(manifest);
 }
 
@@ -406,12 +455,75 @@ const multiclassManifestV = obj({
   }),
 });
 
+// S7 (P9): carnadas en tests/unit/model-file.test.ts — una por campo nuevo.
+const clusterMember: Validator = (v, path) =>
+  isMemberOf("agrupar", v) ? null : path;
+const clusterManifestShapeV = obj({
+  task: oneOf(["agrupar"]),
+  app: obj({ name: oneOf([APP_NAME]), version: str }),
+  created_at: str,
+  dataset: obj({ name: str, n_rows: num }),
+  schema: clusterSchemaV,
+  training_profile: trainingProfileV,
+  groups: refine(int, (v) => (v as number) >= 2),
+  reading: clusterReadingV,
+  assignment: clusterAssignmentV,
+  versions: versionsV,
+  payload_sha256: str,
+  payload_encoding: oneOf([PAYLOAD_ENCODING]),
+  model_name: clusterMember,
+  sanitation: sanitationV,
+  league: arr(
+    obj({
+      name: clusterMember,
+      status: oneOf(["ok", "no-converge", "no-structure", "error"]),
+      k: nullable(int),
+      score: nullable(num),
+    }),
+    1,
+  ),
+  selection: obj({
+    by: oneOf(["consensus", "user"]),
+    consensus_winner: clusterMember,
+    k: refine(int, (v) => (v as number) >= 2),
+  }),
+});
+/** Lo que un manifiesto de agrupar NO puede traer: es de una tarea con objetivo. */
+const SUPERVISED_ONLY = [
+  "target",
+  "metrics",
+  "verdict",
+  "leakage",
+  "positive_rate",
+] as const;
+const clusterManifestV: Validator = (v, path) => {
+  const at = (field: string) => (path ? `${path}.${field}` : field);
+  if (isRecord(v)) {
+    const colado = SUPERVISED_ONLY.find((key) => key in v);
+    if (colado) return at(colado);
+  }
+  const shape = clusterManifestShapeV(v, path);
+  if (shape) return shape;
+  const m = v as ClusterManifest;
+  if (m.groups !== m.schema.groups) return at("groups");
+  if (
+    m.reading.level !==
+    computeClusterReading(m.reading.gap, m.reading.stability.ari_mean)
+  ) {
+    return at("reading.level");
+  }
+  if ((m.model_name === m.selection.consensus_winner) !== (m.selection.by === "consensus"))
+    return at("selection.by");
+  return null;
+};
+
 /** El validador del manifiesto de cada tarea que el motor entrena. Es un `Record`
  *  completo: sumar una tarea a `TrainTask` sin su validador no compila (AU-S6-03). */
 const MANIFEST_V_BY_TASK: ByTask<Validator> = {
   binaria: binaryManifestV,
   multiclase: multiclassManifestV,
   numerica: regressionManifestV,
+  agrupar: clusterManifestV,
 };
 
 function isKnownManifestTask(task: string): task is TrainTask {
@@ -474,28 +586,30 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
           coercions: sanitation.coercions,
         }
       : undefined;
+  // Lo que todo archivo lleva, de cualquier tarea.
   const common = {
     app: { name: APP_NAME, version: APP_VERSION },
     created_at: (input.date ?? new Date()).toISOString(),
-    dataset: {
-      name: input.datasetName,
-      n_train: result.nTrain,
-      n_test: result.nTest,
-    },
     training_profile: exported.training_profile,
-    leakage: result.leakage,
     versions: exported.versions,
     payload_sha256,
     payload_encoding: PAYLOAD_ENCODING,
     model_name: result.modelName,
     ...(sanitationSummary ? { sanitation: sanitationSummary } : {}),
   } as const;
-  const selection = {
-    by: result.selection.by,
-    cv_winner: result.selection.cvWinner,
-    k: result.selection.k,
-    rule: result.selection.rule,
-  };
+  // Lo de una tarea con objetivo: la partición, la fuga y la selección por CV.
+  const supervised = (r: SupervisedResult) =>
+    ({
+      ...common,
+      dataset: { name: input.datasetName, n_train: r.nTrain, n_test: r.nTest },
+      leakage: r.leakage,
+    }) as const;
+  const selectionOf = (r: SupervisedResult) => ({
+    by: r.selection.by,
+    cv_winner: r.selection.cvWinner,
+    k: r.selection.k,
+    rule: r.selection.rule,
+  });
   const league = <M>(
     rows: readonly {
       name: MemberId;
@@ -519,43 +633,74 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
   const manifest: ModelManifest = matchByTask(result, {
     binaria: (binary): BinaryManifest => ({
       task: "binaria",
-      ...common,
+      ...supervised(binary),
       schema: matchByTask(exported.schema, {
         binaria: (schema) => schema,
         multiclase: mismatch,
         numerica: mismatch,
+        agrupar: mismatch,
       }),
       metrics: { model: binary.model, baselines: binary.baselines },
       positive_rate: binary.positiveRate,
       verdict: binary.verdict,
       league: league(binary.league),
-      selection: { ...selection, metric: binary.selection.metric },
+      selection: { ...selectionOf(binary), metric: binary.selection.metric },
     }),
     multiclase: (multi): MulticlassManifest => ({
       task: "multiclase",
-      ...common,
+      ...supervised(multi),
       schema: matchByTask(exported.schema, {
         binaria: mismatch,
         multiclase: (schema) => schema,
         numerica: mismatch,
+        agrupar: mismatch,
       }),
       metrics: { model: multi.model, baselines: multi.baselines },
       verdict: multi.verdict,
       league: league(multi.league),
-      selection: { ...selection, metric: multi.selection.metric },
+      selection: { ...selectionOf(multi), metric: multi.selection.metric },
     }),
     numerica: (regression): RegressionManifest => ({
       task: "numerica",
-      ...common,
+      ...supervised(regression),
       schema: matchByTask(exported.schema, {
         binaria: mismatch,
         multiclase: mismatch,
         numerica: (schema) => schema,
+        agrupar: mismatch,
       }),
       metrics: { model: regression.model, baselines: regression.baselines },
       verdict: regression.verdict,
       league: league(regression.league),
-      selection: { ...selection, metric: "mae" },
+      selection: { ...selectionOf(regression), metric: "mae" },
+    }),
+    // S7 (P9): sin objetivo, sin prueba, sin fuga y sin métricas de clase: la
+    // lectura del agrupador y su regla de asignación (en el esquema). Ni una
+    // etiqueta por fila ni un perfil de grupo (datos del usuario, P13).
+    agrupar: (cluster): ClusterManifest => ({
+      task: "agrupar",
+      ...common,
+      dataset: { name: input.datasetName, n_rows: cluster.nRows },
+      schema: matchByTask(exported.schema, {
+        binaria: mismatch,
+        multiclase: mismatch,
+        numerica: mismatch,
+        agrupar: (schema) => schema,
+      }),
+      groups: cluster.profiles.groups.length,
+      reading: cluster.reading,
+      assignment: cluster.assignment,
+      league: cluster.league.map((row) => ({
+        name: row.name,
+        status: row.status,
+        k: row.k,
+        score: row.score,
+      })),
+      selection: {
+        by: cluster.selection.by,
+        consensus_winner: cluster.selection.consensusWinner,
+        k: cluster.selection.k,
+      },
     }),
   });
   return {
@@ -585,6 +730,10 @@ export type ModelFileErrorKind =
 
 /** Largo máximo con que se nombra una tarea desconocida (texto del archivo). */
 const MAX_TASK_NAME = 40;
+
+/** Las tareas cuyos archivos la UI sabe abrir: las que ofrece entrenar. S7 (D3):
+ *  la multiclase y agrupar se suman con su UI, en la F3. */
+const USABLE_TASKS: readonly TrainTask[] = TRAINABLE_TASKS.filter(isTrainTask);
 
 export type VersionWarning = {
   component: "pyodide" | "sklearn" | "xgboost" | "lightgbm";
@@ -636,7 +785,7 @@ export async function validateModelFile(
   text: string,
   // S6: las tareas que la UI sabe usar (las mismas que ofrece entrenar). Un
   // archivo íntegro de otra tarea se rechaza nombrándola, no se abre a medias.
-  usable: readonly Task[] = TRAINABLE_TASKS,
+  usable: readonly TrainTask[] = USABLE_TASKS,
 ): Promise<ModelFileValidation> {
   let raw: unknown;
   try {

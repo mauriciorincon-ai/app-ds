@@ -16,9 +16,11 @@
 import { matchTask } from "@/engine/despacho";
 import type {
   BinaryMemberId,
+  ClusterMemberId,
   MemberId,
   RegressionMemberId,
 } from "@/engine/roster";
+import { AGGLO_MAX_ROWS } from "@/engine/verdict";
 import type { TrainTask } from "@/engine/tarea";
 
 export type CostCoefficients = { t0: number; a: number; b: number; c: number };
@@ -93,12 +95,44 @@ export const MULTICLASS_COST_COEFFICIENTS: Record<
   mlp: { t0: 0.083, a: 0.694, b: 0.666, c: 0.667, d: 0.415 },
 };
 
+/**
+ * S7 (ADR 016): agrupar no hace CV. Cada agrupador BARRE sus k sobre todas las
+ * filas (siempre corre), y solo el retenido mide su LECTURA (referencia nula +
+ * estabilidad). Dos modelos por agrupador, medidos en el flujo real del producto
+ * (scripts/costos-agrupar, Chromium sobre el build de producción):
+ *   t ≈ t0 + a·(filas/1000)^b·(ancho/5)^c
+ * Contra el flujo entero medido, con la lectura del ganador real: de −31 % a +34 %
+ * (sprints/SPRINT_007-implementation-log.md, F2). El BARRIDO:
+ */
+export const CLUSTER_COST_COEFFICIENTS: Record<
+  ClusterMemberId,
+  CostCoefficients
+> = {
+  kmeans: { t0: 0.026, a: 0.0604, b: 0.925, c: 0.318 },
+  agglomerative: { t0: 0.008, a: 0.0535, b: 1.609, c: 0.359 },
+  gmm: { t0: 0.047, a: 0.042, b: 0.997, c: 2.482 },
+  hdbscan: { t0: 0.002, a: 0.0125, b: 1.834, c: 0.911 },
+};
+
+/** S7: la LECTURA del agrupador retenido (referencia nula + estabilidad + perfiles).
+ *  La de HDBSCAN y la de Agglomerative crecen ~n²: con miles de filas, son lo caro. */
+export const CLUSTER_READING_COEFFICIENTS: Record<
+  ClusterMemberId,
+  CostCoefficients
+> = {
+  kmeans: { t0: 0.035, a: 0.0138, b: 1.373, c: 0.398 },
+  agglomerative: { t0: 0.024, a: 0.0928, b: 1.981, c: 0.547 },
+  gmm: { t0: 0.047, a: 0.0259, b: 1.308, c: 0.958 },
+  hdbscan: { t0: 0.033, a: 0.0653, b: 2.006, c: 0.709 },
+};
+
 /** Los coeficientes de cada tarea. Un `Record` completo por tarea: sumar una a
  *  `TrainTask` sin sus coeficientes no compila (AU-S6-03). */
 export const COST_COEFFICIENTS_BY_TASK = {
   binaria: COST_COEFFICIENTS,
   multiclase: MULTICLASS_COST_COEFFICIENTS,
   numerica: REGRESSION_COST_COEFFICIENTS,
+  agrupar: CLUSTER_COST_COEFFICIENTS,
 } as const satisfies Record<
   TrainTask,
   Partial<Record<MemberId, CostCoefficients>>
@@ -145,6 +179,7 @@ function classFactor(
   return matchTask(task, {
     binaria: () => 1,
     numerica: () => 1,
+    agrupar: () => 1,
     multiclase: () => {
       if (input.classes === undefined) {
         throw new Error("costos: la multiclase necesita el número de clases");
@@ -167,6 +202,76 @@ function classFactor(
  * · (f/0.8)^b; la CV son k ajustes sobre (k−1)/k y el final, uno sobre todo train.
  */
 export function estimateMemberSeconds(
+  member: MemberId,
+  input: CostInput,
+  task: TrainTask,
+): number {
+  return matchTask(task, {
+    binaria: () => leagueMemberSeconds(member, input, task),
+    multiclase: () => leagueMemberSeconds(member, input, task),
+    numerica: () => leagueMemberSeconds(member, input, task),
+    agrupar: () => clusterMemberSeconds(member, input),
+  });
+}
+
+/** Ancho de referencia del ajuste de agrupar (columnas de la distancia de los
+ *  sintéticos medidos). */
+const CLUSTER_REFERENCE_WIDTH = 5;
+
+/** Segundos de una parte del flujo de un agrupador. Agglomerative, en modo muestra
+ *  por encima de AGGLO_MAX_ROWS, cuesta como con AGGLO_MAX_ROWS filas. */
+function clusterSeconds(
+  table: Partial<Record<MemberId, CostCoefficients>>,
+  member: MemberId,
+  input: CostInput,
+): number {
+  const coefficients = table[member];
+  if (!coefficients) {
+    throw new Error(`costos: ${member} no compite en la tarea agrupar`);
+  }
+  const { t0, a, b, c } = coefficients;
+  const rows = Math.max(
+    member === "agglomerative"
+      ? Math.min(input.nTrain, AGGLO_MAX_ROWS)
+      : input.nTrain,
+    1,
+  );
+  const width = Math.max(input.width, 1);
+  return t0 + a * (rows / 1000) ** b * (width / CLUSTER_REFERENCE_WIDTH) ** c;
+}
+
+/** S7: el barrido de k de un agrupador (corre siempre). */
+function clusterMemberSeconds(member: MemberId, input: CostInput): number {
+  return clusterSeconds(CLUSTER_COST_COEFFICIENTS, member, input);
+}
+
+/**
+ * Lo que la corrida suma UNA vez, además de cada miembro, para elegir y abrir el
+ * resultado. Con objetivo, nada: el test de cada miembro ya está en su estimación.
+ * Al agrupar, la lectura del retenido — que puede ser cualquiera de los que corren:
+ * se reserva la más cara (S7).
+ */
+export function selectionReserveSeconds(
+  members: readonly MemberId[],
+  input: CostInput,
+  task: TrainTask,
+): number {
+  const none = () => 0;
+  return matchTask(task, {
+    binaria: none,
+    multiclase: none,
+    numerica: none,
+    agrupar: () =>
+      Math.max(
+        0,
+        ...members.map((id) =>
+          clusterSeconds(CLUSTER_READING_COEFFICIENTS, id, input),
+        ),
+      ),
+  });
+}
+
+function leagueMemberSeconds(
   member: MemberId,
   input: CostInput,
   task: TrainTask,

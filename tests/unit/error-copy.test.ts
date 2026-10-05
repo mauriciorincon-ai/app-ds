@@ -21,6 +21,7 @@ const KINDS: Record<WorkerErrorKind, true> = {
   "too-few-rows": true,
   "too-few-rows-quantity": true,
   "too-few-rows-per-class": true,
+  "too-few-rows-cluster": true,
   contract: true,
   "league-empty": true,
   "csv-unusable": true,

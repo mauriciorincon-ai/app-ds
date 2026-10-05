@@ -12,6 +12,8 @@ import {
   MAX_MODEL_FILE_BYTES,
   validateModelFile,
   type ModelFile,
+  type ModelManifest,
+  type SupervisedManifest,
   type ModelFileErrorKind,
   type VersionWarning,
 } from "@/lib/model-file";
@@ -265,24 +267,41 @@ function ImportModelSection({
   );
 }
 
-// Resumen honesto del manifiesto ANTES de continuar: qué modelo es, de qué
-// dataset, con qué veredicto — y la advertencia franca si las versiones del
-// archivo no son las de esta app.
-function ImportSummary({
-  file,
-  warnings,
-  locale,
-  onConfirm,
-  onCancel,
-}: {
-  file: ModelFile;
+type ImportSummaryProps<M> = {
+  manifest: M;
   warnings: VersionWarning[];
   locale: string;
   onConfirm: () => void;
   onCancel: () => void;
-}) {
+};
+
+// Resumen honesto del manifiesto ANTES de continuar: qué modelo es, de qué
+// dataset, con qué veredicto — y la advertencia franca si las versiones del
+// archivo no son las de esta app. S7: el de agrupar tiene su resumen (F3, D3).
+function ImportSummary({
+  file,
+  ...rest
+}: Omit<ImportSummaryProps<ModelManifest>, "manifest"> & { file: ModelFile }) {
+  return matchByTask(file.manifest, {
+    binaria: (manifest) => <SupervisedImportSummary {...rest} manifest={manifest} />,
+    multiclase: (manifest) => (
+      <SupervisedImportSummary {...rest} manifest={manifest} />
+    ),
+    numerica: (manifest) => (
+      <SupervisedImportSummary {...rest} manifest={manifest} />
+    ),
+    agrupar: () => pendingSurface("ImportSummary", "agrupar"),
+  });
+}
+
+function SupervisedImportSummary({
+  manifest,
+  warnings,
+  locale,
+  onConfirm,
+  onCancel,
+}: ImportSummaryProps<SupervisedManifest>) {
   const t = useT();
-  const { manifest } = file;
   const date = new Date(manifest.created_at).toLocaleDateString(
     locale === "es" ? "es-ES" : "en-US",
     { year: "numeric", month: "long", day: "numeric" },

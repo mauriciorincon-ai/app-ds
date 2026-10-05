@@ -5,11 +5,21 @@
 // Se carga con import() dinámico junto con FichaModelo (budget de script).
 // Paridad (ids = roster, ambos idiomas completos): tests/unit/modelos.test.ts.
 import { MLP_MIN_ROWS } from "@/engine/encarrilador";
+import {
+  AGGLO_MAX_ROWS,
+  HDBSCAN_MIN_CLUSTER_SIZE,
+  HDBSCAN_ROWS_PER_MIN_CLUSTER,
+} from "@/engine/verdict";
 import type {
   BinaryMemberId,
   MemberId,
   RegressionMemberId,
 } from "@/engine/roster";
+
+/** Miles con el separador de cada idioma («8.000» / «8,000»). */
+export const thousands = (n: number, sep: "." | ",") =>
+  String(n).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+const HDBSCAN_MIN_SHARE_PCT = 100 / HDBSCAN_ROWS_PER_MIN_CLUSTER;
 
 export type Bilingual = { es: string; en: string };
 
@@ -364,6 +374,96 @@ export const FICHAS: Record<FichaId, Ficha> = {
     cost: {
       es: "Ninguno.",
       en: "None.",
+    },
+  },
+  // S7 (ADR 016): los agrupadores. Agrupar no tiene objetivo: estas fichas no
+  // hablan de clases ni de aciertos, sino de qué forma de grupo encuentra cada uno.
+  kmeans: {
+    what: {
+      es: "Reparte las filas en k grupos alrededor de k centros: cada fila va al centro más cercano y cada centro se mueve al medio de su grupo, hasta que nada cambia.",
+      en: "Splits the rows into k groups around k centres: each row joins the nearest centre and each centre moves to the middle of its group, until nothing changes.",
+    },
+    goodFor: {
+      es: "Grupos redondeados y de tamaño parecido en columnas numéricas; tablas grandes, porque es rápido.",
+      en: "Roundish groups of similar size in numeric columns; big tables, because it is fast.",
+    },
+    notFor: {
+      es: "Grupos alargados, anidados o de densidades muy distintas: igual los corta en pedazos redondos. Y siempre encuentra k grupos, aunque no haya ninguno.",
+      en: "Elongated, nested or very uneven groups: it still slices them into round pieces. And it always finds k groups, even when there are none.",
+    },
+    watch: {
+      es: "Por eso la lectura lo compara con lo que él mismo encuentra en datos sin estructura: si no lo supera, sus grupos son un reparto, no un hallazgo.",
+      en: "That is why the reading compares it with what it finds in data with no structure at all: if it doesn't beat that, its groups are a split, not a finding.",
+    },
+    cost: {
+      es: "Bajo: con unos pocos miles de filas, una fracción de segundo por cada k que prueba.",
+      en: "Low: with a few thousand rows, a fraction of a second for each k it tries.",
+    },
+  },
+  agglomerative: {
+    what: {
+      es: "Empieza con cada fila sola y une, paso a paso, los dos grupos que menos aumentan la dispersión (el método de Ward). Cortar ese árbol a distintas alturas da distintos k.",
+      en: "Starts with every row on its own and, step by step, merges the two groups that add the least spread (Ward's method). Cutting that tree at different heights gives different k.",
+    },
+    goodFor: {
+      es: "Ver cómo se anidan unos grupos dentro de otros; tablas medianas; un resultado que no depende del azar.",
+      en: "Seeing how some groups nest inside others; medium-sized tables; a result that doesn't depend on chance.",
+    },
+    notFor: {
+      es: `Tablas grandes: la memoria que pide crece con el cuadrado de las filas. Con más de ${thousands(AGGLO_MAX_ROWS, ".")} filas se ajusta sobre una muestra de ${thousands(AGGLO_MAX_ROWS, ".")} y las demás van al grupo más cercano, para que la pestaña no se cierre en un teléfono. La app lo dice junto al resultado.`,
+      en: `Big tables: the memory it needs grows with the square of the rows. With more than ${thousands(AGGLO_MAX_ROWS, ",")} rows it is fitted on a sample of ${thousands(AGGLO_MAX_ROWS, ",")} and the rest go to the nearest group, so the tab doesn't crash on a phone. The app says so next to the result.`,
+    },
+    watch: {
+      es: "Si dice «ajustado sobre una muestra», su estabilidad se midió dentro de esa muestra.",
+      en: "If it says «fitted on a sample», its stability was measured within that sample.",
+    },
+    cost: {
+      es: "Bajo con pocas filas; con miles, unos segundos (por eso la muestra).",
+      en: "Low with few rows; with thousands, a few seconds (hence the sample).",
+    },
+  },
+  gmm: {
+    what: {
+      es: "Supone que los datos son una mezcla de nubes con forma de campana —elípticas, de tamaños y orientaciones distintas— y estima cuántas hay y dónde está cada una.",
+      en: "Assumes the data are a mix of bell-shaped clouds —elliptical, of different sizes and orientations— and estimates how many there are and where each one sits.",
+    },
+    goodFor: {
+      es: "Grupos elípticos o que se solapan; cuando te sirve una probabilidad de pertenencia para cada fila.",
+      en: "Elliptical or overlapping groups; when a membership probability for each row is useful.",
+    },
+    notFor: {
+      es: "Formas que no son nubes (anillos, cadenas) y pocas filas para muchas columnas: no le alcanzan los datos para estimar cada nube.",
+      en: "Shapes that aren't clouds (rings, chains) and few rows for many columns: there isn't enough data to estimate every cloud.",
+    },
+    watch: {
+      es: "Elige su k con el BIC (premia ajustar bien y castiga sumar nubes), no con la silueta: puede discrepar de los demás, y el consenso lo deja a la vista.",
+      en: "It picks its k with BIC (rewards a good fit, penalises extra clouds), not with the silhouette: it may disagree with the others, and the consensus shows it.",
+    },
+    cost: {
+      es: "Medio: varias veces K-Means, porque ajusta una mezcla para cada k.",
+      en: "Medium: several times K-Means, because it fits a mixture for every k.",
+    },
+  },
+  hdbscan: {
+    what: {
+      es: "Busca las zonas donde las filas están apretadas y las separa de las zonas ralas. No pide k: los grupos salen de la densidad, y lo que no cae en ninguna zona densa queda «fuera de todo grupo».",
+      en: "Looks for regions where rows are packed together and separates them from sparse regions. It doesn't ask for k: groups come from the density, and whatever falls in no dense region is left «outside every group».",
+    },
+    goodFor: {
+      es: "Grupos de formas raras o de tamaños muy distintos; datos con filas sueltas que no pertenecen a ningún grupo.",
+      en: "Oddly shaped groups or groups of very different sizes; data with stray rows that belong to no group.",
+    },
+    notFor: {
+      es: `Pocas filas o densidad pareja: puede dejar casi todo fuera de los grupos. Un grupo necesita al menos ${HDBSCAN_MIN_CLUSTER_SIZE} filas, o el ${HDBSCAN_MIN_SHARE_PCT} % de la tabla si es más.`,
+      en: `Few rows or even density: it may leave almost everything outside the groups. A group needs at least ${HDBSCAN_MIN_CLUSTER_SIZE} rows, or ${HDBSCAN_MIN_SHARE_PCT}% of the table if that is more.`,
+    },
+    watch: {
+      es: "Mira cuántas filas quedan «fuera de todo grupo»: su puntaje las descuenta (silueta × parte agrupada), así que no gana dejando fuera las filas difíciles.",
+      en: "Watch how many rows end up «outside every group»: its score discounts them (silhouette × grouped share), so it can't win by leaving the hard rows out.",
+    },
+    cost: {
+      es: "Bajo con pocas filas; con decenas de miles, el más caro de los cuatro, sobre todo al medir su estabilidad.",
+      en: "Low with few rows; with tens of thousands, the most expensive of the four, especially when its stability is measured.",
     },
   },
   // S6: el baseline constante de estimar una cantidad (decidido en el STOP de la F0).

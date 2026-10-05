@@ -87,7 +87,12 @@ describe("despacho exhaustivo — conducta (gate 3)", () => {
 
   it("una tarea sin rama falla NOMBRÁNDOLA (un dato que llegó igual)", () => {
     const unknown = "serie-tiempo" as TrainTask;
-    const branches = { binaria: () => 1, multiclase: () => 3, numerica: () => 2 };
+    const branches = {
+      binaria: () => 1,
+      multiclase: () => 3,
+      numerica: () => 2,
+      agrupar: () => 4,
+    };
     expect(() => matchTask(unknown, branches)).toThrow(
       "tarea sin rama propia: serie-tiempo",
     );
@@ -98,6 +103,7 @@ describe("despacho exhaustivo — conducta (gate 3)", () => {
 
   it("TRAIN_TASKS sale de un Record completo (no de una lista a mano)", () => {
     expect([...TRAIN_TASKS].sort()).toEqual([
+      "agrupar",
       "binaria",
       "multiclase",
       "numerica",

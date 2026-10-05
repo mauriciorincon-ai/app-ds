@@ -10,6 +10,7 @@
 import {
   calibrationFactor,
   estimateMemberSeconds,
+  selectionReserveSeconds,
   type CostInput,
 } from "@/engine/costos";
 import { matchTask } from "@/engine/despacho";
@@ -112,6 +113,7 @@ function classCount(profile: RouteProfile): number | null {
       return profile.classes;
     },
     numerica: () => null,
+    agrupar: () => null,
   });
 }
 
@@ -149,6 +151,12 @@ export function routeModels(
   const task = profile.task;
   const forcedSet = new Set(forced);
   const placements: Placement[] = [];
+  // S7: al agrupar, la lectura del retenido se suma UNA vez (la más cara posible
+  // entre los que corren); con objetivo, la reserva es 0.
+  const reserve = (ids: readonly MemberId[]) =>
+    selectionReserveSeconds(ids, cost, task);
+  const inLevel1 = () =>
+    placements.filter((p) => p.level === 1).map((p) => p.id);
   let used = 0;
   for (const id of ROSTER_BY_TASK[task]) {
     const estimateS = estimateMemberSeconds(id, cost, task);
@@ -165,11 +173,12 @@ export function routeModels(
       placements.push({
         id,
         level: 1,
-        reason: estimateS <= ceilingS ? "fits-ceiling" : "always-first",
+        reason:
+          estimateS + reserve([id]) <= ceilingS ? "fits-ceiling" : "always-first",
         estimateS,
       });
       used += estimateS;
-    } else if (used + estimateS <= ceilingS) {
+    } else if (used + estimateS + reserve([...inLevel1(), id]) <= ceilingS) {
       placements.push({ id, level: 1, reason: "fits-ceiling", estimateS });
       used += estimateS;
     } else {
@@ -190,8 +199,8 @@ export function routeModels(
     level1,
     level2,
     out: level("out"),
-    level1EstimateS: sum(level1),
-    unionEstimateS: sum([...level1, ...level2]),
+    level1EstimateS: sum(level1) + reserve(level1),
+    unionEstimateS: sum([...level1, ...level2]) + reserve([...level1, ...level2]),
   };
 }
 
@@ -256,6 +265,15 @@ export function planLevel2(
   const factor = calibrationFactor(measured.membersMs, ranEstimateS);
   const fixedS = Math.max(0, measured.totalMs - measured.membersMs) / 1000;
   const roster = rosterFor(routing, 2);
+  // S7: al agrupar, la parte fija incluye la lectura del retenido — y en el Nivel
+  // 2 el retenido puede ser uno más caro: se toma la mayor de las dos.
+  const reserveS =
+    factor *
+    selectionReserveSeconds(
+      roster,
+      { nTrain: profile.nTrain, width: profile.width, k: profile.k },
+      profile.task,
+    );
   return {
     roster,
     added: roster.filter((id) => !ranSet.has(id)),
@@ -263,6 +281,7 @@ export function planLevel2(
       (p) => (p.level === "out" || p.reason === "forced") && !ranSet.has(p.id),
     ),
     estimateS:
-      factor * roster.reduce((acc, id) => acc + estimateOf(id), 0) + fixedS,
+      factor * roster.reduce((acc, id) => acc + estimateOf(id), 0) +
+      Math.max(fixedS, reserveS),
   };
 }

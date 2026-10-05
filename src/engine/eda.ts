@@ -109,6 +109,15 @@ export function computeEdaAlerts(
 }
 
 /**
+ * S7 (P5): sin objetivo, la EDA de agrupar solo mira las columnas — las que tienen
+ * pinta de identificador (sobre TODAS las filas), que no entran a la distancia y se
+ * listan como excluidas. La fuga no aplica: no hay objetivo que filtrar.
+ */
+export function clusterEdaAlerts(table: CsvTable): EdaAlert[] {
+  return idLikeColumns(table, -1, table.rows).idAlerts;
+}
+
+/**
  * Las alertas que no dependen de la tarea: las columnas con pinta de
  * identificador. Para un objetivo cuya tarea no se entrena (una ambigua sin
  * responder, una multiclase, una columna que no sirve como objetivo): ninguna

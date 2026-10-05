@@ -25,7 +25,7 @@ import {
 } from "@/lib/regression-text";
 import type {
   BinaryResult,
-  ExperimentResult,
+  SupervisedResult,
   RegressionResult,
 } from "@/workers/protocol";
 
@@ -38,7 +38,7 @@ export type ModelCardInput = {
   categoricalFeatures: number;
   target: string;
   seed: number;
-  result: ExperimentResult;
+  result: SupervisedResult;
   /** Saneamiento del dataset (S4) — cifras exactas en la constancia. */
   sanitation?: SanitationReport | null;
   /** Narración IA que PASÓ la verificación numérica; null ⇒ no se cita. */

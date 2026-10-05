@@ -270,10 +270,10 @@ describe("useExperiment", () => {
       } as MessageEvent);
     });
     expect(result.current.state.phase).toBe("results");
-    expect(result.current.state.result?.verdict.level).toBe("beats");
-    expect(result.current.state.result?.explainability.features[0]?.name).toBe(
-      "x",
-    );
+    const trained = result.current.state.result;
+    if (!trained || !("verdict" in trained)) throw new Error("sin veredicto");
+    expect(trained.verdict.level).toBe("beats");
+    expect(trained.explainability.features[0]?.name).toBe("x");
   });
 
   it("CSV inválido ⇒ error honesto; reset vuelve al inicio", () => {
@@ -477,7 +477,9 @@ describe("useExperiment", () => {
 
     act(() => result.current.backToResults());
     expect(result.current.state.phase).toBe("results");
-    expect(result.current.state.result?.verdict.level).toBe("beats");
+    const back = result.current.state.result;
+    if (!back || !("verdict" in back)) throw new Error("sin veredicto");
+    expect(back.verdict.level).toBe("beats");
   });
 
   it("scoreCsv con columna faltante ⇒ bloqueo local SIN postear al worker", () => {

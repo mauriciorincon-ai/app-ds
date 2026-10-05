@@ -19,6 +19,7 @@ import {
   type Routing,
 } from "@/engine/encarrilador";
 import { BASELINE_IDS_BY_TASK, type MemberId } from "@/engine/roster";
+import { clusterEdaAlerts } from "@/engine/eda";
 import { quantileSplit, stratifiedSplit } from "@/engine/split";
 import { matchTask } from "@/engine/despacho";
 import {
@@ -28,8 +29,12 @@ import {
   type AmbiguousChoice,
 } from "@/engine/tarea";
 import {
+  CLUSTER_K_MIN,
+  CLUSTER_MIN_NUMERIC,
+  clusterKCap,
   computeVerdict,
   MULTICLASS_PRIMARY_METRIC,
+  STABILITY_RUNS,
   pickBestBaseline,
   pickPrimaryMetric,
   type MulticlassMetrics,
@@ -44,8 +49,13 @@ import {
   targetClasses,
   type CsvTable,
 } from "@/lib/ds/csv";
+import type { ClusterSent } from "@/workers/contract";
 import type {
   BinaryResult,
+  ClusterMemberFitResult,
+  ClusterPayload,
+  ClusterPipelineResult,
+  ClusterResult,
   DatasetSummary,
   MemberFitResult,
   ModelCandidate,
@@ -824,5 +834,180 @@ export function applyMulticlassMemberFit(
     perClass: fit.per_class,
     verdict: computeVerdict(fit.model, bestBaseline, MULTICLASS_PRIMARY_METRIC),
     explainability: fit.explainability,
+  };
+}
+
+// --- S7: agrupar sin objetivo (ADR 016) ------------------------------------
+
+/** Por qué una columna no entra a agrupar (se lista en pantalla, P5). */
+export type ClusterExclusion = { column: string; reason: "id-like" | "date" };
+
+export type PreparedClusterRun =
+  | {
+      ok: true;
+      payload: ClusterPayload;
+      /** Las columnas que no forman parte, con su razón (ninguna se esconde). */
+      excluded: ClusterExclusion[];
+      routing: Routing;
+      profile: RouteProfile;
+      smallSample: boolean;
+    }
+  | { ok: false; error: WorkerErrorKind };
+
+/**
+ * S7 (P5) — la entrada de agrupar, APARTE de prepareRun (la rama supervisada no
+ * se toca). Sin objetivo ni partición: todas las filas, todas las columnas menos
+ * las fechas y las que parecen identificador (listadas con su razón). La distancia
+ * usa solo las numéricas si hay al menos CLUSTER_MIN_NUMERIC; si no, también las
+ * categóricas (one-hot). Python recibe la decisión y la coteja, no la re-deriva.
+ */
+export function prepareClusterRun(
+  table: CsvTable,
+  seed: number,
+  options: Omit<RunOptions, "ambiguousChoice"> = {},
+): PreparedClusterRun {
+  const rows = table.rows;
+  const idLike = new Set(
+    clusterEdaAlerts(table).flatMap((a) =>
+      a.kind === "id-like" ? [a.column] : [],
+    ),
+  );
+  const excluded: ClusterExclusion[] = [];
+  const numeric: string[] = [];
+  const categorical: string[] = [];
+  for (const profile of profileTable(table)) {
+    if (profile.looksLikeDate) {
+      excluded.push({ column: profile.name, reason: "date" });
+    } else if (idLike.has(profile.name)) {
+      excluded.push({ column: profile.name, reason: "id-like" });
+    } else {
+      (profile.kind === "numeric" ? numeric : categorical).push(profile.name);
+    }
+  }
+  if (numeric.length + categorical.length === 0)
+    return { ok: false, error: "no-features" };
+
+  // Cada re-muestreo de la estabilidad necesita al menos k + 1 filas.
+  const kMax = clusterKCap(rows.length);
+  if (kMax < CLUSTER_K_MIN) return { ok: false, error: "too-few-rows-cluster" };
+
+  const distance = numeric.length >= CLUSTER_MIN_NUMERIC ? "numeric" : "all";
+  const all = rows.map((_, i) => i);
+  const profile: RouteProfile = {
+    task: "agrupar",
+    rows: rows.length,
+    nTrain: rows.length,
+    width:
+      distance === "numeric"
+        ? numeric.length
+        : estimateEncodedWidth(table.headers, rows, numeric, categorical, all),
+    minorityShare: null,
+    k: kMax,
+  };
+  const routing = routeModels(
+    profile,
+    options.ceilingS ?? LEVEL1_CEILING_S,
+    options.forced ?? [],
+  );
+  return {
+    ok: true,
+    payload: {
+      task: "agrupar",
+      headers: table.headers,
+      rows,
+      numeric,
+      categorical,
+      distance,
+      seed,
+      roster: rosterFor(routing, options.level ?? 1),
+      k_range: [CLUSTER_K_MIN, kMax],
+      stability_runs: STABILITY_RUNS,
+    },
+    excluded,
+    routing,
+    profile,
+    smallSample: rows.length < SMALL_SAMPLE_ROWS,
+  };
+}
+
+/** Lo que el lector de agrupar coteja: lo que TS envió y sabe. */
+export function clusterSent(payload: ClusterPayload): ClusterSent {
+  return {
+    roster: payload.roster,
+    k_range: payload.k_range,
+    n_rows: payload.rows.length,
+    distance: payload.distance,
+    stability_runs: payload.stability_runs,
+    numeric: payload.numeric,
+    categorical: payload.categorical,
+  };
+}
+
+/** Lo que el lector coteja al elegir otro agrupador, sacado del resultado vigente
+ *  (que ya pasó por el lector): sus filas, su rango de k, su distancia y las
+ *  columnas de sus perfiles. */
+export function clusterSentOf(result: ClusterResult): ClusterSent {
+  const first = result.profiles.groups[0];
+  return {
+    roster: result.league.map((row) => row.name),
+    k_range: result.kRange,
+    n_rows: result.nRows,
+    distance: result.distance,
+    stability_runs: result.reading.stability.runs,
+    numeric: first ? Object.keys(first.numeric) : [],
+    categorical: first ? Object.keys(first.categorical) : [],
+  };
+}
+
+/** Ensambla el resultado de AGRUPAR con lo que el lector validó. */
+export function assembleClusterResult(
+  py: ClusterPipelineResult,
+  smallSample = false,
+): ClusterResult {
+  return {
+    task: "agrupar",
+    nRows: py.n_rows,
+    distance: py.distance,
+    silhouetteSample: py.silhouette_sample,
+    kRange: py.k_range,
+    modelName: py.model_name,
+    league: py.league,
+    selection: {
+      by: "consensus",
+      consensusWinner: py.winner,
+      k: py.consensus.k,
+      votes: py.consensus.votes,
+      voters: py.consensus.voters,
+      competitors: py.league.length,
+      elapsedMs: py.elapsed_ms,
+    },
+    reading: py.reading,
+    profiles: py.profiles,
+    assignment: py.assignment,
+    rareCategories: py.preprocessing.rare_categories,
+    smallSample,
+  };
+}
+
+/** Elección manual al agrupar (U1): la lectura, los perfiles y la regla pasan a
+ *  ser los del elegido; la liga y el ganador por consenso no cambian. */
+export function applyClusterMemberFit(
+  result: ClusterResult,
+  fit: ClusterMemberFitResult,
+): ClusterResult {
+  return {
+    ...result,
+    modelName: fit.model_name,
+    selection: {
+      ...result.selection,
+      by:
+        fit.model_name === result.selection.consensusWinner
+          ? "consensus"
+          : "user",
+    },
+    reading: fit.reading,
+    profiles: fit.profiles,
+    assignment: fit.assignment,
+    rareCategories: fit.preprocessing.rare_categories,
   };
 }

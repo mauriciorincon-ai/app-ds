@@ -20,7 +20,7 @@ import {
   scoredCsvFileName,
 } from "@/lib/scored-csv";
 import type { ExportState, ModelMeta, ScoringState } from "@/lib/useExperiment";
-import type { ProgressStage } from "@/workers/protocol";
+import type { ProgressStage, SupervisedSchema } from "@/workers/protocol";
 import { Button, Card, Icon, MetricTile } from "./ui";
 
 const PREVIEW_ROWS = 10;
@@ -31,7 +31,37 @@ const IMPORT_STAGES: ProgressStage[] = [
   "importing",
 ];
 
-export function ScoreScreen({
+type ScoreScreenProps<M> = {
+  meta: M;
+  ready: boolean;
+  progress: ProgressStage | null;
+  scoring: ScoringState;
+  exportState: ExportState;
+  onScoreFile: (csv: string, name: string) => void;
+  onScoreAnother: () => void;
+  onBackToResults: () => void;
+  onExit: () => void;
+  onExportModel: () => void;
+};
+
+/** El modelo activo de una tarea con objetivo. */
+type SupervisedMeta = Omit<ModelMeta, "schema"> & { schema: SupervisedSchema };
+
+/** S7 (P2): puntuar con el modelo de cada tarea. Agrupar asigna grupos, no
+ *  predice un objetivo: tendrá su pantalla (F3, D3). */
+export function ScoreScreen(props: ScoreScreenProps<ModelMeta>) {
+  const supervised = (schema: SupervisedSchema) => (
+    <SupervisedScoreScreen {...props} meta={{ ...props.meta, schema }} />
+  );
+  return matchByTask(props.meta.schema, {
+    binaria: supervised,
+    multiclase: supervised,
+    numerica: supervised,
+    agrupar: () => pendingSurface("ScoreScreen", "agrupar"),
+  });
+}
+
+function SupervisedScoreScreen({
   meta,
   ready,
   progress,
@@ -42,18 +72,7 @@ export function ScoreScreen({
   onBackToResults,
   onExit,
   onExportModel,
-}: {
-  meta: ModelMeta;
-  ready: boolean;
-  progress: ProgressStage | null;
-  scoring: ScoringState;
-  exportState: ExportState;
-  onScoreFile: (csv: string, name: string) => void;
-  onScoreAnother: () => void;
-  onBackToResults: () => void;
-  onExit: () => void;
-  onExportModel: () => void;
-}) {
+}: ScoreScreenProps<SupervisedMeta>) {
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -317,7 +336,7 @@ function ScoredResults({
   scoring,
   onScoreAnother,
 }: {
-  meta: ModelMeta;
+  meta: SupervisedMeta;
   scoring: Extract<ScoringState, { status: "scored" }>;
   onScoreAnother: () => void;
 }) {
@@ -336,12 +355,14 @@ function ScoredResults({
   const quantity = matchByTask(score, {
     binaria: () => null,
     multiclase: () => pendingSurface("ScoreScreen.quantity", "multiclase"),
+    agrupar: () => pendingSurface("ScoreScreen.quantity", "agrupar"),
     numerica: (estimated) =>
       decimals === null ? null : { values: estimated.predictions, decimals },
   });
   const predictions = matchByTask(score, {
     binaria: (classified) => classified.predictions,
     multiclase: () => pendingSurface("ScoreScreen.predictions", "multiclase"),
+    agrupar: () => pendingSurface("ScoreScreen.predictions", "agrupar"),
     numerica: (estimated) =>
       formatEstimates(estimated.predictions, quantity?.decimals ?? 0),
   });

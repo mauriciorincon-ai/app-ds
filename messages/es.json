@@ -218,7 +218,11 @@
         "extra_trees": "Extra Trees (200 árboles)",
         "forest": "Random Forest (200 árboles)",
         "forest_balanced": "Random Forest balanceado (200 árboles)",
-        "mlp": "Red neuronal (MLP, 64 neuronas)"
+        "mlp": "Red neuronal (MLP, 64 neuronas)",
+        "kmeans": "K-Means (k medias)",
+        "agglomerative": "Agrupamiento jerárquico (Ward)",
+        "gmm": "Mezcla gaussiana (GMM)",
+        "hdbscan": "HDBSCAN (por densidad)"
       },
       "short": {
         "logistic": "Regresión logística",
@@ -236,7 +240,11 @@
         "extra_trees": "Extra Trees",
         "forest": "Random Forest",
         "forest_balanced": "Random Forest balanceado",
-        "mlp": "Red neuronal"
+        "mlp": "Red neuronal",
+        "kmeans": "K-Means",
+        "agglomerative": "Jerárquico",
+        "gmm": "GMM",
+        "hdbscan": "HDBSCAN"
       },
       "regressionModel": {
         "ridge": "Regresión Ridge"
@@ -561,7 +569,8 @@
     "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo.",
     "target-mixed-notation": "Tu objetivo tiene clases escritas de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalas en tu CSV y vuelve a cargarlo.",
     "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas.",
-    "too-few-rows-per-class": "Una de las categorías tiene muy pocas filas para comparar modelos con honestidad: la validación cruzada necesita al menos 2 filas de cada categoría en el conjunto de entrenamiento. Prueba con más filas o junta las categorías más raras en una sola."
+    "too-few-rows-per-class": "Una de las categorías tiene muy pocas filas para comparar modelos con honestidad: la validación cruzada necesita al menos 2 filas de cada categoría en el conjunto de entrenamiento. Prueba con más filas o junta las categorías más raras en una sola.",
+    "too-few-rows-cluster": "Hay muy pocas filas para agrupar con honestidad: para saber si los grupos se sostienen, la app los vuelve a buscar en partes de tus datos, y cada parte necesita más filas que grupos. Prueba con más filas."
   },
   "task": {
     "title": "Tipo de predicción",

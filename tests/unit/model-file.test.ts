@@ -108,8 +108,10 @@ describe("packModelFile → validateModelFile (roundtrip)", () => {
       n_train: 75,
       n_test: 25,
     });
-    expect(validation.file.manifest.verdict.level).toBe("beats");
-    expect(validation.file.manifest.leakage).toHaveLength(1);
+    const manifest = validation.file.manifest;
+    if (!isBinaryManifest(manifest)) throw new Error("no es binario");
+    expect(manifest.verdict.level).toBe("beats");
+    expect(manifest.leakage).toHaveLength(1);
     expect(validation.file.payload).toBe(PAYLOAD_B64);
   });
 
@@ -553,8 +555,10 @@ describe("S7 — manifiesto de VARIAS CATEGORÍAS (P9)", () => {
     });
     const usable = await validateModelFile(text, ["multiclase"]);
     expect(usable.ok).toBe(true);
-    if (usable.ok) {
+    if (usable.ok && "leakage" in usable.file.manifest) {
       expect(usable.file.manifest.leakage[0]!.class).toBe("empresa");
+    } else {
+      throw new Error("el manifiesto multiclase no trae su fuga");
     }
   });
 

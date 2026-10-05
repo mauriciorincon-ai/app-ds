@@ -68,15 +68,22 @@ export function assertNever(value: never): never {
  *  veredicto contra un baseline) va por esta unión. */
 export type SupervisedTask = "binaria" | "multiclase" | "numerica";
 
+/** S7 (ADR 016): agrupar filas parecidas, SIN objetivo. No es lo que E1 detecta en
+ *  una columna (`Task` no cambia): es una elección sobre el dataset entero. */
+export type ClusterTask = "agrupar";
+/** La etiqueta con que viaja (la cotejan los lectores de agrupar). */
+export const CLUSTER_TASK = "agrupar" satisfies ClusterTask;
+
 /** Todas las tareas que el MOTOR sabe entrenar. Toda decisión por tarea pasa por
  *  engine/despacho.ts, que obliga a escribir la rama de cada una (S7, P2). */
-export type TrainTask = SupervisedTask;
+export type TrainTask = SupervisedTask | ClusterTask;
 
 /** Un `Record` completo: sumar una tarea a `TrainTask` sin listarla aquí no compila. */
 const TRAIN_TASK_NAMES: Record<TrainTask, true> = {
   binaria: true,
   multiclase: true,
   numerica: true,
+  agrupar: true,
 };
 export const TRAIN_TASKS = Object.keys(TRAIN_TASK_NAMES) as TrainTask[];
 
@@ -159,6 +166,8 @@ export function resolveTask(
   return detection.task === "ambigua" && choice ? choice : detection.task;
 }
 
-export function isTrainTask(task: Task): task is TrainTask {
-  return (TRAIN_TASKS as readonly Task[]).includes(task);
+/** ¿Entrena el motor esta tarea detectada? (Las de una columna son con objetivo:
+ *  agrupar no se detecta, se elige.) */
+export function isTrainTask(task: Task): task is SupervisedTask {
+  return (TRAIN_TASKS as readonly string[]).includes(task);
 }

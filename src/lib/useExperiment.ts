@@ -31,12 +31,14 @@ import {
   type TrainTask,
 } from "@/engine/tarea";
 import {
+  applyClusterMemberFit,
   applyMemberFit,
   applyMulticlassMemberFit,
   applyRegressionMemberFit,
   assembleMulticlassResult,
   assembleRegressionResult,
   assembleResult,
+  clusterSentOf,
   inferUnit,
   prepareRun,
   summarizeDataset,
@@ -62,6 +64,8 @@ import { byPriority, type MemberId } from "@/engine/roster";
 import {
   pythonContractField,
   pythonLeagueEmpty,
+  validateClusterMemberFit,
+  validateClusterScore,
   validateExportResult,
   validateMemberFit,
   validateProgressDetail,
@@ -352,6 +356,19 @@ function applyFit(
             ok: true,
             value: applyRegressionMemberFit(regression, checked.value),
           }
+        : checked;
+    },
+    // S7: el elegido se coteja con SU fila de la liga vigente (mismo k y puntaje).
+    agrupar: (cluster): Applied => {
+      const row = cluster.league.find((r) => r.name === member);
+      if (!row) return { ok: false, field: "model_name" };
+      const checked = validateClusterMemberFit(raw, {
+        ...clusterSentOf(cluster),
+        member,
+        row,
+      });
+      return checked.ok
+        ? { ok: true, value: applyClusterMemberFit(cluster, checked.value) }
         : checked;
     },
   });
@@ -756,6 +773,7 @@ export function useExperiment() {
             }),
           numerica: () =>
             validateScoreResult(message.result, { task: "numerica" }),
+          agrupar: (schema) => validateClusterScore(message.result, schema),
         });
         if (!checked.ok) {
           console.error("[experiment] contract", checked.field);

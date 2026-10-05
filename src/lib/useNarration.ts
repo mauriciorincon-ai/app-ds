@@ -32,7 +32,7 @@ import {
   buildRegressionTemplate,
   buildTemplateNarrative,
 } from "@/lib/narration/templates";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { SupervisedResult } from "@/workers/protocol";
 
 /** Estado del bloque de IA (el bloque de plantilla no tiene estados: existe). */
 export type AiNarrationState =
@@ -77,7 +77,7 @@ function toOutcome(json: unknown): RemoteOutcome {
 }
 
 export function useNarration(input: {
-  result: ExperimentResult;
+  result: SupervisedResult;
   target: string;
   cols: number;
   /** Alertas EDA del objetivo (S4). Referencia estable ⇒ no re-dispara el fetch. */

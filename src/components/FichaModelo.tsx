@@ -87,6 +87,8 @@ export default function FichaModelo({
     binaria: () => ({ ficha: FICHAS[fichaId], regressionNote: null }),
     // S7 (D3): los reemplazos de «la clase positiva» llegan con la UI (F3).
     multiclase: () => pendingSurface("FichaModelo", "multiclase"),
+    // S7 (D3): la ficha de un agrupador se abre desde su pantalla (F3).
+    agrupar: () => pendingSurface("FichaModelo", "agrupar"),
     numerica: () => ({
       ficha:
         id in REGRESSION_FICHA_FIELDS

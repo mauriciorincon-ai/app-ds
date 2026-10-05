@@ -13,12 +13,24 @@ import { isMemberOf, selectOneSe, type MemberId } from "@/engine/roster";
 import {
   MULTICLASS_MAX_CLASSES,
   MULTICLASS_MIN_CLASSES,
+  CLUSTER_TASK,
   TRAIN_TASKS,
+  type SupervisedTask,
   type TrainTask,
 } from "@/engine/tarea";
-import { METRIC_RULES, type PrimaryMetric } from "@/engine/verdict";
+import {
+  AGGLO_MAX_ROWS,
+  computeClusterReading,
+  METRIC_RULES,
+  selectClusterWinner,
+  SEPARATING_TOP,
+  SILHOUETTE_SAMPLE,
+  STABILITY_FRACTION,
+  type PrimaryMetric,
+} from "@/engine/verdict";
 import {
   arr,
+  bool,
   check,
   dict,
   int,
@@ -34,6 +46,14 @@ import {
 } from "@/lib/validate";
 import type {
   BinaryScoreResult,
+  ClusterMemberFitResult,
+  ClusterMemberRow,
+  ClusterModelSchema,
+  ClusterPipelineResult,
+  ClusterProfiles,
+  ClusterReadingResult,
+  ClusterAssignment,
+  ClusterScoreResult,
   ExportResult,
   MemberFitResult,
   MulticlassMemberFitResult,
@@ -420,8 +440,8 @@ function regressionTrainField(r: RegressionPipelineResult): string | null {
 }
 
 export type TrainSent = {
-  /** S6: ausente = binaria (lo que el S5 enviaba). */
-  task?: TrainTask;
+  /** S6: ausente = binaria (lo que el S5 enviaba). S7: agrupar tiene su lector. */
+  task?: SupervisedTask;
   roster: readonly MemberId[];
   cv_k: number;
   primary_metric: PrimaryMetric;
@@ -574,7 +594,11 @@ export function validateMemberFit(
 ): Checked<MemberFitResult>;
 export function validateMemberFit(
   raw: unknown,
-  sent: { member: MemberId; task?: TrainTask; nTest?: number } & MulticlassSent,
+  sent: {
+    member: MemberId;
+    task?: SupervisedTask;
+    nTest?: number;
+  } & MulticlassSent,
 ): Checked<
   MemberFitResult | MulticlassMemberFitResult | RegressionMemberFitResult
 > {
@@ -605,7 +629,7 @@ export function validateMemberFit(
 }
 
 const progressV = obj({
-  phase: oneOf(["cv", "test"]),
+  phase: oneOf(["cv", "test", "cluster", "stability"]),
   member: (v, path) =>
     TRAIN_TASKS.some((task) => isMemberOf(task, v)) ? null : path,
   index: nonNegInt,
@@ -669,6 +693,7 @@ const SCHEMA_V_BY_TASK: ByTask<Validator> = {
   binaria: binarySchemaV,
   multiclase: multiclassSchemaV,
   numerica: regressionSchemaV,
+  agrupar: (v, path) => clusterSchemaV(v, path),
 };
 const exportSchemaV: Validator = (v, path) => {
   if (!isRecord(v)) return path;
@@ -767,7 +792,7 @@ export function validateScoreResult(
 ): Checked<BinaryScoreResult>;
 export function validateScoreResult(
   raw: unknown,
-  sent: { task?: TrainTask; classes?: readonly string[] } = {},
+  sent: { task?: SupervisedTask; classes?: readonly string[] } = {},
 ): Checked<BinaryScoreResult | MulticlassScoreResult | RegressionScoreResult> {
   const task = taskOf(sent);
   if (!isRecord(raw) || raw.task !== task) return { ok: false, field: "task" };
@@ -792,6 +817,453 @@ export function validateScoreResult(
       predictions.length !== novelty.n_rows ? "predictions" : null,
   });
   return field ? { ok: false, field } : shaped;
+}
+
+// --- S7: agrupar sin objetivo (ADR 016) --------------------------------------
+//
+// El lector de agrupar coteja la forma Y recalcula lo que solo TS puede afirmar:
+// el k que eligió cada criterio, el puntaje comparable, el ganador por consenso y
+// la lectura (las reglas de engine/verdict.ts), los tamaños contra las filas
+// enviadas, y que NINGUNA etiqueta por fila viaje (P13).
+
+const clusterMember: Validator = (v, path) =>
+  isMemberOf("agrupar", v) ? null : path;
+/** Silueta (y puntaje comparable): de −1 a 1. */
+const silhouetteV = refine(
+  num,
+  (v) => (v as number) >= -1 && (v as number) <= 1,
+);
+const positiveInt = refine(int, (v) => (v as number) >= 1);
+
+const clusterRowV = obj({
+  name: clusterMember,
+  status: oneOf(["ok", "no-converge", "no-structure", "error"]),
+  error_type: nullable(str),
+  k: nullable(nonNegInt),
+  k_by: oneOf(["silhouette", "bic", "density"]),
+  silhouette_by_k: nullable(
+    arr(obj({ k: positiveInt, silhouette: nullable(silhouetteV) })),
+  ),
+  bic_by_k: nullable(arr(obj({ k: positiveInt, bic: num }))),
+  silhouette: nullable(silhouetteV),
+  noise_share: nullable(unit01),
+  score: nullable(silhouetteV),
+  sizes: nullable(arr(positiveInt)),
+  sample_rows: nullable(positiveInt),
+  elapsed_ms: nonNegInt,
+});
+
+const stabilityV = obj({
+  // El ARI vive en [−0,5, 1]; solo se exige que no pase de 1.
+  ari_mean: refine(num, (v) => (v as number) <= 1),
+  ari_min: refine(num, (v) => (v as number) <= 1),
+  runs: positiveInt,
+  fraction: unit01,
+});
+
+export const clusterReadingV = obj({
+  level: oneOf(["exist", "fragile", "none"]),
+  score: silhouetteV,
+  null_score: silhouetteV,
+  gap: num,
+  stability: stabilityV,
+});
+
+const profilesV = obj({
+  groups: arr(
+    obj({
+      group: nonNegInt,
+      size: positiveInt,
+      share: unit01,
+      numeric: dict(nullable(num)),
+      categorical: dict(nullable(obj({ mode: str, share: unit01 }))),
+    }),
+    2,
+  ),
+  noise: nullable(obj({ size: positiveInt, share: unit01 })),
+  separating: arr(
+    obj({
+      column: str,
+      kind: oneOf(["numeric", "categorical"]),
+      strength: unit01,
+    }),
+  ),
+});
+
+export const clusterAssignmentV = obj({
+  method: oneOf(["nearest-centroid", "gaussian", "centroid-radius"]),
+  train_agreement: unit01,
+  sample_rows: nullable(positiveInt),
+});
+
+const clusterPreprocessingV = obj({ rare_categories: dict(arr(str)) });
+
+const clusterResultV = obj({
+  task: oneOf(["agrupar"]),
+  n_rows: positiveInt,
+  distance: oneOf(["numeric", "all"]),
+  silhouette_sample: positiveInt,
+  k_range: refine(arr(int), (v) => (v as number[]).length === 2),
+  league: arr(clusterRowV, 1),
+  consensus: obj({ k: positiveInt, votes: positiveInt, voters: positiveInt }),
+  winner: clusterMember,
+  model_name: clusterMember,
+  reading: clusterReadingV,
+  profiles: profilesV,
+  assignment: clusterAssignmentV,
+  preprocessing: clusterPreprocessingV,
+  elapsed_ms: nonNegInt,
+});
+
+/** Cómo elige su k cada agrupador, y con qué regla asigna una fila nueva. */
+const CLUSTER_K_BY = {
+  kmeans: "silhouette",
+  agglomerative: "silhouette",
+  gmm: "bic",
+  hdbscan: "density",
+} as const;
+const CLUSTER_ASSIGN = {
+  kmeans: "nearest-centroid",
+  agglomerative: "nearest-centroid",
+  gmm: "gaussian",
+  hdbscan: "centroid-radius",
+} as const;
+type ClusterId = keyof typeof CLUSTER_K_BY;
+const clusterId = (name: MemberId) => name as ClusterId;
+
+/** Lo que TS envió (o sabe) al agrupar. */
+export type ClusterSent = {
+  roster: readonly MemberId[];
+  k_range: readonly [number, number];
+  n_rows: number;
+  distance: "numeric" | "all";
+  stability_runs: number;
+  /** Las columnas utilizables (las de los perfiles). */
+  numeric: readonly string[];
+  categorical: readonly string[];
+};
+
+/** P13: una etiqueta por fila no viaja en NINGÚN resultado de agrupar. */
+function labelsField(r: Record<string, unknown>): string | null {
+  if ("labels" in r) return "labels";
+  const league = Array.isArray(r.league) ? r.league : [];
+  const i = league.findIndex((row) => isRecord(row) && "labels" in row);
+  return i >= 0 ? `league[${i}].labels` : null;
+}
+
+const close = (a: number, b: number) =>
+  Math.abs(a - b) <= 1e-12 * Math.max(1, Math.abs(b));
+
+/** Lo que solo una fila de agrupador puede incumplir, con su criterio. */
+function clusterRowField(
+  row: ClusterMemberRow,
+  i: number,
+  sent: ClusterSent,
+): string | null {
+  const at = (field: string) => `league[${i}].${field}`;
+  const id = clusterId(row.name);
+  if (row.k_by !== CLUSTER_K_BY[id]) return at("k_by");
+  if ((row.status === "error") !== (row.error_type !== null))
+    return at("error_type");
+  if (row.status === "error") {
+    return row.k !== null || row.score !== null || row.sizes !== null
+      ? at("score")
+      : null;
+  }
+  const votes = row.status === "ok" || row.status === "no-converge";
+  if (votes !== (row.score !== null)) return at("score");
+  // El barrido de k: los de silueta, todos los k del rango y en orden; el de BIC,
+  // un subconjunto ordenado (un k sin ajuste posible se salta).
+  const [kMin, kMax] = sent.k_range;
+  const range = Array.from({ length: kMax - kMin + 1 }, (_, j) => kMin + j);
+  if (row.k_by === "silhouette") {
+    const byK = row.silhouette_by_k;
+    if (!byK || byK.map((x) => x.k).join() !== range.join())
+      return at("silhouette_by_k");
+    if (row.bic_by_k !== null) return at("bic_by_k");
+    const scored = byK.filter(
+      (x): x is { k: number; silhouette: number } => x.silhouette !== null,
+    );
+    if (votes) {
+      const best = scored.reduce((a, b) => (b.silhouette > a.silhouette ? b : a));
+      if (row.k !== best.k) return at("k");
+      if (row.silhouette !== best.silhouette) return at("silhouette");
+    }
+  } else if (row.k_by === "bic") {
+    const byK = row.bic_by_k;
+    if (
+      !byK ||
+      byK.length === 0 ||
+      byK.some((x, j) => !range.includes(x.k) || (j > 0 && x.k <= byK[j - 1]!.k))
+    )
+      return at("bic_by_k");
+    if (row.silhouette_by_k !== null) return at("silhouette_by_k");
+    const best = byK.reduce((a, b) => (b.bic < a.bic ? b : a));
+    if (votes && row.k !== best.k) return at("k");
+  } else if (row.silhouette_by_k !== null || row.bic_by_k !== null) {
+    return at("silhouette_by_k");
+  }
+  // El ruido es solo de HDBSCAN.
+  if ((row.k_by === "density") !== (row.noise_share !== null))
+    return at("noise_share");
+  // Los tamaños: k grupos, del más grande al más chico, que con el ruido suman las
+  // filas. Sin grupos (un barrido sin ningún k con silueta) no hay tamaños.
+  const sample =
+    clusterId(row.name) === "agglomerative" && sent.n_rows > AGGLO_MAX_ROWS
+      ? AGGLO_MAX_ROWS
+      : null;
+  if (row.sample_rows !== sample) return at("sample_rows");
+  if (row.sizes === null) return votes ? at("sizes") : null;
+  const sizes = row.sizes;
+  if (votes && (row.k === null || row.k < 2 || sizes.length !== row.k))
+    return at("sizes");
+  if (sizes.some((n, j) => j > 0 && n > sizes[j - 1]!)) return at("sizes");
+  const grouped = sizes.reduce((a, b) => a + b, 0);
+  if (grouped > sent.n_rows) return at("sizes");
+  const noise = (sent.n_rows - grouped) / sent.n_rows;
+  if (row.noise_share === null ? grouped !== sent.n_rows : !close(row.noise_share, noise))
+    return row.noise_share === null ? at("sizes") : at("noise_share");
+  // Con el ruido ya cotejado contra los tamaños, el puntaje: silueta × (1 − ruido).
+  if (
+    votes &&
+    !close(row.score!, row.silhouette! * (1 - (row.noise_share ?? 0)))
+  ) {
+    return at("score");
+  }
+  return null;
+}
+
+/** La lectura, los perfiles y la regla del agrupador RETENIDO, contra su fila. */
+function clusterDetailsField(
+  d: {
+    reading: ClusterReadingResult;
+    profiles: ClusterProfiles;
+    assignment: ClusterAssignment;
+  },
+  row: ClusterMemberRow,
+  sent: ClusterSent,
+): string | null {
+  const { reading, profiles, assignment } = d;
+  if (row.score === null || row.sizes === null) return "model_name";
+  if (reading.score !== row.score) return "reading.score";
+  if (!close(reading.gap, reading.score - reading.null_score))
+    return "reading.gap";
+  const { stability } = reading;
+  if (stability.runs !== sent.stability_runs) return "reading.stability.runs";
+  if (stability.fraction !== STABILITY_FRACTION)
+    return "reading.stability.fraction";
+  if (stability.ari_min > stability.ari_mean) return "reading.stability";
+  if (reading.level !== computeClusterReading(reading.gap, stability.ari_mean))
+    return "reading.level";
+  // Un perfil por grupo, con los tamaños de la fila y las columnas enviadas.
+  const n = sent.n_rows;
+  if (
+    profiles.groups.length !== row.sizes.length ||
+    profiles.groups.some(
+      (g, j) =>
+        g.group !== j ||
+        g.size !== row.sizes![j] ||
+        !close(g.share, g.size / n) ||
+        Object.keys(g.numeric).sort().join() !== [...sent.numeric].sort().join() ||
+        Object.keys(g.categorical).sort().join() !==
+          [...sent.categorical].sort().join(),
+    )
+  ) {
+    return "profiles.groups";
+  }
+  const noise = n - row.sizes.reduce((a, b) => a + b, 0);
+  if (
+    noise === 0
+      ? profiles.noise !== null
+      : profiles.noise?.size !== noise || !close(profiles.noise.share, noise / n)
+  ) {
+    return "profiles.noise";
+  }
+  const kind = (c: string) =>
+    sent.numeric.includes(c)
+      ? "numeric"
+      : sent.categorical.includes(c)
+        ? "categorical"
+        : null;
+  if (
+    profiles.separating.length > SEPARATING_TOP ||
+    profiles.separating.some((s, j) =>
+      kind(s.column) !== s.kind ||
+      (j > 0 && s.strength > profiles.separating[j - 1]!.strength),
+    )
+  ) {
+    return "profiles.separating";
+  }
+  if (assignment.method !== CLUSTER_ASSIGN[clusterId(row.name)])
+    return "assignment.method";
+  if (assignment.sample_rows !== row.sample_rows)
+    return "assignment.sample_rows";
+  return null;
+}
+
+/** Valida el resultado de AGRUPAR (Python → TS). */
+export function validateClusterResult(
+  raw: unknown,
+  sent: ClusterSent,
+): Checked<ClusterPipelineResult> {
+  if (!isRecord(raw) || raw.task !== CLUSTER_TASK)
+    return { ok: false, field: "task" };
+  const labels = labelsField(raw);
+  if (labels) return { ok: false, field: labels };
+  const shaped = check<ClusterPipelineResult>(clusterResultV, raw);
+  if (!shaped.ok) return shaped;
+  const r = shaped.value;
+  if (r.n_rows !== sent.n_rows) return { ok: false, field: "n_rows" };
+  if (r.distance !== sent.distance) return { ok: false, field: "distance" };
+  if (r.k_range[0] !== sent.k_range[0] || r.k_range[1] !== sent.k_range[1])
+    return { ok: false, field: "k_range" };
+  if (r.silhouette_sample !== Math.min(r.n_rows, SILHOUETTE_SAMPLE))
+    return { ok: false, field: "silhouette_sample" };
+  const names = r.league.map((row) => row.name);
+  if (
+    names.length !== sent.roster.length ||
+    names.some((n, i) => n !== sent.roster[i])
+  ) {
+    return { ok: false, field: "league" };
+  }
+  for (const [i, row] of r.league.entries()) {
+    const field = clusterRowField(row, i, sent);
+    if (field) return { ok: false, field };
+  }
+  // El consenso, recalculado con la regla de verdict.ts.
+  const consensus = selectClusterWinner(r.league);
+  if (!consensus) return { ok: false, field: "league" };
+  if (
+    r.consensus.k !== consensus.k ||
+    r.consensus.votes !== consensus.votes ||
+    r.consensus.voters !== consensus.voters
+  ) {
+    return { ok: false, field: "consensus" };
+  }
+  if (r.winner !== consensus.winner) return { ok: false, field: "winner" };
+  if (r.model_name !== r.winner) return { ok: false, field: "model_name" };
+  const row = r.league.find((x) => x.name === r.winner)!;
+  const details = clusterDetailsField(r, row, sent);
+  return details ? { ok: false, field: details } : shaped;
+}
+
+const clusterMemberFitV = obj({
+  task: oneOf(["agrupar"]),
+  model_name: clusterMember,
+  k: positiveInt,
+  score: silhouetteV,
+  reading: clusterReadingV,
+  profiles: profilesV,
+  assignment: clusterAssignmentV,
+  preprocessing: clusterPreprocessingV,
+});
+
+/** Valida el agrupador elegido a mano (U1) contra SU fila de la liga vigente. */
+export function validateClusterMemberFit(
+  raw: unknown,
+  sent: ClusterSent & { member: MemberId; row: ClusterMemberRow },
+): Checked<ClusterMemberFitResult> {
+  if (!isRecord(raw) || raw.task !== CLUSTER_TASK)
+    return { ok: false, field: "task" };
+  const labels = labelsField(raw);
+  if (labels) return { ok: false, field: labels };
+  const shaped = check<ClusterMemberFitResult>(clusterMemberFitV, raw);
+  if (!shaped.ok) return shaped;
+  const fit = shaped.value;
+  if (fit.model_name !== sent.member) return { ok: false, field: "model_name" };
+  if (fit.k !== sent.row.k) return { ok: false, field: "k" };
+  if (fit.score !== sent.row.score) return { ok: false, field: "score" };
+  const details = clusterDetailsField(fit, sent.row, sent);
+  return details ? { ok: false, field: details } : shaped;
+}
+
+/** El esquema exportado de agrupar: la regla de asignación con su forma. */
+const clusterSchemaShapeV = obj({
+  numeric: arr(str),
+  categorical: arr(str),
+  task: oneOf(["agrupar"]),
+  groups: refine(int, (v) => (v as number) >= 2),
+  noise: bool,
+  assign: obj({
+    method: oneOf(["nearest-centroid", "gaussian", "centroid-radius"]),
+    centroids: arr(arr(num, 1), 2),
+    radii: nullable(arr(nonNeg)),
+    sample_rows: nullable(positiveInt),
+  }),
+});
+export function clusterSchemaV(v: unknown, path: string): string | null {
+  const shape = clusterSchemaShapeV(v, path);
+  if (shape) return shape;
+  const at = (field: string) => (path ? `${path}.${field}` : field);
+  const s = v as ClusterModelSchema;
+  const { centroids, radii, method } = s.assign;
+  if (
+    centroids.length !== s.groups ||
+    centroids.some((c) => c.length !== centroids[0]!.length)
+  ) {
+    return at("assign.centroids");
+  }
+  const withRadius = method === "centroid-radius";
+  if (withRadius !== (radii !== null) || (radii && radii.length !== s.groups))
+    return at("assign.radii");
+  // Solo la regla con radio deja filas «fuera de todo grupo».
+  if (s.noise !== withRadius) return at("noise");
+  return null;
+}
+
+const clusterScoreV = obj({
+  task: oneOf(["agrupar"]),
+  predictions: arr(int),
+  probabilities: nullable(arr(unit01)),
+  novelty: noveltyV,
+});
+
+/** Valida la puntuación al agrupar contra el esquema del modelo activo: un grupo
+ *  que el modelo tiene, −1 solo si su regla admite «fuera de todo grupo», y la
+ *  probabilidad solo con la mezcla gaussiana. */
+export function validateClusterScore(
+  raw: unknown,
+  schema: Pick<ClusterModelSchema, "groups" | "noise" | "assign">,
+): Checked<ClusterScoreResult> {
+  if (!isRecord(raw) || raw.task !== CLUSTER_TASK)
+    return { ok: false, field: "task" };
+  const shaped = check<ClusterScoreResult>(clusterScoreV, raw);
+  if (!shaped.ok) return shaped;
+  const { predictions, probabilities, novelty } = shaped.value;
+  if (predictions.length !== novelty.n_rows) return { ok: false, field: "predictions" };
+  if (
+    predictions.some(
+      (g) => g >= schema.groups || g < -1 || (g === -1 && !schema.noise),
+    )
+  ) {
+    return { ok: false, field: "predictions" };
+  }
+  const gaussian = schema.assign.method === "gaussian";
+  if (
+    gaussian !== (probabilities !== null) ||
+    (probabilities && probabilities.length !== predictions.length)
+  ) {
+    return { ok: false, field: "probabilities" };
+  }
+  return shaped;
+}
+
+/** S7 (P13): las etiquetas por fila del agrupamiento retenido, SOLO para el CSV
+ *  local. Una por fila agrupada, de −1 a k − 1. */
+export function validateClusterLabels(
+  raw: unknown,
+  sent: { n_rows: number; groups: number; noise: boolean },
+): Checked<{ labels: number[] }> {
+  const shaped = check<{ labels: number[] }>(obj({ labels: arr(int) }), raw);
+  if (!shaped.ok) return shaped;
+  const { labels } = shaped.value;
+  if (
+    labels.length !== sent.n_rows ||
+    labels.some((g) => g >= sent.groups || g < -1 || (g === -1 && !sent.noise))
+  ) {
+    return { ok: false, field: "labels" };
+  }
+  return shaped;
 }
 
 /** «contract:<campo>» que lanza _validate_payload en Python (lado que LEE TS → Python).

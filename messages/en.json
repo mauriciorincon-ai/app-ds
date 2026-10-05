@@ -218,7 +218,11 @@
         "extra_trees": "Extra Trees (200 trees)",
         "forest": "Random Forest (200 trees)",
         "forest_balanced": "Balanced Random Forest (200 trees)",
-        "mlp": "Neural network (MLP, 64 units)"
+        "mlp": "Neural network (MLP, 64 units)",
+        "kmeans": "K-Means",
+        "agglomerative": "Hierarchical clustering (Ward)",
+        "gmm": "Gaussian mixture (GMM)",
+        "hdbscan": "HDBSCAN (density-based)"
       },
       "short": {
         "logistic": "Logistic regression",
@@ -236,7 +240,11 @@
         "extra_trees": "Extra Trees",
         "forest": "Random Forest",
         "forest_balanced": "Balanced Random Forest",
-        "mlp": "Neural network"
+        "mlp": "Neural network",
+        "kmeans": "K-Means",
+        "agglomerative": "Hierarchical",
+        "gmm": "GMM",
+        "hdbscan": "HDBSCAN"
       },
       "regressionModel": {
         "ridge": "Ridge regression"
@@ -561,7 +569,8 @@
     "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file.",
     "target-mixed-notation": "Your target has classes written in more than one way (for example «1» and «1.0»): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
     "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns.",
-    "too-few-rows-per-class": "One of the categories has too few rows to compare models honestly: cross-validation needs at least 2 rows of each category in the training set. Try with more rows, or merge the rarest categories into one."
+    "too-few-rows-per-class": "One of the categories has too few rows to compare models honestly: cross-validation needs at least 2 rows of each category in the training set. Try with more rows, or merge the rarest categories into one.",
+    "too-few-rows-cluster": "There are too few rows to cluster honestly: to tell whether the groups hold up, the app searches for them again in parts of your data, and each part needs more rows than groups. Try with more rows."
   },
   "task": {
     "title": "Kind of prediction",

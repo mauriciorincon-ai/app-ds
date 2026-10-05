@@ -40,9 +40,11 @@ export type TaskBranches<T, R> = {
   readonly [K in TagOf<T>]: (value: OfTask<T, K>) => R;
 };
 
-/** EL único `?? "binaria"`: sin tarea, un dato es del S5 (clasificación binaria). */
-export function taskOf(value: Tasked): TrainTask {
-  return value.task ?? "binaria";
+/** EL único `?? "binaria"`: sin tarea, un dato es del S5 (clasificación binaria).
+ *  El tipo es el de la etiqueta del valor: lo que solo puede ser supervisado
+ *  devuelve una `SupervisedTask`, y su despacho no pide la rama de agrupar. */
+export function taskOf<T extends Tasked>(value: T): TagOf<T> {
+  return (value.task ?? "binaria") as TagOf<T>;
 }
 
 /** Lo mismo para un registro sin validar (un manifiesto, antes de mirar su forma):
@@ -84,7 +86,9 @@ export function matchByTask<
   T extends Tasked,
   B extends TaskBranches<T, unknown>,
 >(value: T, branches: B): Returned<B> {
-  return branchOf<(value: T) => Returned<B>>(branches, taskOf(value))(value);
+  return branchOf<(value: T) => Returned<B>>(branches, taskOf<Tasked>(value))(
+    value,
+  );
 }
 
 /**

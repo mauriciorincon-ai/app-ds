@@ -10,7 +10,7 @@ import type { SanitationReport } from "@/engine/sanitize";
 import { useI18n } from "@/i18n/provider";
 import { downloadTextFile } from "@/lib/files";
 import { buildModelCard, modelCardFileName } from "@/lib/modelcard";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { SupervisedResult } from "@/workers/protocol";
 import { Button, Card } from "./ui";
 
 export type ModelCardMeta = {
@@ -28,7 +28,7 @@ export function ModelCardView({
   sanitation,
   verifiedNarrative,
 }: {
-  result: ExperimentResult;
+  result: SupervisedResult;
   meta: ModelCardMeta;
   sanitation: SanitationReport | null;
   verifiedNarrative: string | null;

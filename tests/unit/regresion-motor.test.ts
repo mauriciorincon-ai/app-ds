@@ -30,6 +30,7 @@ import {
 } from "@/engine/leakage";
 import {
   ALL_MEMBER_IDS,
+  CLUSTER_MEMBER_IDS,
   isMemberOf,
   MEMBER_IDS,
   REGRESSION_MEMBER_IDS,
@@ -292,9 +293,14 @@ describe("roster y costos por tarea", () => {
       expect(positions.every((p) => p >= 0)).toBe(true);
       expect([...positions].sort((a, b) => a - b)).toEqual(positions);
     }
-    expect(new Set([...MEMBER_IDS, ...REGRESSION_MEMBER_IDS])).toEqual(
-      new Set(ALL_MEMBER_IDS),
-    );
+    // S7 (cambio esperado): agrupar suma su roster al mismo espacio de ids.
+    expect(
+      new Set([
+        ...MEMBER_IDS,
+        ...REGRESSION_MEMBER_IDS,
+        ...CLUSTER_MEMBER_IDS,
+      ]),
+    ).toEqual(new Set(ALL_MEMBER_IDS));
   });
 
   it("solo estiman los que existen como regresores (un logistic no estima cantidades)", () => {

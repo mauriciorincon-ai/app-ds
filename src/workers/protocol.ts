@@ -3,8 +3,9 @@
 // métricas. La UI no habla WASM: lee el estado de useExperiment.
 import type { LeakageFinding } from "@/engine/leakage";
 import type { MemberId } from "@/engine/roster";
-import type { TaskDetection, TrainTask } from "@/engine/tarea";
+import type { SupervisedTask, TaskDetection } from "@/engine/tarea";
 import type {
+  ClusterReadingLevel,
   MetricName,
   Metrics,
   MulticlassMetrics,
@@ -49,6 +50,9 @@ export type WorkerErrorKind =
   // S6 (AU-S6-08): al estimar una cantidad, la prueba quedaría con menos de
   // MIN_REGRESSION_TEST_ROWS filas (el texto de «too-few-rows» habla de clases).
   | "too-few-rows-quantity"
+  // S7: al agrupar, tan pocas filas que la estabilidad no puede medir ni dos grupos
+  // (cada re-muestreo necesita al menos k + 1 filas).
+  | "too-few-rows-cluster"
   // S5 (regla 15): el resultado del motor no tiene la forma del contrato; se
   // nombra el campo y no se muestra nada que no se pueda verificar.
   | "contract"
@@ -76,8 +80,9 @@ export type DatasetSummary = {
 
 // Lo que se envía al runner de Pyodide (nombres en snake_case: los consume pipeline.py).
 export type PipelinePayload = {
-  /** S6 (P1): la tarea viaja explícita; Python la valida y la devuelve. */
-  task: TrainTask;
+  /** S6 (P1): la tarea viaja explícita; Python la valida y la devuelve. S7:
+   *  agrupar tiene su propio payload (ClusterPayload). */
+  task: SupervisedTask;
   headers: string[];
   rows: string[][];
   target: string;
@@ -165,9 +170,10 @@ export type CvSummary = {
   se: number;
 };
 
-/** Progreso modelo a modelo (worker → UI): primero la CV de todos, luego el test. */
+/** Progreso modelo a modelo (worker → UI): primero la CV de todos, luego el test.
+ *  S7: al agrupar, el barrido de cada agrupador y la lectura del ganador. */
 export type ProgressDetail = {
-  phase: "cv" | "test";
+  phase: "cv" | "test" | "cluster" | "stability";
   member: MemberId;
   /** Base 0. */
   index: number;
@@ -415,7 +421,178 @@ export type MulticlassResult = {
   explainability: Explainability;
 };
 
-export type ExperimentResult = BinaryResult | MulticlassResult | RegressionResult;
+// --- S7: agrupar sin objetivo (ADR 016) -------------------------------------
+
+/** TS → Python: SIN objetivo ni partición (el preprocesador se ajusta sobre todas
+ *  las filas: no hay prueba). Python rechaza `target`, `train_idx`, `test_idx`,
+ *  `primary_metric`, `cv_k` y `classes` nombrándolos. */
+export type ClusterPayload = {
+  task: "agrupar";
+  headers: string[];
+  rows: string[][];
+  /** Columnas utilizables (las que describen los perfiles). */
+  numeric: string[];
+  categorical: string[];
+  /** Qué columnas forman la distancia: «numeric» con ≥ CLUSTER_MIN_NUMERIC
+   *  numéricas (las categóricas solo describen), «all» si no. TS decide. */
+  distance: ClusterDistance;
+  seed: number;
+  roster: MemberId[];
+  /** k candidatos, [mín, máx] (máx acotado por las filas). */
+  k_range: [number, number];
+  stability_runs: number;
+};
+
+export type ClusterDistance = "numeric" | "all";
+
+export type ClusterFitMemberPayload = Omit<ClusterPayload, "roster"> & {
+  member: MemberId;
+};
+
+/** ok = vota · no-converge = visible, se puede elegir, no vota · no-structure =
+ *  no encontró dos grupos (HDBSCAN todo ruido) · error = solo el TIPO viaja. */
+export type ClusterMemberStatus = "ok" | "no-converge" | "no-structure" | "error";
+
+/** Cómo eligió su k: la silueta, el BIC o la densidad (HDBSCAN no elige k). */
+export type ClusterKBy = "silhouette" | "bic" | "density";
+
+export type ClusterMemberRow = {
+  name: MemberId;
+  status: ClusterMemberStatus;
+  error_type: string | null;
+  /** Grupos encontrados (sin el ruido); null si falló. */
+  k: number | null;
+  k_by: ClusterKBy;
+  /** K-Means y Agglomerative: la silueta de cada k candidato, en orden. */
+  silhouette_by_k: { k: number; silhouette: number | null }[] | null;
+  /** GMM: el BIC de cada k que se pudo ajustar, en orden. */
+  bic_by_k: { k: number; bic: number }[] | null;
+  /** Sobre la muestra compartida, sin el ruido. */
+  silhouette: number | null;
+  /** Solo HDBSCAN: la parte de las filas «fuera de todo grupo». */
+  noise_share: number | null;
+  /** Puntaje comparable: silueta × (1 − cuota de ruido). null ⇔ no vota. */
+  score: number | null;
+  /** Filas por grupo, del más grande al más chico (+ el ruido = n_rows). */
+  sizes: number[] | null;
+  /** Solo Agglomerative con más de AGGLO_MAX_ROWS filas: el tamaño de la muestra. */
+  sample_rows: number | null;
+  elapsed_ms: number;
+};
+
+export type ClusterStability = {
+  ari_mean: number;
+  ari_min: number;
+  runs: number;
+  fraction: number;
+};
+
+export type ClusterReadingResult = {
+  level: ClusterReadingLevel;
+  /** El puntaje del retenido y el del mismo agrupador sobre datos sin estructura. */
+  score: number;
+  null_score: number;
+  /** score − null_score. */
+  gap: number;
+  stability: ClusterStability;
+};
+
+/** Un grupo en las unidades del usuario. Medias, modas y columnas son datos del
+ *  usuario: viven solo en memoria (P13, regla dura 2). */
+export type GroupProfile = {
+  group: number;
+  size: number;
+  share: number;
+  numeric: Record<string, number | null>;
+  categorical: Record<string, { mode: string; share: number } | null>;
+};
+
+export type ClusterProfiles = {
+  groups: GroupProfile[];
+  noise: { size: number; share: number } | null;
+  /** Las columnas que más separan los grupos: η² (numéricas) o V de Cramér. */
+  separating: {
+    column: string;
+    kind: "numeric" | "categorical";
+    strength: number;
+  }[];
+};
+
+export type ClusterAssignMethod =
+  | "nearest-centroid"
+  | "gaussian"
+  | "centroid-radius";
+
+export type ClusterAssignment = {
+  method: ClusterAssignMethod;
+  /** Qué parte de las filas del ajuste reproduce la regla (P12). */
+  train_agreement: number;
+  /** Agglomerative en modo muestra: el tamaño de la muestra. */
+  sample_rows: number | null;
+};
+
+export type ClusterPipelineResult = {
+  task: "agrupar";
+  n_rows: number;
+  distance: ClusterDistance;
+  /** Filas de la muestra con que se mide la silueta (todas, hasta SILHOUETTE_SAMPLE). */
+  silhouette_sample: number;
+  k_range: [number, number];
+  league: ClusterMemberRow[];
+  /** El k en que coinciden más agrupadores que votan, y cuántos. */
+  consensus: { k: number; votes: number; voters: number };
+  winner: MemberId;
+  model_name: MemberId;
+  reading: ClusterReadingResult;
+  profiles: ClusterProfiles;
+  assignment: ClusterAssignment;
+  preprocessing: Pick<Preprocessing, "rare_categories">;
+  elapsed_ms: number;
+};
+
+export type ClusterMemberFitResult = {
+  task: "agrupar";
+  model_name: MemberId;
+  k: number;
+  score: number;
+  reading: ClusterReadingResult;
+  profiles: ClusterProfiles;
+  assignment: ClusterAssignment;
+  preprocessing: Pick<Preprocessing, "rare_categories">;
+};
+
+/** S7: el resultado de agrupar. Sin prueba, sin baseline y sin fuga (no hay
+ *  objetivo): lo que sirve para creer es `reading`. Las etiquetas por fila NO
+ *  están aquí (P13). */
+export type ClusterResult = {
+  task: "agrupar";
+  nRows: number;
+  distance: ClusterDistance;
+  silhouetteSample: number;
+  kRange: [number, number];
+  modelName: MemberId;
+  league: ClusterMemberRow[];
+  selection: {
+    /** "consensus" = el ganador por consenso · "user" = «elegido por ti». */
+    by: "consensus" | "user";
+    consensusWinner: MemberId;
+    k: number;
+    votes: number;
+    voters: number;
+    competitors: number;
+    elapsedMs: number;
+  };
+  reading: ClusterReadingResult;
+  profiles: ClusterProfiles;
+  assignment: ClusterAssignment;
+  rareCategories?: Record<string, string[]>;
+  smallSample: boolean;
+};
+
+/** Los resultados de una tarea CON objetivo (veredicto, prueba, liga con CV). */
+export type SupervisedResult = BinaryResult | MulticlassResult | RegressionResult;
+
+export type ExperimentResult = SupervisedResult | ClusterResult;
 
 // --- Scoring + export/import (S3) ------------------------------------------
 // El modelo fitted vive a nivel de módulo en pipeline.py (_MODEL) dentro del
@@ -450,10 +627,32 @@ export type MulticlassModelSchema = {
   task: "multiclase";
 };
 
-export type ModelSchema =
+/** S7: agrupar puntúa con su regla de asignación — sin objetivo y sin filas de
+ *  entrenamiento (P12). `numeric`/`categorical` son las columnas de la distancia. */
+export type ClusterModelSchema = {
+  numeric: string[];
+  categorical: string[];
+  task: "agrupar";
+  groups: number;
+  /** true ⇔ la regla puede dejar una fila «fuera de todo grupo» (HDBSCAN). */
+  noise: boolean;
+  assign: {
+    method: ClusterAssignMethod;
+    /** k × p, en el espacio de la distancia (escalado). */
+    centroids: number[][];
+    /** Solo HDBSCAN: el radio de cada grupo. */
+    radii: number[] | null;
+    sample_rows: number | null;
+  };
+};
+
+/** El esquema de un modelo con objetivo (sus columnas y su objetivo). */
+export type SupervisedSchema =
   | BinaryModelSchema
   | MulticlassModelSchema
   | RegressionModelSchema;
+
+export type ModelSchema = SupervisedSchema | ClusterModelSchema;
 
 /** Perfil de TRAIN (nunca de test) — base del reporte honesto de novedad.
  *  min/max null ⇔ la columna quedó sin valores numéricos en train. */
@@ -513,10 +712,20 @@ export type MulticlassScoreResult = {
   novelty: NoveltyReport;
 };
 
+/** S7: el grupo de cada fila (0..k−1; −1 = fuera de todo grupo, solo si la regla
+ *  lo admite) y, solo con la mezcla gaussiana, la probabilidad de ese grupo. */
+export type ClusterScoreResult = {
+  task: "agrupar";
+  predictions: number[];
+  probabilities: number[] | null;
+  novelty: NoveltyReport;
+};
+
 export type ScoreResult =
   | BinaryScoreResult
   | MulticlassScoreResult
-  | RegressionScoreResult;
+  | RegressionScoreResult
+  | ClusterScoreResult;
 
 export type RuntimeVersions = {
   pyodide: string;
@@ -539,8 +748,12 @@ export type ExportResult = {
 export type ImportResult = { ok: true };
 
 export type RunnerRequest =
-  | { id: number; type: "train"; payload: PipelinePayload }
-  | { id: number; type: "fit-member"; payload: FitMemberPayload }
+  | { id: number; type: "train"; payload: PipelinePayload | ClusterPayload }
+  | {
+      id: number;
+      type: "fit-member";
+      payload: FitMemberPayload | ClusterFitMemberPayload;
+    }
   | { id: number; type: "score"; payload: ScorePayload }
   | { id: number; type: "export-model" }
   | {
