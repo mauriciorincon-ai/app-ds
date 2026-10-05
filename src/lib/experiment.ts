@@ -196,8 +196,8 @@ export function prepareRun(
   const detection = detectTask(labels);
   const task = resolveTask(detection, options.ambiguousChoice);
   if (task === "ambigua") return { ok: false, error: "target-ambiguous" };
-  // Una tarea que el motor no entrena (o una columna que no sirve de objetivo).
-  if (!isTrainTask(task)) return { ok: false, error: "target-not-binary" };
+  // Una columna que no sirve de objetivo (constante, vacía, demasiadas categorías).
+  if (!isTrainTask(task)) return { ok: false, error: "target-not-usable" };
   // S7 (P2): una rama por tarea; la que falte no compila.
   return matchTask(task, {
     binaria: () =>

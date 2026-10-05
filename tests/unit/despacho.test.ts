@@ -116,10 +116,10 @@ describe("despacho exhaustivo — conducta (gate 3)", () => {
     );
   });
 
-  it("S7 (D3): la UI todavía no ofrece entrenar varias categorías", () => {
-    // El MOTOR la entrena (F1); la UI, recién con sus pantallas (F3). Mientras
-    // tanto, ninguna pantalla puede llegar a una rama pendiente.
-    expect(TRAINABLE_TASKS).not.toContain("multiclase");
+  it("S7 (F3): la UI ofrece entrenar las tres tareas con objetivo", () => {
+    // Cambio esperado (D3 cumplida): la multiclase llega a la UI con sus
+    // pantallas. Agrupar no es una tarea de columna: se elige aparte.
+    expect(TRAINABLE_TASKS).toEqual(["binaria", "multiclase", "numerica"]);
   });
 });
 

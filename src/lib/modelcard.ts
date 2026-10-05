@@ -11,7 +11,7 @@
 // errores) y la narración con IA se declara «no aplica».
 import type { Locale } from "@/i18n/config";
 import { translate, type TParams } from "@/i18n/translate";
-import { matchByTask, pendingSurface, taskOf } from "@/engine/despacho";
+import { matchByTask, taskOf } from "@/engine/despacho";
 import { SMALL_SAMPLE_ROWS } from "@/engine/encarrilador";
 import { memberNameKey, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
@@ -25,6 +25,7 @@ import {
 } from "@/lib/regression-text";
 import type {
   BinaryResult,
+  MulticlassResult,
   SupervisedResult,
   RegressionResult,
 } from "@/workers/protocol";
@@ -125,6 +126,98 @@ function binaryBlocks(
   };
 }
 
+/** S7 (ADR 015): varias categorías — exactitud balanceada contra la mayoritaria y
+ *  la logística multinomial, la matriz K×K y las métricas por clase. Las clases
+ *  SÍ aparecen (como la clase positiva en la binaria): el documento no sale del
+ *  equipo salvo que el usuario lo comparta. */
+function multiclassBlocks(
+  result: MulticlassResult,
+  input: ModelCardInput,
+  t: T,
+): TaskBlocks {
+  const { model, baselines, classes, confusionMatrix, perClass } = result;
+  const maybe = (value: number | null) => (value === null ? "—" : fmt(value));
+  const rows: [string, (m: MulticlassResult["model"]) => string][] = [
+    ["balanced_accuracy", (m) => fmt(m.balanced_accuracy)],
+    ["f1_macro", (m) => fmt(m.f1_macro)],
+    ["accuracy", (m) => fmt(m.accuracy)],
+    ["log_loss", (m) => maybe(m.log_loss)],
+    ["auc_ovr", (m) => maybe(m.auc_ovr)],
+  ];
+  const metricsTable = [
+    `| ${t("modelcard.metrics.metric")} | ${t("modelcard.metrics.model")} | ${t("results.baselines.majority")} | ${t("results.baselines.logistic")} |`,
+    "| --- | --- | --- | --- |",
+    ...rows.map(
+      ([key, show]) =>
+        `| ${t(`results.metrics.${key}`)} | ${show(model)} | ${show(baselines.majority)} | ${show(baselines.logistic)} |`,
+    ),
+  ].join("\n");
+  const verdictHeadline = t(`results.verdict.${result.verdict.level}`, {
+    name: t(`results.candidates.short.${result.modelName}`),
+  });
+  const verdictDetail = t(`results.verdict.${result.verdict.level}Detail`, {
+    delta: `+${fmt(result.verdict.delta)}`,
+    metric: t(`results.metrics.${result.verdict.primaryMetric}`),
+    model: fmt(result.verdict.modelScore),
+    baseline: fmt(result.verdict.baselineScore),
+  });
+  // Una celda de tabla markdown no admite «|» ni saltos: el nombre se escapa.
+  const cell = (name: string) => name.replace(/\|/g, "\\|").replace(/\s+/g, " ");
+  const perClassTable = [
+    `| ${t("results.multiclass.class")} | ${t("results.metrics.precision")} | ${t("results.metrics.recall")} | ${t("results.metrics.f1")} | ${t("results.multiclass.support")} |`,
+    "| --- | --- | --- | --- | --- |",
+    ...perClass.map(
+      (c, i) =>
+        `| ${cell(classes[i]!)} | ${fmt(c.precision)} | ${fmt(c.recall)} | ${fmt(c.f1)} | ${c.support} |`,
+    ),
+  ].join("\n");
+  const confusion = [
+    `| ${t("results.multiclass.realPredicted")} | ${classes.map(cell).join(" | ")} |`,
+    `| --- |${" --- |".repeat(classes.length)}`,
+    ...confusionMatrix.map(
+      (row, i) => `| ${cell(classes[i]!)} | ${row.join(" | ")} |`,
+    ),
+  ].join("\n");
+  return {
+    target: t("modelcard.data.targetMulticlass", {
+      target: input.target,
+      count: classes.length,
+    }),
+    split: t("modelcard.split.sizes", {
+      train: result.nTrain,
+      test: result.nTest,
+      seed: input.seed,
+    }),
+    baselines: t("modelcard.method.baselinesMulticlass"),
+    metricsTable,
+    testNote: t("results.multiclass.testNote"),
+    verdict: [
+      `**${verdictHeadline}** — ${verdictDetail}`,
+      "",
+      t("modelcard.verdict.primaryMulticlass", {
+        k: classes.length,
+        chance: fmt(1 / classes.length),
+      }),
+    ].join("\n"),
+    estimate: [
+      `## ${t("modelcard.sections.multiclass")}`,
+      "",
+      perClassTable,
+      "",
+      t("modelcard.multiclass.confusion"),
+      "",
+      confusion,
+      "",
+    ],
+    direction: (key) =>
+      key === "categorical"
+        ? t("narration.template.direction.categorical")
+        : t("modelcard.multiclass.direction"),
+    importance: (value) => value.toFixed(4),
+    narrative: t("modelcard.multiclass.noAi"),
+  };
+}
+
 function regressionBlocks(
   result: RegressionResult,
   input: ModelCardInput,
@@ -221,8 +314,7 @@ export function buildModelCard(input: ModelCardInput): string {
   const task = taskOf(result);
   const blocks = matchByTask(result, {
     binaria: (binary) => binaryBlocks(binary, input, t),
-    // S7 (D3): la model card de varias categorías llega con su UI (F3).
-    multiclase: () => pendingSurface("modelcard", "multiclase"),
+    multiclase: (multi) => multiclassBlocks(multi, input, t),
     numerica: (regression) => regressionBlocks(regression, input, t),
   });
 

@@ -546,14 +546,15 @@ describe("S7 — manifiesto de VARIAS CATEGORÍAS (P9)", () => {
     expect(file.manifest.schema).not.toHaveProperty("positive_class");
   });
 
-  it("D3: la UI todavía no lo abre (se rechaza NOMBRÁNDOLA); con la tarea usable, importa", async () => {
+  it("S7 (F3): la UI lo abre; una versión que no usa la tarea lo rechaza NOMBRÁNDOLA", async () => {
+    // Cambio esperado (D3 cumplida): con la UI de varias categorías, se importa.
     const text = JSON.stringify(await packMulticlass());
-    expect(await validateModelFile(text)).toEqual({
+    expect(await validateModelFile(text, ["binaria", "numerica"])).toEqual({
       ok: false,
       error: "unsupported-task",
       task: "multiclase",
     });
-    const usable = await validateModelFile(text, ["multiclase"]);
+    const usable = await validateModelFile(text);
     expect(usable.ok).toBe(true);
     if (usable.ok && "leakage" in usable.file.manifest) {
       expect(usable.file.manifest.leakage[0]!.class).toBe("empresa");

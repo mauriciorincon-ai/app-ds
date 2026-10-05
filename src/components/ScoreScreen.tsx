@@ -102,8 +102,14 @@ function SupervisedScoreScreen({
         positive: schema.positive_class,
       }),
     }),
-    // S7 (D3): puntuar con varias categorías llega a la pantalla en la F3.
-    multiclase: () => pendingSurface("ScoreScreen.header", "multiclase"),
+    multiclase: (schema) => ({
+      subtitle: t("score.subtitleMulticlass"),
+      modelLine: t("score.modelLineMulticlass", {
+        dataset: meta.datasetName,
+        target: schema.target,
+        count: schema.classes.length,
+      }),
+    }),
     numerica: (schema) => ({
       subtitle: t("score.subtitleQuantity"),
       modelLine: t("score.modelLineQuantity", {
@@ -349,19 +355,19 @@ function ScoredResults({
   // con que el usuario escribió su objetivo; no hay probabilidad (no se inventa).
   const decimals = matchByTask(schema, {
     binaria: () => null,
-    multiclase: () => pendingSurface("ScoreScreen.decimals", "multiclase"),
+    multiclase: () => null,
     numerica: (quantitySchema) => quantitySchema.target_stats.decimals,
   });
   const quantity = matchByTask(score, {
     binaria: () => null,
-    multiclase: () => pendingSurface("ScoreScreen.quantity", "multiclase"),
+    multiclase: () => null,
     agrupar: () => pendingSurface("ScoreScreen.quantity", "agrupar"),
     numerica: (estimated) =>
       decimals === null ? null : { values: estimated.predictions, decimals },
   });
   const predictions = matchByTask(score, {
     binaria: (classified) => classified.predictions,
-    multiclase: () => pendingSurface("ScoreScreen.predictions", "multiclase"),
+    multiclase: (classified) => classified.predictions,
     agrupar: () => pendingSurface("ScoreScreen.predictions", "agrupar"),
     numerica: (estimated) =>
       formatEstimates(estimated.predictions, quantity?.decimals ?? 0),
@@ -374,7 +380,13 @@ function ScoredResults({
         label: binarySchema.positive_class,
       }),
     }),
-    multiclase: () => pendingSurface("ScoreScreen.columns", "multiclase"),
+    // S7 (R11): la categoría predicha y la probabilidad de ESA categoría.
+    multiclase: (multiSchema) => ({
+      prediction: t("score.columns.predicted", { target: multiSchema.target }),
+      probability: t("score.columns.predictedProbability", {
+        target: multiSchema.target,
+      }),
+    }),
     numerica: (quantitySchema) => ({
       prediction: t("score.columns.estimate", {
         target: quantitySchema.target,
@@ -383,6 +395,12 @@ function ScoredResults({
     }),
   });
   const names = resolveScoredColumnNames(table.headers, desiredNames);
+  // S7: con varias categorías, la probabilidad es la de la categoría predicha.
+  const probabilityNote = matchByTask(schema, {
+    binaria: () => null,
+    multiclase: () => t("score.multiclassProbabilityNote"),
+    numerica: () => null,
+  });
 
   // Distribución de predicciones por clase (conteo simple, honesto). Al estimar
   // no hay clases: el resumen es mínimo · mediana · máximo.
@@ -510,6 +528,9 @@ function ScoredResults({
           <p className="text-sm text-ink-muted">
             {quantity ? t("score.quantityNote") : t("score.noProbabilities")}
           </p>
+        )}
+        {probabilities && probabilityNote && (
+          <p className="text-sm text-ink-muted">{probabilityNote}</p>
         )}
         {/* Región scrolleable accesible por teclado (axe: scrollable-region-focusable). */}
         <div

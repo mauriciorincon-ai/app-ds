@@ -13,7 +13,7 @@ const KINDS: Record<WorkerErrorKind, true> = {
   "csv-ragged": true,
   "csv-semicolon": true,
   "csv-tab": true,
-  "target-not-binary": true,
+  "target-not-usable": true,
   "target-not-numeric": true,
   "target-ambiguous": true,
   "target-mixed-notation": true,

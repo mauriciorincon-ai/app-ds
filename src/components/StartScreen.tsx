@@ -311,8 +311,7 @@ function SupervisedImportSummary({
   const fmt = (value: number) =>
     matchTask(task, {
       binaria: () => value.toFixed(2),
-      // S7 (D3): el import multiclase se abre con la UI (F3).
-      multiclase: () => pendingSurface("ImportSummary.metric", "multiclase"),
+      multiclase: () => value.toFixed(2),
       numerica: () =>
         withUnit(
           formatQuantity(value, quantityDecimals([value])),
@@ -343,8 +342,11 @@ function SupervisedImportSummary({
                 target: binary.schema.target,
                 positive: binary.schema.positive_class,
               }),
-            multiclase: () =>
-              pendingSurface("ImportSummary.target", "multiclase"),
+            multiclase: (multi) =>
+              t("start.import.summary.targetMulticlass", {
+                target: multi.schema.target,
+                count: multi.schema.classes.length,
+              }),
             numerica: (regression) =>
               t("start.import.summary.targetQuantity", {
                 target: regression.schema.target,

@@ -98,7 +98,8 @@ describe("TaskCard (E1)", () => {
     expect(screen.getByText("Se puede entrenar.")).toBeInTheDocument();
   });
 
-  it("otras tareas: se nombran y se dice que llegan en una próxima versión (no se esconden)", () => {
+  it("S7: varias categorías se entrenan, y la tarjeta dice cuántas y con qué métrica", () => {
+    // Cambio esperado (R13): antes «llega en una próxima versión».
     ui(<TaskCard detection={detectTask(["a", "b", "c", "a"])} />);
     expect(
       screen.getByText(
@@ -106,8 +107,9 @@ describe("TaskCard (E1)", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/llega en una próxima versión/),
+      screen.getByText(/Vas a clasificar en 3 categorías.*exactitud balanceada/),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/próxima versión/)).toBeNull();
   });
 
   // S6: estimar una cantidad se entrena, y la tarjeta dice en qué unidades.
@@ -219,7 +221,7 @@ describe("TaskCard (E1)", () => {
     expect(screen.getByText(/no algo que predecir/)).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Esta columna no sirve como objetivo. Elige una columna con dos categorías o con una cantidad.",
+        "Esta columna no sirve como objetivo. Elige una columna con categorías o con una cantidad.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/próxima versión/)).toBeNull();
@@ -255,9 +257,11 @@ describe("TaskCard (E1)", () => {
       />,
     );
     expect(screen.getByText("Respondiste: Categorías.")).toBeInTheDocument();
+    // S7 (cambio esperado, R13): «Categorías» entrena.
     expect(
-      screen.getByText(/llega en una próxima versión/),
+      screen.getByText(/Vas a clasificar en 6 categorías/),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/próxima versión/)).toBeNull();
   });
 });
 
@@ -345,6 +349,7 @@ describe("ConfigScreen con el plan (E1 + E2)", () => {
     profile: routing ? KIT : null,
     smallSample: false,
     blocked: null,
+    smallestClass: null,
   });
   const screenWith = (p: TargetPlan, value: string) => {
     ui(

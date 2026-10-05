@@ -4,8 +4,8 @@ import { axeBothThemes } from "./axe-temas";
 // S5 — la liga de punta a punta en el navegador real (build de producción en CI):
 // Nivel 1 → tabla → ficha de lectura (<dialog> nativo: foco, Esc) → prueba a
 // pedido y etiquetada → elegir a mano → «◆ Elegido por ti» en el veredicto y en la
-// model card → volver al ganador. axe en ambos temas en Configuración (tarea que
-// se entrena y tarea que todavía no), en Resultados y con la ficha abierta.
+// model card → volver al ganador. axe en ambos temas en Configuración (dos tareas
+// que se entrenan), en Resultados y con la ficha abierta.
 
 test("liga: tabla, ficha, prueba etiquetada y elección manual registrada", async ({
   page,
@@ -14,14 +14,15 @@ test("liga: tabla, ficha, prueba etiquetada y elección manual registrada", asyn
 
   await page.goto("/");
   await page.getByRole("button", { name: /Rotación de empleados/i }).click();
-  // E1 con una tarea que todavía no se entrena: la TaskCard en ámbar, auditada
-  // en ambos temas (AU-S5-08). S6 (R19): «edad» ya se entrena (estimar una
-  // cantidad); el caso «todavía no» pasa a varias categorías (multiclase).
+  // E1 con varias categorías, auditada en ambos temas (AU-S5-08). S7 (cambio
+  // esperado, R13): el caso «todavía no se entrena» desapareció — «departamento»
+  // entrena como varias categorías.
   await page.selectOption("#target", "departamento");
   await expect(
     page.getByText(/categorías distintas → clasificación en varias categorías/),
   ).toBeVisible();
-  await expect(page.getByText(/llega en una próxima versión/)).toBeVisible();
+  await expect(page.getByText(/Vas a clasificar en \d+ categorías/)).toBeVisible();
+  await expect(page.getByText(/próxima versión/)).toHaveCount(0);
   await axeBothThemes(page);
   await page.selectOption("#target", "renuncio");
   // E1 + E2 antes de entrenar: la tarea y quién compite.

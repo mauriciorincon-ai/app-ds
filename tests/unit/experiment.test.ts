@@ -122,7 +122,7 @@ describe("prepareRun", () => {
     );
     expect(prepareRun(t, "t", 1)).toEqual({
       ok: false,
-      error: "target-not-binary",
+      error: "target-not-usable",
     });
   });
 

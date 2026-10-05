@@ -564,22 +564,22 @@ tarea.
 **Medición de costos de agrupar** (`scripts/costos-agrupar/`, Chromium 153 sobre el build de
 producción, 12 datasets, 3 corridas por celda salvo 8.000, 12.000 y 20.000 filas).
 
-| Intento | Carga | Qué se tomó |
-| --- | --- | --- |
-| 1 | Los 12 datasets con carga: 17 a 23 con 10 núcleos al empezar, umbral 5 | Nada: se descartó |
-| 2 | 11 de 12 bajo el umbral (2,9 a 4,9); `nubes-20000` terminó en 5,21 ⚠ | Por dataset, el intento limpio (regla de `elegir-intento`) |
+| Intento | Carga                                                                  | Qué se tomó                                                |
+| ------- | ---------------------------------------------------------------------- | ---------------------------------------------------------- |
+| 1       | Los 12 datasets con carga: 17 a 23 con 10 núcleos al empezar, umbral 5 | Nada: se descartó                                          |
+| 2       | 11 de 12 bajo el umbral (2,9 a 4,9); `nubes-20000` terminó en 5,21 ⚠   | Por dataset, el intento limpio (regla de `elegir-intento`) |
 
 - **Sin pedirte nada:** la carga venía de las otras ventanas del usuario; no se le pidió cerrar
   nada.
 - **Una mancha propia en el intento 2:** al empezar, corrí un `typecheck` de unos segundos (sobre
   los datasets chicos, con carga registrada de 4,4).
 
-| Agrupador | Barrido (t0 · a · b · c) | Lectura (t0 · a · b · c) |
-| --- | --- | --- |
-| K-Means | 0,026 · 0,0604 · 0,925 · 0,318 | 0,035 · 0,0138 · 1,373 · 0,398 |
+| Agrupador     | Barrido (t0 · a · b · c)       | Lectura (t0 · a · b · c)       |
+| ------------- | ------------------------------ | ------------------------------ |
+| K-Means       | 0,026 · 0,0604 · 0,925 · 0,318 | 0,035 · 0,0138 · 1,373 · 0,398 |
 | Agglomerative | 0,008 · 0,0535 · 1,609 · 0,359 | 0,024 · 0,0928 · 1,981 · 0,547 |
-| GMM | 0,047 · 0,042 · 0,997 · 2,482 | 0,047 · 0,0259 · 1,308 · 0,958 |
-| HDBSCAN | 0,002 · 0,0125 · 1,834 · 0,911 | 0,033 · 0,0653 · 2,006 · 0,709 |
+| GMM           | 0,047 · 0,042 · 0,997 · 2,482  | 0,047 · 0,0259 · 1,308 · 0,958 |
+| HDBSCAN       | 0,002 · 0,0125 · 1,834 · 0,911 | 0,033 · 0,0653 · 2,006 · 0,709 |
 
 - **Error contra el flujo entero medido** (con la lectura del ganador real): de −31 % a +34 %.
 - **Reparto con el techo de 5 s:**
@@ -604,11 +604,11 @@ producción, 12 datasets, 3 corridas por celda salvo 8.000, 12.000 y 20.000 fila
 
 **Contrato «detectó k de n»** (corrida fresca sobre el árbol final, 2026-10-04):
 
-| Dirección | Carnadas |
-| --- | --- |
-| TS → Python (`_cluster_validate`, Pyodide real) | **16 de 16** |
-| Python → TS | liga **46 de 46** · elegido a mano **8 de 8** · export **8 de 8** · puntuar **8 de 8** · puntuar con ruido **2 de 2** · etiquetas **4 de 4** |
-| Archivo → import | manifiesto de agrupar **14 de 14** |
+| Dirección                                       | Carnadas                                                                                                                                     |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| TS → Python (`_cluster_validate`, Pyodide real) | **16 de 16**                                                                                                                                 |
+| Python → TS                                     | liga **46 de 46** · elegido a mano **8 de 8** · export **8 de 8** · puntuar **8 de 8** · puntuar con ruido **2 de 2** · etiquetas **4 de 4** |
+| Archivo → import                                | manifiesto de agrupar **14 de 14**                                                                                                           |
 
 Los siete fixtures `*-agrupar` los escribió Pyodide real con `CONTRATO_ACTUALIZAR=1`.
 
@@ -627,28 +627,28 @@ Los siete fixtures `*-agrupar` los escribió Pyodide real con `CONTRATO_ACTUALIZ
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-04; cada uno restaurado con Python + `cmp` y en verde
 después):
 
-| Gate | Mutación | Rojo (lo que nombró) | Verde |
-| --- | --- | --- | --- |
-| Lector: ninguna etiqueta por fila (P13) | sin `"labels" in r` | `labels → aceptada` | 11/11 |
-| Lector: el consenso recalculado | sin el cotejo de `winner` | `winner →` | 11/11 |
-| Lector: la lectura recalculada | sin el cotejo de `reading.level` | `reading.level → aceptada` | 11/11 |
-| Lector: el puntaje = silueta × (1 − ruido) | sin el recálculo | `league[0].score → aceptada` | 11/11 |
-| Manifiesto: sin objetivo colado | `target` fuera de `SUPERVISED_ONLY` | `manifest.target` | 11/11 |
-| Regla de la lectura (gap) | `CLUSTER_GAP_MIN = 0.05` | «el borde: justo en el umbral cuenta» | 18/18 |
-| Consenso: a igual votos y puntaje, el k menor | `k` en vez de `-k` | «…luego el k menor» | 18/18 |
-| Tope de k | sin el `- 1` | «…acotado para que cada re-muestreo…» | 18/18 |
-| Distancia numérica con ≥ 2 numéricas | `>= 1` | «con menos de dos numéricas…» | 18/18 |
-| Reserva de la lectura al agrupar | la reserva × 0 | «…los de lectura cara pasan al Nivel 2» | 18/18 |
-| La reserva no toca a las tareas con objetivo | reserva 1 s con objetivo | 4 pruebas de `planLevel2` de `encarrilador.test.ts` | 19/19 |
-| Paridad de constantes | `CLUSTER_GAP_MIN = 0.15` en Python | «las constantes de agrupar…» | 15/15 |
-| Paridad de constantes | `AGGLO_MAX_ROWS = 12000` en Python | «las constantes de agrupar…» | 15/15 |
-| Paridad del roster y su orden | `agglomerative` antes que `kmeans` | «…los agrupadores de CLUSTER_MEMBER_IDS» | 15/15 |
-| Despacho de Python con 4 tareas | sin la rama `agrupar` de `_test_metrics` | `src/lib/ds/pipeline.py:` (archivo:línea) | 12/12 |
-| Python: sin objetivo | `target` fuera de la lista prohibida | `train:target → aceptada` | 1/1 |
-| Python: tope de k | sin `_k_cap` | `train:k_range → aceptada` | 1/1 |
-| Python: el radio de HDBSCAN al puntuar | radio infinito | «fuera de todo grupo» (la fila lejana dio 1, no −1) | 1/1 |
-| Python: Agglomerative en modo muestra | sin el modo muestra | «modo muestra» (el lector rechazó la fila) | 1/1 |
-| Python: P13 | `"labels"` en el resultado | «P13» (el resultado contenía `"labels"`) | 1/1 |
+| Gate                                          | Mutación                                 | Rojo (lo que nombró)                                | Verde |
+| --------------------------------------------- | ---------------------------------------- | --------------------------------------------------- | ----- |
+| Lector: ninguna etiqueta por fila (P13)       | sin `"labels" in r`                      | `labels → aceptada`                                 | 11/11 |
+| Lector: el consenso recalculado               | sin el cotejo de `winner`                | `winner →`                                          | 11/11 |
+| Lector: la lectura recalculada                | sin el cotejo de `reading.level`         | `reading.level → aceptada`                          | 11/11 |
+| Lector: el puntaje = silueta × (1 − ruido)    | sin el recálculo                         | `league[0].score → aceptada`                        | 11/11 |
+| Manifiesto: sin objetivo colado               | `target` fuera de `SUPERVISED_ONLY`      | `manifest.target`                                   | 11/11 |
+| Regla de la lectura (gap)                     | `CLUSTER_GAP_MIN = 0.05`                 | «el borde: justo en el umbral cuenta»               | 18/18 |
+| Consenso: a igual votos y puntaje, el k menor | `k` en vez de `-k`                       | «…luego el k menor»                                 | 18/18 |
+| Tope de k                                     | sin el `- 1`                             | «…acotado para que cada re-muestreo…»               | 18/18 |
+| Distancia numérica con ≥ 2 numéricas          | `>= 1`                                   | «con menos de dos numéricas…»                       | 18/18 |
+| Reserva de la lectura al agrupar              | la reserva × 0                           | «…los de lectura cara pasan al Nivel 2»             | 18/18 |
+| La reserva no toca a las tareas con objetivo  | reserva 1 s con objetivo                 | 4 pruebas de `planLevel2` de `encarrilador.test.ts` | 19/19 |
+| Paridad de constantes                         | `CLUSTER_GAP_MIN = 0.15` en Python       | «las constantes de agrupar…»                        | 15/15 |
+| Paridad de constantes                         | `AGGLO_MAX_ROWS = 12000` en Python       | «las constantes de agrupar…»                        | 15/15 |
+| Paridad del roster y su orden                 | `agglomerative` antes que `kmeans`       | «…los agrupadores de CLUSTER_MEMBER_IDS»            | 15/15 |
+| Despacho de Python con 4 tareas               | sin la rama `agrupar` de `_test_metrics` | `src/lib/ds/pipeline.py:` (archivo:línea)           | 12/12 |
+| Python: sin objetivo                          | `target` fuera de la lista prohibida     | `train:target → aceptada`                           | 1/1   |
+| Python: tope de k                             | sin `_k_cap`                             | `train:k_range → aceptada`                          | 1/1   |
+| Python: el radio de HDBSCAN al puntuar        | radio infinito                           | «fuera de todo grupo» (la fila lejana dio 1, no −1) | 1/1   |
+| Python: Agglomerative en modo muestra         | sin el modo muestra                      | «modo muestra» (el lector rechazó la fila)          | 1/1   |
+| Python: P13                                   | `"labels"` en el resultado               | «P13» (el resultado contenía `"labels"`)            | 1/1   |
 
 **Verde del árbol completo** (2026-10-04, después de los rojos):
 
@@ -658,6 +658,113 @@ después):
   98,66 % de líneas;
 - `pnpm test:integration`: 98 pasan y 1 se salta, en 10 archivos. Incluye la binaria, la
   regresión, la multiclase y agrupar.
+
+**CI del cuarto commit** (`280954a`, run 37251464861, `gh pr checks 19` y `statusCheckRollup`): 6 de
+6 `success` (`quality`, `integration`, `e2e`, `lighthouse`, Vercel, Vercel Preview Comments). El
+margen de Lighthouse: «✓ ninguna mediana a menos del 10 % de su presupuesto».
+
+**STOP de la F2** (2026-10-04): el usuario respondió «continúa».
+
+## Fase 3 — UI, lectura y documentos
+
+### Quinto commit: varias categorías en la app (D3 cumplida para la multiclase)
+
+La multiclase llega a la interfaz. Lo que hoy entrena el motor ya se puede elegir, leer, exportar,
+importar y puntuar en la app.
+
+**Qué cambia en la app:**
+
+- **Tareas que se entrenan.** `TRAINABLE_TASKS` suma `multiclase`. La tarjeta de tarea dice «Vas a
+  clasificar en N categorías» y con qué métrica. La respuesta «Categorías» de la pregunta ambigua
+  entrena (paga D2 del S6). El caso «todavía no se entrena» desaparece: una columna que no sirve
+  como objetivo lo dice de frente.
+- **Resultados** (`MulticlassResults.tsx`):
+  - el veredicto en exactitud balanceada; si gana la logística multinomial y empata consigo misma
+    como baseline, se dice así (AU-S5-01);
+  - «cuál mirar», con el azar de K categorías en el mismo número;
+  - la matriz K×K en su propia región desplazable, enfocable y con nombre. Los aciertos llevan ✓,
+    negrita y su nombre para el lector, nunca solo color. Los nombres largos se recortan a la
+    vista, pero la celda conserva el texto completo;
+  - la confusión más frecuente, en palabras;
+  - las métricas por categoría y los baselines con su ficha.
+- **Fuga por clase.** El aviso nombra la columna Y la categoría que delata.
+- **La categoría más chica** se nombra en pantalla cuando bloquea (`too-few-rows-per-class`), nunca
+  en un log (P4).
+- **La liga** muestra la exactitud balanceada con 3 decimales. La razón de una balanceada «fuera»
+  usa la parte de la clase más chica del reparto.
+- **«¿Por qué predice así?»:** con varias categorías no hay una sola dirección, y se dice. La IA no
+  narra (P10) y lo dice con su propio texto.
+- **Puntuar:** `<objetivo>_predicho` + `<objetivo>_probabilidad` (la de la categoría predicha),
+  con su nota. Sin probabilidad (Ridge, SVM lineal), se dice.
+- **Import:** el resumen dice «Clasifica «plan» en 5 categorías» y la exactitud balanceada.
+- **Fichas:** la logística, Ridge y el SVM lineal reemplazan lo que solo vale con dos clases
+  («sí»/«no», «las dos clases», el AUC binario) por `MULTICLASS_FICHA_FIELDS`.
+- **Model card:** la tarea, la exactitud balanceada con su azar, las métricas por categoría, la
+  matriz K×K (las clases sí aparecen, como la clase positiva en la binaria) y «Narración con IA:
+  no aplica».
+
+**Copy caducado** (casilla 4 adelantada; se repite al cierre):
+
+- `errors.target-not-binary` («debe tener exactamente dos categorías») pasa a `target-not-usable`,
+  que dice lo que de verdad pasa;
+- `task.notYet` («llega en una próxima versión») se retira: no queda tarea de columna que no
+  entrene;
+- se reescriben `task.notUsable`, `task.ask.multiclase.desc`, `config.target.help` y
+  `modelcard.limits.tasks`.
+
+**Cambios esperados en pruebas heredadas** (R13; afirmaban «la multiclase todavía no»):
+
+- `despacho`, `regresion-motor` y `tarea`: la lista de tareas entrenables;
+- `league-ui`: TaskCard con varias categorías y con la ambigua respondida;
+- `regresion-ui` y `use-hooks`: el plan de varias categorías se arma y se envía;
+- `model-file` y `start-import`: el archivo multiclase se abre. La tarea desconocida pasa a una
+  inventada (`serie-tiempo`);
+- `multiclase-ui`: la prueba de «superficie sin rama» de la model card pasa a probar la model card
+  real;
+- e2e `liga` y `tarea-ambigua`: «departamento» y «Categorías» entrenan. La ambigua corre la liga
+  hasta la matriz.
+
+**Pruebas nuevas:**
+
+- unit (`multiclase-ui.test.tsx`, `start-import.test.tsx`, `use-hooks.test.tsx`):
+  - resultados sin marcas binarias;
+  - la matriz con K aciertos marcados;
+  - la fuga con su categoría;
+  - la liga a 3 decimales;
+  - `topConfusion`;
+  - puntuar con su CSV;
+  - la ficha de cada reemplazo en ES y EN (y la binaria intacta);
+  - la model card en ES y EN;
+  - el import del archivo multiclase;
+  - la categoría más chica nombrada;
+- e2e:
+  - `multiclase.spec.ts`: el recorrido con axe en los dos temas, la ficha y cero peticiones a
+    `/api/narrate`; y la fuga plantada nombrando `cargo_corporativo_usd` y «empresa»;
+  - `multiclase-score.spec.ts`: exportar → recargar → importar → puntuar, sin el payload ni el CSV
+    en la red.
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-04; cada uno restaurado con Python + `cmp` y en verde
+después):
+
+| Gate | Mutación | Rojo (lo que nombró) | Verde |
+| --- | --- | --- | --- |
+| Los aciertos de la matriz, nombrados para el lector | sin el `sr-only` «acierto:» | «matriz K×K con ✓ en la diagonal» | 12/12 |
+| La fuga por clase nombra la categoría | siempre el texto sin categoría | «la fuga por clase nombra la columna Y la categoría» | 12/12 |
+| Ficha del SVM lineal sin «dos clases» | el reemplazo vuelve a decir «las dos clases» | «linear_svc: los apartados de dos clases se reemplazan» | 12/12 |
+| Model card: la primaria con su azar | la línea binaria de la métrica | «la exactitud balanceada con su azar, la matriz K×K y las clases» | 12/12 |
+| La categoría más chica, nombrada | el plan sin `smallestClass` | «una categoría con muy pocas filas bloquea, y el plan la NOMBRA» | 35/35 |
+| Puntuar: la probabilidad de la predicha | la columna binaria `probabilidad_<etiqueta>` | «la probabilidad de ESA categoría, la distribución y el CSV» | 12/12 |
+
+**Verde del árbol completo** (2026-10-04, después de los rojos):
+
+- `pnpm lint`: sin avisos;
+- `pnpm typecheck`: sin errores;
+- `pnpm test`: 633 de 633 en 54 archivos. El motor (`engine/`) está al 97,29 % de sentencias y al
+  98,81 % de líneas;
+- `pnpm test:integration`: 98 pasan y 1 se salta, en 10 archivos;
+- e2e sobre el build de producción (`pnpm build` + `pnpm start`, Chromium móvil y escritorio):
+  `multiclase`, `multiclase-score`, `tarea-ambigua` y `liga`, 10 de 10 al primer intento, con axe
+  en los dos temas.
 
 ## Fricciones del kit (SEPARADAS del producto)
 

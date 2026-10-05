@@ -81,8 +81,8 @@ describe("E1: la tarea con la respuesta del usuario (D2)", () => {
     expect(resolveTask(detectTask(["si", "no"]), "numerica")).toBe("binaria");
   });
 
-  it("la UI ofrece entrenar las dos tareas desde la F2 (D4)", () => {
-    expect(TRAINABLE_TASKS).toEqual(["binaria", "numerica"]);
+  it("la UI ofrece entrenar la cantidad desde la F2 del S6 (D4), y varias categorías desde el S7", () => {
+    expect(TRAINABLE_TASKS).toEqual(["binaria", "multiclase", "numerica"]);
   });
 });
 

@@ -1,8 +1,8 @@
 // E1 — encarrilador de la TAREA (S5, ADR-010): mira la columna objetivo y decide
 // qué tipo de problema es, con su razón. Determinista y puro (no entrena nada;
-// solo cuenta valores distintos de la columna elegida). Solo la clasificación
-// binaria entrena en el S5; las demás tareas se nombran con honestidad («llega
-// en el S6/S7») en vez de esconder la columna.
+// solo cuenta valores distintos de la columna elegida). Desde el S7 se entrenan
+// las tres tareas con objetivo; una columna que no sirve como objetivo se nombra
+// con su razón en vez de esconderla.
 import { isNullToken, parseNumber } from "@/lib/ds/csv";
 
 export type Task =
@@ -87,10 +87,14 @@ const TRAIN_TASK_NAMES: Record<TrainTask, true> = {
 };
 export const TRAIN_TASKS = Object.keys(TRAIN_TASK_NAMES) as TrainTask[];
 
-/** Las tareas que la UI ofrece entrenar (S6 F2: también estimar una cantidad). S7
- *  (D3 del plan): la multiclase entra al MOTOR en la F1 y a la UI en la F3 — hasta
- *  entonces ninguna pantalla puede llegar a un resultado multiclase. */
-export const TRAINABLE_TASKS: readonly Task[] = ["binaria", "numerica"];
+/** Las tareas de una columna que la UI ofrece entrenar: las tres con objetivo (S7
+ *  F3: la multiclase llega a la UI). Agrupar no es una tarea de columna: se elige
+ *  sobre el dataset entero (ConfigScreen). */
+export const TRAINABLE_TASKS: readonly Task[] = [
+  "binaria",
+  "multiclase",
+  "numerica",
+];
 
 /** Respuesta del usuario a la pregunta de una columna ambigua (D2 del S6). */
 export type AmbiguousChoice = "multiclase" | "numerica";

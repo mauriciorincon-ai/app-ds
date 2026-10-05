@@ -32,7 +32,9 @@ export type WorkerErrorKind =
   // configuración regional europea/latina. Se nombra el separador real.
   | "csv-semicolon"
   | "csv-tab"
-  | "target-not-binary"
+  // S7: la columna no sirve como objetivo (constante, vacía o con demasiadas
+  // categorías); el texto viejo («exactamente dos categorías») caducó.
+  | "target-not-usable"
   // S6: se eligió estimar una cantidad pero el objetivo trae valores no numéricos.
   | "target-not-numeric"
   // S6 (D2): la columna puede ser clases o cantidad y el usuario aún no respondió.

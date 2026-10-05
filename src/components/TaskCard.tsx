@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { matchTask, pendingSurface } from "@/engine/despacho";
+import { matchTask } from "@/engine/despacho";
 import {
   isTrainableTask,
   isTrainTask,
@@ -14,10 +14,11 @@ import type { TargetUnit } from "@/workers/protocol";
 import { Button, Icon, type IconName } from "./ui";
 
 // E1 (S5): qué tipo de predicción plantea la columna elegida y por qué. La
-// honestidad acompaña: toda columna se puede elegir; si su tarea todavía no se
-// entrena, se dice de frente (no se esconde la columna ni se adivina). Si la
-// tarea se entrena pero el plan está bloqueado (p. ej. muy pocas filas), no hay
-// ✓: la tarjeta remite al motivo, que se muestra debajo.
+// honestidad acompaña: toda columna se puede elegir; si no sirve como objetivo,
+// se dice de frente (no se esconde la columna ni se adivina). Si la tarea se
+// entrena pero el plan está bloqueado (p. ej. muy pocas filas), no hay ✓: la
+// tarjeta remite al motivo, que se muestra debajo. S7: las tres tareas con
+// objetivo se entrenan (dos categorías, varias categorías y una cantidad).
 //
 // S6 (D2): una columna AMBIGUA (pocos números distintos) no se adivina: se
 // pregunta «¿categorías o una cantidad?», con la lectura más probable marcada
@@ -235,18 +236,21 @@ function TaskStatus({
           {blocked
             ? t("task.blocked")
             : !trainable
-              ? // Una columna que no sirve como objetivo no espera una versión
-                // futura: se dice de frente (AU-S6-05).
+              ? // Una columna que no sirve como objetivo se dice de frente
+                // (AU-S6-05); una ambigua sin respuesta, que falta la respuesta.
                 t(
                   detection.task === "sin-objetivo"
                     ? "task.notUsable"
-                    : "task.notYet",
+                    : "errors.target-ambiguous",
                 )
               : isTrainTask(resolved)
                 ? matchTask(resolved, {
                     binaria: () => t("task.trainable"),
-                    // S7 (D3): la multiclase aún no es `trainable` en la UI.
-                    multiclase: () => pendingSurface("TaskCard", "multiclase"),
+                    // S7: cuántas categorías; la ambigua respondida, las suyas.
+                    multiclase: () =>
+                      t("task.multiclass.trainable", {
+                        count: detection.distinct,
+                      }),
                     numerica: () =>
                       unit?.symbol
                         ? t("task.estimate.unit", { unit: unit.symbol })

@@ -157,6 +157,9 @@ export type TargetPlan = {
   smallSample: boolean;
   /** Entrenable pero sin CV honesta posible u otro rechazo de prepareRun. */
   blocked: WorkerErrorKind | null;
+  /** S7 (P4): con `too-few-rows-per-class`, la categoría más chica y sus filas de
+   *  train — se nombra EN PANTALLA (dato del usuario), jamás en un log. */
+  smallestClass: { name: string; trainRows: number } | null;
 };
 
 /** S5 (U1): elección manual de un miembro de la liga. */
@@ -403,6 +406,7 @@ function planTarget(
     profile: null,
     smallSample: false,
     blocked: null,
+    smallestClass: null,
   };
   if (!isTrainableTask(resolved)) return plan;
   const prepared = prepareRun(table, target, SEED, { ambiguousChoice: choice });
@@ -413,15 +417,17 @@ function planTarget(
         profile: prepared.profile,
         smallSample: prepared.smallSample,
       }
-    : { ...plan, blocked: prepared.error };
+    : {
+        ...plan,
+        blocked: prepared.error,
+        smallestClass: prepared.smallestClass ?? null,
+      };
 }
 
 /** Las alertas EDA hablan de la tarea con que se entrenaría. Sin una tarea que se
  *  entrene, solo las que no dependen de ella (ninguna se supone por descarte). */
 function edaFor(table: CsvTable, plan: TargetPlan | null, target: string) {
-  // S7 (D3): la multiclase ya entrena en el MOTOR, pero sus avisos llegan a la
-  // pantalla con su UI (F3): hasta entonces, la que la UI no entrena solo ve id-like.
-  if (!plan || !isTrainTask(plan.resolved) || !isTrainableTask(plan.resolved)) {
+  if (!plan || !isTrainTask(plan.resolved)) {
     return idLikeAlerts(table, target);
   }
   return computeEdaAlerts(table, target, plan.resolved);
@@ -993,8 +999,8 @@ export function useExperiment() {
 
   /**
    * S6 (D2): la respuesta a «¿clases o cantidad?» de una columna ambigua. Con
-   * «cantidad» se planea la regresión; con «clases», la multiclase (que esta
-   * versión todavía no entrena, y se dice de frente). null vuelve a preguntar.
+   * «cantidad» se planea la regresión; con «clases», la multiclase (S7: entrena).
+   * null vuelve a preguntar.
    */
   const answerTask = useCallback((choice: AmbiguousChoice | null) => {
     const table = tableRef.current;

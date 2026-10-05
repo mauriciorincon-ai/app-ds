@@ -66,7 +66,8 @@
         "chosen": "◆ Elegido por ti, no por la validación cruzada (el ganador de la validación cruzada era {winner}). Si se eligió mirando la prueba, la métrica puede ser optimista.",
         "cv": "Elegido por validación cruzada de {k} pliegues entre {count} modelos.",
         "cv_one": "Elegido por validación cruzada de {k} pliegues (compitió 1 modelo).",
-        "targetQuantity": "Estima «{target}», una cantidad"
+        "targetQuantity": "Estima «{target}», una cantidad",
+        "targetMulticlass": "Clasifica «{target}» en {count} categorías"
       },
       "errors": {
         "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
@@ -87,7 +88,7 @@
     "target": {
       "label": "¿Qué quieres predecir?",
       "placeholder": "Elige una columna…",
-      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. Esta versión entrena las de dos categorías (sí/no, 0/1) y las cantidades (un precio, un consumo, un tiempo).",
+      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. La app entrena las de dos categorías (sí/no, 0/1), las de varias categorías (hasta 20, como un plan o una región) y las cantidades (un precio, un consumo, un tiempo).",
       "option": "{column} · {task}"
     },
     "profile": {
@@ -187,7 +188,8 @@
       "title": "Posible fuga de datos",
       "finding": "La columna «{column}» podría ser un proxy del objetivo.",
       "hint": "Quítala y vuelve a entrenar para ver el rendimiento honesto.",
-      "none": "No detectamos fugas evidentes (el chequeo es una ayuda, no una garantía)."
+      "none": "No detectamos fugas evidentes (el chequeo es una ayuda, no una garantía).",
+      "findingClass": "La columna «{column}» separa casi a la perfección la categoría «{class}» del resto: podría ser un proxy del objetivo."
     },
     "again": "Nuevo experimento",
     "use": {
@@ -292,6 +294,19 @@
       },
       "baselinesNote": "Los baselines no compiten: miden si la liga aporta algo. La mediana es la constante que menos se equivoca en promedio; la regresión lineal, la recta más simple.",
       "testNote": "El veredicto, las métricas, el gráfico y los baselines se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento. La tabla de la liga usa validación cruzada dentro del entrenamiento: sirve para elegir."
+    },
+    "multiclass": {
+      "guide": "Mira la exactitud balanceada: de cada categoría, qué parte acierta, en promedio. Con {k} categorías, adivinar al azar da {chance}; 1.00 sería acertar siempre. La exactitud a secas puede engañar si una categoría domina.",
+      "noProbabilities": "Este modelo decide la categoría pero no da probabilidades: por eso la pérdida logarítmica y el AUC quedan en «—».",
+      "topConfusion": "La confusión más frecuente: filas de «{real}» que el modelo tomó por «{predicted}» ({count} en la prueba).",
+      "noConfusion": "En la prueba, el modelo no confundió ninguna categoría con otra.",
+      "testNote": "El veredicto, la matriz, las métricas por categoría y los baselines se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento. La tabla de la liga usa validación cruzada dentro del entrenamiento: sirve para elegir; esto sirve para creer.",
+      "confusionHow": "Cada fila es la categoría real; cada columna, la que predijo el modelo. ✓ marca los aciertos (la diagonal); todo lo demás son confusiones.",
+      "realPredicted": "Real ↓ · Predicha →",
+      "hit": "acierto:",
+      "perClass": "Por categoría (prueba)",
+      "class": "Categoría",
+      "support": "Filas de prueba"
     }
   },
   "score": {
@@ -342,7 +357,9 @@
     "columns": {
       "prediction": "prediccion",
       "probability": "probabilidad_{label}",
-      "estimate": "{target}_estimado"
+      "estimate": "{target}_estimado",
+      "predicted": "{target}_predicho",
+      "predictedProbability": "{target}_probabilidad"
     },
     "fileSuffix": "puntuado",
     "download": "Descargar CSV puntuado",
@@ -363,7 +380,10 @@
       "median": "Mediana",
       "max": "Máximo"
     },
-    "quantityNote": "Estimar no da una probabilidad: cada fila trae su cantidad estimada, con los decimales con que escribiste el objetivo."
+    "quantityNote": "Estimar no da una probabilidad: cada fila trae su cantidad estimada, con los decimales con que escribiste el objetivo.",
+    "subtitleMulticlass": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la categoría predicha y su probabilidad para cada fila. Todo ocurre en tu navegador.",
+    "modelLineMulticlass": "Modelo: {dataset} · objetivo: {target} · {count} categorías",
+    "multiclassProbabilityNote": "La probabilidad es la de la categoría predicha: qué tan seguro está el modelo de esa fila. Con varias categorías puede ser baja aunque la predicha sea la más probable."
   },
   "why": {
     "title": "¿Por qué predice así?",
@@ -375,7 +395,8 @@
       "negative": "▼ a mayor valor, menos probable que «{target}» sea «{positive}»",
       "categorical": "· el efecto varía según la categoría (no hay una sola dirección)",
       "unclear": "· sin dirección clara (no empuja de forma consistente hacia un lado)",
-      "unused": "· el modelo no se apoya en esta variable (quitarla no le haría perder precisión)"
+      "unused": "· el modelo no se apoya en esta variable (quitarla no le haría perder precisión)",
+      "multiclass": "· con varias categorías no hay una sola dirección: puede volver más probable una categoría y menos otra"
     },
     "narration": {
       "title": "En palabras",
@@ -392,7 +413,8 @@
         "provider": "El proveedor de IA no respondió. Puedes volver a intentarlo.",
         "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad no se muestra. Puedes volver a intentarlo."
       },
-      "aiNotForQuantity": "La narración con IA solo cubre la clasificación en dos categorías. Al estimar una cantidad, la lectura es el texto estándar de arriba, que sale de los mismos números."
+      "aiNotForQuantity": "La narración con IA solo cubre la clasificación en dos categorías. Al estimar una cantidad, la lectura es el texto estándar de arriba, que sale de los mismos números.",
+      "aiNotForMulticlass": "La narración con IA solo cubre la clasificación en dos categorías. Con varias categorías, la lectura es el texto estándar de arriba, que sale de los mismos números."
     },
     "legend": "La barra mide cuánto IMPORTA cada variable; la línea de abajo dice hacia dónde EMPUJA. Una variable puede pesar mucho y no tener una sola dirección: eso no la hace irrelevante.",
     "positiveClass": "El modelo predice la columna «{target}». La clase que intenta detectar (la menos frecuente) es «{positive}».",
@@ -400,7 +422,8 @@
       "positive": "▲ a mayor valor, mayor «{target}»",
       "negative": "▼ a mayor valor, menor «{target}»"
     },
-    "quantityNote": "El modelo estima la columna «{target}». La barra mide cuánto crece su error (MAE) si se rompe la relación de esa variable con el objetivo."
+    "quantityNote": "El modelo estima la columna «{target}». La barra mide cuánto crece su error (MAE) si se rompe la relación de esa variable con el objetivo.",
+    "multiclassNote": "El modelo clasifica la columna «{target}» en {count} categorías. La barra mide cuánto baja la exactitud balanceada si se rompe la relación de esa variable con el objetivo."
   },
   "card": {
     "title": "Model card",
@@ -474,13 +497,15 @@
       "limits": "Límites",
       "sanitation": "Saneamiento",
       "selection": "Selección del modelo",
-      "estimate": "Estimación"
+      "estimate": "Estimación",
+      "multiclass": "Categorías (sobre prueba)"
     },
     "data": {
       "dataset": "Dataset: {name}",
       "shape": "{rows} filas × {cols} columnas ({numeric} predictores numéricos, {categorical} categóricos)",
       "target": "Objetivo: «{target}» (clasificación binaria; clase positiva: «{positive}»)",
-      "targetQuantity": "Objetivo: «{target}» (estimar una cantidad)"
+      "targetQuantity": "Objetivo: «{target}» (estimar una cantidad)",
+      "targetMulticlass": "Objetivo: «{target}» (clasificación en {count} categorías)"
     },
     "split": {
       "sizes": "Entrenamiento: {train} filas · Prueba: {test} filas (estratificado, semilla {seed}).",
@@ -492,7 +517,8 @@
       "models": "Candidatos comparados: {candidates}. Modelo elegido: {model}.",
       "rareCategories": "Categorías raras agrupadas (aprendido solo de entrenamiento): {cols}.",
       "baselines": "Baselines: clase mayoritaria y regresión logística.",
-      "baselinesQuantity": "Baselines: la mediana del objetivo y la regresión lineal."
+      "baselinesQuantity": "Baselines: la mediana del objetivo y la regresión lineal.",
+      "baselinesMulticlass": "Baselines: clase mayoritaria y regresión logística multinomial."
     },
     "metrics": {
       "metric": "Métrica",
@@ -500,7 +526,8 @@
     },
     "verdict": {
       "primary": "Métrica principal: {metric}.",
-      "primaryQuantity": "Métrica principal: MAE, el error promedio en las unidades del objetivo (menor es mejor); empata si queda a menos del 1 % del mejor baseline."
+      "primaryQuantity": "Métrica principal: MAE, el error promedio en las unidades del objetivo (menor es mejor); empata si queda a menos del 1 % del mejor baseline.",
+      "primaryMulticlass": "Métrica principal: exactitud balanceada (de cada categoría, qué parte acierta, en promedio). Con {k} categorías, adivinar al azar da {chance}."
     },
     "leakage": {
       "found": "Columnas sospechosas de fuga: {columns}. Las métricas pueden estar infladas; quítalas y vuelve a entrenar.",
@@ -518,7 +545,7 @@
       "leakage": "El chequeo de fuga atrapa casos evidentes; no es una garantía.",
       "explainability": "La importancia por permutación es global (no por predicción) y puede repartirse entre variables correlacionadas; la dirección es univariada y no captura interacciones.",
       "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal).",
-      "tasks": "Esta versión entrena dos tareas: la clasificación en dos categorías y la estimación de una cantidad. Varias categorías llegan en una próxima versión."
+      "tasks": "Esta versión entrena tres tareas con objetivo: la clasificación en dos categorías, la clasificación en varias categorías (hasta 20) y la estimación de una cantidad."
     },
     "sanitation": {
       "duplicates": "Se quitaron {count} filas duplicadas exactas (previene fuga por duplicación).",
@@ -546,6 +573,11 @@
       "targetStats_one": "El objetivo en el entrenamiento: media {mean}, desviación {std}, mínimo {min}, mediana {median}, máximo {max} (escrito con 1 decimal).",
       "errors": "Errores en las {total} filas de prueba (estimado − real): la mitad queda entre {p25} y {p75}; 9 de cada 10 se equivocan por menos de ±{abs90}.",
       "noAi": "Narración con IA: no aplica a estimar una cantidad (solo cubre la clasificación en dos categorías)."
+    },
+    "multiclass": {
+      "confusion": "Matriz de confusión: cada fila es la categoría real; cada columna, la que predijo el modelo. La diagonal son los aciertos.",
+      "direction": "sin una sola dirección (varias categorías)",
+      "noAi": "Narración con IA: no aplica. Solo narra la clasificación en dos categorías; con varias, la lectura es el texto estándar."
     }
   },
   "errors": {
@@ -556,7 +588,6 @@
     "csv-ragged": "Hay filas con distinto número de columnas que la cabecera.",
     "csv-semicolon": "Tu archivo separa las columnas con punto y coma (;), no con comas, así que no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "csv-tab": "Tu archivo separa las columnas con tabulaciones, no con comas, así que no se reconoce ninguna columna. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
-    "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
     "target-not-numeric": "Para estimar una cantidad, el objetivo tiene que ser un número en todas las filas, y esta columna trae valores que no lo son. Revísala en tu CSV o elige otra columna.",
     "target-ambiguous": "Esta columna puede guardar categorías o una cantidad, y falta tu respuesta. Responde la pregunta de la tarjeta «Tipo de predicción» y vuelve a entrenar.",
     "no-features": "No hay columnas utilizables como predictores.",
@@ -570,7 +601,9 @@
     "target-mixed-notation": "Tu objetivo tiene clases escritas de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalas en tu CSV y vuelve a cargarlo.",
     "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas.",
     "too-few-rows-per-class": "Una de las categorías tiene muy pocas filas para comparar modelos con honestidad: la validación cruzada necesita al menos 2 filas de cada categoría en el conjunto de entrenamiento. Prueba con más filas o junta las categorías más raras en una sola.",
-    "too-few-rows-cluster": "Hay muy pocas filas para agrupar con honestidad: para saber si los grupos se sostienen, la app los vuelve a buscar en partes de tus datos, y cada parte necesita más filas que grupos. Prueba con más filas."
+    "too-few-rows-cluster": "Hay muy pocas filas para agrupar con honestidad: para saber si los grupos se sostienen, la app los vuelve a buscar en partes de tus datos, y cada parte necesita más filas que grupos. Prueba con más filas.",
+    "target-not-usable": "Esta columna no sirve como objetivo: tiene un solo valor, está vacía o tiene demasiados valores distintos para ser categorías. Elige otra columna.",
+    "too-few-rows-per-class-named": "La categoría «{class}» tiene solo {rows} fila(s) en el conjunto de entrenamiento, y la validación cruzada necesita al menos 2 de cada categoría para comparar modelos con honestidad. Prueba con más filas o junta las categorías más raras en una sola."
   },
   "task": {
     "title": "Tipo de predicción",
@@ -593,8 +626,7 @@
     "suggested": "Lo más probable: {task}.",
     "blocked": "Es un tipo de predicción que la app entrena, pero con estos datos no se pueden comparar modelos con honestidad (el motivo está abajo).",
     "trainable": "Se puede entrenar.",
-    "notYet": "Esta versión todavía no entrena este tipo de predicción: llega en una próxima versión. Por ahora, elige una columna con dos categorías o con una cantidad.",
-    "notUsable": "Esta columna no sirve como objetivo. Elige una columna con dos categorías o con una cantidad.",
+    "notUsable": "Esta columna no sirve como objetivo. Elige una columna con categorías o con una cantidad.",
     "estimate": {
       "unit": "Vas a estimar una cantidad, en {unit}. El veredicto dirá cuánto se equivoca en promedio, en {unit}.",
       "noUnit": "Vas a estimar una cantidad. Su nombre no trae una unidad que la app reconozca, así que las cifras se dirán en las unidades de «{column}»."
@@ -609,10 +641,13 @@
       },
       "multiclase": {
         "label": "Categorías",
-        "desc": "Cada número es una clase, como una nota del 1 al 5. Esta versión todavía no entrena varias clases: llega en una próxima versión."
+        "desc": "Cada número es una categoría, como una nota del 1 al 5. El veredicto usa la exactitud balanceada, que pesa igual cada categoría."
       },
       "answered": "Respondiste: {answer}.",
       "change": "Cambiar la respuesta"
+    },
+    "multiclass": {
+      "trainable": "Vas a clasificar en {count} categorías. El veredicto usa la exactitud balanceada: cada categoría pesa igual, aunque tenga pocas filas."
     }
   },
   "roster": {

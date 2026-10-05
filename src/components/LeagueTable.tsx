@@ -6,7 +6,7 @@ import {
   type Placement,
   type Routing,
 } from "@/engine/encarrilador";
-import { matchByTask, pendingSurface, taskOf } from "@/engine/despacho";
+import { matchByTask, taskOf } from "@/engine/despacho";
 import { selectOneSe, type MemberId } from "@/engine/roster";
 import {
   METRIC_RULES,
@@ -49,11 +49,15 @@ export function LeagueTable({
   routing,
   choice,
   onChoose,
+  minorityShare: profileMinority = null,
 }: {
   result: SupervisedResult;
   routing: Routing | null;
   choice: ChoiceState;
   onChoose: (member: MemberId) => void;
+  /** S7: la parte de la clase más chica en el dataset con que se entrenó (la del
+   *  reparto de E2), para la razón de una balanceada «fuera». */
+  minorityShare?: number | null;
 }) {
   const t = useT();
   const [showTest, setShowTest] = useState(false);
@@ -75,10 +79,10 @@ export function LeagueTable({
         : m[metric as MetricName];
   // Clasificación: 3 decimales (de 0 a 1). Estimar: unidades del objetivo, con
   // los decimales que pide el puntaje más chico de la tabla (R9).
+  const fixed3 = (v: number) => v.toFixed(3);
   const fmt: (v: number) => string = matchByTask(result, {
-    binaria: () => (v: number) => v.toFixed(3),
-    // S7 (D3): la liga de varias categorías llega a la pantalla en la F3.
-    multiclase: () => pendingSurface("LeagueTable", "multiclase"),
+    binaria: () => fixed3,
+    multiclase: () => fixed3,
     numerica: (regression) => {
       const decimals = quantityDecimals(
         league.flatMap((row) => (row.cv ? [row.cv.mean, row.cv.std] : [])),
@@ -121,7 +125,10 @@ export function LeagueTable({
   const rows = result.nTrain + result.nTest;
   const minorityShare = matchByTask(result, {
     binaria: (binary) => Math.min(binary.positiveRate, 1 - binary.positiveRate),
-    multiclase: () => pendingSurface("LeagueTable.minority", "multiclase"),
+    // La del reparto (train); sin perfil, la de la prueba (las filas de la matriz).
+    multiclase: (multi) =>
+      profileMinority ??
+      Math.min(...multi.perClass.map((c) => c.support)) / multi.nTest,
     numerica: () => 0,
   });
   const outReason = (p: Placement) =>

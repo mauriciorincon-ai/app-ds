@@ -137,7 +137,13 @@ export function ConfigScreen({
           <span aria-hidden className="mr-1 text-negative">
             ✕
           </span>
-          {t(`errors.${plan.blocked}`)}
+          {/* S7 (P4): la categoría más chica se nombra aquí, en pantalla. */}
+          {plan.smallestClass
+            ? t("errors.too-few-rows-per-class-named", {
+                class: plan.smallestClass.name,
+                rows: plan.smallestClass.trainRows,
+              })
+            : t(`errors.${plan.blocked}`)}
         </p>
       )}
 

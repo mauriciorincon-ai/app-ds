@@ -586,3 +586,32 @@ export const REGRESSION_FICHA_FIELDS: Partial<
     },
   },
 };
+
+/**
+ * S7 (ADR 015): con VARIAS categorías, los apartados que solo hablan de dos clases
+ * («sí» o «no», «las dos clases», el AUC binario) se reemplazan — si no, la ficha
+ * describiría un modelo que no es el que compite. Un test vigila que ninguna ficha
+ * de la liga multiclase hable de «sí/no», de dos clases ni del AUC binario.
+ */
+export const MULTICLASS_FICHA_FIELDS: Partial<
+  Record<BinaryMemberId, Partial<Ficha>>
+> = {
+  logistic: {
+    what: {
+      es: "Una suma ponderada de tus columnas para cada categoría, convertida en una probabilidad por categoría (entre todas suman 1). Cada columna acerca a unas categorías y aleja de otras con pesos fijos.",
+      en: "A weighted sum of your columns for each category, turned into one probability per category (together they add up to 1). Each column pulls towards some categories and away from others with fixed weights.",
+    },
+  },
+  ridge: {
+    watch: {
+      es: "Con varias categorías no da probabilidades, así que su pérdida logarítmica y su AUC quedan en «—». Compite, como todos, por la exactitud balanceada.",
+      en: "With several categories it gives no probabilities, so its log loss and AUC show as «—». Like everyone else, it competes on balanced accuracy.",
+    },
+  },
+  linear_svc: {
+    what: {
+      es: "Traza una frontera recta por cada categoría, que la separa de todas las demás con el mayor margen posible; gana la categoría cuya frontera queda más lejos de la fila.",
+      en: "Draws one straight boundary per category, splitting it from all the others with the widest possible gap; the category whose boundary sits furthest from the row wins.",
+    },
+  },
+};

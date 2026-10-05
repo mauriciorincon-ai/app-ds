@@ -66,7 +66,8 @@
         "chosen": "◆ Chosen by you, not by cross-validation (the cross-validation winner was {winner}). If it was chosen by looking at the test set, the metric may be optimistic.",
         "cv": "Chosen by {k}-fold cross-validation among {count} models.",
         "cv_one": "Chosen by {k}-fold cross-validation (1 model competed).",
-        "targetQuantity": "Estimates «{target}», a quantity"
+        "targetQuantity": "Estimates «{target}», a quantity",
+        "targetMulticlass": "Classifies “{target}” into {count} categories"
       },
       "errors": {
         "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
@@ -87,7 +88,7 @@
     "target": {
       "label": "What do you want to predict?",
       "placeholder": "Pick a column…",
-      "help": "You can pick any column: we tell you what kind of prediction it would be. This version trains two-category columns (yes/no, 0/1) and quantities (a price, a consumption, a duration).",
+      "help": "You can pick any column: we tell you what kind of prediction it would be. The app trains two-category columns (yes/no, 0/1), several-category columns (up to 20, like a plan or a region) and quantities (a price, a consumption, a duration).",
       "option": "{column} · {task}"
     },
     "profile": {
@@ -187,7 +188,8 @@
       "title": "Possible data leakage",
       "finding": "The column “{column}” could be a proxy for the target.",
       "hint": "Remove it and retrain to see the honest performance.",
-      "none": "No obvious leakage found (this check is a help, not a guarantee)."
+      "none": "No obvious leakage found (this check is a help, not a guarantee).",
+      "findingClass": "The column “{column}” separates the category “{class}” from the rest almost perfectly: it could be a proxy for the target."
     },
     "again": "New experiment",
     "use": {
@@ -292,6 +294,19 @@
       },
       "baselinesNote": "Baselines don't compete: they measure whether the league adds anything. The median is the constant with the smallest average error; linear regression, the simplest straight line.",
       "testNote": "The verdict, metrics, chart and baselines are computed on the test set, never on the training set. The league table uses cross-validation inside training: it is for choosing."
+    },
+    "multiclass": {
+      "guide": "Look at balanced accuracy: for each category, the share it gets right, averaged. With {k} categories, guessing at random gives {chance}; 1.00 would mean always right. Plain accuracy can mislead when one category dominates.",
+      "noProbabilities": "This model picks the category but gives no probabilities, which is why log loss and AUC show as «—».",
+      "topConfusion": "The most frequent mix-up: rows of “{real}” the model took for “{predicted}” ({count} in the test set).",
+      "noConfusion": "On the test set, the model didn't mix up any category with another.",
+      "testNote": "The verdict, the matrix, the per-category metrics and the baselines are computed on the test set, never on the training set. The league table uses cross-validation inside training: it's for choosing; this is for believing.",
+      "confusionHow": "Each row is the real category; each column, the one the model predicted. ✓ marks the hits (the diagonal); everything else is a mix-up.",
+      "realPredicted": "Real ↓ · Predicted →",
+      "hit": "hit:",
+      "perClass": "Per category (test)",
+      "class": "Category",
+      "support": "Test rows"
     }
   },
   "score": {
@@ -342,7 +357,9 @@
     "columns": {
       "prediction": "prediction",
       "probability": "probability_{label}",
-      "estimate": "{target}_estimate"
+      "estimate": "{target}_estimate",
+      "predicted": "{target}_predicted",
+      "predictedProbability": "{target}_probability"
     },
     "fileSuffix": "scored",
     "download": "Download scored CSV",
@@ -363,7 +380,10 @@
       "median": "Median",
       "max": "Maximum"
     },
-    "quantityNote": "Estimating gives no probability: each row gets its estimated quantity, with the decimals you used for the target."
+    "quantityNote": "Estimating gives no probability: each row gets its estimated quantity, with the decimals you used for the target.",
+    "subtitleMulticlass": "Upload a new CSV with the columns the model knows (without the target column) and get the predicted category and its probability for each row. Everything happens in your browser.",
+    "modelLineMulticlass": "Model: {dataset} · target: {target} · {count} categories",
+    "multiclassProbabilityNote": "The probability is the predicted category's: how sure the model is about that row. With several categories it can be low even when the predicted one is the most likely."
   },
   "why": {
     "title": "Why does it predict this way?",
@@ -375,7 +395,8 @@
       "negative": "▼ higher values make “{target}” = “{positive}” less likely",
       "categorical": "· the effect varies by category (there is no single direction)",
       "unclear": "· no clear direction (it doesn't push consistently one way)",
-      "unused": "· the model doesn't rely on this variable (removing it wouldn't cost accuracy)"
+      "unused": "· the model doesn't rely on this variable (removing it wouldn't cost accuracy)",
+      "multiclass": "· with several categories there is no single direction: it can make one category more likely and another less"
     },
     "narration": {
       "title": "In words",
@@ -392,7 +413,8 @@
         "provider": "The AI provider didn't respond. You can try again.",
         "rejected": "The AI narrative didn't pass verification against the numbers; for honesty it isn't shown. You can try again."
       },
-      "aiNotForQuantity": "AI narration only covers classification into two categories. When estimating a quantity, the reading is the standard text above, built from the same numbers."
+      "aiNotForQuantity": "AI narration only covers classification into two categories. When estimating a quantity, the reading is the standard text above, built from the same numbers.",
+      "aiNotForMulticlass": "AI narration only covers classification into two categories. With several categories, the reading is the standard text above, built from the same numbers."
     },
     "legend": "The bar measures how much each variable MATTERS; the line below says which way it PUSHES. A variable can matter a lot and still have no single direction — that doesn't make it irrelevant.",
     "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”.",
@@ -400,7 +422,8 @@
       "positive": "▲ the higher the value, the higher «{target}»",
       "negative": "▼ the higher the value, the lower «{target}»"
     },
-    "quantityNote": "The model estimates the column «{target}». The bar measures how much its error (MAE) grows when that variable's link to the target is broken."
+    "quantityNote": "The model estimates the column «{target}». The bar measures how much its error (MAE) grows when that variable's link to the target is broken.",
+    "multiclassNote": "The model classifies the column “{target}” into {count} categories. The bar measures how much balanced accuracy drops when that variable's link to the target is broken."
   },
   "card": {
     "title": "Model card",
@@ -474,13 +497,15 @@
       "limits": "Limits",
       "sanitation": "Sanitization",
       "selection": "Model selection",
-      "estimate": "Estimation"
+      "estimate": "Estimation",
+      "multiclass": "Categories (on test)"
     },
     "data": {
       "dataset": "Dataset: {name}",
       "shape": "{rows} rows × {cols} columns ({numeric} numeric predictors, {categorical} categorical)",
       "target": "Target: “{target}” (binary classification; positive class: “{positive}”)",
-      "targetQuantity": "Target: «{target}» (estimating a quantity)"
+      "targetQuantity": "Target: «{target}» (estimating a quantity)",
+      "targetMulticlass": "Target: “{target}” (classification into {count} categories)"
     },
     "split": {
       "sizes": "Training: {train} rows · Test: {test} rows (stratified, seed {seed}).",
@@ -492,7 +517,8 @@
       "models": "Candidates compared: {candidates}. Chosen model: {model}.",
       "rareCategories": "Rare categories grouped (learned from training only): {cols}.",
       "baselines": "Baselines: majority class and logistic regression.",
-      "baselinesQuantity": "Baselines: the target's median and linear regression."
+      "baselinesQuantity": "Baselines: the target's median and linear regression.",
+      "baselinesMulticlass": "Baselines: majority class and multinomial logistic regression."
     },
     "metrics": {
       "metric": "Metric",
@@ -500,7 +526,8 @@
     },
     "verdict": {
       "primary": "Primary metric: {metric}.",
-      "primaryQuantity": "Primary metric: MAE, the average error in the target's units (lower is better); it ties when within 1% of the best baseline."
+      "primaryQuantity": "Primary metric: MAE, the average error in the target's units (lower is better); it ties when within 1% of the best baseline.",
+      "primaryMulticlass": "Primary metric: balanced accuracy (for each category, the share it gets right, averaged). With {k} categories, guessing at random gives {chance}."
     },
     "leakage": {
       "found": "Columns suspected of leakage: {columns}. Metrics may be inflated; remove them and retrain.",
@@ -518,7 +545,7 @@
       "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
       "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
       "dates": "Date columns are detected but not used yet (no temporal split).",
-      "tasks": "This version trains two tasks: classification into two categories and estimating a quantity. Several categories come in a later version."
+      "tasks": "This version trains three tasks with a target: classification into two categories, classification into several categories (up to 20) and estimating a quantity."
     },
     "sanitation": {
       "duplicates": "Removed {count} exact duplicate rows (prevents leakage by duplication).",
@@ -546,6 +573,11 @@
       "targetStats_one": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with 1 decimal).",
       "errors": "Errors over the {total} test rows (estimate − actual): half fall between {p25} and {p75}; 9 in 10 are off by less than ±{abs90}.",
       "noAi": "AI narration: does not apply to estimating a quantity (it only covers classification into two categories)."
+    },
+    "multiclass": {
+      "confusion": "Confusion matrix: each row is the real category; each column, the one the model predicted. The diagonal holds the hits.",
+      "direction": "no single direction (several categories)",
+      "noAi": "AI narration: not applicable. It only narrates classification into two categories; with several, the reading is the standard text."
     }
   },
   "errors": {
@@ -556,7 +588,6 @@
     "csv-ragged": "Some rows have a different number of columns than the header.",
     "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
     "csv-tab": "Your file separates columns with tabs rather than commas, so no column is recognised. Save it again as “CSV (comma delimited)” and upload it once more.",
-    "target-not-binary": "The target must have exactly two categories.",
     "target-not-numeric": "To estimate a quantity, the target has to be a number in every row, and this column has values that are not. Check it in your CSV or pick another column.",
     "target-ambiguous": "This column could hold categories or a quantity, and your answer is missing. Answer the question on the «Kind of prediction» card and train again.",
     "no-features": "There are no usable columns as predictors.",
@@ -570,7 +601,9 @@
     "target-mixed-notation": "Your target has classes written in more than one way (for example «1» and «1.0»): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
     "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns.",
     "too-few-rows-per-class": "One of the categories has too few rows to compare models honestly: cross-validation needs at least 2 rows of each category in the training set. Try with more rows, or merge the rarest categories into one.",
-    "too-few-rows-cluster": "There are too few rows to cluster honestly: to tell whether the groups hold up, the app searches for them again in parts of your data, and each part needs more rows than groups. Try with more rows."
+    "too-few-rows-cluster": "There are too few rows to cluster honestly: to tell whether the groups hold up, the app searches for them again in parts of your data, and each part needs more rows than groups. Try with more rows.",
+    "target-not-usable": "This column can't be used as a target: it has a single value, it's empty, or it has too many distinct values to be categories. Pick another column.",
+    "too-few-rows-per-class-named": "The category “{class}” has only {rows} row(s) in the training set, and cross-validation needs at least 2 of each category to compare models honestly. Try with more rows, or merge the rarest categories into one."
   },
   "task": {
     "title": "Kind of prediction",
@@ -593,8 +626,7 @@
     "suggested": "Most likely: {task}.",
     "blocked": "The app trains this kind of prediction, but with this data models cannot be compared honestly (the reason is below).",
     "trainable": "Ready to train.",
-    "notYet": "This version does not train this kind of prediction yet: it comes in a later version. For now, pick a column with two categories or with a quantity.",
-    "notUsable": "This column is not usable as a target. Pick a column with two categories or with a quantity.",
+    "notUsable": "This column can't be used as a target. Pick a column with categories or with a quantity.",
     "estimate": {
       "unit": "You are going to estimate a quantity, in {unit}. The verdict will say how far off it is on average, in {unit}.",
       "noUnit": "You are going to estimate a quantity. Its name carries no unit the app recognizes, so figures will be given in the units of «{column}»."
@@ -609,10 +641,13 @@
       },
       "multiclase": {
         "label": "Categories",
-        "desc": "Each number is a class, like a 1-to-5 rating. This version does not train several classes yet: it comes in a later version."
+        "desc": "Each number is a category, like a 1-to-5 rating. The verdict uses balanced accuracy, which weighs every category the same."
       },
       "answered": "You answered: {answer}.",
       "change": "Change the answer"
+    },
+    "multiclass": {
+      "trainable": "You're going to classify into {count} categories. The verdict uses balanced accuracy: every category weighs the same, even one with few rows."
     }
   },
   "roster": {

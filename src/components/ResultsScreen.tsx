@@ -28,6 +28,11 @@ import { LeagueTable } from "./LeagueTable";
 import { Level2Card } from "./Level2Card";
 import { ModelCardView } from "./ModelCardView";
 import {
+  MulticlassDetail,
+  MulticlassMetricsSection,
+  MulticlassVerdict,
+} from "./MulticlassResults";
+import {
   RegressionDetail,
   RegressionMetricsSection,
   RegressionVerdict,
@@ -124,9 +129,17 @@ function SupervisedResults({
       detail: <BinaryDetail result={binary} />,
       positiveClass: binary.positiveClass,
       unit: null,
+      classes: null,
     }),
-    // S7 (D3): la pantalla de varias categorías llega en la F3.
-    multiclase: () => pendingSurface("ResultsScreen", "multiclase"),
+    // S7 (ADR 015): la matriz K×K y las métricas por clase; sin «clase positiva».
+    multiclase: (multi) => ({
+      verdict: <MulticlassVerdict result={multi} hasLeak={hasLeak} />,
+      metrics: <MulticlassMetricsSection result={multi} />,
+      detail: <MulticlassDetail result={multi} />,
+      positiveClass: null,
+      unit: null,
+      classes: multi.classes.length,
+    }),
     numerica: (regression) => ({
       verdict: (
         <RegressionVerdict
@@ -139,6 +152,7 @@ function SupervisedResults({
       detail: <RegressionDetail result={regression} target={runMeta.target} />,
       positiveClass: null,
       unit: regression.unit,
+      classes: null,
     }),
   });
 
@@ -170,9 +184,15 @@ function SupervisedResults({
             {t("results.leakage.title")}
           </p>
           <ul className="ml-5 list-disc text-sm">
+            {/* S7 (P6): con varias categorías se nombra también la que delata. */}
             {leakage.map((finding) => (
               <li key={finding.column}>
-                {t("results.leakage.finding", { column: finding.column })}
+                {finding.class === undefined
+                  ? t("results.leakage.finding", { column: finding.column })
+                  : t("results.leakage.findingClass", {
+                      column: finding.column,
+                      class: finding.class,
+                    })}
               </li>
             ))}
           </ul>
@@ -190,6 +210,7 @@ function SupervisedResults({
         routing={routing}
         choice={choice}
         onChoose={onChoose}
+        minorityShare={profile?.minorityShare ?? null}
       />
       {profile && onRunLevel2 && (
         <Level2Card
@@ -214,6 +235,7 @@ function SupervisedResults({
         aiAvailable={aiAvailable}
         onRequestNarration={requestNarration}
         unit={byResult.unit}
+        classes={byResult.classes}
       />
 
       {/* S3: el modelo se usa — puntuar datos nuevos y exportar como archivo. */}

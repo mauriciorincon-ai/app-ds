@@ -320,7 +320,7 @@ describe("useExperiment", () => {
 
   // --- S5: el plan E1 + E2 al elegir el objetivo (AU-S5-09) -------------------
 
-  it("selectTarget: binaria ⇒ reparto; varias categorías ⇒ sin reparto ni bloqueo; muy pocas filas ⇒ bloqueo", () => {
+  it("selectTarget: binaria ⇒ reparto; varias categorías ⇒ reparto (S7); muy pocas filas ⇒ bloqueo", () => {
     const multi = [
       "x,cat,y,grupo",
       ...Array.from(
@@ -334,16 +334,31 @@ describe("useExperiment", () => {
     expect(result.current.state.plan?.routing).not.toBeNull();
     expect(result.current.state.plan?.blocked).toBeNull();
 
+    // S7 (cambio esperado, D3 cumplida): varias categorías se planean y entrenan.
     act(() => result.current.selectTarget("grupo"));
     expect(result.current.state.plan?.task.task).toBe("multiclase");
-    expect(result.current.state.plan?.routing).toBeNull();
+    expect(result.current.state.plan?.routing).not.toBeNull();
     expect(result.current.state.plan?.blocked).toBeNull();
+    expect(result.current.state.plan?.smallestClass).toBeNull();
 
     const tiny = ["x,y", "1,0", "2,0", "3,0", "4,0", "5,0", "6,1"].join("\n");
     act(() => result.current.loadCsv(tiny, "tiny.csv"));
     act(() => result.current.selectTarget("y"));
     expect(result.current.state.plan?.task.task).toBe("binaria");
     expect(result.current.state.plan?.blocked).toBe("too-few-rows");
+  });
+
+  it("S7 (P4): una categoría con muy pocas filas bloquea, y el plan la NOMBRA (solo para la pantalla)", () => {
+    const rare = [
+      "x,plan",
+      ...Array.from({ length: 12 }, (_, i) => `${i},${"ab"[i % 2]}`),
+      "99,raro",
+    ].join("\n");
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(rare, "rare.csv"));
+    act(() => result.current.selectTarget("plan"));
+    expect(result.current.state.plan?.blocked).toBe("too-few-rows-per-class");
+    expect(result.current.state.plan?.smallestClass?.name).toBe("raro");
   });
 
   // --- S5: el lector del contrato en producción ------------------------------

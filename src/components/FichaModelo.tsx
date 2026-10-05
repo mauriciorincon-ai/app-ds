@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import {
   BALANCED_NOTES,
   FICHAS,
+  MULTICLASS_FICHA_FIELDS,
   REGRESSION_FICHA_FIELDS,
   REGRESSION_NOTES,
   type BalancedId,
@@ -12,7 +13,12 @@ import {
   type FichaId,
   type SharedId,
 } from "@/content/modelos";
-import { MEMBERS, memberNameKey, type MemberId } from "@/engine/roster";
+import {
+  MEMBERS,
+  memberNameKey,
+  type BinaryMemberId,
+  type MemberId,
+} from "@/engine/roster";
 import { matchTask, pendingSurface, taskOf } from "@/engine/despacho";
 import type { TrainTask } from "@/engine/tarea";
 import { useI18n } from "@/i18n/provider";
@@ -85,8 +91,17 @@ export default function FichaModelo({
   // los modelos compartidos suman cómo estiman.
   const { ficha, regressionNote } = matchTask(task, {
     binaria: () => ({ ficha: FICHAS[fichaId], regressionNote: null }),
-    // S7 (D3): los reemplazos de «la clase positiva» llegan con la UI (F3).
-    multiclase: () => pendingSurface("FichaModelo", "multiclase"),
+    // S7: los apartados que solo hablan de dos clases se reemplazan.
+    multiclase: () => ({
+      ficha:
+        id in MULTICLASS_FICHA_FIELDS
+          ? {
+              ...FICHAS[fichaId],
+              ...MULTICLASS_FICHA_FIELDS[id as BinaryMemberId],
+            }
+          : FICHAS[fichaId],
+      regressionNote: null,
+    }),
     // S7 (D3): la ficha de un agrupador se abre desde su pantalla (F3).
     agrupar: () => pendingSurface("FichaModelo", "agrupar"),
     numerica: () => ({
