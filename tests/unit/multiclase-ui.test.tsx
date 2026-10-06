@@ -199,9 +199,15 @@ describe("S7: Resultados con varias categorías (sin marcas binarias)", () => {
         "La columna «descuento_estudiantil» separa casi a la perfección la categoría «estudiante» del resto: podría ser un proxy del objetivo.",
       ),
     ).toBeInTheDocument();
+    // La fuga delata UNA categoría: el titular dice la sospecha, no «casi
+    // perfectas» (con la fuga plantada del kit la cifra global es 0.78).
     expect(
-      screen.getByRole("heading", { level: 1, name: /sospechoso/ }),
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Posible fuga de datos — sospechoso",
+      }),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/casi perfectas/)).toBeNull();
   });
 
   it("la liga muestra la exactitud balanceada con 3 decimales", () => {

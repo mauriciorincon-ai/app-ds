@@ -32,14 +32,28 @@ export const LEVEL_MARK: Record<
   loses: { tone: "negative", mark: "▼" },
 };
 
-/** Con una fuga sospechada, el titular es la sospecha — igual en las dos tareas
- *  (un solo sitio: AU-S6-42). */
-export function suspiciousBanner(t: (key: string) => string): Banner {
+/** Con una fuga sospechada, el titular es la sospecha — igual en todas las tareas
+ *  (un solo sitio: AU-S6-42). S7: con varias categorías la fuga delata UNA
+ *  categoría y la cifra global puede quedar lejos de «perfecta» (planes con fuga
+ *  plantada: exactitud balanceada 0.78), así que ese titular no dice «casi
+ *  perfectas»: dice la sospecha. */
+export function suspiciousBanner(
+  t: (key: string) => string,
+  kind: "metrics" | "class" = "metrics",
+): Banner {
   return {
     tone: "caution",
     mark: "⚠",
-    headline: t("results.verdict.suspicious"),
-    detail: t("results.verdict.suspiciousDetail"),
+    headline: t(
+      kind === "class"
+        ? "results.verdict.suspiciousClass"
+        : "results.verdict.suspicious",
+    ),
+    detail: t(
+      kind === "class"
+        ? "results.verdict.suspiciousClassDetail"
+        : "results.verdict.suspiciousDetail",
+    ),
   };
 }
 

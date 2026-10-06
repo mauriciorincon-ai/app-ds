@@ -1087,6 +1087,37 @@ desde el octavo commit), LCP simulado **2.935 ms** (margen 16,1 %).
 - `pnpm test`: 669 de 669 en 57 archivos (el motor al 97,42 % de sentencias y 98,96 % de líneas);
 - e2e, la suite entera sobre el build de producción: 58 de 58 al primer intento, en 5,0 min.
 
+### Décimo commit: dos defectos de las pantallas nuevas, cazados al recorrerlas
+
+Un recorrido de reconocimiento con Playwright sobre el build de producción, para escribir los
+«Esperado» de la guía v4 con los textos reales, encontró dos defectos en superficies de este sprint:
+
+- **El titular de la fuga por categoría afirmaba algo falso.** Con `planes-fuga-plantada.csv` el
+  titular decía «Métricas casi perfectas — sospechoso» con una exactitud balanceada de **0,78**. El
+  titular sale de que haya una columna marcada, no de las métricas, y con varias categorías la fuga
+  delata UNA categoría («empresa»): la cifra global queda lejos de perfecta. En multiclase el
+  titular pasa a **«Posible fuga de datos — sospechoso»**. El detalle dice que una columna separa una
+  categoría casi a la perfección y que las cifras pueden estar infladas aunque no parezcan
+  perfectas. `suspiciousBanner` sigue en un solo sitio (AU-S6-42), con una variante. El titular
+  heredado de binaria y estimar no se toca: es copy aprobado en sus gates, y en el kit coincide con
+  métricas casi perfectas. Queda anotado para la auditoría (casilla 4).
+- **Choque de símbolos.** «Los grupos existen» llevaba **◆**, que en toda la app es «Elegido por ti»
+  (design-system). Mauricio lee por símbolo, no por color. Pasa a **●**, que hace par con **○** («no
+  hay estructura»); «frágiles» sigue con ⚠.
+
+De paso, TEXTO: «Agrupan 4 agrupadores ahora» → «Compiten 4 agrupadores ahora».
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`):
+
+| Gate | Mutación | Rojo (lo que nombró) | Verde |
+| --- | --- | --- | --- |
+| Titular de la fuga por categoría | `suspiciousBanner(t)` en multiclase | «Posible fuga de datos — sospechoso» | 12 de 12 |
+| La lectura no reusa ◆ | `mark: "◆"` para «existen» | «Unable to find an element with the text: ●» | 24 de 24 |
+
+La e2e de la fuga multiclase pasa a exigir el titular exacto.
+
+**Verde:** el mismo árbol del noveno commit (669 de 669 unitarias y 58 de 58 e2e al primer intento).
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

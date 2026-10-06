@@ -134,6 +134,10 @@ describe("S7: Resultados al agrupar (sin veredicto ni prueba)", () => {
     ).toBeInTheDocument();
     // Ni marcas binarias ni columnas de la liga con objetivo.
     expect(container.textContent).not.toMatch(BINARY_OR_TEST);
+    // La marca de la lectura no reusa ◆, que en toda la app es «Elegido por ti»
+    // (Mauricio lee por símbolo, no por color): «existen» lleva ●.
+    expect(screen.getByText("●")).toBeInTheDocument();
+    expect(container.textContent).not.toContain("◆");
   });
 
   it.each([

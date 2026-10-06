@@ -42,7 +42,7 @@ export function MulticlassVerdict({
       verdict.primaryMetric,
     ) === result.baselines.logistic;
   const banner: Banner = hasLeak
-    ? suspiciousBanner(t)
+    ? suspiciousBanner(t, "class")
     : logisticTie
       ? {
           ...LEVEL_MARK.ties,

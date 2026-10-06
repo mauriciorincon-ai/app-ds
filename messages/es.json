@@ -142,8 +142,8 @@
     "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
     "trainHint_one": "Nivel 1: 1 modelo · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
     "cluster": "Agrupar filas",
-    "clusterHint": "Agrupan {count} agrupadores ahora, unos {time} en un computador de escritorio.",
-    "clusterHint_one": "Agrupa 1 agrupador ahora, unos {time} en un computador de escritorio."
+    "clusterHint": "Compiten {count} agrupadores ahora, unos {time} en un computador de escritorio.",
+    "clusterHint_one": "Compite 1 agrupador ahora, unos {time} en un computador de escritorio."
   },
   "training": {
     "title": "Entrenando…",
@@ -172,6 +172,8 @@
       "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Tus columnas actuales no aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con lo que quieres predecir.",
       "suspicious": "Métricas casi perfectas — sospechoso",
       "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo.",
+      "suspiciousClass": "Posible fuga de datos — sospechoso",
+      "suspiciousClassDetail": "Una columna separa una categoría del resto casi a la perfección. Las cifras de abajo pueden estar infladas aunque no parezcan perfectas.",
       "chosenNote": "◆ Elegido por ti, no por la validación cruzada. Si lo elegiste mirando la prueba, este número puede ser optimista.",
       "logisticTie": "La liga no encontró nada mejor que la regresión de referencia",
       "logisticTieDetail": "Ningún modelo superó en validación cruzada, por más de un error estándar, a la regresión logística, que también es el baseline. Con estas columnas no hay señal extra que aprender: suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo."

@@ -201,8 +201,10 @@ export function ClusterReading({
     runs: reading.stability.runs,
     fraction: pct(reading.stability.fraction),
   };
+  // ● / ⚠ / ○: un disco lleno para «existen» y uno vacío para «no hay estructura».
+  // ◆ está reservado para «Elegido por ti» en toda la app (design-system).
   const MARKS = {
-    exist: { tone: "positive", mark: "◆" },
+    exist: { tone: "positive", mark: "●" },
     fragile: { tone: "caution", mark: "⚠" },
     none: { tone: "ink", mark: "○" },
   } as const;

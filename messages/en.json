@@ -172,6 +172,8 @@
       "losesDetail": "a simple model does better: {model} vs {baseline}. Your current columns don't carry enough signal about the target — try variables more related to what you want to predict.",
       "suspicious": "Almost perfect metrics — suspicious",
       "suspiciousDetail": "A perfect result almost always hides a leak, not a great model.",
+      "suspiciousClass": "Possible data leak — suspicious",
+      "suspiciousClassDetail": "A column separates one category from the rest almost perfectly. The figures below may be inflated even if they don't look perfect.",
       "chosenNote": "◆ Chosen by you, not by cross-validation. If you chose it by looking at the test, this number may be optimistic.",
       "logisticTie": "The league found nothing better than the reference regression",
       "logisticTieDetail": "No model beat logistic regression in cross-validation by more than one standard error, and logistic regression is also the baseline. With these columns there is no extra signal to learn: adding variables related to the target usually helps more than changing the model."

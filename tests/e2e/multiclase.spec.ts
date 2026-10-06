@@ -115,7 +115,10 @@ test("varias categorías: la fuga por clase nombra la columna y la categoría", 
   await load(page, "planes-fuga-plantada.csv");
   await page.getByRole("button", { name: /Entrenar modelos/i }).click();
   await expect(
-    page.getByRole("heading", { level: 1, name: /sospechoso/ }),
+    page.getByRole("heading", {
+      level: 1,
+      name: "Posible fuga de datos — sospechoso",
+    }),
   ).toBeVisible({ timeout: 150_000 });
   await expect(
     page.getByText(
