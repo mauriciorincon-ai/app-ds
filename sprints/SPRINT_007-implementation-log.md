@@ -1498,6 +1498,13 @@ unitarias **sin ninguna saltada**: la carnada del hook ya no se salta en la CI (
 publicado — la excepción sigue vigente». `integration`: 101 más 1 saltada, el emisor del fixture del S6
 (`modelo-s6.test.ts`), que solo escribe con su variable de entorno y no es un gate. e2e 64 de 64.
 
+**CI de `a39525b`** (copy y UI, parte 3; run 37411615946): quality (743 de 743), integration,
+lighthouse y Vercel en `success`; **e2e en rojo, 2 de 68**: `score-download.spec.ts` en los dos
+dispositivos esperaba «adivinando en 3 de 4 filas (75%)», y el pago de AU-S7-33 puso el espacio no
+separable del español («75 %»). Es un cambio esperado que no busqué en las e2e: corrí la suite unitaria
+completa antes del push, no la e2e. Corregido en el commit siguiente (`\s` en la regex; el byte lo exige
+la unitaria) y, desde aquí, la e2e completa corre en local antes de empujar (K-S7-7).
+
 La tabla de demos en rojo de la Fase 2 se copia aquí al cerrar la fase.
 
 ## Fricciones del kit (SEPARADAS del producto)
@@ -1535,3 +1542,10 @@ La tabla de demos en rojo de la Fase 2 se copia aquí al cerrar la fase.
   `--debe-nombrar`, que es opcional. La constitución (regla 11) dice que una señal no cuenta. El
   script del kit (v1.40.0) tiene el mismo hueco (auditoría de la constitución, AC-12). Propuesta:
   `rc ≥ 128` ⇒ «el gate murió por una señal: eso no es un rojo», con restauración y exit 1.
+- **K-S7-7 · Un cambio de copy rompe una e2e que la suite unitaria no ve.** El pago de una regla de
+  cifras (el espacio no separable antes de `%` en español) pasó 743 de 743 unitarias y cayó en la CI en
+  una e2e que buscaba el texto viejo (`a39525b`). El método pide «gates nuevos al final sobre el árbol
+  completo», pero no dice que un cambio de copy obligue a correr la e2e completa antes del push, ni a
+  buscar el texto viejo en `tests/e2e/`. Propuesta para `/audita-sprint` Fase 2: todo pago que cambie un
+  texto visible busca el literal viejo en `tests/` (unit **y** e2e) en el mismo paso, y la e2e completa
+  corre en local antes de empujar el lote de copy.
