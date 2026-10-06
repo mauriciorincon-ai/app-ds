@@ -105,6 +105,20 @@ test("varias categorías: veredicto, matriz K×K, por categoría y cero peticion
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
 
+  // AU-S7-22 / AU-S7-39: «Elegir» otro modelo con varias categorías: la model card y la
+  // lectura pasan a «Elegido por ti», el foco va al h1 (no a <body>), y «Volver al
+  // ganador» lo deshace.
+  await page.getByRole("button", { name: /^Elegir / }).first().click();
+  await expect(page.getByText(/◆ Elegido por ti/).first()).toBeVisible({
+    timeout: 120_000,
+  });
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+  await page.getByRole("button", { name: /Volver al ganador/ }).first().click();
+  await expect(page.getByText(/◆ Elegido por ti/)).toHaveCount(0, {
+    timeout: 120_000,
+  });
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+
   expect(narrateRequests).toEqual([]);
 });
 

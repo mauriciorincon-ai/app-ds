@@ -19,6 +19,13 @@
 // el DOM —abrir la ficha, «Ver las otras columnas», «Elegir» y «Volver al ganador»,
 // descargar las filas con su grupo, el Nivel 2, cambiar el idioma—; si no cambia,
 // es un hallazgo. Además deja en el reporte las CIFRAS que cita la guía v4.
+// S7, Fase 2 de la auditoría (AU-S7-22): también la ficha de un baseline y «Ver
+// puntajes de prueba» con varias categorías, «Elegir» / «Volver al ganador» ahí (con el
+// foco en el h1), «Incluir de todos modos», la ficha de un agrupador que no ganó,
+// «Descargar model card» de las dos tareas nuevas y «Cancelar el Nivel 2» al agrupar
+// (tras cancelar, las filas con su grupo dicen que ya no se pueden descargar). El
+// estado `error` de esa descarga no se puede provocar desde la página: lo cubre la
+// prueba unitaria por prop.
 // Las capturas se LEEN como imagen antes de presentar.
 //
 // Uso: OUT=<carpeta> node scripts/capturas-s7.mjs
@@ -223,6 +230,67 @@ for (const [width, scheme] of [
   await shot(page, `${tag}-06-ficha-planes`, { full: false });
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "hidden" });
+
+  // AU-S7-22: la ficha de un baseline con varias categorías (escondía AU-S7-15).
+  await interact(
+    "ficha de la clase mayoritaria (baseline, varias categorías)",
+    () => page.getByRole("dialog").count(),
+    async () => {
+      await page.getByRole("button", { name: "Ficha de Clase mayoritaria" }).first().click();
+      await page.getByRole("dialog").waitFor();
+    },
+  );
+  const majority = await text(page.getByRole("dialog"));
+  if (/AUC o F1|«sí»|«no»/.test(majority)) fail(`${tag} la ficha de la mayoritaria habla de dos clases: «${majority}»`);
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+
+  await interact(
+    "«Ver puntajes de prueba» con varias categorías",
+    () => page.getByRole("button", { name: /puntajes de prueba/ }).getAttribute("aria-expanded"),
+    () => page.getByRole("button", { name: /Ver puntajes de prueba/ }).click(),
+  );
+  await element(page, page.getByRole("region", { name: /La liga/ }).first(), `${tag}-06b-liga-prueba-planes`);
+  await page.getByRole("button", { name: /Ocultar puntajes de prueba/ }).click();
+
+  await interact(
+    "«Elegir» otro modelo con varias categorías",
+    () => page.getByText(/◆ Elegido por ti/).count(),
+    async () => {
+      await page.getByRole("button", { name: /^Elegir / }).first().click();
+      await page.getByText(/◆ Elegido por ti/).first().waitFor({ timeout: 120_000 });
+    },
+  );
+  const focused = await page.evaluate(() => document.activeElement?.tagName);
+  if (focused !== "H1") fail(`${tag} tras «Elegir», el foco está en ${focused} (AU-S7-39)`);
+  else report.push(`OK ${tag} tras «Elegir», el foco va al h1`);
+  await interact(
+    "«Volver al ganador» con varias categorías",
+    () => page.getByText(/◆ Elegido por ti/).count(),
+    async () => {
+      await page.getByRole("button", { name: /Volver al ganador/ }).first().click();
+      await page.getByText(/◆ Elegido por ti/).first().waitFor({ state: "detached", timeout: 120_000 });
+    },
+  );
+
+  const force = page.getByRole("group", { name: "Incluir de todos modos" }).getByRole("checkbox");
+  if ((await force.count()) > 0) {
+    await interact(
+      "«Incluir de todos modos» suma un modelo al Nivel 2",
+      () => text(page.getByRole("button", { name: /Correr el Nivel 2/ })),
+      () => force.first().check(),
+    );
+    await element(page, page.getByRole("heading", { name: /Nivel 2/ }).locator("xpath=ancestor::section[1]"), `${tag}-06c-nivel2-planes`);
+    await force.first().uncheck();
+  } else report.push(`· ${tag} planes: ningún modelo «fuera» que incluir`);
+
+  const cardDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Descargar model card/ }).click();
+  const cardMd = readFileSync(await (await cardDownload).path(), "utf8");
+  if (!/Exactitud balanceada/.test(cardMd) || /clase positiva/i.test(cardMd))
+    fail(`${tag} la model card descargada (varias categorías) no es la de su tarea`);
+  else report.push(`OK interacción: descargar la model card de varias categorías (${cardMd.length} caracteres)`);
+
   await page.getByText("Ver el contenido").click();
   await element(page, page.getByRole("region", { name: /contenido/i }), `${tag}-07-model-card-planes`);
   await page.getByRole("button", { name: /Usar el modelo/i }).click();
@@ -314,6 +382,35 @@ for (const [width, scheme] of [
   await shot(page, `${tag}-17-ficha-jerarquico`, { full: false });
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "hidden" });
+
+  // AU-S7-22: la ficha de un agrupador que NO ganó (escondía AU-S7-16).
+  await interact(
+    "ficha de un agrupador que no ganó",
+    () => page.getByRole("dialog").count(),
+    async () => {
+      await page
+        .getByRole("region", { name: /Los agrupadores: \d/ })
+        .getByRole("row")
+        .filter({ hasNotText: /Ganador por/ })
+        .getByRole("button", { name: /^Ficha de / })
+        .first()
+        .click();
+      await page.getByRole("dialog").waitFor();
+    },
+  );
+  const loser = await text(page.getByRole("dialog"));
+  if (/validación cruzada|no concluyó/.test(loser) || !/por puntaje|no encontró dos grupos/.test(loser))
+    fail(`${tag} la ficha de un agrupador que no ganó: «${loser}»`);
+  await element(page, page.getByRole("dialog"), `${tag}-17b-ficha-no-ganador`);
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+
+  const clusterCard = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Descargar model card/ }).click();
+  const clusterMd = readFileSync(await (await clusterCard).path(), "utf8");
+  if (/puntajes de validación cruzada|Tiempo de la liga|aún no/.test(clusterMd) || !/re-muestreo más distinto/.test(clusterMd))
+    fail(`${tag} la model card descargada de agrupar no es la de su tarea`);
+  else report.push(`OK interacción: descargar la model card de agrupar (${clusterMd.length} caracteres)`);
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: /Descargar filas con su grupo/ }).click();
   const labels = readFileSync(await (await download).path(), "utf8").trim().split("\n");
@@ -385,6 +482,31 @@ for (const [width, scheme] of [
     await shot(page, `${tag}-27-grande-nivel1`);
     if (figures)
       report.push(`cifra · grande nivel 1: ${await text(page.getByText(/consenso/).first())}`);
+    // AU-S7-22: cancelar el Nivel 2 al agrupar vuelve al resultado, y lo que se pierde
+    // se dice (AU-S7-17): las filas con su grupo ya no se pueden descargar.
+    await interact(
+      "«Cancelar el Nivel 2» al agrupar vuelve al resultado anterior",
+      () => page.getByText(/Cancelaste el Nivel 2/).count(),
+      async () => {
+        await page.getByRole("button", { name: /Correr el Nivel 2/ }).click();
+        await page.getByText(/hay que volver a agrupar/).first().waitFor();
+        // Se cancela cuando ya está agrupando (la línea de cada agrupador): antes, mientras
+        // guarda la instantánea, el worker conserva las filas con su grupo y no se pierde nada.
+        await page.getByText(/Buscando grupos · agrupador/).first().waitFor({ timeout: 120_000 });
+        await shot(page, `${tag}-27b-nivel2-corriendo`, { full: false });
+        await page.getByRole("button", { name: /Cancelar el Nivel 2/ }).click();
+        await page.getByText(/Cancelaste el Nivel 2/).first().waitFor({ timeout: 120_000 });
+      },
+    );
+    await interact(
+      "tras cancelar, «Descargar filas con su grupo» dice que ya no se puede",
+      () => page.getByText(/ya no guarda el grupo de tus filas/).count(),
+      async () => {
+        await page.getByRole("button", { name: /Descargar filas con su grupo/ }).click();
+        await page.getByText(/ya no guarda el grupo de tus filas/).first().waitFor({ timeout: 60_000 });
+      },
+    );
+    await shot(page, `${tag}-27c-cancelado`);
     await interact(
       "«Correr el Nivel 2» suma el jerárquico",
       () => text(page.getByRole("heading", { name: /Los agrupadores: \d/ })),

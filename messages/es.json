@@ -849,7 +849,7 @@
       "estimate_one": "1 agrupador · unos {time} en este equipo",
       "running": "Nivel 2 · {count} agrupadores · unos {time} en este equipo",
       "running_one": "Nivel 2 · 1 agrupador · unos {time} en este equipo",
-      "cancelHint": "Puedes cancelar mientras corre: vuelves a este resultado. Para descargar tus filas con su grupo después de cancelar, hay que volver a agrupar."
+      "cancelHint": "Puedes cancelar mientras corre: vuelves a este resultado. Si cancelas cuando ya está agrupando, para descargar tus filas con su grupo hay que volver a agrupar."
     }
   },
   "cluster": {

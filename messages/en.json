@@ -849,7 +849,7 @@
       "estimate_one": "1 clusterer · about {time} on this device",
       "running": "Level 2 · {count} clusterers · about {time} on this device",
       "running_one": "Level 2 · 1 clusterer · about {time} on this device",
-      "cancelHint": "You can cancel while it runs: you come back to this result. To download your rows with their group after cancelling, you need to group again."
+      "cancelHint": "You can cancel while it runs: you come back to this result. If you cancel once it's already grouping, you need to group again to download your rows with their group."
     }
   },
   "cluster": {

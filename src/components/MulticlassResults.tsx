@@ -267,7 +267,7 @@ export function ConfusionTable({
                   scope="row"
                   className="sticky left-0 z-10 bg-surface px-2 py-1 text-left font-sans text-xs font-normal text-ink-muted"
                 >
-                  <span className="block max-w-[6rem] wrap-anywhere sm:max-w-[9rem]">
+                  <span className="block max-w-[6rem] break-words sm:max-w-[9rem]">
                     <span aria-hidden className="tabular-nums">
                       {real + 1}·
                     </span>
@@ -370,7 +370,7 @@ function PerClassTable({
                   scope="row"
                   className="py-0.5 pr-3 text-left font-sans font-normal"
                 >
-                  <span className="block max-w-[10rem] wrap-anywhere">
+                  <span className="block max-w-[10rem] break-words">
                     {classes[index]}
                   </span>
                 </th>

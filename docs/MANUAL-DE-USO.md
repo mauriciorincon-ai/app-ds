@@ -68,7 +68,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Solo predicción de **dos categorías** (clasificación binaria). _Desde el Sprint 006 también se
     estiman cantidades, y desde el Sprint 007 se clasifica en varias categorías y se agrupa sin
     objetivo._
-  - Tamaño máximo del archivo: **5 MB o 50 000 filas**. Por encima, la app avisa (no se cuelga).
+  - Tamaño máximo del archivo: **5 MB o 50,000 filas**. Por encima, la app avisa (no se cuelga).
   - El chequeo de fuga es una **ayuda honesta, no una garantía**: atrapa los casos evidentes, no
     todos.
   - Las columnas de fecha se **detectan y avisan**, pero no se usan para el análisis.
@@ -176,7 +176,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 - **Limitaciones conocidas (Sprint 003):**
   - El archivo `.probeta.json` **solo lo entiende Probeta** (no es un formato estándar de
     intercambio). Publicar el modelo para que otros lo usen llegará más adelante.
-  - El CSV nuevo tiene los **mismos límites** de siempre: 5 MB o 50 000 filas.
+  - El CSV nuevo tiene los **mismos límites** de siempre: 5 MB o 50,000 filas.
   - El aviso de novedad detecta **valores nunca vistos**; no puede detectar cambios más sutiles
     (por ejemplo, que la relación entre variables haya cambiado con el tiempo).
   - Por seguridad, **carga solo archivos exportados por Probeta**. La app valida la integridad,
@@ -395,8 +395,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     una cifra.
   - **La matriz de confusión:** cada fila es la categoría real y cada columna la que predijo el
     modelo. Los aciertos (la diagonal) llevan **✓**; todo lo demás son confusiones. Con muchas
-    categorías, la tabla se desplaza dentro de su propio recuadro y los nombres largos se recortan
-    (el nombre completo aparece al pasar el puntero). Debajo, una frase te dice **la confusión más
+    categorías, la tabla se desplaza dentro de su propio recuadro. El nombre de cada fila se lee
+    entero, y cada columna lleva delante el número de su fila (_«2·»_ arriba es la fila _«2·»_ de la
+    izquierda), porque en la columna un nombre largo se recorta. Debajo, una frase te dice **la confusión más
     frecuente**, con su conteo: _«filas de “A” que el modelo tomó por “B”»_.
   - **Por categoría:** una tabla con cómo le va al modelo en cada categoría y cuántas filas de
     prueba tiene. Todo esto se calcula sobre el **conjunto de prueba**.
@@ -475,7 +476,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     otro**: la lectura pasa a ser la suya, con la etiqueta **◆ Elegido por ti**, y **«Volver al
     ganador»** lo restituye.
 
-- **Con más de 8.000 filas, el jerárquico usa una muestra:** se ajusta sobre **8.000 filas al azar**
+- **Con más de 8,000 filas, el jerárquico usa una muestra:** se ajusta sobre **8,000 filas al azar**
   (siempre las mismas para tus datos) y asigna el resto al grupo más cercano. Lo hace para no agotar
   la memoria del navegador, sobre todo en un teléfono, sin cerrar la pestaña. Los otros tres usan
   todas tus filas. La app te lo dice **antes de agrupar**, junto a la lectura si el jerárquico gana,
@@ -503,9 +504,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 - **Limitaciones conocidas (Sprint 007):**
   - Los grupos **describen** tus filas: no prueban que haya una causa detrás, ni que se repitan en
     otros datos.
-  - La silueta se mide sobre una **muestra de hasta 2.000 filas**, la misma para todos los
+  - La silueta se mide sobre una **muestra de hasta 2,000 filas**, la misma para todos los
     agrupadores.
-  - Con más de 8.000 filas, el jerárquico se ajusta sobre una muestra (ver arriba).
+  - Con más de 8,000 filas, el jerárquico se ajusta sobre una muestra (ver arriba).
   - Las fechas no se usan para agrupar.
   - La fuga no aplica (no hay objetivo que una columna pueda delatar) y la narración con IA no se
     ofrece; la model card lo dice.
@@ -585,7 +586,7 @@ cuando una te frene.
 | **Datos sin estructura**        | Datos al azar en la misma caja que los tuyos. Si tus filas no se separan mejor que ellos (por al menos 0.10 de puntaje), no hay estructura de grupos.        |
 | **Estabilidad**                 | Si al volver a agrupar el 80 % de tus filas, 10 veces, salen los mismos grupos. Se mide de 0 a 1; hace falta al menos 0.7.                                   |
 | **η² y V de Cramér**            | De 0 a 1: cuánto de la variación de una columna se explica por el grupo. η² en las numéricas, V de Cramér en las de categorías.                              |
-| **Muestra del jerárquico**      | Con más de 8.000 filas, el jerárquico se ajusta sobre 8.000 al azar y asigna el resto al grupo más cercano, para no agotar la memoria del navegador.        |
+| **Muestra del jerárquico**      | Con más de 8,000 filas, el jerárquico se ajusta sobre 8,000 al azar y asigna el resto al grupo más cercano, para no agotar la memoria del navegador.        |
 
 **Sobre las advertencias**
 
@@ -654,10 +655,10 @@ cuando una te frene.
   **mejor que datos sin estructura** y que los grupos **se repitan** al volver a agrupar partes de tus
   filas. Si no pasa lo primero, la app te dice «no hay estructura de grupos»; si no pasa lo segundo,
   que los grupos son frágiles.
-- **¿Por qué el jerárquico usa una muestra si tengo más de 8.000 filas?** Porque el agrupamiento
+- **¿Por qué el jerárquico usa una muestra si tengo más de 8,000 filas?** Porque el agrupamiento
   jerárquico compara cada fila con todas las demás: con muchas filas necesita más memoria de la que
   un navegador puede dar, sobre todo en un teléfono, y la pestaña se cerraría. Por eso se ajusta sobre
-  8.000 filas al azar (siempre las mismas para tus datos) y asigna el resto al grupo más cercano. Los
+  8,000 filas al azar (siempre las mismas para tus datos) y asigna el resto al grupo más cercano. Los
   otros tres agrupadores usan todas tus filas, y la app te lo dice antes de agrupar y donde se lee el
   resultado.
 - **«Los grupos existen», ¿quiere decir que son reales?** Quiere decir que tus filas forman grupos

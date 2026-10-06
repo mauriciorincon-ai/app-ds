@@ -760,6 +760,40 @@ describe("S7: el flujo de agrupar en el hook (P13: las etiquetas no pasan por el
     expect(result.current.state.labels).toBe("unavailable");
   });
 
+  // La otra rama del aviso de cancelar («si cancelas cuando ya está agrupando…»): si el
+  // Nivel 2 todavía guardaba la instantánea, el worker es el mismo y conserva el grupo de
+  // cada fila, así que la descarga funciona.
+  it("cancelar mientras guarda la instantánea: las filas con su grupo se siguen descargando", () => {
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(SEGMENTOS, "segmentos-clientes.csv"));
+    act(() => result.current.selectCluster());
+    act(() => result.current.runCluster());
+    const worker = FakeWorker.last!;
+    const train = worker.posted.at(-1)!;
+    reply(worker, train.id, "train", TRAIN);
+    act(() => result.current.runLevel2());
+    expect(worker.posted.at(-1)!.type).toBe("export-model");
+    act(() => result.current.cancelLevel2());
+    expect(FakeWorker.last, "cancelar la instantánea no reinicia el worker").toBe(
+      worker,
+    );
+    expect(result.current.state.modelReady).toBe(true);
+    act(() =>
+      result.current.downloadClusterLabels({
+        column: "grupo",
+        noise: "fuera de todo grupo",
+        fileSuffix: "agrupado",
+      }),
+    );
+    const ask = worker.posted.at(-1)!;
+    expect(ask.type).toBe("cluster-labels");
+    reply(worker, ask.id, "cluster-labels", {
+      labels: Array.from({ length: TRAIN.n_rows }, (_, i) => i % 3),
+    });
+    expect(result.current.state.labels).toBe("idle");
+    expect(vi.mocked(downloadTextFile)).toHaveBeenCalled();
+  });
+
   // AU-S7-18 / AU-S7-40: el botón «agrupar en su lugar» se PULSA (antes el título lo
   // prometía y la prueba no lo tocaba): desmonta la tarjeta de tarea y el foco va al
   // título de agrupar, no a <body>.
