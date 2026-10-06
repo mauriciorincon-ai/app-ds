@@ -49,7 +49,7 @@ export function RosterCard({
 
       <section className="flex flex-col gap-1.5">
         <h3 className="text-sm font-medium">
-          {t("roster.level1", {
+          {t(cluster ? "roster.cluster.level1" : "roster.level1", {
             count: routing.level1.length,
             time: formatEstimate(routing.level1EstimateS),
           })}
@@ -71,7 +71,9 @@ export function RosterCard({
       {level2.length > 0 && (
         <section className="flex flex-col gap-1.5">
           <h3 className="text-sm font-medium">
-            {t("roster.level2", { count: level2.length })}
+            {t(cluster ? "roster.cluster.level2" : "roster.level2", {
+              count: level2.length,
+            })}
           </h3>
           <ul className="flex flex-col gap-1 text-sm text-ink-muted">
             {level2.map((p) => (
@@ -87,7 +89,7 @@ export function RosterCard({
             ))}
           </ul>
           <p className="text-xs text-ink-muted">
-            {t("roster.level2Hint", {
+            {t(cluster ? "roster.cluster.level2Hint" : "roster.level2Hint", {
               time: formatEstimate(routing.unionEstimateS),
             })}
           </p>
@@ -136,7 +138,9 @@ export function RosterCard({
           <span aria-hidden className="mr-1">
             ⚠
           </span>
-          {t("roster.smallSample", { rows })}
+          {t(cluster ? "roster.cluster.smallSample" : "roster.smallSample", {
+            rows,
+          })}
         </p>
       )}
       {out.length > 0 && (

@@ -1118,6 +1118,62 @@ La e2e de la fuga multiclase pasa a exigir el titular exacto.
 
 **Verde:** el mismo árbol del noveno commit (669 de 669 unitarias y 58 de 58 e2e al primer intento).
 
+### Undécimo commit: al agrupar, el copy dice solo lo que al agrupar existe
+
+El reconocimiento con los dos archivos nuevos del kit (`segmentos-grande.csv`, 9.000 filas, y
+`tiendas-ciudades.csv`, 120 filas) mostró superficies de agrupar que reusaban copy de la liga
+supervisada y **decían cosas falsas al agrupar**:
+
+| Superficie | Decía | Dice ahora |
+| --- | --- | --- |
+| Quién compite | «Nivel 1 · 3 modelos», «correr la liga completa» | «3 agrupadores», «agrupar con todos» |
+| Aviso de muestra pequeña (quién compite y resultados) | «los puntajes de validación cruzada varían… gana el más simple» | «la silueta y la estabilidad se mueven más de una corrida a otra; léelas con cuidado» |
+| Tarjeta del Nivel 2 | «Nivel 2: la liga completa… con la misma validación cruzada»; «vuelve a elegir por validación cruzada» | «Nivel 2: todos los agrupadores… con la misma lectura contra datos sin estructura»; «vuelve a elegir con la regla de la app» |
+| Nivel 2 corriendo | «Nivel 2 · 4 modelos» | «Nivel 2 · 4 agrupadores» |
+| Pie de la tabla | «La liga tardó…» | «El agrupamiento tardó…» |
+| Sin acuerdo (Nivel 1 con 9.000 filas: K-Means 6, HDBSCAN 3, GMM 10) | «Consenso: 1 de 3 agrupadores encontraron 6 grupos» y «★ Ganador por consenso» | «Sin consenso: cada agrupador encontró un número distinto de grupos, así que gana el de mayor puntaje» y «★ Ganador por puntaje»; igual en la ficha y la model card |
+| Resumen del import | «Elegido por consenso entre 4 agrupadores» | «Ganador entre 4 agrupadores»: el archivo no guarda los votos y no puede saber si hubo consenso |
+| «Elegido por ti» | «no por consenso (el ganador por consenso era…)» | «(el ganador de la comparación era…)» |
+
+La regla elige igual que antes (decisión 4); solo cambia cómo se nombra. «Hay consenso» = al menos 2
+agrupadores coinciden en el número de grupos (`hasConsensus` y `CONSENSUS_MIN_VOTES`, en
+`verdict.ts`, un solo sitio para la pantalla, la ficha y la model card).
+
+**Dos archivos nuevos del kit** (solo kit, generados con semilla por `make-example-datasets.mjs`):
+
+- `tiendas-ciudades.csv` (120 filas): su columna `ciudad` toma 30 valores que se repiten. Son
+  demasiados para ser categorías y no es un identificador, así que el saneamiento no la aparta.
+  Elegida como objetivo, la app dice «30 valores distintos: parece un identificador o texto libre»
+  y ofrece «Agrupar filas parecidas en su lugar». Sin este archivo, la mirada M3 no se podía
+  recorrer con el kit: el saneamiento aparta los identificadores y las constantes de todos los demás;
+- `segmentos-grande.csv` (9.000 filas): deja ver a mano la nota de la muestra del jerárquico
+  (decisión 8), antes de correr, junto a la lectura y en su fila.
+
+Al regenerar, `git status` solo mostró los dos archivos nuevos: los heredados salieron idénticos.
+
+**Gates nuevos** (`agrupar-ui.test.tsx`):
+
+- sin consenso, la tabla y la model card dicen «por puntaje» y la ficha «ganador por puntaje»;
+- **guardián del copy de agrupar:** quién compite (con muestra pequeña), los resultados con el Nivel 2
+  pendiente y su corrida no pueden decir «misma validación cruzada», «puntajes de validación
+  cruzada», «elegir por validación cruzada», «la liga completa», «La liga tardó», «N modelos» ni
+  «gana el más simple».
+
+**Cambio esperado:** la prueba del resumen del import pasa a «Ganador entre 4 agrupadores (3
+grupos).».
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`; verde 27 de 27):
+
+| Mutación | Rojo (lo que nombró) |
+| --- | --- |
+| `CONSENSUS_MIN_VOTES = 1` | «Sin consenso: cada agrupador encontró un número distinto de grupos» |
+| `Level2Card` siempre con las claves de la liga | «Nivel 2: todos los agrupadores» |
+| El aviso de muestra pequeña de agrupar con el de la liga | «la silueta y la estabilidad» |
+
+**Verde** (2026-10-05): `pnpm lint` y `pnpm typecheck` limpios; `pnpm test` 672 de 672 en 57
+archivos (motor al 97,43 % de sentencias y 98,96 % de líneas); e2e sobre el build de producción
+(`agrupar`, `agrupar-score`, `reduced-motion-app`, `multiclase`): 16 de 16 al primer intento.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

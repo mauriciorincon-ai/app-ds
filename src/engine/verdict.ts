@@ -239,6 +239,14 @@ export type ClusterConsensus<Id extends string = string> = {
   winner: Id;
 };
 
+/** Hay consenso si al menos dos agrupadores coinciden en el número de grupos. Con un
+ *  voto por k (cada uno encontró un número distinto), la regla igual elige —el de mayor
+ *  puntaje—, pero llamarlo «consenso» sería falso (S7: 9.000 filas, Nivel 1, «1 de 3»).
+ *  Un solo sitio para la pantalla, la ficha y la model card. */
+export const CONSENSUS_MIN_VOTES = 2;
+export const hasConsensus = (selection: { votes: number }): boolean =>
+  selection.votes >= CONSENSUS_MIN_VOTES;
+
 /**
  * El ganador entre agrupadores, POR CONSENSO (decisión 4 del STOP de la F0; en el
  * spike recuperó el k plantado en 3 de 3): votan los `ok`; gana el k en que

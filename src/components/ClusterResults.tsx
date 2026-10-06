@@ -7,6 +7,7 @@ import {
   AGGLO_MAX_ROWS,
   CLUSTER_GAP_MIN,
   CLUSTER_STABILITY_MIN,
+  hasConsensus,
 } from "@/engine/verdict";
 import { useI18n } from "@/i18n/provider";
 import { formatEstimate } from "@/lib/duration";
@@ -462,6 +463,7 @@ function ClusterLeague({
 }) {
   const { t } = useI18n();
   const { league, selection } = result;
+  const consensus = hasConsensus(selection);
   const short = (id: MemberId) => t(`results.candidates.short.${id}`);
   const ran = league.map((r) => r.name);
   const placementOf = (id: MemberId) =>
@@ -506,11 +508,13 @@ function ClusterLeague({
           <span aria-hidden className="mr-1 text-accent">
             ★
           </span>
-          {t("cluster.league.consensus", {
-            k: selection.k,
-            votes: selection.votes,
-            voters: selection.voters,
-          })}
+          {consensus
+            ? t("cluster.league.consensus", {
+                k: selection.k,
+                votes: selection.votes,
+                voters: selection.voters,
+              })
+            : t("cluster.league.noConsensus")}
         </p>
       </div>
       {/* relative: un sr-only sin bloque contenedor estira la página (S5 F2). */}
@@ -636,7 +640,7 @@ function ClusterLeague({
                     {ficha(
                       row.name,
                       isWinner
-                        ? { kind: "consensus" }
+                        ? { kind: consensus ? "consensus" : "score" }
                         : isChosen
                           ? { kind: "chosen" }
                           : row.score === null
@@ -657,7 +661,11 @@ function ClusterLeague({
                           >
                             ★
                           </span>
-                          {t("cluster.league.mark.winner")}
+                          {t(
+                            consensus
+                              ? "cluster.league.mark.winner"
+                              : "cluster.league.mark.winnerScore",
+                          )}
                         </span>
                       )}
                       {isChosen && (
@@ -741,11 +749,11 @@ function ClusterLeague({
           <span aria-hidden className="mr-1">
             ⚠
           </span>
-          {t("roster.smallSample", { rows: result.nRows })}
+          {t("roster.cluster.smallSample", { rows: result.nRows })}
         </p>
       )}
       <p className="font-mono text-xs tabular-nums text-ink-muted">
-        {t("league.time", {
+        {t("cluster.league.time", {
           seconds: (selection.elapsedMs / 1000).toFixed(1),
         })}
       </p>

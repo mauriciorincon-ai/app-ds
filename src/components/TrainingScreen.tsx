@@ -50,7 +50,7 @@ export function TrainingScreen({
       <h1 className="text-2xl font-semibold">{t("training.title")}</h1>
       {level2 ? (
         <p className="font-mono text-sm tabular-nums">
-          {t("level2.running", {
+          {t(cluster ? "level2.cluster.running" : "level2.running", {
             count: level2.count,
             time: formatEstimate(level2.estimateS),
           })}

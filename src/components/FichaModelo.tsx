@@ -32,8 +32,10 @@ import { Button } from "./ui";
 
 export type FichaStatus =
   | { kind: "winner" }
-  // S7: al agrupar, el ganador por consenso (no hay validación cruzada).
+  // S7: al agrupar, el ganador por consenso (no hay validación cruzada) o, si cada
+  // agrupador encontró un número distinto de grupos, por puntaje (hasConsensus).
   | { kind: "consensus" }
+  | { kind: "score" }
   | { kind: "chosen" }
   | { kind: "competitor"; rank: number; total: number }
   | { kind: "failed" }
@@ -62,6 +64,7 @@ const SECTIONS: (keyof Ficha)[] = [
 const STATUS_MARK: Partial<Record<FichaStatus["kind"], string>> = {
   winner: "★",
   consensus: "★",
+  score: "★",
   chosen: "◆",
 };
 

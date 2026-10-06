@@ -375,7 +375,7 @@ function ClusterImportSummary({
                   `results.candidates.short.${manifest.selection.consensus_winner}`,
                 ),
               })
-            : t("start.import.summary.clusterConsensus", {
+            : t("start.import.summary.clusterWinner", {
                 k: manifest.selection.k,
                 count: manifest.league.length,
               })}

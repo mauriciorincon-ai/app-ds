@@ -8,6 +8,7 @@ import {
   type Placement,
   type RouteProfile,
 } from "@/engine/encarrilador";
+import { matchByTask } from "@/engine/despacho";
 import { byPriority, type MemberId } from "@/engine/roster";
 import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
@@ -38,6 +39,16 @@ export function Level2Card({
   onRun: (extraForced: MemberId[]) => void;
 }) {
   const t = useT();
+  // S7: al agrupar no hay liga ni validación cruzada; las mismas piezas llevan su
+  // propio copy (level2.cluster.*).
+  const cluster = matchByTask(result, {
+    binaria: () => false,
+    multiclase: () => false,
+    numerica: () => false,
+    agrupar: () => true,
+  });
+  const key = (name: string) =>
+    cluster ? `level2.cluster.${name}` : `level2.${name}`;
   const [extra, setExtra] = useState<MemberId[]>([]);
   const ran = result.league.map((row) => row.name);
   const measured = measuredRun(result.selection.elapsedMs, result.league);
@@ -72,16 +83,16 @@ export function Level2Card({
     <Card className="flex flex-col gap-3 p-5">
       <section aria-labelledby="level2-title" className="flex flex-col gap-3">
         <h2 id="level2-title" className="text-base font-semibold">
-          {t("level2.title")}
+          {t(key("title"))}
         </h2>
         {notice && <Level2Notice notice={notice} busy={busy} inline />}
         <p className="text-sm">
           {baseline.added.length > 0
-            ? t("level2.desc", {
+            ? t(key("desc"), {
                 count: baseline.added.length,
                 models: baseline.added.map(short).join(", "),
               })
-            : t("level2.descAllRan")}
+            : t(key("descAllRan"))}
         </p>
 
         {baseline.forceable.length > 0 && (
@@ -112,14 +123,14 @@ export function Level2Card({
         )}
 
         {result.selection.by === "user" && plan.added.length > 0 && (
-          <p className="text-sm text-ink-muted">{t("level2.dropsChoice")}</p>
+          <p className="text-sm text-ink-muted">{t(key("dropsChoice"))}</p>
         )}
 
         {/* Mono solo para las cifras; la frase que las explica, en prosa. */}
         {plan.added.length > 0 ? (
           <p className="text-sm">
             <span className="font-mono tabular-nums">
-              {t("level2.estimate", {
+              {t(key("estimate"), {
                 count: plan.roster.length,
                 time: formatEstimate(plan.estimateS),
               })}
@@ -129,7 +140,7 @@ export function Level2Card({
             </span>
           </p>
         ) : (
-          <p className="text-sm text-ink-muted">{t("level2.nothingToAdd")}</p>
+          <p className="text-sm text-ink-muted">{t(key("nothingToAdd"))}</p>
         )}
         <div>
           <Button

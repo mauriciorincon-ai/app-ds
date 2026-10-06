@@ -28,6 +28,7 @@ import {
   CLUSTER_GAP_MIN,
   CLUSTER_K_MIN,
   CLUSTER_STABILITY_MIN,
+  hasConsensus,
   SILHOUETTE_SAMPLE,
 } from "@/engine/verdict";
 import type { ClusterExclusion } from "@/lib/experiment";
@@ -667,12 +668,17 @@ export function buildClusterCard(input: ClusterCardInput): string {
             model: modelLabel(result.modelName),
             winner: modelLabel(selection.consensusWinner),
           })
-        : t("modelcard.cluster.consensus", {
-            votes: selection.votes,
-            voters: selection.voters,
-            k: selection.k,
-            model: modelLabel(result.modelName),
-          })
+        : hasConsensus(selection)
+          ? t("modelcard.cluster.consensus", {
+              votes: selection.votes,
+              voters: selection.voters,
+              k: selection.k,
+              model: modelLabel(result.modelName),
+            })
+          : t("modelcard.cluster.noConsensus", {
+              voters: selection.voters,
+              model: modelLabel(result.modelName),
+            })
     }`,
     ...(sampled && sampled.sample_rows !== null
       ? [

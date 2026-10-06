@@ -27,6 +27,12 @@ import {
 } from "vitest";
 import { ClusterResults } from "@/components/ClusterResults";
 import { ConfigScreen } from "@/components/ConfigScreen";
+import { RosterCard } from "@/components/RosterCard";
+import {
+  rosterFor,
+  routeModels,
+  type RouteProfile,
+} from "@/engine/encarrilador";
 import FichaModelo from "@/components/FichaModelo";
 import { ScoreScreen } from "@/components/ScoreScreen";
 import { StartScreen } from "@/components/StartScreen";
@@ -442,7 +448,7 @@ describe("S7: importar un archivo de agrupar", () => {
       screen.getByText("Lectura al entrenar: los grupos existen"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Elegido por consenso entre 4 agrupadores (3 grupos)."),
+      screen.getByText("Ganador entre 4 agrupadores (3 grupos)."),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Usar este modelo/ }));
     expect(onImport).toHaveBeenCalledTimes(1);
@@ -478,6 +484,18 @@ describe("S7: la ficha de un agrupador y la configuración", () => {
     expect(
       within(dialog).getByText(/ganador por consenso/),
     ).toBeInTheDocument();
+  });
+
+  it("sin consenso, la ficha del ganador dice «por puntaje»", () => {
+    ui(
+      <FichaModelo
+        target={{ id: "kmeans", status: { kind: "score" }, task: "agrupar" }}
+        onClose={vi.fn()}
+      />,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/ganador por puntaje/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/ganador por consenso/)).toBeNull();
   });
 
   it("«Sin objetivo: agrupar» es la primera opción; una columna que no sirve ofrece agrupar", () => {
@@ -688,5 +706,96 @@ describe("S7: el flujo de agrupar en el hook (P13: las etiquetas no pasan por el
       groups: 3,
       assign: { method: "gaussian" },
     });
+  });
+});
+
+describe("S7: el copy de agrupar no dice lo que al agrupar no existe", () => {
+  // Al agrupar no hay liga supervisada: ni validación cruzada, ni «la liga
+  // completa», ni «N modelos», ni «gana el más simple». Lo reusado de la liga lo
+  // decía (9.000 filas en el reconocimiento de la guía v4); cada superficie lleva
+  // ahora su propio copy.
+  const FALSE_FOR_CLUSTER =
+    /misma validación cruzada|puntajes de validación cruzada|elegir por validación cruzada|la liga completa|La liga tardó|\b\d+ modelos?\b|gana el más simple/;
+  const profile: RouteProfile = {
+    task: "agrupar",
+    rows: 9000,
+    nTrain: 9000,
+    width: 3,
+    minorityShare: null,
+    k: 10,
+  };
+
+  it("sin consenso: la tabla y la model card dicen «por puntaje», no «consenso»", () => {
+    const base = clusterResult();
+    const result: ClusterResult = {
+      ...base,
+      selection: { ...base.selection, votes: 1, voters: 3 },
+    };
+    const { container } = screenFor(result);
+    expect(
+      screen.getByText(
+        "Sin consenso: cada agrupador encontró un número distinto de grupos, así que gana el de mayor puntaje.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Ganador por puntaje")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/Consenso:|Ganador por consenso/);
+    const md = buildClusterCard({
+      locale: "es",
+      datasetName: "segmentos-clientes.csv",
+      cols: 5,
+      seed: 42,
+      excluded: [],
+      result,
+    });
+    expect(md).toContain(
+      "Ganó por puntaje: no hubo consenso entre los 3 agrupadores",
+    );
+    expect(md).not.toContain("Ganó por consenso");
+  });
+
+  it("quién compite, el Nivel 2 pendiente y su corrida hablan de agrupadores", () => {
+    const routing = routeModels(profile);
+    expect(rosterFor(routing, 2)).toContain("agglomerative");
+    const roster = ui(
+      <RosterCard
+        routing={routing}
+        rows={120}
+        minorityShare={null}
+        k={10}
+        smallSample
+        cluster
+      />,
+    );
+    expect(roster.container.textContent).toMatch(/\d+ agrupador/);
+    expect(roster.container.textContent).toMatch(/la silueta y la estabilidad/);
+    expect(roster.container.textContent).not.toMatch(FALSE_FOR_CLUSTER);
+    roster.unmount();
+
+    const base = clusterResult();
+    const pending: ClusterResult = {
+      ...base,
+      smallSample: true,
+      league: base.league.filter((row) => row.name !== "hdbscan"),
+    };
+    const { container, unmount } = screenFor(pending, {
+      profile,
+      onRunLevel2: vi.fn(),
+    });
+    expect(
+      screen.getByRole("heading", { name: "Nivel 2: todos los agrupadores" }),
+    ).toBeInTheDocument();
+    expect(container.textContent).toMatch(/El agrupamiento tardó/);
+    expect(container.textContent).not.toMatch(FALSE_FOR_CLUSTER);
+    unmount();
+
+    const running = ui(
+      <TrainingScreen
+        stage="training"
+        cluster
+        level2={{ count: 4, estimateS: 8 }}
+      />,
+    );
+    expect(running.container.textContent).toMatch(/Nivel 2 · 4 agrupadores/);
+    expect(running.container.textContent).not.toMatch(FALSE_FOR_CLUSTER);
   });
 });

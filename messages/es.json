@@ -82,8 +82,8 @@
           "fragile": "Lectura al entrenar: los grupos eran frágiles",
           "none": "Lectura al entrenar: no había estructura de grupos"
         },
-        "clusterChosen": "◆ Elegido por ti, no por consenso (el ganador por consenso era {winner}).",
-        "clusterConsensus": "Elegido por consenso entre {count} agrupadores ({k} grupos)."
+        "clusterChosen": "◆ Elegido por ti (el ganador de la comparación era {winner}).",
+        "clusterWinner": "Ganador entre {count} agrupadores ({k} grupos)."
       },
       "errors": {
         "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
@@ -625,14 +625,15 @@
       "pipeline": "Imputación, escalado y one-hot dentro de un Pipeline de scikit-learn, ajustado sobre todas las filas: al agrupar no hay partición ni prueba (semilla {seed}).",
       "members": "Compitieron {count} agrupadores probando de {min} a {max} grupos: K-Means y el jerárquico eligen por silueta (sobre una muestra de {sample} filas), GMM por BIC y HDBSCAN por densidad.",
       "consensus": "Ganó por consenso: {votes} de {voters} agrupadores encontraron {k} grupos, y entre ellos {model} tuvo el mayor puntaje.",
-      "chosen": "◆ Elegido por ti: {model} (el ganador por consenso era {winner}).",
+      "chosen": "◆ Elegido por ti: {model} (el ganador de la comparación era {winner}).",
       "noLeakage": "No aplica: al agrupar no hay objetivo que una columna pueda delatar.",
       "noAi": "Narración con IA: no aplica. Solo narra la clasificación en dos categorías.",
       "limits": {
         "cause": "Los grupos describen tus filas; no prueban que haya una causa detrás ni que se repitan en otros datos.",
         "silhouette": "La silueta se mide sobre una muestra sembrada de hasta {sample} filas, la misma para todos los agrupadores.",
         "agglomerative": "Con más de {max} filas, el jerárquico se ajusta sobre una muestra y asigna el resto al grupo más cercano, para no agotar la memoria del navegador."
-      }
+      },
+      "noConsensus": "Ganó por puntaje: no hubo consenso entre los {voters} agrupadores (cada uno encontró un número distinto de grupos), y {model} tuvo el mayor puntaje."
     }
   },
   "errors": {
@@ -726,7 +727,15 @@
     "level2_one": "Nivel 2 · después, si quieres · 1 modelo más",
     "clusterK": "K-Means y el jerárquico eligen cuántos grupos con la silueta; GMM, con el BIC; HDBSCAN no necesita que se lo digan: los encuentra por densidad.",
     "clusterNote": "Prueban de 2 a {max} grupos sobre todas tus filas: sin objetivo no hay validación cruzada ni conjunto de prueba. Al final, el ganador se compara con datos sin estructura y se repite con partes de tus filas.",
-    "clusterSample": "Con tus {rows} filas, el jerárquico se ajusta sobre una muestra de {sample} y asigna el resto al grupo más cercano (los otros tres usan todas)."
+    "clusterSample": "Con tus {rows} filas, el jerárquico se ajusta sobre una muestra de {sample} y asigna el resto al grupo más cercano (los otros tres usan todas).",
+    "cluster": {
+      "level1": "Nivel 1 · ahora · {count} agrupadores · unos {time}",
+      "level1_one": "Nivel 1 · ahora · 1 agrupador · unos {time}",
+      "level2": "Nivel 2 · después, si quieres · {count} agrupadores más",
+      "level2_one": "Nivel 2 · después, si quieres · 1 agrupador más",
+      "level2Hint": "No caben en el primer paso. Cuando veas los resultados podrás agrupar con todos (unos {time} en total en un computador de escritorio).",
+      "smallSample": "Muestra pequeña ({rows} filas): con pocas filas, la silueta y la estabilidad se mueven más de una corrida a otra. Léelas con cuidado."
+    }
   },
   "league": {
     "title": "La liga: {count} modelos",
@@ -783,7 +792,8 @@
       "pending": "En esta liga: pendiente del Nivel 2.",
       "out": "En esta liga: fuera, porque {reason}.",
       "baseline": "Baseline del veredicto: no compite en la liga, la juzga.",
-      "consensus": "En esta comparación: ganador por consenso (el número de grupos en que más agrupadores coinciden)."
+      "consensus": "En esta comparación: ganador por consenso (el número de grupos en que más agrupadores coinciden).",
+      "score": "En esta comparación: ganador por puntaje (no hubo consenso: cada agrupador encontró un número distinto de grupos)."
     }
   },
   "level2": {
@@ -809,7 +819,19 @@
     "estimate_one": "1 modelo · unos {time} en este equipo",
     "running_one": "Nivel 2 · 1 modelo · unos {time} en este equipo",
     "runNothing": "Correr el Nivel 2",
-    "estimateNote": "Calibrado con lo que tardó la corrida anterior."
+    "estimateNote": "Calibrado con lo que tardó la corrida anterior.",
+    "cluster": {
+      "title": "Nivel 2: todos los agrupadores",
+      "desc": "Suma {count} agrupadores que no cupieron en el primer paso ({models}) y vuelve a agrupar con todos, con la misma lectura contra datos sin estructura.",
+      "desc_one": "Suma 1 agrupador que no cupo en el primer paso ({models}) y vuelve a agrupar con todos, con la misma lectura contra datos sin estructura.",
+      "descAllRan": "Todos los agrupadores recomendados ya agruparon. Si quieres, puedes incluir los que el encarrilador dejó fuera.",
+      "dropsChoice": "Agrupar con todos vuelve a elegir con la regla de la app: tu elección manual de ahora no se conserva.",
+      "estimate": "{count} agrupadores · unos {time} en este equipo",
+      "estimate_one": "1 agrupador · unos {time} en este equipo",
+      "nothingToAdd": "Marca un agrupador para incluirlo; no hay nada más que sumar.",
+      "running": "Nivel 2 · {count} agrupadores · unos {time} en este equipo",
+      "running_one": "Nivel 2 · 1 agrupador · unos {time} en este equipo"
+    }
   },
   "cluster": {
     "title": "Resultados · agrupar",
@@ -823,7 +845,7 @@
       "noneDetail": "{model} no separa tus filas mejor que datos sin estructura en la misma caja: puntaje {score} frente a {nullScore}, una diferencia de {gap} (haría falta al menos {gapMin}). Los {k} grupos de abajo son una forma de partir la tabla, no un hallazgo."
     },
     "noTest": "Agrupar no tiene objetivo: no hay conjunto de prueba ni veredicto contra un baseline. Lo que sirve para creer es esta comparación con datos sin estructura y la estabilidad al re-muestrear.",
-    "chosenNote": "◆ Elegido por ti, no por consenso. La lectura de arriba es la de este agrupador.",
+    "chosenNote": "◆ Elegido por ti. La lectura de arriba es la de este agrupador; el ganador sigue marcado con ★.",
     "sample": {
       "title": "Ajustado sobre una muestra de {sample} de tus {rows} filas; las demás se asignaron al grupo más cercano.",
       "why": "Por qué: con más de {max} filas, el agrupamiento jerárquico necesitaría más memoria de la que un navegador puede dar (sobre todo en un teléfono) sin cerrar la pestaña. Los otros tres agrupadores usan todas tus filas."
@@ -874,10 +896,13 @@
       },
       "backToWinner": "Volver al ganador",
       "mark": {
-        "winner": "Ganador por consenso"
+        "winner": "Ganador por consenso",
+        "winnerScore": "Ganador por puntaje"
       },
       "mobile": "silueta {silhouette} · fuera de grupo {noise}",
-      "scoreHow": "Puntaje = silueta × (1 − la parte fuera de grupo): HDBSCAN no gana dejando fuera las filas difíciles. La silueta va de −1 a 1: cuánto más cerca está cada fila de su grupo que del vecino."
+      "scoreHow": "Puntaje = silueta × (1 − la parte fuera de grupo): HDBSCAN no gana dejando fuera las filas difíciles. La silueta va de −1 a 1: cuánto más cerca está cada fila de su grupo que del vecino.",
+      "noConsensus": "Sin consenso: cada agrupador encontró un número distinto de grupos, así que gana el de mayor puntaje.",
+      "time": "El agrupamiento tardó {seconds} s en este equipo."
     },
     "labels": {
       "title": "Tus filas con su grupo",

@@ -297,6 +297,27 @@ function noGroups(n = 300, seed = 1010) {
   return toCsv(["temperatura_c", "humedad_pct", "presion_hpa", "ruido_db", "zona"], rows);
 }
 
+// 10) Tiendas por ciudad — SOLO KIT (S7). `ciudad` toma 30 valores que se repiten:
+// demasiados para ser categorías y no es un identificador (no hay un valor por fila,
+// así que el saneamiento no la aparta). Elegida como objetivo, la app dice que no
+// sirve y ofrece agrupar filas parecidas en su lugar (mirada M3 de la guía). Las
+// ventas en USD de cinco cifras sirven de extremo de magnitud.
+function storesByCity(n = 120, seed = 1111) {
+  const rng = mulberry32(seed);
+  const cities = Array.from({ length: 30 }, (_, i) => `ciudad_${String(i + 1).padStart(2, "0")}`);
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const big = rng() < 0.5;
+    rows.push([
+      cities[i % cities.length],
+      round((big ? 52000 : 18000) * Math.exp(0.2 * gauss(rng)), 0),
+      Math.max(50, Math.round((big ? 2400 : 900) * Math.exp(0.25 * gauss(rng)))),
+      round((big ? 420 : 160) * Math.exp(0.15 * gauss(rng)), 0),
+    ]);
+  }
+  return toCsv(["ciudad", "ventas_mes_usd", "visitas_mes", "superficie_m2"], rows);
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   await mkdir(kitDir, { recursive: true });
@@ -326,6 +347,16 @@ async function main() {
   const plans = subscriptionPlans(5000, 828);
   await writeFile(resolve(kitDir, "planes-suscripcion-mediano.csv"), plans, "utf8");
   console.log(`[datasets] planes-suscripcion-mediano.csv — ${plans.trimEnd().split("\n").length - 1} filas (solo kit)`);
+  // Solo kit de prueba (S7): más de 8.000 filas para ver la muestra del jerárquico
+  // (decisión 8) y una columna que no sirve como objetivo (M3).
+  const kitOnly = {
+    "segmentos-grande.csv": customerSegments(9000, 919),
+    "tiendas-ciudades.csv": storesByCity(),
+  };
+  for (const [name, content] of Object.entries(kitOnly)) {
+    await writeFile(resolve(kitDir, name), content, "utf8");
+    console.log(`[datasets] ${name} — ${content.trimEnd().split("\n").length - 1} filas (solo kit)`);
+  }
 }
 
 main().catch((error) => {

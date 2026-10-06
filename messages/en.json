@@ -82,8 +82,8 @@
           "fragile": "Reading at training time: the groups were fragile",
           "none": "Reading at training time: there was no group structure"
         },
-        "clusterChosen": "◆ Chosen by you, not by consensus (the consensus winner was {winner}).",
-        "clusterConsensus": "Chosen by consensus among {count} clusterers ({k} groups)."
+        "clusterChosen": "◆ Chosen by you (the winner of the comparison was {winner}).",
+        "clusterWinner": "Winner among {count} clusterers ({k} groups)."
       },
       "errors": {
         "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
@@ -625,14 +625,15 @@
       "pipeline": "Imputation, scaling and one-hot inside a scikit-learn Pipeline, fitted on all rows: grouping has no split and no test (seed {seed}).",
       "members": "{count} clusterers competed, trying {min} to {max} groups: K-Means and hierarchical choose by silhouette (on a sample of {sample} rows), GMM by BIC and HDBSCAN by density.",
       "consensus": "Won by consensus: {votes} of {voters} clusterers found {k} groups, and among them {model} had the highest score.",
-      "chosen": "◆ Chosen by you: {model} (the consensus winner was {winner}).",
+      "chosen": "◆ Chosen by you: {model} (the winner of the comparison was {winner}).",
       "noLeakage": "Not applicable: grouping has no target for a column to give away.",
       "noAi": "AI narration: not applicable. It only narrates classification into two categories.",
       "limits": {
         "cause": "The groups describe your rows; they don't prove there's a cause behind them or that they'll show up in other data.",
         "silhouette": "The silhouette is measured on a seeded sample of up to {sample} rows, the same for every clusterer.",
         "agglomerative": "With more than {max} rows, hierarchical fits a sample and assigns the rest to the nearest group, so the browser doesn't run out of memory."
-      }
+      },
+      "noConsensus": "Won by score: there was no consensus among the {voters} clusterers (each found a different number of groups), and {model} had the highest score."
     }
   },
   "errors": {
@@ -726,7 +727,15 @@
     "level2_one": "Level 2 · later, if you want · 1 more model",
     "clusterK": "K-Means and hierarchical pick how many groups with the silhouette; GMM, with BIC; HDBSCAN doesn't need to be told: it finds them by density.",
     "clusterNote": "They try 2 to {max} groups on all your rows: with no target there is no cross-validation and no test set. At the end, the winner is compared with structureless data and repeated on parts of your rows.",
-    "clusterSample": "With your {rows} rows, hierarchical fits a sample of {sample} and assigns the rest to the nearest group (the other three use all of them)."
+    "clusterSample": "With your {rows} rows, hierarchical fits a sample of {sample} and assigns the rest to the nearest group (the other three use all of them).",
+    "cluster": {
+      "level1": "Level 1 · now · {count} clusterers · about {time}",
+      "level1_one": "Level 1 · now · 1 clusterer · about {time}",
+      "level2": "Level 2 · later, if you want · {count} more clusterers",
+      "level2_one": "Level 2 · later, if you want · 1 more clusterer",
+      "level2Hint": "They do not fit in the first step. Once you see the results you can group with all of them (about {time} in total on a desktop computer).",
+      "smallSample": "Small sample ({rows} rows): with few rows, the silhouette and the stability move more from one run to the next. Read them with care."
+    }
   },
   "league": {
     "title": "The league: {count} models",
@@ -783,7 +792,8 @@
       "pending": "In this league: waiting for Level 2.",
       "out": "In this league: left out, because {reason}.",
       "baseline": "Verdict baseline: it does not compete in the league — it judges it.",
-      "consensus": "In this comparison: winner by consensus (the group count most clusterers agree on)."
+      "consensus": "In this comparison: winner by consensus (the group count most clusterers agree on).",
+      "score": "In this comparison: winner by score (there was no consensus: each clusterer found a different number of groups)."
     }
   },
   "level2": {
@@ -809,7 +819,19 @@
     "estimate_one": "1 model · about {time} on this device",
     "running_one": "Level 2 · 1 model · about {time} on this device",
     "runNothing": "Run Level 2",
-    "estimateNote": "Calibrated against how long the previous run took."
+    "estimateNote": "Calibrated against how long the previous run took.",
+    "cluster": {
+      "title": "Level 2: every clusterer",
+      "desc": "Adds {count} clusterers that did not fit in the first step ({models}) and groups again with all of them, with the same reading against data without structure.",
+      "desc_one": "Adds 1 clusterer that did not fit in the first step ({models}) and groups again with all of them, with the same reading against data without structure.",
+      "descAllRan": "Every recommended clusterer has already grouped. If you like, you can add the ones the router left out.",
+      "dropsChoice": "Grouping with all of them picks again by the app's rule: your current manual pick is not kept.",
+      "estimate": "{count} clusterers · about {time} on this device",
+      "estimate_one": "1 clusterer · about {time} on this device",
+      "nothingToAdd": "Tick a clusterer to include it; there is nothing else to add.",
+      "running": "Level 2 · {count} clusterers · about {time} on this device",
+      "running_one": "Level 2 · 1 clusterer · about {time} on this device"
+    }
   },
   "cluster": {
     "title": "Results · grouping",
@@ -823,7 +845,7 @@
       "noneDetail": "{model} doesn't separate your rows better than structureless data in the same box: score {score} against {nullScore}, a gap of {gap} (at least {gapMin} would be needed). The {k} groups below are one way to split the table, not a finding."
     },
     "noTest": "Grouping has no target: there's no test set and no verdict against a baseline. What's worth believing is this comparison with structureless data and the stability under resampling.",
-    "chosenNote": "◆ Chosen by you, not by consensus. The reading above is this clusterer's.",
+    "chosenNote": "◆ Chosen by you. The reading above is this clusterer's; the winner is still marked with ★.",
     "sample": {
       "title": "Fitted on a sample of {sample} of your {rows} rows; the rest were assigned to the nearest group.",
       "why": "Why: with more than {max} rows, hierarchical clustering would need more memory than a browser can give (especially on a phone) without closing the tab. The other three clusterers use all your rows."
@@ -874,10 +896,13 @@
       },
       "backToWinner": "Back to the winner",
       "mark": {
-        "winner": "Winner by consensus"
+        "winner": "Winner by consensus",
+        "winnerScore": "Winner by score"
       },
       "mobile": "silhouette {silhouette} · outside a group {noise}",
-      "scoreHow": "Score = silhouette × (1 − the share outside a group): HDBSCAN doesn't win by leaving the hard rows out. Silhouette runs from −1 to 1: how much closer each row is to its own group than to the next one."
+      "scoreHow": "Score = silhouette × (1 − the share outside a group): HDBSCAN doesn't win by leaving the hard rows out. Silhouette runs from −1 to 1: how much closer each row is to its own group than to the next one.",
+      "noConsensus": "No consensus: each clusterer found a different number of groups, so the highest score wins.",
+      "time": "Grouping took {seconds} s on this device."
     },
     "labels": {
       "title": "Your rows with their group",
