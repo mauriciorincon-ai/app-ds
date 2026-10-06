@@ -329,10 +329,10 @@
     {
       "clave": "dependencias_runtime",
       "etiqueta": "Dependencias en tiempo de ejecución",
-      "valor": 8,
+      "valor": 9,
       "unidad": "paquetes",
       "fuente": "medido",
-      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador. Lo recuenta tests/unit/brochure-export.test.ts contra package.json."
+      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, @sentry/browser (el cliente liviano de la misma versión, ADR 018), ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador. Lo recuenta tests/unit/brochure-export.test.ts contra package.json."
     },
     {
       "clave": "filas_del_usuario_en_la_red",
@@ -369,7 +369,7 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 14,
+      "valor": 15,
       "unidad": "ADR",
       "fuente": "medido",
       "detalle": "Archivos de decisions/ (001–014). Lo recuenta tests/unit/brochure-export.test.ts."

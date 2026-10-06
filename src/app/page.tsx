@@ -1,16 +1,34 @@
 "use client";
 
-import { ConfigScreen } from "@/components/ConfigScreen";
+import dynamic from "next/dynamic";
 import { ErrorScreen } from "@/components/ErrorScreen";
-import { ResultsScreen } from "@/components/ResultsScreen";
-import { ScoreScreen } from "@/components/ScoreScreen";
 import { StartScreen } from "@/components/StartScreen";
-import { TrainingScreen } from "@/components/TrainingScreen";
 import { useExperiment } from "@/lib/useExperiment";
 
 // Workspace del experimento: una sola ruta, máquina de estados. Pyodide se carga
 // bajo demanda (al entrenar o importar), no aquí — la landing es liviana (fuera
 // del LCP).
+//
+// S7 (R15, decisión 7): la portada solo dibuja el inicio. Configurar, entrenar,
+// resultados y puntuar viajan en sus propios chunks y se piden al llegar a su
+// fase — con agrupar y multiclase dentro, el script de "/" pasó el budget de
+// 300 KB en la CI (321.841 B).
+const ConfigScreen = dynamic(
+  () => import("@/components/ConfigScreen").then((m) => m.ConfigScreen),
+  { ssr: false },
+);
+const TrainingScreen = dynamic(
+  () => import("@/components/TrainingScreen").then((m) => m.TrainingScreen),
+  { ssr: false },
+);
+const ResultsScreen = dynamic(
+  () => import("@/components/ResultsScreen").then((m) => m.ResultsScreen),
+  { ssr: false },
+);
+const ScoreScreen = dynamic(
+  () => import("@/components/ScoreScreen").then((m) => m.ScoreScreen),
+  { ssr: false },
+);
 export default function Home() {
   const {
     state,

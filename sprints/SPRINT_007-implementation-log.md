@@ -58,6 +58,16 @@ Surgidas en la construcción (2026-10-04, F2), se declaran aquí antes del STOP 
   que no viajan en el resultado, el esquema ni el archivo (P13). Lo que falta es cablearlo a la
   pantalla, que llega en la F3 (D3).
 
+Surgida en la construcción (2026-10-05, F3), se declara aquí antes del STOP de la F3:
+
+- **D7 · ADR 018 y una dependencia directa nueva (`@sentry/browser`).** P14 reservaba el 018 «solo
+  si Pyodide se mueve», y no se movió (decisión 6). La mitigación de R15 que preveía el plan
+  (`next/dynamic` para las pantallas) bajó el script de `/` a 302.498 B, apenas 1,5 % por debajo del
+  budget. Para tener margen, el `init` del cliente de Sentry pasa a `@sentry/browser`, en la misma
+  versión que `@sentry/nextjs` trae por dentro y con una prueba que lo vigila. Es una decisión de
+  implementación no anticipada, con su ADR (séptimo commit). No cambia la privacidad: el mismo
+  `scrubSentryEvent`, sin PII ni trazado.
+
 ## Fase 0 — constitución + delta del kit + deuda con sitio + datasets + spike
 
 ### Constitución sincronizada (2026-10-04)
@@ -746,14 +756,14 @@ importar y puntuar en la app.
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-04; cada uno restaurado con Python + `cmp` y en verde
 después):
 
-| Gate | Mutación | Rojo (lo que nombró) | Verde |
-| --- | --- | --- | --- |
-| Los aciertos de la matriz, nombrados para el lector | sin el `sr-only` «acierto:» | «matriz K×K con ✓ en la diagonal» | 12/12 |
-| La fuga por clase nombra la categoría | siempre el texto sin categoría | «la fuga por clase nombra la columna Y la categoría» | 12/12 |
-| Ficha del SVM lineal sin «dos clases» | el reemplazo vuelve a decir «las dos clases» | «linear_svc: los apartados de dos clases se reemplazan» | 12/12 |
-| Model card: la primaria con su azar | la línea binaria de la métrica | «la exactitud balanceada con su azar, la matriz K×K y las clases» | 12/12 |
-| La categoría más chica, nombrada | el plan sin `smallestClass` | «una categoría con muy pocas filas bloquea, y el plan la NOMBRA» | 35/35 |
-| Puntuar: la probabilidad de la predicha | la columna binaria `probabilidad_<etiqueta>` | «la probabilidad de ESA categoría, la distribución y el CSV» | 12/12 |
+| Gate                                                | Mutación                                     | Rojo (lo que nombró)                                              | Verde |
+| --------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------- | ----- |
+| Los aciertos de la matriz, nombrados para el lector | sin el `sr-only` «acierto:»                  | «matriz K×K con ✓ en la diagonal»                                 | 12/12 |
+| La fuga por clase nombra la categoría               | siempre el texto sin categoría               | «la fuga por clase nombra la columna Y la categoría»              | 12/12 |
+| Ficha del SVM lineal sin «dos clases»               | el reemplazo vuelve a decir «las dos clases» | «linear_svc: los apartados de dos clases se reemplazan»           | 12/12 |
+| Model card: la primaria con su azar                 | la línea binaria de la métrica               | «la exactitud balanceada con su azar, la matriz K×K y las clases» | 12/12 |
+| La categoría más chica, nombrada                    | el plan sin `smallestClass`                  | «una categoría con muy pocas filas bloquea, y el plan la NOMBRA»  | 35/35 |
+| Puntuar: la probabilidad de la predicha             | la columna binaria `probabilidad_<etiqueta>` | «la probabilidad de ESA categoría, la distribución y el CSV»      | 12/12 |
 
 **Verde del árbol completo** (2026-10-04, después de los rojos):
 
@@ -871,16 +881,16 @@ saneamiento la quitó (8.999). El e2e lee la cifra de la nota en vez de suponerl
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-04; cada uno restaurado con Python + `cmp` y en verde
 después, 24 de 24):
 
-| Gate | Mutación | Rojo (lo que nombró) |
-| --- | --- | --- |
-| P13: las etiquetas no pasan por el estado | el estado guarda lo validado | «planear → agrupar → resultado validado → descargar las filas con su grupo» |
-| Decisión 8: la nota junto a la lectura | la nota apagada | «junto a la lectura (si gana) y en su fila» |
-| Decisión 8: la nota en la fila | la nota de la fila apagada | «junto a la lectura (si gana) y en su fila» |
-| Una cifra diminuta no es «0» | sin notación científica | «una cifra diminuta (~1e-11) no se muestra como «0»» |
-| El esquema dice si hay «fuera de grupo» | `noise: true` siempre | «planear → agrupar → resultado validado» |
-| Los grupos se cuentan desde 1 | `String(g)` | «el grupo de cada fila (desde 1)» |
-| La opción de agrupar no choca | `if` en vez de `while` | «una columna llamada como la opción de agrupar no choca» |
-| El esquema del elegido | el esquema del ganador se queda | «el esquema pasa a ser el suyo» |
+| Gate                                      | Mutación                        | Rojo (lo que nombró)                                                        |
+| ----------------------------------------- | ------------------------------- | --------------------------------------------------------------------------- |
+| P13: las etiquetas no pasan por el estado | el estado guarda lo validado    | «planear → agrupar → resultado validado → descargar las filas con su grupo» |
+| Decisión 8: la nota junto a la lectura    | la nota apagada                 | «junto a la lectura (si gana) y en su fila»                                 |
+| Decisión 8: la nota en la fila            | la nota de la fila apagada      | «junto a la lectura (si gana) y en su fila»                                 |
+| Una cifra diminuta no es «0»              | sin notación científica         | «una cifra diminuta (~1e-11) no se muestra como «0»»                        |
+| El esquema dice si hay «fuera de grupo»   | `noise: true` siempre           | «planear → agrupar → resultado validado»                                    |
+| Los grupos se cuentan desde 1             | `String(g)`                     | «el grupo de cada fila (desde 1)»                                           |
+| La opción de agrupar no choca             | `if` en vez de `while`          | «una columna llamada como la opción de agrupar no choca»                    |
+| El esquema del elegido                    | el esquema del ganador se queda | «el esquema pasa a ser el suyo»                                             |
 
 **Verde del árbol completo** (2026-10-04, después de los rojos):
 
@@ -892,9 +902,105 @@ después, 24 de 24):
 - e2e, la suite entera sobre el build de producción (Chromium móvil y escritorio, 3 workers, con
   carga de 8,5 al empezar): 58 de 58 al primer intento.
 
+**CI del sexto commit** (`6534cc2`, run 37255735608, `gh pr checks 19` y `statusCheckRollup`): 5 de
+6 `success` y **`lighthouse` en `failure`**. `resource-summary.script.size` en `/` midió 321.841 B
+en las tres corridas, contra el presupuesto de 307.200 B (+14.641 B). Como el paso corre con
+`bash -e`, el `lhci assert` de categorías y `lighthouse-margen` **no ejecutaron** en ese job: no
+cuentan como verdes. Es el riesgo R15 del plan, materializado: la CI del quinto commit había dado 6
+de 6. Se paga antes de seguir con la F3 (siguiente sección).
+
 **Pausa** (2026-10-04): el usuario pidió parar hasta el día siguiente después del sexto commit. Lo
 que falta de la F3, en orden: el LCP y los botones de ejemplo (decisión 7), los documentos, la
 pasada de capturas con extremos y el e2e de reduced-motion de las pantallas nuevas; después, el STOP.
+
+### Séptimo commit: la portada más liviana (R15, decisión 7; ADR 018)
+
+Retomado el 2026-10-05. Paga el rojo de `lighthouse` del sexto commit y baja el margen del LCP
+(decisión 7) **antes** de sumar los botones de ejemplo.
+
+**Diagnóstico** (todo medido con LHCI 0.15.1, 3 corridas, mediana):
+
+- **El build del repo no mide lo que mide la CI.** En el repo, `/` cargaba 251.641 B de script. Una
+  copia limpia del commit (`git archive` al scratchpad, `pnpm install --frozen-lockfile`, build sin
+  `.env.local`) midió **321.841 B, igual al byte que la CI**. Se descartaron, uno por uno: el valor
+  del DSN, la caché de `.next`, las variables de narración, un `.env.local` ficticio, la carpeta
+  `.git`, un `node_modules` reinstalado y los archivos ignorados.
+- **La causa:** el `.env.local` de desarrollo declara `NEXT_PUBLIC_SENTRY_DSN` **vacío** (largo 0,
+  medido sin leer el valor). Next incrusta `""`, el minificador borra el `if (dsn) { init(…) }` y
+  Sentry sale del bundle. En la CI la variable no existe, queda como lectura en tiempo de ejecución
+  y el `init` entra. Toda medición LOCAL de peso de script y de LCP hecha con ese `.env.local` sale ≈ 70 KB más
+  optimista que la CI.
+- **Dónde estaba el peso** (copia tipo CI): las cuatro pantallas que la portada no dibuja viajaban
+  en un chunk de 48,6 KB gzip (Lighthouse: 43 KB sin usar). El `init` de `@sentry/nextjs` suma por
+  defecto el trazado del navegador y la instrumentación del router, incluido el Pages Router. Con
+  `tracesSampleRate: 0` no manda nada y costaba ≈ 50 KB gzip. Importar solo `init` de
+  `@sentry/nextjs` no ahorra nada (331.545 B en el proxy gzip, contra 331.637 B).
+- **El LCP simulado es un artefacto.** El LCP observado es igual al FCP observado (38–57 ms en las
+  tres corridas). Los ≈ 3 s simulados vienen de Lantern, que le carga al párrafo todo el JS
+  evaluado antes del primer pintado, el mismo diagnóstico del S4. Por eso menos bytes de script
+  bajan el LCP simulado.
+
+**Qué cambia:**
+
+- `src/app/page.tsx`: configurar, entrenar, resultados y puntuar se cargan con `next/dynamic`
+  (`ssr: false`) al llegar a su fase, el mismo patrón de la ficha (S5/R12). Inicio y error quedan
+  estáticos.
+- `instrumentation-client.ts`: `init` de **`@sentry/browser`**, dependencia directa nueva en la
+  misma versión que trae `@sentry/nextjs` (10.75.3, `^` en los dos). La privacidad no cambia: el
+  mismo `scrubSentryEvent`, sin PII, sin trazado ni replay. Se conserva el entorno
+  (`vercel-<entorno>`) y se quita `onRouterTransitionStart`, que solo alimenta el trazado.
+  `observability.ts` sigue con `@sentry/nextjs`, porque la comparte el route del servidor; moverla
+  a `@sentry/core` ahorra 0 B (medido).
+- **El lockfile:** al sumar la dependencia, pnpm 11 re-resolvió sufijos de peers opcionales en
+  `snapshots` (284 líneas). El conjunto de paquetes y versiones de `packages:` es **idéntico**
+  (diff vacío) y `verificar-dependencias` sigue en verde (675 paquetes, ninguno por debajo de
+  `origin/main`).
+- `docs/brochure-export.json`: 15 ADR y 9 dependencias en tiempo de ejecución, con
+  `@sentry/browser` nombrada (R16).
+
+**Medición** (copia tipo CI, LHCI 0.15.1, 3 corridas, mediana):
+
+| Estado                                     | Script en `/` | LCP simulado | Margen contra 3.500 ms |
+| ------------------------------------------ | ------------: | -----------: | ---------------------: |
+| `6534cc2` (como la CI)                     |     321.841 B |     3.243 ms |                  7,3 % |
+| + pantallas bajo demanda                   |     302.498 B |     3.242 ms |                  7,4 % |
+| + Sentry del cliente con `@sentry/browser` |     252.708 B |     3.073 ms |                 12,2 % |
+
+El script queda 17,7 % por debajo del budget y el LCP sale de la zona de aviso de
+`lighthouse-margen` (< 10 %). Categorías de la última corrida: performance 0,94–0,95,
+accesibilidad, buenas prácticas y SEO en 1.
+
+**Gate nuevo:** `tests/unit/sentry-cliente.test.ts`, que corre en `quality`, revisa dos cosas: (1) en el
+lockfile, `@sentry/browser` va en la misma versión que `@sentry/nextjs`, porque si se separan los
+`captureMessage` y `addBreadcrumb` de `observability.ts` caen en otra instancia y se pierden en
+silencio; (2) `instrumentation-client.ts` no menciona `@sentry/nextjs`, algo que el build local no
+puede ver con el DSN vacío.
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-05):
+
+| Gate                                   | Mutación                                                 | Rojo (lo que nombró)                               | Verde  |
+| -------------------------------------- | -------------------------------------------------------- | -------------------------------------------------- | ------ |
+| Versiones a la par                     | `version: 10.70.0` para `@sentry/browser` en el lockfile | «@sentry/browser 10.70.0 ≠ @sentry/nextjs 10.75.3» | 2 de 2 |
+| El `init` no vuelve a `@sentry/nextjs` | `import "@sentry/nextjs";` sumado al cliente             | «instrumentation-client.ts importa @sentry/nextjs» | 2 de 2 |
+
+**Dos demos que no se pusieron rojas al primer intento** (registradas, no escondidas):
+
+- La del lockfile, con `pnpm vitest` como gate, **pasó con la mutación**: pnpm 11 verifica las
+  dependencias antes de correr un script, reinstaló y devolvió el lockfile a 10.75.3 antes de que
+  la prueba lo leyera. En la CI no ocurre, porque `--frozen-lockfile` instala lo que diga el
+  lockfile. La demo se repitió llamando a `vitest` directo y salió roja (fila de arriba).
+- La del `import`, con la primera versión de la prueba (`/from "@sentry\/nextjs"/`), **pasó con la
+  mutación**: un `import "@sentry/nextjs"` sin `from` se colaba. La expresión pasó a atrapar
+  cualquier mención del paquete, y la misma mutación salió roja (fila de arriba).
+
+**Verde del árbol completo** (2026-10-05, después de los rojos):
+
+- `pnpm lint`: sin avisos;
+- `pnpm typecheck`: sin errores;
+- `pnpm test`: 657 de 657 en 56 archivos. El motor (`engine/`) está al 97,42 % de sentencias y al
+  98,96 % de líneas;
+- e2e, la suite entera sobre el build de producción de este árbol (Chromium móvil y escritorio, con
+  las pantallas ya cargadas bajo demanda): 58 de 58 al primer intento, en 3,1 min.
 
 ## Fricciones del kit (SEPARADAS del producto)
 
@@ -914,3 +1020,15 @@ pasada de capturas con extremos y el e2e de reduced-motion de las pantallas nuev
   Propuesta para el molde: (a) la regla del tercer intento y de elección de corrida, con su script;
   (b) registrar el swap junto al `uptime`; (c) un paso «¿la carga cambió los resultados o solo los
   tiempos?» con `comparar-corridas.mjs`, que separa lo que la carga puede tocar de lo que no.
+
+- **K-S7-4 · Un DSN público vacío en `.env.local` hace que el build local no mida lo que mide la
+  CI.** Next incrusta `""` y el minificador borra el `init` de Sentry; en la CI, sin la variable, el
+  `init` entra. Aquí fueron ≈ 70 KB de script y ≈ 170 ms de LCP simulado, invisibles en local. Propuesta para `/deploy-check` §4 y §8: medir peso y Lighthouse sobre una
+  copia `git archive` sin `.env.local` (lo que hace la CI), nunca sobre el árbol de trabajo. Y para
+  el molde de `.env.example`: una variable pública opcional se omite, no se deja vacía.
+- **K-S7-5 · `pnpm <script>` reinstala antes de correr (pnpm 11) y deshace una mutación del
+  lockfile.** Una demo en rojo cuyo gate es `pnpm vitest …` sobre un lockfile mutado sale verde, porque
+  pnpm lo reescribe antes de que la prueba lo lea. `demo-rojo.sh` no lo detecta: el gate «pasó con
+  la mutación» y la demo falla, que es lo correcto, pero el porqué no es obvio. Propuesta: que el
+  script avise si `--archivo` es `pnpm-lock.yaml` y el gate empieza por `pnpm `, y sugiera el binario
+  directo.
