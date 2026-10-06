@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 import {
   BALANCED_NOTES,
   FICHAS,
-  thousands,
   REGRESSION_FICHA_FIELDS,
   REGRESSION_NOTES,
   type Bilingual,
@@ -13,6 +12,7 @@ import {
   type SharedId,
 } from "@/content/modelos";
 import { MLP_MIN_ROWS } from "@/engine/encarrilador";
+import { thousands } from "@/lib/quantity";
 import { AGGLO_MAX_ROWS, HDBSCAN_MIN_CLUSTER_SIZE } from "@/engine/verdict";
 import {
   ALL_MEMBER_IDS,

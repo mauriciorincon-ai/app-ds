@@ -1,6 +1,5 @@
 "use client";
 
-import { thousands } from "@/content/modelos";
 import type { Placement, RouteProfile, Routing } from "@/engine/encarrilador";
 import type { MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
@@ -12,7 +11,7 @@ import {
 import { useI18n } from "@/i18n/provider";
 import { formatEstimate } from "@/lib/duration";
 import { buildClusterCard } from "@/lib/modelcard";
-import { formatQuantity, quantityDecimals } from "@/lib/quantity";
+import { formatQuantity, quantityDecimals, thousands } from "@/lib/quantity";
 import type {
   ChoiceState,
   ExportState,

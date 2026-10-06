@@ -60,3 +60,9 @@ export function errorReductionPct(model: number, baseline: number): number {
   if (baseline === 0) return 0;
   return Math.round(((baseline - model) / baseline) * 100);
 }
+
+/** Miles con el separador de cada idioma («8.000» / «8,000»). Vive aquí y no en
+ *  content/modelos.ts: la portada la usa, y las fichas viajan en su propio chunk
+ *  (R12 del S5; S7: importarla desde las fichas las metía en la portada). */
+export const thousands = (n: number, sep: "." | ",") =>
+  String(n).replace(/\B(?=(\d{3})+(?!\d))/g, sep);

@@ -19,8 +19,12 @@ import {
   type VersionWarning,
 } from "@/lib/model-file";
 import { reportImportError } from "@/lib/observability";
-import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
-import { thousands } from "@/content/modelos";
+import {
+  formatQuantity,
+  quantityDecimals,
+  thousands,
+  withUnit,
+} from "@/lib/quantity";
 import { Button, Card, Icon } from "./ui";
 
 export const EXAMPLES = [

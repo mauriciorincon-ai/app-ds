@@ -15,10 +15,8 @@ import type {
   MemberId,
   RegressionMemberId,
 } from "@/engine/roster";
+import { thousands } from "@/lib/quantity";
 
-/** Miles con el separador de cada idioma («8.000» / «8,000»). */
-export const thousands = (n: number, sep: "." | ",") =>
-  String(n).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
 const HDBSCAN_MIN_SHARE_PCT = 100 / HDBSCAN_ROWS_PER_MIN_CLUSTER;
 
 export type Bilingual = { es: string; en: string };

@@ -17,13 +17,12 @@ import { memberNameKey, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { datasetSlug } from "@/lib/files";
-import { formatQuantity, withUnit } from "@/lib/quantity";
+import { formatQuantity, thousands, withUnit } from "@/lib/quantity";
 import {
   importanceFormatter,
   quantityFormatter,
   regressionVerdictText,
 } from "@/lib/regression-text";
-import { thousands } from "@/content/modelos";
 import {
   AGGLO_MAX_ROWS,
   CLUSTER_GAP_MIN,

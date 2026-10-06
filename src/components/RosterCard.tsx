@@ -5,10 +5,10 @@ import {
   type Placement,
   type Routing,
 } from "@/engine/encarrilador";
-import { thousands } from "@/content/modelos";
 import { AGGLO_MAX_ROWS } from "@/engine/verdict";
 import { useI18n } from "@/i18n/provider";
 import { formatEstimate } from "@/lib/duration";
+import { thousands } from "@/lib/quantity";
 import { Card, Icon } from "./ui";
 
 // E2 (S5): quién compite y en qué nivel, con una razón por modelo. Lo que queda

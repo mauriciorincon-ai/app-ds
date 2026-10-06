@@ -1002,6 +1002,12 @@ puede ver con el DSN vacío.
 - e2e, la suite entera sobre el build de producción de este árbol (Chromium móvil y escritorio, con
   las pantallas ya cargadas bajo demanda): 58 de 58 al primer intento, en 3,1 min.
 
+**CI del séptimo commit** (`1e3ae87`, run 37392169219, `gh pr checks 19` y `statusCheckRollup`): 6 de
+6 `success`, con los tres pasos de `lighthouse` ejecutados: el budget y las categorías («All results
+processed!») y `lighthouse-margen`. **El margen siguió avisando:** «/ · largest-contentful-paint
+mediana 3201 vs presupuesto 3500 (margen 8.5 % < 10 %)». El runner de la CI es más lento que la copia
+local (3.073 ms), así que la decisión 7 **no** quedaba cumplida en la CI. Sigue en el noveno commit.
+
 ### Octavo commit: los botones de ejemplo de multiclase y agrupar (decisión 7)
 
 Con el margen del LCP ya bajado (séptimo commit), la portada suma dos ejemplos, con su texto
@@ -1041,6 +1047,45 @@ ninguna mediana a menos del 10 %»).
   líneas);
 - e2e sobre el build de producción con los botones: `multiclase`, `agrupar`, `happy-path`,
   `reduced-motion-app` y `regresion`, 22 de 22 al primer intento.
+
+### Noveno commit: las fichas fuera de la portada (decisión 7, segunda vuelta)
+
+Lantern le carga al LCP simulado la descarga de todo el script de `/`, a unos 5 ms por KB, así que para
+salir de la zona de aviso en la CI hacían falta unos 20 KB menos.
+
+**Lo que sobraba:** `StartScreen` importaba `thousands` desde `src/content/modelos.ts` (las 20 fichas
+de modelos, baselines y agrupadores en ES/EN, ≈ 35 KB), y con ella metía todas las fichas en la portada. El
+encabezado del propio archivo dice que viaja con `import()` dinámico junto con `FichaModelo` (R12 del
+S5): este sprint lo rompió al usar `thousands` en la portada. `thousands` pasa a `src/lib/quantity.ts`,
+el módulo de formato numérico que la portada ya carga, y sus cuatro importadores apuntan ahí.
+
+**Gate nuevo:** `tests/unit/portada-liviana.test.ts` recorre los imports estáticos desde
+`src/app/page.tsx` (sin `import type` ni `import()`). Exige que la portada no alcance las cuatro
+pantallas bajo demanda, los resultados de multiclase y agrupar, la ficha, `content/modelos.ts` ni
+`modelcard.ts`, y nombra el camino si alguno llega. Una prueba de control comprueba que el recorrido sí
+alcanza lo que la portada dibuja (`StartScreen`, `useExperiment`, `quantity`): un detector ciego daría
+verde siempre. No depende del DSN ni de Lighthouse, así que ve en `quality` lo que el build local
+(K-S7-4) no ve.
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`):
+
+| Mutación | Rojo (lo que nombró) | Verde |
+| --- | --- | --- |
+| `StartScreen` importa `FICHAS` de `@/content/modelos` | «src/app/page.tsx → src/components/StartScreen.tsx → src/content/modelos.ts» | 10 de 10 |
+| `page.tsx` importa `ResultsScreen` estático | «la portada importa src/components/ResultsScreen.tsx por: src/app/page.tsx → src/components/ResultsScreen.tsx» | 10 de 10 |
+
+La primera versión de la prueba usaba el flag `s` en una expresión regular, que el `target` de
+TypeScript no admite: `next build` cayó al chequear tipos. Sin el flag la semántica es la misma (el
+patrón no usa `.`), y las dos demos se repitieron sobre el código final con el mismo resultado.
+
+**Medición** (copia tipo CI, LHCI 0.15.1, 3 corridas, mediana): script en `/` **242.497 B** (−10.420 B
+desde el octavo commit), LCP simulado **2.935 ms** (margen 16,1 %).
+
+**Verde del árbol completo** (2026-10-05, con los cambios del décimo commit en el mismo árbol):
+
+- `pnpm lint` y `pnpm typecheck`: limpios;
+- `pnpm test`: 669 de 669 en 57 archivos (el motor al 97,42 % de sentencias y 98,96 % de líneas);
+- e2e, la suite entera sobre el build de producción: 58 de 58 al primer intento, en 5,0 min.
 
 ## Fricciones del kit (SEPARADAS del producto)
 
