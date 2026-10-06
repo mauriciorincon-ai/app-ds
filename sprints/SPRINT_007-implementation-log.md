@@ -1455,6 +1455,9 @@ as-built del H2 (S5–S7):
 La §5 del guion aprobado conserva su «33/33» con una nota que apunta al delta: el guion es el registro
 de lo que se aprobó y no se reescribe. Ninguna línea de HTML del brochure hasta la decisión.
 
+**CI de `e6cf659`** (BLUEPRINT y delta; run 37402379813, `gh pr checks 19` y `statusCheckRollup`): 6 de 6
+`success`; e2e 64 de 64 sin reintentos; `lighthouse-margen` en ✓, sin aviso.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre
