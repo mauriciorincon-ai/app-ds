@@ -12,7 +12,7 @@
     "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
   },
   "schema_version": "1.0.0",
-  "actualizado": "2026-10-04",
+  "actualizado": "2026-10-06",
   "app": {
     "slug": "ds",
     "nombre": "Probeta DS",
@@ -29,7 +29,7 @@
     "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad."
   },
   "funcionalidades": {
-    "total": 35,
+    "total": 41,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
     "descartadas": [],
     "grupos": [
@@ -42,7 +42,7 @@
           {
             "id": "V1",
             "nombre": "Eliges qué predecir",
-            "que_hace": "Seleccionas la columna objetivo: dos categorías (sí/no, 0/1, aprobado/rechazado) o, desde el Sprint 006, una cantidad (un precio, un consumo, un tiempo).",
+            "que_hace": "Seleccionas la columna objetivo: dos categorías (sí/no, aprobado/rechazado), desde el Sprint 007 de 3 a 20 categorías (un plan, una región), o desde el Sprint 006 una cantidad (un precio, un consumo). Si no hay nada que predecir, la app agrupa las filas (grupo «Agrupar sin objetivo»).",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -59,20 +59,20 @@
           },
           {
             "id": "V4",
-            "nombre": "Aviso de métricas casi perfectas",
-            "que_hace": "Un resultado redondo casi siempre esconde una fuga, no un gran modelo. La app lo marca como sospechoso en vez de celebrarlo.",
+            "nombre": "Un resultado demasiado bueno no se celebra",
+            "que_hace": "Si una columna predice el objetivo casi a la perfección, el titular dice «Posible fuga de datos — sospechoso» en vez de «supera», en las tres tareas con objetivo (desde el Sprint 007, el mismo titular para todas).",
             "seccion_manual": "El veredicto honesto"
           },
           {
             "id": "V5",
             "nombre": "Advertencia de fuga con la columna nombrada",
-            "que_hace": "Señala por nombre la columna que podría ser un proxy del objetivo, y qué hacer con ella.",
+            "que_hace": "Señala por nombre la columna que podría ser un proxy del objetivo, y qué hacer con ella. Con varias categorías nombra también la categoría que la columna delata.",
             "seccion_manual": "El veredicto honesto"
           },
           {
             "id": "V6",
             "nombre": "Las métricas, todas sobre datos no vistos",
-            "que_hace": "Al clasificar: exactitud, precisión, sensibilidad, F1 y AUC. Al estimar: MAE, RMSE, R² y MedAE, en las unidades del objetivo. Calculadas siempre sobre el conjunto de prueba.",
+            "que_hace": "Con dos categorías: exactitud, precisión, sensibilidad, F1 y AUC. Con varias: la exactitud balanceada, que pesa igual cada categoría, y el F1 macro. Al estimar: MAE, RMSE, R² y MedAE, en las unidades de la columna. Todo sobre el conjunto de prueba.",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -100,9 +100,15 @@
             "seccion_manual": "Estimar una cantidad"
           },
           {
+            "id": "V13",
+            "nombre": "Clasificar en varias categorías",
+            "que_hace": "De 3 a 20 categorías: la exactitud balanceada contra la categoría más frecuente y una regresión logística, la matriz de confusión con los aciertos marcados ✓ y, en una frase, la confusión más frecuente.",
+            "seccion_manual": "Clasificar en varias categorías"
+          },
+          {
             "id": "V12",
             "nombre": "¿Categorías o una cantidad? Te lo pregunta",
-            "que_hace": "Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada, y deja cambiar la respuesta.",
+            "que_hace": "Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada. Desde el Sprint 007, las dos respuestas entrenan.",
             "seccion_manual": "Estimar una cantidad"
           },
           {
@@ -127,7 +133,7 @@
           },
           {
             "id": "D2",
-            "nombre": "Cinco ejemplos incluidos",
+            "nombre": "Siete ejemplos incluidos",
             "que_hace": "Datos sintéticos empaquetados para recorrer la app entera sin traer nada propio.",
             "seccion_manual": "El veredicto honesto"
           },
@@ -140,7 +146,7 @@
           {
             "id": "D4",
             "nombre": "Límites dichos de frente",
-            "que_hace": "5 MB o 50 000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.",
+            "que_hace": "5 MB o 50,000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.",
             "seccion_manual": "Limitaciones conocidas (Sprint 001)"
           },
           {
@@ -152,7 +158,7 @@
           {
             "id": "D6",
             "nombre": "Cinco alertas antes de entrenar",
-            "que_hace": "Columna que huele a fuga, columna que parece un identificador, objetivo desbalanceado y, al estimar, objetivo muy sesgado u objetivo con valores muy lejos del resto. Con símbolo y texto, nunca solo color.",
+            "que_hace": "Columna que huele a fuga, columna que parece un identificador, objetivo desbalanceado y, al estimar, objetivo muy sesgado u objetivo con valores muy lejos del resto. Con símbolo y texto, nunca solo color. Con varias categorías, la fuga y el desbalance nombran la categoría.",
             "seccion_manual": "Sobrevive datos reales"
           },
           {
@@ -172,7 +178,7 @@
           {
             "id": "P1",
             "nombre": "Gráfico de importancia con dirección",
-            "que_hace": "Importancia por permutación sobre el conjunto de prueba. Si el modelo no se apoya en una variable, se dice así: no se le pinta una flecha que la medición no respalda.",
+            "que_hace": "Importancia por permutación sobre el conjunto de prueba. Si el modelo no se apoya en una variable, se dice así: no se le pinta una flecha que la medición no respalda. Con varias categorías una variable no empuja en una sola dirección, y se dice.",
             "seccion_manual": "El porqué, contado honesto"
           },
           {
@@ -184,7 +190,7 @@
           {
             "id": "P3",
             "nombre": "Narración con IA, solo a petición",
-            "que_hace": "Marcada «✓ verificada con los números»: si cita una cifra o una variable que no existe, se descarta antes de mostrarse.",
+            "que_hace": "Solo con dos categorías, y marcada «✓ verificada con los números»: si cita una cifra o una variable que no existe, se descarta antes de mostrarse. Las demás tareas usan el texto estándar.",
             "seccion_manual": "El porqué, contado honesto"
           },
           {
@@ -196,7 +202,7 @@
           {
             "id": "P5",
             "nombre": "Model card descargable",
-            "que_hace": "La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites.",
+            "que_hace": "La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites; al agrupar, la lectura, los grupos y la regla de asignación.",
             "seccion_manual": "El porqué, contado honesto"
           }
         ]
@@ -234,7 +240,7 @@
           {
             "id": "U5",
             "nombre": "CSV puntuado sin pisar columnas",
-            "que_hace": "La tabla completa más la predicción y, si el modelo la da, su probabilidad; al estimar, la cantidad estimada (<objetivo>_estimado). Si ya existía una columna con ese nombre, la nueva sale con sufijo.",
+            "que_hace": "La tabla completa más la predicción y, si el modelo la da, su probabilidad (con varias categorías, la de la categoría predicha); al estimar, la cantidad estimada con los decimales de la columna. Si ya existía una columna con ese nombre, la nueva sale con sufijo.",
             "seccion_manual": "El modelo se usa"
           },
           {
@@ -266,6 +272,44 @@
       {
         "orden": 5,
         "estrella": false,
+        "nombre": "Agrupar sin objetivo",
+        "linea": "Cuando no hay nada que predecir: encuentra grupos y te dice si existen de verdad.",
+        "features": [
+          {
+            "id": "G1",
+            "nombre": "Agrupar filas parecidas, sin objetivo",
+            "que_hace": "Cuatro agrupadores (K-Means, jerárquico, mezcla gaussiana y HDBSCAN) prueban de 2 a 10 grupos sobre todas las filas, y cada uno dice cómo eligió cuántos.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          },
+          {
+            "id": "G2",
+            "nombre": "Te dice si los grupos existen",
+            "que_hace": "● existen · ⚠ frágiles · ○ no hay estructura: compara con el mismo agrupador sobre datos al azar y repite el agrupamiento sobre partes de las filas. Sin prueba ni baseline, porque no hay respuesta que examinar.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          },
+          {
+            "id": "G3",
+            "nombre": "Qué distingue a cada grupo",
+            "que_hace": "Su tamaño y las columnas que más lo separan, en las unidades del usuario; las filas que no caen en ningún grupo, aparte.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          },
+          {
+            "id": "G4",
+            "nombre": "Tus filas con su grupo",
+            "que_hace": "La tabla entera con una columna más, armada en el navegador en el momento; no se guarda en ningún otro lado.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          },
+          {
+            "id": "G5",
+            "nombre": "Asignar filas nuevas a un grupo",
+            "que_hace": "Con la regla dicha (el centro más cercano, el grupo más probable o «fuera de todo grupo») y un archivo de modelo sin ninguna fila del usuario.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          }
+        ]
+      },
+      {
+        "orden": 6,
+        "estrella": false,
         "nombre": "Transversales",
         "linea": "Lo que acompaña a toda la app, no a una pantalla.",
         "features": [
@@ -289,10 +333,10 @@
     {
       "clave": "funcionalidades",
       "etiqueta": "Funcionalidades",
-      "valor": 35,
+      "valor": 41,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. El Sprint 006 suma dos (estimar una cantidad y la pregunta de la columna ambigua). Ninguna funcionalidad se descartó."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. El Sprint 006 suma dos (estimar una cantidad y la pregunta «¿categorías o una cantidad?») y el Sprint 007 seis (clasificar en varias categorías y las cinco de agrupar sin objetivo)."
     },
     {
       "clave": "pantallas",
@@ -361,7 +405,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 63768,
+      "valor": 105799,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."

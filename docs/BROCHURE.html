@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Probeta DS — Conócela</title>
+<script>
+  // S7 (D-B): el idioma ANTES del primer pintado — la elección guardada o el del navegador.
+  (() => {
+    let idioma = /^en\b/i.test(navigator.language || "") ? "en" : "es";
+    try {
+      const guardado = localStorage.getItem("probeta-conoce-idioma");
+      if (guardado === "es" || guardado === "en") idioma = guardado;
+    } catch { /* sin almacenamiento: manda el navegador */ }
+    document.documentElement.dataset.idioma = idioma;
+    document.documentElement.lang = idioma === "en" ? "en" : "es-CO";
+  })();
+</script>
 <!--
   BROCHURE VIVO DE PROBETA DS — producido desde el molde v2 del kit (regla CERO: guion primero).
   Guion aprobado por el usuario el 2026-08-15: sprints/ENTREGA-brochure-storyboard.md.
@@ -23,9 +35,20 @@
   sitio): 1) grid-template-rows en la apertura de tarjeta · 2) stroke-dashoffset para calibrar
   los iconos · 3) filter:blur en la apertura del titular, con opacidad SIEMPRE 1 (LCP honesto).
 
-  CONTEO: 35 funcionalidades (12 + 7 + 5 + 9 en las cuatro tarjetas + 2 en "lo fino"), cuadrado
-  contra docs/MANUAL-DE-USO.md. S6 suma dos en la tarjeta del veredicto (estimar una cantidad y
-  la pregunta «¿categorías o una cantidad?»); la tabla de mapeo de S6 va en su summary. La tabla de mapeo vive en sprints/ENTREGA-brochure-summary.md.
+  CONTEO: 41 funcionalidades (13 + 7 + 5 + 9 + 5 en las cinco tarjetas + 2 en "lo fino"),
+  cuadrado contra docs/MANUAL-DE-USO.md. S6 suma dos en la tarjeta del veredicto (estimar una
+  cantidad y la pregunta «¿categorías o una cantidad?»); S7 suma seis (clasificar en varias
+  categorías en la tarjeta del veredicto y las cinco de la quinta puerta, «Agrupar sin
+  objetivo»). Las tablas de mapeo de S6 y S7 van en sus summaries; la primera vive en
+  sprints/ENTREGA-brochure-summary.md.
+
+  S7 · DOS IDIOMAS (decisión D-B del usuario): cada texto visible es un par
+  <… class="es" lang="es"> / <… class="en" lang="en">, y el que no es del idioma activo sale del
+  árbol (display:none). Sin JS manda el español; el script del <head> fija el idioma ANTES de
+  pintar (la elección guardada o el del navegador), y el conmutador de la portada lo cambia.
+  tests/e2e/brochure.spec.ts exige la misma página en los dos: escenas, puertas, conteo.
+
+  S7 · E04b «Cuatro preguntas, la misma vara» (decisión D-A del usuario; storyboard §9.3).
 
   NOTA data-tema (regla 8 del molde): el brochure vive FUERA del storage de la app, así que no
   persigue su selector de tema — solo el del sistema (prefers-color-scheme). Se declara y ya.
@@ -185,6 +208,11 @@
     .probeta { left: 3px; width: 8px; top: 26vh; height: 48vh; }
   }
 
+  /* ── S7 · Dos idiomas: lo que no es del idioma activo sale del árbol (ni se ve ni se lee).
+     Sin JS no hay data-idioma y manda el español. ──────────────────────────────────────── */
+  html:not([data-idioma="en"]) .en,
+  html[data-idioma="en"] .es { display: none !important; }
+
   /* ── E01 · Portada ───────────────────────────────────────────────────────────────────── */
   .portada {
     padding: clamp(56px, 14vh, 120px) 0 clamp(40px, 8vh, 72px);
@@ -198,6 +226,33 @@
     margin: 0 0 20px;
   }
   .marca b { color: var(--accent); font-weight: 600; }
+  .cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin: 0 0 20px;
+  }
+  .cabecera .marca { margin: 0; }
+  /* El conmutador: el idioma activo con borde y peso (aria-pressed), nunca solo color. */
+  .idioma { display: flex; gap: 4px; }
+  .idioma button {
+    min-height: 44px;
+    padding: 0 12px;
+    font: 500 13px/1 var(--font-body);
+    color: var(--ink-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+  .idioma button[aria-pressed="true"] {
+    color: var(--ink);
+    font-weight: 600;
+    border-color: var(--hairline);
+    background: var(--surface);
+  }
 
   h1 {
     font-family: var(--font-display);
@@ -615,6 +670,58 @@
   }
   .remate-apoyo { color: var(--ink-muted); max-width: 52ch; margin: 10px 0 0; }
 
+  /* ── E04b · El catálogo: cuatro preguntas, la misma vara (S7) ───────────────────────────
+     G3: cada ficha asienta con su stagger y, dentro, pregunta → ejemplo → vara (--j). Solo
+     transform + opacity; sin loop. Reduced-motion: completas y quietas desde el primer frame. */
+  .fichas {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0;
+    margin: 18px 0 0;
+    list-style: none;
+  }
+  @media (min-width: 640px) { .fichas { grid-template-columns: 1fr 1fr; } }
+  .ficha {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 16px 14px;
+  }
+  .ficha > * {
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity var(--dur-escena) var(--ease-asentar),
+      transform var(--dur-escena) var(--ease-asentar);
+    transition-delay: calc(var(--i, 0) * 70ms + var(--j, 0) * 90ms + 120ms);
+  }
+  .catalogo.dentro .ficha > * { opacity: 1; transform: none; }
+  .ficha-glifo { display: block; width: 28px; height: 28px; color: var(--accent); margin-bottom: 8px; }
+  .ficha-glifo svg { width: 28px; height: 28px; }
+  .ficha-pregunta {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1.2;
+    margin: 0 0 4px;
+  }
+  .ficha-ejemplo { margin: 0 0 10px; color: var(--ink-muted); font-size: 15px; }
+  .ficha-vara {
+    margin: 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--hairline);
+    font-size: 14.5px;
+  }
+  .ficha-vara .sig {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 4px;
+  }
+  .catalogo-remate { margin: 20px 0 0; font-size: 16px; max-width: 52ch; }
+
   /* ── E07 · Lo fino ───────────────────────────────────────────────────────────────────── */
   details {
     border: 1px solid var(--hairline);
@@ -715,6 +822,7 @@
     }
     h1 .pal { filter: none; }                       /* E01: nítido desde el primer frame */
     [data-sube] { opacity: 1; transform: none; }    /* E03/E07: en su sitio */
+    .ficha > * { opacity: 1; transform: none; }     /* E04b: completas y quietas */
     .tarjeta-icono svg > * { stroke-dashoffset: 0; }  /* E03: trazo completo */
     .tarjeta[data-abierta="true"] .features li { opacity: 1; transform: none; }
     .mitad-test { transform: none; }                /* E05: ya cortado */
@@ -736,40 +844,55 @@
 <!-- ══ E01 · PORTADA — la promesa ══════════════════════════════════════════════════════ -->
 <header class="portada">
   <div class="env">
-    <p class="marca"><b>Probeta DS</b> · ciencia de datos honesta</p>
-    <h1 aria-label="Construye un modelo que puedas defender">
-      <span class="pal" style="--i:0" aria-hidden="true">Construye</span>
-      <span class="pal" style="--i:1" aria-hidden="true">un</span>
-      <span class="pal" style="--i:2" aria-hidden="true">modelo</span>
-      <span class="pal" style="--i:3" aria-hidden="true">que</span>
-      <span class="pal" style="--i:4" aria-hidden="true">puedas</span>
-      <span class="pal" style="--i:5" aria-hidden="true">defender.</span>
+    <div class="cabecera">
+      <p class="marca"><span class="es" lang="es"><b>Probeta DS</b> · ciencia de datos honesta</span><span class="en" lang="en"><b>Probeta DS</b> · honest data science</span></p>
+      <!-- S7 (D-B): ES/EN. Sin JS manda el español; con JS, la elección guardada o el idioma
+           del navegador (lo fija el script del <head> antes de pintar). -->
+      <div class="idioma" role="group" aria-label="Idioma · Language">
+        <button type="button" lang="es" data-idioma-boton="es" aria-pressed="true">Español</button>
+        <button type="button" lang="en" data-idioma-boton="en" aria-pressed="false">English</button>
+      </div>
+    </div>
+    <h1 aria-label="Construye un modelo que puedas defender"
+        data-aria-es="Construye un modelo que puedas defender"
+        data-aria-en="Build a model you can defend">
+      <span class="es" lang="es" aria-hidden="true">
+        <span class="pal" style="--i:0">Construye</span>
+        <span class="pal" style="--i:1">un</span>
+        <span class="pal" style="--i:2">modelo</span>
+        <span class="pal" style="--i:3">que</span>
+        <span class="pal" style="--i:4">puedas</span>
+        <span class="pal" style="--i:5">defender.</span>
+      </span>
+      <span class="en" lang="en" aria-hidden="true">
+        <span class="pal" style="--i:0">Build</span>
+        <span class="pal" style="--i:1">a</span>
+        <span class="pal" style="--i:2">model</span>
+        <span class="pal" style="--i:3">you</span>
+        <span class="pal" style="--i:4">can</span>
+        <span class="pal" style="--i:5">defend.</span>
+      </span>
     </h1>
-    <p class="promesa-apoyo">
-      Sin ser científico de datos, sin escribir código, sin una sola tarjeta gráfica.
-    </p>
+    <p class="es promesa-apoyo" lang="es">Sin ser científico de datos, sin escribir código, sin una sola tarjeta gráfica.</p><p class="en promesa-apoyo" lang="en">No data scientist needed, no code to write, not a single graphics card.</p>
     <p class="sello-privacidad">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 3 5 6v6c0 4.2 2.9 7.7 7 9 4.1-1.3 7-4.8 7-9V6z"/>
         <path d="m9 12 2 2 4-4"/>
       </svg>
-      <span><b>Todo el cálculo ocurre dentro de tu navegador.</b> Tu tabla no se sube a ningún
-      servidor: no hay a dónde subirla.</span>
+      <span class="es" lang="es"><b>Todo el cálculo ocurre dentro de tu navegador.</b> Tu tabla no se sube a ningún servidor: no hay a dónde subirla.</span><span class="en" lang="en"><b>All the computing happens inside your browser.</b> Your table isn't uploaded to any server: there's nowhere to upload it to.</span>
     </p>
   </div>
 </header>
 
 <main>
 
-  <!-- ══ E03 + E04 · LAS CUATRO PUERTAS (capa 1) y su detalle (capa 2) ════════════════ -->
+  <!-- ══ E03 + E04 · LAS CINCO PUERTAS (capa 1) y su detalle (capa 2) ══════════════════ -->
   <section class="puertas" id="que-hace">
     <div class="env">
-      <p class="rotulo-seccion">Qué hace</p>
-      <h2>Cuatro cosas, y las cuatro de frente</h2>
-      <p class="entradilla">
-        Toca la que te interese. Nada se abre solo: nadie tiene por qué leer lo que no pidió.
-      </p>
+      <p class="es rotulo-seccion" lang="es">Qué hace</p><p class="en rotulo-seccion" lang="en">What it does</p>
+      <h2><span class="es" lang="es">Cinco cosas, y las cinco de frente</span><span class="en" lang="en">Five things, all of them head-on</span></h2>
+      <p class="es entradilla" lang="es">Toca la que te interese. Nada se abre solo: nadie tiene por qué leer lo que no pidió.</p><p class="en entradilla" lang="en">Tap the one you care about. Nothing opens by itself: no one should have to read what they didn't ask for.</p>
 
       <!-- Tarjeta 1 — LA ESTRELLA. Entra sola, un beat antes que las demás. -->
       <article class="tarjeta estrella" data-sube style="--i:0">
@@ -781,32 +904,31 @@
                 <path pathLength="1" d="m4 12.5 5.5 5.5L20 7"/>
               </svg>
             </span>
-            <span class="tarjeta-titulo">El veredicto honesto</span>
-            <span class="tarjeta-n">12</span>
+            <span class="tarjeta-titulo"><span class="es" lang="es">El veredicto honesto</span><span class="en" lang="en">The honest verdict</span></span>
+            <span class="tarjeta-n">13</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"/>
             </svg>
           </button>
         </h3>
-        <p class="tarjeta-resumen">
-          Entrena un modelo real con tu tabla y te dice, sin rodeos, si sirve o no.
-        </p>
+        <p class="es tarjeta-resumen" lang="es">Entrena un modelo real con tu tabla y te dice, sin rodeos, si sirve o no.</p><p class="en tarjeta-resumen" lang="en">It trains a real model on your table and tells you, straight, whether it's any good.</p>
         <div class="detalle" id="d-veredicto">
           <div class="detalle-caja">
             <ul class="features">
-              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Eliges qué predecir.</b> <em>Una columna de dos opciones (sí/no, 0/1, aprobado/rechazado) o una cantidad (un precio, un consumo, un tiempo).</em></span></li>
-              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Entrena con el progreso a la vista.</b> <em>Paso a paso, sin pantallas en blanco.</em></span></li>
-              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>El veredicto, en grande.</b> <em>▲ supera al baseline · ＝ empata · ▼ NO supera. Con el número exacto de la diferencia.</em></span></li>
-              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Aviso de métricas casi perfectas.</b> <em>Un resultado redondo casi siempre esconde una trampa, no un gran modelo. Te lo dice.</em></span></li>
-              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Advertencia de fuga con la columna nombrada.</b> <em>«La columna X podría ser un proxy del objetivo». Con nombre y apellido.</em></span></li>
-              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Las métricas, todas sobre datos que el modelo no vio.</b> <em>Al clasificar: exactitud, precisión, sensibilidad, F1 y AUC. Al estimar: MAE, RMSE, R² y MedAE, en las unidades de tu columna.</em></span></li>
-              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Matriz de confusión.</b> <em>En qué se equivoca, no solo cuánto.</em></span></li>
-              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Los baselines, a la vista.</b> <em>Al clasificar, la clase mayoritaria y la regresión logística; al estimar, la mediana y la regresión lineal: los rivales que hay que batir.</em></span></li>
-              <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Una liga de modelos, elegida sin mirar la prueba.</b> <em>Compiten todos los que tu navegador puede entrenar; gana el que elige la validación cruzada. Puedes elegir otro: queda registrado como «elegido por ti».</em></span></li>
-              <li style="--i:9"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Estimar una cantidad, con el error en sus unidades.</b> <em>«En promedio se equivoca por ±33.5 kWh; una regresión lineal se equivoca por ±43.8 kWh». Con el gráfico estimado frente a real.</em></span></li>
-              <li style="--i:10"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>¿Categorías o una cantidad? Te lo pregunta.</b> <em>Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada.</em></span></li>
-              <li style="--i:11"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Nuevo experimento cuando quieras.</b> <em>Un botón y vuelves a empezar.</em></span></li>
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Eliges qué predecir.</b> <em>Una columna de dos opciones (sí/no, aprobado/rechazado), una de varias categorías (un plan, una región) o una cantidad (un precio, un consumo). Si no hay nada que predecir, la app agrupa tus filas (más abajo).</em></span><span class="en" lang="en"><b>You choose what to predict.</b> <em>A two-option column (yes/no, approved/rejected), one with several categories (a plan, a region) or a quantity (a price, a consumption). If there's nothing to predict, the app groups your rows (further down).</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Entrena con el progreso a la vista.</b> <em>Paso a paso, sin pantallas en blanco.</em></span><span class="en" lang="en"><b>Training with the progress in sight.</b> <em>Step by step, no blank screens.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>El veredicto, en grande.</b> <em>▲ supera al baseline · ＝ empata · ▼ NO supera. Con el número exacto de la diferencia.</em></span><span class="en" lang="en"><b>The verdict, in large type.</b> <em>▲ beats the baseline · ＝ ties · ▼ does NOT beat it. With the exact size of the gap.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Un resultado demasiado bueno no se celebra.</b> <em>Si una columna predice el objetivo casi a la perfección, el titular dice «Posible fuga de datos — sospechoso», no «supera». Casi siempre es una trampa, no un gran modelo.</em></span><span class="en" lang="en"><b>A result that's too good isn't celebrated.</b> <em>If a column predicts the target almost perfectly, the headline says “Possible data leak — suspicious”, not “beats”. It's almost always a trap, not a great model.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Advertencia de fuga con la columna nombrada.</b> <em>«La columna X podría ser un proxy del objetivo». Con varias categorías, nombra también la categoría que delata. Con nombre y apellido.</em></span><span class="en" lang="en"><b>Leak warning, with the column named.</b> <em>“Column X could be a proxy for the target.” With several categories, it also names the category the column gives away. No vague hints.</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Las métricas, todas sobre datos que el modelo no vio.</b> <em>Con dos categorías: exactitud, precisión, sensibilidad, F1 y AUC. Con varias: la exactitud balanceada, que pesa igual cada categoría, y el F1 macro. Al estimar: MAE, RMSE, R² y MedAE, en las unidades de tu columna.</em></span><span class="en" lang="en"><b>Every metric, on data the model never saw.</b> <em>With two categories: accuracy, precision, recall, F1 and AUC. With several: balanced accuracy, which weighs every category equally, and macro F1. When estimating: MAE, RMSE, R² and MedAE, in your column's units.</em></span></li>
+              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Matriz de confusión.</b> <em>En qué se equivoca, no solo cuánto.</em></span><span class="en" lang="en"><b>Confusion matrix.</b> <em>Where it goes wrong, not just how much.</em></span></li>
+              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Los baselines, a la vista.</b> <em>Al clasificar, la clase mayoritaria y la regresión logística; al estimar, la mediana y la regresión lineal: los rivales que hay que batir.</em></span><span class="en" lang="en"><b>The baselines, in plain sight.</b> <em>When classifying, the majority class and a logistic regression; when estimating, the median and a linear regression: the rivals to beat.</em></span></li>
+              <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Una liga de modelos, elegida sin mirar la prueba.</b> <em>Compiten todos los que tu navegador puede entrenar; gana el que elige la validación cruzada. Puedes elegir otro: queda registrado como «elegido por ti».</em></span><span class="en" lang="en"><b>A league of models, picked without looking at the test.</b> <em>Every model your browser can train competes; the winner is the one cross-validation picks. You can choose another: it's recorded as “chosen by you”.</em></span></li>
+              <li style="--i:9"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Estimar una cantidad, con el error en sus unidades.</b> <em>«En promedio se equivoca por ±33.5 kWh; una regresión lineal se equivoca por ±43.8 kWh». Con el gráfico estimado frente a real.</em></span><span class="en" lang="en"><b>Estimate a quantity, with the error in its units.</b> <em>“On average it's off by ±33.5 kWh; a linear regression is off by ±43.8 kWh.” With the estimated-versus-actual chart.</em></span></li>
+              <li style="--i:10"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Clasifica en varias categorías.</b> <em>De 3 a 20: la exactitud balanceada contra la categoría más frecuente y una regresión logística, la matriz con los aciertos marcados ✓ y, en una frase, la confusión más frecuente.</em></span><span class="en" lang="en"><b>Classify into several categories.</b> <em>From 3 to 20: balanced accuracy against the most frequent category and a logistic regression, the matrix with the hits marked ✓ and, in one sentence, the most frequent mix-up.</em></span></li>
+              <li style="--i:11"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>¿Categorías o una cantidad? Te lo pregunta.</b> <em>Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada. Respondas lo que respondas, entrena.</em></span><span class="en" lang="en"><b>Categories or a quantity? It asks you.</b> <em>If a column has few distinct numbers, the app doesn't guess: it asks, with the likeliest reading marked. Whatever you answer, it trains.</em></span></li>
+              <li style="--i:12"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Nuevo experimento cuando quieras.</b> <em>Un botón y vuelves a empezar.</em></span><span class="en" lang="en"><b>A new experiment whenever you like.</b> <em>One button and you start over.</em></span></li>
             </ul>
           </div>
         </div>
@@ -824,7 +946,7 @@
                 <path pathLength="1" d="M9 10v10"/>
               </svg>
             </span>
-            <span class="tarjeta-titulo">Datos reales, tratados de frente</span>
+            <span class="tarjeta-titulo"><span class="es" lang="es">Datos reales, tratados de frente</span><span class="en" lang="en">Real data, handled head-on</span></span>
             <span class="tarjeta-n">7</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -832,19 +954,17 @@
             </svg>
           </button>
         </h3>
-        <p class="tarjeta-resumen">
-          Tus tablas vienen con huecos, basura y filas repetidas. Se limpian contándote cada paso.
-        </p>
+        <p class="es tarjeta-resumen" lang="es">Tus tablas vienen con huecos, basura y filas repetidas. Se limpian contándote cada paso.</p><p class="en tarjeta-resumen" lang="en">Your tables come with gaps, junk and repeated rows. They're cleaned while it tells you every step.</p>
         <div class="detalle" id="d-datos">
           <div class="detalle-caja">
             <ul class="features">
-              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Sube tu propio CSV.</b> <em>Arrástralo o elígelo. Se queda en tu equipo.</em></span></li>
-              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>O prueba con cinco ejemplos incluidos.</b> <em>Datos sintéticos, listos para que veas la app funcionando entera.</em></span></li>
-              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Vista previa con el perfil de cada columna.</b> <em>Tipo, valores vacíos y aviso si algo parece una fecha.</em></span></li>
-              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Límites dichos de frente.</b> <em>5 MB o 50 000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.</em></span></li>
-              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Saneamiento con el conteo exacto.</b> <em>Filas repetidas eliminadas, columnas identificadoras o constantes apartadas, celdas basura vaciadas. Y si venías limpio, un franco «nada que sanear».</em></span></li>
-              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Cinco alertas antes de entrenar.</b> <em>Una columna que huele a fuga, una que parece un código de cliente, un objetivo desbalanceado y, al estimar, un objetivo muy sesgado o con valores muy lejos del resto. Con símbolo y texto, nunca solo color.</em></span></li>
-              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Si tu CSV separa con punto y coma, se bloquea y se te dice.</b> <em>El caso típico de Excel en español. Adivinar el separador sería convertir tus números en categorías en silencio.</em></span></li>
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Sube tu propio CSV.</b> <em>Arrástralo o elígelo. Se queda en tu equipo.</em></span><span class="en" lang="en"><b>Upload your own CSV.</b> <em>Drag it in or pick it. It stays on your machine.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>O prueba con siete ejemplos incluidos.</b> <em>Datos sintéticos, listos para que veas la app funcionando entera.</em></span><span class="en" lang="en"><b>Or try one of the seven bundled examples.</b> <em>Synthetic data, ready for you to see the whole app at work.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Vista previa con el perfil de cada columna.</b> <em>Tipo, valores vacíos y aviso si algo parece una fecha.</em></span><span class="en" lang="en"><b>A preview with each column's profile.</b> <em>Type, empty values, and a warning if something looks like a date.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Límites dichos de frente.</b> <em>5 MB o 50,000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.</em></span><span class="en" lang="en"><b>Limits stated up front.</b> <em>5 MB or 50,000 rows. Above that it warns you; it doesn't hang pretending to work.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Saneamiento con el conteo exacto.</b> <em>Filas repetidas eliminadas, columnas identificadoras o constantes apartadas, celdas basura vaciadas. Y si venías limpio, un franco «nada que sanear».</em></span><span class="en" lang="en"><b>Cleaning, with the exact count.</b> <em>Duplicate rows removed, identifier or constant columns set aside, junk cells emptied. And if your data was clean, a frank “nothing to clean up”.</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Cinco alertas antes de entrenar.</b> <em>Una columna que huele a fuga (con varias categorías, nombra la categoría que delata), una que parece un código de cliente, un objetivo desbalanceado (con varias categorías, la más chica, con su nombre) y, al estimar, un objetivo muy sesgado o con valores muy lejos del resto. Con símbolo y texto, nunca solo color.</em></span><span class="en" lang="en"><b>Five alerts before training.</b> <em>A column that smells like a leak (with several categories, it names the category the column gives away), one that looks like a customer code, an imbalanced target (with several categories, the smallest one, by name) and, when estimating, a heavily skewed target or one with values far from the rest. With a symbol and text, never colour alone.</em></span></li>
+              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Si tu CSV separa con punto y coma, se bloquea y se te dice.</b> <em>El caso típico de Excel en español. Adivinar el separador sería convertir tus números en categorías en silencio.</em></span><span class="en" lang="en"><b>If your CSV uses semicolons, it stops and tells you.</b> <em>The classic case of Excel in Spanish. Guessing the separator would silently turn your numbers into categories.</em></span></li>
             </ul>
           </div>
         </div>
@@ -863,7 +983,7 @@
                 <path pathLength="1" d="m17.7 6.3-3 3"/><path pathLength="1" d="m9.3 14.7-3 3"/>
               </svg>
             </span>
-            <span class="tarjeta-titulo">El porqué, contado honesto</span>
+            <span class="tarjeta-titulo"><span class="es" lang="es">El porqué, contado honesto</span><span class="en" lang="en">The why, told honestly</span></span>
             <span class="tarjeta-n">5</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -871,17 +991,15 @@
             </svg>
           </button>
         </h3>
-        <p class="tarjeta-resumen">
-          Qué variables pesan, hacia dónde empujan, y una explicación en palabras llanas.
-        </p>
+        <p class="es tarjeta-resumen" lang="es">Qué variables pesan, hacia dónde empujan, y una explicación en palabras llanas.</p><p class="en tarjeta-resumen" lang="en">Which variables weigh, which way they push, and an explanation in plain words.</p>
         <div class="detalle" id="d-porque">
           <div class="detalle-caja">
             <ul class="features">
-              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Gráfico de importancia con dirección.</b> <em>Cuánto pesa cada variable y hacia dónde empuja. Si el modelo no se apoya en una, se dice así — no se le inventa una flecha.</em></span></li>
-              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Un texto explicativo sin IA y sin internet.</b> <em>Lo escribe la propia app con tus números. Siempre está ahí.</em></span></li>
-              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Narración con IA, solo si la pides.</b> <em>Y marcada «✓ verificada con los números»: si cita una cifra o una variable que no existe, se descarta antes de que la veas.</em></span></li>
-              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Si la narración falla, te dice por qué.</b> <em>El proveedor no respondió · no pasó la verificación · no está configurada. Y puedes reintentar.</em></span></li>
-              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Model card descargable.</b> <em>La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites. Tu constancia ante quien pregunte.</em></span></li>
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Gráfico de importancia con dirección.</b> <em>Cuánto pesa cada variable y hacia dónde empuja. Si el modelo no se apoya en una, se dice así — no se le inventa una flecha. Con varias categorías una variable no empuja en una sola dirección, y también se dice.</em></span><span class="en" lang="en"><b>An importance chart, with direction.</b> <em>How much each variable weighs and which way it pushes. If the model doesn't lean on one, it says so — no arrow is invented. With several categories a variable doesn't push one single way, and that's said too.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Un texto explicativo sin IA y sin internet.</b> <em>Lo escribe la propia app con tus números. Siempre está ahí.</em></span><span class="en" lang="en"><b>An explanation with no AI and no internet.</b> <em>The app writes it itself from your numbers. It's always there.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Narración con IA, solo si la pides.</b> <em>Con dos categorías, y marcada «✓ verificada con los números»: si cita una cifra o una variable que no existe, se descarta antes de que la veas. En las demás tareas, el texto estándar.</em></span><span class="en" lang="en"><b>AI narration, only if you ask for it.</b> <em>With two categories, and marked “✓ verified against the numbers”: if it cites a figure or a variable that doesn't exist, it's discarded before you see it. In the other tasks, the standard text.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Si la narración falla, te dice por qué.</b> <em>El proveedor no respondió · no pasó la verificación · no está configurada. Y puedes reintentar.</em></span><span class="en" lang="en"><b>If the narration fails, it tells you why.</b> <em>The provider didn't answer · it failed the check · it isn't set up. And you can retry.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Model card descargable.</b> <em>La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites; al agrupar, la lectura y los grupos. Tu constancia ante quien pregunte.</em></span><span class="en" lang="en"><b>A downloadable model card.</b> <em>The experiment's full record: data, split, method, metrics, verdict and limits; when grouping, the reading and the groups. Your proof for whoever asks.</em></span></li>
             </ul>
           </div>
         </div>
@@ -899,7 +1017,7 @@
                 <path pathLength="1" d="m7 10 5 5 5-5"/>
               </svg>
             </span>
-            <span class="tarjeta-titulo">El modelo se usa</span>
+            <span class="tarjeta-titulo"><span class="es" lang="es">El modelo se usa</span><span class="en" lang="en">The model gets used</span></span>
             <span class="tarjeta-n">9</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -907,25 +1025,98 @@
             </svg>
           </button>
         </h3>
-        <p class="tarjeta-resumen">
-          Deja de ser un experimento: puntúa datos nuevos y guarda el modelo para otro día.
-        </p>
+        <p class="es tarjeta-resumen" lang="es">Deja de ser un experimento: puntúa datos nuevos y guarda el modelo para otro día.</p><p class="en tarjeta-resumen" lang="en">It stops being an experiment: score new data and keep the model for another day.</p>
         <div class="detalle" id="d-usar">
           <div class="detalle-caja">
             <ul class="features">
-              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Puntúa datos nuevos.</b> <em>Subes otra tabla y obtienes la predicción de cada fila.</em></span></li>
-              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Si falta una columna, se niega a puntuar.</b> <em>Y te dice exactamente cuáles faltan. Nunca rellena en silencio.</em></span></li>
-              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Aviso de novedad con el porcentaje.</b> <em>«El modelo está adivinando en el N % de tus filas» — valores que nunca vio al entrenar.</em></span></li>
-              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Distribución de las predicciones y vista previa.</b> <em>Antes de descargar nada.</em></span></li>
-              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>CSV puntuado sin pisar nada tuyo.</b> <em>Tu tabla completa más la predicción y, si el modelo la da, su probabilidad; al estimar, la cantidad estimada con los decimales de tu columna. Si ya tenías una columna con ese nombre, la nueva sale con sufijo.</em></span></li>
-              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Exporta el modelo a un archivo.</b> <em>Lo que aprendió y su constancia — no tus filas. Aun así, trátalo como sensible.</em></span></li>
-              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Al importarlo, se valida antes de abrirlo.</b> <em>Un archivo ajeno, corrupto o manipulado se rechaza con la razón exacta.</em></span></li>
-              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Resumen honesto antes de usarlo.</b> <em>Con qué datos nació, qué métrica sacó, qué advertencias trae. Decides con la información delante.</em></span></li>
-              <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span><b>Puntúa sin volver a entrenar.</b> <em>Otro día, otro computador, el mismo modelo.</em></span></li>
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Puntúa datos nuevos.</b> <em>Subes otra tabla y obtienes la predicción de cada fila.</em></span><span class="en" lang="en"><b>Score new data.</b> <em>Upload another table and get the prediction for each row.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Si falta una columna, se niega a puntuar.</b> <em>Y te dice exactamente cuáles faltan. Nunca rellena en silencio.</em></span><span class="en" lang="en"><b>If a column is missing, it refuses to score.</b> <em>And it tells you exactly which ones. It never fills in silently.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Aviso de novedad con el porcentaje.</b> <em>«El modelo está adivinando en el N % de tus filas» — valores que nunca vio al entrenar.</em></span><span class="en" lang="en"><b>A novelty warning, with the percentage.</b> <em>“The model is guessing on N% of your rows” — values it never saw in training.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Distribución de las predicciones y vista previa.</b> <em>Antes de descargar nada.</em></span><span class="en" lang="en"><b>The spread of predictions, and a preview.</b> <em>Before you download anything.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>CSV puntuado sin pisar nada tuyo.</b> <em>Tu tabla completa más la predicción y, si el modelo la da, su probabilidad (con varias categorías, la de la categoría predicha); al estimar, la cantidad estimada con los decimales de tu columna. Si ya tenías una columna con ese nombre, la nueva sale con sufijo.</em></span><span class="en" lang="en"><b>A scored CSV that overwrites nothing of yours.</b> <em>Your full table plus the prediction and, if the model gives one, its probability (with several categories, that of the predicted category); when estimating, the estimate with your column's decimals. If you already had a column with that name, the new one gets a suffix.</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Exporta el modelo a un archivo.</b> <em>Lo que aprendió y su constancia — no tus filas. Aun así, trátalo como sensible.</em></span><span class="en" lang="en"><b>Export the model to a file.</b> <em>What it learned and its record — not your rows. Still, treat it as sensitive.</em></span></li>
+              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Al importarlo, se valida antes de abrirlo.</b> <em>Un archivo ajeno, corrupto o manipulado se rechaza con la razón exacta.</em></span><span class="en" lang="en"><b>On import, it's checked before it opens.</b> <em>A foreign, corrupt or tampered file is rejected with the exact reason.</em></span></li>
+              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Resumen honesto antes de usarlo.</b> <em>Con qué datos nació, qué métrica sacó, qué advertencias trae. Decides con la información delante.</em></span><span class="en" lang="en"><b>An honest summary before you use it.</b> <em>What data it was born from, what metric it scored, what warnings it carries. You decide with the facts in front of you.</em></span></li>
+              <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Puntúa sin volver a entrenar.</b> <em>Otro día, otro computador, el mismo modelo.</em></span><span class="en" lang="en"><b>Score without retraining.</b> <em>Another day, another computer, the same model.</em></span></li>
             </ul>
           </div>
         </div>
       </article>
+
+      <!-- Tarjeta 5 (S7, decisión D-A del usuario): la quinta puerta. Entra la última. -->
+      <article class="tarjeta" data-sube style="--i:5">
+        <h3>
+          <button type="button" aria-expanded="false" aria-controls="d-agrupar">
+            <span class="tarjeta-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle pathLength="1" cx="5.5" cy="6.5" r="1.6"/><circle pathLength="1" cx="9" cy="8" r="1.6"/><circle pathLength="1" cx="6" cy="10.5" r="1.6"/>
+                <circle pathLength="1" cx="16.5" cy="5.5" r="1.6"/><circle pathLength="1" cx="19" cy="9" r="1.6"/><circle pathLength="1" cx="15.5" cy="9.5" r="1.6"/>
+                <circle pathLength="1" cx="10.5" cy="16.5" r="1.6"/><circle pathLength="1" cx="14" cy="17" r="1.6"/><circle pathLength="1" cx="12" cy="20" r="1.6"/>
+              </svg>
+            </span>
+            <span class="tarjeta-titulo"><span class="es" lang="es">Agrupar sin objetivo</span><span class="en" lang="en">Grouping without a target</span></span>
+            <span class="tarjeta-n">5</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+        </h3>
+        <p class="es tarjeta-resumen" lang="es">Cuando no hay nada que predecir: encuentra grupos y te dice si existen de verdad.</p><p class="en tarjeta-resumen" lang="en">When there's nothing to predict: it finds groups and tells you whether they're real.</p>
+        <div class="detalle" id="d-agrupar">
+          <div class="detalle-caja">
+            <ul class="features">
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Agrupa filas parecidas, sin objetivo.</b> <em>Cuatro agrupadores prueban de 2 a 10 grupos, y cada uno dice cómo eligió cuántos.</em></span><span class="en" lang="en"><b>Groups similar rows, without a target.</b> <em>Four clusterers try 2 to 10 groups, and each one says how it chose how many.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Te dice si los grupos existen.</b> <em>● existen · ⚠ frágiles · ○ no hay estructura: compara con datos al azar y repite el agrupamiento. Sin prueba ni baseline, porque no hay respuesta que examinar.</em></span><span class="en" lang="en"><b>Tells you whether the groups are real.</b> <em>● real · ⚠ fragile · ○ no structure: it compares against random data and repeats the grouping. No test set and no baseline, because there's no answer to examine.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Qué distingue a cada grupo.</b> <em>Su tamaño y las columnas que más lo separan, en tus unidades; las filas que no caen en ningún grupo, aparte.</em></span><span class="en" lang="en"><b>What sets each group apart.</b> <em>Its size and the columns that separate it most, in your units; the rows that fall in no group, on their own.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Tus filas con su grupo.</b> <em>Tu tabla entera con una columna más, armada en tu navegador.</em></span><span class="en" lang="en"><b>Your rows with their group.</b> <em>Your whole table with one more column, built in your browser.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Asigna filas nuevas a un grupo.</b> <em>Con la regla dicha y un archivo de modelo sin ninguna de tus filas.</em></span><span class="en" lang="en"><b>Assigns new rows to a group.</b> <em>With the rule spelled out, and a model file that holds none of your rows.</em></span></li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══ E04b · EL CATÁLOGO — cuatro preguntas, la misma vara (S7, decisión D-A) ══════════
+       G3: asienta una vez al entrar. Las cuatro fichas llegan iguales y se quedan quietas: la
+       misma vara para todas. Dentro de cada ficha, pregunta → ejemplo → vara. -->
+  <section class="catalogo" id="el-catalogo">
+    <div class="env">
+      <p class="es rotulo-seccion" lang="es">El catálogo</p><p class="en rotulo-seccion" lang="en">The catalogue</p>
+      <h2><span class="es" lang="es">Cuatro preguntas, la misma vara</span><span class="en" lang="en">Four questions, the same yardstick</span></h2>
+      <ul class="fichas">
+        <li class="ficha" data-sube style="--i:0">
+          <span class="ficha-glifo" style="--j:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span>
+          <h3 class="ficha-pregunta" style="--j:0"><span class="es" lang="es">¿Sí o no?</span><span class="en" lang="en">Yes or no?</span></h3>
+          <p class="ficha-ejemplo" style="--j:1"><span class="es" lang="es">¿Renuncia o se queda?</span><span class="en" lang="en">Will they quit or stay?</span></p>
+          <p class="ficha-vara" style="--j:2"><span class="sig" aria-hidden="true">▲ ＝ ▼</span> <span class="es" lang="es">Supera, empata o no supera a la mejor regla simple.</span><span class="en" lang="en">Beats, ties or doesn't beat the best simple rule.</span></p>
+        </li>
+        <li class="ficha" data-sube style="--i:1">
+          <span class="ficha-glifo" style="--j:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/><path d="m4.5 6.5 1.2 1.2 2-2.4M10.5 12.5l1.2 1.2 2-2.4M16.5 18.5l1.2 1.2 2-2.4"/></svg></span>
+          <h3 class="ficha-pregunta" style="--j:0"><span class="es" lang="es">¿Cuál de varias?</span><span class="en" lang="en">Which of several?</span></h3>
+          <p class="ficha-ejemplo" style="--j:1"><span class="es" lang="es">¿Qué plan contrata?</span><span class="en" lang="en">Which plan will they buy?</span></p>
+          <p class="ficha-vara" style="--j:2"><span class="sig" aria-hidden="true">✓</span> <span class="es" lang="es">En la diagonal: dónde acierta y con qué se confunde.</span><span class="en" lang="en">On the diagonal: where it's right, and what it mixes up.</span></p>
+        </li>
+        <li class="ficha" data-sube style="--i:2">
+          <span class="ficha-glifo" style="--j:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19 20 6"/><circle cx="6.5" cy="14" r="1.2"/><circle cx="9.5" cy="15.5" r="1.2"/><circle cx="12" cy="10.5" r="1.2"/><circle cx="15" cy="11.5" r="1.2"/><circle cx="17.5" cy="6.5" r="1.2"/></svg></span>
+          <h3 class="ficha-pregunta" style="--j:0"><span class="es" lang="es">¿Cuánto?</span><span class="en" lang="en">How much?</span></h3>
+          <p class="ficha-ejemplo" style="--j:1"><span class="es" lang="es">¿Cuántos kWh gastará?</span><span class="en" lang="en">How many kWh will it use?</span></p>
+          <p class="ficha-vara" style="--j:2"><span class="sig" aria-hidden="true">±</span> <span class="es" lang="es">Cuánto se equivoca, en las unidades de tu columna.</span><span class="en" lang="en">How far off it is, in your column's units.</span></p>
+        </li>
+        <li class="ficha" data-sube style="--i:3">
+          <span class="ficha-glifo" style="--j:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="6.5" r="1.4"/><circle cx="9" cy="8" r="1.4"/><circle cx="6" cy="10.5" r="1.4"/><circle cx="16.5" cy="5.5" r="1.4"/><circle cx="19" cy="9" r="1.4"/><circle cx="15.5" cy="9.5" r="1.4"/><circle cx="10.5" cy="16.5" r="1.4"/><circle cx="14" cy="17" r="1.4"/><circle cx="12" cy="20" r="1.4"/></svg></span>
+          <h3 class="ficha-pregunta" style="--j:0"><span class="es" lang="es">¿Qué grupos hay?</span><span class="en" lang="en">What groups are there?</span></h3>
+          <p class="ficha-ejemplo" style="--j:1"><span class="es" lang="es">¿Qué clientes se parecen?</span><span class="en" lang="en">Which customers are alike?</span></p>
+          <p class="ficha-vara" style="--j:2"><span class="sig" aria-hidden="true">● ⚠ ○</span> <span class="es" lang="es">Los grupos existen, son frágiles o no hay estructura.</span><span class="en" lang="en">The groups are real, fragile, or there's no structure.</span></p>
+        </li>
+      </ul>
+      <p class="es catalogo-remate" lang="es">En las cuatro, la app te dice cuánto creerle — también cuando la respuesta es que no.</p><p class="en catalogo-remate" lang="en">In all four, the app tells you how much to believe it — including when the answer is no.</p>
     </div>
   </section>
 
@@ -934,28 +1125,22 @@
        corte, el veredicto no valdría nada. -->
   <section class="corte">
     <div class="env">
-      <p class="rotulo-seccion">Por qué el número es real</p>
-      <h2>Tu tabla se parte en dos</h2>
+      <p class="es rotulo-seccion" lang="es">Por qué el número es real</p><p class="en rotulo-seccion" lang="en">Why the number is real</p>
+      <h2><span class="es" lang="es">Tu tabla se parte en dos</span><span class="en" lang="en">Your table is split in two</span></h2>
 
       <div class="corte-caja" aria-hidden="true">
         <div class="mitad mitad-train">
-          <p class="mitad-rotulo"><span class="sig">✓</span> Con esta parte aprende</p>
+          <p class="mitad-rotulo"><span class="sig">✓</span> <span class="es" lang="es">Con esta parte aprende</span><span class="en" lang="en">It learns from this part</span></p>
           <div class="fila"></div><div class="fila"></div><div class="fila"></div>
           <div class="fila"></div><div class="fila"></div>
         </div>
         <div class="mitad mitad-test">
-          <p class="mitad-rotulo"><span class="sig">⊘</span> Esta no la ve jamás al aprender</p>
+          <p class="mitad-rotulo"><span class="sig">⊘</span> <span class="es" lang="es">Esta no la ve jamás al aprender</span><span class="en" lang="en">It never sees this one while learning</span></p>
           <div class="fila"></div><div class="fila"></div><div class="fila"></div>
         </div>
       </div>
 
-      <p class="corte-leyenda">
-        El modelo aprende con una parte y se examina con la otra, que nunca vio. El veredicto y
-        sus métricas salen de esa segunda parte; para elegir entre modelos, la app los compara solo
-        dentro de la primera (validación cruzada). <b>Por eso el número es real</b> — y por eso no
-        hay forma de que la limpieza de datos contamine el examen: se ajusta solo con la parte de
-        aprender.
-      </p>
+      <p class="es corte-leyenda" lang="es">El modelo aprende con una parte y se examina con la otra, que nunca vio. El veredicto y sus métricas salen de esa segunda parte; para elegir entre modelos, la app los compara solo dentro de la primera (validación cruzada). <b>Por eso el número es real</b> — y por eso no hay forma de que la limpieza de datos contamine el examen: se ajusta solo con la parte de aprender. Al agrupar no hay respuesta que examinar, así que no hay segunda parte: la app repite el agrupamiento sobre partes de tus filas y lo compara con datos al azar.</p><p class="en corte-leyenda" lang="en">The model learns from one part and is examined on the other, which it never saw. The verdict and its metrics come from that second part; to choose between models, the app compares them only inside the first (cross-validation). <b>That's why the number is real</b> — and why the data cleaning can't contaminate the exam: it's fitted on the learning part only. When grouping there's no answer to examine, so there's no second part: the app repeats the grouping on parts of your rows and compares it with random data.</p>
     </div>
   </section>
 
@@ -964,12 +1149,9 @@
        Decisión valiente registrada en el guion: el clímax muestra el caso NEGATIVO. -->
   <section class="climax" id="el-veredicto">
     <div class="env">
-      <p class="rotulo-seccion">El veredicto</p>
-      <h2>Ninguna herramienta enseña esta pantalla. Nosotros empezamos por ella.</h2>
-      <p class="entradilla">
-        El rival a batir es el <b>baseline</b>: la regla más tonta que podría funcionar. Si tu
-        modelo no le gana, no sirve — por sofisticado que suene su nombre.
-      </p>
+      <p class="es rotulo-seccion" lang="es">El veredicto</p><p class="en rotulo-seccion" lang="en">The verdict</p>
+      <h2><span class="es" lang="es">Ninguna herramienta enseña esta pantalla. Nosotros empezamos por ella.</span><span class="en" lang="en">No tool shows this screen. We start with it.</span></h2>
+      <p class="es entradilla" lang="es">El rival a batir es el <b>baseline</b>: la regla más tonta que podría funcionar. Si tu modelo no le gana, no sirve — por sofisticado que suene su nombre.</p><p class="en entradilla" lang="en">The rival to beat is the <b>baseline</b>: the dumbest rule that could work. If your model doesn't beat it, it's no good — however sophisticated its name sounds.</p>
 
       <div class="med" aria-hidden="true">
         <div class="med-eje"></div>
@@ -982,7 +1164,7 @@
           <div class="med-barra"></div>
           <div class="med-vara"></div>
           <span class="med-tag med-tag-vara">baseline · 0.64</span>
-          <span class="med-tag med-tag-barra">tu modelo · 0.52</span>
+          <span class="med-tag med-tag-barra"><span class="es" lang="es">tu modelo · 0.52</span><span class="en" lang="en">your model · 0.52</span></span>
           <div class="med-brecha"><span>−0.12</span></div>
         </div>
       </div>
@@ -990,60 +1172,46 @@
       <div class="veredicto">
         <span class="sig" aria-hidden="true">▼</span>
         <p>
-          <strong>«Random Forest» NO supera al baseline</strong>
+          <span class="es" lang="es"><strong>«Random Forest» NO supera al baseline</strong>
           <small>un modelo simple rinde mejor: 0.52 frente a 0.64 en F1. Tus columnas actuales no
           aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con
-          lo que quieres predecir.</small>
+          lo que quieres predecir.</small></span><span class="en" lang="en"><strong>Random Forest does NOT beat the baseline</strong>
+          <small>a simple model does better: 0.52 vs 0.64 in F1. Your current columns don't carry
+          enough signal about the target — try variables more related to what you want to
+          predict.</small></span>
         </p>
       </div>
 
-      <p class="remate">Esto también te lo decimos.</p>
-      <p class="remate-apoyo">
-        Que un modelo no sirva no es un fallo de la app: es el resultado. Un número inflado te
-        deja quedar mal ante tu jefe seis meses después; este te lo dice hoy, con la columna
-        sospechosa señalada y una idea de qué probar.
-      </p>
+      <p class="es remate" lang="es">Esto también te lo decimos.</p><p class="en remate" lang="en">We tell you this too.</p>
+      <p class="es remate-apoyo" lang="es">Que un modelo no sirva no es un fallo de la app: es el resultado. Un número inflado te deja quedar mal ante tu jefe seis meses después; este te lo dice hoy, con la columna sospechosa señalada y una idea de qué probar.</p><p class="en remate-apoyo" lang="en">A model that doesn't work isn't a failure of the app: it's the result. An inflated number makes you look bad in front of your boss six months later; this one tells you today, with the suspicious column flagged and an idea of what to try.</p>
     </div>
   </section>
 
   <!-- ══ E07 · LO FINO — la página baja la voz ══════════════════════════════════════════ -->
   <section class="fino" id="lo-fino">
     <div class="env">
-      <p class="rotulo-seccion">Lo fino</p>
-      <h2>Lo que casi nadie cuenta</h2>
-      <p class="entradilla">Está aquí abierto, no en una nota al pie.</p>
+      <p class="es rotulo-seccion" lang="es">Lo fino</p><p class="en rotulo-seccion" lang="en">The fine print</p>
+      <h2><span class="es" lang="es">Lo que casi nadie cuenta</span><span class="en" lang="en">What almost no one tells you</span></h2>
+      <p class="es entradilla" lang="es">Está aquí abierto, no en una nota al pie.</p><p class="en entradilla" lang="en">It's here in the open, not in a footnote.</p>
 
       <details data-sube style="--i:0">
         <summary>
-          Privacidad: no es una promesa, es la arquitectura
+          <span class="es" lang="es">Privacidad: no es una promesa, es la arquitectura</span><span class="en" lang="en">Privacy: not a promise, the architecture</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m6 9 6 6 6-6"/>
           </svg>
         </summary>
         <div class="fino-cuerpo">
-          <p>
-            El motor de análisis —el mismo Python con pandas y scikit-learn que usaría un
-            científico de datos— se descarga <b>a tu navegador</b> y corre ahí. No existe un
-            servidor al que mandar tu tabla: tus filas nunca cruzan la red porque no hay a dónde.
-          </p>
-          <p>
-            La <b>única</b> cosa que sale de tu equipo es la narración con IA, y solo cuando
-            pulsas su botón. Lo que viaja son <b>nombres de columnas y cifras agregadas</b>
-            —métricas, importancias, alertas—, jamás tus filas. En una medición real de la app
-            ese envío pesó <span class="num">652 B</span>: el dataset completo ocuparía miles de
-            veces más. Si nunca tocas ese botón, no sale nada.
-          </p>
-          <p>
-            Tampoco se guarda ninguna decisión tuya sobre esto en el navegador, y los registros
-            técnicos de la app no contienen valores de tus datos.
-          </p>
+          <p class="es" lang="es">El motor de análisis —el mismo Python con pandas y scikit-learn que usaría un científico de datos— se descarga <b>a tu navegador</b> y corre ahí. No existe un servidor al que mandar tu tabla: tus filas nunca cruzan la red porque no hay a dónde.</p><p class="en" lang="en">The analysis engine — the same Python with pandas and scikit-learn a data scientist would use — downloads <b>to your browser</b> and runs there. There's no server to send your table to: your rows never cross the network because there's nowhere for them to go.</p>
+          <p class="es" lang="es">La <b>única</b> cosa que sale de tu equipo es la narración con IA, y solo cuando pulsas su botón. Lo que viaja son <b>nombres de columnas y cifras agregadas</b> —métricas, importancias, alertas—, jamás tus filas. En una medición real de la app ese envío pesó <span class="num">652 B</span>: el dataset completo ocuparía miles de veces más. Si nunca tocas ese botón, no sale nada.</p><p class="en" lang="en">The <b>only</b> thing that leaves your machine is the AI narration, and only when you press its button. What travels is <b>column names and aggregate figures</b> — metrics, importances, alerts — never your rows. In a real measurement of the app that request weighed <span class="num">652 B</span>: the full dataset would take thousands of times more. If you never touch that button, nothing leaves.</p>
+          <p class="es" lang="es">Tampoco se guarda ninguna decisión tuya sobre esto en el navegador, y los registros técnicos de la app no contienen valores de tus datos.</p><p class="en" lang="en">No decision of yours about this is stored in the browser either, and the app's technical logs contain no values from your data.</p>
         </div>
       </details>
 
       <details data-sube style="--i:1">
         <summary>
-          Qué mide, y qué no finge medir
+          <span class="es" lang="es">Qué mide, y qué no finge medir</span><span class="en" lang="en">What it measures, and what it doesn't pretend to</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m6 9 6 6 6-6"/>
@@ -1051,28 +1219,23 @@
         </summary>
         <div class="fino-cuerpo">
           <ul>
-            <li>Predice <b>dos categorías</b> (sí/no, aprobado/rechazado) o <b>estima una
-              cantidad</b> (un precio, un consumo). Varias categorías, todavía no.</li>
-            <li>El chequeo de fuga es una <b>ayuda honesta, no una garantía</b>: atrapa los casos
-              evidentes, no todos.</li>
-            <li>La importancia de variables es <b>global</b>, no caso por caso, y puede repartirse
-              entre columnas que se parecen.</li>
-            <li>La dirección de una variable es una asociación simple: no captura interacciones.</li>
-            <li>El saneamiento arregla lo estructural; <b>no adivina</b> el valor correcto de un
-              dato que falta — lo rellena con la mediana o la categoría más común de la parte de
-              aprender, y lo dice.</li>
-            <li>Las columnas de fecha se detectan y se avisan, pero aún no se usan en el análisis.</li>
-            <li>El aviso de novedad detecta valores nunca vistos; no detecta que el mundo haya
-              cambiado de forma más sutil.</li>
-            <li>El archivo del modelo <b>solo lo entiende Probeta</b>. No está cifrado ni firmado:
-              carga solo archivos que salieron de aquí.</li>
+            <li><span class="es" lang="es">Predice <b>dos categorías</b> (sí/no, aprobado/rechazado), <b>de 3 a 20 categorías</b> o <b>una cantidad</b> (un precio, un consumo), o <b>agrupa</b> filas sin objetivo. Una columna con más de 20 valores distintos no se toma por categorías.</span><span class="en" lang="en">It predicts <b>two categories</b> (yes/no, approved/rejected), <b>3 to 20 categories</b> or <b>a quantity</b> (a price, a consumption), or <b>groups</b> rows without a target. A column with more than 20 distinct values isn't taken as categories.</span></li>
+            <li><span class="es" lang="es">El chequeo de fuga es una <b>ayuda honesta, no una garantía</b>: atrapa los casos evidentes, no todos.</span><span class="en" lang="en">The leak check is <b>an honest aid, not a guarantee</b>: it catches the obvious cases, not all of them.</span></li>
+            <li><span class="es" lang="es">La importancia de variables es <b>global</b>, no caso por caso, y puede repartirse entre columnas que se parecen.</span><span class="en" lang="en">Variable importance is <b>global</b>, not case by case, and it can be split between columns that look alike.</span></li>
+            <li><span class="es" lang="es">La dirección de una variable es una asociación simple: no captura interacciones. Con varias categorías no hay una sola dirección, y la app lo dice en vez de dibujar una flecha.</span><span class="en" lang="en">A variable's direction is a simple association: it doesn't capture interactions. With several categories there's no single direction, and the app says so instead of drawing an arrow.</span></li>
+            <li><span class="es" lang="es">El saneamiento arregla lo estructural; <b>no adivina</b> el valor correcto de un dato que falta — lo rellena con la mediana o la categoría más común de la parte de aprender (al agrupar, de todas tus filas), y lo dice.</span><span class="en" lang="en">Cleaning fixes structure; it <b>doesn't guess</b> the right value of a missing entry — it fills it with the median or the most common category from the learning part (when grouping, from all your rows), and says so.</span></li>
+            <li><span class="es" lang="es">Los grupos <b>describen</b> tus filas: no prueban una causa ni que se repitan en otros datos. Con más de 8,000 filas, el agrupamiento jerárquico se ajusta sobre una muestra, y lo dice.</span><span class="en" lang="en">Groups <b>describe</b> your rows: they don't prove a cause, or that they'll show up again in other data. With more than 8,000 rows, hierarchical clustering is fitted on a sample, and it says so.</span></li>
+            <li><span class="es" lang="es">La narración con IA cubre solo la clasificación en dos categorías; las demás tareas llevan el texto estándar, que sale de los mismos números.</span><span class="en" lang="en">The AI narration covers two-category classification only; the other tasks get the standard text, built from the same numbers.</span></li>
+            <li><span class="es" lang="es">Las columnas de fecha se detectan y se avisan, y no entran al análisis.</span><span class="en" lang="en">Date columns are detected and flagged, and they don't enter the analysis.</span></li>
+            <li><span class="es" lang="es">El aviso de novedad detecta valores nunca vistos; no detecta que el mundo haya cambiado de forma más sutil.</span><span class="en" lang="en">The novelty warning catches values never seen before; it doesn't catch the world changing in subtler ways.</span></li>
+            <li><span class="es" lang="es">El archivo del modelo <b>solo lo entiende Probeta</b>. No está cifrado ni firmado: carga solo archivos que salieron de aquí.</span><span class="en" lang="en"><b>Only Probeta understands</b> the model file. It isn't encrypted or signed: only load files that came from here.</span></li>
           </ul>
         </div>
       </details>
 
       <details data-sube style="--i:2">
         <summary>
-          Qué necesitas para usarla
+          <span class="es" lang="es">Qué necesitas para usarla</span><span class="en" lang="en">What you need to use it</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m6 9 6 6 6-6"/>
@@ -1081,11 +1244,11 @@
         <div class="fino-cuerpo">
           <table>
             <tbody>
-              <tr><th>Instalación</th><td>Ninguna. Tampoco hay que crear una cuenta.</td></tr>
-              <tr><th>Equipo</th><td>El procesador normal de tu computador. <b>Sin tarjeta gráfica</b>: la app está construida a propósito para no necesitarla.</td></tr>
-              <tr><th>Navegador</th><td>Uno moderno de escritorio o móvil. La primera vez tarda unos segundos en traerse el motor de análisis; después va suelto.</td></tr>
-              <tr><th>Tus datos</th><td>Un CSV con cabecera, hasta 5 MB o 50 000 filas, separado por comas.</td></tr>
-              <tr><th>Idioma</th><td>Español e inglés, con el conmutador arriba a la derecha.</td></tr>
+              <tr><th><span class="es" lang="es">Instalación</span><span class="en" lang="en">Installation</span></th><td><span class="es" lang="es">Ninguna. Tampoco hay que crear una cuenta.</span><span class="en" lang="en">None. No account to create either.</span></td></tr>
+              <tr><th><span class="es" lang="es">Equipo</span><span class="en" lang="en">Hardware</span></th><td><span class="es" lang="es">El procesador normal de tu computador. <b>Sin tarjeta gráfica</b>: la app está construida a propósito para no necesitarla.</span><span class="en" lang="en">Your computer's ordinary processor. <b>No graphics card</b>: the app is built on purpose not to need one.</span></td></tr>
+              <tr><th><span class="es" lang="es">Navegador</span><span class="en" lang="en">Browser</span></th><td><span class="es" lang="es">Uno moderno de escritorio o móvil. La primera vez tarda unos segundos en traerse el motor de análisis; después va suelto.</span><span class="en" lang="en">A modern desktop or mobile one. The first time it takes a few seconds to fetch the analysis engine; after that it runs freely.</span></td></tr>
+              <tr><th><span class="es" lang="es">Tus datos</span><span class="en" lang="en">Your data</span></th><td><span class="es" lang="es">Un CSV con cabecera, hasta 5 MB o 50,000 filas, separado por comas.</span><span class="en" lang="en">A CSV with a header row, up to 5 MB or 50,000 rows, comma-separated.</span></td></tr>
+              <tr><th><span class="es" lang="es">Idioma</span><span class="en" lang="en">Language</span></th><td><span class="es" lang="es">Español e inglés, con el conmutador arriba a la derecha.</span><span class="en" lang="en">Spanish and English, with the switch at the top right.</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -1093,36 +1256,30 @@
 
       <details data-sube style="--i:3">
         <summary>
-          Por dónde se pasa
+          <span class="es" lang="es">Por dónde se pasa</span><span class="en" lang="en">The way through</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m6 9 6 6 6-6"/>
           </svg>
         </summary>
         <div class="fino-cuerpo">
-          <p>
-            Probeta DS no es un sitio con menú: es <b>un solo espacio de trabajo</b> que avanza
-            contigo. Estas son sus pantallas, en orden.
-          </p>
+          <p class="es" lang="es">Probeta DS no es un sitio con menú: es <b>un solo espacio de trabajo</b> que avanza contigo. Estas son sus pantallas, en orden.</p><p class="en" lang="en">Probeta DS isn't a site with a menu: it's <b>a single workspace</b> that moves along with you. These are its screens, in order.</p>
           <ul class="ruta">
-            <li>Inicio</li><li aria-hidden="true">→</li>
-            <li>Configuración</li><li aria-hidden="true">→</li>
-            <li>Entrenamiento</li><li aria-hidden="true">→</li>
-            <li>Resultados</li><li aria-hidden="true">→</li>
-            <li>Usar el modelo</li>
+            <li><span class="es" lang="es">Inicio</span><span class="en" lang="en">Start</span></li><li aria-hidden="true">→</li>
+            <li><span class="es" lang="es">Configuración</span><span class="en" lang="en">Setup</span></li><li aria-hidden="true">→</li>
+            <li><span class="es" lang="es">Entrenamiento</span><span class="en" lang="en">Training</span></li><li aria-hidden="true">→</li>
+            <li><span class="es" lang="es">Resultados</span><span class="en" lang="en">Results</span></li><li aria-hidden="true">→</li>
+            <li><span class="es" lang="es">Usar el modelo</span><span class="en" lang="en">Use the model</span></li>
           </ul>
           <p style="margin-top:14px">
-            En <b>Inicio</b> eliges datos o cargas un modelo guardado. En <b>Configuración</b>
-            ves tu tabla saneada, sus alertas, y eliges qué predecir. <b>Entrenamiento</b> te
-            enseña el progreso. <b>Resultados</b> es donde vive el veredicto, las métricas y el
-            porqué. Y <b>Usar el modelo</b> es donde puntúas datos nuevos.
+            <span class="es" lang="es">En <b>Inicio</b> eliges datos o cargas un modelo guardado. En <b>Configuración</b> ves tu tabla saneada, sus alertas, y eliges qué predecir (o agrupar sin objetivo). <b>Entrenamiento</b> te enseña el progreso. <b>Resultados</b> es donde viven el veredicto (al agrupar, la lectura), las métricas y el porqué. Y en <b>Usar el modelo</b> puntúas datos nuevos o asignas filas nuevas a un grupo.</span><span class="en" lang="en">In <b>Start</b> you pick data or load a saved model. In <b>Setup</b> you see your cleaned table and its alerts, and choose what to predict (or group without a target). <b>Training</b> shows you the progress. <b>Results</b> is where the verdict (when grouping, the reading), the metrics and the why live. And in <b>Use the model</b> you score new data or assign new rows to a group.</span>
           </p>
         </div>
       </details>
 
       <details data-sube style="--i:4">
         <summary>
-          Las palabras, en una línea cada una
+          <span class="es" lang="es">Las palabras, en una línea cada una</span><span class="en" lang="en">The words, one line each</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m6 9 6 6 6-6"/>
@@ -1131,18 +1288,22 @@
         <div class="fino-cuerpo">
           <table>
             <tbody>
-              <tr><th>Baseline</th><td>Las reglas simples a batir: al clasificar, responder siempre lo más frecuente y una regresión logística; al estimar, adivinar siempre la mediana y una regresión lineal. Si tu modelo no supera a la mejor, no sirve.</td></tr>
-              <tr><th>Veredicto</th><td>La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.</td></tr>
-              <tr><th>Entrenamiento y prueba</th><td>Las dos partes de tu tabla: con la más grande aprende, con la otra se examina.</td></tr>
-              <tr><th>Fuga de datos</th><td>Una columna que ya contiene la respuesta disfrazada. Infla las métricas y vuelve inútil el modelo en la vida real.</td></tr>
-              <tr><th>Desbalance</th><td>Una de las dos respuestas es mucho más rara que la otra. Obliga a mirar AUC en vez de aciertos.</td></tr>
-              <tr><th>Importancia</th><td>Cuánto empeora el modelo si se desordena esa columna. Mide cuánto <b>pesa</b>, no hacia dónde empuja.</td></tr>
-              <tr><th>Novedad</th><td>Al puntuar datos nuevos: valores que el modelo nunca vio. En esas filas está adivinando, y te lo dice.</td></tr>
-              <tr><th>Model card</th><td>La ficha del modelo, para que otro pueda juzgarlo sin creerte a ti.</td></tr>
+              <tr><th><span class="es" lang="es">Baseline</span><span class="en" lang="en">Baseline</span></th><td><span class="es" lang="es">Las reglas simples a batir: al clasificar, responder siempre lo más frecuente y una regresión logística; al estimar, adivinar siempre la mediana y una regresión lineal. Si tu modelo no supera a la mejor, no sirve.</span><span class="en" lang="en">The simple rules to beat: when classifying, always answering the most frequent value and a logistic regression; when estimating, always guessing the median and a linear regression. If your model doesn't beat the best of them, it's no good.</span></td></tr>
+              <tr><th><span class="es" lang="es">Veredicto</span><span class="en" lang="en">Verdict</span></th><td><span class="es" lang="es">La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.</span><span class="en" lang="en">The frank comparison between your model and the best of those baselines: it beats it, ties or loses.</span></td></tr>
+              <tr><th><span class="es" lang="es">Entrenamiento y prueba</span><span class="en" lang="en">Training and test</span></th><td><span class="es" lang="es">Las dos partes de tu tabla: con la más grande aprende, con la otra se examina.</span><span class="en" lang="en">The two parts of your table: it learns from the larger one and is examined on the other.</span></td></tr>
+              <tr><th><span class="es" lang="es">Fuga de datos</span><span class="en" lang="en">Data leak</span></th><td><span class="es" lang="es">Una columna que ya contiene la respuesta disfrazada. Infla las métricas y vuelve inútil el modelo en la vida real.</span><span class="en" lang="en">A column that already holds the answer in disguise. It inflates the metrics and makes the model useless in real life.</span></td></tr>
+              <tr><th><span class="es" lang="es">Desbalance</span><span class="en" lang="en">Imbalance</span></th><td><span class="es" lang="es">Una de las respuestas es mucho más rara que las otras. Obliga a mirar una métrica que no se deje engañar: el AUC con dos categorías, la exactitud balanceada con varias.</span><span class="en" lang="en">One of the answers is much rarer than the others. It calls for a metric that can't be fooled: AUC with two categories, balanced accuracy with several.</span></td></tr>
+              <tr><th><span class="es" lang="es">Exactitud balanceada</span><span class="en" lang="en">Balanced accuracy</span></th><td><span class="es" lang="es">De cada categoría, qué parte acierta, en promedio: cada una pesa igual, así que no se gana acertando solo la más común.</span><span class="en" lang="en">For each category, the share it gets right, averaged: each one weighs the same, so you can't win by getting only the most common one right.</span></td></tr>
+              <tr><th><span class="es" lang="es">Silueta</span><span class="en" lang="en">Silhouette</span></th><td><span class="es" lang="es">De −1 a 1: cuánto más cerca está cada fila de su grupo que del grupo vecino.</span><span class="en" lang="en">From −1 to 1: how much closer each row is to its own group than to the neighbouring one.</span></td></tr>
+              <tr><th><span class="es" lang="es">Estabilidad</span><span class="en" lang="en">Stability</span></th><td><span class="es" lang="es">De 0 a 1: si al repetir el agrupamiento sobre partes de tus filas salen los mismos grupos.</span><span class="en" lang="en">From 0 to 1: whether repeating the grouping on parts of your rows brings back the same groups.</span></td></tr>
+              <tr><th><span class="es" lang="es">Fuera de todo grupo</span><span class="en" lang="en">Outside any group</span></th><td><span class="es" lang="es">Filas que no caen en ninguna zona densa: HDBSCAN no las fuerza a entrar en un grupo.</span><span class="en" lang="en">Rows that fall in no dense area: HDBSCAN doesn't force them into a group.</span></td></tr>
+              <tr><th><span class="es" lang="es">Importancia</span><span class="en" lang="en">Importance</span></th><td><span class="es" lang="es">Cuánto empeora el modelo si se desordena esa columna. Mide cuánto <b>pesa</b>, no hacia dónde empuja.</span><span class="en" lang="en">How much worse the model gets if that column is shuffled. It measures how much it <b>weighs</b>, not which way it pushes.</span></td></tr>
+              <tr><th><span class="es" lang="es">Novedad</span><span class="en" lang="en">Novelty</span></th><td><span class="es" lang="es">Al puntuar datos nuevos: valores que el modelo nunca vio. En esas filas está adivinando, y te lo dice.</span><span class="en" lang="en">When scoring new data: values the model never saw. On those rows it's guessing, and it tells you.</span></td></tr>
+              <tr><th><span class="es" lang="es">Model card</span><span class="en" lang="en">Model card</span></th><td><span class="es" lang="es">La ficha del modelo, para que otro pueda juzgarlo sin creerte a ti.</span><span class="en" lang="en">The model's record, so someone else can judge it without having to trust you.</span></td></tr>
             </tbody>
           </table>
           <p style="margin-top:14px">
-            La lista completa, con cada métrica explicada en una línea, está en el manual de uso.
+            <span class="es" lang="es">La lista completa, con cada métrica explicada en una línea, está en el manual de uso.</span><span class="en" lang="en">The full list, with every metric explained in one line, is in the user manual (in Spanish).</span>
           </p>
         </div>
       </details>
@@ -1154,30 +1315,26 @@
 <footer>
   <div class="env">
     <p class="conteo">
-      <span class="conteo-cifra" data-contador="35" aria-hidden="true">35</span>
+      <span class="conteo-cifra" data-contador="41" aria-hidden="true">41</span>
       <span class="conteo-glosa">
-        <b><span class="oculto-visual">35 </span>funcionalidades</b>, todas en esta página; la liga
-        honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin mirar la prueba”, y
-        estimar una cantidad, del Sprint 006, suma dos.
+        <span class="es" lang="es"><b><span class="oculto-visual">41 </span>funcionalidades</b>, todas en esta página; la liga honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin mirar la prueba”, estimar una cantidad, del Sprint 006, suma dos, y el Sprint 007 suma seis: clasificar en varias categorías y las cinco de agrupar.</span><span class="en" lang="en"><b><span class="oculto-visual">41 </span>features</b>, all on this page; Sprint 005's honest league is summed up in “A league of models, picked without looking at the test”, estimating a quantity, from Sprint 006, adds two, and Sprint 007 adds six: classifying into several categories and the five of grouping.</span>
       </span>
     </p>
 
     <div class="historial">
       <table>
-        <caption class="oculto-visual">Cómo creció la app, por etapas</caption>
+        <caption class="oculto-visual"><span class="es" lang="es">Cómo creció la app, por etapas</span><span class="en" lang="en">How the app grew, stage by stage</span></caption>
         <tbody>
-          <tr><th scope="row">Etapa 1</th><td>El veredicto honesto: cargar datos, elegir el objetivo, entrenar y comparar contra el baseline.</td></tr>
-          <tr><th scope="row">Etapa 2</th><td>El porqué: importancia de variables, texto sin IA, narración verificada y model card.</td></tr>
-          <tr><th scope="row">Etapa 3</th><td>El modelo se usa: puntuar datos nuevos, exportar e importar sin re-entrenar.</td></tr>
-          <tr><th scope="row">Etapa 4</th><td>Sobrevive datos reales: saneamiento con conteos, alertas antes de entrenar y un segundo modelo compitiendo.</td></tr>
-          <tr><th scope="row">Etapa 5</th><td>La liga honesta: todos los modelos que el navegador puede entrenar, elegidos con validación cruzada sin mirar la prueba.</td></tr>
-          <tr><th scope="row">Etapa 6</th><td>Estimar una cantidad: el veredicto en las unidades de la columna y el gráfico estimado frente a real.</td></tr>
+          <tr><th scope="row"><span class="es" lang="es">Etapa 1</span><span class="en" lang="en">Stage 1</span></th><td><span class="es" lang="es">El veredicto honesto: cargar datos, elegir el objetivo, entrenar y comparar contra el baseline.</span><span class="en" lang="en">The honest verdict: load data, choose the target, train and compare against the baseline.</span></td></tr>
+          <tr><th scope="row"><span class="es" lang="es">Etapa 2</span><span class="en" lang="en">Stage 2</span></th><td><span class="es" lang="es">El porqué: importancia de variables, texto sin IA, narración verificada y model card.</span><span class="en" lang="en">The why: variable importance, a text without AI, checked narration and the model card.</span></td></tr>
+          <tr><th scope="row"><span class="es" lang="es">Etapa 3</span><span class="en" lang="en">Stage 3</span></th><td><span class="es" lang="es">El modelo se usa: puntuar datos nuevos, exportar e importar sin re-entrenar.</span><span class="en" lang="en">The model gets used: score new data, export and import without retraining.</span></td></tr>
+          <tr><th scope="row"><span class="es" lang="es">Etapa 4</span><span class="en" lang="en">Stage 4</span></th><td><span class="es" lang="es">Sobrevive datos reales: saneamiento con conteos, alertas antes de entrenar y un segundo modelo compitiendo.</span><span class="en" lang="en">It survives real data: cleaning with counts, alerts before training and a second model competing.</span></td></tr>
+          <tr><th scope="row"><span class="es" lang="es">Etapa 5</span><span class="en" lang="en">Stage 5</span></th><td><span class="es" lang="es">La liga honesta: todos los modelos que el navegador puede entrenar, elegidos con validación cruzada sin mirar la prueba.</span><span class="en" lang="en">The honest league: every model the browser can train, picked with cross-validation without looking at the test.</span></td></tr>
+          <tr><th scope="row"><span class="es" lang="es">Etapa 6</span><span class="en" lang="en">Stage 6</span></th><td><span class="es" lang="es">Estimar una cantidad: el veredicto en las unidades de la columna y el gráfico estimado frente a real.</span><span class="en" lang="en">Estimating a quantity: the verdict in the column's units and the estimated-versus-actual chart.</span></td></tr>
+          <tr><th scope="row"><span class="es" lang="es">Etapa 7</span><span class="en" lang="en">Stage 7</span></th><td><span class="es" lang="es">El catálogo: clasificar en varias categorías y agrupar filas parecidas sin objetivo, con su lectura.</span><span class="en" lang="en">The catalogue: classifying into several categories and grouping similar rows without a target, with its reading.</span></td></tr>
         </tbody>
       </table>
-      <p class="pie-nota">
-        Probeta DS · <i>ciencia de datos honesta, de principio a fin</i>. Esta página se actualiza
-        con la app: cuando una funcionalidad cambia, cambia aquí en el mismo paso.
-      </p>
+      <p class="es pie-nota" lang="es">Probeta DS · <i>ciencia de datos honesta, de principio a fin</i>. Esta página se actualiza con la app: cuando una funcionalidad cambia, cambia aquí en el mismo paso.</p><p class="en pie-nota" lang="en">Probeta DS · <i>honest data science, end to end</i>. This page is updated with the app: when a feature changes, it changes here in the same step.</p>
     </div>
   </div>
 </footer>
@@ -1199,8 +1356,30 @@
     }
   }, { rootMargin: "0px 0px -12% 0px", threshold: 0.15 });
 
-  for (const el of document.querySelectorAll(".puertas, .corte, .climax, .fino [data-sube]")) {
+  for (const el of document.querySelectorAll(".puertas, .catalogo, .corte, .climax, .fino [data-sube]")) {
     observador.observe(el);
+  }
+
+  // ── S7 (D-B) · ES/EN. El <head> ya fijó el idioma; aquí se sincronizan el título, el nombre
+  // accesible del titular y el conmutador, y se guarda la elección (si el navegador deja).
+  const raiz = document.documentElement;
+  const titular = document.querySelector("h1");
+  const TITULOS = { es: "Probeta DS — Conócela", en: "Probeta DS — Meet it" };
+  const aplicarIdioma = (idioma) => {
+    raiz.dataset.idioma = idioma;
+    raiz.lang = idioma === "en" ? "en" : "es-CO";
+    document.title = TITULOS[idioma];
+    titular.setAttribute("aria-label", titular.dataset[idioma === "en" ? "ariaEn" : "ariaEs"]);
+    for (const boton of document.querySelectorAll("[data-idioma-boton]")) {
+      boton.setAttribute("aria-pressed", String(boton.dataset.idiomaBoton === idioma));
+    }
+  };
+  aplicarIdioma(raiz.dataset.idioma === "en" ? "en" : "es");
+  for (const boton of document.querySelectorAll("[data-idioma-boton]")) {
+    boton.addEventListener("click", () => {
+      aplicarIdioma(boton.dataset.idiomaBoton);
+      try { localStorage.setItem("probeta-conoce-idioma", boton.dataset.idiomaBoton); } catch { /* sin almacenamiento */ }
+    });
   }
 
   // ── G2 · las tarjetas. Llegan CERRADAS y solo el toque las abre.
@@ -1244,7 +1423,7 @@
     window.addEventListener("resize", () => { medir(); despertar(); }, { passive: true });
   }
 
-  // ── E08 · el contador. El texto accesible ya dice 35 desde el primer byte; esto solo
+  // ── E08 · el contador. El texto accesible ya dice 41 desde el primer byte; esto solo
   // dramatiza la cifra decorativa (aria-hidden), así que ningún e2e depende de él.
   const cifra = document.querySelector(".conteo-cifra");
   if (cifra && !menosMovimiento.matches) {

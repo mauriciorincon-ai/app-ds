@@ -84,7 +84,17 @@ Surgida en la F4 (2026-10-06), de la auditoría de la constitución contra el c�
     agregados viajan a la narración, jamás filas.
 
   Las derivas del lado del código (AC-2, AC-4, AC-12, AC-13 y AC-27) se pagan en este PR. La del
-  brochure (AC-3) es la decisión D-B del usuario.
+  brochure (AC-3) es la decisión D-B del usuario. AU-S7-42 («la copia de `pipeline.py` vigilada por
+  test») es la AC-18 de esta lista: va por texto. La línea «Tailwind + shadcn/ui» del stack (AC-4) ya
+  tiene su lado del código: ADR 019.
+
+- **D9 · Pedido a la planeadora: el inglés de `docs/brochure-export.json`.** Con la decisión D-B del
+  usuario (2026-10-06), el brochure es bilingüe en este PR. El export es un contrato del portafolio
+  cuyo dueño es la planeadora (formato v1.0.0, definido por app-dash-agent-ai, y lo consume la vitrina
+  de hoja-de-vida): no tiene campos en inglés, y esta app no los inventa. El export del S7 sigue en
+  español y queda al día (41 funcionalidades, la quinta puerta). Pedido: decidir en el formato cómo
+  viaja el segundo idioma (p. ej. `nombre`/`que_hace` como mapa `{es, en}`, cambio mayor, o campos
+  `_en` opcionales, cambio menor) para que la vitrina lo pueda mostrar.
 
 ## Fase 0 — constitución + delta del kit + deuda con sitio + datasets + spike
 
