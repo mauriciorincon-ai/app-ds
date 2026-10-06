@@ -182,6 +182,7 @@ export function ConfigScreen({
             ? t("errors.too-few-rows-per-class-named", {
                 class: plan.smallestClass.name,
                 rows: plan.smallestClass.trainRows,
+                count: plan.smallestClass.trainRows,
               })
             : t(`errors.${plan.blocked}`)}
         </p>
@@ -411,17 +412,29 @@ function EdaBlock({ alerts }: { alerts: EdaAlert[] }) {
       <ul className="ml-5 list-disc text-sm">
         {alerts.map((alert, i) => (
           <li key={i}>
+            {/* S7 (AU-S7-14): con varias categorías, el aviso nombra la categoría y
+                dice con qué métrica se juzga (la exactitud balanceada, no el AUC). */}
             {alert.kind === "class-imbalance"
-              ? t("config.eda.imbalance", {
-                  rate: (alert.minorityRate * 100).toFixed(0),
-                })
+              ? alert.class !== undefined
+                ? t("config.eda.imbalanceMulticlass", {
+                    class: alert.class,
+                    rate: (alert.minorityRate * 100).toFixed(0),
+                  })
+                : t("config.eda.imbalance", {
+                    rate: (alert.minorityRate * 100).toFixed(0),
+                  })
               : alert.kind === "target-skewed"
                 ? t("config.eda.target-skewed", { skew: alert.skew.toFixed(1) })
                 : alert.kind === "target-outliers"
                   ? t("config.eda.target-outliers", {
                       share: (alert.share * 100).toFixed(1),
                     })
-                  : t(`config.eda.${alert.kind}`, { column: alert.column })}
+                  : alert.kind === "possible-leak" && alert.class !== undefined
+                    ? t("config.eda.possible-leak-class", {
+                        column: alert.column,
+                        class: alert.class,
+                      })
+                    : t(`config.eda.${alert.kind}`, { column: alert.column })}
           </li>
         ))}
       </ul>
@@ -449,8 +462,9 @@ function ClusterPlanCard({ plan }: { plan: ClusterPlan }) {
       </p>
     );
   }
+  // S7 (AU-S7-37): las comillas de cada idioma («» en español, “” en inglés).
   const quote = (columns: readonly string[]) =>
-    columns.map((c) => `«${c}»`).join(", ");
+    columns.map((c) => t("common.quote", { text: c })).join(", ");
   return (
     <Card className="flex flex-col gap-2 p-4 text-sm" role="status">
       <h2 className="font-semibold">{t("cluster.plan.title")}</h2>

@@ -16,7 +16,6 @@ import {
 import {
   MEMBERS,
   memberNameKey,
-  type BinaryMemberId,
   type MemberId,
 } from "@/engine/roster";
 import { matchTask, taskOf } from "@/engine/despacho";
@@ -97,13 +96,16 @@ export default function FichaModelo({
   // los modelos compartidos suman cómo estiman.
   const { ficha, regressionNote } = matchTask(task, {
     binaria: () => ({ ficha: FICHAS[fichaId], regressionNote: null }),
-    // S7: los apartados que solo hablan de dos clases se reemplazan.
+    // S7: los apartados que solo hablan de dos clases se reemplazan. Por la ficha BASE
+    // (AU-S7-15): la logística balanceada usa la de la logística y su reemplazo.
     multiclase: () => ({
       ficha:
-        id in MULTICLASS_FICHA_FIELDS
+        fichaId in MULTICLASS_FICHA_FIELDS
           ? {
               ...FICHAS[fichaId],
-              ...MULTICLASS_FICHA_FIELDS[id as BinaryMemberId],
+              ...MULTICLASS_FICHA_FIELDS[
+                fichaId as keyof typeof MULTICLASS_FICHA_FIELDS
+              ],
             }
           : FICHAS[fichaId],
       regressionNote: null,

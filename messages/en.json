@@ -9,7 +9,8 @@
     "en": "English"
   },
   "common": {
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "quote": "“{text}”"
   },
   "start": {
     "title": "Start your experiment",
@@ -74,7 +75,7 @@
         "chosen": "◆ Chosen by you, not by cross-validation (the cross-validation winner was {winner}). If it was chosen by looking at the test set, the metric may be optimistic.",
         "cv": "Chosen by {k}-fold cross-validation among {count} models.",
         "cv_one": "Chosen by {k}-fold cross-validation (1 model competed).",
-        "targetQuantity": "Estimates «{target}», a quantity",
+        "targetQuantity": "Estimates “{target}”, a quantity",
         "targetMulticlass": "Classifies “{target}” into {count} categories",
         "cluster": "Groups rows with no target: {k} groups, with {model}",
         "reading": {
@@ -83,14 +84,15 @@
           "none": "Reading at training time: there was no group structure"
         },
         "clusterChosen": "◆ Chosen by you (the winner of the comparison was {winner}).",
-        "clusterWinner": "Winner among {count} clusterers ({k} groups)."
+        "clusterWinner": "Winner among {count} clusterers ({k} groups).",
+        "clusterWinner_one": "Winner among 1 clusterer ({k} groups)."
       },
       "errors": {
         "file-too-large": "That file is too large to be a Probeta model (max {mb} MB). It was not read.",
         "invalid-json": "That file isn't valid JSON.",
         "invalid-format": "That file doesn't look like a model exported by Probeta.",
         "unsupported-version": "That file comes from a Probeta format version this app doesn't support.",
-        "unsupported-task": "That file declares a Probeta model for «{task}», a kind of task this version doesn't open. It was not loaded.",
+        "unsupported-task": "That file declares a Probeta model for “{task}”, a kind of task this version doesn't open. It was not loaded.",
         "hash-mismatch": "The file's content doesn't match its manifest (it may be corrupted or modified). For safety it was not loaded.",
         "hint": "Only load .probeta.json files exported by Probeta. The file's payload was never touched."
       },
@@ -125,19 +127,21 @@
       "title": "We cleaned up the dataset before training:",
       "duplicates": "Removed {count} exact duplicate rows (keeps the same row out of both training and test).",
       "exclusion": {
-        "id-column": "Dropped «{column}»: a distinct value per row (an identifier or free text), no signal to generalize from.",
-        "constant-column": "Dropped «{column}»: a single value, it carries no information."
+        "id-column": "Dropped “{column}”: a distinct value per row (an identifier or free text), no signal to generalize from.",
+        "constant-column": "Dropped “{column}”: a single value, it carries no information."
       },
-      "coercion": "In «{column}» we set {count} non-numeric cells to empty (the rest are numbers)."
+      "coercion": "In “{column}” we set {count} non-numeric cells to empty (the rest are numbers)."
     },
     "eda": {
       "clean": "No alerts for this target.",
       "title": "Before training, look at these signals:",
-      "possible-leak": "«{column}» predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again.",
-      "id-like": "«{column}» looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
+      "possible-leak": "“{column}” predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again.",
+      "id-like": "“{column}” looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
       "target-skewed": "The target is heavily skewed (skewness {skew}): a few very large values carry a lot of weight. The mean absolute error (MAE) treats every miss alike; RMSE punishes misses on those large values harder.",
       "target-outliers": "{share}% of the target's values sit far from the rest (beyond 3 interquartile ranges). Check whether they are data-entry mistakes before training: they can pull the model a long way.",
-      "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC)."
+      "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC).",
+      "imbalanceMulticlass": "The smallest category, “{class}”, is {rate}% of the rows. The verdict uses balanced accuracy, which weighs every category equally.",
+      "possible-leak-class": "“{column}” separates the category “{class}” from the rest almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again."
     },
     "trainHint": "Level 1: {count} models · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
     "trainHint_one": "Level 1: 1 model · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
@@ -170,9 +174,8 @@
       "beatsDetail": "by {delta} in {metric} — {model} vs the best baseline's {baseline}",
       "tiesDetail": "a simple model does just as well: {model} vs {baseline}. There is no extra signal to learn from these columns — adding variables related to the target usually helps more than switching models.",
       "losesDetail": "a simple model does better: {model} vs {baseline}. Your current columns don't carry enough signal about the target — try variables more related to what you want to predict.",
-      "suspicious": "Almost perfect metrics — suspicious",
-      "suspiciousDetail": "A perfect result almost always hides a leak, not a great model.",
-      "suspiciousClass": "Possible data leak — suspicious",
+      "suspicious": "Possible data leak — suspicious",
+      "suspiciousDetail": "A column predicts the target almost perfectly on the rows where it has a value. The figures below may be inflated even if they don't look perfect.",
       "suspiciousClassDetail": "A column separates one category from the rest almost perfectly. The figures below may be inflated even if they don't look perfect.",
       "chosenNote": "◆ Chosen by you, not by cross-validation. If you chose it by looking at the test, this number may be optimistic.",
       "logisticTie": "The league found nothing better than the reference regression",
@@ -288,7 +291,7 @@
           "median": "always guessing the median ({value})",
           "linear": "a linear regression"
         },
-        "units": "Figures are in the units of «{column}»: its name carries no unit the app recognizes."
+        "units": "Figures are in the units of “{column}”: its name carries no unit the app recognizes."
       },
       "primaryMetric": "Main metric: MAE, the average error in the target's units",
       "guide": "Which one to read: MAE says how far off it is on average. RMSE punishes large errors more: if it is much larger than MAE, it misses by a lot now and then. R² says how much of the variation it explains: 1 is all of it, 0 is the same as guessing the average, and it goes negative when it does worse. MedAE is the typical error, without extreme cases weighing in.",
@@ -322,12 +325,12 @@
     },
     "multiclass": {
       "guide": "Look at balanced accuracy: for each category, the share it gets right, averaged. With {k} categories, guessing at random gives {chance}; 1.00 would mean always right. Plain accuracy can mislead when one category dominates.",
-      "noProbabilities": "This model picks the category but gives no probabilities, which is why log loss and AUC show as «—».",
-      "topConfusion": "The most frequent mix-up: rows of “{real}” the model took for “{predicted}” ({count} in the test set).",
+      "noProbabilities": "This model picks the category but gives no probabilities, which is why log loss and AUC show as “—”.",
+      "topConfusion": "The most frequent mix-up: rows of actual “{real}” the model took for “{predicted}” ({count} in the test set).",
       "noConfusion": "On the test set, the model didn't mix up any category with another.",
       "testNote": "The verdict, the matrix, the per-category metrics and the baselines are computed on the test set, never on the training set. The league table uses cross-validation inside training: it's for choosing; this is for believing.",
-      "confusionHow": "Each row is the real category; each column, the one the model predicted. ✓ marks the hits (the diagonal); everything else is a mix-up.",
-      "realPredicted": "Real ↓ · Predicted →",
+      "confusionHow": "Each row is the actual category; each column, the one the model predicted. ✓ marks the hits (the diagonal); everything else is a mix-up.",
+      "realPredicted": "Actual ↓ · Predicted →",
       "hit": "hit:",
       "perClass": "Per category (test)",
       "class": "Category",
@@ -417,7 +420,8 @@
       "title": "Assigned groups ({rows} rows)",
       "title_one": "Assigned groups (1 row)"
     },
-    "groupProbabilityNote": "The probability is the assigned group's, according to the Gaussian mixture."
+    "groupProbabilityNote": "The probability is the assigned group's, according to the Gaussian mixture.",
+    "noProbabilitiesMulticlass": "This model picks the category but gives no probability, so that column is left out."
   },
   "why": {
     "title": "Why does it predict this way?",
@@ -453,10 +457,10 @@
     "legend": "The bar measures how much each variable MATTERS; the line below says which way it PUSHES. A variable can matter a lot and still have no single direction — that doesn't make it irrelevant.",
     "positiveClass": "The model predicts the column “{target}”. The class it tries to detect (the less frequent one) is “{positive}”.",
     "directionQuantity": {
-      "positive": "▲ the higher the value, the higher «{target}»",
-      "negative": "▼ the higher the value, the lower «{target}»"
+      "positive": "▲ the higher the value, the higher “{target}”",
+      "negative": "▼ the higher the value, the lower “{target}”"
     },
-    "quantityNote": "The model estimates the column «{target}». The bar measures how much its error (MAE) grows when that variable's link to the target is broken.",
+    "quantityNote": "The model estimates the column “{target}”. The bar measures how much its error (MAE) grows when that variable's link to the target is broken.",
     "multiclassNote": "The model classifies the column “{target}” into {count} categories. The bar measures how much balanced accuracy drops when that variable's link to the target is broken."
   },
   "card": {
@@ -511,8 +515,8 @@
         "metricNote": "The primary metric here is balanced accuracy: for each category, the share it gets right, averaged. With {k} categories, guessing gives {chance} and 1.00 would be always right. Macro F1 is {f1}.",
         "noDirection": "With several categories a variable doesn't push in a single direction: it can make one category more likely and another less likely.",
         "leakage": "Warning: {columns} could give away a category (possible leak); these figures may be inflated.",
-        "leakageItem": "{column} (category «{class}»)",
-        "imbalance": "The smallest category, «{class}», is {rate}% of the rows; that's why the primary metric is balanced accuracy, which weighs every category equally."
+        "leakageItem": "{column} (category “{class}”)",
+        "imbalance": "The smallest category, “{class}”, is {rate}% of the rows; that's why the primary metric is balanced accuracy, which weighs every category equally."
       }
     }
   },
@@ -542,7 +546,7 @@
       "dataset": "Dataset: {name}",
       "shape": "{rows} rows × {cols} columns ({numeric} numeric predictors, {categorical} categorical)",
       "target": "Target: “{target}” (binary classification; positive class: “{positive}”)",
-      "targetQuantity": "Target: «{target}» (estimating a quantity)",
+      "targetQuantity": "Target: “{target}” (estimating a quantity)",
       "targetMulticlass": "Target: “{target}” (classification into {count} categories)"
     },
     "split": {
@@ -582,16 +586,16 @@
     "limits": {
       "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
       "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
-      "dates": "Date columns are detected but not used yet (no temporal split).",
+      "dates": "Date columns are detected and not used for training (there is no temporal split).",
       "tasks": "The app does these tasks and no others: classifying into two categories, classifying into several categories (up to {max}), estimating a quantity and grouping rows with no target."
     },
     "sanitation": {
       "duplicates": "Removed {count} exact duplicate rows (prevents leakage by duplication).",
       "exclusion": {
-        "id-column": "Dropped «{column}» (identifier: one value per row).",
-        "constant-column": "Dropped «{column}» (constant: a single value)."
+        "id-column": "Dropped “{column}” (identifier: one value per row).",
+        "constant-column": "Dropped “{column}” (constant: a single value)."
       },
-      "coercion": "In «{column}», {count} non-numeric cells were set to empty.",
+      "coercion": "In “{column}”, {count} non-numeric cells were set to empty.",
       "none": "The dataset needed no sanitization."
     },
     "selection": {
@@ -606,14 +610,14 @@
     "estimate": {
       "task": "Task: estimating a quantity (regression). It is compared against the baseline with the smallest error: the median or linear regression.",
       "unit": "Unit: {unit}, read from the column name.",
-      "noUnit": "Unit: the column name carries none the app recognizes; figures are in the units of «{column}».",
+      "noUnit": "Unit: the column name carries none the app recognizes; figures are in the units of “{column}”.",
       "targetStats": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with {count} decimals).",
       "targetStats_one": "The target in training: mean {mean}, standard deviation {std}, minimum {min}, median {median}, maximum {max} (written with 1 decimal).",
       "errors": "Errors over the {total} test rows (estimate − actual): half fall between {p25} and {p75}; 9 in 10 are off by less than ±{abs90}.",
       "noAi": "AI narration: does not apply to estimating a quantity (it only covers classification into two categories)."
     },
     "multiclass": {
-      "confusion": "Confusion matrix: each row is the real category; each column, the one the model predicted. The diagonal holds the hits.",
+      "confusion": "Confusion matrix: each row is the actual category; each column, the one the model predicted. The diagonal holds the hits.",
       "direction": "no single direction (several categories)",
       "noAi": "AI narration: not applicable. It only narrates classification into two categories; with several, the reading is the standard text."
     },
@@ -641,7 +645,9 @@
         "silhouette": "The silhouette is measured on a seeded sample of up to {sample} rows, the same for every clusterer.",
         "agglomerative": "With more than {max} rows, hierarchical fits a sample and assigns the rest to the nearest group, so the browser doesn't run out of memory."
       },
-      "noConsensus": "Won by score: there was no consensus among the {voters} clusterers (each found a different number of groups), and {model} had the highest score."
+      "noConsensus": "Won by score: there was no consensus among the {voters} clusterers (each found a different number of groups), and {model} had the highest score.",
+      "limitsDates": "Date columns don't enter the similarity: they're listed above with their reason.",
+      "rareCategories": "Rare categories grouped (learned from all your rows: grouping has no split): {cols}."
     }
   },
   "errors": {
@@ -653,7 +659,7 @@
     "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
     "csv-tab": "Your file separates columns with tabs rather than commas, so no column is recognised. Save it again as “CSV (comma delimited)” and upload it once more.",
     "target-not-numeric": "To estimate a quantity, the target has to be a number in every row, and this column has values that are not. Check it in your CSV or pick another column.",
-    "target-ambiguous": "This column could hold categories or a quantity, and your answer is missing. Answer the question on the «Kind of prediction» card and train again.",
+    "target-ambiguous": "This column could hold categories or a quantity, and your answer is missing. Answer the question on the “Kind of prediction” card and train again.",
     "no-features": "There are no usable columns as predictors.",
     "runtime": "Something went wrong while processing. Please try again.",
     "worker-dead": "The compute engine stopped unexpectedly (it may have run out of memory, or its components failed to load). Try again; if it persists, try a smaller file.",
@@ -662,12 +668,14 @@
     "too-few-rows": "There are too few examples of one of the two classes to compare models honestly: cross-validation needs at least 2 of each class in the training set. Try with more rows.",
     "too-few-rows-quantity": "There are too few rows to estimate a quantity honestly: the test set needs at least 2 rows the model never saw in training. Try with more rows.",
     "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file.",
-    "target-mixed-notation": "Your target has classes written in more than one way (for example «1» and «1.0»): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
+    "target-mixed-notation": "Your target has classes written in more than one way (for example “1” and “1.0”): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
     "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns.",
     "too-few-rows-per-class": "One of the categories has too few rows to compare models honestly: cross-validation needs at least 2 rows of each category in the training set. Try with more rows, or merge the rarest categories into one.",
     "too-few-rows-cluster": "There are too few rows to cluster honestly: to tell whether the groups hold up, the app searches for them again in parts of your data, and each part needs more rows than groups. Try with more rows.",
     "target-not-usable": "This column can't be used as a target: it has a single value, it's empty, or it has too many distinct values to be categories. Pick another column, or group similar rows with no target.",
-    "too-few-rows-per-class-named": "The category “{class}” has only {rows} row(s) in the training set, and cross-validation needs at least 2 of each category to compare models honestly. Try with more rows, or merge the rarest categories into one."
+    "too-few-rows-per-class-named": "The category “{class}” has only {rows} rows in the training set, and cross-validation needs at least 2 of each category to compare models honestly. Try with more rows, or merge the rarest categories into one.",
+    "chunk": "This part of the app couldn't load. Check your connection and try again; your data stays only in this browser.",
+    "too-few-rows-per-class-named_one": "The category “{class}” has only 1 row in the training set, and cross-validation needs at least 2 of each category to compare models honestly. Try with more rows, or merge the rarest categories into one."
   },
   "task": {
     "title": "Kind of prediction",
@@ -693,10 +701,10 @@
     "notUsable": "This column can't be used as a target. Pick a column with categories or with a quantity, or group similar rows with no target.",
     "estimate": {
       "unit": "You are going to estimate a quantity, in {unit}. The verdict will say how far off it is on average, in {unit}.",
-      "noUnit": "You are going to estimate a quantity. Its name carries no unit the app recognizes, so figures will be given in the units of «{column}»."
+      "noUnit": "You are going to estimate a quantity. Its name carries no unit the app recognizes, so figures will be given in the units of “{column}”."
     },
     "ask": {
-      "question": "Does «{column}» hold categories or a quantity?",
+      "question": "Does “{column}” hold categories or a quantity?",
       "help": "This data alone cannot tell; you know the column.",
       "suggested": "Suggested",
       "numerica": {
@@ -725,12 +733,12 @@
       "always-first": "always in: it is the simplest",
       "over-ceiling": "about {time}",
       "mlp-few-rows": "your dataset has {rows} rows; a neural network needs at least {min} to learn something stable",
-      "balanced-not-needed": "your classes are already balanced (the smaller one is {share} %): it would repeat its normal version",
+      "balanced-not-needed": "your classes are already balanced (the smallest one is {share}%): it would repeat its normal version",
       "forced": "you included it; the router was leaving it out because {why}"
     },
     "cv": "They compete with {k}-fold cross-validation inside the training set; the test set is opened only once, at the end.",
     "smallSample": "Small sample ({rows} rows): cross-validation scores vary quite a bit. That is why, when several are practically tied, the simplest one wins.",
-    "note": "Nothing is hidden: «left out» is a recommendation with its reason, and you can include it anyway in Level 2.",
+    "note": "Nothing is hidden: “left out” is a recommendation with its reason, and you can include it anyway in Level 2.",
     "level1_one": "Level 1 · now · 1 model · about {time}",
     "level2_one": "Level 2 · later, if you want · 1 more model",
     "clusterK": "K-Means and hierarchical pick how many groups with the silhouette; GMM, with BIC; HDBSCAN doesn't need to be told: it finds them by density.",
@@ -773,11 +781,11 @@
     "chooseAria": "Choose {model}",
     "fitting": "Fitting…",
     "backToWinner": "Back to the winner",
-    "chooseError": "«{model}» could not be fitted. The previous model is still active.",
+    "chooseError": "“{model}” could not be fitted. The previous model is still active.",
     "showTest": "Show test scores (not for choosing)",
     "hideTest": "Hide test scores",
     "testWarning": "These scores come from the test set. They are for believing in the model already chosen; if you choose by looking at them, the verdict number may be optimistic.",
-    "howWinner": "The simplest of the models within one standard error (±{se}) of the best cross-validation score wins; the best score was «{best}»'s. Among practically tied scores, keeping the maximum rewards luck.",
+    "howWinner": "The simplest of the models within one standard error (±{se}) of the best cross-validation score wins; the best score was “{best}”'s. Among practically tied scores, keeping the maximum rewards luck.",
     "time": "The league took {seconds} s on this device.",
     "testShort": "test",
     "fichaAria": "About {model}",
@@ -801,7 +809,10 @@
       "out": "In this league: left out, because {reason}.",
       "baseline": "Verdict baseline: it does not compete in the league — it judges it.",
       "consensus": "In this comparison: winner by consensus (the group count most clusterers agree on).",
-      "score": "In this comparison: winner by score (there was no consensus: each clusterer found a different number of groups)."
+      "score": "In this comparison: winner by score (there was no consensus: each clusterer found a different number of groups).",
+      "clusterCompetitor": "In this comparison: ranked {rank} of {total} by score.",
+      "clusterNoGroups": "In this comparison: it did not find two groups, so it has no score.",
+      "clusterFailed": "In this comparison: it did not finish, so it has no score."
     }
   },
   "level2": {
@@ -838,7 +849,8 @@
       "estimate_one": "1 clusterer · about {time} on this device",
       "nothingToAdd": "Tick a clusterer to include it; there is nothing else to add.",
       "running": "Level 2 · {count} clusterers · about {time} on this device",
-      "running_one": "Level 2 · 1 clusterer · about {time} on this device"
+      "running_one": "Level 2 · 1 clusterer · about {time} on this device",
+      "cancelHint": "You can cancel while it runs: you come back to this result. To download your rows with their group after cancelling, you need to group again."
     }
   },
   "cluster": {
@@ -846,11 +858,12 @@
     "group": "Group {n}",
     "reading": {
       "exist": "The groups are real: {k} stable groups",
-      "existDetail": "{model} separates your rows better than structureless data in the same box: score {score} against {nullScore}, a gap of {gap} (at least {gapMin} is needed). And the groups come back when {fraction}% of your rows are regrouped {runs} times: they match {ari} out of 1 (at least {ariMin} is needed).",
+      "existDetail": "{model} separates your rows better than structureless data in the same box: score {score} against {nullScore}, a gap of {gap} (at least {gapMin} is needed). And the groups come back when {fraction}% of your rows are regrouped {runs} times: they match {ari} out of 1 (at least {ariNeeded} is needed).",
       "fragile": "There are {k} groups, but they're fragile",
-      "fragileDetail": "{model} separates your rows better than structureless data (score {score} against {nullScore}, gap {gap}), but when {fraction}% of your rows are regrouped {runs} times the groups change: they match {ari} out of 1, below {ariMin}. Read them as one possible split, not as a finding.",
+      "fragileDetail": "{model} separates your rows better than structureless data (score {score} against {nullScore}, gap {gap}), but when {fraction}% of your rows are regrouped {runs} times the groups change: they match {ari} out of 1, below {ariNeeded}. Read them as one possible split, not as a finding.",
       "none": "There's no group structure",
-      "noneDetail": "{model} doesn't separate your rows better than structureless data in the same box: score {score} against {nullScore}, a gap of {gap} (at least {gapMin} would be needed). The {k} groups below are one way to split the table, not a finding."
+      "noneDetail": "{model} doesn't separate your rows better than structureless data in the same box: score {score} against {nullScore}, a gap of {gap} (at least {gapMin} would be needed). The {k} groups below are one way to split the table, not a finding.",
+      "worst": "In the most different resample they match {ariWorst} out of 1."
     },
     "noTest": "Grouping has no target: there's no test set and no verdict against a baseline. What's worth believing is this comparison with structureless data and the stability under resampling.",
     "chosenNote": "◆ Chosen by you. The reading above is this clusterer's; the winner is still marked with ★.",
@@ -872,7 +885,8 @@
       "categorical": "“{column}”: mostly “{mode}” ({share}% of the group)",
       "noValue": "“{column}”: no values in this group",
       "all": "See the other {count} columns",
-      "all_one": "See the other column"
+      "all_one": "See the other column",
+      "size_one": "{size} row · {share}%"
     },
     "noise": {
       "title": "Outside every group",
@@ -910,7 +924,7 @@
       "mobile": "silhouette {silhouette} · outside a group {noise}",
       "scoreHow": "Score = silhouette × (1 − the share outside a group): HDBSCAN doesn't win by leaving the hard rows out. Silhouette runs from −1 to 1: how much closer each row is to its own group than to the next one.",
       "noConsensus": "No consensus: each clusterer found a different number of groups, so the highest score wins.",
-      "time": "Grouping took {seconds} s on this device."
+      "time": "Grouping took {seconds} s on this device."
     },
     "labels": {
       "title": "Your rows with their group",
@@ -920,7 +934,7 @@
       "button": "Download rows with their group",
       "fetching": "Preparing the file…",
       "error": "The file couldn't be prepared. Try again.",
-      "unavailable": "The active model no longer keeps your rows' groups (it was restored after cancelling Level 2). Group again to download them."
+      "unavailable": "The active model no longer keeps your rows' groups: it was recovered from a Level 2 that was cancelled or didn't finish. Group again to download them."
     },
     "use": {
       "title": "Assign new rows",

@@ -14,14 +14,19 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { ConfigScreen } from "@/components/ConfigScreen";
 import FichaModelo from "@/components/FichaModelo";
 import { topConfusion } from "@/components/MulticlassResults";
 import { ResultsScreen } from "@/components/ResultsScreen";
 import { ScoreScreen } from "@/components/ScoreScreen";
 import { MULTICLASS_FICHA_FIELDS } from "@/content/modelos";
+import { BASELINE_IDS_BY_TASK, ROSTER_BY_TASK } from "@/engine/roster";
 import { LOCALE_STORAGE_KEY } from "@/i18n/config";
 import { I18nProvider } from "@/i18n/provider";
-import { assembleMulticlassResult } from "@/lib/experiment";
+import { computeEdaAlerts } from "@/engine/eda";
+import { sanitizeTable } from "@/engine/sanitize";
+import { parseCsvWithLimits } from "@/lib/ds/csv";
+import { assembleMulticlassResult, summarizeDataset } from "@/lib/experiment";
 import { downloadTextFile } from "@/lib/files";
 import { buildModelCard } from "@/lib/modelcard";
 import type { ModelMeta } from "@/lib/useExperiment";
@@ -319,9 +324,25 @@ describe("S7: la ficha con varias categorías", () => {
   });
 
   // Lo que solo vale con dos clases: «sí»/«no», «las dos clases», el AUC binario.
-  const TWO_CLASSES = /«sí» o hacia «no»|las dos clases|Su AUC se calcula|«yes» or «no»|the two classes|Its AUC comes/;
+  // S7 (AU-S7-15): también el «AUC o F1» del veredicto binario, que la mayoritaria decía.
+  const TWO_CLASSES =
+    /«sí» o hacia «no»|las dos clases|Su AUC se calcula|[«“]yes[»”] or [«“]no[»”]|the two classes|Its AUC comes|AUC o F1|AUC or F1/;
 
-  it.each(Object.keys(MULTICLASS_FICHA_FIELDS))(
+  // S7 (AU-S7-15): TODAS las fichas que la pantalla de varias categorías abre (los miembros de
+  // su liga y sus dos baselines), no solo las que tienen reemplazo: una que falte, cae.
+  const MULTICLASS_FICHAS = [
+    ...new Set([
+      ...ROSTER_BY_TASK.multiclase,
+      ...BASELINE_IDS_BY_TASK.multiclase,
+    ]),
+  ];
+
+  it("toda ficha con reemplazo es de la liga de varias categorías", () => {
+    for (const id of Object.keys(MULTICLASS_FICHA_FIELDS))
+      expect(MULTICLASS_FICHAS).toContain(id);
+  });
+
+  it.each(MULTICLASS_FICHAS)(
     "%s: los apartados de dos clases se reemplazan (ES y EN)",
     (id) => {
       for (const locale of ["es", "en"] as const) {
@@ -330,7 +351,8 @@ describe("S7: la ficha con varias categorías", () => {
           <FichaModelo
             target={{
               id: id as "logistic",
-              status: { kind: "winner" },
+              status:
+                id === "majority" ? { kind: "baseline" } : { kind: "winner" },
               task: "multiclase",
             }}
             onClose={vi.fn()}
@@ -352,5 +374,48 @@ describe("S7: la ficha con varias categorías", () => {
       />,
     );
     expect(screen.getByRole("dialog").textContent).toMatch(/las dos clases/);
+  });
+});
+
+// S7 (AU-S7-14): antes de entrenar, con varias categorías, los avisos nombran la categoría
+// y no dicen «usa AUC» (el veredicto usa la exactitud balanceada).
+describe("Configuración con varias categorías: los avisos nombran la categoría", () => {
+  const configWith = (file: string, target: string) => {
+    const parsed = parseCsvWithLimits(
+      readFileSync(resolve(process.cwd(), "public/datasets", file), "utf8"),
+    );
+    if (!parsed.ok) throw new Error(file);
+    const table = sanitizeTable(parsed.table).table;
+    ui(
+      <ConfigScreen
+        dataset={summarizeDataset(table)}
+        sanitation={null}
+        edaAlerts={computeEdaAlerts(table, target, "multiclase")}
+        plan={null}
+        onSelectTarget={() => {}}
+        onRun={() => {}}
+        onBack={() => {}}
+      />,
+    );
+    fireEvent.change(document.querySelector("#target")!, {
+      target: { value: target },
+    });
+  };
+
+  it("el desbalance nombra la categoría más chica y la exactitud balanceada, sin AUC", () => {
+    configWith("clientes-sucio.csv", "canal");
+    const box = screen.getByText(/Antes de entrenar/).closest("div")!;
+    expect(box.textContent, "el aviso dice «usa AUC»").not.toMatch(/AUC/);
+    expect(box.textContent).toMatch(/La categoría más chica, «[^»]+», es el/);
+    expect(box.textContent).toMatch(/exactitud balanceada/);
+  });
+
+  it("la fuga nombra la columna y la categoría que delata", () => {
+    configWith("planes-fuga-plantada.csv", "plan");
+    expect(
+      screen.getByText(
+        /«cargo_corporativo_usd» separa casi a la perfección la categoría «empresa» del resto/,
+      ),
+    ).toBeInTheDocument();
   });
 });

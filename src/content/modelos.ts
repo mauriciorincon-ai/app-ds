@@ -45,15 +45,15 @@ export const FICHAS: Record<FichaId, Ficha> = {
   logistic: {
     what: {
       es: "Una suma ponderada de tus columnas que se convierte en probabilidad. Cada columna empuja hacia «sí» o hacia «no» con un peso fijo.",
-      en: "A weighted sum of your columns squeezed into a probability. Every column nudges the answer towards «yes» or «no» with one fixed weight.",
+      en: "A weighted sum of your columns squeezed into a probability. Every column nudges the answer towards “yes” or “no” with one fixed weight.",
     },
     goodFor: {
       es: "Relaciones del tipo «a más de esto, más probable»; pocos datos; cuando tienes que explicarle el modelo a otra persona.",
-      en: "Relationships of the «the more of this, the likelier» kind; small datasets; any time you have to explain the model to someone else.",
+      en: "Relationships of the “the more of this, the likelier” kind; small datasets; any time you have to explain the model to someone else.",
     },
     notFor: {
       es: "Cuando lo que importa son combinaciones («esto y además aquello») o umbrales: no los ve si nadie se los construye.",
-      en: "Problems driven by combinations («this, but only together with that») or thresholds: it cannot see them unless someone builds them in.",
+      en: "Problems driven by combinations (“this, but only together with that”) or thresholds: it cannot see them unless someone builds them in.",
     },
     watch: {
       es: "También es el baseline del veredicto. Si gana la liga, ningún modelo más complejo aportó algo: eso es un resultado, no un fracaso.",
@@ -72,11 +72,11 @@ export const FICHAS: Record<FichaId, Ficha> = {
     },
     goodFor: {
       es: "Relaciones del tipo «a más de esto, más cantidad»; pocos datos; cuando tienes que poder explicar de dónde sale cada número.",
-      en: "Relationships of the «more of this, more of that» kind; small datasets; any time you need to explain where each number comes from.",
+      en: "Relationships of the “more of this, more of that” kind; small datasets; any time you need to explain where each number comes from.",
     },
     notFor: {
       es: "Combinaciones («esto pesa solo si además pasa aquello») y curvas: si nadie se las construye, no las ve.",
-      en: "Combinations («this matters only when that happens too») and curves: it cannot see them unless someone builds them in.",
+      en: "Combinations (“this matters only when that happens too”) and curves: it cannot see them unless someone builds them in.",
     },
     watch: {
       es: "También es baseline del veredicto. Si gana la liga, ningún modelo más complejo aportó algo: eso es un resultado, no un fracaso.",
@@ -135,7 +135,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
   naive_bayes: {
     what: {
       es: "Calcula la probabilidad de cada clase suponiendo que tus columnas no se influyen entre sí (de ahí lo de «ingenuo»).",
-      en: "Works out each class's probability assuming your columns have nothing to do with each other — hence «naive».",
+      en: "Works out each class's probability assuming your columns have nothing to do with each other — hence “naive”.",
     },
     goodFor: {
       es: "Pocos datos y muchas columnas; como punto de comparación rápido.",
@@ -179,7 +179,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
   decision_tree: {
     what: {
       es: "Una serie de preguntas de sí o no sobre tus columnas («¿edad mayor que 40?») que termina en una predicción.",
-      en: "A chain of yes/no questions about your columns («is age above 40?») that ends in a prediction.",
+      en: "A chain of yes/no questions about your columns (“is age above 40?”) that ends in a prediction.",
     },
     goodFor: {
       es: "Cuando quieres reglas legibles; relaciones con umbrales y combinaciones.",
@@ -209,11 +209,11 @@ export const FICHAS: Record<FichaId, Ficha> = {
     },
     notFor: {
       es: "Muchas columnas (todo termina «lejos» de todo) o muchas filas: predecir es lento porque compara contra todo el entrenamiento.",
-      en: "Lots of columns (everything ends up «far» from everything) or lots of rows: prediction is slow because it compares against the whole training set.",
+      en: "Lots of columns (everything ends up “far” from everything) or lots of rows: prediction is slow because it compares against the whole training set.",
     },
     watch: {
       es: "«Parecido» depende de la escala: la app estandariza las columnas numéricas para que ninguna pese más solo por sus unidades.",
-      en: "«Similar» depends on scale: the app standardises numeric columns so none counts for more just because of its units.",
+      en: "“Similar” depends on scale: the app standardises numeric columns so none counts for more just because of its units.",
     },
     cost: {
       es: "Entrenar es instantáneo; predecir crece con el tamaño de tus datos.",
@@ -235,7 +235,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
     },
     watch: {
       es: "Si queda «≈ empata con el mejor» junto a uno más simple, gana el simple: no aportó lo suficiente para justificar su complejidad.",
-      en: "If it is marked «≈ tied with the best» alongside a simpler model, the simpler one wins: it did not add enough to earn its complexity.",
+      en: "If it is marked “≈ tied with the best” alongside a simpler model, the simpler one wins: it did not add enough to earn its complexity.",
     },
     cost: {
       es: "Medio: segundos con miles de filas.",
@@ -289,7 +289,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
   extra_trees: {
     what: {
       es: "Un bosque de 200 árboles cuyos cortes se eligen en parte al azar. El promedio de muchos árboles «torpes» resulta estable.",
-      en: "A forest of 200 trees whose splits are partly chosen at random. Averaging many «clumsy» trees gives a steady answer.",
+      en: "A forest of 200 trees whose splits are partly chosen at random. Averaging many “clumsy” trees gives a steady answer.",
     },
     goodFor: {
       es: "Datos con ruido; suele ser rápido para ser un bosque.",
@@ -345,7 +345,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
     },
     watch: {
       es: "Si aparece «no convergió», su puntaje puede cambiar de una corrida a otra: no la elijas por un puntaje alto aislado.",
-      en: "If it shows «did not converge», its score may move from run to run — do not pick it for one lucky number.",
+      en: "If it shows “did not converge”, its score may move from run to run — do not pick it for one lucky number.",
     },
     cost: {
       es: "Medio a alto.",
@@ -367,7 +367,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
     },
     watch: {
       es: "Con clases desequilibradas su exactitud parece alta (si el 90 % es «no», acierta el 90 %). Por eso el veredicto se mide con AUC o F1.",
-      en: "With imbalanced classes its accuracy looks impressive (if 90 % are «no», it is right 90 % of the time). That is why the verdict uses AUC or F1.",
+      en: "With imbalanced classes its accuracy looks impressive (if 90 % are “no”, it is right 90 % of the time). That is why the verdict uses AUC or F1.",
     },
     cost: {
       es: "Ninguno.",
@@ -413,7 +413,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
     },
     watch: {
       es: "Si dice «ajustado sobre una muestra», su estabilidad se midió dentro de esa muestra.",
-      en: "If it says «fitted on a sample», its stability was measured within that sample.",
+      en: "If it says “fitted on a sample”, its stability was measured within that sample.",
     },
     cost: {
       es: "Bajo con pocas filas; con miles, unos segundos (por eso la muestra).",
@@ -445,7 +445,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
   hdbscan: {
     what: {
       es: "Busca las zonas donde las filas están apretadas y las separa de las zonas ralas. No pide k: los grupos salen de la densidad, y lo que no cae en ninguna zona densa queda «fuera de todo grupo».",
-      en: "Looks for regions where rows are packed together and separates them from sparse regions. It doesn't ask for k: groups come from the density, and whatever falls in no dense region is left «outside every group».",
+      en: "Looks for regions where rows are packed together and separates them from sparse regions. It doesn't ask for k: groups come from the density, and whatever falls in no dense region is left “outside every group”.",
     },
     goodFor: {
       es: "Grupos de formas raras o de tamaños muy distintos; datos con filas sueltas que no pertenecen a ningún grupo.",
@@ -457,7 +457,7 @@ export const FICHAS: Record<FichaId, Ficha> = {
     },
     watch: {
       es: "Mira cuántas filas quedan «fuera de todo grupo»: su puntaje las descuenta (silueta × parte agrupada), así que no gana dejando fuera las filas difíciles.",
-      en: "Watch how many rows end up «outside every group»: its score discounts them (silhouette × grouped share), so it can't win by leaving the hard rows out.",
+      en: "Watch how many rows end up “outside every group”: its score discounts them (silhouette × grouped share), so it can't win by leaving the hard rows out.",
     },
     cost: {
       es: "Bajo con pocas filas; con decenas de miles, el más caro de los cuatro, sobre todo al medir su estabilidad.",
@@ -592,8 +592,20 @@ export const REGRESSION_FICHA_FIELDS: Partial<
  * de la liga multiclase hable de «sí/no», de dos clases ni del AUC binario.
  */
 export const MULTICLASS_FICHA_FIELDS: Partial<
-  Record<BinaryMemberId, Partial<Ficha>>
+  Record<BinaryMemberId | "majority", Partial<Ficha>>
 > = {
+  // S7 (AU-S7-15): la mayoritaria es baseline también con varias categorías; su ficha no
+  // puede decir que el veredicto se mide con el AUC (se mide con la exactitud balanceada).
+  majority: {
+    notFor: {
+      es: "Usarlo como modelo: solo predice la categoría más frecuente y nunca acierta ninguna otra.",
+      en: "Actual use: it only predicts the most common category and never gets any other right.",
+    },
+    watch: {
+      es: "Con categorías desequilibradas su exactitud parece alta (si el 60\u00a0% es «básico», acierta el 60\u00a0%). Por eso el veredicto se mide con la exactitud balanceada, que con K categorías le da 1/K.",
+      en: "With imbalanced categories its accuracy looks high (if 60% are “basic”, it is right 60% of the time). That is why the verdict uses balanced accuracy, which gives it 1/K with K categories.",
+    },
+  },
   logistic: {
     what: {
       es: "Una suma ponderada de tus columnas para cada categoría, convertida en una probabilidad por categoría (entre todas suman 1). Cada columna acerca a unas categorías y aleja de otras con pesos fijos.",
@@ -603,7 +615,7 @@ export const MULTICLASS_FICHA_FIELDS: Partial<
   ridge: {
     watch: {
       es: "Con varias categorías no da probabilidades, así que su pérdida logarítmica y su AUC quedan en «—». Compite, como todos, por la exactitud balanceada.",
-      en: "With several categories it gives no probabilities, so its log loss and AUC show as «—». Like everyone else, it competes on balanced accuracy.",
+      en: "With several categories it gives no probabilities, so its log loss and AUC show as “—”. Like everyone else, it competes on balanced accuracy.",
     },
   },
   linear_svc: {

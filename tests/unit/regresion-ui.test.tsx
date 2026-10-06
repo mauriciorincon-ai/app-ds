@@ -278,7 +278,7 @@ describe("el veredicto en unidades (P5, R10)", () => {
     );
     expect(
       screen.getByRole("heading", {
-        name: "Métricas casi perfectas — sospechoso",
+        name: "Posible fuga de datos — sospechoso",
       }),
     ).toBeInTheDocument();
   });

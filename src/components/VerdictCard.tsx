@@ -33,22 +33,19 @@ export const LEVEL_MARK: Record<
 };
 
 /** Con una fuga sospechada, el titular es la sospecha — igual en todas las tareas
- *  (un solo sitio: AU-S6-42). S7: con varias categorías la fuga delata UNA
- *  categoría y la cifra global puede quedar lejos de «perfecta» (planes con fuga
- *  plantada: exactitud balanceada 0.78), así que ese titular no dice «casi
- *  perfectas»: dice la sospecha. */
+ *  (un solo sitio: AU-S6-42). La alarma la da UNA columna, medida en las filas
+ *  donde tiene valor, y la cifra global puede quedar lejos de «perfecta» (planes con
+ *  fuga plantada: exactitud balanceada 0.78). S7 (AU-S7-20, decisión del usuario):
+ *  el titular dice la sospecha en las tres tareas con objetivo, y el detalle, lo que
+ *  se encontró: una columna que predice el objetivo, o una que delata una categoría. */
 export function suspiciousBanner(
   t: (key: string) => string,
-  kind: "metrics" | "class" = "metrics",
+  kind: "column" | "class" = "column",
 ): Banner {
   return {
     tone: "caution",
     mark: "⚠",
-    headline: t(
-      kind === "class"
-        ? "results.verdict.suspiciousClass"
-        : "results.verdict.suspicious",
-    ),
+    headline: t("results.verdict.suspicious"),
     detail: t(
       kind === "class"
         ? "results.verdict.suspiciousClassDetail"

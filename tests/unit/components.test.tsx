@@ -281,7 +281,7 @@ describe("ResultsScreen (integración de la pantalla)", () => {
       />,
     );
     expect(
-      screen.getByText("Métricas casi perfectas — sospechoso"),
+      screen.getByText("Posible fuga de datos — sospechoso"),
     ).toBeInTheDocument();
     // La columna marcada aparece en la alerta, la plantilla y la model card.
     expect(screen.getAllByText(/monto_recuperado/).length).toBeGreaterThan(0);

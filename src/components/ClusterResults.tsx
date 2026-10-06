@@ -198,7 +198,7 @@ export function ClusterReading({
     gap: two(reading.gap),
     gapMin: two(CLUSTER_GAP_MIN),
     ari: two(reading.stability.ari_mean),
-    ariMin: two(CLUSTER_STABILITY_MIN),
+    ariNeeded: two(CLUSTER_STABILITY_MIN),
     runs: reading.stability.runs,
     fraction: pct(reading.stability.fraction),
   };

@@ -344,7 +344,7 @@ describe("la plantilla local de varias categorías (P10: la IA no la narra)", ()
     const en = buildMulticlassTemplate({ result, locale: "en" });
     expect(en).toContain("balanced accuracy");
     expect(en).toContain("With 5 categories, guessing gives 0.20");
-    expect(en).toContain("cargo_corporativo_usd (category «empresa»)");
+    expect(en).toContain("cargo_corporativo_usd (category “empresa”)");
   });
 
   it("no habla de «la clase positiva» ni de una dirección única", () => {
@@ -362,6 +362,6 @@ describe("la plantilla local de varias categorías (P10: la IA no la narra)", ()
         { kind: "class-imbalance", minorityRate: 0.05, class: "estudiante" },
       ],
     });
-    expect(text).toContain("La categoría más chica, «estudiante», es el 5%");
+    expect(text).toContain("La categoría más chica, «estudiante», es el 5\u00a0%");
   });
 });
