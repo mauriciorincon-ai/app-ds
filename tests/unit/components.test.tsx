@@ -1,7 +1,8 @@
 // Tests de componentes (Testing Library) — pago de la deuda S1 "cobertura de
 // la capa UI". Cubren los componentes nuevos del S2 (estados del porqué,
 // consentimiento, model card) + smoke de las pantallas S1.
-import { fireEvent, render, screen } from "@testing-library/react";
+import { existsSync } from "node:fs";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { Metrics } from "@/engine/verdict";
@@ -13,7 +14,7 @@ import { ConfigScreen } from "@/components/ConfigScreen";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { ModelCardView } from "@/components/ModelCardView";
 import { ResultsScreen } from "@/components/ResultsScreen";
-import { StartScreen } from "@/components/StartScreen";
+import { EXAMPLES, StartScreen } from "@/components/StartScreen";
 import { TrainingScreen } from "@/components/TrainingScreen";
 import { WhySection } from "@/components/WhySection";
 import { leagueFields } from "./factories";
@@ -288,11 +289,46 @@ describe("ResultsScreen (integración de la pantalla)", () => {
 });
 
 describe("pantallas S1 (smoke)", () => {
-  it("StartScreen: dropzone + 4 ejemplos (incl. el sucio de S4)", () => {
+  it("StartScreen: dropzone + los ejemplos (incl. el sucio de S4 y los dos del S7)", () => {
     ui(<StartScreen onLoad={() => {}} onImport={() => {}} />);
     expect(screen.getByText("Empieza tu experimento")).toBeInTheDocument();
     expect(screen.getByText("Campaña de marketing")).toBeInTheDocument();
     expect(screen.getByText("Clientes (datos sucios)")).toBeInTheDocument();
+    expect(screen.getByText("Planes de suscripción")).toBeInTheDocument();
+    expect(screen.getByText("Segmentos de clientes")).toBeInTheDocument();
+  });
+
+  // S7: un botón de ejemplo con un archivo mal escrito daría un 404 a quien lo pulse.
+  it("cada ejemplo existe en public/datasets/ (lo que sirve la app) y en el kit de prueba", () => {
+    for (const { file } of EXAMPLES) {
+      expect(existsSync(`public/datasets/${file}`), `public/datasets/${file}`).toBe(true);
+      expect(existsSync(`docs/kit-de-prueba/${file}`), `docs/kit-de-prueba/${file}`).toBe(true);
+    }
+  });
+
+  it("S7: «Planes de suscripción» y «Segmentos de clientes» cargan SU archivo con su nombre", async () => {
+    const fetchSpy = vi.fn(async (url: string) => new Response(`csv:${url}`));
+    vi.stubGlobal("fetch", fetchSpy);
+    try {
+      const onLoad = vi.fn();
+      ui(<StartScreen onLoad={onLoad} onImport={() => {}} />);
+      fireEvent.click(screen.getByRole("button", { name: /Planes de suscripción/ }));
+      await waitFor(() =>
+        expect(onLoad).toHaveBeenCalledWith(
+          "csv:/datasets/planes-suscripcion.csv",
+          "planes-suscripcion.csv",
+        ),
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Segmentos de clientes/ }));
+      await waitFor(() =>
+        expect(onLoad).toHaveBeenCalledWith(
+          "csv:/datasets/segmentos-clientes.csv",
+          "segmentos-clientes.csv",
+        ),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("ConfigScreen: preview + selección de objetivo", () => {

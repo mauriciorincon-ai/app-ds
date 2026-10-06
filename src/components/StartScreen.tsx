@@ -23,7 +23,7 @@ import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
 import { thousands } from "@/content/modelos";
 import { Button, Card, Icon } from "./ui";
 
-const EXAMPLES = [
+export const EXAMPLES = [
   { key: "marketing", file: "marketing-campania.csv" },
   { key: "rotacion", file: "rotacion-empleados.csv" },
   { key: "credito", file: "credito-fuga-plantada.csv" },
@@ -32,6 +32,10 @@ const EXAMPLES = [
   { key: "clientes", file: "clientes-sucio.csv" },
   // S6 (P9): estimar una cantidad — el consumo de una casa, en kWh.
   { key: "consumo", file: "consumo-energia.csv" },
+  // S7 (decisión 7: después de bajar el LCP): clasificar en cinco categorías y
+  // agrupar sin objetivo.
+  { key: "planes", file: "planes-suscripcion.csv" },
+  { key: "segmentos", file: "segmentos-clientes.csv" },
 ] as const;
 
 export function StartScreen({
@@ -285,14 +289,18 @@ function ImportSummary({
   ...rest
 }: Omit<ImportSummaryProps<ModelManifest>, "manifest"> & { file: ModelFile }) {
   return matchByTask(file.manifest, {
-    binaria: (manifest) => <SupervisedImportSummary {...rest} manifest={manifest} />,
+    binaria: (manifest) => (
+      <SupervisedImportSummary {...rest} manifest={manifest} />
+    ),
     multiclase: (manifest) => (
       <SupervisedImportSummary {...rest} manifest={manifest} />
     ),
     numerica: (manifest) => (
       <SupervisedImportSummary {...rest} manifest={manifest} />
     ),
-    agrupar: (manifest) => <ClusterImportSummary {...rest} manifest={manifest} />,
+    agrupar: (manifest) => (
+      <ClusterImportSummary {...rest} manifest={manifest} />
+    ),
   });
 }
 

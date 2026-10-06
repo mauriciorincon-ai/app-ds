@@ -40,6 +40,14 @@
       "consumo": {
         "name": "Consumo de energía",
         "desc": "¿Cuántos kWh gasta una casa? Estima una cantidad y mira cuánto se equivoca."
+      },
+      "planes": {
+        "name": "Planes de suscripción",
+        "desc": "¿Qué plan elige cada cliente? Cinco categorías: mira contra qué se compara y dónde se confunde."
+      },
+      "segmentos": {
+        "name": "Segmentos de clientes",
+        "desc": "Sin objetivo: agrupa clientes parecidos y mira qué distingue a cada grupo."
       }
     },
     "import": {

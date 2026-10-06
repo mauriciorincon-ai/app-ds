@@ -40,7 +40,10 @@ test("agrupar: segmentos → 3 grupos que existen, perfiles, tabla y las filas c
       narrateRequests.push(request.url());
   });
 
-  await loadAndCluster(page, kit("segmentos-clientes.csv"));
+  // S7 (decisión 7): por el botón de ejemplo de la portada, el mismo CSV del kit.
+  await page.goto("/");
+  await page.getByRole("button", { name: /Segmentos de clientes/ }).click();
+  await page.selectOption("#target", CLUSTER);
   await expect(
     page.getByRole("heading", {
       name: "Agrupar filas parecidas, sin objetivo",

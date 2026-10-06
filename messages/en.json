@@ -40,6 +40,14 @@
       "consumo": {
         "name": "Energy use",
         "desc": "How many kWh does a home use? Estimate a quantity and see how far off it is."
+      },
+      "planes": {
+        "name": "Subscription plans",
+        "desc": "Which plan does each customer pick? Five categories: see what it is compared against and where it gets confused."
+      },
+      "segmentos": {
+        "name": "Customer segments",
+        "desc": "No target: group similar customers and see what sets each group apart."
       }
     },
     "import": {

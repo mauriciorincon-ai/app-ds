@@ -28,7 +28,10 @@ test("varias categorías: veredicto, matriz K×K, por categoría y cero peticion
       narrateRequests.push(request.url());
   });
 
-  await load(page, "planes-suscripcion.csv");
+  // S7 (decisión 7): por el botón de ejemplo de la portada, el mismo CSV del kit.
+  await page.goto("/");
+  await page.getByRole("button", { name: /Planes de suscripción/ }).click();
+  await page.selectOption("#target", "plan");
   await expect(
     page.getByText(
       /5 categorías distintas → clasificación en varias categorías/,

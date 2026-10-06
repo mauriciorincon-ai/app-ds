@@ -1002,6 +1002,46 @@ puede ver con el DSN vacío.
 - e2e, la suite entera sobre el build de producción de este árbol (Chromium móvil y escritorio, con
   las pantallas ya cargadas bajo demanda): 58 de 58 al primer intento, en 3,1 min.
 
+### Octavo commit: los botones de ejemplo de multiclase y agrupar (decisión 7)
+
+Con el margen del LCP ya bajado (séptimo commit), la portada suma dos ejemplos, con su texto
+redactado en cada idioma en el mismo paso:
+
+- **«Planes de suscripción» / «Subscription plans»** (`planes-suscripcion.csv`, cinco categorías);
+- **«Segmentos de clientes» / «Customer segments»** (`segmentos-clientes.csv`, sin objetivo).
+
+Los dos CSV de `public/datasets/` son idénticos a los del kit (`cmp`). `EXAMPLES` se exporta para
+probarlo.
+
+**Pruebas nuevas** (`components.test.tsx`):
+
+- cada archivo de `EXAMPLES` existe en `public/datasets/` (lo que sirve la app) y en el kit: un
+  nombre mal escrito sería un 404 para quien pulse el botón;
+- los dos botones nuevos piden SU archivo y lo cargan con su nombre.
+
+**e2e:** el happy path de `multiclase.spec.ts` y el de `agrupar.spec.ts` entran ahora por el botón de
+la portada, en vez de subir el archivo del kit (es el mismo CSV).
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`):
+
+| Gate | Mutación | Rojo (lo que nombró) | Verde |
+| --- | --- | --- | --- |
+| Cada ejemplo existe | `segmento-clientes.csv` en `EXAMPLES` | «public/datasets/segmento-clientes.csv» | 21 de 21 |
+| Cada botón pide su archivo | todos los botones piden `EXAMPLES[0].file` | «planes-suscripcion.csv» | 21 de 21 |
+
+**Medición después de los botones** (copia tipo CI, LHCI 0.15.1, 3 corridas, mediana): script en
+`/` 252.917 B (+209 B), LCP simulado 3.072 ms (margen 12,2 %). Sobre esa colección, los tres pasos
+del job pasan: `lhci assert` del budget, `lhci assert` de categorías y `lighthouse-margen` («✓
+ninguna mediana a menos del 10 %»).
+
+**Verde** (2026-10-05):
+
+- `pnpm lint` y `pnpm typecheck`: limpios;
+- `pnpm test`: 659 de 659 en 56 archivos (el motor sigue al 97,42 % de sentencias y 98,96 % de
+  líneas);
+- e2e sobre el build de producción con los botones: `multiclase`, `agrupar`, `happy-path`,
+  `reduced-motion-app` y `regresion`, 22 de 22 al primer intento.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre
