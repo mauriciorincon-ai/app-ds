@@ -1234,6 +1234,47 @@ tocó.
 **Verde** (2026-10-05): `pnpm lint` y `pnpm typecheck` limpios; `pnpm test` 674 de 674; e2e
 `agrupar` y `agrupar-score` sobre el build de producción, 8 de 8 al primer intento.
 
+### Decimocuarto commit: los documentos de la F3
+
+- **Manual** (`docs/MANUAL-DE-USO.md`):
+  - dos secciones nuevas, «Clasificar en varias categorías» y «Agrupar filas parecidas, sin
+    objetivo», con qué hace, cómo se usa, cómo leer el resultado y sus límites;
+  - dos tablas del diccionario: varias categorías (6 términos) y agrupar (11 términos). El baseline
+    dice que al agrupar no hay;
+  - cinco preguntas frecuentes, entre ellas «¿por qué no hay veredicto contra un baseline al
+    agrupar?» y la muestra del jerárquico (decisión 8);
+  - la fila 007 del historial;
+  - **ocho frases que este sprint volvió falsas**, corregidas con su sprint de origen: «esta versión
+    todavía no la entrena», «llegan en una próxima versión», «aún no se usan»…
+- **Guía v4** (`docs/GUIA-DE-PRUEBA.html`, clave `guia-ds:s7:`):
+  - hereda las 49 y suma el bloque H (varias categorías, 8 pruebas) y el bloque I (agrupar, 8), con
+    los «Esperado» escritos con los textos y cifras reales del build de producción (cinco
+    recorridos de reconocimiento con Playwright);
+  - **mejoradas en S7:** F1, G5 y E4. Las del S6 pasan a regresión;
+  - **⭐ gate H2: 12** (4 del S5, 4 del S6 y 4 del S7: H2, I2, I7, I8);
+  - **⭐⭐ corto: 6 paradas, unos 20 minutos** (F3, G4, G5, H2, I2, F8), con un chip «N de 6» y
+    un cuadro que dice qué deja fuera y por qué (lo que la CI verifica por otro camino, y las otras
+    seis ⭐). La parada del brochure re-armado se suma en la F4, cuando exista el brochure;
+  - **comprobada en un navegador** (Chromium, 360 y 1280 px). Cada filtro da su cuenta («todo»
+    0/65, corto 0/6, ⭐ 0/12, nuevo S7 0/16, mejoradas 0/3, regresión S6 0/10); una casilla se
+    guarda bajo la clave nueva; sin desborde lateral y sin errores de consola. El cuadro del corto y
+    la prueba H2 a 360 px, leídos como imagen;
+- **ADR 015** (varias categorías como tercera tarea), **016** (agrupar sin objetivo) y **017** (fuga
+  por clase con soporte mínimo, D8). Citan al 014 sin editarlo. El export pasa a 18 ADR.
+- **`design-system.md`:** «Añadidos Sprint 007» (los símbolos ● / ⚠ / ○ y ◆ reservado, el selector,
+  la TaskCard, la tarjeta del plan de agrupar, las dos pantallas de resultados, R9 ampliado a los
+  conteos, puntuar) y la jerarquía de Resultados.
+- **`design-sync/`:** dos tarjetas nuevas (`varias-categorias.html` y `agrupar.html`) con los datos
+  reales de los ejemplos, leídas como imagen (sin errores ni desborde), y el README del bundle.
+  `project.json` no cambia: se publica en el Acto 2, después del ⭐⭐.
+- **README del kit:** los dos archivos nuevos y los botones.
+
+**Casilla 4 sobre los documentos tocados** (promesa aplazada: «todavía no», «aún no», «por ahora»,
+«más adelante», «próxima versión», «podrás»…): las coincidencias que quedan son historia («ya no te
+dice «llega en una próxima versión»», el historial de la guía) o conducta de hoy («mientras tanto…
+esperan», «podrás correrlos»). Una heredada del S3 queda para la auditoría: manual, «Publicar el
+modelo para que otros lo usen llegará más adelante».
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

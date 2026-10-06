@@ -9,8 +9,9 @@
 Probeta DS te ayuda a construir un modelo de predicción a partir de tus datos y, sobre todo, te dice
 **con franqueza si ese modelo sirve o no**. Está pensada para profesionales que no son científicos de
 datos: tú traes una tabla, eliges qué quieres predecir, y la app entrena un modelo y te da un
-**veredicto honesto**. Todo ocurre **dentro de tu navegador** — tus datos nunca se suben a ningún
-servidor.
+**veredicto honesto**. Si no tienes nada que predecir, también puede **encontrar grupos de filas
+parecidas** y decirte cuánto creerles. Todo ocurre **dentro de tu navegador** — tus datos nunca se
+suben a ningún servidor.
 
 ## Primeros pasos
 
@@ -31,10 +32,12 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      archivo_) o probar con uno de los **ejemplos** incluidos.
   2. **Configuración → elige qué predecir.** Verás una vista previa de tu tabla y, en el menú _¿Qué
      quieres predecir?_, seleccionas la columna objetivo. Desde el Sprint 005 puedes elegir
-     **cualquier columna**: la app te dice qué tipo de predicción sería. Esta versión entrena las de
-     **dos categorías** (sí/no, 0/1, aprobado/rechazado…) y, desde el Sprint 006, las **cantidades**
-     (un precio, un consumo, un tiempo: ver _Estimar una cantidad_). Si alguna columna parece una
-     fecha, la app te avisa (en esta versión no se usa para el análisis).
+     **cualquier columna**: la app te dice qué tipo de predicción sería. Se entrenan las de **dos
+     categorías** (sí/no, 0/1, aprobado/rechazado…), desde el Sprint 006 las **cantidades** (un
+     precio, un consumo, un tiempo: ver _Estimar una cantidad_) y desde el Sprint 007 las de **varias
+     categorías** (ver _Clasificar en varias categorías_). Y si no quieres predecir nada, la primera
+     opción del menú es **agrupar filas parecidas** (ver _Agrupar filas parecidas, sin objetivo_). Si
+     alguna columna parece una fecha, la app te avisa: las fechas no se usan para el análisis.
   3. **Pulsa _Entrenar modelos_.** La primera vez tarda unos segundos mientras se prepara el motor
      de análisis; verás el progreso paso a paso.
   4. **Resultados → lee el veredicto.** Arriba, en grande, aparece el veredicto:
@@ -62,11 +65,12 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Limitaciones conocidas (Sprint 001):**
   - Solo predicción de **dos categorías** (clasificación binaria). _Desde el Sprint 006 también se
-    estiman cantidades._
+    estiman cantidades, y desde el Sprint 007 se clasifica en varias categorías y se agrupa sin
+    objetivo._
   - Tamaño máximo del archivo: **5 MB o 50 000 filas**. Por encima, la app avisa (no se cuelga).
   - El chequeo de fuga es una **ayuda honesta, no una garantía**: atrapa los casos evidentes, no
     todos.
-  - Las columnas de fecha se **detectan y avisan**, pero aún no se usan para el análisis.
+  - Las columnas de fecha se **detectan y avisan**, pero no se usan para el análisis.
   - Formato admitido: **CSV** (con cabecera). Los valores vacíos, `NA`, `null`, etc. se tratan como
     faltantes.
 
@@ -222,9 +226,11 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Antes de entrenar (Configuración):**
   - **Tipo de predicción:** al elegir la columna, una tarjeta te dice qué tipo de predicción sería y
-    por qué (por ejemplo, _«2 valores distintos → clasificación binaria»_). Si es de otro tipo
-    (varias categorías), te lo dice: esta versión todavía no la entrena, pero la columna no se
-    esconde. _Desde el Sprint 006, las cantidades sí se entrenan._
+    por qué (por ejemplo, _«2 valores distintos → clasificación binaria»_). En el Sprint 005 solo se
+    entrenaban las de dos categorías; la columna de otro tipo no se escondía, y la tarjeta lo decía.
+    _Desde el Sprint 006 se entrenan las cantidades y desde el Sprint 007 las varias categorías. Una
+    columna que no sirve como objetivo (un solo valor, o tantos valores distintos que parece un
+    identificador) ofrece **«Agrupar filas parecidas en su lugar»**._
   - **Quién compite:** otra tarjeta reparte los modelos en tres grupos, cada uno con su razón:
     - **Nivel 1 · ahora:** los que caben en unos 5 segundos de cálculo en un computador de
       escritorio (en un móvil puede tardar el doble o más).
@@ -284,8 +290,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     lo dice y te sugiere más filas u otras columnas.
 
 - **Limitaciones conocidas (Sprint 005):**
-  - Solo se entrenan objetivos de **dos categorías**; varias categorías y cantidades llegan en una
-    próxima versión. _Las cantidades llegaron en el Sprint 006._
+  - En el Sprint 005 solo se entrenaban objetivos de **dos categorías**. _Las cantidades llegaron en
+    el Sprint 006 y las varias categorías en el Sprint 007._
   - Con **muestras pequeñas** (menos de 200 filas) los puntajes de validación cruzada varían mucho;
     la app lo avisa.
   - Los tiempos son **estimaciones**: tu equipo puede tardar distinto, sobre todo un móvil.
@@ -307,8 +313,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      puede saber si son **categorías** (como una nota del 1 al 5) o **una cantidad**, y te lo
      **pregunta**, con la lectura más probable marcada con ★ _Sugerida_:
      - **Una cantidad** → se entrena la liga que estima el número.
-     - **Categorías** → es una predicción de varias clases, que esta versión todavía no entrena (y
-       te lo dice).
+     - **Categorías** → se entrena la liga de varias categorías (desde el Sprint 007: ver
+       _Clasificar en varias categorías_).
      - Puedes **cambiar la respuesta** cuando quieras.
   3. **Pulsa _Entrenar modelos_.** La liga de estimar reúne 11 modelos (los mismos árboles, boosting,
      vecinos y red neuronal de la liga, más tres rectas: lineal, Ridge y Lasso). Como al clasificar,
@@ -354,7 +360,154 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - La unidad sale **solo del nombre** de la columna; si no la reconoce, no la inventa.
   - Árboles, bosques y vecinos **no estiman por fuera** del rango que vieron al entrenar.
   - La narración con IA no cubre estimar (sí el texto estándar).
-  - Varias categorías (multiclase) llegan en una próxima versión.
+  - _Las varias categorías llegaron en el Sprint 007._
+
+### Clasificar en varias categorías · desde Sprint 007
+
+- **Qué hace:** si la columna que quieres predecir tiene **entre 3 y 20 categorías** —un plan
+  (básico, estándar, premium…), una región, un tipo de producto—, la app arma la misma liga honesta y te
+  dice si el modelo acierta **en cada categoría** mejor que una regla simple, y **dónde se confunde**.
+
+- **Cómo se usa:**
+  1. **Elige la columna** (o pulsa el ejemplo **«Planes de suscripción»** en el inicio). La tarjeta
+     dice _«5 categorías distintas → clasificación en varias categorías»_ y _«Vas a clasificar en 5
+     categorías»_. Si la columna tiene **más de 20** valores distintos, la app no la toma por
+     categorías (parece un identificador o texto libre) y te ofrece **agrupar filas parecidas** en su
+     lugar.
+  2. Si la app te preguntó **«¿categorías o una cantidad?»** y respondes **Categorías**, también
+     llegas aquí.
+  3. **Pulsa _Entrenar modelos_.** Compiten los mismos 14 modelos de la liga, cada uno en su forma
+     para varias categorías, con la misma validación cruzada y la misma regla del más simple entre
+     empatados.
+
+- **Cómo leer el resultado:**
+  - **La métrica que decide es la exactitud balanceada:** de cada categoría, qué parte acierta, en
+    promedio. Cada categoría pesa igual aunque tenga pocas filas, así que el modelo no puede ganar
+    acertando solo la más común. La pantalla te dice cuánto daría **adivinar al azar** (con 5
+    categorías, 0.20) y que 1.00 sería acertar siempre.
+  - **El veredicto:** compara tu modelo con dos baselines, **la categoría más frecuente** y una
+    **regresión logística**. Si la diferencia es menor que 0.01, **empata**; si pierde, **NO
+    supera**, y te lo dice de frente.
+  - **Las otras métricas:** el **F1 macro**, la **exactitud** a secas (que puede engañar si una
+    categoría domina), la **pérdida logarítmica** y el **AUC**. Los modelos que deciden la categoría
+    sin dar probabilidades (Ridge y el SVM lineal) muestran «—» en las dos últimas: la app no inventa
+    una cifra.
+  - **La matriz de confusión:** cada fila es la categoría real y cada columna la que predijo el
+    modelo. Los aciertos (la diagonal) llevan **✓**; todo lo demás son confusiones. Con muchas
+    categorías, la tabla se desplaza dentro de su propio recuadro y los nombres largos se recortan
+    (el nombre completo aparece al pasar el puntero). Debajo, una frase te dice **la confusión más
+    frecuente**, con su conteo: _«filas de “A” que el modelo tomó por “B”»_.
+  - **Por categoría:** una tabla con cómo le va al modelo en cada categoría y cuántas filas de
+    prueba tiene. Todo esto se calcula sobre el **conjunto de prueba**.
+  - **El porqué:** las barras miden cuánto baja la exactitud balanceada si se rompe la relación de
+    cada variable con el objetivo. Con varias categorías una variable **no empuja en una sola
+    dirección** (puede volver más probable una categoría y menos otra), y la app lo dice en vez de
+    dibujar una flecha. La **narración con IA no se ofrece** con varias categorías: el texto estándar,
+    que sale de los mismos números, sí está.
+
+- **La fuga, por categoría:** la app busca columnas que separan **una categoría** del resto casi a
+  la perfección y nombra las dos. En el kit de prueba, por ejemplo: _«La columna
+  “cargo_corporativo_usd” separa casi a la perfección la categoría “empresa” del resto»_. Para no dar falsas alarmas con pocas filas, solo mira una
+  categoría si **ella y el resto tienen al menos 5 filas con valor** en esa columna. _Desde el Sprint
+  007, la clasificación en dos categorías usa la misma regla._
+
+- **Si una categoría tiene muy pocas filas:** la validación cruzada necesita al menos **2 filas de
+  cada categoría** en el entrenamiento. Si alguna no llega, la app no entrena y te dice **cuál** es:
+  prueba con más filas o junta las categorías más raras en una sola.
+
+- **Usar el modelo:** al puntuar un CSV nuevo se suman dos columnas: **`<tu columna>_predicho`** (la
+  categoría) y **`<tu columna>_probabilidad`** (qué tan seguro está el modelo de **esa** categoría).
+  Con varias categorías esa probabilidad puede ser baja aunque la predicha sea la más probable, y la
+  pantalla lo explica. Si el modelo no da probabilidades, la segunda columna no se incluye. Exportar e
+  importar funcionan igual que siempre; el resumen del import dice cuántas categorías trae.
+
+- **Limitaciones conocidas (Sprint 007):**
+  - De **3 a 20 categorías**. Más de 20 valores distintos no se toman por categorías.
+  - La narración con IA no cubre varias categorías (sí el texto estándar).
+
+### Agrupar filas parecidas, sin objetivo · desde Sprint 007
+
+- **Qué hace:** a veces no hay nada que predecir: quieres saber si tus clientes, productos o casos
+  **forman grupos** y qué distingue a cada uno. La app prueba cuatro formas de agrupar, elige cuántos
+  grupos hay y, sobre todo, te dice **si esos grupos existen de verdad** o si solo son una manera de
+  partir la tabla.
+
+- **Cómo se usa:**
+  1. **Elige _«Sin objetivo: agrupar filas parecidas»_**, la primera opción del menú _¿Qué quieres
+     predecir?_ (o pulsa el ejemplo **«Segmentos de clientes»** en el inicio). Si elegiste una
+     columna que no sirve como objetivo, la tarjeta te ofrece **«Agrupar filas parecidas en su
+     lugar»**.
+  2. **Revisa el plan.** Una tarjeta te dice **con qué columnas se mide el parecido** (las numéricas,
+     si hay al menos dos; si no, todas), cuáles **solo describen** los grupos (las de categorías) y
+     cuáles **no entran** y por qué (un identificador, una fecha).
+  3. **Quién compite:** cuatro agrupadores que prueban de **2 a 10 grupos** sobre todas tus filas.
+     **K-Means** y el **jerárquico** eligen cuántos grupos con la _silueta_; la **mezcla gaussiana**
+     (GMM), con el _BIC_; **HDBSCAN** no necesita que se lo digan: los encuentra por densidad.
+  4. **Pulsa _Agrupar filas_.**
+
+- **Cómo leer el resultado:**
+  - **Arriba, la lectura, que sirve para creer.** Al agrupar **no hay conjunto de prueba ni
+    veredicto contra un baseline**: no hay respuesta correcta con la que comparar. La app hace dos
+    cosas en su lugar:
+    - **Compara con datos sin estructura.** Agrupa con el mismo agrupador datos al azar en la misma
+      caja que los tuyos, y exige que tus filas se separen mejor por al menos **0.10** de puntaje.
+    - **Repite el agrupamiento.** Vuelve a agrupar el **80 %** de tus filas **10 veces** y mira si
+      salen los mismos grupos: tienen que parecerse en al menos **0.7 de 1**.
+
+    Con eso dice una de tres cosas, con su símbolo: **● «Los grupos existen»** (pasan las dos),
+    **⚠ «Hay k grupos, pero son frágiles»** (se separan, pero cambian al repetir: léelos como una
+    partición posible, no como un hallazgo) o **○ «No hay estructura de grupos»** (no se separan
+    mejor que el azar; los grupos de abajo son una forma de partir la tabla, no un hallazgo).
+  - **Qué distingue a cada grupo:** una tarjeta por grupo con su tamaño, **las columnas que más lo
+    separan** y su valor en las unidades de tus columnas, junto al promedio de los grupos. Cuánto
+    separa una columna se mide de 0 a 1 (con _η²_ en las numéricas y la _V de Cramér_ en las de
+    categorías). Las demás columnas están en **«Ver las otras columnas»**.
+  - **Fuera de todo grupo:** HDBSCAN puede dejar filas que no caen en ninguna zona densa, sin
+    forzarlas a un grupo. Aparecen en su propia tarjeta.
+  - **La tabla de los agrupadores, que sirve para elegir:** cuántos grupos encontró cada uno y cómo
+    los eligió, su **silueta** (de −1 a 1: cuánto más cerca está cada fila de su grupo que del grupo
+    vecino), la parte de filas **fuera de grupo** y su **puntaje** = silueta × (1 − la parte fuera de
+    grupo), para que HDBSCAN no gane dejando fuera las filas difíciles.
+  - **★ Ganador por consenso:** gana el número de grupos en el que **coinciden más agrupadores** y,
+    entre ellos, el de mayor puntaje. Si cada agrupador encontró un número distinto de grupos, no hay
+    consenso: gana el de mayor puntaje y la marca dice **★ Ganador por puntaje**. Puedes **elegir
+    otro**: la lectura pasa a ser la suya, con la etiqueta **◆ Elegido por ti**, y **«Volver al
+    ganador»** lo restituye.
+
+- **Con más de 8.000 filas, el jerárquico usa una muestra:** se ajusta sobre **8.000 filas al azar**
+  (siempre las mismas para tus datos) y asigna el resto al grupo más cercano. Lo hace para no agotar
+  la memoria del navegador, sobre todo en un teléfono, sin cerrar la pestaña. Los otros tres usan
+  todas tus filas. La app te lo dice **antes de agrupar**, junto a la lectura si el jerárquico gana,
+  en su fila de la tabla, en la model card y en el archivo exportado. Con datos grandes, el
+  jerárquico puede quedar para el **Nivel 2**.
+
+- **Tus filas con su grupo:** **«Descargar filas con su grupo»** te da tu tabla con una columna más,
+  **`grupo`**, con el número de grupo de cada fila (desde 1) o «fuera de todo grupo». Se arma en tu
+  navegador en el momento y no se guarda en ningún otro lado: ni en el resultado, ni en la model card,
+  ni en el archivo exportado.
+
+- **Asignar filas nuevas:** pulsa **«Asignar filas nuevas»** y sube un CSV con las columnas que
+  forman el parecido (no hay objetivo que quitar). Cada fila recibe su grupo con una regla que la app
+  te dice:
+  - K-Means y el jerárquico: el grupo cuyo **centro está más cerca**;
+  - la mezcla gaussiana: el grupo **más probable**, con su probabilidad (columna
+    `grupo_probabilidad`);
+  - HDBSCAN: el centro más cerca, salvo que la fila quede **más lejos que el miembro más lejano** de
+    ese grupo: entonces queda «fuera de todo grupo».
+
+  La app también te dice qué parte de tus propias filas cae en el mismo grupo con esa regla. El
+  archivo exportado lleva el preprocesamiento y la regla (los centros de los grupos), **sin ninguna
+  de tus filas**.
+
+- **Limitaciones conocidas (Sprint 007):**
+  - Los grupos **describen** tus filas: no prueban que haya una causa detrás, ni que se repitan en
+    otros datos.
+  - La silueta se mide sobre una **muestra de hasta 2.000 filas**, la misma para todos los
+    agrupadores.
+  - Con más de 8.000 filas, el jerárquico se ajusta sobre una muestra (ver arriba).
+  - Las fechas no se usan para agrupar.
+  - La fuga no aplica (no hay objetivo que una columna pueda delatar) y la narración con IA no se
+    ofrece; la model card lo dice.
 
 ## Diccionario de términos
 
@@ -365,7 +518,7 @@ cuando una te frene.
 
 | Término                    | Qué significa                                                                                                                                                                                                                                                                 |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Baseline** (línea base)  | Las reglas simples contra las que se mide tu modelo. Al clasificar: responder siempre lo más frecuente (clase mayoritaria) y una regresión logística. Al estimar: adivinar siempre la mediana y una regresión lineal. Si tu modelo no supera a la mejor de las dos, no sirve. |
+| **Baseline** (línea base)  | Las reglas simples contra las que se mide tu modelo. Al clasificar (en dos o en varias categorías): responder siempre lo más frecuente (clase mayoritaria) y una regresión logística. Al estimar: adivinar siempre la mediana y una regresión lineal. Si tu modelo no supera a la mejor de las dos, no sirve. Al agrupar no hay baseline: no hay respuesta que adivinar. |
 | **Veredicto**              | La comparación franca entre tu modelo y el mejor de esos baselines: lo supera, empata o pierde.                                                                                                                                                                               |
 | **Entrenamiento y prueba** | La app parte tus datos en dos: con tres cuartas partes aprende y con la cuarta parte restante, que nunca vio, se examina. Por eso el número del veredicto es real.                                                                                                            |
 | **Liga**                   | Todos los modelos que compiten entre sí. Se elige al ganador sin mirar la prueba; puedes elegir otro, y queda registrado.                                                                                                                                                     |
@@ -405,6 +558,33 @@ cuando una te frene.
 | **La mediana como baseline**   | Adivinar siempre el valor del medio de tu columna. Es la constante que menos se equivoca en promedio, por eso es el rival honesto (no el promedio). |
 | **Estimado frente a real**     | El gráfico que pone cada fila de la prueba según su valor real y lo que estimó el modelo. Cuanto más cerca de la diagonal, mejor.                   |
 | **Unidad**                     | La que la app lee del final del nombre de tu columna (`_kwh`, `_usd`…). Si no la reconoce, no la inventa.                                           |
+
+**Sobre varias categorías** (desde Sprint 007)
+
+| Término                   | Qué significa                                                                                                                                         |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Exactitud balanceada**  | De cada categoría, qué parte acierta el modelo, en promedio. Cada categoría pesa igual aunque tenga pocas filas. Es la métrica que decide.          |
+| **Azar**                  | Lo que daría adivinar sin mirar los datos: con k categorías, la exactitud balanceada del azar es 1/k (con 5, 0.20).                                  |
+| **F1 macro**              | El F1 de cada categoría, promediado sin pesar por su tamaño.                                                                                          |
+| **Pérdida logarítmica**   | Cuánto castiga el modelo estar muy seguro y equivocarse. Menor es mejor. Solo existe si el modelo da probabilidades.                                 |
+| **Matriz de confusión**   | La tabla de categoría real (filas) contra categoría predicha (columnas). La diagonal (✓) son los aciertos; el resto, las confusiones.                |
+| **Fuga por categoría**    | Una columna que separa casi a la perfección **una** categoría del resto. Se mira solo si esa categoría y el resto tienen al menos 5 filas con valor. |
+
+**Sobre agrupar** (desde Sprint 007)
+
+| Término                         | Qué significa                                                                                                                                                  |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Agrupador**                   | Un método que reparte las filas en grupos de filas parecidas. La app usa cuatro: K-Means, el jerárquico, la mezcla gaussiana (GMM) y HDBSCAN.                |
+| **Silueta**                     | De −1 a 1: cuánto más cerca está cada fila de su grupo que del grupo vecino. Cerca de 0, los grupos se tocan.                                                |
+| **BIC**                         | La medida con que la mezcla gaussiana elige cuántos grupos: premia explicar bien los datos y castiga usar más grupos de los necesarios.                      |
+| **Densidad**                    | Cómo HDBSCAN encuentra los grupos: busca zonas donde las filas se amontonan, sin que le digas cuántas hay.                                                    |
+| **Fuera de todo grupo**         | Las filas que HDBSCAN no pone en ningún grupo porque no caen en ninguna zona densa. No se fuerzan.                                                            |
+| **Puntaje**                     | Silueta × (1 − la parte de filas fuera de grupo). Sirve para comparar agrupadores sin premiar al que deja fuera las filas difíciles.                         |
+| **Consenso**                    | El número de grupos en el que coinciden más agrupadores (al menos dos). Entre ellos gana el de mayor puntaje (★). Si no coinciden, gana el de mayor puntaje. |
+| **Datos sin estructura**        | Datos al azar en la misma caja que los tuyos. Si tus filas no se separan mejor que ellos (por al menos 0.10 de puntaje), no hay estructura de grupos.        |
+| **Estabilidad**                 | Si al volver a agrupar el 80 % de tus filas, 10 veces, salen los mismos grupos. Se mide de 0 a 1; hace falta al menos 0.7.                                   |
+| **η² y V de Cramér**            | De 0 a 1: cuánto de la variación de una columna se explica por el grupo. η² en las numéricas, V de Cramér en las de categorías.                              |
+| **Muestra del jerárquico**      | Con más de 8.000 filas, el jerárquico se ajusta sobre 8.000 al azar y asigna el resto al grupo más cercano, para no agotar la memoria del navegador.        |
 
 **Sobre las advertencias**
 
@@ -467,6 +647,29 @@ cuando una te frene.
   equivoca en promedio (el MAE), y para esa medida la constante que menos se equivoca es la mediana.
   Comparar contra el promedio le regalaría al modelo una victoria contra un rival más débil.
 
+- **¿Por qué no hay veredicto contra un baseline al agrupar?** Porque no hay una respuesta correcta
+  con la que comparar: sin objetivo, no hay nada que «adivinar» y, por lo tanto, ningún conjunto de
+  prueba ni regla simple que superar. Lo que sirve para creer es otra cosa: que tus filas se separen
+  **mejor que datos sin estructura** y que los grupos **se repitan** al volver a agrupar partes de tus
+  filas. Si no pasa lo primero, la app te dice «no hay estructura de grupos»; si no pasa lo segundo,
+  que los grupos son frágiles.
+- **¿Por qué el jerárquico usa una muestra si tengo más de 8.000 filas?** Porque el agrupamiento
+  jerárquico compara cada fila con todas las demás: con muchas filas necesita más memoria de la que
+  un navegador puede dar, sobre todo en un teléfono, y la pestaña se cerraría. Por eso se ajusta sobre
+  8.000 filas al azar (siempre las mismas para tus datos) y asigna el resto al grupo más cercano. Los
+  otros tres agrupadores usan todas tus filas, y la app te lo dice antes de agrupar y donde se lee el
+  resultado.
+- **«Los grupos existen», ¿quiere decir que son reales?** Quiere decir que tus filas forman grupos
+  que se separan mejor que el azar y que se repiten. No dice **por qué** existen ni que vayan a
+  aparecer en otros datos: eso lo juzgas tú, mirando qué distingue a cada grupo.
+- **¿Por qué al clasificar en varias categorías decide la exactitud balanceada y no la exactitud?**
+  Porque si una categoría es mucho más común, un modelo que la responde siempre tiene buena
+  exactitud sin aprender nada. La exactitud balanceada pesa igual cada categoría, así que eso no le
+  alcanza.
+- **La app me dice que una categoría tiene muy pocas filas, ¿qué hago?** La validación cruzada
+  necesita al menos dos filas de cada categoría en el entrenamiento para comparar modelos con
+  honestidad. Consigue más filas de esa categoría o júntala con otra parecida en tu CSV.
+
 ## Historial
 
 | Sprint | Features añadidas a este manual                                                                                                                                                                                                                                                                                      |
@@ -478,3 +681,4 @@ cuando una te frene.
 | 004    | **Diccionario de términos** (pedido en el gate ⭐, prueba E3) + aviso de CSV con punto y coma.                                                                                                                                                                                                                       |
 | 005    | La liga honesta (14 modelos con validación cruzada, ganador por la regla de un error estándar, prueba a pedido y etiquetada, elección manual «elegido por ti», tipo de predicción de cada columna, quién compite por nivel, ficha de cada modelo, Nivel 2 cancelable).                                               |
 | 006    | Estimar una cantidad (liga de 11 modelos que estiman, veredicto en las unidades de la columna contra la mediana y la regresión lineal, gráfico estimado frente a real, la pregunta «¿categorías o una cantidad?», `<columna>_estimado` al puntuar, avisos de sesgo y atípicos) + diccionario y preguntas de estimar. |
+| 007    | Clasificar en varias categorías (de 3 a 20, la liga en exactitud balanceada, matriz de confusión con ✓, fuga que nombra la columna y la categoría, `<columna>_predicho` y `_probabilidad`) y agrupar filas parecidas sin objetivo (cuatro agrupadores, ganador por consenso, lectura contra datos sin estructura y estabilidad, qué distingue a cada grupo, «fuera de todo grupo», la muestra del jerárquico, tus filas con su grupo, asignar filas nuevas) + dos ejemplos en el inicio, diccionario y preguntas de las dos. |

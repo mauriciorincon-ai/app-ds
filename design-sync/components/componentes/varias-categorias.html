@@ -1,0 +1,91 @@
+<!-- @dsCard group="Componentes · S7" name="Varias categorías — veredicto, matriz de confusión y fuga por categoría" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clasificar en varias categorías — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif; box-sizing: border-box;
+  }
+  .lead { max-width: 68ch; font-size: 14px; color: #586172; margin: 0 0 20px; }
+  .lead h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; color: #14181f; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .card { max-width: 680px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); }
+  .verdict { display: flex; gap: 12px; align-items: flex-start; }
+  .verdict .mark { font-size: 24px; }
+  .verdict h2 { font-size: 20px; font-weight: 600; margin: 0; }
+  .verdict p { font-size: 14px; color: #586172; margin: 4px 0 0; }
+  .beats .mark, .beats h2 { color: #1c7c4a; }
+  .leak { border-left: 4px solid #8a5a0c; }
+  .leak .mark, .leak h2 { color: #8a5a0c; }
+  .eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #586172; margin: 0 0 8px; }
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 680px; }
+  .tile { background: #f2f2ec; border-radius: 4px; padding: 10px; }
+  .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #586172; }
+  .tile .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .guide { max-width: 68ch; font-size: 14px; color: #586172; margin: 8px 0 20px; }
+  .scroll { overflow-x: auto; border: 1px solid #e4e4dc; border-radius: 6px; }
+  table { border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; color: #586172; padding: 6px 8px; border-bottom: 1px solid #e4e4dc; white-space: nowrap; }
+  td { padding: 6px 8px; border-bottom: 1px solid #e4e4dc; text-align: right; }
+  td.hit { background: rgb(28 124 74 / .12); font-weight: 600; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+  <div class="lead">
+    <h1>Clasificar en varias categorías <span class="mono" style="font-size:13px">· S7 · ADR 015 y 017</span></h1>
+    La métrica que decide es la <b>exactitud balanceada</b>: cada categoría pesa igual y el azar da
+    exactamente 1/K. La matriz K×K marca los aciertos con <b>✓</b> (y «acierto:» para el lector de
+    pantalla) y se desplaza dentro de su propio recuadro. Una fuga que delata <b>una</b> categoría
+    tiene su propio titular: la cifra global puede quedar lejos de perfecta.
+  </div>
+
+  <div class="card verdict beats">
+    <span class="mark" aria-hidden="true">▲</span>
+    <div>
+      <h2>«Logística balanceada» supera al baseline</h2>
+      <p>por +0.06 en Exactitud balanceada — 0.60 frente a 0.54 del mejor baseline</p>
+    </div>
+  </div>
+
+  <p class="eyebrow">Métrica principal: exactitud balanceada</p>
+  <div class="tiles mono">
+    <div class="tile"><div class="k">Exactitud balanceada</div><div class="v">0.60</div></div>
+    <div class="tile"><div class="k">F1 macro</div><div class="v">0.55</div></div>
+    <div class="tile"><div class="k">Exactitud</div><div class="v">0.60</div></div>
+    <div class="tile"><div class="k">Pérdida log.</div><div class="v">0.90</div></div>
+    <div class="tile"><div class="k">AUC uno contra el resto</div><div class="v">0.89</div></div>
+  </div>
+  <p class="guide">Mira la exactitud balanceada: de cada categoría, qué parte acierta, en promedio. Con 5 categorías, adivinar al azar da 0.20; 1.00 sería acertar siempre.</p>
+
+  <div class="card">
+    <p style="font-size:14px;font-weight:600;margin:0 0 8px">Matriz de confusión (prueba)</p>
+    <p style="font-size:13px;color:#586172;margin:0 0 8px">Cada fila es la categoría real; cada columna, la que predijo el modelo. ✓ marca los aciertos.</p>
+    <div class="scroll" role="region" tabindex="0" aria-label="Matriz de confusión (prueba)">
+      <table class="mono">
+        <thead><tr><th>Real ↓ · Predicha →</th><th>basico</th><th>empresa</th><th>estandar</th><th>estudiante</th><th>premium</th></tr></thead>
+        <tbody>
+          <tr><th>basico</th><td class="hit">✓ <span class="sr">acierto:</span>14</td><td>0</td><td>1</td><td>4</td><td>0</td></tr>
+          <tr><th>empresa</th><td>0</td><td class="hit">✓ <span class="sr">acierto:</span>4</td><td>0</td><td>0</td><td>2</td></tr>
+          <tr><th>estandar</th><td>2</td><td>1</td><td class="hit">✓ <span class="sr">acierto:</span>3</td><td>1</td><td>2</td></tr>
+          <tr><th>estudiante</th><td>0</td><td>0</td><td>1</td><td class="hit">✓ <span class="sr">acierto:</span>4</td><td>0</td></tr>
+          <tr><th>premium</th><td>0</td><td>5</td><td>1</td><td>0</td><td class="hit">✓ <span class="sr">acierto:</span>5</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:14px;margin:12px 0 0">La confusión más frecuente: filas de «premium» que el modelo tomó por «empresa» (5 en la prueba).</p>
+  </div>
+
+  <div class="card verdict leak">
+    <span class="mark" aria-hidden="true">⚠</span>
+    <div>
+      <h2>Posible fuga de datos — sospechoso</h2>
+      <p>La columna «cargo_corporativo_usd» separa casi a la perfección la categoría «empresa» del resto: podría ser un proxy del objetivo.</p>
+    </div>
+  </div>
+</body>
+</html>

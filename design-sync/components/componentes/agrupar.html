@@ -1,0 +1,85 @@
+<!-- @dsCard group="Componentes · S7" name="Agrupar — la lectura, qué distingue a cada grupo y la tabla de agrupadores" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agrupar filas parecidas — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif; box-sizing: border-box;
+  }
+  .lead { max-width: 68ch; font-size: 14px; color: #586172; margin: 0 0 20px; }
+  .lead h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; color: #14181f; }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .card { max-width: 680px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); }
+  .verdict { display: flex; gap: 12px; align-items: flex-start; }
+  .verdict .mark { font-size: 24px; }
+  .verdict h2 { font-size: 20px; font-weight: 600; margin: 0; }
+  .verdict p { font-size: 14px; color: #586172; margin: 4px 0 0; }
+  .exist .mark, .exist h2 { color: #1c7c4a; }
+  .none .mark, .none h2 { color: #14181f; }
+  .groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 680px; margin-bottom: 16px; }
+  .group { background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 14px; font-size: 13px; }
+  .group h3 { font-size: 14px; margin: 0 0 4px; }
+  .group ul { margin: 6px 0 0; padding-left: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #586172; border-bottom: 1px solid #e4e4dc; padding: 8px; }
+  td { padding: 8px; border-bottom: 1px solid #e4e4dc; vertical-align: top; }
+  tr.win { border-left: 4px solid #0e6e6b; background: rgb(14 110 107 / .05); }
+  .mark-win { display: inline-flex; gap: 4px; align-items: center; color: #0e6e6b; font-size: 12px; font-weight: 600; }
+  .disc { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; background: #0e6e6b; color: #fff; font-size: 10px; align-items: center; justify-content: center; }
+  .rule { font-size: 14px; color: #586172; margin: 4px 0 12px; }
+</style>
+</head>
+<body>
+  <div class="lead">
+    <h1>Agrupar filas parecidas, sin objetivo <span class="mono" style="font-size:13px">· S7 · ADR 016</span></h1>
+    Sin objetivo no hay prueba ni baseline: la <b>lectura</b> ocupa el lugar del veredicto y dice si
+    los grupos existen comparando con datos sin estructura y repitiendo con partes de las filas.
+    <b>●</b> existen · <b>⚠</b> frágiles · <b>○</b> no hay estructura. <b>◆</b> sigue reservado para
+    «Elegido por ti»; <b>★</b> es el ganador, «por consenso» solo si coinciden al menos dos. Las filas
+    que HDBSCAN deja sin grupo van en una tarjeta de borde punteado con ○, «Fuera de todo grupo». Cifras:
+    punto decimal y miles con coma en los dos idiomas.
+  </div>
+
+  <div class="card verdict exist">
+    <span class="mark" aria-hidden="true">●</span>
+    <div>
+      <h2>Los grupos existen: 3 grupos estables</h2>
+      <p>Jerárquico separa tus filas mejor que datos sin estructura en la misma caja: puntaje <span class="mono">0.48</span> frente a <span class="mono">0.23</span>, una diferencia de <span class="mono">0.25</span> (hace falta al menos 0.10). Y los grupos se repiten al volver a agrupar el 80 % de tus filas 10 veces: se parecen en <span class="mono">0.88</span> de 1 (hace falta al menos 0.70).</p>
+    </div>
+  </div>
+
+  <p style="font-size:14px;font-weight:600;margin:0 0 8px">Qué distingue a los 3 grupos</p>
+  <div class="groups">
+    <div class="group"><h3>Grupo 1</h3><div class="mono">120 filas · 40 %</div><ul><li>«gasto_mensual_usd»: <span class="mono">216.6</span> (promedio <span class="mono">250.5</span>)</li><li>«visitas_mes»: <span class="mono">12.00</span></li><li>«canal»: sobre todo «app»</li></ul></div>
+    <div class="group"><h3>Grupo 2</h3><div class="mono">117 filas · 39 %</div><ul><li>«gasto_mensual_usd»: <span class="mono">82.5</span></li><li>«visitas_mes»: <span class="mono">2.56</span></li><li>«canal»: sobre todo «tienda»</li></ul></div>
+    <div class="group"><h3>Grupo 3</h3><div class="mono">63 filas · 21 %</div><ul><li>«gasto_mensual_usd»: <span class="mono">627.1</span></li><li>«visitas_mes»: <span class="mono">4.94</span></li><li>«canal»: sobre todo «tienda»</li></ul></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0;font-size:16px">Los agrupadores: 4</h3>
+    <p class="rule"><span aria-hidden="true">★</span> Consenso: 3 de 4 agrupadores encontraron 3 grupos; entre ellos gana el de mayor puntaje.</p>
+    <table>
+      <thead><tr><th>Agrupador</th><th>Grupos</th><th>Silueta</th><th>Fuera de grupo</th><th>Puntaje</th></tr></thead>
+      <tbody>
+        <tr><td>K-Means</td><td class="mono">5 · silueta</td><td class="mono">0.51</td><td class="mono">—</td><td class="mono">0.51</td></tr>
+        <tr class="win"><td>Jerárquico<br><span class="mark-win"><span class="disc" aria-hidden="true">★</span>Ganador por consenso</span></td><td class="mono">3 · silueta</td><td class="mono">0.48</td><td class="mono">—</td><td class="mono">0.48</td></tr>
+        <tr><td>GMM</td><td class="mono">3 · BIC</td><td class="mono">0.48</td><td class="mono">—</td><td class="mono">0.48</td></tr>
+        <tr><td>HDBSCAN</td><td class="mono">3 · densidad</td><td class="mono">0.48</td><td class="mono">0 %</td><td class="mono">0.48</td></tr>
+      </tbody>
+    </table>
+    <p class="rule" style="margin:12px 0 0">Puntaje = silueta × (1 − la parte fuera de grupo): HDBSCAN no gana dejando fuera las filas difíciles.</p>
+  </div>
+
+  <div class="card verdict none">
+    <span class="mark" aria-hidden="true">○</span>
+    <div>
+      <h2>No hay estructura de grupos</h2>
+      <p>K-Means no separa tus filas mejor que datos sin estructura en la misma caja: puntaje <span class="mono">0.20</span> frente a <span class="mono">0.23</span>. Los 10 grupos de abajo son una forma de partir la tabla, no un hallazgo.</p>
+    </div>
+  </div>
+</body>
+</html>

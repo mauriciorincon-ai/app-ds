@@ -12,6 +12,7 @@ en la app.
 | `rotacion-empleados.csv`    | Un caso donde un modelo simple basta (veredicto de empate honesto).                                                                                  |
 | `credito-fuga-plantada.csv` | Trae una **fuga plantada** (`monto_recuperado`): mira cómo se detecta.                                                                               |
 | `clientes-sucio.csv`        | Datos "reales" sucios: nulos, basura, un ID, una constante y filas duplicadas → mira el **saneamiento transparente** y la alerta de desbalance (S4). |
+| `consumo-energia.csv`, `planes-suscripcion.csv`, `segmentos-clientes.csv` | Estimar una cantidad (S6), clasificar en varias categorías y agrupar sin objetivo (S7): ver sus secciones abajo. |
 
 ## La liga (Sprint 005)
 
@@ -38,8 +39,12 @@ Los tres se regeneran con `node scripts/make-example-datasets.mjs`.
 | `planes-fuga-plantada.csv`       | Igual que `planes-suscripcion.csv`, más una **fuga plantada que delata una sola clase**: `cargo_corporativo_usd` solo tiene valor en el plan «empresa» (se cobra _después_ de contratarlo). La app debe nombrar la columna **y la clase** antes de entrenar; quítala y el ejemplo entrena.                                      |
 | `segmentos-clientes.csv`         | 300 clientes sintéticos **sin objetivo**, con tres grupos plantados que se separan por gasto mensual y visitas al mes (`antiguedad_meses` es ruido común a los tres). `cliente_id` es un identificador: al agrupar, la app lo deja fuera y lo dice.                                                                             |
 | `sin-grupos.csv`                 | 300 mediciones sintéticas de una sola nube (temperatura, humedad, presión y ruido independientes, y una zona al azar). Sirve para ver qué dice la app cuando **no hay grupos**: la tabla de agrupadores se muestra igual, con su lectura franca.                                                                                |
+| `segmentos-grande.csv`           | Los mismos tres grupos de `segmentos-clientes.csv`, con **9 000 filas**. Por encima de 8 000 filas, el agrupamiento jerárquico se ajusta sobre una muestra de 8 000 y asigna el resto al grupo más cercano: la app lo dice antes de agrupar, junto a la lectura y en su fila (prueba I8).                                       |
+| `tiendas-ciudades.csv`           | 120 tiendas sintéticas con ventas, visitas y superficie. `ciudad` toma 30 valores que se repiten: demasiados para ser categorías y no es un identificador. Elegida como objetivo, la app dice que no sirve y ofrece **agrupar filas parecidas en su lugar** (prueba I7).                                                         |
 
-Se regeneran con `node scripts/make-example-datasets.mjs` (la versión de 5 000 filas vive solo en este kit).
+`planes-suscripcion.csv` y `segmentos-clientes.csv` también son botones en la app. Se regeneran con
+`node scripts/make-example-datasets.mjs` (la versión de 5 000 filas, `segmentos-grande.csv` y
+`tiendas-ciudades.csv` viven solo en este kit).
 
 ## Datos nuevos para puntuar
 
