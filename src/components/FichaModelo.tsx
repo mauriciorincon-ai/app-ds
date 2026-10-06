@@ -38,6 +38,11 @@ export type FichaStatus =
   | { kind: "chosen" }
   | { kind: "competitor"; rank: number; total: number }
   | { kind: "failed" }
+  // S7 (AU-S7-16): al agrupar no hay validación cruzada ni liga; el puesto es por
+  // puntaje y «no encontró dos grupos» no es «no concluyó».
+  | { kind: "clusterCompetitor"; rank: number; total: number }
+  | { kind: "clusterNoGroups" }
+  | { kind: "clusterFailed" }
   | { kind: "pending" }
   | { kind: "out"; reason: string }
   | { kind: "baseline" };
@@ -156,8 +161,8 @@ export default function FichaModelo({
               </span>
             )}
             {t(`ficha.status.${status.kind}`, {
-              rank: status.kind === "competitor" ? status.rank : 0,
-              total: status.kind === "competitor" ? status.total : 0,
+              rank: "rank" in status ? status.rank : 0,
+              total: "total" in status ? status.total : 0,
               reason: status.kind === "out" ? status.reason : "",
             })}
           </p>

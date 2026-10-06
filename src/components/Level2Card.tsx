@@ -92,7 +92,9 @@ export function Level2Card({
                 count: baseline.added.length,
                 models: baseline.added.map(short).join(", "),
               })
-            : t(key("descAllRan"))}
+            : // AU-S7-35: al agrupar nadie queda «fuera» (encarrilador.ts), así que
+              // con todo corrido la tarjeta no aparece: estas dos frases son de la liga.
+              t("level2.descAllRan")}
         </p>
 
         {baseline.forceable.length > 0 && (
@@ -140,7 +142,7 @@ export function Level2Card({
             </span>
           </p>
         ) : (
-          <p className="text-sm text-ink-muted">{t(key("nothingToAdd"))}</p>
+          <p className="text-sm text-ink-muted">{t("level2.nothingToAdd")}</p>
         )}
         <div>
           <Button
@@ -153,7 +155,8 @@ export function Level2Card({
               : t("level2.runNothing")}
           </Button>
         </div>
-        <p className="text-xs text-ink-muted">{t("level2.cancelHint")}</p>
+        {/* AU-S7-17: al agrupar, cancelar pierde las filas con su grupo: se dice. */}
+        <p className="text-xs text-ink-muted">{t(key("cancelHint"))}</p>
       </section>
     </Card>
   );

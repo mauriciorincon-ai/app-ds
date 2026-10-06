@@ -16,7 +16,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { ConfigScreen } from "@/components/ConfigScreen";
 import FichaModelo from "@/components/FichaModelo";
-import { topConfusion } from "@/components/MulticlassResults";
+import { ConfusionTable, topConfusion } from "@/components/MulticlassResults";
 import { ResultsScreen } from "@/components/ResultsScreen";
 import { ScoreScreen } from "@/components/ScoreScreen";
 import { MULTICLASS_FICHA_FIELDS } from "@/content/modelos";
@@ -306,6 +306,120 @@ describe("S7: puntuar con varias categorías («<objetivo>_predicho» + su proba
     expect(vi.mocked(downloadTextFile).mock.lastCall?.[1]).toBe(
       "uso_gb_mes,plan_predicho,plan_probabilidad\n3,basico,0.9000\n40,estandar,0.4500\n90,premium,0.6000\n",
     );
+  });
+});
+
+// S7, Fase 2 de la auditoría (AU-S7-33, AU-S7-36): los conteos con miles en las dos
+// lenguas (R9), el porcentaje con el espacio de su idioma, y sin probabilidad no se
+// promete «ordenar por riesgo» (eso es de la binaria).
+describe("S7 (auditoría): cifras y frases de varias categorías", () => {
+  const scoreWith = (
+    predictions: string[],
+    probabilities: number[] | null,
+  ) =>
+    ui(
+      <ScoreScreen
+        meta={{
+          source: "trained",
+          datasetName: "planes-suscripcion.csv",
+          manifest: null,
+          schema: {
+            numeric: ["uso_gb_mes"],
+            categorical: [],
+            target: "plan",
+            classes: ["basico", "estandar", "premium"],
+            task: "multiclase",
+          },
+        }}
+        ready
+        progress={null}
+        scoring={{
+          status: "scored",
+          fileName: "nuevos.csv",
+          table: {
+            headers: ["uso_gb_mes"],
+            rows: predictions.map((_, i) => [String(i)]),
+          },
+          check: { ok: true, missing: [], extra: [], targetPresent: false },
+          score: {
+            task: "multiclase",
+            predictions,
+            probabilities,
+            novelty: { columns: [], affected_rows: 0, n_rows: predictions.length },
+          },
+        }}
+        exportState="idle"
+        onScoreFile={vi.fn()}
+        onScoreAnother={vi.fn()}
+        onBackToResults={vi.fn()}
+        onExit={vi.fn()}
+        onExportModel={vi.fn()}
+      />,
+    );
+
+  it("sin probabilidad, puntuar no habla de ordenar por riesgo", () => {
+    const { container } = scoreWith(["basico", "premium"], null);
+    expect(
+      screen.getByText(
+        "Este modelo decide la categoría pero no da una probabilidad, así que esa columna no se incluye.",
+      ),
+    ).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/riesgo/);
+  });
+
+  it("los mosaicos de puntuar: miles con coma y «%» con espacio no separable", () => {
+    const predictions = [
+      ...Array.from({ length: 1800 }, () => "basico"),
+      ...Array.from({ length: 200 }, () => "premium"),
+    ];
+    const { container } = scoreWith(predictions, null);
+    expect(container.textContent).toContain("1,800 (90\u00a0%)");
+    expect(container.textContent).not.toMatch(/\b1800\b/);
+  });
+
+  it("la matriz escribe 1,800, no 1800", () => {
+    const { container } = ui(
+      <ConfusionTable
+        classes={["basico", "premium"]}
+        matrix={[
+          [1800, 3],
+          [2, 1500],
+        ]}
+      />,
+    );
+    expect(container.textContent).toContain("1,800");
+    expect(container.textContent).toContain("1,500");
+    expect(container.textContent).not.toMatch(/\b1800\b/);
+  });
+
+  it("la model card: la partición, el soporte y la matriz, con miles", () => {
+    const base = multiclassResult();
+    const result = {
+      ...base,
+      nTrain: 7200,
+      nTest: 1800,
+      confusionMatrix: base.confusionMatrix.map((row, i) =>
+        row.map((count, j) => (i === 0 && j === 0 ? 1800 : count)),
+      ),
+      perClass: base.perClass.map((c, i) =>
+        i === 0 ? { ...c, support: 1803 } : c,
+      ),
+    };
+    const md = buildModelCard({
+      locale: "es",
+      datasetName: "planes-suscripcion.csv",
+      cols: 7,
+      numericFeatures: 4,
+      categoricalFeatures: 2,
+      target: "plan",
+      seed: 42,
+      result,
+      verifiedNarrative: null,
+      date: new Date(2026, 9, 4),
+    });
+    for (const figure of ["7,200", "1,800", "1,803"])
+      expect(md).toContain(figure);
+    expect(md).not.toMatch(/\b(7200|1800|1803)\b/);
   });
 });
 

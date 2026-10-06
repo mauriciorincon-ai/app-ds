@@ -12,7 +12,7 @@ import {
 import { useI18n } from "@/i18n/provider";
 import { formatEstimate } from "@/lib/duration";
 import { buildClusterCard } from "@/lib/modelcard";
-import { formatQuantity, quantityDecimals, thousands } from "@/lib/quantity";
+import { profileNumber, quantityDecimals, thousands } from "@/lib/quantity";
 import type {
   ChoiceState,
   ExportState,
@@ -44,15 +44,6 @@ type T = (key: string, params?: Record<string, string | number>) => string;
 
 const two = (value: number) => value.toFixed(2);
 const pct = (share: number) => Math.round(share * 100);
-
-/** Una cifra de un perfil en las unidades del usuario: con los decimales que pide
- *  su columna, y en notación científica si es diminuta (~1e-11 no es «0»). */
-function profileNumber(value: number, decimals: number): string {
-  const abs = Math.abs(value);
-  return abs > 0 && abs < 1e-4
-    ? value.toExponential(2)
-    : formatQuantity(value, decimals);
-}
 
 /** El número de un grupo para una persona: del 1 en adelante. */
 const groupLabel = (t: T, group: number) =>
@@ -216,6 +207,15 @@ export function ClusterReading({
   };
   return (
     <VerdictCard banner={banner}>
+      {/* AU-S7-10 (P8): la media Y el mínimo. Solo donde el detalle habla del
+          re-muestreo (sin estructura, el detalle no lo cita). */}
+      {reading.level !== "none" && (
+        <p className="mt-2 text-sm">
+          {t("cluster.reading.worst", {
+            ariWorst: two(reading.stability.ari_min),
+          })}
+        </p>
+      )}
       <p className="mt-2 text-sm text-ink-muted">{t("cluster.noTest")}</p>
       {result.selection.by === "user" && (
         <p className="mt-2 text-sm font-medium">{t("cluster.chosenNote")}</p>
@@ -308,7 +308,7 @@ function GroupProfiles({
             list: separating
               .map(
                 (s) =>
-                  `«${s.column}» (${strengthName(s.kind)} ${two(s.strength)})`,
+                  `${t("common.quote", { text: s.column })} (${strengthName(s.kind)} ${two(s.strength)})`,
               )
               .join(", "),
           })}
@@ -342,6 +342,7 @@ function GroupProfiles({
               </h3>
               <p className="font-mono text-sm tabular-nums">
                 {t("cluster.profiles.size", {
+                  count: noise.size,
                   size: n(noise.size),
                   share: pct(noise.share),
                 })}
@@ -409,6 +410,7 @@ function GroupCard({
         </h3>
         <p className="font-mono text-sm tabular-nums">
           {t("cluster.profiles.size", {
+            count: group.size,
             size: n(group.size),
             share: pct(group.share),
           })}
@@ -491,8 +493,10 @@ function ClusterLeague({
   const kText = (row: ClusterMemberRow) =>
     row.k === null ? "—" : t(`cluster.league.kBy.${row.k_by}`, { k: row.k });
   const noiseText = (row: ClusterMemberRow) =>
-    // Espacio no separable: «0 %» nunca se parte en dos líneas (R9).
-    row.noise_share === null ? "—" : `${pct(row.noise_share)}\u00a0%`;
+    // R9: «0 %» con espacio no separable en español y «0%» en inglés.
+    row.noise_share === null
+      ? "—"
+      : t("common.percent", { n: pct(row.noise_share) });
   const statusText = (row: ClusterMemberRow) =>
     t(`cluster.league.status.${row.status}`, { type: row.error_type ?? "" });
 
@@ -644,13 +648,15 @@ function ClusterLeague({
                         ? { kind: consensus ? "consensus" : "score" }
                         : isChosen
                           ? { kind: "chosen" }
-                          : row.score === null
-                            ? { kind: "failed" }
-                            : {
-                                kind: "competitor",
-                                rank: index + 1,
-                                total: league.length,
-                              },
+                          : row.status === "no-structure"
+                            ? { kind: "clusterNoGroups" }
+                            : row.score === null
+                              ? { kind: "clusterFailed" }
+                              : {
+                                  kind: "clusterCompetitor",
+                                  rank: index + 1,
+                                  total: league.length,
+                                },
                       isWinner || isChosen ? "font-semibold" : "font-medium",
                     )}
                     <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs">

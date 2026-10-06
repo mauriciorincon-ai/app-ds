@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EdaAlert } from "@/engine/eda";
 import type { SanitationReport } from "@/engine/sanitize";
 import {
@@ -56,6 +56,9 @@ export function ConfigScreen({
 }) {
   const t = useT();
   const [target, setTarget] = useState("");
+  // AU-S7-18: «agrupar en su lugar» desmonta la tarjeta de tarea (y su botón); el
+  // foco va al título de agrupar. Solo por esa vía: desde el <select> se queda ahí.
+  const [focusPlan, setFocusPlan] = useState(false);
   const profileByName = new Map(dataset.profiles.map((p) => [p.name, p]));
   const clusterValue = clusterOptionValue(dataset.headers);
   const clustering = target === clusterValue && onSelectCluster !== undefined;
@@ -70,7 +73,8 @@ export function ConfigScreen({
     isTrainableTask(plan.resolved) &&
     plan.routing !== null;
 
-  const handleTargetChange = (value: string) => {
+  const handleTargetChange = (value: string, fromTaskCard = false) => {
+    setFocusPlan(fromTaskCard);
     setTarget(value);
     if (value === clusterValue && onSelectCluster) onSelectCluster();
     else onSelectTarget(value);
@@ -138,7 +142,9 @@ export function ConfigScreen({
       </div>
 
       {/* S7: agrupar — qué columnas forman la distancia y cuáles quedan fuera. */}
-      {clustering && clusterPlan && <ClusterPlanCard plan={clusterPlan} />}
+      {clustering && clusterPlan && (
+        <ClusterPlanCard plan={clusterPlan} autoFocus={focusPlan} />
+      )}
 
       {/* S5 (E1): qué tarea plantea el objetivo elegido, con su razón. */}
       {target !== "" && !clustering && plan && (
@@ -154,7 +160,9 @@ export function ConfigScreen({
           onAnswer={onAnswerTask}
           // S7: una columna que no sirve como objetivo ofrece agrupar en su lugar.
           onCluster={
-            onSelectCluster ? () => handleTargetChange(clusterValue) : undefined
+            onSelectCluster
+              ? () => handleTargetChange(clusterValue, true)
+              : undefined
           }
         />
       )}
@@ -447,8 +455,18 @@ function EdaBlock({ alerts }: { alerts: EdaAlert[] }) {
  * cuáles quedan fuera con su razón (ninguna se esconde). Sin objetivo no hay
  * prueba ni veredicto contra un baseline, y se dice antes de correr.
  */
-function ClusterPlanCard({ plan }: { plan: ClusterPlan }) {
+function ClusterPlanCard({
+  plan,
+  autoFocus,
+}: {
+  plan: ClusterPlan;
+  autoFocus: boolean;
+}) {
   const t = useT();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (autoFocus) titleRef.current?.focus();
+  }, [autoFocus]);
   if (!plan.ok) {
     return (
       <p
@@ -467,7 +485,9 @@ function ClusterPlanCard({ plan }: { plan: ClusterPlan }) {
     columns.map((c) => t("common.quote", { text: c })).join(", ");
   return (
     <Card className="flex flex-col gap-2 p-4 text-sm" role="status">
-      <h2 className="font-semibold">{t("cluster.plan.title")}</h2>
+      <h2 ref={titleRef} tabIndex={-1} className="font-semibold">
+        {t("cluster.plan.title")}
+      </h2>
       <p>{t("cluster.plan.what")}</p>
       <p className="text-ink-muted">
         {plan.distance === "numeric"

@@ -369,10 +369,10 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 18,
+      "valor": 19,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/ (001–014). Lo recuenta tests/unit/brochure-export.test.ts."
+      "detalle": "Archivos de decisions/ (001–019). Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [

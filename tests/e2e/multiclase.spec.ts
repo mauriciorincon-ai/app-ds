@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
 
 // S7 (ADR 015) — clasificar en VARIAS categorías de punta a punta en el navegador
@@ -171,7 +171,27 @@ test("R10: 20 categorías y un nombre largo — la página no se desplaza de lad
   expect(pageBox.sw, "la página se desplaza de lado").toBeLessThanOrEqual(
     pageBox.cw,
   );
-  // El nombre largo va recortado en la matriz, con su nombre completo a mano.
-  await expect(matrix.locator(`[title="${LONG_CLASS}"]`).first()).toBeAttached();
+  // AU-S7-21: en un teléfono no hay `title` que ver. El nombre de cada FILA se lee
+  // entero (nada recortado), en la matriz y en la tabla por categoría.
+  const notClipped = (locator: Locator) =>
+    locator.evaluate((el) => el.scrollWidth <= el.clientWidth);
+  const rowName = matrix.getByRole("rowheader", { name: LONG_CLASS });
+  expect(
+    await notClipped(rowName.locator("span").first()),
+    "el nombre largo de la fila se recorta en la matriz",
+  ).toBe(true);
+  const perClass = page.getByRole("region", { name: "Por categoría (prueba)" });
+  expect(
+    await notClipped(
+      perClass.getByRole("rowheader", { name: LONG_CLASS }).locator("span"),
+    ),
+    "el nombre largo se recorta en la tabla por categoría",
+  ).toBe(true);
+  // La COLUMNA (estrecha) va recortada, con el MISMO número que su fila delante.
+  const rowNumber = /^(\d+)·/.exec((await rowName.textContent()) ?? "")?.[1];
+  expect(rowNumber, "la fila no lleva su número").toBeTruthy();
+  await expect(
+    matrix.locator(`th[scope="col"] [title="${LONG_CLASS}"]`),
+  ).toContainText(`${rowNumber}·`);
   await axeBothThemes(page);
 });

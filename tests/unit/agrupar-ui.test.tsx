@@ -27,6 +27,7 @@ import {
 } from "vitest";
 import { ClusterResults } from "@/components/ClusterResults";
 import { ConfigScreen } from "@/components/ConfigScreen";
+import { ResultsScreen } from "@/components/ResultsScreen";
 import { RosterCard } from "@/components/RosterCard";
 import {
   rosterFor,
@@ -719,6 +720,102 @@ describe("S7: el flujo de agrupar en el hook (P13: las etiquetas no pasan por el
     expect(JSON.stringify(result.current.state)).not.toContain('"labels":[');
   });
 
+  // AU-S7-17: cancelar el Nivel 2 al agrupar SÍ pierde algo. El worker que vuelve
+  // restaura el modelo importando la instantánea, y un modelo importado no guarda el
+  // grupo de cada fila: la descarga dice «unavailable», no un error genérico.
+  it("Nivel 2 al agrupar → cancelar → descargar las filas: «unavailable»", () => {
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(SEGMENTOS, "segmentos-clientes.csv"));
+    act(() => result.current.selectCluster());
+    act(() => result.current.runCluster());
+    const first = FakeWorker.last!;
+    const train = first.posted.at(-1)!;
+    reply(first, train.id, "train", TRAIN);
+    act(() => result.current.runLevel2());
+    const snapshot = first.posted.at(-1)!;
+    expect(snapshot.type).toBe("export-model");
+    reply(first, snapshot.id, "export-model", fixture("export-result-agrupar"));
+    expect(first.posted.at(-1)!.type).toBe("train");
+    act(() => result.current.cancelLevel2());
+    const second = FakeWorker.last!;
+    expect(second, "cancelar no levantó un worker nuevo").not.toBe(first);
+    const restore = second.posted.find((m) => m.type === "import-model")!;
+    reply(second, restore.id, "import-model", {});
+    expect(result.current.state.level2.status).toBe("cancelled");
+    expect(result.current.state.modelReady).toBe(true);
+    act(() =>
+      result.current.downloadClusterLabels({
+        column: "grupo",
+        noise: "fuera de todo grupo",
+        fileSuffix: "agrupado",
+      }),
+    );
+    const ask = second.posted.at(-1)!;
+    expect(ask.type).toBe("cluster-labels");
+    act(() =>
+      second.onmessage?.({
+        data: { id: ask.id, type: "error", message: "ValueError: no-labels" },
+      } as MessageEvent),
+    );
+    expect(result.current.state.labels).toBe("unavailable");
+  });
+
+  // AU-S7-18 / AU-S7-40: el botón «agrupar en su lugar» se PULSA (antes el título lo
+  // prometía y la prueba no lo tocaba): desmonta la tarjeta de tarea y el foco va al
+  // título de agrupar, no a <body>.
+  it("«Agrupar filas parecidas en su lugar» lleva a agrupar y el foco al título", () => {
+    let load: ((csv: string, name: string) => void) | null = null;
+    function Loader() {
+      const exp = useExperiment();
+      load = exp.loadCsv;
+      const s = exp.state;
+      if (!s.dataset) return null;
+      return (
+        <ConfigScreen
+          dataset={s.dataset}
+          sanitation={s.sanitation}
+          edaAlerts={s.edaAlerts}
+          plan={s.plan}
+          clusterPlan={s.clusterPlan}
+          onSelectTarget={exp.selectTarget}
+          onSelectCluster={exp.selectCluster}
+          onAnswerTask={exp.answerTask}
+          onRun={vi.fn()}
+          onRunCluster={vi.fn()}
+          onBack={vi.fn()}
+        />
+      );
+    }
+    // Una columna con 40 categorías que se repiten: no es un identificador (el
+    // saneamiento la deja) y no sirve como objetivo (demasiadas categorías).
+    const [header, ...rows] = SEGMENTOS.trimEnd().split("\n");
+    const withZone = [
+      `${header},zona`,
+      ...rows.map((row, i) => `${row},z${i % 40}`),
+    ].join("\n");
+    ui(<Loader />);
+    act(() => load!(withZone, "segmentos-clientes.csv"));
+    fireEvent.change(screen.getByLabelText("¿Qué quieres predecir?"), {
+      target: { value: "zona" },
+    });
+    const instead = screen.getByRole("button", {
+      name: "Agrupar filas parecidas en su lugar",
+    });
+    instead.focus();
+    fireEvent.click(instead);
+    const title = screen.getByRole("heading", {
+      name: "Agrupar filas parecidas, sin objetivo",
+    });
+    expect(
+      document.activeElement,
+      "el foco no está en el título de agrupar",
+    ).toBe(title);
+    expect(
+      (screen.getByLabelText("¿Qué quieres predecir?") as HTMLSelectElement)
+        .selectedOptions[0]!.textContent,
+    ).toBe("Sin objetivo: agrupar filas parecidas");
+  });
+
   // S7 (AU-S7-01): con basura en una numérica («?» que el saneamiento vacía), la fila sale
   // tal como llegó y cada fila recibe SU grupo: ni celdas perdidas ni grupos «NaN».
   it("con basura coaccionada, el CSV conserva la celda y ningún grupo sale «NaN»", () => {
@@ -795,8 +892,10 @@ describe("S7: el copy de agrupar no dice lo que al agrupar no existe", () => {
   // completa», ni «N modelos», ni «gana el más simple». Lo reusado de la liga lo
   // decía (9.000 filas en el reconocimiento de la guía v4); cada superficie lleva
   // ahora su propio copy.
+  // AU-S7-16/17: también «Tiempo de la liga» (la card) y «sin perder nada» (cancelar el
+  // Nivel 2 al agrupar pierde las filas con su grupo).
   const FALSE_FOR_CLUSTER =
-    /misma validación cruzada|puntajes de validación cruzada|elegir por validación cruzada|la liga completa|La liga tardó|\b\d+ modelos?\b|gana el más simple/;
+    /misma validación cruzada|puntajes de validación cruzada|elegir por validación cruzada|la liga completa|La liga tardó|Tiempo de la liga|sin perder nada|\b\d+ modelos?\b|gana el más simple/;
   const profile: RouteProfile = {
     task: "agrupar",
     rows: 9000,
@@ -874,9 +973,250 @@ describe("S7: el copy de agrupar no dice lo que al agrupar no existe", () => {
         stage="training"
         cluster
         level2={{ count: 4, estimateS: 8 }}
+        onCancel={vi.fn()}
       />,
     );
     expect(running.container.textContent).toMatch(/Nivel 2 · 4 agrupadores/);
+    expect(running.container.textContent).toMatch(/hay que volver a agrupar/);
     expect(running.container.textContent).not.toMatch(FALSE_FOR_CLUSTER);
+  });
+
+  // AU-S7-16: tres superficies que hablaban de la liga al agrupar. La ficha de un
+  // agrupador que NO ganó (su puesto es por puntaje; «no encontró dos grupos» no es «no
+  // concluyó»), el nombre accesible de la barra de progreso y la card con muestra pequeña.
+  describe("la ficha de un no ganador, la barra y la card con muestra pequeña", () => {
+    beforeAll(() => {
+      const proto = HTMLDialogElement.prototype as HTMLDialogElement & {
+        showModal: () => void;
+      };
+      proto.showModal = function (this: HTMLDialogElement) {
+        this.setAttribute("open", "");
+      };
+    });
+    const LEAGUE_ONLY = /por validación cruzada|conjunto de prueba|no concluyó/;
+    const withNoGroups = (): ClusterResult => {
+      const base = clusterResult();
+      return {
+        ...base,
+        smallSample: true,
+        league: base.league.map((row) =>
+          row.name === "hdbscan"
+            ? {
+                ...row,
+                status: "no-structure" as const,
+                k: null,
+                silhouette: null,
+                noise_share: 1,
+                score: null,
+                sizes: [],
+              }
+            : row,
+        ),
+      };
+    };
+
+    it("la ficha de un competidor: su puesto por puntaje", async () => {
+      screenFor(withNoGroups());
+      fireEvent.click(screen.getByRole("button", { name: "Ficha de K-Means" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(dialog.textContent).toMatch(/puesto \d+ de 4 por puntaje/);
+      expect(dialog.textContent).not.toMatch(LEAGUE_ONLY);
+    });
+
+    it("la ficha de uno que no encontró dos grupos lo dice así", async () => {
+      screenFor(withNoGroups());
+      fireEvent.click(screen.getByRole("button", { name: "Ficha de HDBSCAN" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(dialog.textContent).toMatch(/no encontró dos grupos/);
+      expect(dialog.textContent).not.toMatch(LEAGUE_ONLY);
+    });
+
+    it("la barra de progreso al agrupar no se llama «validación cruzada»", () => {
+      ui(
+        <TrainingScreen
+          stage="training"
+          cluster
+          detail={{ phase: "cluster", member: "gmm", index: 2, total: 4 }}
+        />,
+      );
+      const name = screen.getByRole("progressbar").getAttribute("aria-label");
+      expect(name).toMatch(/Buscando grupos/);
+      expect(name).not.toMatch(LEAGUE_ONLY);
+    });
+
+    it.each(["es", "en"] as const)(
+      "la card con muestra pequeña habla de agrupar (%s)",
+      (locale) => {
+        const md = buildClusterCard({
+          locale,
+          datasetName: "segmentos-clientes.csv",
+          cols: 5,
+          seed: 42,
+          excluded: [],
+          result: withNoGroups(),
+        });
+        expect(md).toContain(
+          locale === "es"
+            ? "Muestra pequeña (300 filas)"
+            : "Small sample (300 rows)",
+        );
+        expect(md).not.toMatch(FALSE_FOR_CLUSTER);
+        expect(md).not.toMatch(
+          /cross-validation scores|League time|validación cruzada/,
+        );
+      },
+    );
+  });
+});
+
+// S7, Fase 2 de la auditoría: lo que el motor calcula se dibuja (AU-S7-10, AU-S7-35), con
+// la regla de cifras de la app (AU-S7-23, AU-S7-33) y sin frases que al agrupar no aplican
+// (AU-S7-36).
+describe("S7 (auditoría): lo calculado se dibuja, con la regla de cifras", () => {
+  const card = (locale: "es" | "en", result: ClusterResult = clusterResult()) =>
+    buildClusterCard({
+      locale,
+      datasetName: "segmentos-clientes.csv",
+      cols: 5,
+      seed: 42,
+      excluded: [],
+      result,
+    });
+
+  it.each(["es", "en"] as const)(
+    "la peor repetición (el mínimo del re-muestreo), en pantalla y en la card (%s)",
+    (locale) => {
+      const worst =
+        locale === "es"
+          ? "En el re-muestreo más distinto se parecen en 0.53 de 1."
+          : "In the most different resample they match 0.53 out of 1.";
+      if (locale === "en")
+        window.localStorage.setItem(LOCALE_STORAGE_KEY, "en");
+      screenFor(clusterResult());
+      expect(screen.getByText(worst)).toBeInTheDocument();
+      expect(card(locale)).toContain(worst);
+    },
+  );
+
+  it("una media diminuta (~1e-11) no sale «0.00» en la card", () => {
+    const base = clusterResult();
+    const tiny: ClusterResult = {
+      ...base,
+      profiles: {
+        ...base.profiles,
+        groups: base.profiles.groups.map((g) => ({
+          ...g,
+          numeric: { ...g.numeric, gasto_mensual_usd: 1.2e-11 },
+        })),
+      },
+    };
+    const md = card("es", tiny);
+    expect(md).toContain("«gasto_mensual_usd» 1.20e-11");
+    expect(md).not.toMatch(/«gasto_mensual_usd» 0\.00/);
+  });
+
+  it.each(["es", "en"] as const)(
+    "los conteos llevan miles y el porcentaje, el espacio de su idioma (%s)",
+    (locale) => {
+      const base = clusterResult();
+      const big: ClusterResult = {
+        ...base,
+        nRows: 18000,
+        profiles: {
+          ...base.profiles,
+          groups: base.profiles.groups.map((g) => ({
+            ...g,
+            size: g.size * 60,
+          })),
+        },
+      };
+      const md = card(locale, big);
+      expect(md).toMatch(/7,200 (filas|rows)/);
+      expect(md).toContain(locale === "es" ? "(48 %)" : "(48%)");
+      expect(md).not.toMatch(locale === "es" ? /\d %/ : /\d[  ]%/);
+    },
+  );
+
+  it("un grupo de una fila se dice en singular", () => {
+    const base = clusterResult();
+    const one: ClusterResult = {
+      ...base,
+      profiles: {
+        ...base.profiles,
+        groups: [{ ...base.profiles.groups[0]!, size: 1 }],
+      },
+    };
+    screenFor(one);
+    expect(screen.getByText(/^1 fila · /)).toBeInTheDocument();
+    expect(card("es", one)).toMatch(/: 1 fila · /);
+  });
+
+  it.each(["es", "en"] as const)(
+    "las categorías raras agrupadas llegan a la card de agrupar (%s)",
+    (locale) => {
+      const rare: ClusterResult = {
+        ...clusterResult(),
+        rareCategories: { canal: ["fax", "telex"] },
+      };
+      expect(card(locale, rare)).toContain(
+        locale === "es"
+          ? "Categorías raras agrupadas (aprendido de todas tus filas: al agrupar no hay partición): «canal» (fax, telex)."
+          : "Rare categories grouped (learned from all your rows: grouping has no split): “canal” (fax, telex).",
+      );
+    },
+  );
+
+  it.each(["es", "en"] as const)(
+    "la card de agrupar no promete la partición temporal (%s)",
+    (locale) => {
+      const md = card(locale);
+      expect(md).not.toMatch(/aún no|not used yet|sin partición temporal/);
+      expect(md).toContain(
+        locale === "es"
+          ? "Las columnas de fecha no entran al parecido"
+          : "Date columns don't enter the similarity",
+      );
+    },
+  );
+
+  // AU-S7-39: «Elegir» / «Volver al ganador» se deshabilitan al ajustar y luego
+  // desaparecen; el foco caía a <body>. Al terminar va al h1 de la lectura.
+  it("tras «Elegir», el foco va al h1 de la lectura, no a <body>", () => {
+    const props = {
+      result: clusterResult(),
+      datasetName: "segmentos-clientes.csv",
+      cols: 5,
+      runMeta: {
+        target: null,
+        numericFeatures: 3,
+        categoricalFeatures: 1,
+        seed: 42,
+        excluded: [],
+      },
+      sanitation: null,
+      edaAlerts: null,
+      onAgain: vi.fn(),
+      onUseModel: vi.fn(),
+      onExportModel: vi.fn(),
+      exportState: "idle" as const,
+      routing: null,
+      onChoose: vi.fn(),
+    };
+    const { rerender } = ui(
+      <ResultsScreen
+        {...props}
+        choice={{ status: "fitting", member: "kmeans" }}
+      />,
+    );
+    expect(document.activeElement).toBe(document.body);
+    rerender(
+      <I18nProvider>
+        <ResultsScreen {...props} choice={{ status: "idle" }} />
+      </I18nProvider>,
+    );
+    expect(
+      document.activeElement,
+      "tras elegir, el foco no está en el h1",
+    ).toBe(screen.getByRole("heading", { level: 1 }));
   });
 });

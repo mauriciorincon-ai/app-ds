@@ -3,6 +3,7 @@
 import { BASELINE_IDS_BY_TASK } from "@/engine/roster";
 import { pickBestBaseline } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
+import { thousands } from "@/lib/quantity";
 import type { MulticlassResult } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import { Card, MetricTile } from "./ui";
@@ -150,7 +151,7 @@ export function MulticlassDetail({ result }: { result: MulticlassResult }) {
           ? t("results.multiclass.topConfusion", {
               real: classes[top.real]!,
               predicted: classes[top.predicted]!,
-              count: top.count,
+              count: thousands(top.count),
             })
           : t("results.multiclass.noConfusion")}
       </p>
@@ -197,8 +198,10 @@ export function MulticlassDetail({ result }: { result: MulticlassResult }) {
  * Los aciertos (la diagonal) llevan ✓ + negrita + su nombre para el lector: nunca
  * solo color (daltonismo leve del usuario). Con 20 categorías no cabe en 360 px:
  * vive en su propia región desplazable, enfocable y con nombre (R10); la página no
- * se desplaza de lado. Los nombres largos se recortan a la vista, pero el texto
- * completo sigue en la celda (el lector lo lee entero) y en `title`.
+ * se desplaza de lado. AU-S7-21: en un teléfono no hay `title` que ver, así que el
+ * nombre de cada FILA se lee entero (parte la línea donde haga falta) y lleva su
+ * número; la COLUMNA, más estrecha, lleva el mismo número delante del nombre
+ * recortado: «2·» arriba es la fila «2·» de la izquierda.
  */
 export function ConfusionTable({
   classes,
@@ -238,14 +241,20 @@ export function ConfusionTable({
               >
                 {t("results.multiclass.realPredicted")}
               </th>
-              {classes.map((name) => (
+              {classes.map((name, index) => (
                 <th
                   key={name}
                   scope="col"
                   className="px-2 py-1 text-center font-sans text-xs font-normal text-ink-muted"
                 >
-                  <span className="block max-w-[7rem] truncate" title={name}>
-                    {name}
+                  <span
+                    className="flex max-w-[7rem] items-baseline"
+                    title={name}
+                  >
+                    <span aria-hidden className="shrink-0 tabular-nums">
+                      {index + 1}·
+                    </span>
+                    <span className="truncate">{name}</span>
                   </span>
                 </th>
               ))}
@@ -258,10 +267,10 @@ export function ConfusionTable({
                   scope="row"
                   className="sticky left-0 z-10 bg-surface px-2 py-1 text-left font-sans text-xs font-normal text-ink-muted"
                 >
-                  <span
-                    className="block max-w-[6rem] truncate sm:max-w-[9rem]"
-                    title={classes[real]}
-                  >
+                  <span className="block max-w-[6rem] wrap-anywhere sm:max-w-[9rem]">
+                    <span aria-hidden className="tabular-nums">
+                      {real + 1}·
+                    </span>
                     {classes[real]}
                   </span>
                 </th>
@@ -284,7 +293,7 @@ export function ConfusionTable({
                           </span>
                         </>
                       )}
-                      {count}
+                      {thousands(count)}
                     </td>
                   );
                 })}
@@ -361,17 +370,14 @@ function PerClassTable({
                   scope="row"
                   className="py-0.5 pr-3 text-left font-sans font-normal"
                 >
-                  <span
-                    className="block max-w-[10rem] truncate"
-                    title={classes[index]}
-                  >
+                  <span className="block max-w-[10rem] wrap-anywhere">
                     {classes[index]}
                   </span>
                 </th>
                 <td className="py-0.5 pr-3">{two(row.precision)}</td>
                 <td className="py-0.5 pr-3">{two(row.recall)}</td>
                 <td className="py-0.5 pr-3">{two(row.f1)}</td>
-                <td className="py-0.5">{row.support}</td>
+                <td className="py-0.5">{thousands(row.support)}</td>
               </tr>
             ))}
           </tbody>

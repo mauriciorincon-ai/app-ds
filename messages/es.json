@@ -10,7 +10,8 @@
   },
   "common": {
     "loading": "Cargando…",
-    "quote": "«{text}»"
+    "quote": "«{text}»",
+    "percent": "{n} %"
   },
   "start": {
     "title": "Empieza tu experimento",
@@ -371,7 +372,7 @@
       "title": "El modelo está viendo cosas nuevas",
       "numeric": "«{column}»: {count} valores fuera del rango visto en el entrenamiento",
       "categorical": "«{column}»: {count} valores con categorías nunca vistas en el entrenamiento",
-      "summary": "El modelo está adivinando en {affected} de {total} filas ({percent}%).",
+      "summary": "El modelo está adivinando en {affected} de {total} filas ({percent} %).",
       "hint": "En esas filas la predicción es menos confiable: el modelo nunca vio valores así al entrenar.",
       "none": "Sin novedades: todos los valores están dentro de lo que el modelo vio al entrenar.",
       "numeric_one": "«{column}»: 1 valor fuera del rango visto en el entrenamiento",
@@ -488,7 +489,7 @@
       "method": "La importancia se midió por permutación sobre el conjunto de prueba (datos que el modelo no vio al entrenar).",
       "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas.",
       "idLike": "Además, {columns} parece un identificador: aporta poco para generalizar.",
-      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate}%); por eso la métrica principal es el AUC.",
+      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate} %); por eso la métrica principal es el AUC.",
       "metricHelp": {
         "accuracy": "proporción de aciertos sobre el total, de 0 a 1",
         "precision": "de los casos que marcó como positivos, cuántos lo eran de verdad, de 0 a 1",
@@ -568,7 +569,7 @@
     },
     "verdict": {
       "primary": "Métrica principal: {metric}.",
-      "primaryQuantity": "Métrica principal: MAE, el error promedio en las unidades del objetivo (menor es mejor); empata si queda a menos del 1 % del mejor baseline.",
+      "primaryQuantity": "Métrica principal: MAE, el error promedio en las unidades del objetivo (menor es mejor); empata si queda a menos del 1 % del mejor baseline.",
       "primaryMulticlass": "Métrica principal: exactitud balanceada (de cada categoría, qué parte acierta, en promedio). Con {k} categorías, adivinar al azar da {chance}."
     },
     "leakage": {
@@ -654,7 +655,7 @@
     "title": "Algo no cuadra",
     "csv-empty": "El archivo está vacío o solo tiene la cabecera.",
     "csv-too-large": "El archivo supera el límite de {mb} MB.",
-    "csv-too-many-rows": "El archivo supera las 50 000 filas.",
+    "csv-too-many-rows": "El archivo supera las {rows} filas.",
     "csv-ragged": "Hay filas con distinto número de columnas que la cabecera.",
     "csv-semicolon": "Tu archivo separa las columnas con punto y coma (;), no con comas, así que no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "csv-tab": "Tu archivo separa las columnas con tabulaciones, no con comas, así que no se reconoce ninguna columna. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
@@ -733,7 +734,7 @@
       "always-first": "entra siempre: es el más simple",
       "over-ceiling": "unos {time}",
       "mlp-few-rows": "tu dataset tiene {rows} filas; una red neuronal necesita al menos {min} para aprender algo estable",
-      "balanced-not-needed": "tus clases ya están equilibradas (la menor es el {share} %): repetiría a su versión normal",
+      "balanced-not-needed": "tus clases ya están equilibradas (la menor es el {share} %): repetiría a su versión normal",
       "forced": "lo incluiste tú; el encarrilador lo dejaba fuera porque {why}"
     },
     "cv": "Compiten con validación cruzada de {k} pliegues dentro del entrenamiento; el conjunto de prueba se abre una sola vez, al final.",
@@ -843,11 +844,9 @@
       "title": "Nivel 2: todos los agrupadores",
       "desc": "Suma {count} agrupadores que no cupieron en el primer paso ({models}) y vuelve a agrupar con todos, con la misma lectura contra datos sin estructura.",
       "desc_one": "Suma 1 agrupador que no cupo en el primer paso ({models}) y vuelve a agrupar con todos, con la misma lectura contra datos sin estructura.",
-      "descAllRan": "Todos los agrupadores recomendados ya agruparon. Si quieres, puedes incluir los que el encarrilador dejó fuera.",
       "dropsChoice": "Agrupar con todos vuelve a elegir con la regla de la app: tu elección manual de ahora no se conserva.",
       "estimate": "{count} agrupadores · unos {time} en este equipo",
       "estimate_one": "1 agrupador · unos {time} en este equipo",
-      "nothingToAdd": "Marca un agrupador para incluirlo; no hay nada más que sumar.",
       "running": "Nivel 2 · {count} agrupadores · unos {time} en este equipo",
       "running_one": "Nivel 2 · 1 agrupador · unos {time} en este equipo",
       "cancelHint": "Puedes cancelar mientras corre: vuelves a este resultado. Para descargar tus filas con su grupo después de cancelar, hay que volver a agrupar."

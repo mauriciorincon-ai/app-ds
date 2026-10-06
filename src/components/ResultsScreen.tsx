@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { matchByTask } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
@@ -98,6 +99,16 @@ function targetOf(runMeta: RunMeta): string {
 /** S7 (P2): la pantalla de resultados de cada tarea. Las de objetivo comparten la
  *  de la liga con veredicto; agrupar tiene la suya (sin prueba ni baseline). */
 export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
+  // AU-S7-39 (heredado de la liga del S5): «Elegir» y «Volver al ganador» se
+  // deshabilitan mientras ajustan y después desaparecen (la fila pasa a «En uso»):
+  // el foco caía a <body>. Al terminar el ajuste va al h1, que es lo que cambió.
+  const root = useRef<HTMLDivElement>(null);
+  const was = useRef(props.choice.status);
+  useEffect(() => {
+    if (was.current === "fitting" && props.choice.status === "idle")
+      root.current?.querySelector<HTMLElement>("h1")?.focus();
+    was.current = props.choice.status;
+  }, [props.choice.status]);
   const supervised = (result: SupervisedResult) => (
     <SupervisedResults
       {...props}
@@ -105,12 +116,16 @@ export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
       target={targetOf(props.runMeta)}
     />
   );
-  return matchByTask(props.result, {
-    binaria: supervised,
-    multiclase: supervised,
-    numerica: supervised,
-    agrupar: (result) => <ClusterResults {...props} result={result} />,
-  });
+  return (
+    <div ref={root}>
+      {matchByTask(props.result, {
+        binaria: supervised,
+        multiclase: supervised,
+        numerica: supervised,
+        agrupar: (result) => <ClusterResults {...props} result={result} />,
+      })}
+    </div>
+  );
 }
 
 function SupervisedResults({

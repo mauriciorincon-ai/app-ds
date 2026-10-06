@@ -69,7 +69,8 @@ Escala (rem, base 16): `display` 2.25/600 · `h1` 1.75/600 · `h2` 1.25/600 · `
 
 ## Componentes canon
 
-shadcn/ui **personalizados** con estos tokens (nunca el default):
+**Primitivos propios** en `src/components/ui.tsx`, con estos tokens (no se instaló shadcn/ui ni
+Radix: ADR 019; los diálogos son el `<dialog>` nativo):
 
 - **Button** — `primary` (acento sólido), `secondary` (hairline + ink), `ghost`. Alto 44px (táctil),
   radio `md`, foco con ring de `accent`. **Todo botón de acción lleva icono de trazo a la
@@ -326,8 +327,9 @@ y 5 del ⭐⭐ corto de la guía v4; plan del S7, D4).
   - **RosterCard al agrupar:** «agrupadores», no «modelos». Explica cómo elige k cada uno, y no habla
     de validación cruzada.
 - **Resultados de varias categorías** (`MulticlassResults`):
-  - **VerdictCard** como siempre. Con una fuga por categoría, el titular es «⚠ Posible fuga de datos —
-    sospechoso» (no «métricas casi perfectas»).
+  - **VerdictCard** como siempre. Con una fuga, el titular es «⚠ Posible fuga de datos — sospechoso»
+    en las tres tareas con objetivo (decisión 2 del usuario en la auditoría del S7); «métricas casi
+    perfectas» ya no es un titular.
   - Cinco MetricTile (`grid-cols-2`, `sm:grid-cols-5`): exactitud balanceada · F1 macro · exactitud ·
     pérdida logarítmica · AUC uno contra el resto. Sin probabilidades, «—», nunca un número
     inventado.

@@ -45,8 +45,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
        por cuánto.
      - **＝ Empata con el baseline** — un modelo simple rinde igual; no vale la pena complicarse.
      - **▼ NO supera al baseline** — el modelo no aporta; conviene revisar tus columnas.
-     - **⚠ Métricas casi perfectas — sospechoso** — un resultado “perfecto” casi siempre esconde una
-       fuga. La app señala la columna sospechosa; **quítala de tu tabla y vuelve a entrenar**.
+     - **⚠ Posible fuga de datos — sospechoso** — una columna predice el objetivo casi a la
+       perfección: casi siempre es una fuga, y las cifras pueden estar infladas aunque no parezcan
+       perfectas. La app señala la columna sospechosa; **quítala de tu tabla y vuelve a entrenar**.
   5. Debajo verás las **métricas** (exactitud, precisión, sensibilidad, F1, AUC), la **matriz de
      confusión** y los **baselines** de comparación. Todas las cifras se calculan sobre datos que el
      modelo **no vio al entrenar** (el conjunto de prueba), para que sean honestas.

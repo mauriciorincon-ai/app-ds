@@ -10,7 +10,8 @@
   },
   "common": {
     "loading": "Loading…",
-    "quote": "“{text}”"
+    "quote": "“{text}”",
+    "percent": "{n}%"
   },
   "start": {
     "title": "Start your experiment",
@@ -654,7 +655,7 @@
     "title": "Something doesn't add up",
     "csv-empty": "The file is empty or has only a header.",
     "csv-too-large": "The file exceeds the {mb} MB limit.",
-    "csv-too-many-rows": "The file exceeds 50,000 rows.",
+    "csv-too-many-rows": "The file exceeds {rows} rows.",
     "csv-ragged": "Some rows have a different number of columns than the header.",
     "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
     "csv-tab": "Your file separates columns with tabs rather than commas, so no column is recognised. Save it again as “CSV (comma delimited)” and upload it once more.",
@@ -843,11 +844,9 @@
       "title": "Level 2: every clusterer",
       "desc": "Adds {count} clusterers that did not fit in the first step ({models}) and groups again with all of them, with the same reading against data without structure.",
       "desc_one": "Adds 1 clusterer that did not fit in the first step ({models}) and groups again with all of them, with the same reading against data without structure.",
-      "descAllRan": "Every recommended clusterer has already grouped. If you like, you can add the ones the router left out.",
       "dropsChoice": "Grouping with all of them picks again by the app's rule: your current manual pick is not kept.",
       "estimate": "{count} clusterers · about {time} on this device",
       "estimate_one": "1 clusterer · about {time} on this device",
-      "nothingToAdd": "Tick a clusterer to include it; there is nothing else to add.",
       "running": "Level 2 · {count} clusterers · about {time} on this device",
       "running_one": "Level 2 · 1 clusterer · about {time} on this device",
       "cancelHint": "You can cancel while it runs: you come back to this result. To download your rows with their group after cancelling, you need to group again."

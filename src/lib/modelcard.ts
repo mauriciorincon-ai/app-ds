@@ -18,7 +18,13 @@ import { memberNameKey, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
 import { datasetSlug } from "@/lib/files";
-import { formatQuantity, thousands, withUnit } from "@/lib/quantity";
+import {
+  formatQuantity,
+  profileNumber,
+  quantityDecimals,
+  thousands,
+  withUnit,
+} from "@/lib/quantity";
 import {
   importanceFormatter,
   quantityFormatter,
@@ -113,8 +119,8 @@ function binaryBlocks(
       positive: result.positiveClass,
     }),
     split: t("modelcard.split.sizes", {
-      train: result.nTrain,
-      test: result.nTest,
+      train: thousands(result.nTrain),
+      test: thousands(result.nTest),
       seed: input.seed,
     }),
     baselines: t("modelcard.method.baselines"),
@@ -180,14 +186,15 @@ function multiclassBlocks(
     "| --- | --- | --- | --- | --- |",
     ...perClass.map(
       (c, i) =>
-        `| ${cell(classes[i]!)} | ${fmt(c.precision)} | ${fmt(c.recall)} | ${fmt(c.f1)} | ${c.support} |`,
+        `| ${cell(classes[i]!)} | ${fmt(c.precision)} | ${fmt(c.recall)} | ${fmt(c.f1)} | ${thousands(c.support)} |`,
     ),
   ].join("\n");
   const confusion = [
     `| ${t("results.multiclass.realPredicted")} | ${classes.map(cell).join(" | ")} |`,
     `| --- |${" --- |".repeat(classes.length)}`,
     ...confusionMatrix.map(
-      (row, i) => `| ${cell(classes[i]!)} | ${row.join(" | ")} |`,
+      (row, i) =>
+        `| ${cell(classes[i]!)} | ${row.map(thousands).join(" | ")} |`,
     ),
   ].join("\n");
   return {
@@ -196,8 +203,8 @@ function multiclassBlocks(
       count: classes.length,
     }),
     split: t("modelcard.split.sizes", {
-      train: result.nTrain,
-      test: result.nTest,
+      train: thousands(result.nTrain),
+      test: thousands(result.nTest),
       seed: input.seed,
     }),
     baselines: t("modelcard.method.baselinesMulticlass"),
@@ -267,8 +274,8 @@ function regressionBlocks(
   return {
     target: t("modelcard.data.targetQuantity", { target: input.target }),
     split: t("modelcard.split.sizesQuantity", {
-      train: result.nTrain,
-      test: result.nTest,
+      train: thousands(result.nTrain),
+      test: thousands(result.nTest),
       seed: input.seed,
     }),
     baselines: t("modelcard.method.baselinesQuantity"),
@@ -302,7 +309,7 @@ function regressionBlocks(
         abs90: quantityFormatter(result, [residuals.abs_p90])(
           residuals.abs_p90,
         ),
-        total: result.predVsReal.n_total,
+        total: thousands(result.predVsReal.n_total),
       })}`,
       `- ${t("modelcard.estimate.noAi")}`,
       "",
@@ -352,7 +359,9 @@ export function buildModelCard(input: ModelCardInput): string {
   const leakageBlock =
     result.leakage.length > 0
       ? t("modelcard.leakage.found", {
-          columns: result.leakage.map((f) => `«${f.column}»`).join(", "),
+          columns: result.leakage
+            .map((f) => t("common.quote", { text: f.column }))
+            .join(", "),
         })
       : t("modelcard.leakage.none");
 
@@ -401,7 +410,10 @@ export function buildModelCard(input: ModelCardInput): string {
       ? [
           `- ${t("modelcard.method.rareCategories", {
             cols: rareEntries
-              .map(([col, cats]) => `«${col}» (${cats.join(", ")})`)
+              .map(
+                ([col, cats]) =>
+                  `${t("common.quote", { text: col })} (${cats.join(", ")})`,
+              )
               .join("; "),
           })}`,
         ]
@@ -538,6 +550,9 @@ export function buildClusterCard(input: ClusterCardInput): string {
   const n = (value: number) => thousands(value);
   const two = (value: number) => value.toFixed(2);
   const pct = (share: number) => Math.round(share * 100);
+  // R9 (AU-S7-33): «12 %» con espacio no separable en español, «12%» en inglés.
+  const percent = (share: number) => t("common.percent", { n: pct(share) });
+  const quote = (text: string) => t("common.quote", { text });
   const short = (id: MemberId) => t(`results.candidates.short.${id}`);
   const modelLabel = (id: MemberId) => t(memberNameKey(id, "agrupar"));
   const date = (input.date ?? new Date()).toLocaleDateString(
@@ -593,23 +608,32 @@ export function buildClusterCard(input: ClusterCardInput): string {
             ? "—"
             : t(`cluster.league.kBy.${row.k_by}`, { k: row.k })
         } | ${row.silhouette === null ? "—" : two(row.silhouette)} | ${
-          row.noise_share === null ? "—" : `${pct(row.noise_share)} %`
+          row.noise_share === null ? "—" : percent(row.noise_share)
         } | ${row.score === null ? t(`cluster.league.status.${row.status}`, { type: row.error_type ?? "" }) : two(row.score)} |`,
     ),
   ].join("\n");
 
+  // AU-S7-23: las medias con los decimales que pide su columna (como la pantalla):
+  // con 2 fijos, ~1e-11 salía «0.00».
+  const decimalsOf = (column: string) =>
+    quantityDecimals(
+      profiles.groups.flatMap((g) => {
+        const v = g.numeric[column];
+        return v === null || v === undefined ? [] : [v];
+      }),
+    );
   const groupLines = profiles.groups.map((group) => {
     const parts = profiles.separating.map((s) => {
       if (s.kind === "numeric") {
         const value = group.numeric[s.column];
-        return `«${cell(s.column)}» ${value === null || value === undefined ? "—" : formatQuantity(value, 2)}`;
+        return `${quote(cell(s.column))} ${value === null || value === undefined ? "—" : profileNumber(value, decimalsOf(s.column))}`;
       }
       const mode = group.categorical[s.column];
-      return `«${cell(s.column)}» ${mode ? `${cell(mode.mode)} (${pct(mode.share)} %)` : "—"}`;
+      return `${quote(cell(s.column))} ${mode ? `${cell(mode.mode)} (${percent(mode.share)})` : "—"}`;
     });
     return `- ${t("cluster.group", { n: group.group + 1 })}: ${t(
       "cluster.profiles.size",
-      { size: n(group.size), share: pct(group.share) },
+      { count: group.size, size: n(group.size), share: pct(group.share) },
     )}${parts.length ? ` — ${parts.join("; ")}` : ""}`;
   });
 
@@ -659,15 +683,13 @@ export function buildClusterCard(input: ClusterCardInput): string {
       result.distance === "numeric"
         ? t("modelcard.cluster.distanceNumeric", {
             count: numeric.length,
-            columns: numeric.map((c) => `«${c}»`).join(", "),
+            columns: numeric.map(quote).join(", "),
             categorical: categorical.length
-              ? categorical.map((c) => `«${c}»`).join(", ")
+              ? categorical.map(quote).join(", ")
               : "—",
           })
         : t("modelcard.cluster.distanceAll", {
-            columns: [...numeric, ...categorical]
-              .map((c) => `«${c}»`)
-              .join(", "),
+            columns: [...numeric, ...categorical].map(quote).join(", "),
           })
     }`,
     ...input.excluded.map(
@@ -711,12 +733,22 @@ export function buildClusterCard(input: ClusterCardInput): string {
           })} ${t("cluster.sample.why", { max: n(AGGLO_MAX_ROWS) })}`,
         ]
       : []),
-    `- ${t("modelcard.selection.time", {
+    // AU-S7-16: al agrupar no hay liga ni validación cruzada; el tiempo y la
+    // muestra pequeña se dicen con las palabras de agrupar.
+    `- ${t("cluster.league.time", {
       seconds: (selection.elapsedMs / 1000).toFixed(1),
     })}`,
     ...(result.smallSample
+      ? [`- ${t("roster.cluster.smallSample", { rows: n(result.nRows) })}`]
+      : []),
+    // AU-S7-35: las categorías raras se agrupan también al agrupar (sobre todas las filas).
+    ...(Object.keys(result.rareCategories ?? {}).length > 0
       ? [
-          `- ${t("modelcard.selection.smallSample", { rows: SMALL_SAMPLE_ROWS })}`,
+          `- ${t("modelcard.cluster.rareCategories", {
+            cols: Object.entries(result.rareCategories ?? {})
+              .map(([col, cats]) => `${quote(col)} (${cats.join(", ")})`)
+              .join("; "),
+          })}`,
         ]
       : []),
     "",
@@ -731,7 +763,11 @@ export function buildClusterCard(input: ClusterCardInput): string {
     `**${t(`cluster.reading.${reading.level}`, readingParams)}** — ${t(
       `cluster.reading.${reading.level}Detail`,
       readingParams,
-    )}`,
+    )}${
+      reading.level === "none"
+        ? ""
+        : ` ${t("cluster.reading.worst", { ariWorst: two(reading.stability.ari_min) })}`
+    }`,
     "",
     t("cluster.noTest"),
     "",
@@ -741,6 +777,7 @@ export function buildClusterCard(input: ClusterCardInput): string {
     ...(profiles.noise
       ? [
           `- ${t("cluster.noise.title")}: ${t("cluster.profiles.size", {
+            count: profiles.noise.size,
             size: n(profiles.noise.size),
             share: pct(profiles.noise.share),
           })}`,
@@ -765,7 +802,7 @@ export function buildClusterCard(input: ClusterCardInput): string {
     `- ${t("modelcard.cluster.limits.cause")}`,
     `- ${t("modelcard.cluster.limits.silhouette", { sample: n(SILHOUETTE_SAMPLE) })}`,
     `- ${t("modelcard.cluster.limits.agglomerative", { max: n(AGGLO_MAX_ROWS) })}`,
-    `- ${t("modelcard.limits.dates")}`,
+    `- ${t("modelcard.cluster.limitsDates")}`,
     "",
   ].join("\n");
 }

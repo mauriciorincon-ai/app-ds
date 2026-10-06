@@ -476,6 +476,13 @@ function ScoredResults({
     multiclase: () => t("score.multiclassProbabilityNote"),
     numerica: () => null,
   });
+  // Sin columna de probabilidad, por qué (AU-S7-36: «ordenar por riesgo» es de la
+  // binaria; con varias categorías no hay un riesgo que ordenar).
+  const noProbabilityNote = matchByTask(schema, {
+    binaria: () => t("score.noProbabilities"),
+    multiclase: () => t("score.noProbabilitiesMulticlass"),
+    numerica: () => t("score.quantityNote"),
+  });
 
   // Distribución de predicciones por clase (conteo simple, honesto). Al estimar
   // no hay clases: el resumen es mínimo · mediana · máximo.
@@ -511,7 +518,9 @@ function ScoredResults({
             {check.extra.length > 0 && (
               <li>
                 {t("score.warnings.extra", {
-                  columns: check.extra.map((c) => `«${c}»`).join(", "),
+                  columns: check.extra
+                    .map((c) => t("common.quote", { text: c }))
+                    .join(", "),
                 })}
               </li>
             )}
@@ -543,7 +552,7 @@ function ScoredResults({
               <MetricTile
                 key={label}
                 label={label}
-                value={`${count} (${percent(count)}%)`}
+                value={`${thousands(count)} (${t("common.percent", { n: percent(count) })})`}
               />
             ))}
           </div>
@@ -560,9 +569,7 @@ function ScoredResults({
         {/* S5: ridge y el SVM lineal no dan probabilidad — se dice, no se inventa.
             S6: estimar tampoco la da, por otra razón (no hay clases). */}
         {!probabilities && (
-          <p className="text-sm text-ink-muted">
-            {quantity ? t("score.quantityNote") : t("score.noProbabilities")}
-          </p>
+          <p className="text-sm text-ink-muted">{noProbabilityNote}</p>
         )}
         {probabilities && probabilityNote && (
           <p className="text-sm text-ink-muted">{probabilityNote}</p>
@@ -783,7 +790,9 @@ function ClusterScoredResults({
           <ul className="mt-1 ml-5 list-disc">
             <li>
               {t("score.warnings.extra", {
-                columns: check.extra.map((c) => `«${c}»`).join(", "),
+                columns: check.extra
+                  .map((c) => t("common.quote", { text: c }))
+                  .join(", "),
               })}
             </li>
           </ul>
@@ -798,20 +807,20 @@ function ClusterScoredResults({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
-          {t("score.groups.title", { rows: thousands(total) })}
+          {t("score.groups.title", { count: total, rows: thousands(total) })}
         </h2>
         <div className="grid grid-cols-2 gap-2 sm:max-w-md">
           {counts.map(({ label, count }) => (
             <MetricTile
               key={label}
               label={label}
-              value={`${count} (${percent(count)}%)`}
+              value={`${thousands(count)} (${t("common.percent", { n: percent(count) })})`}
             />
           ))}
           {schema.noise && (
             <MetricTile
               label={noise}
-              value={`${outside} (${percent(outside)}%)`}
+              value={`${thousands(outside)} (${t("common.percent", { n: percent(outside) })})`}
             />
           )}
         </div>

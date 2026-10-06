@@ -107,7 +107,11 @@ export function TrainingScreen({
           </p>
           <div
             role="progressbar"
-            aria-label={t("training.training")}
+            // AU-S7-16: el nombre de la barra dice lo que pasa (al agrupar no hay
+            // validación cruzada ni conjunto de prueba).
+            aria-label={t(
+              cluster ? "training.clustering" : "training.training",
+            )}
             aria-valuemin={0}
             aria-valuemax={steps}
             aria-valuenow={step}
@@ -125,7 +129,10 @@ export function TrainingScreen({
           <Button variant="secondary" icon="stop" onClick={onCancel}>
             {t("level2.cancel")}
           </Button>
-          <p className="text-sm text-ink-muted">{t("level2.cancelHint")}</p>
+          {/* AU-S7-17: al agrupar, cancelar sí pierde algo (las filas con su grupo). */}
+          <p className="text-sm text-ink-muted">
+            {t(cluster ? "level2.cluster.cancelHint" : "level2.cancelHint")}
+          </p>
         </div>
       ) : (
         <p className="text-sm text-ink-muted">{t("training.wait")}</p>

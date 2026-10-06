@@ -10,9 +10,9 @@ import { matchByTask, taskOf } from "@/engine/despacho";
 import { selectOneSe, type MemberId } from "@/engine/roster";
 import {
   METRIC_RULES,
-  type MetricName,
   type Metrics,
   type MulticlassMetrics,
+  type PrimaryMetric,
   type RegressionMetrics,
 } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
@@ -68,15 +68,13 @@ export function LeagueTable({
   const metricName = t(`results.metrics.${metric}`);
   const lower = METRIC_RULES[metric].direction === "lower";
   const short = (id: MemberId) => t(`results.candidates.short.${id}`);
-  // El puntaje de prueba de una fila en la métrica de la liga.
+  // El puntaje de prueba de una fila en la métrica de la liga, leído por SU nombre
+  // (AU-S7-41: sin fijar `balanced_accuracy` ni `mae` aquí; la métrica la decide
+  // `selection.metric`, la misma que gobierna METRIC_RULES). Las tres formas de
+  // métricas encajan en este tipo sin conversión.
   const testScore = (
-    m: Metrics | MulticlassMetrics | RegressionMetrics,
-  ): number =>
-    "mae" in m
-      ? m.mae
-      : "balanced_accuracy" in m
-        ? m.balanced_accuracy
-        : m[metric as MetricName];
+    m: Partial<Record<PrimaryMetric, number | null>>,
+  ): number => m[metric] ?? Number.NaN;
   // Clasificación: 3 decimales (de 0 a 1). Estimar: unidades del objetivo, con
   // los decimales que pide el puntaje más chico de la tabla (R9).
   const fixed3 = (v: number) => v.toFixed(3);

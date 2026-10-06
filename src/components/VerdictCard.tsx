@@ -69,7 +69,11 @@ export function VerdictCard({
           {banner.mark}
         </span>
         <div>
-          <h1 className={`text-xl font-semibold ${TONE_CLASS[banner.tone]}`}>
+          {/* tabIndex −1: el foco llega aquí tras «Elegir» (AU-S7-39), sin entrar al tabulador. */}
+          <h1
+            tabIndex={-1}
+            className={`text-xl font-semibold ${TONE_CLASS[banner.tone]}`}
+          >
             {banner.headline}
           </h1>
           <p className="mt-1 text-sm text-ink-muted">{banner.detail}</p>

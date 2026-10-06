@@ -50,6 +50,16 @@ export function formatQuantity(value: number, decimals: number): string {
   return formatter.format(Number(value.toFixed(decimals)) === 0 ? 0 : value);
 }
 
+/** Una cifra de un perfil de grupo en las unidades del usuario: con los decimales que
+ *  pide su columna, y en notación científica si es diminuta (~1e-11 no es «0»). La
+ *  usan la pantalla y la model card de agrupar (S7, AU-S7-23: la card decía «0.00»). */
+export function profileNumber(value: number, decimals: number): string {
+  const abs = Math.abs(value);
+  return abs > 0 && abs < 1e-4
+    ? value.toExponential(2)
+    : formatQuantity(value, decimals);
+}
+
 /** «33.3 kWh» si la unidad se conoce; si no, el número solo (la UI dice de qué
  *  columna). Espacio NO separable: «33.3» y «kWh» nunca quedan en líneas distintas. */
 export function withUnit(text: string, unit: TargetUnit): string {

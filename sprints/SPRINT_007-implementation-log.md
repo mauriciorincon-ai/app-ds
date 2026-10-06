@@ -1420,7 +1420,7 @@ as-built del H2 (S5–S7):
 **Medido para el BLUEPRINT** (2026-10-06):
 
 - `node scripts/verificar-peso-pyodide.mjs`: «39.58 MiB (11 wheels de pandas + scikit-learn + xgboost
-  + lightgbm) · crecimiento 1.40 MiB sobre la línea base · tope 40.18 MiB»;
+  - lightgbm) · crecimiento 1.40 MiB sobre la línea base · tope 40.18 MiB»;
 - `gh api …/rulesets`: `main-protegida active`;
 - **sin sesión** (`curl`, con las URLs del registro privado de la planeadora, que no se escriben
   aquí): la portada de producción responde 200, `/conoce` 200 y la preview del PR #19 (`23dedf1`)
@@ -1466,16 +1466,29 @@ de lo que se aprobó y no se reescribe. Ninguna línea de HTML del brochure hast
 Respuesta literal: **«1. A, 2. A 3. Arreglalo 2 A»**, sobre las cuatro preguntas del mensaje (las dos del
 storyboard y las dos de la auditoría, cada una con su recomendación):
 
-| Pregunta | Decisión |
-| --- | --- |
-| D-A · cómo entra el catálogo en el brochure | **A**: escena E04b «Cuatro preguntas, la misma vara» + quinta puerta «Agrupar sin objetivo» |
-| D-B · el brochure en inglés | **A**: ES y EN en este PR; el inglés del export, como desviación para la planeadora |
-| Decisión 1 de la auditoría · HDBSCAN con más de 2.000 filas (AU-S7-02) | **Arreglarlo** (la regla de tamaño se aplica a las filas de cada ajuste) |
-| Decisión 2 de la auditoría · el titular de fuga heredado (AU-S7-20) | **A**: «Posible fuga de datos — sospechoso» en las tres tareas con objetivo, con el detalle de lo encontrado y sin umbral nuevo |
+| Pregunta                                                               | Decisión                                                                                                                        |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| D-A · cómo entra el catálogo en el brochure                            | **A**: escena E04b «Cuatro preguntas, la misma vara» + quinta puerta «Agrupar sin objetivo»                                     |
+| D-B · el brochure en inglés                                            | **A**: ES y EN en este PR; el inglés del export, como desviación para la planeadora                                             |
+| Decisión 1 de la auditoría · HDBSCAN con más de 2.000 filas (AU-S7-02) | **Arreglarlo** (la regla de tamaño se aplica a las filas de cada ajuste)                                                        |
+| Decisión 2 de la auditoría · el titular de fuga heredado (AU-S7-20)    | **A**: «Posible fuga de datos — sospechoso» en las tres tareas con objetivo, con el detalle de lo encontrado y sin umbral nuevo |
 
 Con la respuesta quedan aprobadas la Fase 1 parcial de `/audita-sprint` y su plan de pago. La decisión
 del storyboard es de forma: lo construido se ve en la parada 7 del ⭐⭐ corto (Acto 2), no se da por
 visto aquí.
+
+### Fase 2 de la auditoría (pago de B, C y la constitución)
+
+**CI de `dbdd81f`** (gates y motor, parte 1; run 37408832924): quality, integration, e2e y lighthouse en
+`success`, más Vercel.
+
+**CI de `2fae8c2`** (copy, parte 2; run 37409352000): 6 de 6 `success`. `quality` corrió 716 de 716
+unitarias **sin ninguna saltada**: la carnada del hook ya no se salta en la CI (AU-S7-13), y el paso nuevo
+«Regla 18 — verificar-retiros» corrió por primera vez en este PR: «GHSA-vfj7-8cjw-p6xm sigue sin parche
+publicado — la excepción sigue vigente». `integration`: 101 más 1 saltada, el emisor del fixture del S6
+(`modelo-s6.test.ts`), que solo escribe con su variable de entorno y no es un gate. e2e 64 de 64.
+
+La tabla de demos en rojo de la Fase 2 se copia aquí al cerrar la fase.
 
 ## Fricciones del kit (SEPARADAS del producto)
 

@@ -119,9 +119,11 @@ export function RosterCard({
           <p className="text-xs text-ink-muted">
             {t("roster.clusterNote", { max: k })}
           </p>
-          {/* Decisión 8 del usuario: la muestra del jerárquico, antes de correr. */}
+          {/* Decisión 8 del usuario: la muestra del jerárquico, antes de correr. En la
+              caja `sunken` con `info` que dice design-system.md (AU-S7-38), la misma
+              forma que la nota de Resultados (AggloSampleNote). */}
           {rows > AGGLO_MAX_ROWS && (
-            <p className="flex items-start gap-1 text-xs">
+            <p className="flex items-start gap-2 rounded-md border border-hairline bg-sunken p-3 text-xs">
               <Icon name="info" className="mt-0.5 shrink-0 text-ink-muted" />
               {t("roster.clusterSample", {
                 sample: n(AGGLO_MAX_ROWS),

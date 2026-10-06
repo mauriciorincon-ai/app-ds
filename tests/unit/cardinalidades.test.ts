@@ -18,6 +18,9 @@ const CARDINALES = [
   /\b\d+ MB\b/,
   /\b(dos|tres|cuatro|cinco|two|three|four|five) (tareas|agrupadores|tasks|clusterers)\b/i,
   /\b(otros tres|other three)\b/i,
+  // S7: el tope de filas escrito a mano («50 000 filas», con espacio de miles además).
+  /\b\d{1,3}(?:[ \u00a0.,]\d{3})+\s(filas|rows)\b/,
+  /\b\d{4,}\s(filas|rows)\b/,
 ];
 
 function textos(valor: unknown, ruta = ""): [string, string][] {
@@ -64,6 +67,9 @@ describe("cardinalidades: el copy no fija cifras que vienen de los datos (casill
       // Las filas con la regla de cifras de la app (R9): miles con coma en los dos idiomas.
       expect(hint).toContain(thousands(MAX_ROWS));
       expect(thousands(MAX_ROWS)).toBe("50,000");
+      expect(
+        translate(idioma, "errors.csv-too-many-rows", csvLimitParams()),
+      ).toContain(thousands(MAX_ROWS));
       expect(
         translate(idioma, "start.import.errors.file-too-large", {
           mb: MAX_MODEL_FILE_BYTES / (1024 * 1024),
