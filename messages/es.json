@@ -16,7 +16,7 @@
     "subtitle": "Sube un CSV o elige un ejemplo. Todo corre en tu navegador; tus datos nunca salen de él.",
     "dropzone": {
       "label": "Arrastra un CSV aquí o haz clic para elegir",
-      "hint": "Hasta 5 MB o 50 000 filas",
+      "hint": "Hasta {mb} MB o {rows} filas",
       "button": "Elegir archivo"
     },
     "examples": {
@@ -86,7 +86,7 @@
         "clusterWinner": "Ganador entre {count} agrupadores ({k} grupos)."
       },
       "errors": {
-        "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
+        "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. {mb} MB). No se leyó.",
         "invalid-json": "Ese archivo no es un JSON válido.",
         "invalid-format": "Ese archivo no parece un modelo exportado por Probeta.",
         "unsupported-version": "Ese archivo viene de una versión del formato de Probeta que esta app no soporta.",
@@ -104,7 +104,7 @@
     "target": {
       "label": "¿Qué quieres predecir?",
       "placeholder": "Elige una columna…",
-      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. La app entrena las de dos categorías (sí/no, 0/1), las de varias categorías (hasta 20, como un plan o una región) y las cantidades (un precio, un consumo, un tiempo). Si no hay nada que predecir, elige «Sin objetivo» para agrupar filas parecidas.",
+      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. La app entrena las de dos categorías (sí/no, 0/1), las de varias categorías (hasta {max}, como un plan o una región) y las cantidades (un precio, un consumo, un tiempo). Si no hay nada que predecir, elige «Sin objetivo» para agrupar filas parecidas.",
       "option": "{column} · {task}",
       "cluster": "Sin objetivo: agrupar filas parecidas"
     },
@@ -344,7 +344,7 @@
     },
     "dropzone": {
       "label": "Arrastra tu CSV nuevo aquí o haz clic para elegir",
-      "hint": "Hasta 5 MB o 50 000 filas",
+      "hint": "Hasta {mb} MB o {rows} filas",
       "button": "Elegir archivo"
     },
     "needed": {
@@ -583,7 +583,7 @@
       "leakage": "El chequeo de fuga atrapa casos evidentes; no es una garantía.",
       "explainability": "La importancia por permutación es global (no por predicción) y puede repartirse entre variables correlacionadas; la dirección es univariada y no captura interacciones.",
       "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal).",
-      "tasks": "Esta versión hace cuatro tareas: la clasificación en dos categorías, la clasificación en varias categorías (hasta 20), la estimación de una cantidad y el agrupamiento de filas sin objetivo."
+      "tasks": "La app hace estas tareas y ninguna otra: clasificar en dos categorías, clasificar en varias categorías (hasta {max}), estimar una cantidad y agrupar filas sin objetivo."
     },
     "sanitation": {
       "duplicates": "Se quitaron {count} filas duplicadas exactas (previene fuga por duplicación).",
@@ -623,7 +623,15 @@
       "distanceNumeric": "El parecido se mide con {count} columnas numéricas ({columns}); las categóricas ({categorical}) solo describen los grupos.",
       "distanceAll": "El parecido se mide con todas las columnas, numéricas y categóricas ({columns}), porque hay menos de dos numéricas.",
       "pipeline": "Imputación, escalado y one-hot dentro de un Pipeline de scikit-learn, ajustado sobre todas las filas: al agrupar no hay partición ni prueba (semilla {seed}).",
-      "members": "Compitieron {count} agrupadores probando de {min} a {max} grupos: K-Means y el jerárquico eligen por silueta (sobre una muestra de {sample} filas), GMM por BIC y HDBSCAN por densidad.",
+      "members": "Compitieron {count} agrupadores probando de {min} a {max} grupos: {how}.",
+      "kBy": {
+        "silhouette": "{models} eligen por silueta (sobre una muestra de {sample} filas)",
+        "silhouette_one": "{models} elige por silueta (sobre una muestra de {sample} filas)",
+        "bic": "{models} eligen por BIC",
+        "bic_one": "{models} elige por BIC",
+        "density": "{models} los encuentran por densidad",
+        "density_one": "{models} los encuentra por densidad"
+      },
       "consensus": "Ganó por consenso: {votes} de {voters} agrupadores encontraron {k} grupos, y entre ellos {model} tuvo el mayor puntaje.",
       "chosen": "◆ Elegido por ti: {model} (el ganador de la comparación era {winner}).",
       "noLeakage": "No aplica: al agrupar no hay objetivo que una columna pueda delatar.",
@@ -639,7 +647,7 @@
   "errors": {
     "title": "Algo no cuadra",
     "csv-empty": "El archivo está vacío o solo tiene la cabecera.",
-    "csv-too-large": "El archivo supera el límite de 5 MB.",
+    "csv-too-large": "El archivo supera el límite de {mb} MB.",
     "csv-too-many-rows": "El archivo supera las 50 000 filas.",
     "csv-ragged": "Hay filas con distinto número de columnas que la cabecera.",
     "csv-semicolon": "Tu archivo separa las columnas con punto y coma (;), no con comas, así que no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
@@ -727,7 +735,7 @@
     "level2_one": "Nivel 2 · después, si quieres · 1 modelo más",
     "clusterK": "K-Means y el jerárquico eligen cuántos grupos con la silueta; GMM, con el BIC; HDBSCAN no necesita que se lo digan: los encuentra por densidad.",
     "clusterNote": "Prueban de 2 a {max} grupos sobre todas tus filas: sin objetivo no hay validación cruzada ni conjunto de prueba. Al final, el ganador se compara con datos sin estructura y se repite con partes de tus filas.",
-    "clusterSample": "Con tus {rows} filas, el jerárquico se ajusta sobre una muestra de {sample} y asigna el resto al grupo más cercano (los otros tres usan todas).",
+    "clusterSample": "Con tus {rows} filas, el jerárquico se ajusta sobre una muestra de {sample} y asigna el resto al grupo más cercano (los demás agrupadores usan todas).",
     "cluster": {
       "level1": "Nivel 1 · ahora · {count} agrupadores · unos {time}",
       "level1_one": "Nivel 1 · ahora · 1 agrupador · unos {time}",
@@ -848,7 +856,7 @@
     "chosenNote": "◆ Elegido por ti. La lectura de arriba es la de este agrupador; el ganador sigue marcado con ★.",
     "sample": {
       "title": "Ajustado sobre una muestra de {sample} de tus {rows} filas; las demás se asignaron al grupo más cercano.",
-      "why": "Por qué: con más de {max} filas, el agrupamiento jerárquico necesitaría más memoria de la que un navegador puede dar (sobre todo en un teléfono) sin cerrar la pestaña. Los otros tres agrupadores usan todas tus filas."
+      "why": "Por qué: con más de {max} filas, el agrupamiento jerárquico necesitaría más memoria de la que un navegador puede dar (sobre todo en un teléfono) sin cerrar la pestaña. Los demás agrupadores usan todas tus filas."
     },
     "profiles": {
       "title": "Qué distingue a los {count} grupos",

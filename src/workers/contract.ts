@@ -9,7 +9,12 @@
 // S6 (P1): cada resultado trae su `task` y el lector la coteja con la enviada; la
 // forma, las métricas y la selección se validan con las reglas de ESA tarea.
 import { byTask, matchByTask, taskOf, type ByTask } from "@/engine/despacho";
-import { isMemberOf, selectOneSe, type MemberId } from "@/engine/roster";
+import {
+  isMemberOf,
+  selectOneSe,
+  type ClusterMemberId,
+  type MemberId,
+} from "@/engine/roster";
 import {
   MULTICLASS_MAX_CLASSES,
   MULTICLASS_MIN_CLASSES,
@@ -46,6 +51,8 @@ import {
 } from "@/lib/validate";
 import type {
   BinaryScoreResult,
+  ClusterAssignMethod,
+  ClusterKBy,
   ClusterMemberFitResult,
   ClusterMemberRow,
   ClusterModelSchema,
@@ -916,20 +923,22 @@ const clusterResultV = obj({
   elapsed_ms: nonNegInt,
 });
 
-/** Cómo elige su k cada agrupador, y con qué regla asigna una fila nueva. */
+/** Cómo elige su k cada agrupador, y con qué regla asigna una fila nueva. S7 (AU-S7-27): una
+ *  entrada por agrupador del roster, exigida por el compilador (un agrupador nuevo no compila
+ *  hasta que dice cómo elige k y cómo asigna). */
 const CLUSTER_K_BY = {
   kmeans: "silhouette",
   agglomerative: "silhouette",
   gmm: "bic",
   hdbscan: "density",
-} as const;
+} as const satisfies Record<ClusterMemberId, ClusterKBy>;
 const CLUSTER_ASSIGN = {
   kmeans: "nearest-centroid",
   agglomerative: "nearest-centroid",
   gmm: "gaussian",
   hdbscan: "centroid-radius",
-} as const;
-type ClusterId = keyof typeof CLUSTER_K_BY;
+} as const satisfies Record<ClusterMemberId, ClusterAssignMethod>;
+type ClusterId = ClusterMemberId;
 const clusterId = (name: MemberId) => name as ClusterId;
 
 /** Lo que TS envió (o sabe) al agrupar. */
@@ -944,12 +953,24 @@ export type ClusterSent = {
   categorical: readonly string[];
 };
 
-/** P13: una etiqueta por fila no viaja en NINGÚN resultado de agrupar. */
-function labelsField(r: Record<string, unknown>): string | null {
-  if ("labels" in r) return "labels";
-  const league = Array.isArray(r.league) ? r.league : [];
-  const i = league.findIndex((row) => isRecord(row) && "labels" in row);
-  return i >= 0 ? `league[${i}].labels` : null;
+/** P13: una etiqueta por fila no viaja en NINGÚN resultado de agrupar, a ninguna
+ *  profundidad (S7, AU-S7-09: también `reading.labels` o dentro de un perfil). */
+function labelsField(value: unknown, path = ""): string | null {
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      const hit = labelsField(value[i], `${path}[${i}]`);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  if (!isRecord(value)) return null;
+  for (const [key, inner] of Object.entries(value)) {
+    const at = path ? `${path}.${key}` : key;
+    if (key === "labels") return at;
+    const hit = labelsField(inner, at);
+    if (hit) return hit;
+  }
+  return null;
 }
 
 const close = (a: number, b: number) =>
@@ -986,6 +1007,8 @@ function clusterRowField(
       (x): x is { k: number; silhouette: number } => x.silhouette !== null,
     );
     if (votes) {
+      // S7 (AU-S7-06): un agrupador que vota sin ninguna silueta medida se nombra, no lanza.
+      if (scored.length === 0) return at("silhouette_by_k");
       const best = scored.reduce((a, b) => (b.silhouette > a.silhouette ? b : a));
       if (row.k !== best.k) return at("k");
       if (row.silhouette !== best.silhouette) return at("silhouette");
@@ -1204,6 +1227,15 @@ export function clusterSchemaV(v: unknown, path: string): string | null {
   ) {
     return at("assign.centroids");
   }
+  // S7 (AU-S7-08): el ancho de cada centro es el del espacio preprocesado: una columna por
+  // numérica y, con categorías en la distancia, al menos una por categórica (one-hot).
+  const p = centroids[0]!.length;
+  if (
+    s.categorical.length === 0
+      ? p !== s.numeric.length
+      : p < s.numeric.length + s.categorical.length
+  )
+    return at("assign.centroids");
   const withRadius = method === "centroid-radius";
   if (withRadius !== (radii !== null) || (radii && radii.length !== s.groups))
     return at("assign.radii");

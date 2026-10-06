@@ -59,6 +59,15 @@ describe("hook PreToolUse de secretos (kit v1.37.0; origen planlang AU-S2-B12)",
     expect(r.status).toBe(0);
   });
 
+  // S7 (AU-S7-13, AC-27): la CI pone gitleaks en el PATH (jq viene en el runner), así que allí la
+  // carnada de abajo CORRE; si faltara, esta prueba es el rojo («skipped» no es verde).
+  it("en la CI, gitleaks y jq están: la carnada no se salta", () => {
+    expect(
+      hayHerramientas || !process.env.CI,
+      "en la CI faltan gitleaks o jq: la carnada se saltaría",
+    ).toBe(true);
+  });
+
   it.runIf(hayHerramientas)(
     "con las herramientas: deja pasar lo limpio y bloquea la carnada",
     () => {

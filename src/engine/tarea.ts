@@ -42,6 +42,23 @@ export const MULTICLASS_MAX_CLASSES = 20;
  *  MULTICLASS_MIN_CLASSES en pipeline.py, paridad en tests/unit/roster.test.ts). */
 export const MULTICLASS_MIN_CLASSES = 3;
 
+/**
+ * S7: orden de las clases por punto de código — el de `sorted()` de Python, que
+ * las codifica 0..K−1 y las coteja con las que manda TS. (El `sort()` de JS compara
+ * unidades UTF-16 y difiere fuera del plano básico: un emoji contra «ﬀ».) Lo usan la
+ * partición, la EDA y la fuga por clase (AU-S7-29): con un empate, la clase que se
+ * nombra es la misma en todos lados.
+ */
+export function byCodePoint(a: string, b: string): number {
+  const x = [...a];
+  const y = [...b];
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const d = x[i]!.codePointAt(0)! - y[i]!.codePointAt(0)!;
+    if (d !== 0) return d;
+  }
+  return x.length - y.length;
+}
+
 /** Todas las tareas que E1 nombra. Un `Record` completo: sumar una tarea a `Task`
  *  sin listarla aquí no compila. */
 const TASK_NAMES: Record<Task, true> = {

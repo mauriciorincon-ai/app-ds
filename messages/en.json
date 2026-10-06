@@ -16,7 +16,7 @@
     "subtitle": "Upload a CSV or pick an example. Everything runs in your browser; your data never leaves it.",
     "dropzone": {
       "label": "Drag a CSV here or click to choose",
-      "hint": "Up to 5 MB or 50,000 rows",
+      "hint": "Up to {mb} MB or {rows} rows",
       "button": "Choose file"
     },
     "examples": {
@@ -86,7 +86,7 @@
         "clusterWinner": "Winner among {count} clusterers ({k} groups)."
       },
       "errors": {
-        "file-too-large": "That file is too large to be a Probeta model (max 100 MB). It was not read.",
+        "file-too-large": "That file is too large to be a Probeta model (max {mb} MB). It was not read.",
         "invalid-json": "That file isn't valid JSON.",
         "invalid-format": "That file doesn't look like a model exported by Probeta.",
         "unsupported-version": "That file comes from a Probeta format version this app doesn't support.",
@@ -104,7 +104,7 @@
     "target": {
       "label": "What do you want to predict?",
       "placeholder": "Pick a column…",
-      "help": "You can pick any column: we tell you what kind of prediction it would be. The app trains two-category columns (yes/no, 0/1), several-category columns (up to 20, like a plan or a region) and quantities (a price, a consumption, a duration). If there's nothing to predict, pick “No target” to group similar rows.",
+      "help": "You can pick any column: we tell you what kind of prediction it would be. The app trains two-category columns (yes/no, 0/1), several-category columns (up to {max}, like a plan or a region) and quantities (a price, a consumption, a duration). If there's nothing to predict, pick “No target” to group similar rows.",
       "option": "{column} · {task}",
       "cluster": "No target: group similar rows"
     },
@@ -344,7 +344,7 @@
     },
     "dropzone": {
       "label": "Drop your new CSV here or click to choose",
-      "hint": "Up to 5 MB or 50,000 rows",
+      "hint": "Up to {mb} MB or {rows} rows",
       "button": "Choose file"
     },
     "needed": {
@@ -583,7 +583,7 @@
       "leakage": "The leakage check catches obvious cases; it is not a guarantee.",
       "explainability": "Permutation importance is global (not per-prediction) and can spread across correlated variables; the direction is univariate and does not capture interactions.",
       "dates": "Date columns are detected but not used yet (no temporal split).",
-      "tasks": "This version does four tasks: classification into two categories, classification into several categories (up to 20), estimating a quantity and grouping rows with no target."
+      "tasks": "The app does these tasks and no others: classifying into two categories, classifying into several categories (up to {max}), estimating a quantity and grouping rows with no target."
     },
     "sanitation": {
       "duplicates": "Removed {count} exact duplicate rows (prevents leakage by duplication).",
@@ -623,7 +623,15 @@
       "distanceNumeric": "Similarity is measured with {count} numeric columns ({columns}); the categorical ones ({categorical}) only describe the groups.",
       "distanceAll": "Similarity is measured with every column, numeric and categorical ({columns}), because there are fewer than two numeric ones.",
       "pipeline": "Imputation, scaling and one-hot inside a scikit-learn Pipeline, fitted on all rows: grouping has no split and no test (seed {seed}).",
-      "members": "{count} clusterers competed, trying {min} to {max} groups: K-Means and hierarchical choose by silhouette (on a sample of {sample} rows), GMM by BIC and HDBSCAN by density.",
+      "members": "{count} clusterers competed, trying {min} to {max} groups: {how}.",
+      "kBy": {
+        "silhouette": "{models} choose by silhouette (on a sample of {sample} rows)",
+        "silhouette_one": "{models} chooses by silhouette (on a sample of {sample} rows)",
+        "bic": "{models} choose by BIC",
+        "bic_one": "{models} chooses by BIC",
+        "density": "{models} find them by density",
+        "density_one": "{models} finds them by density"
+      },
       "consensus": "Won by consensus: {votes} of {voters} clusterers found {k} groups, and among them {model} had the highest score.",
       "chosen": "◆ Chosen by you: {model} (the winner of the comparison was {winner}).",
       "noLeakage": "Not applicable: grouping has no target for a column to give away.",
@@ -639,7 +647,7 @@
   "errors": {
     "title": "Something doesn't add up",
     "csv-empty": "The file is empty or has only a header.",
-    "csv-too-large": "The file exceeds the 5 MB limit.",
+    "csv-too-large": "The file exceeds the {mb} MB limit.",
     "csv-too-many-rows": "The file exceeds 50,000 rows.",
     "csv-ragged": "Some rows have a different number of columns than the header.",
     "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
@@ -727,7 +735,7 @@
     "level2_one": "Level 2 · later, if you want · 1 more model",
     "clusterK": "K-Means and hierarchical pick how many groups with the silhouette; GMM, with BIC; HDBSCAN doesn't need to be told: it finds them by density.",
     "clusterNote": "They try 2 to {max} groups on all your rows: with no target there is no cross-validation and no test set. At the end, the winner is compared with structureless data and repeated on parts of your rows.",
-    "clusterSample": "With your {rows} rows, hierarchical fits a sample of {sample} and assigns the rest to the nearest group (the other three use all of them).",
+    "clusterSample": "With your {rows} rows, hierarchical fits a sample of {sample} and assigns the rest to the nearest group (the other clusterers use all of them).",
     "cluster": {
       "level1": "Level 1 · now · {count} clusterers · about {time}",
       "level1_one": "Level 1 · now · 1 clusterer · about {time}",
@@ -848,7 +856,7 @@
     "chosenNote": "◆ Chosen by you. The reading above is this clusterer's; the winner is still marked with ★.",
     "sample": {
       "title": "Fitted on a sample of {sample} of your {rows} rows; the rest were assigned to the nearest group.",
-      "why": "Why: with more than {max} rows, hierarchical clustering would need more memory than a browser can give (especially on a phone) without closing the tab. The other three clusterers use all your rows."
+      "why": "Why: with more than {max} rows, hierarchical clustering would need more memory than a browser can give (especially on a phone) without closing the tab. The other clusterers use all your rows."
     },
     "profiles": {
       "title": "What sets the {count} groups apart",

@@ -5,6 +5,8 @@
 // promete atrapar todos los casos: es una advertencia ("esta columna podría ser
 // un proxy del objetivo"), no una garantía. Se calcula SOLO sobre train.
 
+import { byCodePoint } from "@/engine/tarea";
+
 export type LeakageColumn =
   | { name: string; kind: "numeric"; values: readonly (number | null)[] }
   | { name: string; kind: "categorical"; values: readonly (string | null)[] };
@@ -229,7 +231,7 @@ export function detectLeakageByClass(
   threshold: number = DEFAULT_LEAKAGE_THRESHOLD,
   minSupport: number = LEAKAGE_CLASS_MIN_SUPPORT,
 ): LeakageFinding[] {
-  const classes = [...new Set(labels)].sort();
+  const classes = [...new Set(labels)].sort(byCodePoint);
   const indicators = classes.map(
     (c) => [c, labels.map((l) => (l === c ? 1 : 0))] as const,
   );

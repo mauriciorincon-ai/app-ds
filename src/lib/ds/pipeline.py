@@ -716,10 +716,19 @@ def _sweep_hdbscan(ctx):
     silueta sin el ruido × (1 − cuota de ruido)."""
     row = _cluster_row("hdbscan", "density")
     mcs = _hdbscan_min_size(ctx["n"])
+    # S7 (AU-S7-02, decisión 1 del usuario): la regla de tamaño max(5, n/50) se aplica a las
+    # filas de CADA ajuste —el barrido, la referencia nula y cada re-muestreo—. Con el tamaño
+    # del total, la nula (sobre la muestra de 2.000) no encontraba ningún grupo, valía 0 y la
+    # lectura «existen» se daba sin comparar contra datos sin estructura.
+    refit = lambda Z, seed: HDBSCAN(min_cluster_size=_hdbscan_min_size(len(Z))).fit(Z).labels_
+    if ctx["n"] < mcs:
+        # S7 (AU-S7-30): menos filas que el tamaño mínimo de un grupo: todas quedan fuera de
+        # todo grupo («sin estructura»), en vez de un error de sklearn.
+        return _finish(row, np.full(ctx["n"], -1), None, refit, np.arange(ctx["n"]))
     labels = HDBSCAN(min_cluster_size=mcs).fit(ctx["Z"]).labels_
     return _finish(
         row, labels, _sample_silhouette(ctx, labels),
-        lambda Z, seed: HDBSCAN(min_cluster_size=mcs).fit(Z).labels_,
+        refit,
         np.arange(ctx["n"]),
     )
 

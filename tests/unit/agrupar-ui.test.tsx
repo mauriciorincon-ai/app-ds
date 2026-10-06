@@ -252,7 +252,7 @@ describe("S7 (decisión 8): la muestra del jerárquico, donde se lee el resultad
     screenFor(sampled());
     const reading = screen.getByRole("heading", { level: 1 }).closest("div")!;
     expect(reading.parentElement!.textContent).toMatch(
-      /Ajustado sobre una muestra de 8,000 de tus 12,000 filas; las demás se asignaron al grupo más cercano\..*memoria.*teléfono.*Los otros tres agrupadores usan todas tus filas/,
+      /Ajustado sobre una muestra de 8,000 de tus 12,000 filas; las demás se asignaron al grupo más cercano\..*memoria.*teléfono.*Los demás agrupadores usan todas tus filas/,
     );
     const table = screen.getByRole("region", { name: "Los agrupadores: 4" });
     expect(
@@ -306,6 +306,40 @@ describe("S7: la model card de agrupar", () => {
       result: clusterResult(),
       date: new Date(2026, 9, 4),
     });
+
+  // S7 (AU-S7-04): con 20,000 filas el Nivel 1 corre solo K-Means y GMM. La card describe a
+  // los que compitieron, no a los cuatro.
+  it.each(["es", "en"] as const)(
+    "en %s, la card nombra solo a los agrupadores que compitieron",
+    (locale) => {
+      const full = clusterResult();
+      const two = full.league.filter(
+        (r) => r.name === "kmeans" || r.name === "gmm",
+      );
+      const md = buildClusterCard({
+        locale,
+        datasetName: "grande.csv",
+        cols: 5,
+        seed: 42,
+        excluded: [],
+        result: {
+          ...full,
+          league: two,
+          selection: { ...full.selection, competitors: two.length },
+        },
+        date: new Date(2026, 9, 4),
+      });
+      const line = md
+        .split("\n")
+        .find((l) => /Compitieron|clusterers competed/.test(l))!;
+      expect(line).toMatch(/\b2\b/);
+      expect(line, "la card nombra un agrupador que no corrió").not.toMatch(
+        /HDBSCAN|Jerárquico|Hierarchical/,
+      );
+      expect(line).toMatch(/K-Means/);
+      expect(line).toMatch(/GMM/);
+    },
+  );
 
   it("lectura, liga, grupos y regla; fuga e IA «no aplica»; sin prueba ni etiquetas", () => {
     const md = card("es");
@@ -618,9 +652,7 @@ describe("S7: el flujo de agrupar en el hook (P13: las etiquetas no pasan por el
     // pero el CSV que se descarga es la tabla del usuario ENTERA.
     const firstRow = SEGMENTOS.split("\n")[1]!;
     const withDuplicate = `${SEGMENTOS.trimEnd()}\n${firstRow}`;
-    act(() =>
-      result.current.loadCsv(withDuplicate, "segmentos-clientes.csv"),
-    );
+    act(() => result.current.loadCsv(withDuplicate, "segmentos-clientes.csv"));
     act(() => result.current.selectCluster());
     const plan = result.current.state.clusterPlan;
     expect(plan?.ok).toBe(true);
@@ -685,6 +717,40 @@ describe("S7: el flujo de agrupar en el hook (P13: las etiquetas no pasan por el
     expect(lines.at(-1)).toBe(lines[1]);
     // P13: el estado nunca guardó las etiquetas.
     expect(JSON.stringify(result.current.state)).not.toContain('"labels":[');
+  });
+
+  // S7 (AU-S7-01): con basura en una numérica («?» que el saneamiento vacía), la fila sale
+  // tal como llegó y cada fila recibe SU grupo: ni celdas perdidas ni grupos «NaN».
+  it("con basura coaccionada, el CSV conserva la celda y ningún grupo sale «NaN»", () => {
+    const { result } = renderHook(() => useExperiment());
+    const [header, first, ...rest] = SEGMENTOS.trimEnd().split("\n");
+    const cells = first!.split(",");
+    cells[2] = "?"; // visitas_mes: una basura en una columna casi toda numérica
+    const dirty = cells.join(",");
+    // La fila con basura, más su duplicado exacto al final.
+    const csvIn = [header, dirty, ...rest, dirty].join("\n");
+    act(() => result.current.loadCsv(csvIn, "segmentos-clientes.csv"));
+    act(() => result.current.selectCluster());
+    act(() => result.current.runCluster());
+    const worker = FakeWorker.last!;
+    reply(worker, worker.posted.at(-1)!.id, "train", TRAIN);
+    act(() =>
+      result.current.downloadClusterLabels({
+        column: "grupo",
+        noise: "fuera de todo grupo",
+        fileSuffix: "agrupado",
+      }),
+    );
+    const ask = worker.posted.at(-1)!;
+    const labels = Array.from({ length: TRAIN.n_rows }, (_, i) => i % 3);
+    reply(worker, ask.id, "cluster-labels", { labels });
+    const csv = vi.mocked(downloadTextFile).mock.lastCall![1];
+    const lines = csv.trimEnd().split("\n");
+    expect(lines[1], "la celda «?» se perdió").toBe(`${dirty},1`);
+    expect(lines.at(-1), "el duplicado no recibió el grupo de su gemela").toBe(
+      lines[1],
+    );
+    expect(csv, "un grupo salió «NaN»").not.toContain("NaN");
   });
 
   it("un resultado de agrupar que no cuadra con lo enviado se rechaza nombrando el campo", () => {

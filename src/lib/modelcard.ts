@@ -13,6 +13,7 @@ import type { Locale } from "@/i18n/config";
 import { translate, type TParams } from "@/i18n/translate";
 import { matchByTask, taskOf } from "@/engine/despacho";
 import { SMALL_SAMPLE_ROWS } from "@/engine/encarrilador";
+import { MULTICLASS_MAX_CLASSES } from "@/engine/tarea";
 import { memberNameKey, type MemberId } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { MetricName } from "@/engine/verdict";
@@ -172,7 +173,8 @@ function multiclassBlocks(
     baseline: fmt(result.verdict.baselineScore),
   });
   // Una celda de tabla markdown no admite «|» ni saltos: el nombre se escapa.
-  const cell = (name: string) => name.replace(/\|/g, "\\|").replace(/\s+/g, " ");
+  const cell = (name: string) =>
+    name.replace(/\|/g, "\\|").replace(/\s+/g, " ");
   const perClassTable = [
     `| ${t("results.multiclass.class")} | ${t("results.metrics.precision")} | ${t("results.metrics.recall")} | ${t("results.metrics.f1")} | ${t("results.multiclass.support")} |`,
     "| --- | --- | --- | --- | --- |",
@@ -496,7 +498,7 @@ export function buildModelCard(input: ModelCardInput): string {
     "",
     section("limits"),
     "",
-    `- ${t("modelcard.limits.tasks")}`,
+    `- ${t("modelcard.limits.tasks", { max: MULTICLASS_MAX_CLASSES })}`,
     `- ${t("modelcard.limits.leakage")}`,
     `- ${t("modelcard.limits.explainability")}`,
     `- ${t("modelcard.limits.dates")}`,
@@ -543,6 +545,25 @@ export function buildClusterCard(input: ClusterCardInput): string {
     { year: "numeric", month: "long", day: "numeric" },
   );
   const { reading, selection, profiles, assignment, league } = result;
+  // S7 (AU-S7-04): cómo elige cuántos grupos CADA agrupador que compitió (con 20,000 filas
+  // el Nivel 1 corre dos: la card no nombra a los que no corrieron).
+  const list = new Intl.ListFormat(locale === "es" ? "es" : "en", {
+    type: "conjunction",
+  });
+  const howTheyChoose = () => {
+    const byRule = new Map<string, string[]>();
+    for (const row of league)
+      byRule.set(row.k_by, [...(byRule.get(row.k_by) ?? []), short(row.name)]);
+    return list.format(
+      [...byRule].map(([kBy, names]) =>
+        t(`modelcard.cluster.kBy.${kBy}`, {
+          count: names.length,
+          models: list.format(names),
+          sample: n(result.silhouetteSample),
+        }),
+      ),
+    );
+  };
   const retained = league.find((r) => r.name === result.modelName);
   const k = retained?.k ?? profiles.groups.length;
   const first = profiles.groups[0];
@@ -644,7 +665,9 @@ export function buildClusterCard(input: ClusterCardInput): string {
               : "—",
           })
         : t("modelcard.cluster.distanceAll", {
-            columns: [...numeric, ...categorical].map((c) => `«${c}»`).join(", "),
+            columns: [...numeric, ...categorical]
+              .map((c) => `«${c}»`)
+              .join(", "),
           })
     }`,
     ...input.excluded.map(
@@ -658,9 +681,9 @@ export function buildClusterCard(input: ClusterCardInput): string {
     `- ${t("modelcard.cluster.pipeline", { seed: input.seed })}`,
     `- ${t("modelcard.cluster.members", {
       count: selection.competitors,
-      sample: n(result.silhouetteSample),
       min: CLUSTER_K_MIN,
       max: result.kRange[1],
+      how: howTheyChoose(),
     })}`,
     `- ${
       selection.by === "user"
@@ -692,7 +715,9 @@ export function buildClusterCard(input: ClusterCardInput): string {
       seconds: (selection.elapsedMs / 1000).toFixed(1),
     })}`,
     ...(result.smallSample
-      ? [`- ${t("modelcard.selection.smallSample", { rows: SMALL_SAMPLE_ROWS })}`]
+      ? [
+          `- ${t("modelcard.selection.smallSample", { rows: SMALL_SAMPLE_ROWS })}`,
+        ]
       : []),
     "",
     section("clusterLeague"),

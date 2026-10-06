@@ -37,7 +37,11 @@ import {
   type LeakageColumn,
 } from "@/engine/leakage";
 import { matchTask } from "@/engine/despacho";
-import type { SupervisedTask } from "@/engine/tarea";
+import {
+  byCodePoint,
+  MULTICLASS_MIN_CLASSES,
+  type SupervisedTask,
+} from "@/engine/tarea";
 import {
   isNullToken,
   parseNumber,
@@ -192,8 +196,8 @@ function multiclassAlerts(
   labels: readonly string[],
 ): EdaAlert[] {
   const trimmed = labels.map((v) => v.trim());
-  const classes = targetClasses(trimmed).sort();
-  if (classes.length < 3) return [];
+  const classes = targetClasses(trimmed).sort(byCodePoint);
+  if (classes.length < MULTICLASS_MIN_CLASSES) return [];
   const { idLike, idAlerts } = idLikeColumns(
     table,
     targetIndex,

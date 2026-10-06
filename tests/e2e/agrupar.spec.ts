@@ -175,7 +175,7 @@ test("decisión 8: con más de 8.000 filas, la muestra del jerárquico se dice a
   await expect(
     // El saneamiento puede quitar alguna fila duplicada: la cifra se lee de la nota.
     page.getByText(
-      /Con tus [\d,]+ filas, el jerárquico se ajusta sobre una muestra de 8,000 y asigna el resto al grupo más cercano \(los otros tres usan todas\)\./,
+      /Con tus [\d,]+ filas, el jerárquico se ajusta sobre una muestra de 8,000 y asigna el resto al grupo más cercano \(los demás agrupadores usan todas\)\./,
     ),
   ).toBeVisible();
   await page.getByRole("button", { name: /Agrupar filas/ }).click();

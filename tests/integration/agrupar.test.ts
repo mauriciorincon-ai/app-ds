@@ -24,7 +24,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { PyodideInterface } from "pyodide";
 import { CLUSTER_MEMBER_IDS, type MemberId } from "@/engine/roster";
 import { sanitizeTable } from "@/engine/sanitize";
-import { AGGLO_MAX_ROWS } from "@/engine/verdict";
+import { AGGLO_MAX_ROWS, computeClusterReading } from "@/engine/verdict";
 import { parseCsvWithLimits } from "@/lib/ds/csv";
 import {
   applyClusterMemberFit,
@@ -238,6 +238,62 @@ describe("HDBSCAN: «fuera de todo grupo»", () => {
     expect(validateClusterScore(score, schema).ok).toBe(true);
     expect(score.predictions[1]).toBe(-1);
     expect(score.probabilities).toBeNull();
+  });
+});
+
+/** Tres nubes 2D que se solapan (separación 1,8): HDBSCAN deja mucho ruido. Generador
+ *  sembrado, como la sonda del auditor B (AU-S7-02). */
+function nubesSolapadas(n: number): string {
+  let a = 1_000 + n;
+  const rng = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const gauss = () =>
+    Math.sqrt(-2 * Math.log(Math.max(rng(), 1e-12))) *
+    Math.cos(2 * Math.PI * rng());
+  const lines = ["x,y"];
+  for (let i = 0; i < n; i++) {
+    const g = i % 3;
+    lines.push(
+      `${(g * 1.8 + gauss()).toFixed(4)},${((g % 2) * 1.8 + gauss()).toFixed(4)}`,
+    );
+  }
+  return lines.join("\n");
+}
+
+describe("HDBSCAN: la referencia nula con su propia regla de tamaño (decisión 1 de la Fase 2)", () => {
+  // S7 (AU-S7-02): con más de 2.000 filas, la nula se mide sobre la muestra de la silueta. Con
+  // el tamaño mínimo del TOTAL (n/50) no encontraba ningún grupo y valía 0: la lectura
+  // «existen» se daba sin comparar contra datos sin estructura.
+  it("con 6.000 filas, la nula de HDBSCAN no vale 0 y la lectura sale de ella", () => {
+    const run = prepared(nubesSolapadas(6_000));
+    const fit = JSON.parse(
+      fitMember(JSON.stringify(memberPayload(run.payload, "hdbscan"))),
+    ) as ClusterMemberFitResult;
+    expect(fit.score, "HDBSCAN no encontró grupos en las nubes").not.toBeNull();
+    expect(
+      fit.reading.null_score,
+      "la referencia nula de HDBSCAN vale 0 con más de 2.000 filas",
+    ).toBeGreaterThan(0);
+    expect(fit.reading.level).toBe(
+      computeClusterReading(fit.reading.gap, fit.reading.stability.ari_mean),
+    );
+  });
+
+  // S7 (AU-S7-30): menos filas que el tamaño mínimo de un grupo (5): todo queda fuera de
+  // todo grupo, «sin estructura», en vez de un error.
+  it("con 4 filas, HDBSCAN dice «sin estructura» y no «error»", () => {
+    const run = prepared("x,y\n0,0\n0,1\n5,5\n5,6", ["kmeans", "hdbscan"]);
+    const result = league(run.payload);
+    const row = result.league.find((r) => r.name === "hdbscan")!;
+    expect(row.status, `HDBSCAN con 4 filas: ${row.error_type}`).toBe(
+      "no-structure",
+    );
+    expect(row.sizes).toEqual([]);
+    expect(row.noise_share).toBe(1);
   });
 });
 

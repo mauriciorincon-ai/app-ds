@@ -112,6 +112,8 @@ describe("Python → TS: la liga de AGRUPAR", () => {
       // P13: ninguna etiqueta por fila viaja, ni arriba ni en una fila.
       ["labels", (t) => (t.labels = [0, 1, 2])],
       [`league[${km}].labels`, (t) => (t.league[km].labels = [0, 1])],
+      // S7 (AU-S7-09): a cualquier profundidad.
+      ["reading.labels", (t) => (t.reading.labels = [0, 1])],
       ["n_rows", (t) => (t.n_rows += 1)],
       ["distance", (t) => (t.distance = "all")],
       ["k_range", (t) => (t.k_range = [2, 9])],
@@ -133,6 +135,16 @@ describe("Python → TS: la liga de AGRUPAR", () => {
         (t) => (t.league[km].silhouette_by_k[0].silhouette = 2),
       ],
       [`league[${km}].silhouette`, (t) => (t.league[km].silhouette -= 0.01)],
+      // S7 (AU-S7-06): vota sin ninguna silueta medida → se nombra, no lanza.
+      [
+        `league[${km}].silhouette_by_k`,
+        (t) =>
+          t.league[km].silhouette_by_k.forEach(
+            (x: Json) => (x.silhouette = null),
+          ),
+      ],
+      // S7 (AU-S7-26): campos nuevos que no tenían carnada propia.
+      [`league[${km}].status`, (t) => (t.league[km].status = "zzz")],
       // El puntaje comparable: silueta × (1 − ruido), recalculado.
       [`league[${km}].score`, (t) => (t.league[km].score -= 0.01)],
       [`league[${km}].sizes`, (t) => t.league[km].sizes.reverse()],
@@ -165,6 +177,7 @@ describe("Python → TS: la liga de AGRUPAR", () => {
       // La lectura del retenido.
       ["reading.score", (t) => (t.reading.score -= 0.01)],
       ["reading.gap", (t) => (t.reading.gap += 0.01)],
+      ["reading.null_score", (t) => (t.reading.null_score = 2)],
       [
         "reading.level",
         (t) =>
@@ -226,6 +239,10 @@ describe("Python → TS: la liga de AGRUPAR", () => {
       [
         "assignment.train_agreement",
         (t) => (t.assignment.train_agreement = 1.5),
+      ],
+      [
+        "preprocessing.rare_categories",
+        (t) => (t.preprocessing.rare_categories = []),
       ],
     ]);
   });
@@ -303,6 +320,13 @@ describe("Python → TS: el export y la puntuación al agrupar", () => {
       ["schema.assign.radii", (e) => (e.schema.assign.radii = null)],
       ["schema.assign.radii", (e) => e.schema.assign.radii.pop()],
       ["schema.noise", (e) => (e.schema.noise = false)],
+      // S7 (AU-S7-08): todos los centros un ancho de más (k × (p + 1)).
+      [
+        "schema.assign.centroids",
+        (e) => e.schema.assign.centroids.forEach((c: number[]) => c.push(0)),
+      ],
+      // S7 (AU-S7-26): la muestra del jerárquico no puede ser 0.
+      ["schema.assign.sample_rows", (e) => (e.schema.assign.sample_rows = 0)],
     ]);
   });
 
@@ -369,6 +393,27 @@ describe("Archivo → import: el manifiesto de AGRUPAR (P9)", () => {
       expect(text).not.toContain(key);
   });
 
+  // S7 (AU-S7-09): el manifiesto se arma campo por campo. Una lista por fila con OTRO nombre,
+  // o un campo extra en la lectura, no llega al archivo aunque viaje en el resultado.
+  it("P13 por estructura: lo que no es un campo del manifiesto no llega al archivo", async () => {
+    const result = assembleClusterResult(TRAIN);
+    const filas = Array.from({ length: result.nRows }, (_, i) => i % 3);
+    const conExtras = {
+      ...result,
+      reading: { ...result.reading, labels: filas, extra: 1 },
+      assignment: { ...result.assignment, row_groups: filas },
+    } as typeof result;
+    const file = await packModelFile({
+      datasetName: "segmentos-clientes.csv",
+      result: conExtras,
+      exported: fixture<ExportResult>("export-result-agrupar"),
+      date: DATE,
+    });
+    const text = JSON.stringify(file.manifest);
+    for (const key of ['"labels"', '"row_groups"', '"extra"'])
+      expect(text, `el manifiesto lleva ${key}`).not.toContain(key);
+  });
+
   it("S7 (F3): la UI lo abre; una versión que no usa la tarea lo rechaza NOMBRÁNDOLA", async () => {
     // Cambio esperado (D3 cumplida): con la pantalla de agrupar, se importa.
     const text = JSON.stringify(await packCluster());
@@ -411,6 +456,38 @@ describe("Archivo → import: el manifiesto de AGRUPAR (P9)", () => {
         (m) => m.schema.assign.centroids.pop(),
       ],
       ["manifest.league[0].name", (m) => (m.league[0].name = "logistic")],
+      // S7 (AU-S7-07): lo que el resumen muestra es lo que el archivo puntúa y su liga dice.
+      [
+        "manifest.assignment.method",
+        (m) =>
+          (m.assignment.method =
+            m.schema.assign.method === "gaussian"
+              ? "nearest-centroid"
+              : "gaussian"),
+      ],
+      [
+        "manifest.assignment.sample_rows",
+        (m) => (m.assignment.sample_rows = 8000),
+      ],
+      ["manifest.reading.score", (m) => (m.reading.score += 0.01)],
+      ["manifest.reading.gap", (m) => (m.reading.gap += 0.01)],
+      [
+        "manifest.reading.stability",
+        (m) =>
+          (m.reading.stability.ari_min = m.reading.stability.ari_mean + 0.001),
+      ],
+      [
+        "manifest.selection.consensus_winner",
+        (m) => {
+          const other = m.league.find(
+            (r: Json) => r.name !== m.model_name,
+          ).name;
+          m.league = m.league.filter((r: Json) => r.name !== other);
+          m.selection.consensus_winner = other;
+          m.selection.by = "user";
+        },
+      ],
+      ["manifest.selection.k", (m) => (m.selection.k = 99)],
     ];
     let detected = 0;
     for (const [field, mutate] of baits) {

@@ -3,7 +3,11 @@
 import { useState } from "react";
 import type { EdaAlert } from "@/engine/eda";
 import type { SanitationReport } from "@/engine/sanitize";
-import { isTrainableTask, type AmbiguousChoice } from "@/engine/tarea";
+import {
+  isTrainableTask,
+  MULTICLASS_MAX_CLASSES,
+  type AmbiguousChoice,
+} from "@/engine/tarea";
 import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
 import type { ClusterPlan, TargetPlan } from "@/lib/useExperiment";
@@ -128,7 +132,9 @@ export function ConfigScreen({
             );
           })}
         </select>
-        <p className="text-sm text-ink-muted">{t("config.target.help")}</p>
+        <p className="text-sm text-ink-muted">
+          {t("config.target.help", { max: MULTICLASS_MAX_CLASSES })}
+        </p>
       </div>
 
       {/* S7: agrupar — qué columnas forman la distancia y cuáles quedan fuera. */}

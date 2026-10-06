@@ -88,11 +88,19 @@ test("varias categorías: exportar → recargar → importar → puntuar con «_
     .trim()
     .split("\n");
   const header = scored[0]!.split(",");
-  expect(header.slice(-2)).toEqual(expect.arrayContaining(["plan_predicho"]));
+  // S7 (AU-S7-40): las DOS columnas, en orden. El ganador de este ejemplo (la logística
+  // multinomial) da probabilidades, así que la columna de probabilidad tiene que estar.
+  expect(header.slice(-2)).toEqual(["plan_predicho", "plan_probabilidad"]);
   const classes = new Set(exported.manifest.schema.classes);
   const predictedAt = header.indexOf("plan_predicho");
+  const probabilityAt = header.indexOf("plan_probabilidad");
   for (const line of scored.slice(1)) {
-    expect(classes.has(line.split(",")[predictedAt]!)).toBe(true);
+    const cells = line.split(",");
+    expect(classes.has(cells[predictedAt]!)).toBe(true);
+    // La probabilidad de la clase PREDICHA: nunca menos que el azar entre K clases (1/K).
+    const p = Number(cells[probabilityAt]);
+    expect(p).toBeGreaterThanOrEqual(1 / classes.size);
+    expect(p).toBeLessThanOrEqual(1);
   }
 
   const traffic = requests.join("\n");

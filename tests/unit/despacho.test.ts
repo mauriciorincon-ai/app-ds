@@ -135,6 +135,11 @@ const TS_FORBIDDEN: { rule: string; re: RegExp }[] = [
   { rule: "«?? binaria»", re: /\?\?\s*"binaria"/ },
   { rule: "valor por defecto", re: /\btask\s*=\s*"binaria"/ },
   { rule: "case", re: new RegExp(`case\\s+"${TASKS}"\\s*:`) },
+  // S7 (AU-S7-28): la misma comparación escondida tras la constante de la tarea.
+  {
+    rule: "comparación con constante",
+    re: /[!=]==\s*CLUSTER_TASK\b|\bCLUSTER_TASK\s*[!=]==/,
+  },
 ];
 const PY_FORBIDDEN: { rule: string; re: RegExp }[] = [
   { rule: "comparación", re: new RegExp(`(==|!=)\\s*"${TASKS}"`) },
@@ -156,6 +161,12 @@ const ALLOWED: { file: string; text: string; reason: string }[] = [
     file: "src/lib/ds/pipeline.py",
     text: 'return record.get("task", "binaria")',
     reason: "_task_of: el único «sin tarea = binaria» de Python",
+  },
+  {
+    file: "src/workers/contract.ts",
+    text: "raw.task !== CLUSTER_TASK",
+    reason:
+      "los lectores de agrupar cotejan la etiqueta del resultado que Python devolvió (no despachan)",
   },
 ];
 

@@ -11,7 +11,12 @@ import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
 import { modelFeatures } from "@/lib/ds/schema-check";
 import { inferUnit } from "@/lib/experiment";
-import { formatQuantity, thousands, withUnit } from "@/lib/quantity";
+import {
+  csvLimitParams,
+  formatQuantity,
+  thousands,
+  withUnit,
+} from "@/lib/quantity";
 import {
   buildScoredCsv,
   estimateSummary,
@@ -215,7 +220,9 @@ function ScoreShell({
             }`}
           >
             <p>{t("score.dropzone.label")}</p>
-            <p className="text-sm text-ink-muted">{t("score.dropzone.hint")}</p>
+            <p className="text-sm text-ink-muted">
+              {t("score.dropzone.hint", csvLimitParams())}
+            </p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -304,7 +311,7 @@ function ScoreShell({
           <p className="text-ink-muted">
             {scoring.kind === "runtime" || scoring.kind === "import-failed"
               ? t(`score.errors.${scoring.kind}`)
-              : t(`errors.${scoring.kind}`)}
+              : t(`errors.${scoring.kind}`, csvLimitParams())}
           </p>
           {scoring.kind !== "import-failed" && (
             <Button variant="secondary" icon="upload" onClick={onScoreAnother}>
@@ -388,9 +395,7 @@ function PreparingModel({ progress }: { progress: ProgressStage | null }) {
 }
 
 type SupervisedScore =
-  | BinaryScoreResult
-  | MulticlassScoreResult
-  | RegressionScoreResult;
+  BinaryScoreResult | MulticlassScoreResult | RegressionScoreResult;
 
 /** El lector valida el puntaje con el esquema del modelo activo: un puntaje de
  *  agrupar para un modelo con objetivo no puede llegar; si llega, falla
@@ -401,7 +406,9 @@ function supervisedScore(score: ScoreResult): SupervisedScore {
     multiclase: (s): SupervisedScore => s,
     numerica: (s): SupervisedScore => s,
     agrupar: () => {
-      throw new Error("ScoreScreen: un puntaje de agrupar para un modelo con objetivo");
+      throw new Error(
+        "ScoreScreen: un puntaje de agrupar para un modelo con objetivo",
+      );
     },
   });
 }
@@ -672,43 +679,43 @@ function NoveltyPanel({ novelty }: { novelty: ScoreResult["novelty"] }) {
     (100 * novelty.affected_rows) / Math.max(novelty.n_rows, 1),
   );
   return (
-  <Card className="p-4">
-    {novelty.columns.length > 0 ? (
-      <div className="text-sm">
-        <p className="font-medium text-caution">
-          <span aria-hidden className="mr-1">
-            ⚠
+    <Card className="p-4">
+      {novelty.columns.length > 0 ? (
+        <div className="text-sm">
+          <p className="font-medium text-caution">
+            <span aria-hidden className="mr-1">
+              ⚠
+            </span>
+            {t("score.novelty.title")}
+          </p>
+          <ul className="mt-1 ml-5 list-disc">
+            {novelty.columns.map((column) => (
+              <li key={column.column}>
+                {t(`score.novelty.${column.kind}`, {
+                  column: column.column,
+                  count: column.count,
+                })}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 font-mono tabular-nums">
+            {t("score.novelty.summary", {
+              affected: thousands(novelty.affected_rows),
+              total: thousands(novelty.n_rows),
+              percent: noveltyPercent,
+            })}
+          </p>
+          <p className="mt-1 text-ink-muted">{t("score.novelty.hint")}</p>
+        </div>
+      ) : (
+        <p className="text-sm">
+          <span aria-hidden className="mr-1 text-positive">
+            ✓
           </span>
-          {t("score.novelty.title")}
+          {t("score.novelty.none")}
         </p>
-        <ul className="mt-1 ml-5 list-disc">
-          {novelty.columns.map((column) => (
-            <li key={column.column}>
-              {t(`score.novelty.${column.kind}`, {
-                column: column.column,
-                count: column.count,
-              })}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2 font-mono tabular-nums">
-          {t("score.novelty.summary", {
-            affected: thousands(novelty.affected_rows),
-            total: thousands(novelty.n_rows),
-            percent: noveltyPercent,
-          })}
-        </p>
-        <p className="mt-1 text-ink-muted">{t("score.novelty.hint")}</p>
-      </div>
-    ) : (
-      <p className="text-sm">
-        <span aria-hidden className="mr-1 text-positive">
-          ✓
-        </span>
-        {t("score.novelty.none")}
-      </p>
-    )}
-  </Card>
+      )}
+    </Card>
   );
 }
 

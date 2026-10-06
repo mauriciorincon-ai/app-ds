@@ -68,7 +68,9 @@ function dedupeRows(rows: string[][]): { rows: string[][]; removed: number } {
     const key = rowKey(row);
     if (seen.has(key)) continue;
     seen.add(key);
-    kept.push(row);
+    // S7 (AU-S7-01): una COPIA. La coerción de abajo vacía celdas basura de estas filas, y la
+    // tabla del usuario (la que vuelve en «tus filas con su grupo») no se toca.
+    kept.push([...row]);
   }
   return { rows: kept, removed: rows.length - kept.length };
 }

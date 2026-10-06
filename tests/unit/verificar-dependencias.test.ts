@@ -65,10 +65,19 @@ describe("verificar-dependencias (regla 18, kit v1.37.0 + AU-S6-13)", () => {
     const base = lock(["zod@4.1.0", "zod@3.24.0"]);
     const pr = lock(["zod@4.1.0", "zod@3.22.0"]);
     const r = revisar({ lockBase: base, lockPR: pr, permitidas: [] });
-    if (r.ilegible === undefined)
-      expect(r.degradados).toEqual([
-        "zod: 3.24.0 (origin/main) → 3.22.0 (este árbol)",
-      ]);
+    // S7 (AU-S7-31): sin `if`: si la revisión saliera ilegible, esta prueba tiene que caer.
+    expect(r.ilegible).toBeUndefined();
+    expect(r).toMatchObject({
+      degradados: ["zod: 3.24.0 (origin/main) → 3.22.0 (este árbol)"],
+    });
+  });
+
+  it("S7 (AU-S7-31): una degradación declarada sin razón es rojo, nombrando la entrada", () => {
+    const permitidas = [
+      { nombre: "zod", de: "4.1.0", a: "4.0.0" },
+    ] as unknown as Parameters<typeof revisar>[0]["permitidas"];
+    const r = revisar({ lockBase: BASE, lockPR: BASE, permitidas });
+    expect(r.ilegible).toMatch(/la entrada 0 no tiene nombre, de, a y razon/);
   });
 
   it("AU-S6-13: otra lockfileVersion no se compara: ilegible", () => {

@@ -17,7 +17,7 @@
 #
 # Salida: 0 si el gate falló con la mutación NOMBRANDO lo esperado y volvió a pasar (o no se
 #         pidió) tras restaurar; 1 si el gate NO falló (la demo no es demo), si falló sin correr
-#         (126/127: comando inexistente) o sin nombrar lo esperado (un servidor que no arrancó,
+#         (126/127: comando inexistente), si murió por una señal (≥ 128, ds S7: AU-S7-12) o sin nombrar lo esperado (un servidor que no arrancó,
 #         una mutación que no compila: K-S6-5), si el verde corrió menos de N pruebas (un filtro
 #         que no coincide con nada sale 0: K-S6-4), si la restauración dejó rastro, o si el puerto
 #         sigue ocupado por un proceso viejo. Una interrupción (Ctrl-C, SIGTERM) restaura antes de
@@ -94,6 +94,13 @@ if [ "$rc" -eq 0 ]; then
 fi
 if [ "$rc" -eq 126 ] || [ "$rc" -eq 127 ]; then
   echo "demo-rojo: ✗ el gate no corrió (exit $rc: comando inexistente o no ejecutable) — eso no es un rojo" >&2
+  restaurar; exit 1
+fi
+# S7 (AU-S7-12, AC-12): un gate que murió por una SEÑAL (exit ≥ 128: Ctrl-C 130, kill -9 137,
+# SIGTERM 143, el OOM del sistema) no llegó a su aserción: no es un rojo, aunque haya alcanzado a
+# imprimir el texto de --debe-nombrar (vitest lo muestra en el code frame antes de correr).
+if [ "$rc" -ge 128 ]; then
+  echo "demo-rojo: ✗ el gate murió por una señal (exit $rc, señal $((rc - 128))) — eso no es un rojo" >&2
   restaurar; exit 1
 fi
 if [ -n "$debe" ] && ! grep -qF -- "$debe" "$salida"; then

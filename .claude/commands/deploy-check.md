@@ -68,6 +68,9 @@ Corre cada verificación en orden y reporta estado:
       solo para lo clavado en profundidad, **acotando el selector al RANGO VULNERABLE**
       (`postcss@<8.5.18`) y con `^` en el reemplazo, **que no cruza de major** — nada de arrastrar
       una ruptura de API por un parche de seguridad.
+- [ ] **(app ds, S7 — AU-S7-05) Las excepciones de auditoría que vencen:** `pnpm verificar:retiros`
+      consulta cada aviso de `auditConfig.ignoreGhsas` y es rojo si ya publicó parche (la excepción
+      venció: bump, quitar el id, ADR superseded) o si no se pudo leer. Corre también en `quality`.
 - [ ] **Los overrides viven en `pnpm-workspace.yaml`, NO en `package.json`** (kit v1.16.0):
       **pnpm 11 ya no lee `pnpm.overrides` de `package.json` — lo ignora con un WARN y sigue.**
       Si este repo los tiene en el sitio viejo, su protección es **ficticia** y nada lo delata.

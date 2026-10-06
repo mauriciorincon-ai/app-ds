@@ -23,6 +23,7 @@ import { clusterEdaAlerts } from "@/engine/eda";
 import { quantileSplit, stratifiedSplit } from "@/engine/split";
 import { matchTask } from "@/engine/despacho";
 import {
+  byCodePoint,
   detectTask,
   isTrainTask,
   resolveTask,
@@ -337,20 +338,9 @@ function leakageColumns(
   });
 }
 
-/**
- * S7: orden de las clases por punto de código — el de `sorted()` de Python, que
- * las codifica 0..K−1 y las coteja con las que manda TS. (El `sort()` de JS compara
- * unidades UTF-16 y difiere fuera del plano básico: un emoji contra «ﬀ».)
- */
-export function byCodePoint(a: string, b: string): number {
-  const x = [...a];
-  const y = [...b];
-  for (let i = 0; i < Math.min(x.length, y.length); i++) {
-    const d = x[i]!.codePointAt(0)! - y[i]!.codePointAt(0)!;
-    if (d !== 0) return d;
-  }
-  return x.length - y.length;
-}
+// S7 (AU-S7-29): el orden de las clases vive en el motor (`@/engine/tarea`), para que la EDA y la
+// fuga lo usen igual; aquí se re-exporta para los lectores de siempre.
+export { byCodePoint };
 
 /** S7: filas de PRUEBA por clase, en el orden de `payload.classes` (el lector
  *  coteja con ellas las filas de la matriz de confusión). */

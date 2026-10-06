@@ -507,16 +507,37 @@ const clusterManifestV: Validator = (v, path) => {
   if (shape) return shape;
   const m = v as ClusterManifest;
   if (m.groups !== m.schema.groups) return at("groups");
+  // S7 (AU-S7-07): lo que el resumen del import MUESTRA tiene que ser lo que el archivo
+  // puntúa y lo que su liga dice. Cada incoherencia se nombra.
+  if (m.assignment.method !== m.schema.assign.method)
+    return at("assignment.method");
+  if (m.assignment.sample_rows !== m.schema.assign.sample_rows)
+    return at("assignment.sample_rows");
+  const retained = m.league.find((row) => row.name === m.model_name);
+  if (!retained) return at("model_name");
+  if (retained.score === null || !close(m.reading.score, retained.score))
+    return at("reading.score");
+  if (!close(m.reading.gap, m.reading.score - m.reading.null_score))
+    return at("reading.gap");
+  if (m.reading.stability.ari_min > m.reading.stability.ari_mean)
+    return at("reading.stability");
   if (
     m.reading.level !==
     computeClusterReading(m.reading.gap, m.reading.stability.ari_mean)
   ) {
     return at("reading.level");
   }
+  if (!m.league.some((row) => row.name === m.selection.consensus_winner))
+    return at("selection.consensus_winner");
+  if (!m.league.some((row) => row.status === "ok" && row.k === m.selection.k))
+    return at("selection.k");
   if ((m.model_name === m.selection.consensus_winner) !== (m.selection.by === "consensus"))
     return at("selection.by");
   return null;
 };
+
+const close = (a: number, b: number) =>
+  Math.abs(a - b) <= 1e-12 * Math.max(1, Math.abs(b));
 
 /** El validador del manifiesto de cada tarea que el motor entrena. Es un `Record`
  *  completo: sumar una tarea a `TrainTask` sin su validador no compila (AU-S6-03). */
@@ -689,8 +710,25 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
         agrupar: (schema) => schema,
       }),
       groups: cluster.profiles.groups.length,
-      reading: cluster.reading,
-      assignment: cluster.assignment,
+      // S7 (AU-S7-09): campo por campo, para que nada que no esté aquí —una lista por
+      // fila con otro nombre— pueda llegar al archivo exportado (P13).
+      reading: {
+        level: cluster.reading.level,
+        score: cluster.reading.score,
+        null_score: cluster.reading.null_score,
+        gap: cluster.reading.gap,
+        stability: {
+          ari_mean: cluster.reading.stability.ari_mean,
+          ari_min: cluster.reading.stability.ari_min,
+          runs: cluster.reading.stability.runs,
+          fraction: cluster.reading.stability.fraction,
+        },
+      },
+      assignment: {
+        method: cluster.assignment.method,
+        train_agreement: cluster.assignment.train_agreement,
+        sample_rows: cluster.assignment.sample_rows,
+      },
       league: cluster.league.map((row) => ({
         name: row.name,
         status: row.status,

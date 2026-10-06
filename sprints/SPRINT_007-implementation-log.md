@@ -1458,6 +1458,25 @@ de lo que se aprobó y no se reescribe. Ninguna línea de HTML del brochure hast
 **CI de `e6cf659`** (BLUEPRINT y delta; run 37402379813, `gh pr checks 19` y `statusCheckRollup`): 6 de 6
 `success`; e2e 64 de 64 sin reintentos; `lighthouse-margen` en ✓, sin aviso.
 
+**CI de `fec1a29` + `44a0f31`** (auditoría de la constitución y Fase 1 parcial de `/audita-sprint`; run
+37405203352): 6 de 6 `success`; e2e 64 de 64 sin reintentos; `lighthouse-margen` en ✓.
+
+### Decisiones del usuario sobre el delta del brochure y la Fase 1 de la auditoría (2026-10-06)
+
+Respuesta literal: **«1. A, 2. A 3. Arreglalo 2 A»**, sobre las cuatro preguntas del mensaje (las dos del
+storyboard y las dos de la auditoría, cada una con su recomendación):
+
+| Pregunta | Decisión |
+| --- | --- |
+| D-A · cómo entra el catálogo en el brochure | **A**: escena E04b «Cuatro preguntas, la misma vara» + quinta puerta «Agrupar sin objetivo» |
+| D-B · el brochure en inglés | **A**: ES y EN en este PR; el inglés del export, como desviación para la planeadora |
+| Decisión 1 de la auditoría · HDBSCAN con más de 2.000 filas (AU-S7-02) | **Arreglarlo** (la regla de tamaño se aplica a las filas de cada ajuste) |
+| Decisión 2 de la auditoría · el titular de fuga heredado (AU-S7-20) | **A**: «Posible fuga de datos — sospechoso» en las tres tareas con objetivo, con el detalle de lo encontrado y sin umbral nuevo |
+
+Con la respuesta quedan aprobadas la Fase 1 parcial de `/audita-sprint` y su plan de pago. La decisión
+del storyboard es de forma: lo construido se ve en la parada 7 del ⭐⭐ corto (Acto 2), no se da por
+visto aquí.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

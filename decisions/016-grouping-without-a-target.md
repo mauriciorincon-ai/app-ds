@@ -29,7 +29,12 @@ noise «stable groups».
    - K-Means and Agglomerative (Ward) choose k by silhouette, on one seeded sample of up to 2,000
      rows shared by all of them.
    - GMM chooses k by BIC.
-   - HDBSCAN finds its own groups, with `min_cluster_size = max(5, n/50)`.
+   - HDBSCAN finds its own groups, with `min_cluster_size = max(5, n/50)`, where n is the number of
+     rows of **each fit**: the sweep, the null reference and every resample (audit AU-S7-02, the
+     user's decision on 2026-10-06). With the size of the whole table, the null reference on the
+     2,000-row silhouette sample found no groups, scored 0, and «the groups exist» was read without
+     comparing against structureless data. With fewer rows than that minimum, every row is outside
+     all groups («no structure»), not an error (AU-S7-30).
 
    The comparable score is `silhouette × (1 − noise share)`, so HDBSCAN cannot win by discarding the
    hard rows.

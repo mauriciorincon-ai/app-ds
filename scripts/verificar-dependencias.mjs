@@ -69,6 +69,20 @@ export function revisar({
   permitidas,
   base = "origin/main",
 }) {
+  // S7 (AU-S7-31): una degradación se DECLARA entera (kit v1.37.0): nombre, de, a y razón, todo
+  // texto. Una entrada a medias no se acepta en silencio: el gate no puede mirarla, así que es rojo.
+  const malformada = (Array.isArray(permitidas) ? permitidas : [null]).findIndex(
+    (p) =>
+      !p ||
+      typeof p !== "object" ||
+      !["nombre", "de", "a", "razon"].every(
+        (k) => typeof p[k] === "string" && p[k].trim() !== "",
+      ),
+  );
+  if (malformada >= 0)
+    return {
+      ilegible: `degradaciones-permitidas.json: la entrada ${malformada} no tiene nombre, de, a y razon como texto. Una degradación se declara entera.`,
+    };
   const vBase = lockfileVersion(lockBase),
     vPR = lockfileVersion(lockPR);
   if (vBase !== vPR)

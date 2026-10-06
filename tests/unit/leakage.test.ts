@@ -225,6 +225,26 @@ describe("S7 — fuga por clase con soporte mínimo (D8, P6)", () => {
     ]);
   });
 
+  // S7 (AU-S7-29): con un empate, la clase nombrada es la primera en el orden de Python
+  // (`sorted()`, por punto de código): «ﬀ» (U+FB00) antes que «😀» (U+1F600). El `sort()` de JS
+  // compara unidades UTF-16 y pondría el emoji primero.
+  it("con un empate nombra la clase en el orden de Python: «ﬀ» antes que el emoji", () => {
+    const labels = [
+      ...Array(6).fill("😀"),
+      ...Array(6).fill("ﬀ"),
+      ...Array(6).fill("c"),
+    ];
+    // «😀» queda abajo y «ﬀ» arriba: las dos se separan perfecto del resto (empate).
+    const x: LeakageColumn = {
+      name: "x",
+      kind: "numeric",
+      values: labels.map((l) => (l === "😀" ? 0 : l === "ﬀ" ? 10 : 5)),
+    };
+    expect(detectLeakageByClass([x], labels).map((f) => f.class)).toEqual([
+      "ﬀ",
+    ]);
+  });
+
   it("varias categorías: una clase con 4 filas no se evalúa (sin falsa alarma)", () => {
     const labels = [
       ...Array(12).fill("a"),

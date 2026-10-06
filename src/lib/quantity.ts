@@ -3,6 +3,7 @@
 // formatean con el MISMO separador decimal que el resto de la app (punto) y miles
 // con coma, en los dos idiomas, y con las cifras significativas justas para leer
 // la diferencia sin inventar precisión.
+import { MAX_BYTES, MAX_ROWS } from "@/lib/ds/csv";
 import { TARGET_DECIMALS_MAX } from "@/workers/contract";
 import type { TargetUnit } from "@/workers/protocol";
 
@@ -67,3 +68,10 @@ export function errorReductionPct(model: number, baseline: number): number {
  *  content/modelos.ts: la portada la usa, y las fichas viajan en su propio chunk
  *  (R12 del S5; S7: importarla desde las fichas las metía en la portada). */
 export const thousands = (n: number): string => formatQuantity(n, 0);
+
+/** S7 (AU-S7-03): el límite del CSV se escribe desde sus constantes (`MAX_BYTES`, `MAX_ROWS`),
+ *  nunca como cifra en el copy; las filas, con la regla de cifras de la app (R9). */
+export const csvLimitParams = (): { mb: number; rows: string } => ({
+  mb: MAX_BYTES / (1024 * 1024),
+  rows: thousands(MAX_ROWS),
+});

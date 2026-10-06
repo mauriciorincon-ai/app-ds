@@ -6,7 +6,7 @@ propuesto: 2026-08-15
 aprobado: 2026-08-15
 aprobado_por: usuario (regla CERO del molde v2)
 branch: entrega/brochure-conoce
-delta_s7: propuesto 2026-10-06 (§9), pendiente de la decisión del usuario
+delta_s7: decidido 2026-10-06 (§9) — D-A = A (E04b + quinta puerta), D-B = A (ES/EN en este PR)
 ---
 
 # Storyboard — El brochure vivo de Probeta DS (`/conoce`)
@@ -305,7 +305,12 @@ No lo resuelve el builder — es una opción de la cuenta de Vercel del usuario.
 
 ---
 
-## 9 · Delta del Sprint 007 — el catálogo (PROPUESTO 2026-10-06, pendiente de tu decisión)
+## 9 · Delta del Sprint 007 — el catálogo (DECIDIDO 2026-10-06)
+
+> **Decisión del usuario (2026-10-06), literal:** «1. A, 2. A 3. Arreglalo 2 A». Lo que toca al
+> brochure: **D-A = A** (la escena E04b «Cuatro preguntas, la misma vara» + la quinta puerta) y **D-B =
+> A** (el brochure en ES y EN en este PR). El clímax no cambia. El veredicto visual de lo construido
+> va a la parada 7 del ⭐⭐ corto (Acto 2).
 
 > Regla CERO: ni una línea de HTML hasta que decidas. Lo que sigue propone qué cambia en el guion;
 > las §1–§8 de arriba siguen siendo el guion aprobado y no se reescriben.

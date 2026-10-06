@@ -56,8 +56,17 @@ afterAll(() => {
   if (workdir) rmSync(workdir, { recursive: true, force: true });
 });
 
-// Si gitleaks no está instalado (p. ej. la CI de GitHub, que no lo trae — es un
-// gate LOCAL), el test se salta con gracia, igual que el propio hook.
+// S7 (AU-S7-13, AC-27): la CI instala gitleaks (job `integration`, verificado por sha256), así
+// que allí la carnada CORRE; un salto en la CI es un rojo (abajo). Fuera de la CI, sin gitleaks el
+// bloque se salta, pero el pre-commit y el hook PreToolUse ya no dejan pasar nada sin él: fallan
+// cerrados (kit v1.37.0).
+it("en la CI, gitleaks está: la carnada no se salta («skipped» no es verde)", () => {
+  expect(
+    gitleaksAvailable || !process.env.CI,
+    "en la CI falta gitleaks: la carnada se saltaría",
+  ).toBe(true);
+});
+
 describe.skipIf(!gitleaksAvailable)(
   "gate de secretos (gitleaks — carnada canónica)",
   () => {

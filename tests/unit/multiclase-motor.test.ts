@@ -220,6 +220,22 @@ describe("EDA con varias categorías", () => {
     ).toBe(false);
     expect(EDA_IMBALANCE_THRESHOLD).toBe(0.15);
   });
+
+  // S7 (AU-S7-29): con dos clases igual de chicas se nombra la primera en el orden de Python
+  // (por punto de código): «ﬀ» antes que el emoji, como en la partición y la fuga.
+  it("con un empate de la más chica nombra la clase en el orden de Python", () => {
+    const rows = [
+      ...Array.from({ length: 90 }, (_, i) => [String(i), "grande"]),
+      ...Array.from({ length: 5 }, (_, i) => [String(i), "😀"]),
+      ...Array.from({ length: 5 }, (_, i) => [String(i), "ﬀ"]),
+    ];
+    const alert = computeEdaAlerts(
+      { headers: ["x", "t"], rows },
+      "t",
+      "multiclase",
+    ).find((a) => a.kind === "class-imbalance");
+    expect(alert && "class" in alert ? alert.class : null).toBe("ﬀ");
+  });
 });
 
 describe("prepareRun con varias categorías", () => {
@@ -243,11 +259,44 @@ describe("prepareRun con varias categorías", () => {
     expect(counts.every((n) => n > 0)).toBe(true);
   });
 
-  it("la fuga se mide SOLO en train y nombra la clase", () => {
+  it("la fuga plantada se marca nombrando la columna y la clase", () => {
     const run = prepareRun(kit("planes-fuga-plantada.csv"), "plan", 42);
     expect(run.ok && run.leakage.map((f) => [f.column, f.class])).toEqual([
       ["cargo_corporativo_usd", "empresa"],
     ]);
+  });
+
+  // S7 (AU-S7-11): una columna que delata la clase «a» SOLO en las filas de train (en las de
+  // prueba es azar). Medida sobre train, se marca; medida sobre todas las filas, su AUC baja y
+  // no se marca. Así esta prueba cae si la fuga dejara de medirse solo en train.
+  it("la fuga se mide SOLO en train: una columna perfecta en train y azar en prueba se marca", () => {
+    const n = 90;
+    const t = Array.from({ length: n }, (_, i) => ["a", "b", "c"][i % 3]!);
+    const ruido = (i: number) => String((i * 37 + 11) % 200);
+    const base: CsvTable = {
+      headers: ["z", "t"],
+      rows: t.map((c, i) => [ruido(i * 7), c]),
+    };
+    const first = prepareRun(base, "t", 42);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    const train = new Set(first.payload.train_idx);
+    const table: CsvTable = {
+      headers: ["z", "x", "t"],
+      rows: t.map((c, i) => [
+        ruido(i * 7),
+        train.has(i) ? (c === "a" ? "500" : "0") : ruido(i),
+        c,
+      ]),
+    };
+    const run = prepareRun(table, "t", 42);
+    expect(run.ok).toBe(true);
+    if (!run.ok) return;
+    expect(run.payload.train_idx).toEqual(first.payload.train_idx);
+    expect(
+      run.leakage.map((f) => [f.column, f.class]),
+      "la columna que delata «a» solo en train no se marcó: ¿la fuga se mide con todas las filas?",
+    ).toEqual([["x", "a"]]);
   });
 
   it("«1» y «1.0» en una columna de pocas cifras ⇒ se nombra la notación (AU-S5-10)", () => {

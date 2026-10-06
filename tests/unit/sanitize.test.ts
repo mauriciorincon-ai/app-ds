@@ -196,4 +196,39 @@ describe("dedupeIndex — cada fila original apunta a su fila deduplicada (S7)",
     expect(Math.max(...index) + 1).toBe(report.rowsAfter);
     expect(clean.rows).toHaveLength(report.rowsAfter);
   });
+
+  // S7 (AU-S7-01): una columna numérica con basura («?», «n/d») que el saneamiento vacía. Con
+  // 60 filas sigue siendo ≥ 90 % numérica aun con las basuras que se suman abajo, así que la
+  // coerción ocurre de verdad (con 30 no ocurría y la prueba del índice no podía caer).
+  const conBasura = (): CsvTable => ({
+    headers: ["x", "y", "canal"],
+    rows: Array.from({ length: 60 }, (_, i) => [
+      i === 3 ? "?" : i === 7 ? "n/d" : String(i),
+      String((i * 13) % 17),
+      ["web", "tienda"][i % 2]!,
+    ]),
+  });
+
+  it("sanitizeTable no muta la tabla de entrada (la del usuario vuelve tal como llegó)", () => {
+    const table = conBasura();
+    const antes = table.rows.map((r) => [...r]);
+    const { report } = sanitizeTable(table);
+    expect(report.coercions).toEqual([{ column: "x", cellsNulled: 2 }]);
+    expect(table.rows, "sanitizeTable mutó la tabla de entrada").toEqual(antes);
+  });
+
+  it("cuadra con sanitizeTable también con basura coaccionada y duplicados", () => {
+    const table = conBasura();
+    // Un duplicado exacto de la fila con «?» y dos filas que solo difieren en la basura.
+    table.rows.push([...table.rows[3]!]);
+    table.rows.push(["?", "99", "web"], ["n/d", "99", "web"]);
+    const { report } = sanitizeTable(table);
+    expect(report.coercions).toEqual([{ column: "x", cellsNulled: 4 }]);
+    const index = dedupeIndex(table.rows);
+    expect(Math.max(...index) + 1).toBe(report.rowsAfter);
+    expect(index[60], "el duplicado no comparte índice con su gemela").toBe(
+      index[3],
+    );
+    expect(index[61]).not.toBe(index[62]);
+  });
 });

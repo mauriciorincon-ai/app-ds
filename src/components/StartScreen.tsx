@@ -20,6 +20,7 @@ import {
 } from "@/lib/model-file";
 import { reportImportError } from "@/lib/observability";
 import {
+  csvLimitParams,
   formatQuantity,
   quantityDecimals,
   thousands,
@@ -88,7 +89,9 @@ export function StartScreen({
         }`}
       >
         <p>{t("start.dropzone.label")}</p>
-        <p className="text-sm text-ink-muted">{t("start.dropzone.hint")}</p>
+        <p className="text-sm text-ink-muted">
+          {t("start.dropzone.hint", csvLimitParams())}
+        </p>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -246,6 +249,8 @@ function ImportModelSection({
                     : isTask(status.task)
                       ? t(`task.name.${status.task}`)
                       : status.task,
+                // S7 (AU-S7-03): el tope del archivo, desde su constante.
+                mb: MAX_MODEL_FILE_BYTES / (1024 * 1024),
               })}
             </p>
             <p className="text-ink-muted">{t("start.import.errors.hint")}</p>
