@@ -68,6 +68,24 @@ Surgida en la construcción (2026-10-05, F3), se declara aquí antes del STOP de
   implementación no anticipada, con su ADR (séptimo commit). No cambia la privacidad: el mismo
   `scrubSentryEvent`, sin PII ni trazado.
 
+Surgida en la F4 (2026-10-06), de la auditoría de la constitución contra el código:
+
+- **D8 · Pedido a la planeadora: 23 afirmaciones de `CLAUDE.md` quedaron viejas.** Esta app no reescribe su
+  constitución, que es una copia literal que regenera la planeadora. Las derivas del lado del texto, con la
+  frase propuesta para cada una, están en `sprints/SPRINT_007-auditoria-constitucion.md`, camino **T**
+  (AC-1, AC-2, AC-4 a AC-11 y AC-14 a AC-26). Las tres que más importan para una sesión nueva:
+  - **AC-1.** La anti-fuga «solo `fit` sobre train» y «todas las métricas sobre test» se acotan a las
+    tareas con objetivo. Agrupar suma su viñeta: sin partición, preprocesador sobre todas las filas,
+    referencia nula y estabilidad (ADR 016).
+  - **AC-2.** La regla 18 promete un test de condiciones de retiro «con fecha». No hay fechas: el
+    retiro del ADR 012 es un evento. Lo que esta app suma del lado del código se registra en la Fase 2
+    de la auditoría.
+  - **AC-8.** La regla dura 2 nombra la excepción consentida del ADR 006: nombres de columna y
+    agregados viajan a la narración, jamás filas.
+
+  Las derivas del lado del código (AC-2, AC-4, AC-12, AC-13 y AC-27) se pagan en este PR. La del
+  brochure (AC-3) es la decisión D-B del usuario.
+
 ## Fase 0 — constitución + delta del kit + deuda con sitio + datasets + spike
 
 ### Constitución sincronizada (2026-10-04)
@@ -1467,3 +1485,8 @@ de lo que se aprobó y no se reescribe. Ninguna línea de HTML del brochure hast
   la mutación» y la demo falla, que es lo correcto, pero el porqué no es obvio. Propuesta: que el
   script avise si `--archivo` es `pnpm-lock.yaml` y el gate empieza por `pnpm `, y sugiera el binario
   directo.
+- **K-S7-6 · `demo-rojo.sh` cuenta como rojo un gate que murió por una señal.** Descarta los exit 126
+  y 127, pero un gate interrumpido (exit ≥ 128: 130, 137, 143) pasa por rojo si la demo no lleva
+  `--debe-nombrar`, que es opcional. La constitución (regla 11) dice que una señal no cuenta. El
+  script del kit (v1.40.0) tiene el mismo hueco (auditoría de la constitución, AC-12). Propuesta:
+  `rc ≥ 128` ⇒ «el gate murió por una señal: eso no es un rojo», con restauración y exit 1.
