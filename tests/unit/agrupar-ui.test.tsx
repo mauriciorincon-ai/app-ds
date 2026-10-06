@@ -252,12 +252,12 @@ describe("S7 (decisión 8): la muestra del jerárquico, donde se lee el resultad
     screenFor(sampled());
     const reading = screen.getByRole("heading", { level: 1 }).closest("div")!;
     expect(reading.parentElement!.textContent).toMatch(
-      /Ajustado sobre una muestra de 8\.000 de tus 12\.000 filas; las demás se asignaron al grupo más cercano\..*memoria.*teléfono.*Los otros tres agrupadores usan todas tus filas/,
+      /Ajustado sobre una muestra de 8,000 de tus 12,000 filas; las demás se asignaron al grupo más cercano\..*memoria.*teléfono.*Los otros tres agrupadores usan todas tus filas/,
     );
     const table = screen.getByRole("region", { name: "Los agrupadores: 4" });
     expect(
       within(table).getByText(
-        /Ajustado sobre una muestra de 8\.000 de tus 12\.000 filas/,
+        /Ajustado sobre una muestra de 8,000 de tus 12,000 filas/,
       ),
     ).toBeInTheDocument();
   });
@@ -287,10 +287,10 @@ describe("S7 (decisión 8): la muestra del jerárquico, donde se lee el resultad
       date: new Date(2026, 9, 4),
     });
     expect(md).toContain(
-      "Ajustado sobre una muestra de 8.000 de tus 12.000 filas",
+      "Ajustado sobre una muestra de 8,000 de tus 12,000 filas",
     );
     expect(md).toContain(
-      "Con más de 8.000 filas, el jerárquico se ajusta sobre una muestra",
+      "Con más de 8,000 filas, el jerárquico se ajusta sobre una muestra",
     );
   });
 });

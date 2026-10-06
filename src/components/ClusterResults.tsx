@@ -101,8 +101,8 @@ export function ClusterResults({
   labels = "idle",
   onDownloadLabels,
 }: ClusterResultsProps) {
-  const { locale, t } = useI18n();
-  const n = (value: number) => thousands(value, locale === "es" ? "." : ",");
+  const { t } = useI18n();
+  const n = (value: number) => thousands(value);
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">

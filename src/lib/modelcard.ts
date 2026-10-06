@@ -533,7 +533,7 @@ export function buildClusterCard(input: ClusterCardInput): string {
   const { locale, result } = input;
   const t = (key: string, params?: TParams) => translate(locale, key, params);
   const section = (key: string) => `## ${t(`modelcard.sections.${key}`)}`;
-  const n = (value: number) => thousands(value, locale === "es" ? "." : ",");
+  const n = (value: number) => thousands(value);
   const two = (value: number) => value.toFixed(2);
   const pct = (share: number) => Math.round(share * 100);
   const short = (id: MemberId) => t(`results.candidates.short.${id}`);

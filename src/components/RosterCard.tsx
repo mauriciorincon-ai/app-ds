@@ -30,8 +30,8 @@ export function RosterCard({
   /** S7: agrupar — sin validación cruzada; cada agrupador elige su k. */
   cluster?: boolean;
 }) {
-  const { locale, t } = useI18n();
-  const n = (value: number) => thousands(value, locale === "es" ? "." : ",");
+  const { t } = useI18n();
+  const n = (value: number) => thousands(value);
   const name = (id: Placement["id"]) => t(`results.candidates.short.${id}`);
   const level2 = routing.placements.filter((p) => p.level === 2);
   const out = routing.placements.filter((p) => p.level === "out");

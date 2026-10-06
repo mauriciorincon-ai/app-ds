@@ -61,8 +61,9 @@ export function errorReductionPct(model: number, baseline: number): number {
   return Math.round(((baseline - model) / baseline) * 100);
 }
 
-/** Miles con el separador de cada idioma («8.000» / «8,000»). Vive aquí y no en
+/** Un conteo con separador de miles: «8,000» en los dos idiomas, como toda cifra de
+ *  la app (design-system R9: punto decimal y miles con coma; con punto de miles,
+ *  «8.000» se leería como 8 en una pantalla que escribe «0.88»). Vive aquí y no en
  *  content/modelos.ts: la portada la usa, y las fichas viajan en su propio chunk
  *  (R12 del S5; S7: importarla desde las fichas las metía en la portada). */
-export const thousands = (n: number, sep: "." | ",") =>
-  String(n).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+export const thousands = (n: number): string => formatQuantity(n, 0);

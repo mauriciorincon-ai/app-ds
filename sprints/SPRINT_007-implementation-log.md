@@ -1212,6 +1212,28 @@ pasar por el estado (P13).
 archivos (motor al 97,45 % de sentencias y 98,97 % de líneas); e2e `agrupar` y `agrupar-score` sobre
 el build de producción, 8 de 8 al primer intento.
 
+### Decimotercer commit: los conteos siguen la regla de cifras del design-system (R9)
+
+En los perfiles de agrupar, «presion_hpa»: 1,013 (miles con coma, `formatQuantity`) convivía con
+«una muestra de 8.000 filas» (miles con punto, el `thousands` de este sprint), en una pantalla que
+escribe los decimales con punto («0.88 de 1»). Con punto de miles, «8.000» se lee como 8. La regla
+ya estaba fijada: **design-system R9 (S6), «punto decimal y miles con coma, como el resto de la app
+(no dependen del idioma)»**. El desvío era de este sprint, no una decisión abierta.
+
+`thousands(n)` pasa a ser `formatQuantity(n, 0)`: «8,000» en los dos idiomas, sin separador por
+idioma. Lo usan quién compite, los resultados de agrupar, el resumen del import, la model card y la
+ficha del jerárquico. El «50 000 filas» del límite del S1 es un texto literal con espacio, y no se
+tocó.
+
+**Cambios esperados en pruebas:** `modelos.test.ts`, `agrupar-ui.test.tsx` y la e2e de la decisión
+8 pasan de «8.000» a «8,000».
+
+**Rojo** (`scripts/demo-rojo.sh`, 2026-10-05): `thousands` vuelve al punto de miles → rojo nombrando
+«"8,000"»; restaurado con Python + `cmp`, 37 de 37 en verde.
+
+**Verde** (2026-10-05): `pnpm lint` y `pnpm typecheck` limpios; `pnpm test` 674 de 674; e2e
+`agrupar` y `agrupar-score` sobre el build de producción, 8 de 8 al primer intento.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

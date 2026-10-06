@@ -408,8 +408,8 @@ export const FICHAS: Record<FichaId, Ficha> = {
       en: "Seeing how some groups nest inside others; medium-sized tables; a result that doesn't depend on chance.",
     },
     notFor: {
-      es: `Tablas grandes: la memoria que pide crece con el cuadrado de las filas. Con más de ${thousands(AGGLO_MAX_ROWS, ".")} filas se ajusta sobre una muestra de ${thousands(AGGLO_MAX_ROWS, ".")} y las demás van al grupo más cercano, para que la pestaña no se cierre en un teléfono. La app lo dice junto al resultado.`,
-      en: `Big tables: the memory it needs grows with the square of the rows. With more than ${thousands(AGGLO_MAX_ROWS, ",")} rows it is fitted on a sample of ${thousands(AGGLO_MAX_ROWS, ",")} and the rest go to the nearest group, so the tab doesn't crash on a phone. The app says so next to the result.`,
+      es: `Tablas grandes: la memoria que pide crece con el cuadrado de las filas. Con más de ${thousands(AGGLO_MAX_ROWS)} filas se ajusta sobre una muestra de ${thousands(AGGLO_MAX_ROWS)} y las demás van al grupo más cercano, para que la pestaña no se cierre en un teléfono. La app lo dice junto al resultado.`,
+      en: `Big tables: the memory it needs grows with the square of the rows. With more than ${thousands(AGGLO_MAX_ROWS)} rows it is fitted on a sample of ${thousands(AGGLO_MAX_ROWS)} and the rest go to the nearest group, so the tab doesn't crash on a phone. The app says so next to the result.`,
     },
     watch: {
       es: "Si dice «ajustado sobre una muestra», su estabilidad se midió dentro de esa muestra.",

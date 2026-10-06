@@ -343,7 +343,7 @@ function ClusterImportSummary({
   onCancel,
 }: ImportSummaryProps<ClusterManifest>) {
   const t = useT();
-  const n = (value: number) => thousands(value, locale === "es" ? "." : ",");
+  const n = (value: number) => thousands(value);
   const model = t(memberNameKey(manifest.model_name, "agrupar"));
   return (
     <div className="flex flex-col gap-2 text-sm">
