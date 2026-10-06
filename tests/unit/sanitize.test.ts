@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CsvTable } from "@/lib/ds/csv";
-import { sanitizeTable } from "@/engine/sanitize";
+import { dedupeIndex, sanitizeTable } from "@/engine/sanitize";
 
 function table(headers: string[], rows: string[][]): CsvTable {
   return { headers, rows };
@@ -171,5 +171,29 @@ describe("sanitizeTable — irrecuperable", () => {
     expect(report.exclusions).toHaveLength(2);
     expect(report.colsAfter).toBe(0);
     expect(report.usable).toBe(false);
+  });
+});
+
+describe("dedupeIndex — cada fila original apunta a su fila deduplicada (S7)", () => {
+  it("dos filas idénticas comparten índice, en el orden estable del dedup", () => {
+    const rows = [["a", "1"], ["b", "2"], ["a", "1"], ["c", "3"], ["b", "2"]];
+    expect(dedupeIndex(rows)).toEqual([0, 1, 0, 2, 1]);
+  });
+
+  it("cuadra con sanitizeTable: el índice recorre exactamente sus filas", () => {
+    const table = {
+      headers: ["id", "x", "y"],
+      rows: [
+        ["1", "5", "si"],
+        ["2", "6", "no"],
+        ["1", "5", "si"],
+        ["3", "7", "si"],
+      ],
+    };
+    const { table: clean, report } = sanitizeTable(table);
+    const index = dedupeIndex(table.rows);
+    expect(index).toHaveLength(table.rows.length);
+    expect(Math.max(...index) + 1).toBe(report.rowsAfter);
+    expect(clean.rows).toHaveLength(report.rowsAfter);
   });
 });

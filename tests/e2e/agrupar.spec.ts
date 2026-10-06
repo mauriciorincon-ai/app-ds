@@ -111,6 +111,8 @@ test("agrupar: segmentos → 3 grupos que existen, perfiles, tabla y las filas c
     .trim()
     .split("\n");
   expect(csv[0]!.split(",").at(-1)).toBe("grupo");
+  // La tabla del usuario, no la saneada: con el identificador que el saneamiento aparta.
+  expect(csv[0]!.startsWith("cliente_id,")).toBe(true);
   expect(csv).toHaveLength(301);
   for (const line of csv.slice(1)) {
     expect(line.split(",").at(-1)).toMatch(/^[1-3]$/);

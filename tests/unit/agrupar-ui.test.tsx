@@ -614,7 +614,13 @@ describe("S7: el flujo de agrupar en el hook (P13: las etiquetas no pasan por el
 
   it("planear → agrupar → resultado validado → descargar las filas con su grupo", () => {
     const { result } = renderHook(() => useExperiment());
-    act(() => result.current.loadCsv(SEGMENTOS, "segmentos-clientes.csv"));
+    // Con una fila repetida al final: el saneamiento la quita (y aparta cliente_id),
+    // pero el CSV que se descarga es la tabla del usuario ENTERA.
+    const firstRow = SEGMENTOS.split("\n")[1]!;
+    const withDuplicate = `${SEGMENTOS.trimEnd()}\n${firstRow}`;
+    act(() =>
+      result.current.loadCsv(withDuplicate, "segmentos-clientes.csv"),
+    );
     act(() => result.current.selectCluster());
     const plan = result.current.state.clusterPlan;
     expect(plan?.ok).toBe(true);
@@ -666,8 +672,17 @@ describe("S7: el flujo de agrupar en el hook (P13: las etiquetas no pasan por el
     expect(result.current.state.labels).toBe("idle");
     const [name, csv] = vi.mocked(downloadTextFile).mock.lastCall!;
     expect(name).toMatch(/agrupado/);
-    expect(csv.split("\n")[0]).toMatch(/,grupo$/);
-    expect(csv.split("\n")[1]).toMatch(/,1$/);
+    const lines = csv.trimEnd().split("\n");
+    expect(lines[0]).toMatch(/,grupo$/);
+    expect(lines[1]).toMatch(/,1$/);
+    // La tabla del usuario, no la saneada: con su identificador, y la fila
+    // repetida con el grupo de su gemela.
+    expect(
+      lines[0]!.startsWith("cliente_id,"),
+      "el CSV no es la tabla del usuario: le falta cliente_id",
+    ).toBe(true);
+    expect(lines).toHaveLength(TRAIN.n_rows + 2);
+    expect(lines.at(-1)).toBe(lines[1]);
     // P13: el estado nunca guardó las etiquetas.
     expect(JSON.stringify(result.current.state)).not.toContain('"labels":[');
   });

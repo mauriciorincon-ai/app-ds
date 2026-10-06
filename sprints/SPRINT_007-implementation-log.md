@@ -1174,6 +1174,44 @@ grupos).».
 archivos (motor al 97,43 % de sentencias y 98,96 % de líneas); e2e sobre el build de producción
 (`agrupar`, `agrupar-score`, `reduced-motion-app`, `multiclase`): 16 de 16 al primer intento.
 
+### Duodécimo commit: «tus filas con su grupo» es la tabla del usuario, entera
+
+Otro hallazgo del reconocimiento: «Descargar filas con su grupo» entregaba
+`gasto_mensual_usd,visitas_mes,antiguedad_meses,canal,grupo`, **sin `cliente_id`**. El CSV se
+armaba con la tabla **saneada** (sin duplicados, sin el identificador, con las celdas basura
+vaciadas), mientras la pantalla promete «tu tabla con una columna más». Al segmentar clientes, el
+identificador es justo lo que hace falta para volver a los propios registros. («Asignar filas
+nuevas» ya lo conservaba: usa el CSV nuevo tal como llega.)
+
+**Arreglo:**
+
+- `dedupeIndex` (en `sanitize.ts`, pura) da, para cada fila original, el índice de su fila saneada,
+  con la misma firma y el mismo orden estable que el dedup;
+- el hook guarda también la tabla tal como llegó (`rawTableRef`, que se limpia donde se limpia la
+  saneada) y arma el CSV con ella. Cada fila lleva el grupo de su fila saneada, y una fila repetida,
+  el de su gemela.
+
+Las etiquetas se siguen validando contra las filas saneadas (lo que vio el agrupador) y siguen sin
+pasar por el estado (P13).
+
+**Pruebas:**
+
+- `sanitize.test.ts`: el índice con filas repetidas y su cuadre con `sanitizeTable`;
+- el flujo del hook carga los segmentos con una fila repetida al final. El CSV trae `cliente_id`,
+  301 filas de datos, y la repetida con el grupo de su gemela;
+- la e2e de agrupar exige `cliente_id` en la cabecera.
+
+**Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`):
+
+| Mutación | Rojo (lo que nombró) | Verde |
+| --- | --- | --- |
+| El CSV con la tabla saneada (la condición de la tabla original a `false`) | «el CSV no es la tabla del usuario: le falta cliente_id» | 27 de 27 |
+| `dedupeIndex` devuelve un índice nuevo para la fila repetida | «dos filas idénticas comparten índice» | 11 de 11 |
+
+**Verde** (2026-10-05): `pnpm lint` y `pnpm typecheck` limpios; `pnpm test` 674 de 674 en 57
+archivos (motor al 97,45 % de sentencias y 98,97 % de líneas); e2e `agrupar` y `agrupar-score` sobre
+el build de producción, 8 de 8 al primer intento.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

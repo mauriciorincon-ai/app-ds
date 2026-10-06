@@ -8,7 +8,11 @@ import {
 } from "@/engine/despacho";
 import type { LeakageFinding } from "@/engine/leakage";
 import { computeEdaAlerts, idLikeAlerts, type EdaAlert } from "@/engine/eda";
-import { sanitizeTable, type SanitationReport } from "@/engine/sanitize";
+import {
+  dedupeIndex,
+  sanitizeTable,
+  type SanitationReport,
+} from "@/engine/sanitize";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import {
   checkSchema,
@@ -354,6 +358,9 @@ type Pending =
   | {
       kind: "cluster-labels";
       table: CsvTable;
+      /** La tabla del usuario ANTES del saneamiento y, por fila, su fila saneada. */
+      raw: CsvTable | null;
+      rawIndex: number[] | null;
       datasetName: string;
       groups: number;
       noise: boolean;
@@ -625,6 +632,9 @@ export function useExperiment() {
   const workerRef = useRef<Worker | null>(null);
   const nextId = useRef(0);
   const tableRef = useRef<CsvTable | null>(null);
+  // S7: la tabla tal como llegó (antes del saneamiento), solo para devolverle al
+  // usuario SUS filas con su grupo (con el identificador que el saneamiento aparta).
+  const rawTableRef = useRef<CsvTable | null>(null);
   // Reporte de saneamiento del dataset activo (para adjuntarlo al export).
   const sanitationRef = useRef<SanitationReport | null>(null);
   const pendingRef = useRef(new Map<number, Pending>());
@@ -1036,15 +1046,23 @@ export function useExperiment() {
           setState((s) => ({ ...s, labels: "error" }));
           return;
         }
-        const { names } = pending;
-        const csv = buildScoredCsv(
-          pending.table,
-          checked.value.labels.map((g) =>
-            g === -1 ? names.noise : String(g + 1),
-          ),
-          null,
-          { prediction: names.column, probability: "" },
-        );
+        const { names, raw, rawIndex } = pending;
+        const label = (g: number) => (g === -1 ? names.noise : String(g + 1));
+        const labels = checked.value.labels;
+        // La tabla del usuario, entera: cada fila original lleva el grupo de su
+        // fila saneada (una fila repetida, el de su gemela).
+        const csv =
+          raw && rawIndex && rawIndex.length === raw.rows.length
+            ? buildScoredCsv(
+                raw,
+                rawIndex.map((i) => label(labels[i]!)),
+                null,
+                { prediction: names.column, probability: "" },
+              )
+            : buildScoredCsv(pending.table, labels.map(label), null, {
+                prediction: names.column,
+                probability: "",
+              });
         downloadTextFile(
           scoredCsvFileName(pending.datasetName, names.fileSuffix),
           csv,
@@ -1182,6 +1200,7 @@ export function useExperiment() {
       return;
     }
     tableRef.current = table;
+    rawTableRef.current = parsed.table;
     sanitationRef.current = report;
     datasetNameRef.current = name;
     setState({
@@ -1587,9 +1606,12 @@ export function useExperiment() {
     });
     if (!groups) return;
     const id = nextId.current++;
+    const raw = rawTableRef.current;
     pendingRef.current.set(id, {
       kind: "cluster-labels",
       table,
+      raw,
+      rawIndex: raw ? dedupeIndex(raw.rows) : null,
       datasetName,
       groups: groups.groups,
       noise: groups.noise,
@@ -1612,6 +1634,7 @@ export function useExperiment() {
     resultRef.current = null;
     datasetNameRef.current = file.manifest.dataset.name;
     tableRef.current = null;
+    rawTableRef.current = null;
     const id = nextId.current++;
     pendingRef.current.set(id, { kind: "import-model" });
     setState({
@@ -1638,6 +1661,7 @@ export function useExperiment() {
     // — antes seguía corriendo y el experimento nuevo esperaba detrás de él.
     if (pendingRef.current.size > 0) respawnRef.current?.();
     tableRef.current = null;
+    rawTableRef.current = null;
     payloadRef.current = null;
     choiceRef.current = null;
     modelRef.current = null;
