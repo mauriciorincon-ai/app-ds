@@ -23,6 +23,7 @@
   body {
     margin: 0; padding: 2rem 1rem 4rem; background: var(--fondo); color: var(--tinta);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.55;
+    overflow-wrap: break-word;
   }
   main { max-width: 980px; margin: 0 auto; }
   h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
@@ -38,7 +39,7 @@
     border-radius: 8px; padding: .8rem 1rem; font-size: .88rem; color: var(--tinta-suave);
   }
   .diagrama { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 1rem; overflow-x: auto; }
-  .diagrama svg { display: block; min-width: 720px; width: 100%; height: auto; }
+  .diagrama svg { display: block; min-width: 760px; width: 100%; height: auto; }
   .caja { fill: var(--caja-svg); stroke: var(--borde); stroke-width: 1.5; }
   .caja-principal { stroke: var(--acento); stroke-width: 2.5; }
   .caja-bd { fill: none; stroke: var(--futuro); stroke-width: 1.5; stroke-dasharray: 6 5; }
@@ -56,18 +57,19 @@
   tr.critica td { font-weight: 700; }
   code { font-size: .85em; background: var(--acento-suave); color: var(--acento); padding: .05rem .3rem; border-radius: 4px; }
   .tabla-scroll { overflow-x: auto; }
+  .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
   footer { margin-top: 3rem; font-size: .8rem; color: var(--tinta-suave); border-top: 1px solid var(--borde); padding-top: .8rem; }
 </style>
 </head>
 <body>
 <main>
   <h1>Probeta DS — Blueprint de infraestructura <span class="badge">as-built</span></h1>
-  <p class="meta">Ciclo: <strong>H1 — "El veredicto honesto → sobrevive datos reales"</strong> · Cerrado: <strong>2026-07-19</strong> · Sprints del ciclo: <strong>S001–S004</strong> (4) · Última actualización: <strong>2026-07-19</strong></p>
-  <p class="nota"><strong>La forma de esta infraestructura es el producto.</strong> Probeta DS es <strong>local-first radical</strong>: TODO el cómputo pesado (perfilado, saneamiento, EDA, entrenamiento, scoring, export/import) corre <strong>en el navegador del usuario</strong> con Pyodide/WASM (pandas + scikit-learn). Los datos del usuario <strong>JAMÁS salen del dispositivo</strong> (regla dura 2). El servidor es finísimo: Vercel sirve estáticos + <strong>una sola</strong> ruta serverless (<code>/api/narrate</code>), opt-in y con fallback determinista. <strong>No hay base de datos</strong> en H1.</p>
+  <p class="meta">Ciclo: <strong>H2 — «El catálogo»</strong> (la liga honesta → estimar → agrupar y varias categorías) · Sprints del ciclo: <strong>S005–S007</strong> (3) · Cierre de construcción (Acto 1): <strong>2026-10-06</strong> · Última actualización: <strong>2026-10-06</strong></p>
+  <p class="nota"><strong>La forma de esta infraestructura es el producto, y el H2 no la cambió.</strong> Probeta DS sigue siendo <strong>local-first radical</strong>: todo el cómputo (perfilado, saneamiento, EDA, la liga de modelos, el agrupamiento, puntuar, exportar e importar) corre <strong>en el navegador del usuario</strong> con Pyodide/WASM. Los datos del usuario <strong>jamás salen del dispositivo</strong> (regla dura 2). El servidor sigue siendo finísimo: Vercel sirve estáticos y <strong>una sola</strong> ruta serverless (<code>/api/narrate</code>), opcional y con respaldo determinista. <strong>No hay base de datos</strong>. Lo que el H2 sumó vive dentro del navegador (dos librerías de modelos, cuatro tareas, la liga) y en los gates que protegen el merge.</p>
 
   <h2>Diagrama</h2>
   <div class="diagrama">
-  <svg viewBox="0 0 960 470" role="img" aria-label="Diagrama de infraestructura de Probeta DS: cómputo client-side en el navegador, Vercel sirviendo estáticos y una ruta serverless opt-in hacia Groq, sin base de datos.">
+  <svg viewBox="0 0 960 500" role="img" aria-label="Diagrama de infraestructura de Probeta DS al cierre del H2: el cómputo y el dataset viven en el navegador del usuario; Vercel sirve los estáticos, el motor de Pyodide bajo demanda, el brochure y una ruta serverless opcional hacia Groq; sin base de datos; las descargas van al disco del usuario; GitHub Actions gatea el merge.">
     <defs>
       <marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" opacity="0.65"/>
@@ -75,71 +77,103 @@
     </defs>
 
     <!-- Navegador del usuario (la pieza principal) -->
-    <rect class="caja caja-principal" x="20" y="70" width="330" height="250" rx="12"/>
-    <text class="titulo-caja" x="185" y="96" text-anchor="middle">Navegador del usuario (móvil / desktop)</text>
-    <text class="detalle-caja detalle-ok" x="185" y="114" text-anchor="middle">aquí vive TODO el cómputo y el dataset</text>
+    <rect class="caja caja-principal" x="20" y="60" width="340" height="290" rx="12"/>
+    <text class="titulo-caja" x="190" y="86" text-anchor="middle">Navegador del usuario (móvil / escritorio)</text>
+    <text class="detalle-caja detalle-ok" x="190" y="103" text-anchor="middle">aquí vive TODO el cómputo y el dataset</text>
 
-    <rect class="caja" x="42" y="130" width="286" height="70" rx="9"/>
-    <text class="titulo-caja" x="185" y="153" text-anchor="middle">UI — Next.js 16 + React 19</text>
-    <text class="detalle-caja" x="185" y="170" text-anchor="middle">App Router · Tailwind · i18n ES/EN</text>
-    <text class="detalle-caja" x="185" y="186" text-anchor="middle">máquina de estados del experimento</text>
+    <rect class="caja" x="40" y="114" width="300" height="74" rx="9"/>
+    <text class="titulo-caja" x="190" y="136" text-anchor="middle">UI — Next.js 16 + React 19</text>
+    <text class="detalle-caja" x="190" y="153" text-anchor="middle">Tailwind · ES/EN · pantallas de resultados bajo demanda</text>
+    <text class="detalle-caja" x="190" y="169" text-anchor="middle">portada liviana: 237,6 KiB de script (budget 300 KiB)</text>
 
-    <rect class="caja" x="42" y="212" width="286" height="88" rx="9"/>
-    <text class="titulo-caja" x="185" y="235" text-anchor="middle">Web Worker — Pyodide/WASM</text>
-    <text class="detalle-caja" x="185" y="252" text-anchor="middle">pandas + scikit-learn (self-hosteados)</text>
-    <text class="detalle-caja" x="185" y="268" text-anchor="middle">pipeline anti-fuga · forest + HGB · scoring</text>
-    <text class="detalle-caja detalle-ok" x="185" y="285" text-anchor="middle">dataset en memoria — nunca sale de aquí</text>
+    <rect class="caja" x="40" y="198" width="300" height="138" rx="9"/>
+    <text class="titulo-caja" x="190" y="220" text-anchor="middle">Web Worker — Pyodide 314.0.2 (fijado)</text>
+    <text class="detalle-caja" x="190" y="237" text-anchor="middle">pandas · scikit-learn 1.8 · XGBoost · LightGBM</text>
+    <text class="detalle-caja" x="190" y="253" text-anchor="middle">4 tareas: dos clases · varias categorías ·</text>
+    <text class="detalle-caja" x="190" y="268" text-anchor="middle">una cantidad · agrupar sin objetivo</text>
+    <text class="detalle-caja" x="190" y="284" text-anchor="middle">la liga elige con validación cruzada dentro de train</text>
+    <text class="detalle-caja" x="190" y="300" text-anchor="middle">pipeline anti-fuga · fuga por clase con soporte mínimo</text>
+    <text class="detalle-caja detalle-ok" x="190" y="320" text-anchor="middle">dataset en memoria — nunca sale de aquí</text>
+
+    <!-- Disco del usuario -->
+    <rect class="caja" x="20" y="392" width="340" height="76" rx="10"/>
+    <text class="titulo-caja" x="190" y="415" text-anchor="middle">Disco del usuario (descargas del navegador)</text>
+    <text class="detalle-caja" x="190" y="433" text-anchor="middle">modelo .probeta.json · CSV puntuado · model card</text>
+    <text class="detalle-caja" x="190" y="449" text-anchor="middle">«tus filas con su grupo» · nada se sube</text>
 
     <!-- Vercel -->
-    <rect class="caja" x="430" y="70" width="250" height="130" rx="10"/>
-    <text class="titulo-caja" x="555" y="96" text-anchor="middle">Vercel (Hobby / Free)</text>
-    <text class="detalle-caja" x="555" y="114" text-anchor="middle">estáticos + wheels de Pyodide (CDN)</text>
-    <text class="detalle-caja" x="555" y="131" text-anchor="middle">prod desde <tspan font-family="monospace">main</tspan> · preview por PR</text>
-    <text class="detalle-caja" x="555" y="153" text-anchor="middle">— única superficie server —</text>
-    <text class="detalle-caja etiqueta-acento" x="555" y="170" text-anchor="middle">ruta serverless /api/narrate</text>
-    <text class="detalle-caja" x="555" y="186" text-anchor="middle">Node · rate limit en memoria · sin persistencia</text>
+    <rect class="caja" x="430" y="60" width="270" height="176" rx="10"/>
+    <text class="titulo-caja" x="565" y="86" text-anchor="middle">Vercel (Hobby)</text>
+    <text class="detalle-caja" x="565" y="104" text-anchor="middle">estáticos de la app · brochure en /conoce</text>
+    <text class="detalle-caja" x="565" y="120" text-anchor="middle">motor Pyodide: 39,58 MiB, solo al empezar</text>
+    <text class="detalle-caja" x="565" y="136" text-anchor="middle">producción desde <tspan font-family="monospace">main</tspan> · preview por PR</text>
+    <text class="detalle-caja" x="565" y="160" text-anchor="middle">— única superficie de servidor —</text>
+    <text class="detalle-caja etiqueta-acento" x="565" y="177" text-anchor="middle">ruta serverless /api/narrate</text>
+    <text class="detalle-caja" x="565" y="193" text-anchor="middle">Node · límite de uso en memoria</text>
+    <text class="detalle-caja" x="565" y="209" text-anchor="middle">sin persistencia</text>
 
     <!-- Groq -->
-    <rect class="caja" x="740" y="90" width="200" height="90" rx="10"/>
-    <text class="titulo-caja" x="840" y="116" text-anchor="middle">Groq (LLM)</text>
-    <text class="detalle-caja etiqueta-acento" x="840" y="134" text-anchor="middle">narración OPT-IN (ADR-005)</text>
-    <text class="detalle-caja" x="840" y="151" text-anchor="middle">solo agregados, jamás filas</text>
-    <text class="detalle-caja" x="840" y="168" text-anchor="middle">fallback determinista si falla</text>
+    <rect class="caja" x="760" y="70" width="180" height="104" rx="10"/>
+    <text class="titulo-caja" x="850" y="96" text-anchor="middle">Groq (LLM)</text>
+    <text class="detalle-caja etiqueta-acento" x="850" y="114" text-anchor="middle">narración A PETICIÓN (ADR 005)</text>
+    <text class="detalle-caja" x="850" y="130" text-anchor="middle">solo la tarea de dos clases</text>
+    <text class="detalle-caja" x="850" y="146" text-anchor="middle">agregados, jamás filas</text>
+    <text class="detalle-caja" x="850" y="162" text-anchor="middle">plantilla local si falla</text>
 
     <!-- Sin base de datos -->
-    <rect class="caja-bd" x="740" y="210" width="200" height="70" rx="10"/>
-    <text class="titulo-caja detalle-futuro" x="840" y="238" text-anchor="middle">Base de datos</text>
-    <text class="detalle-caja detalle-futuro" x="840" y="256" text-anchor="middle">NINGUNA en H1 (local-first)</text>
-    <text class="detalle-caja detalle-futuro" x="840" y="272" text-anchor="middle">Supabase solo-metadata → H2</text>
+    <rect class="caja-bd" x="760" y="190" width="180" height="76" rx="10"/>
+    <text class="titulo-caja detalle-futuro" x="850" y="216" text-anchor="middle">Base de datos</text>
+    <text class="detalle-caja detalle-futuro" x="850" y="234" text-anchor="middle">NINGUNA al cierre de H2</text>
+    <text class="detalle-caja detalle-futuro" x="850" y="250" text-anchor="middle">(solo metadatos, si algún día)</text>
 
     <!-- GitHub + CI -->
-    <rect class="caja" x="430" y="250" width="250" height="90" rx="10"/>
-    <text class="titulo-caja" x="555" y="276" text-anchor="middle">GitHub — mauriciorincon-ai/app-ds</text>
-    <text class="detalle-caja" x="555" y="294" text-anchor="middle">público · ruleset main-protegida</text>
-    <text class="detalle-caja" x="555" y="311" text-anchor="middle">CI: quality · integration · e2e · lighthouse</text>
-    <text class="detalle-caja" x="555" y="328" text-anchor="middle">hooks gitleaks (PreToolUse + pre-commit)</text>
+    <rect class="caja" x="430" y="270" width="270" height="116" rx="10"/>
+    <text class="titulo-caja" x="565" y="294" text-anchor="middle">GitHub — repo público</text>
+    <text class="detalle-caja" x="565" y="312" text-anchor="middle">ruleset main-protegida · PR con checks</text>
+    <text class="detalle-caja" x="565" y="328" text-anchor="middle">CI: quality · integration · e2e · lighthouse</text>
+    <text class="detalle-caja" x="565" y="344" text-anchor="middle">gitleaks con checksum · dependencias vs main</text>
+    <text class="detalle-caja" x="565" y="360" text-anchor="middle">budget + categorías + margen del LCP</text>
+    <text class="detalle-caja" x="565" y="376" text-anchor="middle">dependabot: máximo 2 PRs abiertos</text>
+
+    <!-- Equipo del constructor -->
+    <rect class="caja" x="760" y="290" width="180" height="92" rx="10"/>
+    <text class="titulo-caja" x="850" y="314" text-anchor="middle">Equipo del constructor</text>
+    <text class="detalle-caja" x="850" y="332" text-anchor="middle">hook PreToolUse: gitleaks,</text>
+    <text class="detalle-caja" x="850" y="347" text-anchor="middle">falla cerrado sin gitleaks o jq</text>
+    <text class="detalle-caja" x="850" y="363" text-anchor="middle">githooks/pre-commit</text>
 
     <!-- Observabilidad -->
-    <rect class="caja" x="430" y="370" width="250" height="76" rx="10"/>
-    <text class="titulo-caja" x="555" y="396" text-anchor="middle">Observabilidad</text>
-    <text class="detalle-caja" x="555" y="414" text-anchor="middle">Sentry (inerte sin DSN) · metadata-only</text>
-    <text class="detalle-caja" x="555" y="431" text-anchor="middle">Pino: costo de narración (sin datos)</text>
+    <rect class="caja" x="430" y="410" width="270" height="72" rx="10"/>
+    <text class="titulo-caja" x="565" y="434" text-anchor="middle">Observabilidad</text>
+    <text class="detalle-caja" x="565" y="452" text-anchor="middle">Sentry: solo metadatos y breadcrumbs probeta.*</text>
+    <text class="detalle-caja" x="565" y="468" text-anchor="middle">Pino: costo de cada narración (sin datos)</text>
 
     <!-- Flechas -->
-    <path class="flecha" d="M 350 150 L 425 130"/>
-    <text class="etiqueta-flecha" x="388" y="128" text-anchor="middle">HTTPS · estáticos</text>
+    <path class="flecha" d="M 340 128 L 426 98"/>
+    <text class="etiqueta-flecha" x="383" y="100" text-anchor="middle">HTTPS</text>
 
-    <path class="flecha flecha-opt" d="M 350 230 C 390 230 400 175 425 168"/>
-    <text class="etiqueta-flecha etiqueta-acento" x="392" y="205" text-anchor="middle">POST opt-in</text>
+    <path class="flecha flecha-opt" d="M 340 168 L 426 172"/>
+    <text class="etiqueta-flecha etiqueta-acento" x="383" y="160" text-anchor="middle">POST opcional</text>
 
-    <path class="flecha flecha-opt" d="M 680 150 L 736 140"/>
-    <text class="etiqueta-flecha etiqueta-acento" x="708" y="132" text-anchor="middle">≤2 llamadas</text>
+    <path class="flecha" d="M 340 262 L 426 218"/>
+    <text class="etiqueta-flecha" x="395" y="276" text-anchor="middle">motor</text>
+    <text class="etiqueta-flecha" x="395" y="288" text-anchor="middle">a demanda</text>
 
-    <path class="flecha" d="M 555 250 L 555 205"/>
-    <text class="etiqueta-flecha" x="563" y="230">CI → deploy</text>
+    <path class="flecha flecha-opt" d="M 700 150 L 756 130"/>
+    <text class="etiqueta-flecha etiqueta-acento" x="728" y="112" text-anchor="middle">≤ 2</text>
+    <text class="etiqueta-flecha etiqueta-acento" x="728" y="124" text-anchor="middle">llamadas</text>
 
-    <path class="flecha flecha-opt" d="M 430 410 C 380 410 360 340 348 305"/>
-    <text class="etiqueta-flecha" x="372" y="392" text-anchor="middle">errores (metadata)</text>
+    <path class="flecha" d="M 565 270 L 565 240"/>
+    <text class="etiqueta-flecha" x="573" y="259">deploy</text>
+
+    <path class="flecha" d="M 760 336 L 704 330"/>
+    <text class="etiqueta-flecha" x="732" y="320" text-anchor="middle">push</text>
+
+    <path class="flecha" d="M 190 350 L 190 388"/>
+    <text class="etiqueta-flecha" x="198" y="374">descargas (Blob)</text>
+
+    <path class="flecha flecha-opt" d="M 360 330 C 395 360 400 430 426 440"/>
+    <text class="etiqueta-flecha" x="370" y="476" text-anchor="middle">errores (metadatos)</text>
   </svg>
   </div>
 
@@ -148,22 +182,48 @@
   <table>
     <thead><tr><th>Pieza</th><th>Servicio + plan</th><th>Detalle operativo</th></tr></thead>
     <tbody>
-      <tr><td>Código / versionamiento</td><td>GitHub <code>mauriciorincon-ai/app-ds</code> (público)</td><td>Ruleset <code>main-protegida</code>: jamás push directo; PR con checks requeridos.</td></tr>
-      <tr><td>CI/CD</td><td>GitHub Actions</td><td>4 jobs que gatean el merge: <code>quality</code> (typecheck·lint·test+cobertura·build·audit), <code>integration</code> (Pyodide/WASM), <code>e2e</code> (Playwright ×2 devices + axe), <code>lighthouse</code> (vs <code>perf-budget.json</code>, solo páginas públicas).</td></tr>
-      <tr><td>Hosting / publicación</td><td>Vercel — Hobby (Free)</td><td>Prod desde <code>main</code>, preview por PR; subdominio generado por Vercel. Sirve la app estática + las wheels de Pyodide. Uso comercial permitido en el plan Hobby solo para proyectos no comerciales (para lanzar de verdad → plan Pro, decisión de H2).</td></tr>
-      <tr class="critica"><td>Base de datos</td><td><strong>NINGUNA</strong> — local-first (ADR-001)</td><td>El cómputo corre en el navegador; los datasets viven en memoria/OPFS del cliente. Supabase entra en H2 <strong>solo para metadata</strong> (proyectos, métricas, model cards) con RLS desde la 1ª tabla — <strong>jamás datos crudos del usuario</strong>.</td></tr>
-      <tr><td>Auth</td><td>No aplica (H1)</td><td>Sin cuentas: la app es de un solo uso local. Auth llega con la BD de metadata en H2.</td></tr>
-      <tr><td>Almacenamiento de archivos</td><td>El disco del usuario (descargas del navegador)</td><td>El modelo (<code>.probeta.json</code>), el CSV puntuado y la model card se descargan al equipo del usuario vía Blob; <strong>nada se sube</strong>. Sin storage de servidor.</td></tr>
+      <tr><td>Código / versionamiento</td><td>GitHub, repo público</td><td>Ruleset <code>main-protegida</code>: jamás push directo; PR con checks requeridos. El PR de cada sprint nace en borrador y lo mergea el usuario, con squash.</td></tr>
+      <tr><td>CI/CD</td><td>GitHub Actions</td><td>4 jobs que gatean el merge: <code>quality</code> (gitleaks, peers, dependencias contra <code>main</code>, typecheck, lint, pruebas con cobertura, build, peso del motor, auditoría), <code>integration</code> (el motor Python en Pyodide real), <code>e2e</code> (Playwright en móvil y escritorio, con axe) y <code>lighthouse</code> (budget, categorías y margen sobre la portada). El detalle de cada gate está en la tabla siguiente.</td></tr>
+      <tr><td>Hosting / publicación</td><td>Vercel — Hobby (gratis)</td><td>Producción desde <code>main</code>, preview por PR, subdominio generado por Vercel. Sirve la app, el motor Pyodide (núcleo y wheels, en <code>public/pyodide/</code>) y el brochure. El plan Hobby es para uso no comercial: lanzar de verdad exige el plan Pro, una decisión que el H2 no tomó.</td></tr>
+      <tr class="critica"><td>Base de datos</td><td><strong>NINGUNA</strong> — local-first (ADR 001)</td><td>El cómputo corre en el navegador y los datasets viven en su memoria. El H2 no sumó base de datos: las cuatro tareas, la liga y los modelos exportados caben en el cliente. Si algún día entra una (la constitución nombra Supabase), será <strong>solo para metadatos</strong> y con RLS desde la primera tabla; <strong>jamás datos crudos del usuario</strong>.</td></tr>
+      <tr><td>Auth</td><td>No aplica</td><td>Sin cuentas: la app no guarda nada del usuario en un servidor, así que no hay nada que proteger con un login.</td></tr>
+      <tr><td>Motor de cómputo</td><td>Pyodide <span class="num">314.0.2</span>, fijado</td><td>Python en WebAssembly, en un Web Worker, cargado <strong>solo al empezar un experimento</strong> (fuera del camino del LCP). 11 wheels: pandas, scikit-learn 1.8, scipy, numpy, XGBoost, LightGBM y sus dependencias. <strong>Peso medido: <span class="num">39,58 MiB</span></strong> con tope de <span class="num">40,18 MiB</span> (<code>pyodide-budget.json</code>). La versión viaja dentro de cada modelo exportado: se mueve solo por decisión, con prueba de pin (en el S7 se midió 314.0.7 y se quedó en 314.0.2).</td></tr>
+      <tr><td>Almacenamiento de archivos</td><td>El disco del usuario (descargas del navegador)</td><td>El modelo (<code>.probeta.json</code>, uno por tarea), el CSV puntuado, la model card y, al agrupar, «tus filas con su grupo» se descargan al equipo del usuario vía Blob. <strong>Nada se sube</strong>; no hay almacenamiento de servidor.</td></tr>
       <tr><td>Email / notificaciones</td><td>No aplica</td><td>La app no envía correo ni notificaciones.</td></tr>
-      <tr><td>IA embebida</td><td>Groq (OpenAI-compatible) — free tier</td><td>Única IA: la <strong>narración del porqué</strong> (desde S2, ADR-005/006), <strong>opt-in</strong> y verificada contra los números. Envía solo agregados (nombres de columna, métricas, alertas EDA) — nunca filas. Adapter conmutable por env; en CI corre el proveedor <code>mock</code>. Guardrails + circuit breaker con fallback determinista.</td></tr>
-      <tr><td>Observabilidad</td><td>Sentry + Pino</td><td>Sentry client-side, <strong>inerte sin</strong> <code>NEXT_PUBLIC_SENTRY_DSN</code>, solo tipos+metadatos (nº filas/columnas), <strong>jamás contenido del dataset</strong>. Pino registra el costo de cada narración (~US$0.0005) sin datos del usuario.</td></tr>
-      <tr><td>Crons / keep-alives</td><td>Ninguno</td><td>No hay procesos programados (no hay servidor con estado que mantener vivo).</td></tr>
-      <tr><td>Secretos</td><td><code>.env.local</code> (gitignored) + Vercel env vars</td><td>Doble cinturón gitleaks: hook PreToolUse de Claude Code + <code>githooks/pre-commit</code> (100755, verificado vivo en S3/S4 con carnada canónica). El repo nunca guarda secretos.</td></tr>
-      <tr><td>Dominio</td><td>Subdominio generado por Vercel</td><td>Sin dominio propio en H1; se administra desde el panel de Vercel. Dominio propio es decisión de H2 (lanzamiento). <strong>La URL exacta NO se escribe aquí</strong> — regla de cero enlaces del pipeline: este repo es público y la producción se MUESTRA, jamás se ENTREGA; el registro vive en la planeadora, que es privada. <strong>Ojo con el homónimo:</strong> existe un dominio de nombre parecido que responde 200 y es de OTRO proyecto ajeno («Quarksuite App: Design Tokens») — al verificar producción hay que usar la URL que registra la planeadora, no una deducida del nombre del repo.</td></tr>
-      <tr class="critica"><td>Protección de deployment</td><td>Vercel Authentication — <strong>DESACTIVADA</strong> (desde 2026-08-15)</td><td>Hasta el 2026-08-15 estuvo en <em>Standard Protection</em>, que protege las previews <strong>y las URLs generadas de producción</strong>: la app llevaba todo H1 tras el login de Vercel sin que nadie lo notara (producción respondía <code>302 → vercel.com/sso-api</code>). Se apagó para publicar la app y su brochure. <strong>Efecto lateral medido:</strong> las <em>previews</em> de PR también quedaron públicas — la recomendación era <code>Only Preview Deployments</code>, no apagarla del todo. Riesgo bajo aquí (repo público; <strong>cero datos de usuario en el servidor</strong>), pero implica que el trabajo sin revisar es alcanzable antes de su gate. Se cambia en <code>Settings → Deployment Protection → Vercel Authentication</code>; es una opción de la cuenta que ninguna sesión de construcción puede tocar.</td></tr>
-      <tr><td>Ruta pública <code>/conoce</code></td><td>HTML estático en <code>public/</code> + rewrite de Next</td><td>El brochure vivo (<code>docs/BROCHURE.html</code>, canónico y autocontenido) se copia a <code>public/conoce.html</code> en <code>prebuild</code> (<code>scripts/copy-brochure.mjs</code>) y se sirve vía rewrite. <strong>No entra al bundle</strong> ni pesa en el LCP de la app; el derivado está gitignored como los assets de Pyodide.</td></tr>
-      <tr class="critica"><td>Costo real / mes</td><td><strong>≈ US$0</strong></td><td>Vercel Hobby: US$0 (dentro del free tier; app estática liviana). GitHub: US$0 (repo público). Groq: US$0 en la práctica (narración opt-in, ~US$0.0005/uso, medida por Pino; techo declarado US$10/mes). Sentry: US$0 (free tier, inerte sin DSN).</td></tr>
-      <tr class="critica"><td>Punto único de falla</td><td>Vercel (hosting de los estáticos)</td><td>Si Vercel cae, no se puede <em>cargar</em> la app; pero una vez cargada, <strong>corre 100% en el navegador</strong> (sin dependencia de servidor para su función central — entrenar/puntuar/exportar). La única llamada de servidor (<code>/api/narrate</code>) es opt-in y <strong>degrada a plantilla determinista</strong> si Vercel o Groq fallan. Mitigación: estáticos cacheables + degradación honesta; no hay estado central que perder (no hay BD).</td></tr>
+      <tr><td>IA embebida</td><td>Groq (compatible con OpenAI) — capa gratuita</td><td>Única IA: la <strong>narración del porqué</strong> (desde S2, ADR 005/006), <strong>a petición del usuario</strong> y verificada contra los números. Envía solo agregados (nombres de columna, métricas, alertas), nunca filas. <strong>Solo narra la tarea de dos clases:</strong> varias categorías, estimar y agrupar usan su plantilla local, y la ruta rechaza otro problema antes de llegar al proveedor. Adapter conmutable por env; en la CI corre el proveedor <code>mock</code>.</td></tr>
+      <tr><td>Observabilidad</td><td>Sentry + Pino</td><td>Sentry del navegador con <code>@sentry/browser</code> (ADR 018), <strong>inerte sin</strong> <code>NEXT_PUBLIC_SENTRY_DSN</code>: solo tipos y metadatos, y de los breadcrumbs automáticos <strong>solo pasan los propios</strong> (<code>probeta.*</code>), porque los otros copiaban texto de la pantalla (S6). Los nombres de clase, los perfiles de grupo y las etiquetas por fila jamás entran en un registro. Pino anota el costo de cada narración, sin datos del usuario.</td></tr>
+      <tr><td>Crons / keep-alives</td><td>Ninguno</td><td>No hay procesos programados: no hay servidor con estado que mantener vivo.</td></tr>
+      <tr><td>Secretos</td><td><code>.env.local</code> (gitignored) + variables de Vercel</td><td>Triple cinturón gitleaks: el hook PreToolUse de Claude Code (<strong>falla cerrado</strong> si faltan gitleaks o jq desde el S7), <code>githooks/pre-commit</code> (100755, <code>core.hooksPath</code> re-aplicado en cada <code>pnpm install</code>) y el job <code>quality</code>, que baja gitleaks y <strong>verifica su SHA-256</strong> antes de ejecutarlo. El repo nunca guarda secretos.</td></tr>
+      <tr><td>Dominio</td><td>Subdominio generado por Vercel</td><td>Sin dominio propio; se administra desde el panel de Vercel. <strong>La URL exacta NO se escribe aquí</strong> — regla de cero enlaces del pipeline: este repo es público y la producción se MUESTRA, jamás se ENTREGA; el registro vive en la planeadora, que es privada. <strong>Ojo con el homónimo:</strong> existe un dominio de nombre parecido que responde 200 y es de OTRO proyecto ajeno («Quarksuite App: Design Tokens»); al verificar producción hay que usar la URL que registra la planeadora, no una deducida del nombre del repo.</td></tr>
+      <tr class="critica"><td>Qué ve quién sin sesión</td><td>Vercel Authentication — <strong>DESACTIVADA</strong> (desde 2026-08-15)</td><td><strong>Medido el 2026-10-06, sin sesión:</strong> la portada de producción responde 200, el brochure (<code>/conoce</code>) responde 200 y <strong>la preview del PR del S7 también responde 200</strong>. La app y su brochure son públicos, y el trabajo sin revisar de cada PR también es alcanzable antes de su gate: el efecto lateral de apagar la protección del todo, en vez de dejarla en <code>Only Preview Deployments</code>, sigue vigente. Riesgo bajo aquí (repo público; <strong>cero datos de usuario en el servidor</strong>). Se cambia en <code>Settings → Deployment Protection → Vercel Authentication</code>; es una opción de la cuenta que ninguna sesión de construcción puede tocar.</td></tr>
+      <tr><td>Ruta pública <code>/conoce</code></td><td>HTML estático en <code>public/</code> + rewrite de Next</td><td>El brochure vivo (<code>docs/BROCHURE.html</code>, canónico y autocontenido) se copia a <code>public/conoce.html</code> en <code>prebuild</code> (<code>scripts/copy-brochure.mjs</code>) y se sirve vía rewrite. <strong>No entra al bundle</strong> ni pesa en el LCP de la app; el derivado está gitignored como el motor.</td></tr>
+      <tr class="critica"><td>Costo real / mes</td><td><strong>≈ US$0</strong></td><td>El H2 no sumó servicios. Vercel Hobby: US$0. GitHub: US$0 (repo público, Actions incluido). Groq: US$0 en la práctica (narración a petición, ~US$0.0005 por uso según Pino; techo declarado US$10/mes). Sentry: US$0 (capa gratuita, inerte sin DSN). XGBoost y LightGBM corren en el navegador del usuario: no cuestan nada a la app.</td></tr>
+      <tr class="critica"><td>Punto único de falla</td><td>Vercel (hosting de los estáticos y del motor)</td><td>Si Vercel cae, no se puede <em>cargar</em> la app ni traer el motor a un navegador que no lo tenga en caché; una vez cargada, <strong>corre 100 % en el navegador</strong> (entrenar, agrupar, puntuar y exportar no dependen del servidor). La única llamada de servidor (<code>/api/narrate</code>) es opcional y <strong>degrada a la plantilla local</strong> si Vercel o Groq fallan. No hay estado central que perder: no hay base de datos.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Los gates que protegen el merge (as-built H2)</h2>
+  <p class="nota">Cada gate nació con una demo en rojo registrada en la bitácora de su sprint (regla 11): un gate que nunca se vio fallar no cuenta. Cada check requerido tiene que terminar con conclusión propia <code>success</code>; un job <code>skipped</code> no es verde.</p>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Gate</th><th>Dónde corre</th><th>Qué atrapa</th></tr></thead>
+    <tbody>
+      <tr><td>gitleaks, con el binario verificado por SHA-256</td><td><code>quality</code></td><td>Un secreto en el árbol que se va a subir. Un binario alterado no llega a ejecutarse.</td></tr>
+      <tr><td>Hook PreToolUse + <code>githooks/pre-commit</code></td><td>Equipo del constructor</td><td>Un secreto antes de escribirse o de comitearse. Sin gitleaks o jq, el hook bloquea en vez de dejar pasar; <code>KIT_SIN_GITLEAKS=1</code> lo salta a sabiendas.</td></tr>
+      <tr><td><code>pnpm peers check</code></td><td><code>quality</code></td><td>Una dependencia con su peer insatisfecho, que ningún otro gate ve.</td></tr>
+      <tr><td><code>scripts/verificar-dependencias.mjs</code></td><td><code>quality</code></td><td>Un paquete que quedó por debajo de su versión en <code>main</code>. Una degradación solo pasa si está declarada en <code>scripts/degradaciones-permitidas.json</code>, y una declaración sin uso es rojo. Un lockfile ilegible también es rojo.</td></tr>
+      <tr><td><code>pnpm audit --audit-level high</code></td><td><code>quality</code></td><td>Un aviso alto o crítico. La única excepción (<code>braces</code>, sin parche publicado) tiene su ADR 012, y una prueba pone rojo cualquier excepción sin ADR.</td></tr>
+      <tr><td>Typecheck, lint y pruebas con cobertura</td><td><code>quality</code></td><td>TypeScript estricto; umbrales de cobertura en <code>vitest.config</code> (el motor por encima del 80 %).</td></tr>
+      <tr><td>Peso del motor (<code>verificar-peso-pyodide.mjs</code>)</td><td><code>quality</code></td><td>Que el motor supere <span class="num">40,18 MiB</span> o que falte una wheel (el motor fallaría en el navegador).</td></tr>
+      <tr><td>Pin del runtime (<code>runtime-pin.test.ts</code>)</td><td><code>quality</code></td><td>Que Pyodide se mueva sin decisión: el pin exacto, la constante que viaja en el modelo y el <code>ignore</code> de dependabot tienen que coincidir.</td></tr>
+      <tr><td>Despacho exhaustivo por tarea (<code>despacho.test.ts</code>)</td><td><code>quality</code></td><td>Que una tarea nueva caiga en silencio en la rama de dos clases: el compilador obliga a escribir cada rama, y una prueba de fuente prohíbe comparar la tarea a mano fuera de <code>src/engine/despacho.ts</code>, salvo una lista corta de excepciones con su razón.</td></tr>
+      <tr><td>Portada liviana (<code>portada-liviana.test.ts</code>, <code>sentry-cliente.test.ts</code>)</td><td><code>quality</code></td><td>Que la portada vuelva a importar las pantallas de resultados o las fichas, o que el cliente vuelva a <code>@sentry/nextjs</code>: los dos cambios que la llevaron por encima de su budget en el S7.</td></tr>
+      <tr><td>Contrato TypeScript ↔ Python, con carnadas por campo</td><td><code>quality</code> + <code>integration</code></td><td>Un campo mal formado en cualquier dirección (payload, resultado de la liga, puntuar, exportar, manifiesto): el lector lo rechaza nombrándolo. Los fixtures los escribe Pyodide real.</td></tr>
+      <tr><td>Integración con Pyodide real</td><td><code>integration</code></td><td>Que el preprocesador vea la prueba (espía anti-fuga), que la elección del ganador mire la prueba, o que la ida y vuelta exportar → importar → puntuar no dé lo mismo que el modelo recién entrenado. Los archivos de modelo del S5 y del S6 siguen importando.</td></tr>
+      <tr><td>e2e + axe + reduced-motion</td><td><code>e2e</code></td><td>Las cuatro tareas de punta a punta en móvil y escritorio, axe en los dos temas, la página sin desplazamiento lateral a 360 px y las pantallas visibles y quietas con «reducir movimiento».</td></tr>
+      <tr><td>Lighthouse: budget, categorías y margen</td><td><code>lighthouse</code></td><td>La portada por encima de <span class="num">300 KiB</span> de script o de <span class="num">3.500 ms</span> de LCP simulado (mediana de 3 corridas), cualquier categoría por debajo de 0,9, y un aviso si una mediana queda a menos del 10 % de su budget. Al cierre del H2: <span class="num">237,6 KiB</span> y <span class="num">3.074 ms</span>, sin aviso.</td></tr>
+      <tr><td>Dependabot con techo de 2 PRs (<code>dependabot-config.test.ts</code>)</td><td>GitHub + <code>quality</code></td><td>Una configuración que abra más de dos PRs de dependencias a la vez, o que mezcle un salto mayor en el lote semanal.</td></tr>
     </tbody>
   </table>
   </div>
@@ -173,13 +233,14 @@
   <table>
     <thead><tr><th>Fecha</th><th>Ciclo</th><th>Cambios</th></tr></thead>
     <tbody>
-      <tr><td>2026-07-19</td><td>H1 (S001–S004)</td><td>Versión inicial (as-built del cierre del ciclo H1): local-first con Pyodide, Vercel + <code>/api/narrate</code> hacia Groq (opt-in), sin BD, observabilidad metadata-only. Sin cambios de infraestructura respecto al plan — H1 se sostuvo en client-side puro.</td></tr>
-      <tr><td>2026-08-15</td><td>Entrega puntual — brochure</td><td>Se documentan dos piezas que existían sin registrar: la <strong>protección de deployment</strong> (activa en producción — la app no es pública hoy) y el <strong>dominio exacto</strong>, con el aviso del homónimo ajeno. Se añade la ruta pública <code>/conoce</code> (HTML estático + rewrite). <strong>La app pasa a ser realmente pública</strong>: se apagó Vercel Authentication tras comprobar que producción llevaba todo H1 tras el login. Cero infraestructura nueva, US$0.</td></tr>
+      <tr><td>2026-07-19</td><td>H1 (S001–S004)</td><td>Versión inicial (as-built del cierre del ciclo H1): local-first con Pyodide, Vercel + <code>/api/narrate</code> hacia Groq (opcional), sin BD, observabilidad solo con metadatos. H1 se sostuvo en client-side puro.</td></tr>
+      <tr><td>2026-08-15</td><td>Entrega puntual — brochure</td><td>Se documentan dos piezas que existían sin registrar: la <strong>protección de deployment</strong> (activa en producción: la app no era pública) y el <strong>dominio exacto</strong>, con el aviso del homónimo ajeno. Se añade la ruta pública <code>/conoce</code> (HTML estático + rewrite). <strong>La app pasa a ser realmente pública</strong>: se apagó Vercel Authentication. Cero infraestructura nueva, US$0.</td></tr>
+      <tr><td>2026-10-06</td><td>H2 (S005–S007), Acto 1</td><td>Sin infraestructura nueva y sin costo nuevo: el H2 sumó dentro del navegador XGBoost y LightGBM (motor de <span class="num">39,58 MiB</span>, Pyodide fijado en <span class="num">314.0.2</span>), cuatro tareas (dos clases, varias categorías, estimar una cantidad y agrupar sin objetivo) y la liga elegida con validación cruzada. La narración se limita a la tarea de dos clases. Sentry del navegador pasa a <code>@sentry/browser</code> con breadcrumbs filtrados y la portada carga los resultados bajo demanda (ADR 018). Se dibujan los gates del merge que el H2 sumó: hook que falla cerrado, gitleaks con checksum, dependencias contra <code>main</code>, pin del runtime, despacho exhaustivo, peso del motor y margen de Lighthouse. «Qué ve quién sin sesión» se re-midió: las previews de PR siguen públicas. La base de datos que este blueprint anunciaba «para H2» no llegó: no hizo falta.</td></tr>
     </tbody>
   </table>
   </div>
 
-  <footer>Blueprint as-built de Probeta DS · pipeline AI-APPs · se actualiza en cada cierre de ciclo (método v1.8.1). Archivo del repo — sin CDNs ni dependencias externas. La infraestructura de H2 (Supabase solo-metadata, auth, dominio propio, plan Pro) se dibujará al cerrar ese ciclo.</footer>
+  <footer>Blueprint as-built de Probeta DS · pipeline AI-APPs · se actualiza en cada cierre de ciclo (método v1.8.1). Archivo del repo, sin CDNs ni dependencias externas. Las URLs de producción y de preview no se escriben aquí (regla de cero enlaces): su registro vive en la planeadora.</footer>
 </main>
 </body>
 </html>

@@ -1377,6 +1377,66 @@ décimo. El duodécimo llegó con el decimotercero, y el decimocuarto con el dec
 3 corridas): script en `/` **243.276 B** (237,6 KiB; el budget es de 300 KiB: 20,8 % por debajo); LCP simulado 3.081 /
 3.074 / 3.072 ms, mediana **3.074 ms** (margen 12,2 %); `lighthouse-margen` en ✓.
 
+## Fase 4 — cierres del ciclo H2 (Acto 1)
+
+El usuario dio el «continúa» de la F3 el 2026-10-06.
+
+### El BLUEPRINT al día (as-built del H2)
+
+`docs/BLUEPRINT.html` dibujaba el H1 (2026-07-19, con la entrada del brochure del 2026-08-15). Ahora es el
+as-built del H2 (S5–S7):
+
+- **Diagrama SVG redibujado:**
+  - el motor con Pyodide 314.0.2 fijado, XGBoost y LightGBM, y las cuatro tareas;
+  - el disco del usuario, con «tus filas con su grupo»;
+  - el equipo del constructor, con el hook que falla cerrado;
+  - Groq solo para la tarea de dos clases;
+  - Sentry con `@sentry/browser` y breadcrumbs `probeta.*`.
+- **Tabla por pieza al día.** Suma la fila del motor de cómputo; «Protección de deployment» pasa a
+  «Qué ve quién sin sesión», con lo medido.
+- **Sección nueva, «Los gates que protegen el merge»:** 15 filas con dónde corre cada uno y qué
+  atrapa.
+- **Historial con la entrada del H2.** Dice de frente que la base de datos que el H1 anunciaba «para
+  H2» no llegó, porque no hizo falta.
+
+**Medido para el BLUEPRINT** (2026-10-06):
+
+- `node scripts/verificar-peso-pyodide.mjs`: «39.58 MiB (11 wheels de pandas + scikit-learn + xgboost
+  + lightgbm) · crecimiento 1.40 MiB sobre la línea base · tope 40.18 MiB»;
+- `gh api …/rulesets`: `main-protegida active`;
+- **sin sesión** (`curl`, con las URLs del registro privado de la planeadora, que no se escriben
+  aquí): la portada de producción responde 200, `/conoce` 200 y la preview del PR #19 (`23dedf1`)
+  también 200. Las previews siguen públicas: el efecto lateral que el BLUEPRINT ya registraba el
+  2026-08-15 sigue vigente.
+
+**Revisado como imagen:**
+
+- Capturas a 360 y 1280 px, en claro y en oscuro: `scrollWidth ≤ clientWidth` en las cuatro.
+- Leí como imagen el diagrama (claro y oscuro), la tabla de gates (oscuro) y la cabecera a 360 px.
+- Defectos cazados al leer, y corregidos antes de comitear:
+  - «≤ 2 llamadas» tocaba la caja de Groq;
+  - «motor bajo demanda» tapaba su flecha y después rozaba la caja de GitHub; ahora dice «motor a
+    demanda»;
+  - la fila de integración decía «que exportar → importar → puntuar cambie algo», que es lo
+    contrario de lo que la prueba exige.
+
+### El delta del storyboard del brochure (PROPUESTO, parada de DECISIÓN)
+
+`sprints/ENTREGA-brochure-storyboard.md` §9:
+
+- **Qué volvió falso:** las frases del brochure que el S7 dejó falsas o incompletas, 9 filas con su
+  línea.
+- **Dos decisiones del usuario:**
+  - **D-A, la forma del catálogo.** A: escena nueva E04b «Cuatro preguntas, la misma vara» más una
+    quinta puerta. B: solo la quinta puerta. C: corregir lo falso y el conteo.
+  - **D-B, el inglés del brochure** (regla 16). A: ES/EN en este PR. B: deuda.
+- **Detalle de la propuesta:** la escena E04b completa, la quinta puerta con G1–G5 y su sección del
+  manual, el delta por escena, el conteo de 35 a 41 y el riesgo registrado.
+- **El clímax no cambia, a propósito.**
+
+La §5 del guion aprobado conserva su «33/33» con una nota que apunta al delta: el guion es el registro
+de lo que se aprobó y no se reescribe. Ninguna línea de HTML del brochure hasta la decisión.
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre
