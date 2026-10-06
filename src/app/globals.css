@@ -65,6 +65,9 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* S7 (R10): un nombre de categoría o de columna sin espacios (~60 caracteres) se
+     corta antes que empujar la página de lado en un móvil. Solo corta si no cabe. */
+  overflow-wrap: break-word;
 }
 
 /* Foco visible coherente con la paleta (a11y). */

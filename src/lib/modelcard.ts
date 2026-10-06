@@ -445,7 +445,7 @@ export function buildModelCard(input: ModelCardInput): string {
     "",
     `- ${t("modelcard.data.dataset", { name: input.datasetName })}`,
     `- ${t("modelcard.data.shape", {
-      rows: result.nTrain + result.nTest,
+      rows: thousands(result.nTrain + result.nTest),
       cols: input.cols,
       numeric: input.numericFeatures,
       categorical: input.categoricalFeatures,

@@ -111,7 +111,7 @@ export function ClusterResults({
         </p>
         {datasetName && (
           <p className="font-mono text-sm tabular-nums text-ink-muted">
-            {t("results.dataset", { name: datasetName, rows: result.nRows })}
+            {t("results.dataset", { name: datasetName, rows: n(result.nRows) })}
           </p>
         )}
       </header>
@@ -491,7 +491,8 @@ function ClusterLeague({
   const kText = (row: ClusterMemberRow) =>
     row.k === null ? "—" : t(`cluster.league.kBy.${row.k_by}`, { k: row.k });
   const noiseText = (row: ClusterMemberRow) =>
-    row.noise_share === null ? "—" : `${pct(row.noise_share)} %`;
+    // Espacio no separable: «0 %» nunca se parte en dos líneas (R9).
+    row.noise_share === null ? "—" : `${pct(row.noise_share)}\u00a0%`;
   const statusText = (row: ClusterMemberRow) =>
     t(`cluster.league.status.${row.status}`, { type: row.error_type ?? "" });
 

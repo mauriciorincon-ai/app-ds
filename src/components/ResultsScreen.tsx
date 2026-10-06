@@ -13,6 +13,7 @@ import { pickBestBaseline, type MetricName } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { useNarration } from "@/lib/useNarration";
 import { buildModelCard } from "@/lib/modelcard";
+import { thousands } from "@/lib/quantity";
 import type {
   ChoiceState,
   ExportState,
@@ -190,7 +191,7 @@ function SupervisedResults({
           <p className="font-mono text-sm tabular-nums text-ink-muted">
             {t("results.dataset", {
               name: datasetName,
-              rows: result.nTrain + result.nTest,
+              rows: thousands(result.nTrain + result.nTest),
             })}
           </p>
         )}

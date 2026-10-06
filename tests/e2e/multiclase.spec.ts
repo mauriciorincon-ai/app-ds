@@ -127,3 +127,51 @@ test("varias categorías: la fuga por clase nombra la columna y la categoría", 
   ).toBeVisible();
   await axeBothThemes(page);
 });
+
+/** 20 categorías (30 filas cada una), una con un nombre de ~60 caracteres (sembrado). */
+function twentyClasses() {
+  let seed = 17;
+  const random = () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+  const rows = ["x1,x2,x3,categoria"];
+  for (let c = 0; c < 20; c++) {
+    const name = c === 7 ? LONG_CLASS : `clase_${String(c + 1).padStart(2, "0")}`;
+    for (let i = 0; i < 30; i++) {
+      const values = [c + random() * 1.5, (c % 5) * 2 + random() * 2, random() * 10];
+      rows.push([...values.map((v) => v.toFixed(3)), name].join(","));
+    }
+  }
+  return rows.join("\n");
+}
+const LONG_CLASS = "plan_corporativo_internacional_con_soporte_dedicado_24_7";
+
+test("R10: 20 categorías y un nombre largo — la página no se desplaza de lado; la matriz, en su recuadro", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  await page.goto("/");
+  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+    name: "veinte-clases.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(twentyClasses()),
+  });
+  await page.selectOption("#target", "categoria");
+  await expect(page.getByText(/Vas a clasificar en 20 categorías/)).toBeVisible();
+  await page.getByRole("button", { name: /Entrenar modelos/i }).click();
+  const matrix = page.getByRole("region", {
+    name: "Matriz de confusión (prueba)",
+  });
+  await expect(matrix).toBeVisible({ timeout: 150_000 });
+  const pageBox = await page.evaluate(() => ({
+    sw: document.documentElement.scrollWidth,
+    cw: document.documentElement.clientWidth,
+  }));
+  expect(pageBox.sw, "la página se desplaza de lado").toBeLessThanOrEqual(
+    pageBox.cw,
+  );
+  // El nombre largo va recortado en la matriz, con su nombre completo a mano.
+  await expect(matrix.locator(`[title="${LONG_CLASS}"]`).first()).toBeAttached();
+  await axeBothThemes(page);
+});

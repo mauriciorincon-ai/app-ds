@@ -331,6 +331,27 @@ describe("pantallas S1 (smoke)", () => {
     }
   });
 
+  // S7 (design-system R9): los conteos llevan miles con coma, como toda cifra de la app,
+  // y en la misma pantalla que la nota de la muestra del jerárquico («8,000»).
+  it("ConfigScreen: el conteo de filas lleva separador de miles (R9)", () => {
+    const dataset = summarizeDataset({
+      headers: ["x", "y"],
+      rows: Array.from({ length: 1200 }, (_, i) => [String(i), String(i % 2)]),
+    });
+    ui(
+      <ConfigScreen
+        dataset={dataset}
+        sanitation={null}
+        edaAlerts={null}
+        plan={null}
+        onSelectTarget={() => {}}
+        onRun={() => {}}
+        onBack={() => {}}
+      />,
+    );
+    expect(screen.getByText("1,200 filas · 2 columnas")).toBeInTheDocument();
+  });
+
   it("ConfigScreen: preview + selección de objetivo", () => {
     const dataset = summarizeDataset({
       headers: ["x", "y"],

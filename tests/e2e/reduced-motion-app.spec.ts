@@ -129,3 +129,70 @@ test("reduced-motion: estimar una cantidad, veredicto y gráfico visibles y quie
     ),
   ).toBe(0);
 });
+
+const stillness = (page: import("@playwright/test").Page) =>
+  page.evaluate(
+    () =>
+      document.getAnimations().filter((a) => a.playState === "running").length,
+  );
+
+// S7: Resultados de varias categorías — el veredicto, la matriz de confusión y la
+// tabla por categoría se VEN de verdad, y la pantalla queda quieta.
+test("reduced-motion: varias categorías, veredicto y matriz visibles y quietos", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  await page.goto("/");
+  const example = page.getByRole("button", { name: /Planes de suscripción/ });
+  await expectReallyVisible(example);
+  expect(await transitionOff(example)).toBe(true);
+  await example.click();
+  await page.selectOption("#target", "plan");
+  await expectReallyVisible(page.getByText(/Vas a clasificar en 5 categorías/));
+  await page.getByRole("button", { name: /Entrenar modelos/i }).click();
+
+  const matrix = page.getByRole("region", {
+    name: "Matriz de confusión (prueba)",
+  });
+  await expect(matrix).toBeVisible({ timeout: 150_000 });
+  await expectReallyVisible(page.getByRole("heading", { level: 1 }));
+  await expectReallyVisible(matrix);
+  await expectReallyVisible(matrix.getByText("✓").first());
+  await expectReallyVisible(
+    page.getByRole("region", { name: "Por categoría (prueba)" }),
+  );
+  expect(await stillness(page)).toBe(0);
+});
+
+// S7: Resultados de agrupar — la lectura, las tarjetas de grupo, la tabla de
+// agrupadores y el detalle «Ver las otras columnas» se VEN de verdad, quietos.
+test("reduced-motion: agrupar, lectura, grupos y tabla visibles y quietos", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  await page.goto("/");
+  const example = page.getByRole("button", { name: /Segmentos de clientes/ });
+  await expectReallyVisible(example);
+  await example.click();
+  await page.selectOption("#target", {
+    label: "Sin objetivo: agrupar filas parecidas",
+  });
+  const run = page.getByRole("button", { name: /Agrupar filas/ });
+  await expectReallyVisible(run);
+  expect(await transitionOff(run)).toBe(true);
+  await run.click();
+
+  const table = page.getByRole("region", { name: /Los agrupadores: \d/ });
+  await expect(table).toBeVisible({ timeout: 150_000 });
+  await expectReallyVisible(page.getByRole("heading", { level: 1 }));
+  await expectReallyVisible(
+    page.getByRole("heading", { name: /^Grupo \d+$/ }).first(),
+  );
+  await expectReallyVisible(table);
+  const others = page
+    .getByText(/Ver las otras \d+ columnas|Ver la otra columna/)
+    .first();
+  await others.click();
+  await expectReallyVisible(others.locator("xpath=..").locator("li").last());
+  expect(await stillness(page)).toBe(0);
+});

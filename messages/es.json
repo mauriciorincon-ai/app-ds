@@ -401,7 +401,7 @@
     "subtitleQuantity": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la cantidad estimada para cada fila. Todo ocurre en tu navegador.",
     "modelLineQuantity": "Modelo: {dataset} · estima: {target}",
     "quantity": {
-      "title": "Estimaciones ({count} filas)",
+      "title": "Estimaciones ({rows} filas)",
       "title_one": "Estimaciones (1 fila)",
       "min": "Mínimo",
       "median": "Mediana",
@@ -838,9 +838,9 @@
     "group": "Grupo {n}",
     "reading": {
       "exist": "Los grupos existen: {k} grupos estables",
-      "existDetail": "{model} separa tus filas mejor que datos sin estructura en la misma caja: puntaje {score} frente a {nullScore}, una diferencia de {gap} (hace falta al menos {gapMin}). Y los grupos se repiten al volver a agrupar el {fraction} % de tus filas {runs} veces: se parecen en {ari} de 1 (hace falta al menos {ariMin}).",
+      "existDetail": "{model} separa tus filas mejor que datos sin estructura en la misma caja: puntaje {score} frente a {nullScore}, una diferencia de {gap} (hace falta al menos {gapMin}). Y los grupos se repiten al volver a agrupar el {fraction} % de tus filas {runs} veces: se parecen en {ari} de 1 (hace falta al menos {ariMin}).",
       "fragile": "Hay {k} grupos, pero son frágiles",
-      "fragileDetail": "{model} separa tus filas mejor que datos sin estructura (puntaje {score} frente a {nullScore}, diferencia {gap}), pero al volver a agrupar el {fraction} % de tus filas {runs} veces los grupos cambian: se parecen en {ari} de 1, por debajo de {ariMin}. Léelos como una partición posible, no como un hallazgo.",
+      "fragileDetail": "{model} separa tus filas mejor que datos sin estructura (puntaje {score} frente a {nullScore}, diferencia {gap}), pero al volver a agrupar el {fraction} % de tus filas {runs} veces los grupos cambian: se parecen en {ari} de 1, por debajo de {ariMin}. Léelos como una partición posible, no como un hallazgo.",
       "none": "No hay estructura de grupos",
       "noneDetail": "{model} no separa tus filas mejor que datos sin estructura en la misma caja: puntaje {score} frente a {nullScore}, una diferencia de {gap} (haría falta al menos {gapMin}). Los {k} grupos de abajo son una forma de partir la tabla, no un hallazgo."
     },
@@ -859,9 +859,9 @@
         "numeric": "η²",
         "categorical": "V de Cramér"
       },
-      "size": "{size} filas · {share} %",
+      "size": "{size} filas · {share} %",
       "numeric": "«{column}»: {value} (promedio de los grupos: {average})",
-      "categorical": "«{column}»: sobre todo «{mode}» ({share} % del grupo)",
+      "categorical": "«{column}»: sobre todo «{mode}» ({share} % del grupo)",
       "noValue": "«{column}»: sin valores en este grupo",
       "all": "Ver las otras {count} columnas",
       "all_one": "Ver la otra columna"
@@ -923,7 +923,7 @@
       "nearest-centroid": "Regla para filas nuevas: el grupo cuyo centro está más cerca.",
       "gaussian": "Regla para filas nuevas: la mezcla gaussiana elige el grupo más probable y da su probabilidad.",
       "centroid-radius": "Regla para filas nuevas: el grupo cuyo centro está más cerca, salvo que la fila quede más lejos que el miembro más lejano de ese grupo: entonces queda «fuera de todo grupo».",
-      "agreement": "Con esta regla, el {pct} % de tus filas cae en el mismo grupo que les dio el agrupador."
+      "agreement": "Con esta regla, el {pct} % de tus filas cae en el mismo grupo que les dio el agrupador."
     },
     "plan": {
       "title": "Agrupar filas parecidas, sin objetivo",

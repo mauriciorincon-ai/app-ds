@@ -1275,6 +1275,89 @@ dice «llega en una próxima versión»», el historial de la guía) o conducta 
 esperan», «podrás correrlos»). Una heredada del S3 queda para la auditoría: manual, «Publicar el
 modelo para que otros lo usen llegará más adelante».
 
+### Decimoquinto commit: la pasada de capturas del S7 y lo que encontró
+
+`scripts/capturas-s7.mjs`, con el molde del S6:
+
+- **Encuadres:** el build de producción, 360 y 1280 px, temas claro y oscuro. Cada encuadre mide
+  `scrollWidth ≤ clientWidth`.
+- **Recorrido:**
+  - varias categorías: config, resultados, veredicto, matriz, ficha, model card, puntuar y la fuga
+    en una categoría;
+  - agrupar: plan, resultados, lectura, tabla, elegir GMM, volver al ganador, ficha, model card,
+    filas con su grupo y asignar;
+  - sin grupos (k = 10);
+  - la columna que no sirve;
+  - 9,000 filas con el Nivel 2;
+  - la guía v4 con el filtro del corto.
+- **Extremos, en memoria:** 20 categorías con un nombre de 57 caracteres
+  (`plan_corporativo_internacional_con_soporte_dedicado_24_7`), y cifras de ~1e-11 en un perfil.
+  Las ventas de cinco cifras salen del kit.
+- **Pasada de interacción (regla 17):** cada control activado tiene que cambiar el DOM (ficha,
+  «Ver las otras columnas», «Elegir», «Volver al ganador», filas con su grupo, el Nivel 2, English
+  y «Agrupar filas parecidas en su lugar»).
+
+**Primera corrida** (2026-10-05): **10 hallazgos**.
+
+- 8 eran del arnés: la ficha llega con `next/dynamic` y leía el DOM antes de que apareciera el
+  diálogo. El chequeo de alto, que sí espera, la encontraba. El arnés ahora espera al diálogo.
+- **2 eran reales: con 20 categorías, a 360 px la página se desplazaba de lado (431 > 360)**, en
+  claro y en oscuro. Un recorrido de diagnóstico (contenedores sin desplazamiento propio con
+  `scrollWidth > clientWidth`) lo ubicó: el párrafo de «la confusión más frecuente» medía 407 px
+  dentro de 312, porque el nombre de 57 caracteres no tenía dónde cortarse.
+
+**Lo que se corrigió** (leyendo las capturas como imagen y midiendo):
+
+1. **Cortar palabras largas:** `overflow-wrap: break-word` en `body` (se hereda; solo corta lo que
+   no cabe). Un nombre de categoría o de columna sin espacios ya no empuja la página en ninguna
+   frase.
+2. **La columna de nombres de la matriz queda fija** (`sticky left-0`, fondo opaco). Con 20
+   categorías a 360 px, al desplazar la matriz se perdía de qué fila era cada cifra, y la columna
+   ocupaba casi la mitad (6 rem en el móvil, 9 rem desde `sm`).
+3. **Espacio no separable antes de «%»** en el copy de agrupar y en la columna «fuera de grupo»: «0
+   %» se partía en dos líneas (R9).
+4. **Los conteos de filas llevan separador de miles en toda la app** (cabecera de configuración,
+   resultados, resumen del import, model card, títulos de puntuar, novedad). «9000 filas» convivía
+   con «9,000» en la misma pantalla de agrupar. Es heredado del S1–S6, y este sprint lo volvió
+   visible. El título de las estimaciones separa el `count` del plural del número que muestra.
+
+**Gates nuevos, cada uno con su rojo** (`scripts/demo-rojo.sh`, 2026-10-05):
+
+| Gate | Mutación | Rojo (lo que nombró) | Verde |
+| --- | --- | --- | --- |
+| e2e R10 (`multiclase.spec.ts`): 20 categorías y un nombre largo, la página no se desplaza de lado y el nombre lleva su título | sin `overflow-wrap` en `body` (build + servidor + la prueba en el móvil) | «la página se desplaza de lado» | 1 de 1 |
+| La columna de nombres de la matriz, fija (`multiclase-ui.test.tsx`) | sin `sticky left-0` en las cabeceras de fila | «la columna de nombres no queda fija» | 12 de 12 |
+| Los conteos con separador de miles (`components.test.tsx`) | la cabecera con el número crudo | «1,200 filas · 2 columnas» | 22 de 22 |
+| e2e de reduced-motion de varias categorías y de agrupar (`reduced-motion-app.spec.ts`, dos pruebas nuevas) | una animación de pulso en el `h1` de `main` sin `motion-reduce` | «2 failed» (las dos pruebas nuevas) | 2 de 2 |
+
+**Segunda corrida** (2026-10-05, sobre el build con los arreglos): **0 hallazgos**.
+
+- 126 comprobaciones `OK` y 100 capturas. Cada encuadre con `scrollWidth ≤ clientWidth`, en 360 y
+  1280, claro y oscuro.
+- La matriz de 20 se desplaza en su propio recuadro (1499 > 278 a 360 px) y el nombre largo lleva su
+  título completo en 3 lugares.
+- Las 10 tarjetas de grupo de `sin-grupos`, la cifra diminuta «9.52e-11 (promedio de los grupos:
+  5.53e-11)» y la nota de la muestra 2 veces tras el Nivel 2.
+- Las 9 interacciones con efecto, en cada ancho y tema donde corren.
+
+**Leídas como imagen:**
+
+- 8 capturas de la primera corrida (360 px claro): el veredicto y la matriz de planes, la matriz de
+  20, el veredicto de la fuga, la lectura y la tabla de agrupadores, la columna que no sirve y el
+  plan de 9,000 filas;
+- 3 de la segunda (360 px oscuro): la matriz de 20 desplazada a la derecha con la columna de nombres
+  fija, la frase de la confusión con el nombre largo cortado dentro, y la tabla de agrupadores con
+  «0 %» en una línea.
+
+La cabecera de las 9,000 filas se comprobó leyendo su texto: «9,000 filas · 4 columnas».
+
+**Verde del árbol completo** (2026-10-05):
+
+- `pnpm lint` y `pnpm typecheck`: limpios;
+- `pnpm test`: 675 de 675 en 57 archivos (motor al 97,45 % de sentencias y 98,97 % de líneas);
+- e2e, la suite entera sobre el build de producción: **64 de 64 al primer intento**, en 5,3 min
+  (58 más la de R10 y las dos de reduced-motion, cada una en dos dispositivos).
+
 ## Fricciones del kit (SEPARADAS del producto)
 
 - **K-S7-1 · `plan-sprint.md` del kit perdió el punto 10** («al concluir la construcción, corre

@@ -11,7 +11,7 @@ import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
 import { modelFeatures } from "@/lib/ds/schema-check";
 import { inferUnit } from "@/lib/experiment";
-import { formatQuantity, withUnit } from "@/lib/quantity";
+import { formatQuantity, thousands, withUnit } from "@/lib/quantity";
 import {
   buildScoredCsv,
   estimateSummary,
@@ -529,7 +529,7 @@ function ScoredResults({
       ) : (
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
-            {t("score.distribution.title", { rows: total })}
+            {t("score.distribution.title", { rows: thousands(total) })}
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:max-w-md">
             {[...counts.entries()].map(([label, count]) => (
@@ -547,7 +547,7 @@ function ScoredResults({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
           {t("score.preview.title", {
             shown: Math.min(PREVIEW_ROWS, table.rows.length),
-            total: table.rows.length,
+            total: thousands(table.rows.length),
           })}
         </h2>
         {/* S5: ridge y el SVM lineal no dan probabilidad — se dice, no se inventa.
@@ -567,7 +567,7 @@ function ScoredResults({
           tabIndex={0}
           aria-label={t("score.preview.title", {
             shown: Math.min(PREVIEW_ROWS, table.rows.length),
-            total: table.rows.length,
+            total: thousands(table.rows.length),
           })}
         >
           <table className="w-full border-collapse text-sm">
@@ -648,7 +648,7 @@ function QuantitySummary({
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
-        {t("score.quantity.title", { count: n })}
+        {t("score.quantity.title", { count: n, rows: thousands(n) })}
       </h2>
       {stats && (
         <div className="grid grid-cols-3 gap-2 sm:max-w-md">
@@ -693,8 +693,8 @@ function NoveltyPanel({ novelty }: { novelty: ScoreResult["novelty"] }) {
         </ul>
         <p className="mt-2 font-mono tabular-nums">
           {t("score.novelty.summary", {
-            affected: novelty.affected_rows,
-            total: novelty.n_rows,
+            affected: thousands(novelty.affected_rows),
+            total: thousands(novelty.n_rows),
             percent: noveltyPercent,
           })}
         </p>
@@ -791,7 +791,7 @@ function ClusterScoredResults({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
-          {t("score.groups.title", { rows: total })}
+          {t("score.groups.title", { rows: thousands(total) })}
         </h2>
         <div className="grid grid-cols-2 gap-2 sm:max-w-md">
           {counts.map(({ label, count }) => (
@@ -814,7 +814,7 @@ function ClusterScoredResults({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
           {t("score.preview.title", {
             shown: Math.min(PREVIEW_ROWS, table.rows.length),
-            total: table.rows.length,
+            total: thousands(table.rows.length),
           })}
         </h2>
         {probabilities && (
@@ -828,7 +828,7 @@ function ClusterScoredResults({
           tabIndex={0}
           aria-label={t("score.preview.title", {
             shown: Math.min(PREVIEW_ROWS, table.rows.length),
-            total: table.rows.length,
+            total: thousands(table.rows.length),
           })}
         >
           <table className="w-full border-collapse text-sm">

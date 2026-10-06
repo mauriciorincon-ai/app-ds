@@ -229,9 +229,12 @@ export function ConfusionTable({
         <table className="border-collapse font-mono text-sm tabular-nums">
           <thead>
             <tr>
+              {/* La columna de nombres queda fija al desplazar la matriz de lado
+                  (S7, pasada de capturas: con 20 categorías a 360 px se perdía de
+                  qué fila era cada cifra). Fondo opaco para tapar lo que pasa debajo. */}
               <th
                 scope="col"
-                className="px-2 py-1 text-left font-sans text-xs font-normal text-ink-muted"
+                className="sticky left-0 z-10 bg-surface px-2 py-1 text-left font-sans text-xs font-normal text-ink-muted"
               >
                 {t("results.multiclass.realPredicted")}
               </th>
@@ -253,10 +256,10 @@ export function ConfusionTable({
               <tr key={classes[real]}>
                 <th
                   scope="row"
-                  className="px-2 py-1 text-left font-sans text-xs font-normal text-ink-muted"
+                  className="sticky left-0 z-10 bg-surface px-2 py-1 text-left font-sans text-xs font-normal text-ink-muted"
                 >
                   <span
-                    className="block max-w-[9rem] truncate"
+                    className="block max-w-[6rem] truncate sm:max-w-[9rem]"
                     title={classes[real]}
                   >
                     {classes[real]}

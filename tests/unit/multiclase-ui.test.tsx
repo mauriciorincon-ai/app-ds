@@ -166,6 +166,13 @@ describe("S7: Resultados con varias categorías (sin marcas binarias)", () => {
     });
     const rows = within(region).getAllByRole("row");
     expect(rows).toHaveLength(k + 1);
+    // Los nombres de las filas quedan fijos al desplazar la matriz de lado (con 20
+    // categorías a 360 px se perdía de qué fila era cada cifra).
+    for (const header of within(region).getAllByRole("rowheader")) {
+      expect(header.className, "la columna de nombres no queda fija").toMatch(
+        /\bsticky\b.*\bleft-0\b|\bleft-0\b.*\bsticky\b/,
+      );
+    }
     // Los aciertos llevan ✓ y su nombre para el lector (no solo color).
     expect(within(region).getAllByText("✓")).toHaveLength(k);
     expect(within(region).getAllByText(/acierto:/)).toHaveLength(k);

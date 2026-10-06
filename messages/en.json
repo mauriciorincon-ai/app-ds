@@ -401,7 +401,7 @@
     "subtitleQuantity": "Upload a new CSV with the columns the model knows (without the target column) and get the estimated quantity for each row. Everything happens in your browser.",
     "modelLineQuantity": "Model: {dataset} · estimates: {target}",
     "quantity": {
-      "title": "Estimates ({count} rows)",
+      "title": "Estimates ({rows} rows)",
       "title_one": "Estimates (1 row)",
       "min": "Minimum",
       "median": "Median",

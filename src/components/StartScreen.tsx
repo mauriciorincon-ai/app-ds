@@ -357,7 +357,7 @@ function ClusterImportSummary({
         <li>
           {t("start.import.summary.dataset", {
             name: manifest.dataset.name,
-            rows: manifest.dataset.n_rows,
+            rows: thousands(manifest.dataset.n_rows),
             date: createdOn(manifest.created_at, locale),
           })}
         </li>
@@ -439,7 +439,7 @@ function SupervisedImportSummary({
         <li>
           {t("start.import.summary.dataset", {
             name: manifest.dataset.name,
-            rows: manifest.dataset.n_train + manifest.dataset.n_test,
+            rows: thousands(manifest.dataset.n_train + manifest.dataset.n_test),
             date,
           })}
         </li>

@@ -8,6 +8,7 @@ import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
 import type { ClusterPlan, TargetPlan } from "@/lib/useExperiment";
 import type { DatasetSummary } from "@/workers/protocol";
+import { thousands } from "@/lib/quantity";
 import { RosterCard } from "./RosterCard";
 import { TaskCard } from "./TaskCard";
 import { Badge, Button, Card } from "./ui";
@@ -77,7 +78,7 @@ export function ConfigScreen({
         <h1 className="text-2xl font-semibold">{t("config.title")}</h1>
         <p className="font-mono text-sm tabular-nums text-ink-muted">
           {t("config.summary", {
-            rows: dataset.rowCount,
+            rows: thousands(dataset.rowCount),
             cols: dataset.headers.length,
           })}
         </p>
