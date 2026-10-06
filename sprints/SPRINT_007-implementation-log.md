@@ -1505,6 +1505,24 @@ separable del español («75 %»). Es un cambio esperado que no busqué en las e
 completa antes del push, no la e2e. Corregido en el commit siguiente (`\s` en la regex; el byte lo exige
 la unitaria) y, desde aquí, la e2e completa corre en local antes de empujar (K-S7-7).
 
+**Antes del push de `b7d9a56` + `fd37a2c` + `0a0358f`:** la suite e2e entera en local sobre el build de
+producción, en los dos dispositivos: 72 de 72, ninguna con reintento (`scratchpad/e2e-full.log`).
+
+**CI de `0a0358f`** (un solo push con `b7d9a56`, el brochure `fd37a2c` y la bitácora; run 37413373868):
+6 de 6 `success`. e2e 72 de 72 (15.1 min); `lighthouse-margen`: «ninguna mediana a menos del 10 % de
+su presupuesto».
+
+### El brochure ES/EN, leído (2026-10-06)
+
+`fd37a2c`, abierto como archivo en Chromium (`scratchpad/brochure-check.mjs`), en cuatro encuadres: 360
+claro en `es-ES`, 360 oscuro en `en-US`, 1280 claro en `en-US` y 1280 oscuro en `es-ES` con
+reduced-motion. En los cuatro: `scrollWidth` = ancho de la ventana, 0 errores de página, 5 puertas
+(13 · 7 · 5 · 9 · 5), 4 fichas, 163 pares ES/EN, el pie en 41, y el conmutador cambia el `lang`, el
+título y el nombre accesible del titular. De los 28 encuadres por bloque (`scratchpad/brochure-cap/`)
+leí como imagen seis: la portada (360, ES), la escena E04b (360 ES y 1280 EN), la quinta puerta
+abierta (360 oscuro, EN), lo fino «Qué mide» (360 oscuro, EN) y el pie (360, ES). Los otros 22 no los
+leí.
+
 La tabla de demos en rojo de la Fase 2 se copia aquí al cerrar la fase.
 
 ## Fricciones del kit (SEPARADAS del producto)
