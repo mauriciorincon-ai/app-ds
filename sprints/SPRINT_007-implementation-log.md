@@ -1030,10 +1030,10 @@ la portada, en vez de subir el archivo del kit (es el mismo CSV).
 
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`):
 
-| Gate | Mutación | Rojo (lo que nombró) | Verde |
-| --- | --- | --- | --- |
-| Cada ejemplo existe | `segmento-clientes.csv` en `EXAMPLES` | «public/datasets/segmento-clientes.csv» | 21 de 21 |
-| Cada botón pide su archivo | todos los botones piden `EXAMPLES[0].file` | «planes-suscripcion.csv» | 21 de 21 |
+| Gate                       | Mutación                                   | Rojo (lo que nombró)                    | Verde    |
+| -------------------------- | ------------------------------------------ | --------------------------------------- | -------- |
+| Cada ejemplo existe        | `segmento-clientes.csv` en `EXAMPLES`      | «public/datasets/segmento-clientes.csv» | 21 de 21 |
+| Cada botón pide su archivo | todos los botones piden `EXAMPLES[0].file` | «planes-suscripcion.csv»                | 21 de 21 |
 
 **Medición después de los botones** (copia tipo CI, LHCI 0.15.1, 3 corridas, mediana): script en
 `/` 252.917 B (+209 B), LCP simulado 3.072 ms (margen 12,2 %). Sobre esa colección, los tres pasos
@@ -1069,10 +1069,10 @@ verde siempre. No depende del DSN ni de Lighthouse, así que ve en `quality` lo 
 
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`):
 
-| Mutación | Rojo (lo que nombró) | Verde |
-| --- | --- | --- |
-| `StartScreen` importa `FICHAS` de `@/content/modelos` | «src/app/page.tsx → src/components/StartScreen.tsx → src/content/modelos.ts» | 10 de 10 |
-| `page.tsx` importa `ResultsScreen` estático | «la portada importa src/components/ResultsScreen.tsx por: src/app/page.tsx → src/components/ResultsScreen.tsx» | 10 de 10 |
+| Mutación                                              | Rojo (lo que nombró)                                                                                           | Verde    |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------- |
+| `StartScreen` importa `FICHAS` de `@/content/modelos` | «src/app/page.tsx → src/components/StartScreen.tsx → src/content/modelos.ts»                                   | 10 de 10 |
+| `page.tsx` importa `ResultsScreen` estático           | «la portada importa src/components/ResultsScreen.tsx por: src/app/page.tsx → src/components/ResultsScreen.tsx» | 10 de 10 |
 
 La primera versión de la prueba usaba el flag `s` en una expresión regular, que el `target` de
 TypeScript no admite: `next build` cayó al chequear tipos. Sin el flag la semántica es la misma (el
@@ -1109,10 +1109,10 @@ De paso, TEXTO: «Agrupan 4 agrupadores ahora» → «Compiten 4 agrupadores aho
 
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`):
 
-| Gate | Mutación | Rojo (lo que nombró) | Verde |
-| --- | --- | --- | --- |
-| Titular de la fuga por categoría | `suspiciousBanner(t)` en multiclase | «Posible fuga de datos — sospechoso» | 12 de 12 |
-| La lectura no reusa ◆ | `mark: "◆"` para «existen» | «Unable to find an element with the text: ●» | 24 de 24 |
+| Gate                             | Mutación                            | Rojo (lo que nombró)                         | Verde    |
+| -------------------------------- | ----------------------------------- | -------------------------------------------- | -------- |
+| Titular de la fuga por categoría | `suspiciousBanner(t)` en multiclase | «Posible fuga de datos — sospechoso»         | 12 de 12 |
+| La lectura no reusa ◆            | `mark: "◆"` para «existen»          | «Unable to find an element with the text: ●» | 24 de 24 |
 
 La e2e de la fuga multiclase pasa a exigir el titular exacto.
 
@@ -1124,16 +1124,16 @@ El reconocimiento con los dos archivos nuevos del kit (`segmentos-grande.csv`, 9
 `tiendas-ciudades.csv`, 120 filas) mostró superficies de agrupar que reusaban copy de la liga
 supervisada y **decían cosas falsas al agrupar**:
 
-| Superficie | Decía | Dice ahora |
-| --- | --- | --- |
-| Quién compite | «Nivel 1 · 3 modelos», «correr la liga completa» | «3 agrupadores», «agrupar con todos» |
-| Aviso de muestra pequeña (quién compite y resultados) | «los puntajes de validación cruzada varían… gana el más simple» | «la silueta y la estabilidad se mueven más de una corrida a otra; léelas con cuidado» |
-| Tarjeta del Nivel 2 | «Nivel 2: la liga completa… con la misma validación cruzada»; «vuelve a elegir por validación cruzada» | «Nivel 2: todos los agrupadores… con la misma lectura contra datos sin estructura»; «vuelve a elegir con la regla de la app» |
-| Nivel 2 corriendo | «Nivel 2 · 4 modelos» | «Nivel 2 · 4 agrupadores» |
-| Pie de la tabla | «La liga tardó…» | «El agrupamiento tardó…» |
-| Sin acuerdo (Nivel 1 con 9.000 filas: K-Means 6, HDBSCAN 3, GMM 10) | «Consenso: 1 de 3 agrupadores encontraron 6 grupos» y «★ Ganador por consenso» | «Sin consenso: cada agrupador encontró un número distinto de grupos, así que gana el de mayor puntaje» y «★ Ganador por puntaje»; igual en la ficha y la model card |
-| Resumen del import | «Elegido por consenso entre 4 agrupadores» | «Ganador entre 4 agrupadores»: el archivo no guarda los votos y no puede saber si hubo consenso |
-| «Elegido por ti» | «no por consenso (el ganador por consenso era…)» | «(el ganador de la comparación era…)» |
+| Superficie                                                          | Decía                                                                                                  | Dice ahora                                                                                                                                                          |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Quién compite                                                       | «Nivel 1 · 3 modelos», «correr la liga completa»                                                       | «3 agrupadores», «agrupar con todos»                                                                                                                                |
+| Aviso de muestra pequeña (quién compite y resultados)               | «los puntajes de validación cruzada varían… gana el más simple»                                        | «la silueta y la estabilidad se mueven más de una corrida a otra; léelas con cuidado»                                                                               |
+| Tarjeta del Nivel 2                                                 | «Nivel 2: la liga completa… con la misma validación cruzada»; «vuelve a elegir por validación cruzada» | «Nivel 2: todos los agrupadores… con la misma lectura contra datos sin estructura»; «vuelve a elegir con la regla de la app»                                        |
+| Nivel 2 corriendo                                                   | «Nivel 2 · 4 modelos»                                                                                  | «Nivel 2 · 4 agrupadores»                                                                                                                                           |
+| Pie de la tabla                                                     | «La liga tardó…»                                                                                       | «El agrupamiento tardó…»                                                                                                                                            |
+| Sin acuerdo (Nivel 1 con 9.000 filas: K-Means 6, HDBSCAN 3, GMM 10) | «Consenso: 1 de 3 agrupadores encontraron 6 grupos» y «★ Ganador por consenso»                         | «Sin consenso: cada agrupador encontró un número distinto de grupos, así que gana el de mayor puntaje» y «★ Ganador por puntaje»; igual en la ficha y la model card |
+| Resumen del import                                                  | «Elegido por consenso entre 4 agrupadores»                                                             | «Ganador entre 4 agrupadores»: el archivo no guarda los votos y no puede saber si hubo consenso                                                                     |
+| «Elegido por ti»                                                    | «no por consenso (el ganador por consenso era…)»                                                       | «(el ganador de la comparación era…)»                                                                                                                               |
 
 La regla elige igual que antes (decisión 4); solo cambia cómo se nombra. «Hay consenso» = al menos 2
 agrupadores coinciden en el número de grupos (`hasConsensus` y `CONSENSUS_MIN_VOTES`, en
@@ -1164,11 +1164,11 @@ grupos).».
 
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`; verde 27 de 27):
 
-| Mutación | Rojo (lo que nombró) |
-| --- | --- |
-| `CONSENSUS_MIN_VOTES = 1` | «Sin consenso: cada agrupador encontró un número distinto de grupos» |
-| `Level2Card` siempre con las claves de la liga | «Nivel 2: todos los agrupadores» |
-| El aviso de muestra pequeña de agrupar con el de la liga | «la silueta y la estabilidad» |
+| Mutación                                                 | Rojo (lo que nombró)                                                 |
+| -------------------------------------------------------- | -------------------------------------------------------------------- |
+| `CONSENSUS_MIN_VOTES = 1`                                | «Sin consenso: cada agrupador encontró un número distinto de grupos» |
+| `Level2Card` siempre con las claves de la liga           | «Nivel 2: todos los agrupadores»                                     |
+| El aviso de muestra pequeña de agrupar con el de la liga | «la silueta y la estabilidad»                                        |
 
 **Verde** (2026-10-05): `pnpm lint` y `pnpm typecheck` limpios; `pnpm test` 672 de 672 en 57
 archivos (motor al 97,43 % de sentencias y 98,96 % de líneas); e2e sobre el build de producción
@@ -1203,10 +1203,10 @@ pasar por el estado (P13).
 
 **Rojos** (`scripts/demo-rojo.sh`, 2026-10-05; restaurados con Python + `cmp`):
 
-| Mutación | Rojo (lo que nombró) | Verde |
-| --- | --- | --- |
+| Mutación                                                                  | Rojo (lo que nombró)                                     | Verde    |
+| ------------------------------------------------------------------------- | -------------------------------------------------------- | -------- |
 | El CSV con la tabla saneada (la condición de la tabla original a `false`) | «el CSV no es la tabla del usuario: le falta cliente_id» | 27 de 27 |
-| `dedupeIndex` devuelve un índice nuevo para la fila repetida | «dos filas idénticas comparten índice» | 11 de 11 |
+| `dedupeIndex` devuelve un índice nuevo para la fila repetida              | «dos filas idénticas comparten índice»                   | 11 de 11 |
 
 **Verde** (2026-10-05): `pnpm lint` y `pnpm typecheck` limpios; `pnpm test` 674 de 674 en 57
 archivos (motor al 97,45 % de sentencias y 98,97 % de líneas); e2e `agrupar` y `agrupar-score` sobre
@@ -1323,12 +1323,12 @@ modelo para que otros lo usen llegará más adelante».
 
 **Gates nuevos, cada uno con su rojo** (`scripts/demo-rojo.sh`, 2026-10-05):
 
-| Gate | Mutación | Rojo (lo que nombró) | Verde |
-| --- | --- | --- | --- |
-| e2e R10 (`multiclase.spec.ts`): 20 categorías y un nombre largo, la página no se desplaza de lado y el nombre lleva su título | sin `overflow-wrap` en `body` (build + servidor + la prueba en el móvil) | «la página se desplaza de lado» | 1 de 1 |
-| La columna de nombres de la matriz, fija (`multiclase-ui.test.tsx`) | sin `sticky left-0` en las cabeceras de fila | «la columna de nombres no queda fija» | 12 de 12 |
-| Los conteos con separador de miles (`components.test.tsx`) | la cabecera con el número crudo | «1,200 filas · 2 columnas» | 22 de 22 |
-| e2e de reduced-motion de varias categorías y de agrupar (`reduced-motion-app.spec.ts`, dos pruebas nuevas) | una animación de pulso en el `h1` de `main` sin `motion-reduce` | «2 failed» (las dos pruebas nuevas) | 2 de 2 |
+| Gate                                                                                                                          | Mutación                                                                 | Rojo (lo que nombró)                  | Verde    |
+| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------- | -------- |
+| e2e R10 (`multiclase.spec.ts`): 20 categorías y un nombre largo, la página no se desplaza de lado y el nombre lleva su título | sin `overflow-wrap` en `body` (build + servidor + la prueba en el móvil) | «la página se desplaza de lado»       | 1 de 1   |
+| La columna de nombres de la matriz, fija (`multiclase-ui.test.tsx`)                                                           | sin `sticky left-0` en las cabeceras de fila                             | «la columna de nombres no queda fija» | 12 de 12 |
+| Los conteos con separador de miles (`components.test.tsx`)                                                                    | la cabecera con el número crudo                                          | «1,200 filas · 2 columnas»            | 22 de 22 |
+| e2e de reduced-motion de varias categorías y de agrupar (`reduced-motion-app.spec.ts`, dos pruebas nuevas)                    | una animación de pulso en el `h1` de `main` sin `motion-reduce`          | «2 failed» (las dos pruebas nuevas)   | 2 de 2   |
 
 **Segunda corrida** (2026-10-05, sobre el build con los arreglos): **0 hallazgos**.
 
@@ -1357,6 +1357,25 @@ La cabecera de las 9,000 filas se comprobó leyendo su texto: «9,000 filas · 4
 - `pnpm test`: 675 de 675 en 57 archivos (motor al 97,45 % de sentencias y 98,97 % de líneas);
 - e2e, la suite entera sobre el build de producción: **64 de 64 al primer intento**, en 5,3 min
   (58 más la de R10 y las dos de reduced-motion, cada una en dos dispositivos).
+
+### CI de la F3 desde el octavo commit (leída el 2026-10-06 con `gh pr checks 19`, `statusCheckRollup` y el log de cada run)
+
+El octavo y el noveno commit no tienen corrida propia: llegaron a la rama en el mismo push que el
+décimo. El duodécimo llegó con el decimotercero, y el decimocuarto con el decimoquinto.
+
+| Push (cabeza)             | Run         | Checks           | Unitarias (`quality`)      | Integración               | e2e                          | `lighthouse-margen`                |
+| ------------------------- | ----------- | ---------------- | -------------------------- | ------------------------- | ---------------------------- | ---------------------------------- |
+| `3e14365` (commits 8–10)  | 37394384231 | 6 de 6 `success` | 668 pasan, 1 saltada (669) | 93 pasan, 6 saltadas (99) | 58 de 58                     | ✓ ninguna mediana a menos del 10 % |
+| `065c3b3` (commit 11)     | 37395413966 | 6 de 6 `success` | 671 pasan, 1 saltada (672) | 93 pasan, 6 saltadas (99) | 58 de 58                     | ✓                                  |
+| `846fec9` (commits 12–13) | 37396519809 | 6 de 6 `success` | 673 pasan, 1 saltada (674) | 93 pasan, 6 saltadas (99) | 58 de 58                     | ✓                                  |
+| `23dedf1` (commits 14–15) | 37399501605 | 6 de 6 `success` | 674 pasan, 1 saltada (675) | 93 pasan, 6 saltadas (99) | **64 de 64**, sin reintentos | ✓                                  |
+
+**La decisión 7 queda cumplida en la CI:** el margen avisó por última vez en el séptimo commit
+(`1e3ae87`, LCP 3.201 ms, margen 8,5 %) y no volvió a avisar en las cuatro corridas siguientes.
+
+**Medida final de la portada** (2026-10-05, copia tipo CI de `23dedf1` sin `.env.local`, LHCI 0.15.1,
+3 corridas): script en `/` **243.276 B** (237,6 KiB; el budget es de 300 KiB: 20,8 % por debajo); LCP simulado 3.081 /
+3.074 / 3.072 ms, mediana **3.074 ms** (margen 12,2 %); `lighthouse-margen` en ✓.
 
 ## Fricciones del kit (SEPARADAS del producto)
 
