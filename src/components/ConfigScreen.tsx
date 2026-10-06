@@ -1,25 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EdaAlert } from "@/engine/eda";
 import type { SanitationReport } from "@/engine/sanitize";
-import { isTrainableTask, type AmbiguousChoice } from "@/engine/tarea";
+import {
+  isTrainableTask,
+  MULTICLASS_MAX_CLASSES,
+  type AmbiguousChoice,
+} from "@/engine/tarea";
 import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
-import type { TargetPlan } from "@/lib/useExperiment";
+import type { ClusterPlan, TargetPlan } from "@/lib/useExperiment";
 import type { DatasetSummary } from "@/workers/protocol";
+import { thousands } from "@/lib/quantity";
 import { RosterCard } from "./RosterCard";
 import { TaskCard } from "./TaskCard";
 import { Badge, Button, Card } from "./ui";
+
+/** S7 (P5): el valor de la opción «agrupar» no puede chocar con una columna que
+ *  se llame igual: se alarga hasta que ninguna coincida. */
+export function clusterOptionValue(headers: readonly string[]): string {
+  let value = "__agrupar__";
+  while (headers.includes(value)) value += "_";
+  return value;
+}
 
 export function ConfigScreen({
   dataset,
   sanitation,
   edaAlerts,
   plan,
+  clusterPlan = null,
   onSelectTarget,
+  onSelectCluster,
   onAnswerTask,
   onRun,
+  onRunCluster,
   onBack,
 }: {
   dataset: DatasetSummary;
@@ -27,27 +43,41 @@ export function ConfigScreen({
   edaAlerts: EdaAlert[] | null;
   /** S5: E1 + E2 del objetivo elegido (null mientras no hay objetivo). */
   plan: TargetPlan | null;
+  /** S7: el plan de agrupar (sin objetivo), si se eligió. */
+  clusterPlan?: ClusterPlan | null;
   onSelectTarget: (target: string) => void;
+  /** S7: elegir agrupar filas parecidas en lugar de un objetivo. */
+  onSelectCluster?: () => void;
   /** S6 (D2): la respuesta a «¿categorías o una cantidad?». */
   onAnswerTask?: (choice: AmbiguousChoice | null) => void;
   onRun: (target: string) => void;
+  onRunCluster?: () => void;
   onBack: () => void;
 }) {
   const t = useT();
   const [target, setTarget] = useState("");
+  // AU-S7-18: «agrupar en su lugar» desmonta la tarjeta de tarea (y su botón); el
+  // foco va al título de agrupar. Solo por esa vía: desde el <select> se queda ahí.
+  const [focusPlan, setFocusPlan] = useState(false);
   const profileByName = new Map(dataset.profiles.map((p) => [p.name, p]));
+  const clusterValue = clusterOptionValue(dataset.headers);
+  const clustering = target === clusterValue && onSelectCluster !== undefined;
+  const readyCluster = clustering && clusterPlan?.ok ? clusterPlan : null;
 
   // Solo se entrena lo que E1 reconoce (o el usuario respondió) como una tarea
   // entrenable y prepareRun pudo armar.
   const trainable =
+    !clustering &&
     plan !== null &&
     plan.target === target &&
     isTrainableTask(plan.resolved) &&
     plan.routing !== null;
 
-  const handleTargetChange = (value: string) => {
+  const handleTargetChange = (value: string, fromTaskCard = false) => {
+    setFocusPlan(fromTaskCard);
     setTarget(value);
-    onSelectTarget(value);
+    if (value === clusterValue && onSelectCluster) onSelectCluster();
+    else onSelectTarget(value);
   };
 
   return (
@@ -56,7 +86,7 @@ export function ConfigScreen({
         <h1 className="text-2xl font-semibold">{t("config.title")}</h1>
         <p className="font-mono text-sm tabular-nums text-ink-muted">
           {t("config.summary", {
-            rows: dataset.rowCount,
+            rows: thousands(dataset.rowCount),
             cols: dataset.headers.length,
           })}
         </p>
@@ -86,6 +116,10 @@ export function ConfigScreen({
           <option value="" disabled>
             {t("config.target.placeholder")}
           </option>
+          {/* S7 (P5): agrupar va primero — no es una columna, es otra pregunta. */}
+          {onSelectCluster && (
+            <option value={clusterValue}>{t("config.target.cluster")}</option>
+          )}
           {/* S5 (E1): TODAS las columnas, cada una con la tarea que plantearía —
               ninguna se esconde; la tarjeta de tarea dice si ya se entrena. */}
           {dataset.headers.map((column) => {
@@ -102,11 +136,18 @@ export function ConfigScreen({
             );
           })}
         </select>
-        <p className="text-sm text-ink-muted">{t("config.target.help")}</p>
+        <p className="text-sm text-ink-muted">
+          {t("config.target.help", { max: MULTICLASS_MAX_CLASSES })}
+        </p>
       </div>
 
+      {/* S7: agrupar — qué columnas forman la distancia y cuáles quedan fuera. */}
+      {clustering && clusterPlan && (
+        <ClusterPlanCard plan={clusterPlan} autoFocus={focusPlan} />
+      )}
+
       {/* S5 (E1): qué tarea plantea el objetivo elegido, con su razón. */}
-      {target !== "" && plan && (
+      {target !== "" && !clustering && plan && (
         <TaskCard
           // Otra columna, otra tarjeta: el foco solo se mueve tras responder.
           key={plan.target}
@@ -117,19 +158,26 @@ export function ConfigScreen({
           choice={plan.choice}
           unit={plan.unit}
           onAnswer={onAnswerTask}
+          // S7: una columna que no sirve como objetivo ofrece agrupar en su lugar.
+          onCluster={
+            onSelectCluster
+              ? () => handleTargetChange(clusterValue, true)
+              : undefined
+          }
         />
       )}
 
       {/* Alertas EDA del objetivo elegido — role="status" (no "alert": no
           interrumpe; el route announcer de Next reserva alert — regla 7). */}
       {target !== "" &&
+        !clustering &&
         edaAlerts &&
         (plan === null || isTrainableTask(plan.resolved)) && (
           <EdaBlock alerts={edaAlerts} />
         )}
 
       {/* S5: binaria pero sin validación cruzada honesta posible (o sin features). */}
-      {target !== "" && plan?.blocked && (
+      {target !== "" && !clustering && plan?.blocked && (
         <p
           role="status"
           className="rounded-md border border-negative/40 bg-negative/10 p-3 text-sm"
@@ -137,18 +185,35 @@ export function ConfigScreen({
           <span aria-hidden className="mr-1 text-negative">
             ✕
           </span>
-          {t(`errors.${plan.blocked}`)}
+          {/* S7 (P4): la categoría más chica se nombra aquí, en pantalla. */}
+          {plan.smallestClass
+            ? t("errors.too-few-rows-per-class-named", {
+                class: plan.smallestClass.name,
+                rows: plan.smallestClass.trainRows,
+                count: plan.smallestClass.trainRows,
+              })
+            : t(`errors.${plan.blocked}`)}
         </p>
       )}
 
       {/* S5 (E2): quién compite y en qué nivel, con su razón. */}
-      {target !== "" && plan?.routing && plan.profile && (
+      {target !== "" && !clustering && plan?.routing && plan.profile && (
         <RosterCard
           routing={plan.routing}
           rows={plan.profile.rows}
           minorityShare={plan.profile.minorityShare}
           k={plan.profile.k}
           smallSample={plan.smallSample}
+        />
+      )}
+      {readyCluster && (
+        <RosterCard
+          routing={readyCluster.routing}
+          rows={readyCluster.rows}
+          minorityShare={null}
+          k={readyCluster.profile.k}
+          smallSample={readyCluster.smallSample}
+          cluster
         />
       )}
 
@@ -160,10 +225,32 @@ export function ConfigScreen({
           })}
         </p>
       )}
+      {readyCluster && (
+        <p className="text-sm text-ink-muted">
+          {t("config.clusterHint", {
+            count: readyCluster.routing.level1.length,
+            time: formatEstimate(readyCluster.routing.level1EstimateS),
+          })}
+        </p>
+      )}
       <div className="flex flex-wrap gap-3">
-        <Button icon="play" onClick={() => onRun(target)} disabled={!trainable}>
-          {t("config.train")}
-        </Button>
+        {clustering ? (
+          <Button
+            icon="play"
+            onClick={() => onRunCluster?.()}
+            disabled={!readyCluster || !onRunCluster}
+          >
+            {t("config.cluster")}
+          </Button>
+        ) : (
+          <Button
+            icon="play"
+            onClick={() => onRun(target)}
+            disabled={!trainable}
+          >
+            {t("config.train")}
+          </Button>
+        )}
         <Button variant="secondary" icon="back" onClick={onBack}>
           {t("config.back")}
         </Button>
@@ -333,20 +420,102 @@ function EdaBlock({ alerts }: { alerts: EdaAlert[] }) {
       <ul className="ml-5 list-disc text-sm">
         {alerts.map((alert, i) => (
           <li key={i}>
+            {/* S7 (AU-S7-14): con varias categorías, el aviso nombra la categoría y
+                dice con qué métrica se juzga (la exactitud balanceada, no el AUC). */}
             {alert.kind === "class-imbalance"
-              ? t("config.eda.imbalance", {
-                  rate: (alert.minorityRate * 100).toFixed(0),
-                })
+              ? alert.class !== undefined
+                ? t("config.eda.imbalanceMulticlass", {
+                    class: alert.class,
+                    rate: (alert.minorityRate * 100).toFixed(0),
+                  })
+                : t("config.eda.imbalance", {
+                    rate: (alert.minorityRate * 100).toFixed(0),
+                  })
               : alert.kind === "target-skewed"
                 ? t("config.eda.target-skewed", { skew: alert.skew.toFixed(1) })
                 : alert.kind === "target-outliers"
                   ? t("config.eda.target-outliers", {
                       share: (alert.share * 100).toFixed(1),
                     })
-                  : t(`config.eda.${alert.kind}`, { column: alert.column })}
+                  : alert.kind === "possible-leak" && alert.class !== undefined
+                    ? t("config.eda.possible-leak-class", {
+                        column: alert.column,
+                        class: alert.class,
+                      })
+                    : t(`config.eda.${alert.kind}`, { column: alert.column })}
           </li>
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * S7 (P5): agrupar sin objetivo — qué es, qué columnas forman la distancia y
+ * cuáles quedan fuera con su razón (ninguna se esconde). Sin objetivo no hay
+ * prueba ni veredicto contra un baseline, y se dice antes de correr.
+ */
+function ClusterPlanCard({
+  plan,
+  autoFocus,
+}: {
+  plan: ClusterPlan;
+  autoFocus: boolean;
+}) {
+  const t = useT();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (autoFocus) titleRef.current?.focus();
+  }, [autoFocus]);
+  if (!plan.ok) {
+    return (
+      <p
+        role="status"
+        className="rounded-md border border-negative/40 bg-negative/10 p-3 text-sm"
+      >
+        <span aria-hidden className="mr-1 text-negative">
+          ✕
+        </span>
+        {t(`errors.${plan.error}`)}
+      </p>
+    );
+  }
+  // S7 (AU-S7-37): las comillas de cada idioma («» en español, “” en inglés).
+  const quote = (columns: readonly string[]) =>
+    columns.map((c) => t("common.quote", { text: c })).join(", ");
+  return (
+    <Card className="flex flex-col gap-2 p-4 text-sm" role="status">
+      <h2 ref={titleRef} tabIndex={-1} className="font-semibold">
+        {t("cluster.plan.title")}
+      </h2>
+      <p>{t("cluster.plan.what")}</p>
+      <p className="text-ink-muted">
+        {plan.distance === "numeric"
+          ? t("cluster.plan.distanceNumeric", {
+              count: plan.numeric.length,
+              columns: quote(plan.numeric),
+            })
+          : t("cluster.plan.distanceAll", {
+              columns: quote([...plan.numeric, ...plan.categorical]),
+            })}
+        {plan.distance === "numeric" && plan.categorical.length > 0 && (
+          <>
+            {" "}
+            {t("cluster.plan.describeOnly", {
+              columns: quote(plan.categorical),
+            })}
+          </>
+        )}
+      </p>
+      {plan.excluded.length > 0 && (
+        <ul className="ml-5 list-disc text-ink-muted">
+          {plan.excluded.map((ex) => (
+            <li key={ex.column}>
+              {t(`cluster.plan.excluded.${ex.reason}`, { column: ex.column })}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }

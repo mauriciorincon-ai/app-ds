@@ -13,11 +13,13 @@
 // una pulsación nueva. Pase lo que pase (kill-switch, proveedor caído,
 // verificación fallida) SIEMPRE hay texto: la plantilla nunca desaparece.
 //
-// S6 (P7): la narración con IA NO narra regresión. Primer cerrojo (este): con un
-// resultado de estimar no se arma payload y el hook jamás llama al route
-// (`aiAvailable` false; pedirla no hace nada). Segundo cerrojo: el route rechaza
-// todo payload que no sea de clasificación binaria. La plantilla sí existe.
+// S6 (P7): la narración con IA NO narra regresión — y S7 (P10), tampoco varias
+// categorías. Primer cerrojo (este): con un resultado que no es binario no se arma
+// payload y el hook jamás llama al route (`aiAvailable` false; pedirla no hace
+// nada). Segundo cerrojo: el route rechaza todo payload que no sea de
+// clasificación binaria. La plantilla sí existe.
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { matchByTask } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import { useI18n } from "@/i18n/provider";
 // SOLO tipos: importar el schema Zod aquí metería zod al bundle del cliente
@@ -26,10 +28,11 @@ import { useI18n } from "@/i18n/provider";
 import type { FallbackReason, NarrationPayload } from "@/lib/ia/schemas";
 import { buildNarrationPayload } from "@/lib/narration/payload";
 import {
+  buildMulticlassTemplate,
   buildRegressionTemplate,
   buildTemplateNarrative,
 } from "@/lib/narration/templates";
-import type { ExperimentResult } from "@/workers/protocol";
+import type { SupervisedResult } from "@/workers/protocol";
 
 /** Estado del bloque de IA (el bloque de plantilla no tiene estados: existe). */
 export type AiNarrationState =
@@ -74,7 +77,7 @@ function toOutcome(json: unknown): RemoteOutcome {
 }
 
 export function useNarration(input: {
-  result: ExperimentResult;
+  result: SupervisedResult;
   target: string;
   cols: number;
   /** Alertas EDA del objetivo (S4). Referencia estable ⇒ no re-dispara el fetch. */
@@ -82,27 +85,40 @@ export function useNarration(input: {
 }): {
   template: string;
   ai: AiNarrationState;
-  /** S6: false al estimar una cantidad (la IA solo narra clasificación binaria). */
+  /** S6/S7: false fuera de la binaria (la IA solo narra clasificación binaria). */
   aiAvailable: boolean;
   requestNarration: () => void;
 } {
   const { result, target, cols, edaAlerts } = input;
   const { locale } = useI18n();
 
+  // S7 (P10): la IA narra SOLO las tareas listadas con payload; cada tarea nueva
+  // escribe aquí su rama, y la que no narra lo dice (null) a la vista.
   const payload = useMemo(
     () =>
-      result.task === "numerica"
-        ? null
-        : buildNarrationPayload({ result, target, cols, locale, edaAlerts }),
+      matchByTask(result, {
+        binaria: (binary) =>
+          buildNarrationPayload({
+            result: binary,
+            target,
+            cols,
+            locale,
+            edaAlerts,
+          }),
+        multiclase: () => null,
+        numerica: () => null,
+      }),
     [result, target, cols, locale, edaAlerts],
   );
   const template = useMemo(
     () =>
-      payload
-        ? buildTemplateNarrative(payload)
-        : result.task === "numerica"
-          ? buildRegressionTemplate({ result, locale, edaAlerts })
-          : "",
+      matchByTask(result, {
+        binaria: () => (payload ? buildTemplateNarrative(payload) : ""),
+        multiclase: (multi) =>
+          buildMulticlassTemplate({ result: multi, locale, edaAlerts }),
+        numerica: (regression) =>
+          buildRegressionTemplate({ result: regression, locale, edaAlerts }),
+      }),
     [payload, result, locale, edaAlerts],
   );
 

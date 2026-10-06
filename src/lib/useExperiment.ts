@@ -1,9 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  matchByTask,
+  matchTask,
+  taskOf,
+} from "@/engine/despacho";
 import type { LeakageFinding } from "@/engine/leakage";
 import { computeEdaAlerts, idLikeAlerts, type EdaAlert } from "@/engine/eda";
-import { sanitizeTable, type SanitationReport } from "@/engine/sanitize";
+import {
+  dedupeIndex,
+  sanitizeTable,
+  type SanitationReport,
+} from "@/engine/sanitize";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import {
   checkSchema,
@@ -21,22 +30,36 @@ import {
   isTrainTask,
   resolveTask,
   type AmbiguousChoice,
+  type SupervisedTask,
   type Task,
   type TaskDetection,
   type TrainTask,
 } from "@/engine/tarea";
 import {
+  applyClusterMemberFit,
   applyMemberFit,
+  applyMulticlassMemberFit,
   applyRegressionMemberFit,
+  assembleClusterResult,
+  assembleMulticlassResult,
   assembleRegressionResult,
   assembleResult,
+  clusterScoringSchema,
+  clusterSent,
+  clusterSentOf,
   inferUnit,
+  prepareClusterRun,
   prepareRun,
   summarizeDataset,
+  testClassCounts,
+  withoutClusterLeague,
   withoutLeague,
+  type ClusterExclusion,
+  type PreparedClusterRun,
   type PreparedRun,
 } from "@/lib/experiment";
 import { downloadTextFile } from "@/lib/files";
+import { buildScoredCsv, scoredCsvFileName } from "@/lib/scored-csv";
 import {
   modelFileName,
   packModelFile,
@@ -54,6 +77,10 @@ import { byPriority, type MemberId } from "@/engine/roster";
 import {
   pythonContractField,
   pythonLeagueEmpty,
+  validateClusterLabels,
+  validateClusterMemberFit,
+  validateClusterResult,
+  validateClusterScore,
   validateExportResult,
   validateMemberFit,
   validateProgressDetail,
@@ -62,16 +89,21 @@ import {
   type TrainSent,
 } from "@/workers/contract";
 import type {
+  BinaryModelSchema,
+  ClusterDistance,
+  ClusterPayload,
   DatasetSummary,
   ExperimentResult,
   ExportResult,
-  ModelSchema,
+  MulticlassModelSchema,
   PipelinePayload,
   ProgressDetail,
   ProgressStage,
+  RegressionModelSchema,
   RunnerResponse,
   ScorePayload,
   ScoreResult,
+  ScoringSchema,
   TargetUnit,
   WorkerErrorKind,
 } from "@/workers/protocol";
@@ -81,10 +113,13 @@ export type ExperimentPhase =
 
 /** Metadatos del run que consumen la narración y la model card (S2). */
 export type RunMeta = {
-  target: string;
+  /** S7: null al agrupar (no hay objetivo). */
+  target: string | null;
   numericFeatures: number;
   categoricalFeatures: number;
   seed: number;
+  /** S7: al agrupar, las columnas que no entraron, con su razón (ninguna se esconde). */
+  excluded?: ClusterExclusion[];
 };
 
 /** De dónde salió el modelo activo (S3): entrenado aquí o importado. */
@@ -92,8 +127,9 @@ export type ModelSource = "trained" | "imported";
 
 export type ModelMeta = {
   source: ModelSource;
-  /** S6: por tarea (con clases en binaria; con el objetivo en train al estimar). */
-  schema: ModelSchema;
+  /** S6: por tarea (con clases en binaria; con el objetivo en train al estimar).
+   *  S7: al agrupar, la regla sin centroides (viven en el worker, P12). */
+  schema: ScoringSchema;
   datasetName: string;
   /** Solo `imported`: manifiesto validado, para el resumen honesto. */
   manifest: ModelManifest | null;
@@ -142,6 +178,36 @@ export type TargetPlan = {
   smallSample: boolean;
   /** Entrenable pero sin CV honesta posible u otro rechazo de prepareRun. */
   blocked: WorkerErrorKind | null;
+  /** S7 (P4): con `too-few-rows-per-class`, la categoría más chica y sus filas de
+   *  train — se nombra EN PANTALLA (dato del usuario), jamás en un log. */
+  smallestClass: { name: string; trainRows: number } | null;
+};
+
+/** S7 (P5): lo que la app sabe de AGRUPAR antes de correr: qué columnas forman la
+ *  distancia, cuáles quedan fuera y por qué, y quién compite en qué nivel. */
+export type ClusterPlan =
+  | {
+      ok: true;
+      rows: number;
+      numeric: string[];
+      categorical: string[];
+      distance: ClusterDistance;
+      excluded: ClusterExclusion[];
+      routing: Routing;
+      profile: RouteProfile;
+      smallSample: boolean;
+    }
+  | { ok: false; error: WorkerErrorKind };
+
+/** S7 (P13): la descarga de las filas con su grupo. Las etiquetas no se guardan en
+ *  el estado: se piden al worker, se escriben al CSV y se olvidan. */
+export type LabelsState = "idle" | "fetching" | "error" | "unavailable";
+
+/** Los nombres localizados del CSV con el grupo de cada fila (los pone la UI). */
+export type LabelsNames = {
+  column: string;
+  noise: string;
+  fileSuffix: string;
 };
 
 /** S5 (U1): elección manual de un miembro de la liga. */
@@ -178,6 +244,10 @@ export type ExperimentState = {
   // S5 — la liga: el plan del objetivo elegido, el reparto con que se entrenó y
   // la elección manual en curso.
   plan: TargetPlan | null;
+  /** S7: el plan de agrupar (sin objetivo), si se eligió agrupar. */
+  clusterPlan: ClusterPlan | null;
+  /** S7 (P13): la descarga de las filas con su grupo. */
+  labels: LabelsState;
   routing: Routing | null;
   /** Forma del dataset con que se entrenó (para planear el Nivel 2). */
   profile: RouteProfile | null;
@@ -205,6 +275,8 @@ const INITIAL: ExperimentState = {
   sanitation: null,
   edaAlerts: null,
   plan: null,
+  clusterPlan: null,
+  labels: "idle",
   routing: null,
   profile: null,
   forced: [],
@@ -230,36 +302,70 @@ const CSV_ERROR: Record<string, WorkerErrorKind & ScoringErrorKind> = {
 // Qué esperaba cada mensaje en vuelo. Mapa por id (no un único pending): un
 // mensaje tardío de un comando viejo no puede pisar el estado del actual.
 type ReadyRun = Extract<PreparedRun, { ok: true }>;
+type ReadyClusterRun = Extract<PreparedClusterRun, { ok: true }>;
+
+/** El payload de una liga: con objetivo o (S7) agrupando. */
+type LeaguePayload = PipelinePayload | ClusterPayload;
 
 type TrainPending = {
   kind: "train";
-  leakage: LeakageFinding[];
-  features: { numeric: string[]; categorical: string[]; target: string };
-  // S5: lo enviado, para que el lector del contrato lo coteje (S6: con la tarea).
-  sent: TrainSent & { task: TrainTask };
+  /** S6: la tarea (el breadcrumb `probeta.league` la lleva; nunca un valor). */
+  task: TrainTask;
+  /** Quiénes compiten en ESTA corrida (los cuenta la cancelación). */
+  roster: readonly MemberId[];
   smallSample: boolean;
   // S5: el reparto y los forzados de ESTA corrida (se fijan solo si termina).
   level: 1 | 2;
   routing: Routing;
   forced: MemberId[];
+  /** Lo que el lector del contrato coteja y con qué se arma el resultado. */
+  run:
+    | {
+        cluster: false;
+        leakage: LeakageFinding[];
+        features: { numeric: string[]; categorical: string[]; target: string };
+        // S5: lo enviado, para que el lector lo coteje (S6: con la tarea).
+        sent: TrainSent & { task: SupervisedTask };
+      }
+    // S7: agrupar — lo enviado (sin objetivo) para el lector y el esquema.
+    | { cluster: true; payload: ClusterPayload };
 };
 
 type Pending =
   | TrainPending
   // S5 (R1): la instantánea del modelo del Nivel 1, antes de arrancar el Nivel 2.
-  | { kind: "snapshot"; next: ReadyRun; forced: MemberId[] }
+  | {
+      kind: "snapshot";
+      next: TrainPending;
+      payload: LeaguePayload;
+      forced: MemberId[];
+    }
   // S5 (R1): restaurar esa instantánea tras cancelar o fallar el Nivel 2.
   | { kind: "restore" }
   | {
       kind: "score";
-      task: TrainTask;
+      /** El esquema del modelo activo: su tarea (y, con varias categorías, sus
+       *  clases) dice qué forma exige el lector. */
+      schema: ScoringSchema;
       check: SchemaCheck;
       fileName: string;
       table: CsvTable;
     }
   | { kind: "export-model"; datasetName: string; result: ExperimentResult }
   | { kind: "import-model" }
-  | { kind: "fit-member"; member: MemberId };
+  | { kind: "fit-member"; member: MemberId }
+  // S7 (P13): las etiquetas por fila, para el CSV local (y se olvidan).
+  | {
+      kind: "cluster-labels";
+      table: CsvTable;
+      /** La tabla del usuario ANTES del saneamiento y, por fila, su fila saneada. */
+      raw: CsvTable | null;
+      rawIndex: number[] | null;
+      datasetName: string;
+      groups: number;
+      noise: boolean;
+      names: LabelsNames;
+    };
 
 /** Lo que queda en vuelo al mandar una liga: lo enviado y con qué se armó. */
 function trainPending(
@@ -270,53 +376,196 @@ function trainPending(
   const { payload } = prepared;
   return {
     kind: "train",
-    leakage: prepared.leakage,
-    features: {
-      numeric: payload.numeric,
-      categorical: payload.categorical,
-      target: payload.target,
-    },
-    sent: {
-      task: payload.task,
-      roster: payload.roster,
-      cv_k: payload.cv_k,
-      primary_metric: payload.primary_metric,
-    },
+    task: payload.task,
+    roster: payload.roster,
     smallSample: prepared.smallSample,
     level,
     routing: prepared.routing,
     forced,
+    run: {
+      cluster: false,
+      leakage: prepared.leakage,
+      features: {
+        numeric: payload.numeric,
+        categorical: payload.categorical,
+        target: payload.target,
+      },
+      sent: {
+        task: payload.task,
+        roster: payload.roster,
+        cv_k: payload.cv_k,
+        primary_metric: payload.primary_metric,
+        // S7: con varias categorías, las clases enviadas y las filas de prueba de
+        // cada una (el lector coteja con ellas la matriz K×K).
+        ...(payload.classes
+          ? { classes: payload.classes, testCounts: testClassCounts(payload) }
+          : {}),
+      },
+    },
   };
 }
 
-/** La tarea de un esquema de modelo (los archivos del S5 no la traen: binaria). */
-function schemaTask(schema: ModelSchema): TrainTask {
-  return schema.task ?? "binaria";
+/** S7: lo que queda en vuelo al mandar la liga de AGRUPAR. */
+function clusterPending(
+  prepared: ReadyClusterRun,
+  level: 1 | 2,
+  forced: MemberId[],
+): TrainPending {
+  return {
+    kind: "train",
+    task: prepared.payload.task,
+    roster: prepared.payload.roster,
+    smallSample: prepared.smallSample,
+    level,
+    routing: prepared.routing,
+    forced,
+    run: { cluster: true, payload: prepared.payload },
+  };
+}
+
+type Accepted =
+  | {
+      ok: true;
+      assembled: ExperimentResult;
+      schema: ScoringSchema;
+      elapsedMs: number;
+    }
+  | { ok: false; field: string };
+
+/** El resultado de una liga, validado por el lector del contrato (regla 15) y
+ *  ensamblado según su tarea, con el esquema con que se puntuará. */
+function acceptTrain(pending: TrainPending, raw: unknown): Accepted {
+  const { run } = pending;
+  if (run.cluster) {
+    const checked = validateClusterResult(raw, clusterSent(run.payload));
+    if (!checked.ok) return checked;
+    const assembled = assembleClusterResult(checked.value, pending.smallSample);
+    return {
+      ok: true,
+      assembled,
+      schema: clusterScoringSchema(assembled, run.payload),
+      elapsedMs: checked.value.elapsed_ms,
+    };
+  }
+  const checked = validateTrainResult(raw, run.sent);
+  if (!checked.ok) return checked;
+  const py = checked.value;
+  const { assembled, schema } = matchByTask(py, {
+    binaria: (binary) => ({
+      assembled: assembleResult(binary, run.leakage, pending.smallSample),
+      schema: {
+        ...run.features,
+        classes: binary.classes,
+        positive_class: binary.positive_class,
+      } satisfies BinaryModelSchema,
+    }),
+    multiclase: (multi) => ({
+      assembled: assembleMulticlassResult(
+        multi,
+        run.leakage,
+        pending.smallSample,
+      ),
+      schema: {
+        ...run.features,
+        classes: multi.classes,
+        task: "multiclase",
+      } satisfies MulticlassModelSchema,
+    }),
+    numerica: (regression) => ({
+      assembled: assembleRegressionResult(
+        regression,
+        run.leakage,
+        run.features.target,
+        pending.smallSample,
+      ),
+      schema: {
+        ...run.features,
+        task: "numerica",
+        target_stats: regression.target_stats,
+      } satisfies RegressionModelSchema,
+    }),
+  });
+  return { ok: true, assembled, schema, elapsedMs: py.elapsed_ms };
+}
+
+/** S7: el plan de agrupar, sin el payload (las filas no se guardan dos veces). */
+function clusterPlanOf(prepared: PreparedClusterRun): ClusterPlan {
+  if (!prepared.ok) return { ok: false, error: prepared.error };
+  const { payload } = prepared;
+  return {
+    ok: true,
+    rows: payload.rows.length,
+    numeric: payload.numeric,
+    categorical: payload.categorical,
+    distance: payload.distance,
+    excluded: prepared.excluded,
+    routing: prepared.routing,
+    profile: prepared.profile,
+    smallSample: prepared.smallSample,
+  };
 }
 
 /**
  * S6: el resultado de fit-member, validado por el lector del contrato y aplicado
  * según la tarea del resultado vigente (el veredicto pasa a hablar del elegido).
  */
+type Applied =
+  | { ok: true; value: ExperimentResult }
+  | { ok: false; field: string };
+
 function applyFit(
   current: ExperimentResult,
   raw: unknown,
   member: MemberId,
-): { ok: true; value: ExperimentResult } | { ok: false; field: string } {
-  if (current.task === "numerica") {
-    const checked = validateMemberFit(raw, {
-      member,
-      task: "numerica",
-      nTest: current.nTest,
-    });
-    return checked.ok
-      ? { ok: true, value: applyRegressionMemberFit(current, checked.value) }
-      : checked;
-  }
-  const checked = validateMemberFit(raw, { member });
-  return checked.ok
-    ? { ok: true, value: applyMemberFit(current, checked.value) }
-    : checked;
+): Applied {
+  return matchByTask(current, {
+    binaria: (binary): Applied => {
+      const checked = validateMemberFit(raw, { member });
+      return checked.ok
+        ? { ok: true, value: applyMemberFit(binary, checked.value) }
+        : checked;
+    },
+    multiclase: (multi): Applied => {
+      const checked = validateMemberFit(raw, {
+        member,
+        task: "multiclase",
+        nTest: multi.nTest,
+        classes: multi.classes,
+        // Filas de prueba por clase = filas de la matriz vigente (la partición
+        // no cambia al elegir a mano).
+        testCounts: multi.perClass.map((c) => c.support),
+      });
+      return checked.ok
+        ? { ok: true, value: applyMulticlassMemberFit(multi, checked.value) }
+        : checked;
+    },
+    numerica: (regression): Applied => {
+      const checked = validateMemberFit(raw, {
+        member,
+        task: "numerica",
+        nTest: regression.nTest,
+      });
+      return checked.ok
+        ? {
+            ok: true,
+            value: applyRegressionMemberFit(regression, checked.value),
+          }
+        : checked;
+    },
+    // S7: el elegido se coteja con SU fila de la liga vigente (mismo k y puntaje).
+    agrupar: (cluster): Applied => {
+      const row = cluster.league.find((r) => r.name === member);
+      if (!row) return { ok: false, field: "model_name" };
+      const checked = validateClusterMemberFit(raw, {
+        ...clusterSentOf(cluster),
+        member,
+        row,
+      });
+      return checked.ok
+        ? { ok: true, value: applyClusterMemberFit(cluster, checked.value) }
+        : checked;
+    },
+  });
 }
 
 /**
@@ -337,11 +586,18 @@ function planTarget(
     task,
     choice: task.task === "ambigua" ? choice : null,
     resolved,
-    unit: resolved === "numerica" ? inferUnit(target) : null,
+    unit: isTrainTask(resolved)
+      ? matchTask(resolved, {
+          binaria: () => null,
+          multiclase: () => null,
+          numerica: () => inferUnit(target),
+        })
+      : null,
     routing: null,
     profile: null,
     smallSample: false,
     blocked: null,
+    smallestClass: null,
   };
   if (!isTrainableTask(resolved)) return plan;
   const prepared = prepareRun(table, target, SEED, { ambiguousChoice: choice });
@@ -352,13 +608,19 @@ function planTarget(
         profile: prepared.profile,
         smallSample: prepared.smallSample,
       }
-    : { ...plan, blocked: prepared.error };
+    : {
+        ...plan,
+        blocked: prepared.error,
+        smallestClass: prepared.smallestClass ?? null,
+      };
 }
 
 /** Las alertas EDA hablan de la tarea con que se entrenaría. Sin una tarea que se
  *  entrene, solo las que no dependen de ella (ninguna se supone por descarte). */
 function edaFor(table: CsvTable, plan: TargetPlan | null, target: string) {
-  if (!plan || !isTrainTask(plan.resolved)) return idLikeAlerts(table, target);
+  if (!plan || !isTrainTask(plan.resolved)) {
+    return idLikeAlerts(table, target);
+  }
   return computeEdaAlerts(table, target, plan.resolved);
 }
 
@@ -370,6 +632,9 @@ export function useExperiment() {
   const workerRef = useRef<Worker | null>(null);
   const nextId = useRef(0);
   const tableRef = useRef<CsvTable | null>(null);
+  // S7: la tabla tal como llegó (antes del saneamiento), solo para devolverle al
+  // usuario SUS filas con su grupo (con el identificador que el saneamiento aparta).
+  const rawTableRef = useRef<CsvTable | null>(null);
   // Reporte de saneamiento del dataset activo (para adjuntarlo al export).
   const sanitationRef = useRef<SanitationReport | null>(null);
   const pendingRef = useRef(new Map<number, Pending>());
@@ -377,8 +642,9 @@ export function useExperiment() {
   const modelRef = useRef<ModelMeta | null>(null);
   const resultRef = useRef<ExperimentResult | null>(null);
   const datasetNameRef = useRef<string | null>(null);
-  // S5: el último payload de la liga (para fit-member y el Nivel 2).
-  const payloadRef = useRef<PipelinePayload | null>(null);
+  // S5: el último payload de la liga (para fit-member y el Nivel 2). S7: o el de
+  // agrupar.
+  const payloadRef = useRef<LeaguePayload | null>(null);
   // S6 (D2): la respuesta a «¿clases o cantidad?» del objetivo elegido.
   const choiceRef = useRef<AmbiguousChoice | null>(null);
   // S5 (R1): lo que vuelve si el Nivel 2 se cancela o falla.
@@ -386,7 +652,7 @@ export function useExperiment() {
     result: ExperimentResult;
     routing: Routing | null;
     forced: MemberId[];
-    payload: PipelinePayload;
+    payload: LeaguePayload;
     meta: ModelMeta;
     snapshot: ExportResult | null;
   } | null>(null);
@@ -572,6 +838,16 @@ export function useExperiment() {
             modelReady: true,
             choice: { status: "error", member: pending.member },
           }));
+        } else if (pending.kind === "cluster-labels") {
+          // S7: tras restaurar el Nivel 1 (o en un modelo importado) el worker no
+          // guarda etiquetas: se dice, en vez de un error genérico.
+          reportExportError("labels");
+          setState((s) => ({
+            ...s,
+            labels: message.message.includes("no-labels")
+              ? "unavailable"
+              : "error",
+          }));
         } else {
           reportImportError("runtime");
           setState((s) => ({
@@ -586,7 +862,7 @@ export function useExperiment() {
       // result — cada comando actualiza SOLO su tajada del estado, y solo
       // después de que contract.ts valide la forma (regla 15).
       if (message.command === "train" && pending.kind === "train") {
-        const checked = validateTrainResult(message.result, pending.sent);
+        const checked = acceptTrain(pending, message.result);
         if (!checked.ok) {
           console.error("[experiment] contract", checked.field);
           if (pending.level === 2) {
@@ -597,30 +873,10 @@ export function useExperiment() {
           }
           return;
         }
-        const py = checked.value;
-        const assembled: ExperimentResult =
-          py.task === "numerica"
-            ? assembleRegressionResult(
-                py,
-                pending.leakage,
-                pending.features.target,
-                pending.smallSample,
-              )
-            : assembleResult(py, pending.leakage, pending.smallSample);
+        const { assembled, schema } = checked;
         const meta: ModelMeta = {
           source: "trained",
-          schema:
-            py.task === "numerica"
-              ? {
-                  ...pending.features,
-                  task: "numerica",
-                  target_stats: py.target_stats,
-                }
-              : {
-                  ...pending.features,
-                  classes: py.classes,
-                  positive_class: py.positive_class,
-                },
+          schema,
           datasetName: datasetNameRef.current ?? "dataset",
           manifest: null,
         };
@@ -631,11 +887,11 @@ export function useExperiment() {
         forcedRef.current = pending.forced;
         level1Ref.current = null;
         recordLeagueRun({
-          task: pending.sent.task,
+          task: pending.task,
           ...tableSize(),
           competitors: assembled.league.length,
           level: pending.level,
-          elapsedMs: checked.value.elapsed_ms,
+          elapsedMs: checked.elapsedMs,
           cancelled: false,
         });
         setState((s) => ({
@@ -648,6 +904,7 @@ export function useExperiment() {
           level2: { status: "idle" },
           modelMeta: meta,
           modelReady: true,
+          labels: "idle",
         }));
       } else if (
         message.command === "export-model" &&
@@ -664,14 +921,14 @@ export function useExperiment() {
           return;
         }
         l1.snapshot = checked.value;
-        const { next, forced } = pending;
+        const { next, payload } = pending;
         const trainId = nextId.current++;
-        pendingRef.current.set(trainId, trainPending(next, 2, forced));
-        payloadRef.current = next.payload;
+        pendingRef.current.set(trainId, next);
+        payloadRef.current = payload;
         workerRef.current?.postMessage({
           id: trainId,
           type: "train",
-          payload: next.payload,
+          payload,
         });
       } else if (
         message.command === "import-model" &&
@@ -680,10 +937,17 @@ export function useExperiment() {
         setState((s) => ({ ...s, modelReady: true }));
       } else if (message.command === "score" && pending.kind === "score") {
         // S6: el lector exige la forma de la tarea del modelo activo.
-        const checked =
-          pending.task === "numerica"
-            ? validateScoreResult(message.result, { task: "numerica" })
-            : validateScoreResult(message.result);
+        const checked = matchByTask(pending.schema, {
+          binaria: () => validateScoreResult(message.result),
+          multiclase: ({ classes }) =>
+            validateScoreResult(message.result, {
+              task: "multiclase",
+              classes,
+            }),
+          numerica: () =>
+            validateScoreResult(message.result, { task: "numerica" }),
+          agrupar: (schema) => validateClusterScore(message.result, schema),
+        });
         if (!checked.ok) {
           console.error("[experiment] contract", checked.field);
           reportScoringError(`contract:${checked.field}`);
@@ -735,12 +999,76 @@ export function useExperiment() {
         }
         const chosen = checked.value;
         resultRef.current = chosen;
+        // S7: al agrupar, el elegido trae su propio k y su regla: el esquema con
+        // que se puntúa pasa a ser el suyo (con objetivo, las columnas no cambian).
+        const payload = payloadRef.current;
+        const meta = modelRef.current;
+        const nextMeta =
+          meta && payload
+            ? matchByTask(chosen, {
+                binaria: () => meta,
+                multiclase: () => meta,
+                numerica: () => meta,
+                agrupar: (cluster) =>
+                  matchByTask(payload, {
+                    binaria: () => meta,
+                    multiclase: () => meta,
+                    numerica: () => meta,
+                    agrupar: (clusterPayload) => ({
+                      ...meta,
+                      schema: clusterScoringSchema(cluster, clusterPayload),
+                    }),
+                  }),
+              })
+            : meta;
+        modelRef.current = nextMeta;
         setState((s) => ({
           ...s,
           result: chosen,
+          modelMeta: nextMeta,
           modelReady: true,
           choice: { status: "idle" },
+          labels: "idle",
         }));
+      } else if (
+        message.command === "cluster-labels" &&
+        pending.kind === "cluster-labels"
+      ) {
+        // P13: las etiquetas se validan, se escriben al CSV y se olvidan — no
+        // pasan por el estado ni por ningún reporte.
+        const checked = validateClusterLabels(message.result, {
+          n_rows: pending.table.rows.length,
+          groups: pending.groups,
+          noise: pending.noise,
+        });
+        if (!checked.ok) {
+          reportExportError(`contract:${checked.field}`);
+          setState((s) => ({ ...s, labels: "error" }));
+          return;
+        }
+        const { names, raw, rawIndex } = pending;
+        const label = (g: number) => (g === -1 ? names.noise : String(g + 1));
+        const labels = checked.value.labels;
+        // La tabla del usuario, entera: cada fila original lleva el grupo de su
+        // fila saneada (una fila repetida, el de su gemela).
+        const csv =
+          raw && rawIndex && rawIndex.length === raw.rows.length
+            ? buildScoredCsv(
+                raw,
+                rawIndex.map((i) => label(labels[i]!)),
+                null,
+                { prediction: names.column, probability: "" },
+              )
+            : buildScoredCsv(pending.table, labels.map(label), null, {
+                prediction: names.column,
+                probability: "",
+              });
+        downloadTextFile(
+          scoredCsvFileName(pending.datasetName, names.fileSuffix),
+          csv,
+          "text/csv;charset=utf-8",
+        );
+        setState((s) => ({ ...s, labels: "idle" }));
       }
     };
 
@@ -804,6 +1132,9 @@ export function useExperiment() {
             phase: "error",
             error: { kind: "worker-dead", message: detail },
           }));
+        } else if (pending.kind === "cluster-labels") {
+          reportExportError("labels-worker-dead");
+          setState((s) => ({ ...s, labels: "error" }));
         } else {
           reportImportError("worker-dead");
           setState((s) => ({
@@ -869,6 +1200,7 @@ export function useExperiment() {
       return;
     }
     tableRef.current = table;
+    rawTableRef.current = parsed.table;
     sanitationRef.current = report;
     datasetNameRef.current = name;
     setState({
@@ -894,6 +1226,7 @@ export function useExperiment() {
       return {
         ...s,
         plan,
+        clusterPlan: null,
         edaAlerts:
           table && targetColumn ? edaFor(table, plan, targetColumn) : null,
       };
@@ -901,9 +1234,25 @@ export function useExperiment() {
   }, []);
 
   /**
+   * S7 (P5): elegir AGRUPAR en lugar de un objetivo. Se planea aparte (la rama
+   * supervisada no se toca): qué columnas forman la distancia, cuáles quedan
+   * fuera y por qué, y quién compite. Sin objetivo no hay alertas de objetivo.
+   */
+  const selectCluster = useCallback(() => {
+    const table = tableRef.current;
+    choiceRef.current = null;
+    setState((s) => ({
+      ...s,
+      plan: null,
+      edaAlerts: null,
+      clusterPlan: table ? clusterPlanOf(prepareClusterRun(table, SEED)) : null,
+    }));
+  }, []);
+
+  /**
    * S6 (D2): la respuesta a «¿clases o cantidad?» de una columna ambigua. Con
-   * «cantidad» se planea la regresión; con «clases», la multiclase (que esta
-   * versión todavía no entrena, y se dice de frente). null vuelve a preguntar.
+   * «cantidad» se planea la regresión; con «clases», la multiclase (S7: entrena).
+   * null vuelve a preguntar.
    */
   const answerTask = useCallback((choice: AmbiguousChoice | null) => {
     const table = tableRef.current;
@@ -916,6 +1265,53 @@ export function useExperiment() {
       return { ...s, plan, edaAlerts: edaFor(table, plan, s.plan.target) };
     });
   }, []);
+
+  /** Manda una liga (Nivel 1): con objetivo o agrupando, la misma máquina. */
+  const launch = useCallback(
+    (
+      pending: TrainPending,
+      prepared: {
+        payload: LeaguePayload;
+        routing: Routing;
+        profile: RouteProfile;
+      },
+      runMeta: RunMeta,
+    ) => {
+      const id = nextId.current++;
+      pendingRef.current.set(id, pending);
+      modelRef.current = null;
+      resultRef.current = null;
+      payloadRef.current = prepared.payload;
+      routingRef.current = prepared.routing;
+      forcedRef.current = [];
+      level1Ref.current = null;
+      setState((s) => ({
+        ...s,
+        phase: "running",
+        progress: null,
+        progressDetail: null,
+        error: null,
+        result: null,
+        routing: prepared.routing,
+        profile: prepared.profile,
+        forced: [],
+        level2: { status: "idle" },
+        choice: { status: "idle" },
+        modelMeta: null,
+        modelReady: false,
+        scoring: { status: "idle" },
+        exportState: "idle",
+        labels: "idle",
+        runMeta,
+      }));
+      workerRef.current?.postMessage({
+        id,
+        type: "train",
+        payload: prepared.payload,
+      });
+    },
+    [],
+  );
 
   const run = useCallback((targetColumn: string) => {
     const table = tableRef.current;
@@ -933,43 +1329,35 @@ export function useExperiment() {
       return;
     }
 
-    const id = nextId.current++;
-    pendingRef.current.set(id, trainPending(prepared, 1, []));
-    modelRef.current = null;
-    resultRef.current = null;
-    payloadRef.current = prepared.payload;
-    routingRef.current = prepared.routing;
-    forcedRef.current = [];
-    level1Ref.current = null;
-    setState((s) => ({
-      ...s,
-      phase: "running",
-      progress: null,
-      progressDetail: null,
-      error: null,
-      result: null,
-      routing: prepared.routing,
-      profile: prepared.profile,
-      forced: [],
-      level2: { status: "idle" },
-      choice: { status: "idle" },
-      modelMeta: null,
-      modelReady: false,
-      scoring: { status: "idle" },
-      exportState: "idle",
-      runMeta: {
-        target: targetColumn,
-        numericFeatures: prepared.payload.numeric.length,
-        categoricalFeatures: prepared.payload.categorical.length,
-        seed: SEED,
-      },
-    }));
-    workerRef.current?.postMessage({
-      id,
-      type: "train",
-      payload: prepared.payload,
+    launch(trainPending(prepared, 1, []), prepared, {
+      target: targetColumn,
+      numericFeatures: prepared.payload.numeric.length,
+      categoricalFeatures: prepared.payload.categorical.length,
+      seed: SEED,
     });
-  }, []);
+  }, [launch]);
+
+  /** S7 (ADR 016): agrupar las filas, sin objetivo ni partición. */
+  const runCluster = useCallback(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    const prepared = prepareClusterRun(table, SEED);
+    if (!prepared.ok) {
+      setState((s) => ({
+        ...s,
+        phase: "error",
+        error: { kind: prepared.error, message: prepared.error },
+      }));
+      return;
+    }
+    launch(clusterPending(prepared, 1, []), prepared, {
+      target: null,
+      numericFeatures: prepared.payload.numeric.length,
+      categoricalFeatures: prepared.payload.categorical.length,
+      seed: SEED,
+      excluded: prepared.excluded,
+    });
+  }, [launch]);
 
   /**
    * S5 (U1): elegir a mano un miembro de la liga. El worker lo ajusta en train
@@ -990,7 +1378,13 @@ export function useExperiment() {
     workerRef.current?.postMessage({
       id,
       type: "fit-member",
-      payload: { ...withoutLeague(payload), member },
+      // S7: al agrupar, el payload de agrupar sin roster.
+      payload: matchByTask(payload, {
+        binaria: (p) => ({ ...withoutLeague(p), member }),
+        multiclase: (p) => ({ ...withoutLeague(p), member }),
+        numerica: (p) => ({ ...withoutLeague(p), member }),
+        agrupar: (p) => withoutClusterLeague(p, member),
+      }),
     });
   }, []);
 
@@ -1009,14 +1403,39 @@ export function useExperiment() {
     const forced = byPriority([
       ...new Set([...forcedRef.current, ...extraForced]),
     ]);
-    const next = prepareRun(table, payload.target, SEED, {
-      level: 2,
-      forced,
-      ambiguousChoice: choiceRef.current,
+    // S7: la unión del Nivel 2 se arma con la entrada de la tarea vigente.
+    const supervised = (p: PipelinePayload) => {
+      const next = prepareRun(table, p.target, SEED, {
+        level: 2,
+        forced,
+        ambiguousChoice: choiceRef.current,
+      });
+      return next.ok
+        ? {
+            pending: trainPending(next, 2, forced),
+            payload: next.payload as LeaguePayload,
+            profile: next.profile,
+          }
+        : null;
+    };
+    const next = matchByTask(payload, {
+      binaria: supervised,
+      multiclase: supervised,
+      numerica: supervised,
+      agrupar: () => {
+        const prepared = prepareClusterRun(table, SEED, { level: 2, forced });
+        return prepared.ok
+          ? {
+              pending: clusterPending(prepared, 2, forced),
+              payload: prepared.payload as LeaguePayload,
+              profile: prepared.profile,
+            }
+          : null;
+      },
     });
     // Con los mismos datos esto no falla; si algún día falla, se dice: el botón
     // no queda mudo (AU-S6-16). Sigue vigente el resultado del Nivel 1.
-    if (!next.ok) {
+    if (!next) {
       setState((s) => ({ ...s, level2: { status: "failed" } }));
       return;
     }
@@ -1035,7 +1454,12 @@ export function useExperiment() {
       snapshot: null,
     };
     const id = nextId.current++;
-    pendingRef.current.set(id, { kind: "snapshot", next, forced });
+    pendingRef.current.set(id, {
+      kind: "snapshot",
+      next: next.pending,
+      payload: next.payload,
+      forced,
+    });
     setState((s) => ({
       ...s,
       phase: "running",
@@ -1045,7 +1469,7 @@ export function useExperiment() {
       choice: { status: "idle" },
       level2: {
         status: "running",
-        count: next.payload.roster.length,
+        count: next.pending.roster.length,
         estimateS: plan.estimateS,
       },
     }));
@@ -1069,9 +1493,9 @@ export function useExperiment() {
     const snapshot = inFlight.find((p) => p.kind === "snapshot");
     const competitors =
       level2Train?.kind === "train"
-        ? level2Train.sent.roster.length
+        ? level2Train.roster.length
         : snapshot?.kind === "snapshot"
-          ? snapshot.next.payload.roster.length
+          ? snapshot.next.roster.length
           : level1Ref.current.result.league.length;
     const snapshotPending = [...pendingRef.current.entries()].find(
       ([, pending]) => pending.kind === "snapshot",
@@ -1084,7 +1508,7 @@ export function useExperiment() {
     }
     const table = tableRef.current;
     recordLeagueRun({
-      task: level1Ref.current.result.task ?? "binaria",
+      task: taskOf(level1Ref.current.result),
       rows: table?.rows.length,
       cols: table?.headers.length,
       competitors,
@@ -1142,7 +1566,7 @@ export function useExperiment() {
     const id = nextId.current++;
     pendingRef.current.set(id, {
       kind: "score",
-      task: schemaTask(meta.schema),
+      schema: meta.schema,
       check,
       fileName,
       table: parsed.table,
@@ -1164,6 +1588,39 @@ export function useExperiment() {
     workerRef.current?.postMessage({ id, type: "export-model" });
   }, []);
 
+  /**
+   * S7 (P13): tus filas con el grupo de cada una, como CSV local. Las etiquetas
+   * se piden al worker en ese momento, se escriben al archivo y se olvidan: no
+   * viven en el estado, ni en el resultado, ni en el archivo del modelo.
+   */
+  const downloadClusterLabels = useCallback((names: LabelsNames) => {
+    const table = tableRef.current;
+    const meta = modelRef.current;
+    const datasetName = datasetNameRef.current;
+    if (!table || !meta || !datasetName) return;
+    const groups = matchByTask(meta.schema, {
+      binaria: () => null,
+      multiclase: () => null,
+      numerica: () => null,
+      agrupar: (schema) => schema,
+    });
+    if (!groups) return;
+    const id = nextId.current++;
+    const raw = rawTableRef.current;
+    pendingRef.current.set(id, {
+      kind: "cluster-labels",
+      table,
+      raw,
+      rawIndex: raw ? dedupeIndex(raw.rows) : null,
+      datasetName,
+      groups: groups.groups,
+      noise: groups.noise,
+      names,
+    });
+    setState((s) => ({ ...s, labels: "fetching" }));
+    workerRef.current?.postMessage({ id, type: "cluster-labels" });
+  }, []);
+
   /** Activa un modelo importado (el archivo YA pasó validateModelFile). */
   const activateImportedModel = useCallback((file: ModelFile) => {
     // validateModelFile solo deja pasar tareas que la UI sabe usar (S6).
@@ -1177,6 +1634,7 @@ export function useExperiment() {
     resultRef.current = null;
     datasetNameRef.current = file.manifest.dataset.name;
     tableRef.current = null;
+    rawTableRef.current = null;
     const id = nextId.current++;
     pendingRef.current.set(id, { kind: "import-model" });
     setState({
@@ -1203,6 +1661,7 @@ export function useExperiment() {
     // — antes seguía corriendo y el experimento nuevo esperaba detrás de él.
     if (pendingRef.current.size > 0) respawnRef.current?.();
     tableRef.current = null;
+    rawTableRef.current = null;
     payloadRef.current = null;
     choiceRef.current = null;
     modelRef.current = null;
@@ -1219,8 +1678,11 @@ export function useExperiment() {
     state,
     loadCsv,
     selectTarget,
+    selectCluster,
     answerTask,
     run,
+    runCluster,
+    downloadClusterLabels,
     reset,
     goToScoring,
     backToResults,

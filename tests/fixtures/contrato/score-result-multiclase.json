@@ -1,0 +1,24 @@
+{
+  "task": "multiclase",
+  "predictions": [
+    "basico",
+    "empresa",
+    "basico"
+  ],
+  "probabilities": [
+    0.805,
+    0.625,
+    0.665
+  ],
+  "novelty": {
+    "columns": [
+      {
+        "column": "usuarios",
+        "kind": "numeric",
+        "count": 1
+      }
+    ],
+    "affected_rows": 1,
+    "n_rows": 3
+  }
+}

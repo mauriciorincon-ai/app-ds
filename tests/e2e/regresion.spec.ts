@@ -105,7 +105,7 @@ test("estimar con una fuga plantada: la nombra antes y después de entrenar", as
   await expect(
     page.getByRole("heading", {
       level: 1,
-      name: "Métricas casi perfectas — sospechoso",
+      name: "Posible fuga de datos — sospechoso",
     }),
   ).toBeVisible({ timeout: 150_000 });
   await expect(

@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALL_MEMBER_IDS,
   BASELINE_IDS,
+  CLUSTER_MEMBER_IDS,
   byPriority,
   isMemberId,
   MEMBER_IDS,
@@ -16,7 +17,23 @@ import {
   type CvRowLike,
   type MemberId,
 } from "@/engine/roster";
-import { METRIC_RULES } from "@/engine/verdict";
+import { MULTICLASS_MAX_CLASSES, MULTICLASS_MIN_CLASSES } from "@/engine/tarea";
+import {
+  AGGLO_MAX_ROWS,
+  CLUSTER_GAP_MIN,
+  CLUSTER_K_MAX,
+  CLUSTER_K_MIN,
+  CLUSTER_MIN_NUMERIC,
+  CLUSTER_STABILITY_MIN,
+  HDBSCAN_MIN_CLUSTER_SIZE,
+  HDBSCAN_ROWS_PER_MIN_CLUSTER,
+  METRIC_RULES,
+  MULTICLASS_PRIMARY_METRIC,
+  SEPARATING_TOP,
+  SILHOUETTE_SAMPLE,
+  STABILITY_FRACTION,
+  STABILITY_RUNS,
+} from "@/engine/verdict";
 import {
   PRED_VS_REAL_MAX,
   SCORER,
@@ -60,7 +77,8 @@ describe("paridad del roster TS ↔ Python", () => {
       PIPELINE_PY.indexOf("\n}\n", PIPELINE_PY.indexOf("SCORER = {")),
     );
     const pairs = Object.fromEntries(
-      [...block.matchAll(/^ {4}"([a-z0-9]+)": "([a-z0-9_]+)",$/gm)].map((m) => [
+      // S7: las claves llevan «_» (balanced_accuracy): el patrón viejo no las veía.
+      [...block.matchAll(/^ {4}"([a-z0-9_]+)": "([a-z0-9_]+)",$/gm)].map((m) => [
         m[1],
         m[2],
       ]),
@@ -83,7 +101,7 @@ describe("paridad del roster TS ↔ Python", () => {
     const start = PIPELINE_PY.indexOf("METRIC_DIRECTION = {");
     const block = PIPELINE_PY.slice(start, PIPELINE_PY.indexOf("\n}\n", start));
     const pairs = Object.fromEntries(
-      [...block.matchAll(/^ {4}"([a-z0-9]+)": "(higher|lower)",$/gm)].map(
+      [...block.matchAll(/^ {4}"([a-z0-9_]+)": "(higher|lower)",$/gm)].map(
         (m) => [m[1], m[2]],
       ),
     );
@@ -100,6 +118,48 @@ describe("paridad del roster TS ↔ Python", () => {
     );
     expect(PIPELINE_PY).toMatch(
       new RegExp(`^TARGET_DECIMALS_MAX = ${TARGET_DECIMALS_MAX}$`, "m"),
+    );
+    // S7: cuántas clases son «varias categorías», en los dos lados.
+    expect(PIPELINE_PY).toMatch(
+      new RegExp(`^MULTICLASS_MIN_CLASSES = ${MULTICLASS_MIN_CLASSES}$`, "m"),
+    );
+    expect(PIPELINE_PY).toMatch(
+      new RegExp(`^MULTICLASS_MAX_CLASSES = ${MULTICLASS_MAX_CLASSES}$`, "m"),
+    );
+  });
+
+  it("S7: pipeline.py declara EXACTAMENTE los agrupadores de CLUSTER_MEMBER_IDS, en su orden", () => {
+    const start = PIPELINE_PY.indexOf("_CLUSTERERS = {");
+    const block = PIPELINE_PY.slice(start, PIPELINE_PY.indexOf("\n}\n", start));
+    const pythonIds = [...block.matchAll(/^ {4}"([a-z_]+)":/gm)].map((m) => m[1]);
+    expect(pythonIds).toEqual([...CLUSTER_MEMBER_IDS]);
+  });
+
+  it("S7: las constantes de agrupar son las mismas en los dos lados (STOP de la F0)", () => {
+    const pairs: [string, number][] = [
+      ["CLUSTER_K_MIN", CLUSTER_K_MIN],
+      ["CLUSTER_K_MAX", CLUSTER_K_MAX],
+      ["CLUSTER_MIN_NUMERIC", CLUSTER_MIN_NUMERIC],
+      ["HDBSCAN_MIN_CLUSTER_SIZE", HDBSCAN_MIN_CLUSTER_SIZE],
+      ["HDBSCAN_ROWS_PER_MIN_CLUSTER", HDBSCAN_ROWS_PER_MIN_CLUSTER],
+      ["SILHOUETTE_SAMPLE", SILHOUETTE_SAMPLE],
+      ["STABILITY_RUNS", STABILITY_RUNS],
+      ["STABILITY_FRACTION", STABILITY_FRACTION],
+      ["CLUSTER_GAP_MIN", CLUSTER_GAP_MIN],
+      ["CLUSTER_STABILITY_MIN", CLUSTER_STABILITY_MIN],
+      ["AGGLO_MAX_ROWS", AGGLO_MAX_ROWS],
+      ["SEPARATING_TOP", SEPARATING_TOP],
+    ];
+    for (const [name, value] of pairs) {
+      const match = new RegExp(`^${name} = ([0-9.]+)$`, "m").exec(PIPELINE_PY);
+      expect(match, `${name} en pipeline.py`).not.toBeNull();
+      expect(Number(match![1]), name).toBe(value);
+    }
+  });
+
+  it("S7: con varias categorías Python solo admite la primaria que eligió TS", () => {
+    expect(PIPELINE_PY).toContain(
+      `"multiclase": ("${MULTICLASS_PRIMARY_METRIC}",),`,
     );
   });
 

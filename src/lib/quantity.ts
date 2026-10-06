@@ -3,6 +3,7 @@
 // formatean con el MISMO separador decimal que el resto de la app (punto) y miles
 // con coma, en los dos idiomas, y con las cifras significativas justas para leer
 // la diferencia sin inventar precisión.
+import { MAX_BYTES, MAX_ROWS } from "@/lib/ds/csv";
 import { TARGET_DECIMALS_MAX } from "@/workers/contract";
 import type { TargetUnit } from "@/workers/protocol";
 
@@ -49,6 +50,16 @@ export function formatQuantity(value: number, decimals: number): string {
   return formatter.format(Number(value.toFixed(decimals)) === 0 ? 0 : value);
 }
 
+/** Una cifra de un perfil de grupo en las unidades del usuario: con los decimales que
+ *  pide su columna, y en notación científica si es diminuta (~1e-11 no es «0»). La
+ *  usan la pantalla y la model card de agrupar (S7, AU-S7-23: la card decía «0.00»). */
+export function profileNumber(value: number, decimals: number): string {
+  const abs = Math.abs(value);
+  return abs > 0 && abs < 1e-4
+    ? value.toExponential(2)
+    : formatQuantity(value, decimals);
+}
+
 /** «33.3 kWh» si la unidad se conoce; si no, el número solo (la UI dice de qué
  *  columna). Espacio NO separable: «33.3» y «kWh» nunca quedan en líneas distintas. */
 export function withUnit(text: string, unit: TargetUnit): string {
@@ -60,3 +71,17 @@ export function errorReductionPct(model: number, baseline: number): number {
   if (baseline === 0) return 0;
   return Math.round(((baseline - model) / baseline) * 100);
 }
+
+/** Un conteo con separador de miles: «8,000» en los dos idiomas, como toda cifra de
+ *  la app (design-system R9: punto decimal y miles con coma; con punto de miles,
+ *  «8.000» se leería como 8 en una pantalla que escribe «0.88»). Vive aquí y no en
+ *  content/modelos.ts: la portada la usa, y las fichas viajan en su propio chunk
+ *  (R12 del S5; S7: importarla desde las fichas las metía en la portada). */
+export const thousands = (n: number): string => formatQuantity(n, 0);
+
+/** S7 (AU-S7-03): el límite del CSV se escribe desde sus constantes (`MAX_BYTES`, `MAX_ROWS`),
+ *  nunca como cifra en el copy; las filas, con la regla de cifras de la app (R9). */
+export const csvLimitParams = (): { mb: number; rows: string } => ({
+  mb: MAX_BYTES / (1024 * 1024),
+  rows: thousands(MAX_ROWS),
+});

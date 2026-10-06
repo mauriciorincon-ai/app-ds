@@ -120,8 +120,9 @@ describe("buildTemplateNarrative", () => {
     );
     expect(withEda).toContain("id_cliente");
     expect(withEda).toContain("parece un identificador");
-    // La cifra viene del payload (determinista), no del LLM: 12%.
-    expect(withEda).toContain("12%");
+    // La cifra viene del payload (determinista), no del LLM: 12 % (R9: con espacio
+    // no separable en español, AU-S7-33).
+    expect(withEda).toContain("12\u00a0%");
     // Sin bloque eda ⇒ ninguna de esas frases.
     const plain = buildTemplateNarrative(payload());
     expect(plain).not.toContain("parece un identificador");

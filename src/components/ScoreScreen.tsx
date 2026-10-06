@@ -5,12 +5,18 @@
 // puntuado. El panel de novedad (categorías nunca vistas / fuera de rango)
 // SIEMPRE se muestra antes de descargar. El encabezado es el candidato LCP y
 // nace estático (patrón lcp-nace-estatico: sin motion, sin opacity inicial).
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { matchByTask } from "@/engine/despacho";
 import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
 import { modelFeatures } from "@/lib/ds/schema-check";
 import { inferUnit } from "@/lib/experiment";
-import { formatQuantity, withUnit } from "@/lib/quantity";
+import {
+  csvLimitParams,
+  formatQuantity,
+  thousands,
+  withUnit,
+} from "@/lib/quantity";
 import {
   buildScoredCsv,
   estimateSummary,
@@ -19,7 +25,15 @@ import {
   scoredCsvFileName,
 } from "@/lib/scored-csv";
 import type { ExportState, ModelMeta, ScoringState } from "@/lib/useExperiment";
-import type { ProgressStage } from "@/workers/protocol";
+import type {
+  BinaryScoreResult,
+  ClusterScoringSchema,
+  MulticlassScoreResult,
+  ProgressStage,
+  RegressionScoreResult,
+  ScoreResult,
+  SupervisedSchema,
+} from "@/workers/protocol";
 import { Button, Card, Icon, MetricTile } from "./ui";
 
 const PREVIEW_ROWS = 10;
@@ -30,7 +44,106 @@ const IMPORT_STAGES: ProgressStage[] = [
   "importing",
 ];
 
-export function ScoreScreen({
+type ScoreScreenProps<M> = {
+  meta: M;
+  ready: boolean;
+  progress: ProgressStage | null;
+  scoring: ScoringState;
+  exportState: ExportState;
+  onScoreFile: (csv: string, name: string) => void;
+  onScoreAnother: () => void;
+  onBackToResults: () => void;
+  onExit: () => void;
+  onExportModel: () => void;
+};
+
+/** El modelo activo de una tarea con objetivo. */
+type SupervisedMeta = Omit<ModelMeta, "schema"> & { schema: SupervisedSchema };
+
+type Scored = Extract<ScoringState, { status: "scored" }>;
+
+/** S7 (P2): puntuar con el modelo de cada tarea. Con objetivo se predice; al
+ *  agrupar se ASIGNA un grupo a cada fila nueva con la regla del modelo (P12). */
+export function ScoreScreen(props: ScoreScreenProps<ModelMeta>) {
+  const t = useT();
+  const supervised = (schema: SupervisedSchema) => {
+    const meta: SupervisedMeta = { ...props.meta, schema };
+    return (
+      <ScoreShell
+        {...props}
+        header={supervisedHeader(t, meta)}
+        neededNote={t("score.needed.noTarget", { target: schema.target })}
+        scored={(scoring) => (
+          <ScoredResults
+            meta={meta}
+            scoring={scoring}
+            onScoreAnother={props.onScoreAnother}
+          />
+        )}
+      />
+    );
+  };
+  return matchByTask(props.meta.schema, {
+    binaria: supervised,
+    multiclase: supervised,
+    numerica: supervised,
+    agrupar: (schema) => (
+      <ScoreShell
+        {...props}
+        header={{
+          subtitle: t("score.subtitleCluster"),
+          modelLine: t("score.modelLineCluster", {
+            dataset: props.meta.datasetName,
+            k: schema.groups,
+          }),
+        }}
+        neededNote={t("score.needed.cluster")}
+        scored={(scoring) => (
+          <ClusterScoredResults
+            schema={schema}
+            scoring={scoring}
+            onScoreAnother={props.onScoreAnother}
+          />
+        )}
+      />
+    ),
+  });
+}
+
+type Translate = ReturnType<typeof useT>;
+
+function supervisedHeader(t: Translate, meta: SupervisedMeta) {
+  return matchByTask(meta.schema, {
+    binaria: (schema) => ({
+      subtitle: t("score.subtitle"),
+      modelLine: t("score.modelLine", {
+        dataset: meta.datasetName,
+        target: schema.target,
+        positive: schema.positive_class,
+      }),
+    }),
+    multiclase: (schema) => ({
+      subtitle: t("score.subtitleMulticlass"),
+      modelLine: t("score.modelLineMulticlass", {
+        dataset: meta.datasetName,
+        target: schema.target,
+        count: schema.classes.length,
+      }),
+    }),
+    numerica: (schema) => ({
+      subtitle: t("score.subtitleQuantity"),
+      modelLine: t("score.modelLineQuantity", {
+        dataset: meta.datasetName,
+        target: schema.target,
+      }),
+    }),
+  });
+}
+
+/** Lo común de puntuar en todas las tareas: preparar el modelo, subir el CSV, el
+ *  bloqueo honesto por columnas, el error y exportar. Lo propio de cada tarea
+ *  llega por `header`, `neededNote` y `scored`. */
+function ScoreShell({
   meta,
   ready,
   progress,
@@ -41,17 +154,13 @@ export function ScoreScreen({
   onBackToResults,
   onExit,
   onExportModel,
-}: {
-  meta: ModelMeta;
-  ready: boolean;
-  progress: ProgressStage | null;
-  scoring: ScoringState;
-  exportState: ExportState;
-  onScoreFile: (csv: string, name: string) => void;
-  onScoreAnother: () => void;
-  onBackToResults: () => void;
-  onExit: () => void;
-  onExportModel: () => void;
+  header,
+  neededNote,
+  scored,
+}: ScoreScreenProps<ModelMeta> & {
+  header: { subtitle: string; modelLine: string };
+  neededNote: string;
+  scored: (scoring: Scored) => ReactNode;
 }) {
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -80,22 +189,9 @@ export function ScoreScreen({
         <h1 className="text-3xl font-semibold tracking-tight">
           {t("score.title")}
         </h1>
-        <p className="max-w-prose text-ink-muted">
-          {meta.schema.task === "numerica"
-            ? t("score.subtitleQuantity")
-            : t("score.subtitle")}
-        </p>
+        <p className="max-w-prose text-ink-muted">{header.subtitle}</p>
         <p className="font-mono text-sm tabular-nums text-ink-muted">
-          {meta.schema.task === "numerica"
-            ? t("score.modelLineQuantity", {
-                dataset: meta.datasetName,
-                target: meta.schema.target,
-              })
-            : t("score.modelLine", {
-                dataset: meta.datasetName,
-                target: meta.schema.target,
-                positive: meta.schema.positive_class,
-              })}
+          {header.modelLine}
         </p>
       </header>
 
@@ -124,7 +220,9 @@ export function ScoreScreen({
             }`}
           >
             <p>{t("score.dropzone.label")}</p>
-            <p className="text-sm text-ink-muted">{t("score.dropzone.hint")}</p>
+            <p className="text-sm text-ink-muted">
+              {t("score.dropzone.hint", csvLimitParams())}
+            </p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -164,9 +262,7 @@ export function ScoreScreen({
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-ink-muted">
-              {t("score.needed.noTarget", { target: meta.schema.target })}
-            </p>
+            <p className="text-sm text-ink-muted">{neededNote}</p>
           </section>
         </>
       )}
@@ -205,13 +301,7 @@ export function ScoreScreen({
         </p>
       )}
 
-      {scoring.status === "scored" && (
-        <ScoredResults
-          meta={meta}
-          scoring={scoring}
-          onScoreAnother={onScoreAnother}
-        />
-      )}
+      {scoring.status === "scored" && scored(scoring)}
 
       {scoring.status === "error" && (
         <div role="alert" className="flex flex-col items-start gap-3">
@@ -221,7 +311,7 @@ export function ScoreScreen({
           <p className="text-ink-muted">
             {scoring.kind === "runtime" || scoring.kind === "import-failed"
               ? t(`score.errors.${scoring.kind}`)
-              : t(`errors.${scoring.kind}`)}
+              : t(`errors.${scoring.kind}`, csvLimitParams())}
           </p>
           {scoring.kind !== "import-failed" && (
             <Button variant="secondary" icon="upload" onClick={onScoreAnother}>
@@ -304,42 +394,95 @@ function PreparingModel({ progress }: { progress: ProgressStage | null }) {
   );
 }
 
+type SupervisedScore =
+  BinaryScoreResult | MulticlassScoreResult | RegressionScoreResult;
+
+/** El lector valida el puntaje con el esquema del modelo activo: un puntaje de
+ *  agrupar para un modelo con objetivo no puede llegar; si llega, falla
+ *  nombrándose en vez de pintar grupos como clases. */
+function supervisedScore(score: ScoreResult): SupervisedScore {
+  return matchByTask(score, {
+    binaria: (s): SupervisedScore => s,
+    multiclase: (s): SupervisedScore => s,
+    numerica: (s): SupervisedScore => s,
+    agrupar: () => {
+      throw new Error(
+        "ScoreScreen: un puntaje de agrupar para un modelo con objetivo",
+      );
+    },
+  });
+}
+
 function ScoredResults({
   meta,
   scoring,
   onScoreAnother,
 }: {
-  meta: ModelMeta;
-  scoring: Extract<ScoringState, { status: "scored" }>;
+  meta: SupervisedMeta;
+  scoring: Scored;
   onScoreAnother: () => void;
 }) {
   const t = useT();
-  const { check, table, score, fileName } = scoring;
+  const { check, table, fileName } = scoring;
+  const score = supervisedScore(scoring.score);
   const { probabilities, novelty } = score;
   const { schema } = meta;
 
   // S6: al estimar, la columna nueva es «<objetivo>_estimado» con los decimales
   // con que el usuario escribió su objetivo; no hay probabilidad (no se inventa).
-  const quantity =
-    score.task === "numerica" && schema.task === "numerica"
-      ? { values: score.predictions, decimals: schema.target_stats.decimals }
-      : null;
-  const predictions =
-    score.task === "numerica"
-      ? formatEstimates(score.predictions, quantity?.decimals ?? 0)
-      : score.predictions;
+  const decimals = matchByTask(schema, {
+    binaria: () => null,
+    multiclase: () => null,
+    numerica: (quantitySchema) => quantitySchema.target_stats.decimals,
+  });
+  const quantity = matchByTask(score, {
+    binaria: () => null,
+    multiclase: () => null,
+    numerica: (estimated) =>
+      decimals === null ? null : { values: estimated.predictions, decimals },
+  });
+  const predictions = matchByTask(score, {
+    binaria: (classified) => classified.predictions,
+    multiclase: (classified) => classified.predictions,
+    numerica: (estimated) =>
+      formatEstimates(estimated.predictions, quantity?.decimals ?? 0),
+  });
 
-  const desiredNames = {
-    prediction:
-      schema.task === "numerica"
-        ? t("score.columns.estimate", { target: schema.target })
-        : t("score.columns.prediction"),
-    probability:
-      schema.task === "numerica"
-        ? ""
-        : t("score.columns.probability", { label: schema.positive_class }),
-  };
+  const desiredNames = matchByTask(schema, {
+    binaria: (binarySchema) => ({
+      prediction: t("score.columns.prediction"),
+      probability: t("score.columns.probability", {
+        label: binarySchema.positive_class,
+      }),
+    }),
+    // S7 (R11): la categoría predicha y la probabilidad de ESA categoría.
+    multiclase: (multiSchema) => ({
+      prediction: t("score.columns.predicted", { target: multiSchema.target }),
+      probability: t("score.columns.predictedProbability", {
+        target: multiSchema.target,
+      }),
+    }),
+    numerica: (quantitySchema) => ({
+      prediction: t("score.columns.estimate", {
+        target: quantitySchema.target,
+      }),
+      probability: "",
+    }),
+  });
   const names = resolveScoredColumnNames(table.headers, desiredNames);
+  // S7: con varias categorías, la probabilidad es la de la categoría predicha.
+  const probabilityNote = matchByTask(schema, {
+    binaria: () => null,
+    multiclase: () => t("score.multiclassProbabilityNote"),
+    numerica: () => null,
+  });
+  // Sin columna de probabilidad, por qué (AU-S7-36: «ordenar por riesgo» es de la
+  // binaria; con varias categorías no hay un riesgo que ordenar).
+  const noProbabilityNote = matchByTask(schema, {
+    binaria: () => t("score.noProbabilities"),
+    multiclase: () => t("score.noProbabilitiesMulticlass"),
+    numerica: () => t("score.quantityNote"),
+  });
 
   // Distribución de predicciones por clase (conteo simple, honesto). Al estimar
   // no hay clases: el resumen es mínimo · mediana · máximo.
@@ -361,10 +504,6 @@ function ScoredResults({
     );
   };
 
-  const noveltyPercent = Math.round(
-    (100 * novelty.affected_rows) / Math.max(novelty.n_rows, 1),
-  );
-
   return (
     <div className="flex flex-col gap-5">
       {(check.extra.length > 0 || check.targetPresent) && (
@@ -379,7 +518,9 @@ function ScoredResults({
             {check.extra.length > 0 && (
               <li>
                 {t("score.warnings.extra", {
-                  columns: check.extra.map((c) => `«${c}»`).join(", "),
+                  columns: check.extra
+                    .map((c) => t("common.quote", { text: c }))
+                    .join(", "),
                 })}
               </li>
             )}
@@ -393,43 +534,7 @@ function ScoredResults({
       )}
 
       {/* Panel de novedad: SIEMPRE visible antes de descargar. */}
-      <Card className="p-4">
-        {novelty.columns.length > 0 ? (
-          <div className="text-sm">
-            <p className="font-medium text-caution">
-              <span aria-hidden className="mr-1">
-                ⚠
-              </span>
-              {t("score.novelty.title")}
-            </p>
-            <ul className="mt-1 ml-5 list-disc">
-              {novelty.columns.map((column) => (
-                <li key={column.column}>
-                  {t(`score.novelty.${column.kind}`, {
-                    column: column.column,
-                    count: column.count,
-                  })}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 font-mono tabular-nums">
-              {t("score.novelty.summary", {
-                affected: novelty.affected_rows,
-                total: novelty.n_rows,
-                percent: noveltyPercent,
-              })}
-            </p>
-            <p className="mt-1 text-ink-muted">{t("score.novelty.hint")}</p>
-          </div>
-        ) : (
-          <p className="text-sm">
-            <span aria-hidden className="mr-1 text-positive">
-              ✓
-            </span>
-            {t("score.novelty.none")}
-          </p>
-        )}
-      </Card>
+      <NoveltyPanel novelty={novelty} />
 
       {quantity ? (
         <QuantitySummary
@@ -440,14 +545,14 @@ function ScoredResults({
       ) : (
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
-            {t("score.distribution.title", { rows: total })}
+            {t("score.distribution.title", { rows: thousands(total) })}
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:max-w-md">
             {[...counts.entries()].map(([label, count]) => (
               <MetricTile
                 key={label}
                 label={label}
-                value={`${count} (${percent(count)}%)`}
+                value={`${thousands(count)} (${t("common.percent", { n: percent(count) })})`}
               />
             ))}
           </div>
@@ -458,15 +563,16 @@ function ScoredResults({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
           {t("score.preview.title", {
             shown: Math.min(PREVIEW_ROWS, table.rows.length),
-            total: table.rows.length,
+            total: thousands(table.rows.length),
           })}
         </h2>
         {/* S5: ridge y el SVM lineal no dan probabilidad — se dice, no se inventa.
             S6: estimar tampoco la da, por otra razón (no hay clases). */}
         {!probabilities && (
-          <p className="text-sm text-ink-muted">
-            {quantity ? t("score.quantityNote") : t("score.noProbabilities")}
-          </p>
+          <p className="text-sm text-ink-muted">{noProbabilityNote}</p>
+        )}
+        {probabilities && probabilityNote && (
+          <p className="text-sm text-ink-muted">{probabilityNote}</p>
         )}
         {/* Región scrolleable accesible por teclado (axe: scrollable-region-focusable). */}
         <div
@@ -475,7 +581,7 @@ function ScoredResults({
           tabIndex={0}
           aria-label={t("score.preview.title", {
             shown: Math.min(PREVIEW_ROWS, table.rows.length),
-            total: table.rows.length,
+            total: thousands(table.rows.length),
           })}
         >
           <table className="w-full border-collapse text-sm">
@@ -556,7 +662,7 @@ function QuantitySummary({
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
-        {t("score.quantity.title", { count: n })}
+        {t("score.quantity.title", { count: n, rows: thousands(n) })}
       </h2>
       {stats && (
         <div className="grid grid-cols-3 gap-2 sm:max-w-md">
@@ -570,4 +676,236 @@ function QuantitySummary({
       )}
     </section>
   );
+}
+
+/** Valores que el modelo nunca vio (categorías nuevas, números fuera de rango):
+ *  SIEMPRE visible antes de descargar, en todas las tareas. */
+function NoveltyPanel({ novelty }: { novelty: ScoreResult["novelty"] }) {
+  const t = useT();
+  const noveltyPercent = Math.round(
+    (100 * novelty.affected_rows) / Math.max(novelty.n_rows, 1),
+  );
+  return (
+    <Card className="p-4">
+      {novelty.columns.length > 0 ? (
+        <div className="text-sm">
+          <p className="font-medium text-caution">
+            <span aria-hidden className="mr-1">
+              ⚠
+            </span>
+            {t("score.novelty.title")}
+          </p>
+          <ul className="mt-1 ml-5 list-disc">
+            {novelty.columns.map((column) => (
+              <li key={column.column}>
+                {t(`score.novelty.${column.kind}`, {
+                  column: column.column,
+                  count: column.count,
+                })}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 font-mono tabular-nums">
+            {t("score.novelty.summary", {
+              affected: thousands(novelty.affected_rows),
+              total: thousands(novelty.n_rows),
+              percent: noveltyPercent,
+            })}
+          </p>
+          <p className="mt-1 text-ink-muted">{t("score.novelty.hint")}</p>
+        </div>
+      ) : (
+        <p className="text-sm">
+          <span aria-hidden className="mr-1 text-positive">
+            ✓
+          </span>
+          {t("score.novelty.none")}
+        </p>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * S7 (P12): las filas nuevas con su GRUPO, asignado con la regla del agrupador
+ * (el centro más cercano, la mezcla gaussiana o el centro con su radio). Los
+ * grupos se numeran desde 1, como en Resultados; «fuera de todo grupo» solo
+ * existe si la regla lo admite (HDBSCAN). Solo la mezcla gaussiana da una
+ * probabilidad, la del grupo asignado.
+ */
+function ClusterScoredResults({
+  schema,
+  scoring,
+  onScoreAnother,
+}: {
+  schema: ClusterScoringSchema;
+  scoring: Scored;
+  onScoreAnother: () => void;
+}) {
+  const t = useT();
+  const { check, table, fileName } = scoring;
+  const score = matchByTask(scoring.score, {
+    agrupar: (s) => s,
+    binaria: () => clusterMismatch(),
+    multiclase: () => clusterMismatch(),
+    numerica: () => clusterMismatch(),
+  });
+  const { probabilities, novelty } = score;
+  const noise = t("cluster.noise.label");
+  const labels = score.predictions.map((g) =>
+    g === -1 ? noise : String(g + 1),
+  );
+  const names = {
+    prediction: t("cluster.labels.column"),
+    probability: t("score.columns.groupProbability"),
+  };
+  const resolved = resolveScoredColumnNames(table.headers, names);
+  const total = labels.length;
+  const percent = (n: number) => Math.round((100 * n) / Math.max(total, 1));
+  const counts = Array.from({ length: schema.groups }, (_, g) => ({
+    label: t("cluster.group", { n: g + 1 }),
+    count: score.predictions.filter((p) => p === g).length,
+  }));
+  const outside = score.predictions.filter((p) => p === -1).length;
+
+  const download = () => {
+    const csv = buildScoredCsv(table, labels, probabilities, names);
+    downloadTextFile(
+      scoredCsvFileName(fileName, t("score.fileSuffix")),
+      csv,
+      "text/csv;charset=utf-8",
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      {check.extra.length > 0 && (
+        <div className="rounded-md border border-caution/40 bg-caution/10 p-4 text-sm">
+          <p className="font-medium text-caution">
+            <span aria-hidden className="mr-1">
+              ⚠
+            </span>
+            {t("score.warnings.title")}
+          </p>
+          <ul className="mt-1 ml-5 list-disc">
+            <li>
+              {t("score.warnings.extra", {
+                columns: check.extra
+                  .map((c) => t("common.quote", { text: c }))
+                  .join(", "),
+              })}
+            </li>
+          </ul>
+        </div>
+      )}
+
+      <NoveltyPanel novelty={novelty} />
+
+      <p className="max-w-prose text-sm text-ink-muted">
+        {t(`cluster.assign.${schema.assign.method}`)}
+      </p>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
+          {t("score.groups.title", { count: total, rows: thousands(total) })}
+        </h2>
+        <div className="grid grid-cols-2 gap-2 sm:max-w-md">
+          {counts.map(({ label, count }) => (
+            <MetricTile
+              key={label}
+              label={label}
+              value={`${thousands(count)} (${t("common.percent", { n: percent(count) })})`}
+            />
+          ))}
+          {schema.noise && (
+            <MetricTile
+              label={noise}
+              value={`${thousands(outside)} (${t("common.percent", { n: percent(outside) })})`}
+            />
+          )}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
+          {t("score.preview.title", {
+            shown: Math.min(PREVIEW_ROWS, table.rows.length),
+            total: thousands(table.rows.length),
+          })}
+        </h2>
+        {probabilities && (
+          <p className="text-sm text-ink-muted">
+            {t("score.groupProbabilityNote")}
+          </p>
+        )}
+        <div
+          className="overflow-x-auto rounded-md border border-hairline"
+          role="region"
+          tabIndex={0}
+          aria-label={t("score.preview.title", {
+            shown: Math.min(PREVIEW_ROWS, table.rows.length),
+            total: thousands(table.rows.length),
+          })}
+        >
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-sunken text-left">
+                <th className="px-3 py-2 font-mono text-xs font-semibold">
+                  {resolved.prediction}
+                </th>
+                {probabilities && (
+                  <th className="px-3 py-2 font-mono text-xs font-semibold">
+                    {resolved.probability}
+                  </th>
+                )}
+                {table.headers.map((header) => (
+                  <th
+                    key={header}
+                    className="px-3 py-2 font-mono text-xs font-normal text-ink-muted"
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {table.rows.slice(0, PREVIEW_ROWS).map((row, index) => (
+                <tr key={index} className="border-t border-hairline">
+                  <td className="px-3 py-1.5 font-medium">{labels[index]}</td>
+                  {probabilities && (
+                    <td className="px-3 py-1.5 font-mono tabular-nums">
+                      {probabilities[index]!.toFixed(4)}
+                    </td>
+                  )}
+                  {row.map((cell, cellIndex) => (
+                    <td
+                      key={cellIndex}
+                      className="px-3 py-1.5 font-mono text-xs tabular-nums text-ink-muted"
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap gap-3">
+        <Button icon="download" onClick={download}>
+          {t("score.download")}
+        </Button>
+        <Button variant="secondary" icon="upload" onClick={onScoreAnother}>
+          {t("score.another")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** El lector valida el puntaje con el esquema del modelo activo: un puntaje con
+ *  objetivo para un agrupador no puede llegar; si llega, falla nombrándose. */
+function clusterMismatch(): never {
+  throw new Error("ScoreScreen: un puntaje con objetivo para un agrupador");
 }

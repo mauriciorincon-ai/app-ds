@@ -16,6 +16,7 @@ export function TrainingScreen({
   detail = null,
   level2 = null,
   estimateS = null,
+  cluster = false,
   onCancel,
 }: {
   stage: ProgressStage | null;
@@ -25,22 +26,31 @@ export function TrainingScreen({
   level2?: { count: number; estimateS: number } | null;
   /** S5: segundos estimados del Nivel 1 (la misma cifra que prometió Configuración). */
   estimateS?: number | null;
+  /** S7: agrupando (sin validación cruzada ni prueba): otro texto de la etapa. */
+  cluster?: boolean;
   onCancel?: () => void;
 }) {
   const t = useT();
   const activeIndex = stage ? STAGES.indexOf(stage) : 0;
-  // Avance de la liga: la CV de todos y luego el test de todos (dos vueltas).
-  const step = detail
-    ? (detail.phase === "cv" ? 0 : detail.total) + detail.index + 1
-    : 0;
-  const steps = detail ? detail.total * 2 : 0;
+  // Avance de la liga: la CV de todos y luego el test de todos (dos vueltas). S7:
+  // al agrupar, el barrido de cada agrupador y, al final, la lectura del ganador.
+  const steps = !detail
+    ? 0
+    : detail.phase === "cv" || detail.phase === "test"
+      ? detail.total * 2
+      : detail.total + 1;
+  const step = !detail
+    ? 0
+    : detail.phase === "cv" || detail.phase === "cluster"
+      ? detail.index + 1
+      : detail.total + (detail.phase === "test" ? detail.index + 1 : 1);
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">{t("training.title")}</h1>
       {level2 ? (
         <p className="font-mono text-sm tabular-nums">
-          {t("level2.running", {
+          {t(cluster ? "level2.cluster.running" : "level2.running", {
             count: level2.count,
             time: formatEstimate(level2.estimateS),
           })}
@@ -77,7 +87,9 @@ export function TrainingScreen({
                 <span
                   className={active ? "font-medium text-ink" : "text-ink-muted"}
                 >
-                  {t(`training.${s}`)}
+                  {cluster && s === "training"
+                    ? t("training.clustering")
+                    : t(`training.${s}`)}
                 </span>
               </li>
             );
@@ -95,7 +107,11 @@ export function TrainingScreen({
           </p>
           <div
             role="progressbar"
-            aria-label={t("training.training")}
+            // AU-S7-16: el nombre de la barra dice lo que pasa (al agrupar no hay
+            // validación cruzada ni conjunto de prueba).
+            aria-label={t(
+              cluster ? "training.clustering" : "training.training",
+            )}
             aria-valuemin={0}
             aria-valuemax={steps}
             aria-valuenow={step}
@@ -113,7 +129,10 @@ export function TrainingScreen({
           <Button variant="secondary" icon="stop" onClick={onCancel}>
             {t("level2.cancel")}
           </Button>
-          <p className="text-sm text-ink-muted">{t("level2.cancelHint")}</p>
+          {/* AU-S7-17: al agrupar, cancelar sí pierde algo (las filas con su grupo). */}
+          <p className="text-sm text-ink-muted">
+            {t(cluster ? "level2.cluster.cancelHint" : "level2.cancelHint")}
+          </p>
         </div>
       ) : (
         <p className="text-sm text-ink-muted">{t("training.wait")}</p>

@@ -83,36 +83,42 @@ describe("recordLeagueRun (S5, privacidad)", () => {
     );
   });
 
-  it("la forma de los datos es cerrada: ninguna clave fuera de los metadatos", () => {
-    recordLeagueRun({
-      task: "binaria",
-      competitors: 1,
-      level: 1,
-      elapsedMs: 10,
-      cancelled: false,
-    });
-    const data = addBreadcrumb.mock.calls[0]![0].data as Record<
-      string,
-      unknown
-    >;
-    expect(Object.keys(data).sort()).toEqual(
-      [
-        "cancelled",
-        "cols",
-        "competitors",
-        "elapsedMs",
-        "level",
-        "rows",
-        "task",
-      ].sort(),
-    );
-    // S6: la tarea es el único texto, y es un nombre cerrado de la app.
-    const { task, ...rest } = data;
-    expect(TRAIN_TASKS).toContain(task);
-    for (const value of Object.values(rest)) {
-      expect(["number", "boolean"]).toContain(
-        value === null ? "number" : typeof value,
+  // S7 (AU-S7-32, plan R9): la misma forma cerrada para CADA tarea, también varias categorías y
+  // agrupar: ni las clases ni los grupos ni sus nombres viajan en el breadcrumb.
+  it.each(TRAIN_TASKS)(
+    "la forma de los datos es cerrada con la tarea «%s»: ninguna clave fuera de los metadatos",
+    (tarea) => {
+      addBreadcrumb.mockClear();
+      recordLeagueRun({
+        task: tarea,
+        competitors: 1,
+        level: 1,
+        elapsedMs: 10,
+        cancelled: false,
+      });
+      const data = addBreadcrumb.mock.calls[0]![0].data as Record<
+        string,
+        unknown
+      >;
+      expect(Object.keys(data).sort()).toEqual(
+        [
+          "cancelled",
+          "cols",
+          "competitors",
+          "elapsedMs",
+          "level",
+          "rows",
+          "task",
+        ].sort(),
       );
-    }
-  });
+      // S6: la tarea es el único texto, y es un nombre cerrado de la app.
+      const { task, ...rest } = data;
+      expect(TRAIN_TASKS).toContain(task);
+      for (const value of Object.values(rest)) {
+        expect(["number", "boolean"]).toContain(
+          value === null ? "number" : typeof value,
+        );
+      }
+    },
+  );
 });

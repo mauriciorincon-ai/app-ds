@@ -12,6 +12,8 @@ import {
   type SharedId,
 } from "@/content/modelos";
 import { MLP_MIN_ROWS } from "@/engine/encarrilador";
+import { thousands } from "@/lib/quantity";
+import { AGGLO_MAX_ROWS, HDBSCAN_MIN_CLUSTER_SIZE } from "@/engine/verdict";
 import {
   ALL_MEMBER_IDS,
   MEMBER_IDS,
@@ -38,6 +40,15 @@ describe("fichas ↔ roster", () => {
           const key = `results.candidates.${kind}.${id}`;
           expect(translate(locale, key), `${locale} ${key}`).not.toBe(key);
         }
+  });
+
+  it("S7: las fichas de Agglomerative y HDBSCAN citan las constantes reales", () => {
+    expect(FICHAS.agglomerative.notFor.es).toContain(thousands(AGGLO_MAX_ROWS));
+    expect(FICHAS.agglomerative.notFor.en).toContain(thousands(AGGLO_MAX_ROWS));
+    expect(FICHAS.hdbscan.notFor.es).toContain(` ${HDBSCAN_MIN_CLUSTER_SIZE} filas`);
+    expect(FICHAS.hdbscan.notFor.en).toContain(` ${HDBSCAN_MIN_CLUSTER_SIZE} rows`);
+    // design-system R9: miles con coma en los dos idiomas (la app escribe «0.88»).
+    expect(thousands(8000)).toBe("8,000");
   });
 
   it("la ficha del MLP cita el umbral real del encarrilador", () => {

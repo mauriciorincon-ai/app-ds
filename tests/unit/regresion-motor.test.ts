@@ -30,6 +30,7 @@ import {
 } from "@/engine/leakage";
 import {
   ALL_MEMBER_IDS,
+  CLUSTER_MEMBER_IDS,
   isMemberOf,
   MEMBER_IDS,
   REGRESSION_MEMBER_IDS,
@@ -80,8 +81,8 @@ describe("E1: la tarea con la respuesta del usuario (D2)", () => {
     expect(resolveTask(detectTask(["si", "no"]), "numerica")).toBe("binaria");
   });
 
-  it("la UI ofrece entrenar las dos tareas desde la F2 (D4)", () => {
-    expect(TRAINABLE_TASKS).toEqual(["binaria", "numerica"]);
+  it("la UI ofrece entrenar la cantidad desde la F2 del S6 (D4), y varias categorías desde el S7", () => {
+    expect(TRAINABLE_TASKS).toEqual(["binaria", "multiclase", "numerica"]);
   });
 });
 
@@ -292,9 +293,14 @@ describe("roster y costos por tarea", () => {
       expect(positions.every((p) => p >= 0)).toBe(true);
       expect([...positions].sort((a, b) => a - b)).toEqual(positions);
     }
-    expect(new Set([...MEMBER_IDS, ...REGRESSION_MEMBER_IDS])).toEqual(
-      new Set(ALL_MEMBER_IDS),
-    );
+    // S7 (cambio esperado): agrupar suma su roster al mismo espacio de ids.
+    expect(
+      new Set([
+        ...MEMBER_IDS,
+        ...REGRESSION_MEMBER_IDS,
+        ...CLUSTER_MEMBER_IDS,
+      ]),
+    ).toEqual(new Set(ALL_MEMBER_IDS));
   });
 
   it("solo estiman los que existen como regresores (un logistic no estima cantidades)", () => {
@@ -466,10 +472,15 @@ describe("prepareRun por tarea", () => {
       ambiguousChoice: "numerica",
     });
     expect(asQuantity.ok && asQuantity.payload.task).toBe("numerica");
-    // «Clases» lleva a multiclase, que todavía no entrena (D2): se dice, no se adivina.
-    expect(
-      prepareRun(table, "ocupantes", 42, { ambiguousChoice: "multiclase" }),
-    ).toEqual({ ok: false, error: "target-not-binary" });
+    // S7 (D2 pagada; cambio esperado, R13): «Categorías» entrena como varias
+    // categorías — el motor ya la sabe entrenar.
+    const asClasses = prepareRun(table, "ocupantes", 42, {
+      ambiguousChoice: "multiclase",
+    });
+    expect(asClasses.ok && asClasses.payload.task).toBe("multiclase");
+    expect(asClasses.ok && asClasses.payload.primary_metric).toBe(
+      "balanced_accuracy",
+    );
   });
 
   it("precio SIN la columna plantada: entrena sin aviso de fuga (AC2, AU-S6-22)", () => {

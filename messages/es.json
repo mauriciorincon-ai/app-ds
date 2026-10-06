@@ -9,14 +9,16 @@
     "en": "English"
   },
   "common": {
-    "loading": "Cargando…"
+    "loading": "Cargando…",
+    "quote": "«{text}»",
+    "percent": "{n} %"
   },
   "start": {
     "title": "Empieza tu experimento",
     "subtitle": "Sube un CSV o elige un ejemplo. Todo corre en tu navegador; tus datos nunca salen de él.",
     "dropzone": {
       "label": "Arrastra un CSV aquí o haz clic para elegir",
-      "hint": "Hasta 5 MB o 50 000 filas",
+      "hint": "Hasta {mb} MB o {rows} filas",
       "button": "Elegir archivo"
     },
     "examples": {
@@ -40,6 +42,14 @@
       "consumo": {
         "name": "Consumo de energía",
         "desc": "¿Cuántos kWh gasta una casa? Estima una cantidad y mira cuánto se equivoca."
+      },
+      "planes": {
+        "name": "Planes de suscripción",
+        "desc": "¿Qué plan elige cada cliente? Cinco categorías: mira contra qué se compara y dónde se confunde."
+      },
+      "segmentos": {
+        "name": "Segmentos de clientes",
+        "desc": "Sin objetivo: agrupa clientes parecidos y mira qué distingue a cada grupo."
       }
     },
     "import": {
@@ -66,10 +76,20 @@
         "chosen": "◆ Elegido por ti, no por la validación cruzada (el ganador de la validación cruzada era {winner}). Si se eligió mirando la prueba, la métrica puede ser optimista.",
         "cv": "Elegido por validación cruzada de {k} pliegues entre {count} modelos.",
         "cv_one": "Elegido por validación cruzada de {k} pliegues (compitió 1 modelo).",
-        "targetQuantity": "Estima «{target}», una cantidad"
+        "targetQuantity": "Estima «{target}», una cantidad",
+        "targetMulticlass": "Clasifica «{target}» en {count} categorías",
+        "cluster": "Agrupa filas sin objetivo: {k} grupos, con {model}",
+        "reading": {
+          "exist": "Lectura al entrenar: los grupos existen",
+          "fragile": "Lectura al entrenar: los grupos eran frágiles",
+          "none": "Lectura al entrenar: no había estructura de grupos"
+        },
+        "clusterChosen": "◆ Elegido por ti (el ganador de la comparación era {winner}).",
+        "clusterWinner": "Ganador entre {count} agrupadores ({k} grupos).",
+        "clusterWinner_one": "Ganador entre 1 agrupador ({k} grupos)."
       },
       "errors": {
-        "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. 100 MB). No se leyó.",
+        "file-too-large": "Ese archivo es demasiado grande para ser un modelo de Probeta (máx. {mb} MB). No se leyó.",
         "invalid-json": "Ese archivo no es un JSON válido.",
         "invalid-format": "Ese archivo no parece un modelo exportado por Probeta.",
         "unsupported-version": "Ese archivo viene de una versión del formato de Probeta que esta app no soporta.",
@@ -87,8 +107,9 @@
     "target": {
       "label": "¿Qué quieres predecir?",
       "placeholder": "Elige una columna…",
-      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. Esta versión entrena las de dos categorías (sí/no, 0/1) y las cantidades (un precio, un consumo, un tiempo).",
-      "option": "{column} · {task}"
+      "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. La app entrena las de dos categorías (sí/no, 0/1), las de varias categorías (hasta {max}, como un plan o una región) y las cantidades (un precio, un consumo, un tiempo). Si no hay nada que predecir, elige «Sin objetivo» para agrupar filas parecidas.",
+      "option": "{column} · {task}",
+      "cluster": "Sin objetivo: agrupar filas parecidas"
     },
     "profile": {
       "numeric": "numérica",
@@ -119,10 +140,15 @@
       "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
       "target-skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores muy grandes pesan mucho. El error medio (MAE) trata cada error igual; el RMSE castiga más los errores en esos valores grandes.",
       "target-outliers": "{share} % de los valores del objetivo están muy lejos del resto (más de 3 rangos intercuartílicos). Revisa si son errores de captura antes de entrenar: pueden mover mucho al modelo.",
-      "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate}% de los datos. El veredicto lo tiene en cuenta (usa AUC)."
+      "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate} % de los datos. El veredicto lo tiene en cuenta (usa AUC).",
+      "imbalanceMulticlass": "La categoría más chica, «{class}», es el {rate} % de las filas. El veredicto usa la exactitud balanceada, que pesa igual cada categoría.",
+      "possible-leak-class": "«{column}» separa casi a la perfección la categoría «{class}» del resto: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo."
     },
     "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
-    "trainHint_one": "Nivel 1: 1 modelo · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor)."
+    "trainHint_one": "Nivel 1: 1 modelo · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
+    "cluster": "Agrupar filas",
+    "clusterHint": "Compiten {count} agrupadores ahora, unos {time} en un computador de escritorio.",
+    "clusterHint_one": "Compite 1 agrupador ahora, unos {time} en un computador de escritorio."
   },
   "training": {
     "title": "Entrenando…",
@@ -133,8 +159,11 @@
     "estimate": "Unos {time} de cálculo en un computador de escritorio (en un móvil, el doble o más).",
     "member": {
       "cv": "Validación cruzada · modelo {index} de {total}: {model}",
-      "test": "Conjunto de prueba · modelo {index} de {total}: {model}"
-    }
+      "test": "Conjunto de prueba · modelo {index} de {total}: {model}",
+      "cluster": "Buscando grupos · agrupador {index} de {total}: {model}",
+      "stability": "Comprobando si los grupos de {model} existen: contra datos sin estructura y re-muestreando tus filas"
+    },
+    "clustering": "Buscando grupos: cada agrupador prueba varios números de grupos; al final se lee el ganador contra datos sin estructura…"
   },
   "results": {
     "title": "Veredicto",
@@ -146,8 +175,9 @@
       "beatsDetail": "por {delta} en {metric} — {model} frente a {baseline} del mejor baseline",
       "tiesDetail": "un modelo simple rinde igual: {model} frente a {baseline}. Con estas columnas no hay señal extra que aprender — suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo.",
       "losesDetail": "un modelo simple rinde mejor: {model} frente a {baseline}. Tus columnas actuales no aportan señal suficiente sobre el objetivo — prueba con variables más relacionadas con lo que quieres predecir.",
-      "suspicious": "Métricas casi perfectas — sospechoso",
-      "suspiciousDetail": "Un resultado perfecto casi siempre esconde una fuga, no un gran modelo.",
+      "suspicious": "Posible fuga de datos — sospechoso",
+      "suspiciousDetail": "Una columna predice el objetivo casi a la perfección en las filas donde tiene valor. Las cifras de abajo pueden estar infladas aunque no parezcan perfectas.",
+      "suspiciousClassDetail": "Una columna separa una categoría del resto casi a la perfección. Las cifras de abajo pueden estar infladas aunque no parezcan perfectas.",
       "chosenNote": "◆ Elegido por ti, no por la validación cruzada. Si lo elegiste mirando la prueba, este número puede ser optimista.",
       "logisticTie": "La liga no encontró nada mejor que la regresión de referencia",
       "logisticTieDetail": "Ningún modelo superó en validación cruzada, por más de un error estándar, a la regresión logística, que también es el baseline. Con estas columnas no hay señal extra que aprender: suele ayudar más añadir variables relacionadas con el objetivo que cambiar de modelo."
@@ -163,7 +193,11 @@
       "rmse": "RMSE",
       "r2": "R²",
       "medae": "MedAE",
-      "mape": "MAPE"
+      "mape": "MAPE",
+      "balanced_accuracy": "Exactitud balanceada",
+      "f1_macro": "F1 macro",
+      "log_loss": "Pérdida logarítmica",
+      "auc_ovr": "AUC uno contra el resto"
     },
     "confusion": {
       "title": "Matriz de confusión (prueba)",
@@ -183,7 +217,8 @@
       "title": "Posible fuga de datos",
       "finding": "La columna «{column}» podría ser un proxy del objetivo.",
       "hint": "Quítala y vuelve a entrenar para ver el rendimiento honesto.",
-      "none": "No detectamos fugas evidentes (el chequeo es una ayuda, no una garantía)."
+      "none": "No detectamos fugas evidentes (el chequeo es una ayuda, no una garantía).",
+      "findingClass": "La columna «{column}» separa casi a la perfección la categoría «{class}» del resto: podría ser un proxy del objetivo."
     },
     "again": "Nuevo experimento",
     "use": {
@@ -214,7 +249,11 @@
         "extra_trees": "Extra Trees (200 árboles)",
         "forest": "Random Forest (200 árboles)",
         "forest_balanced": "Random Forest balanceado (200 árboles)",
-        "mlp": "Red neuronal (MLP, 64 neuronas)"
+        "mlp": "Red neuronal (MLP, 64 neuronas)",
+        "kmeans": "K-Means (k medias)",
+        "agglomerative": "Agrupamiento jerárquico (Ward)",
+        "gmm": "Mezcla gaussiana (GMM)",
+        "hdbscan": "HDBSCAN (por densidad)"
       },
       "short": {
         "logistic": "Regresión logística",
@@ -232,7 +271,11 @@
         "extra_trees": "Extra Trees",
         "forest": "Random Forest",
         "forest_balanced": "Random Forest balanceado",
-        "mlp": "Red neuronal"
+        "mlp": "Red neuronal",
+        "kmeans": "K-Means",
+        "agglomerative": "Jerárquico",
+        "gmm": "GMM",
+        "hdbscan": "HDBSCAN"
       },
       "regressionModel": {
         "ridge": "Regresión Ridge"
@@ -280,6 +323,19 @@
       },
       "baselinesNote": "Los baselines no compiten: miden si la liga aporta algo. La mediana es la constante que menos se equivoca en promedio; la regresión lineal, la recta más simple.",
       "testNote": "El veredicto, las métricas, el gráfico y los baselines se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento. La tabla de la liga usa validación cruzada dentro del entrenamiento: sirve para elegir."
+    },
+    "multiclass": {
+      "guide": "Mira la exactitud balanceada: de cada categoría, qué parte acierta, en promedio. Con {k} categorías, adivinar al azar da {chance}; 1.00 sería acertar siempre. La exactitud a secas puede engañar si una categoría domina.",
+      "noProbabilities": "Este modelo decide la categoría pero no da probabilidades: por eso la pérdida logarítmica y el AUC quedan en «—».",
+      "topConfusion": "La confusión más frecuente: filas de «{real}» que el modelo tomó por «{predicted}» ({count} en la prueba).",
+      "noConfusion": "En la prueba, el modelo no confundió ninguna categoría con otra.",
+      "testNote": "El veredicto, la matriz, las métricas por categoría y los baselines se calculan sobre el conjunto de prueba, nunca sobre el de entrenamiento. La tabla de la liga usa validación cruzada dentro del entrenamiento: sirve para elegir; esto sirve para creer.",
+      "confusionHow": "Cada fila es la categoría real; cada columna, la que predijo el modelo. ✓ marca los aciertos (la diagonal); todo lo demás son confusiones.",
+      "realPredicted": "Real ↓ · Predicha →",
+      "hit": "acierto:",
+      "perClass": "Por categoría (prueba)",
+      "class": "Categoría",
+      "support": "Filas de prueba"
     }
   },
   "score": {
@@ -292,12 +348,13 @@
     },
     "dropzone": {
       "label": "Arrastra tu CSV nuevo aquí o haz clic para elegir",
-      "hint": "Hasta 5 MB o 50 000 filas",
+      "hint": "Hasta {mb} MB o {rows} filas",
       "button": "Elegir archivo"
     },
     "needed": {
       "title": "Columnas que el modelo necesita",
-      "noTarget": "No incluyas «{target}»: aquí el modelo predice, no se evalúa. Si viene, se ignora."
+      "noTarget": "No incluyas «{target}»: aquí el modelo predice, no se evalúa. Si viene, se ignora.",
+      "cluster": "Al agrupar no hay objetivo: basta con estas columnas. Las demás se ignoran."
     },
     "blocked": {
       "title": "No se puede puntuar «{name}»",
@@ -315,7 +372,7 @@
       "title": "El modelo está viendo cosas nuevas",
       "numeric": "«{column}»: {count} valores fuera del rango visto en el entrenamiento",
       "categorical": "«{column}»: {count} valores con categorías nunca vistas en el entrenamiento",
-      "summary": "El modelo está adivinando en {affected} de {total} filas ({percent}%).",
+      "summary": "El modelo está adivinando en {affected} de {total} filas ({percent} %).",
       "hint": "En esas filas la predicción es menos confiable: el modelo nunca vio valores así al entrenar.",
       "none": "Sin novedades: todos los valores están dentro de lo que el modelo vio al entrenar.",
       "numeric_one": "«{column}»: 1 valor fuera del rango visto en el entrenamiento",
@@ -330,7 +387,10 @@
     "columns": {
       "prediction": "prediccion",
       "probability": "probabilidad_{label}",
-      "estimate": "{target}_estimado"
+      "estimate": "{target}_estimado",
+      "predicted": "{target}_predicho",
+      "predictedProbability": "{target}_probabilidad",
+      "groupProbability": "grupo_probabilidad"
     },
     "fileSuffix": "puntuado",
     "download": "Descargar CSV puntuado",
@@ -345,13 +405,24 @@
     "subtitleQuantity": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la cantidad estimada para cada fila. Todo ocurre en tu navegador.",
     "modelLineQuantity": "Modelo: {dataset} · estima: {target}",
     "quantity": {
-      "title": "Estimaciones ({count} filas)",
+      "title": "Estimaciones ({rows} filas)",
       "title_one": "Estimaciones (1 fila)",
       "min": "Mínimo",
       "median": "Mediana",
       "max": "Máximo"
     },
-    "quantityNote": "Estimar no da una probabilidad: cada fila trae su cantidad estimada, con los decimales con que escribiste el objetivo."
+    "quantityNote": "Estimar no da una probabilidad: cada fila trae su cantidad estimada, con los decimales con que escribiste el objetivo.",
+    "subtitleMulticlass": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la categoría predicha y su probabilidad para cada fila. Todo ocurre en tu navegador.",
+    "modelLineMulticlass": "Modelo: {dataset} · objetivo: {target} · {count} categorías",
+    "multiclassProbabilityNote": "La probabilidad es la de la categoría predicha: qué tan seguro está el modelo de esa fila. Con varias categorías puede ser baja aunque la predicha sea la más probable.",
+    "subtitleCluster": "Sube un CSV nuevo con las columnas que usa el agrupamiento y la app le asigna un grupo a cada fila, con la misma regla. Todo ocurre en tu navegador.",
+    "modelLineCluster": "Modelo: {dataset} · {k} grupos",
+    "groups": {
+      "title": "Grupos asignados ({rows} filas)",
+      "title_one": "Grupos asignados (1 fila)"
+    },
+    "groupProbabilityNote": "La probabilidad es la del grupo asignado, según la mezcla gaussiana.",
+    "noProbabilitiesMulticlass": "Este modelo decide la categoría pero no da una probabilidad, así que esa columna no se incluye."
   },
   "why": {
     "title": "¿Por qué predice así?",
@@ -363,7 +434,8 @@
       "negative": "▼ a mayor valor, menos probable que «{target}» sea «{positive}»",
       "categorical": "· el efecto varía según la categoría (no hay una sola dirección)",
       "unclear": "· sin dirección clara (no empuja de forma consistente hacia un lado)",
-      "unused": "· el modelo no se apoya en esta variable (quitarla no le haría perder precisión)"
+      "unused": "· el modelo no se apoya en esta variable (quitarla no le haría perder precisión)",
+      "multiclass": "· con varias categorías no hay una sola dirección: puede volver más probable una categoría y menos otra"
     },
     "narration": {
       "title": "En palabras",
@@ -380,7 +452,8 @@
         "provider": "El proveedor de IA no respondió. Puedes volver a intentarlo.",
         "rejected": "La narración de la IA no pasó la verificación contra los números; por honestidad no se muestra. Puedes volver a intentarlo."
       },
-      "aiNotForQuantity": "La narración con IA solo cubre la clasificación en dos categorías. Al estimar una cantidad, la lectura es el texto estándar de arriba, que sale de los mismos números."
+      "aiNotForQuantity": "La narración con IA solo cubre la clasificación en dos categorías. Al estimar una cantidad, la lectura es el texto estándar de arriba, que sale de los mismos números.",
+      "aiNotForMulticlass": "La narración con IA solo cubre la clasificación en dos categorías. Con varias categorías, la lectura es el texto estándar de arriba, que sale de los mismos números."
     },
     "legend": "La barra mide cuánto IMPORTA cada variable; la línea de abajo dice hacia dónde EMPUJA. Una variable puede pesar mucho y no tener una sola dirección: eso no la hace irrelevante.",
     "positiveClass": "El modelo predice la columna «{target}». La clase que intenta detectar (la menos frecuente) es «{positive}».",
@@ -388,7 +461,8 @@
       "positive": "▲ a mayor valor, mayor «{target}»",
       "negative": "▼ a mayor valor, menor «{target}»"
     },
-    "quantityNote": "El modelo estima la columna «{target}». La barra mide cuánto crece su error (MAE) si se rompe la relación de esa variable con el objetivo."
+    "quantityNote": "El modelo estima la columna «{target}». La barra mide cuánto crece su error (MAE) si se rompe la relación de esa variable con el objetivo.",
+    "multiclassNote": "El modelo clasifica la columna «{target}» en {count} categorías. La barra mide cuánto baja la exactitud balanceada si se rompe la relación de esa variable con el objetivo."
   },
   "card": {
     "title": "Model card",
@@ -415,7 +489,7 @@
       "method": "La importancia se midió por permutación sobre el conjunto de prueba (datos que el modelo no vio al entrenar).",
       "leakage": "Atención: {columns} podría contener la respuesta (posible fuga); estas cifras pueden estar infladas.",
       "idLike": "Además, {columns} parece un identificador: aporta poco para generalizar.",
-      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate}%); por eso la métrica principal es el AUC.",
+      "imbalance": "El objetivo está desbalanceado (la clase minoritaria es {rate} %); por eso la métrica principal es el AUC.",
       "metricHelp": {
         "accuracy": "proporción de aciertos sobre el total, de 0 a 1",
         "precision": "de los casos que marcó como positivos, cuántos lo eran de verdad, de 0 a 1",
@@ -437,6 +511,13 @@
         },
         "skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores grandes pesan mucho en el error.",
         "outliers": "El {share} % de los valores del objetivo están muy lejos del resto: el RMSE los castiga más que el MAE."
+      },
+      "multiclass": {
+        "metricNote": "La métrica principal aquí es la exactitud balanceada: de cada categoría, qué parte acierta, en promedio. Con {k} categorías, adivinar da {chance} y 1.00 sería acertar siempre. El F1 macro es {f1}.",
+        "noDirection": "Con varias categorías una variable no empuja en una sola dirección: puede volver más probable una categoría y menos otra.",
+        "leakage": "Atención: {columns} podría delatar una categoría (posible fuga); estas cifras pueden estar infladas.",
+        "leakageItem": "{column} (categoría «{class}»)",
+        "imbalance": "La categoría más chica, «{class}», es el {rate} % de las filas; por eso la métrica principal es la exactitud balanceada, que pesa igual cada categoría."
       }
     }
   },
@@ -455,13 +536,19 @@
       "limits": "Límites",
       "sanitation": "Saneamiento",
       "selection": "Selección del modelo",
-      "estimate": "Estimación"
+      "estimate": "Estimación",
+      "multiclass": "Categorías (sobre prueba)",
+      "clusterLeague": "Los agrupadores (sirve para elegir)",
+      "clusterReading": "Lectura (sirve para creer)",
+      "clusterGroups": "Los grupos",
+      "clusterAssign": "Asignar filas nuevas"
     },
     "data": {
       "dataset": "Dataset: {name}",
       "shape": "{rows} filas × {cols} columnas ({numeric} predictores numéricos, {categorical} categóricos)",
       "target": "Objetivo: «{target}» (clasificación binaria; clase positiva: «{positive}»)",
-      "targetQuantity": "Objetivo: «{target}» (estimar una cantidad)"
+      "targetQuantity": "Objetivo: «{target}» (estimar una cantidad)",
+      "targetMulticlass": "Objetivo: «{target}» (clasificación en {count} categorías)"
     },
     "split": {
       "sizes": "Entrenamiento: {train} filas · Prueba: {test} filas (estratificado, semilla {seed}).",
@@ -473,7 +560,8 @@
       "models": "Candidatos comparados: {candidates}. Modelo elegido: {model}.",
       "rareCategories": "Categorías raras agrupadas (aprendido solo de entrenamiento): {cols}.",
       "baselines": "Baselines: clase mayoritaria y regresión logística.",
-      "baselinesQuantity": "Baselines: la mediana del objetivo y la regresión lineal."
+      "baselinesQuantity": "Baselines: la mediana del objetivo y la regresión lineal.",
+      "baselinesMulticlass": "Baselines: clase mayoritaria y regresión logística multinomial."
     },
     "metrics": {
       "metric": "Métrica",
@@ -481,7 +569,8 @@
     },
     "verdict": {
       "primary": "Métrica principal: {metric}.",
-      "primaryQuantity": "Métrica principal: MAE, el error promedio en las unidades del objetivo (menor es mejor); empata si queda a menos del 1 % del mejor baseline."
+      "primaryQuantity": "Métrica principal: MAE, el error promedio en las unidades del objetivo (menor es mejor); empata si queda a menos del 1 % del mejor baseline.",
+      "primaryMulticlass": "Métrica principal: exactitud balanceada (de cada categoría, qué parte acierta, en promedio). Con {k} categorías, adivinar al azar da {chance}."
     },
     "leakage": {
       "found": "Columnas sospechosas de fuga: {columns}. Las métricas pueden estar infladas; quítalas y vuelve a entrenar.",
@@ -498,8 +587,8 @@
     "limits": {
       "leakage": "El chequeo de fuga atrapa casos evidentes; no es una garantía.",
       "explainability": "La importancia por permutación es global (no por predicción) y puede repartirse entre variables correlacionadas; la dirección es univariada y no captura interacciones.",
-      "dates": "Las columnas de fecha se detectan pero aún no se usan (sin partición temporal).",
-      "tasks": "Esta versión entrena dos tareas: la clasificación en dos categorías y la estimación de una cantidad. Varias categorías llegan en una próxima versión."
+      "dates": "Las columnas de fecha se detectan y no se usan para entrenar (no hay partición temporal).",
+      "tasks": "La app hace estas tareas y ninguna otra: clasificar en dos categorías, clasificar en varias categorías (hasta {max}), estimar una cantidad y agrupar filas sin objetivo."
     },
     "sanitation": {
       "duplicates": "Se quitaron {count} filas duplicadas exactas (previene fuga por duplicación).",
@@ -527,17 +616,49 @@
       "targetStats_one": "El objetivo en el entrenamiento: media {mean}, desviación {std}, mínimo {min}, mediana {median}, máximo {max} (escrito con 1 decimal).",
       "errors": "Errores en las {total} filas de prueba (estimado − real): la mitad queda entre {p25} y {p75}; 9 de cada 10 se equivocan por menos de ±{abs90}.",
       "noAi": "Narración con IA: no aplica a estimar una cantidad (solo cubre la clasificación en dos categorías)."
+    },
+    "multiclass": {
+      "confusion": "Matriz de confusión: cada fila es la categoría real; cada columna, la que predijo el modelo. La diagonal son los aciertos.",
+      "direction": "sin una sola dirección (varias categorías)",
+      "noAi": "Narración con IA: no aplica. Solo narra la clasificación en dos categorías; con varias, la lectura es el texto estándar."
+    },
+    "cluster": {
+      "shape": "{rows} filas × {cols} columnas",
+      "task": "Tarea: agrupar filas parecidas, sin objetivo (no hay conjunto de prueba ni veredicto contra un baseline).",
+      "distanceNumeric": "El parecido se mide con {count} columnas numéricas ({columns}); las categóricas ({categorical}) solo describen los grupos.",
+      "distanceAll": "El parecido se mide con todas las columnas, numéricas y categóricas ({columns}), porque hay menos de dos numéricas.",
+      "pipeline": "Imputación, escalado y one-hot dentro de un Pipeline de scikit-learn, ajustado sobre todas las filas: al agrupar no hay partición ni prueba (semilla {seed}).",
+      "members": "Compitieron {count} agrupadores probando de {min} a {max} grupos: {how}.",
+      "kBy": {
+        "silhouette": "{models} eligen por silueta (sobre una muestra de {sample} filas)",
+        "silhouette_one": "{models} elige por silueta (sobre una muestra de {sample} filas)",
+        "bic": "{models} eligen por BIC",
+        "bic_one": "{models} elige por BIC",
+        "density": "{models} los encuentran por densidad",
+        "density_one": "{models} los encuentra por densidad"
+      },
+      "consensus": "Ganó por consenso: {votes} de {voters} agrupadores encontraron {k} grupos, y entre ellos {model} tuvo el mayor puntaje.",
+      "chosen": "◆ Elegido por ti: {model} (el ganador de la comparación era {winner}).",
+      "noLeakage": "No aplica: al agrupar no hay objetivo que una columna pueda delatar.",
+      "noAi": "Narración con IA: no aplica. Solo narra la clasificación en dos categorías.",
+      "limits": {
+        "cause": "Los grupos describen tus filas; no prueban que haya una causa detrás ni que se repitan en otros datos.",
+        "silhouette": "La silueta se mide sobre una muestra sembrada de hasta {sample} filas, la misma para todos los agrupadores.",
+        "agglomerative": "Con más de {max} filas, el jerárquico se ajusta sobre una muestra y asigna el resto al grupo más cercano, para no agotar la memoria del navegador."
+      },
+      "noConsensus": "Ganó por puntaje: no hubo consenso entre los {voters} agrupadores (cada uno encontró un número distinto de grupos), y {model} tuvo el mayor puntaje.",
+      "limitsDates": "Las columnas de fecha no entran al parecido: se listan arriba con su razón.",
+      "rareCategories": "Categorías raras agrupadas (aprendido de todas tus filas: al agrupar no hay partición): {cols}."
     }
   },
   "errors": {
     "title": "Algo no cuadra",
     "csv-empty": "El archivo está vacío o solo tiene la cabecera.",
-    "csv-too-large": "El archivo supera el límite de 5 MB.",
-    "csv-too-many-rows": "El archivo supera las 50 000 filas.",
+    "csv-too-large": "El archivo supera el límite de {mb} MB.",
+    "csv-too-many-rows": "El archivo supera las {rows} filas.",
     "csv-ragged": "Hay filas con distinto número de columnas que la cabecera.",
     "csv-semicolon": "Tu archivo separa las columnas con punto y coma (;), no con comas, así que no se reconoce ninguna columna. Suele pasar al guardar desde Excel en español. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "csv-tab": "Tu archivo separa las columnas con tabulaciones, no con comas, así que no se reconoce ninguna columna. Vuelve a guardarlo como «CSV (delimitado por comas)» y cárgalo otra vez.",
-    "target-not-binary": "El objetivo debe tener exactamente dos categorías.",
     "target-not-numeric": "Para estimar una cantidad, el objetivo tiene que ser un número en todas las filas, y esta columna trae valores que no lo son. Revísala en tu CSV o elige otra columna.",
     "target-ambiguous": "Esta columna puede guardar categorías o una cantidad, y falta tu respuesta. Responde la pregunta de la tarjeta «Tipo de predicción» y vuelve a entrenar.",
     "no-features": "No hay columnas utilizables como predictores.",
@@ -548,8 +669,14 @@
     "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
     "too-few-rows-quantity": "Hay muy pocas filas para estimar una cantidad con honestidad: la prueba necesita al menos 2 filas que el modelo no vio al entrenar. Prueba con más filas.",
     "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo.",
-    "target-mixed-notation": "Tu objetivo tiene 2 valores, pero escritos de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalos en tu CSV y vuelve a cargarlo.",
-    "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas."
+    "target-mixed-notation": "Tu objetivo tiene clases escritas de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalas en tu CSV y vuelve a cargarlo.",
+    "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas.",
+    "too-few-rows-per-class": "Una de las categorías tiene muy pocas filas para comparar modelos con honestidad: la validación cruzada necesita al menos 2 filas de cada categoría en el conjunto de entrenamiento. Prueba con más filas o junta las categorías más raras en una sola.",
+    "too-few-rows-cluster": "Hay muy pocas filas para agrupar con honestidad: para saber si los grupos se sostienen, la app los vuelve a buscar en partes de tus datos, y cada parte necesita más filas que grupos. Prueba con más filas.",
+    "target-not-usable": "Esta columna no sirve como objetivo: tiene un solo valor, está vacía o tiene demasiados valores distintos para ser categorías. Elige otra columna, o agrupa filas parecidas sin objetivo.",
+    "too-few-rows-per-class-named": "La categoría «{class}» tiene solo {rows} filas en el conjunto de entrenamiento, y la validación cruzada necesita al menos 2 de cada categoría para comparar modelos con honestidad. Prueba con más filas o junta las categorías más raras en una sola.",
+    "chunk": "No se pudo cargar esta parte de la app. Revisa tu conexión y vuelve a intentarlo; tus datos siguen solo en este navegador.",
+    "too-few-rows-per-class-named_one": "La categoría «{class}» tiene solo 1 fila en el conjunto de entrenamiento, y la validación cruzada necesita al menos 2 de cada categoría para comparar modelos con honestidad. Prueba con más filas o junta las categorías más raras en una sola."
   },
   "task": {
     "title": "Tipo de predicción",
@@ -572,8 +699,7 @@
     "suggested": "Lo más probable: {task}.",
     "blocked": "Es un tipo de predicción que la app entrena, pero con estos datos no se pueden comparar modelos con honestidad (el motivo está abajo).",
     "trainable": "Se puede entrenar.",
-    "notYet": "Esta versión todavía no entrena este tipo de predicción: llega en una próxima versión. Por ahora, elige una columna con dos categorías o con una cantidad.",
-    "notUsable": "Esta columna no sirve como objetivo. Elige una columna con dos categorías o con una cantidad.",
+    "notUsable": "Esta columna no sirve como objetivo. Elige una columna con categorías o con una cantidad, o agrupa filas parecidas sin objetivo.",
     "estimate": {
       "unit": "Vas a estimar una cantidad, en {unit}. El veredicto dirá cuánto se equivoca en promedio, en {unit}.",
       "noUnit": "Vas a estimar una cantidad. Su nombre no trae una unidad que la app reconozca, así que las cifras se dirán en las unidades de «{column}»."
@@ -588,11 +714,15 @@
       },
       "multiclase": {
         "label": "Categorías",
-        "desc": "Cada número es una clase, como una nota del 1 al 5. Esta versión todavía no entrena varias clases: llega en una próxima versión."
+        "desc": "Cada número es una categoría, como una nota del 1 al 5. El veredicto usa la exactitud balanceada, que pesa igual cada categoría."
       },
       "answered": "Respondiste: {answer}.",
       "change": "Cambiar la respuesta"
-    }
+    },
+    "multiclass": {
+      "trainable": "Vas a clasificar en {count} categorías. El veredicto usa la exactitud balanceada: cada categoría pesa igual, aunque tenga pocas filas."
+    },
+    "clusterInstead": "Agrupar filas parecidas en su lugar"
   },
   "roster": {
     "title": "Quién compite",
@@ -604,14 +734,25 @@
       "always-first": "entra siempre: es el más simple",
       "over-ceiling": "unos {time}",
       "mlp-few-rows": "tu dataset tiene {rows} filas; una red neuronal necesita al menos {min} para aprender algo estable",
-      "balanced-not-needed": "tus clases ya están equilibradas (la menor es el {share} %): repetiría a su versión normal",
+      "balanced-not-needed": "tus clases ya están equilibradas (la menor es el {share} %): repetiría a su versión normal",
       "forced": "lo incluiste tú; el encarrilador lo dejaba fuera porque {why}"
     },
     "cv": "Compiten con validación cruzada de {k} pliegues dentro del entrenamiento; el conjunto de prueba se abre una sola vez, al final.",
     "smallSample": "Muestra pequeña ({rows} filas): los puntajes de validación cruzada varían bastante. Por eso, si varios quedan prácticamente empatados, gana el más simple.",
     "note": "Nada se esconde: «fuera» es una recomendación con su razón, y podrás incluirlo de todos modos en el Nivel 2.",
     "level1_one": "Nivel 1 · ahora · 1 modelo · unos {time}",
-    "level2_one": "Nivel 2 · después, si quieres · 1 modelo más"
+    "level2_one": "Nivel 2 · después, si quieres · 1 modelo más",
+    "clusterK": "K-Means y el jerárquico eligen cuántos grupos con la silueta; GMM, con el BIC; HDBSCAN no necesita que se lo digan: los encuentra por densidad.",
+    "clusterNote": "Prueban de 2 a {max} grupos sobre todas tus filas: sin objetivo no hay validación cruzada ni conjunto de prueba. Al final, el ganador se compara con datos sin estructura y se repite con partes de tus filas.",
+    "clusterSample": "Con tus {rows} filas, el jerárquico se ajusta sobre una muestra de {sample} y asigna el resto al grupo más cercano (los demás agrupadores usan todas).",
+    "cluster": {
+      "level1": "Nivel 1 · ahora · {count} agrupadores · unos {time}",
+      "level1_one": "Nivel 1 · ahora · 1 agrupador · unos {time}",
+      "level2": "Nivel 2 · después, si quieres · {count} agrupadores más",
+      "level2_one": "Nivel 2 · después, si quieres · 1 agrupador más",
+      "level2Hint": "No caben en el primer paso. Cuando veas los resultados podrás agrupar con todos (unos {time} en total en un computador de escritorio).",
+      "smallSample": "Muestra pequeña ({rows} filas): con pocas filas, la silueta y la estabilidad se mueven más de una corrida a otra. Léelas con cuidado."
+    }
   },
   "league": {
     "title": "La liga: {count} modelos",
@@ -667,7 +808,12 @@
       "failed": "En esta liga: no concluyó, así que no tiene puntaje.",
       "pending": "En esta liga: pendiente del Nivel 2.",
       "out": "En esta liga: fuera, porque {reason}.",
-      "baseline": "Baseline del veredicto: no compite en la liga, la juzga."
+      "baseline": "Baseline del veredicto: no compite en la liga, la juzga.",
+      "consensus": "En esta comparación: ganador por consenso (el número de grupos en que más agrupadores coinciden).",
+      "score": "En esta comparación: ganador por puntaje (no hubo consenso: cada agrupador encontró un número distinto de grupos).",
+      "clusterCompetitor": "En esta comparación: puesto {rank} de {total} por puntaje.",
+      "clusterNoGroups": "En esta comparación: no encontró dos grupos, así que no tiene puntaje.",
+      "clusterFailed": "En esta comparación: no concluyó, así que no tiene puntaje."
     }
   },
   "level2": {
@@ -693,6 +839,123 @@
     "estimate_one": "1 modelo · unos {time} en este equipo",
     "running_one": "Nivel 2 · 1 modelo · unos {time} en este equipo",
     "runNothing": "Correr el Nivel 2",
-    "estimateNote": "Calibrado con lo que tardó la corrida anterior."
+    "estimateNote": "Calibrado con lo que tardó la corrida anterior.",
+    "cluster": {
+      "title": "Nivel 2: todos los agrupadores",
+      "desc": "Suma {count} agrupadores que no cupieron en el primer paso ({models}) y vuelve a agrupar con todos, con la misma lectura contra datos sin estructura.",
+      "desc_one": "Suma 1 agrupador que no cupo en el primer paso ({models}) y vuelve a agrupar con todos, con la misma lectura contra datos sin estructura.",
+      "dropsChoice": "Agrupar con todos vuelve a elegir con la regla de la app: tu elección manual de ahora no se conserva.",
+      "estimate": "{count} agrupadores · unos {time} en este equipo",
+      "estimate_one": "1 agrupador · unos {time} en este equipo",
+      "running": "Nivel 2 · {count} agrupadores · unos {time} en este equipo",
+      "running_one": "Nivel 2 · 1 agrupador · unos {time} en este equipo",
+      "cancelHint": "Puedes cancelar mientras corre: vuelves a este resultado. Si cancelas cuando ya está agrupando, para descargar tus filas con su grupo hay que volver a agrupar."
+    }
+  },
+  "cluster": {
+    "title": "Resultados · agrupar",
+    "group": "Grupo {n}",
+    "reading": {
+      "exist": "Los grupos existen: {k} grupos estables",
+      "existDetail": "{model} separa tus filas mejor que datos sin estructura en la misma caja: puntaje {score} frente a {nullScore}, una diferencia de {gap} (hace falta al menos {gapMin}). Y los grupos se repiten al volver a agrupar el {fraction} % de tus filas {runs} veces: se parecen en {ari} de 1 (hace falta al menos {ariNeeded}).",
+      "fragile": "Hay {k} grupos, pero son frágiles",
+      "fragileDetail": "{model} separa tus filas mejor que datos sin estructura (puntaje {score} frente a {nullScore}, diferencia {gap}), pero al volver a agrupar el {fraction} % de tus filas {runs} veces los grupos cambian: se parecen en {ari} de 1, por debajo de {ariNeeded}. Léelos como una partición posible, no como un hallazgo.",
+      "none": "No hay estructura de grupos",
+      "noneDetail": "{model} no separa tus filas mejor que datos sin estructura en la misma caja: puntaje {score} frente a {nullScore}, una diferencia de {gap} (haría falta al menos {gapMin}). Los {k} grupos de abajo son una forma de partir la tabla, no un hallazgo.",
+      "worst": "En el re-muestreo más distinto se parecen en {ariWorst} de 1."
+    },
+    "noTest": "Agrupar no tiene objetivo: no hay conjunto de prueba ni veredicto contra un baseline. Lo que sirve para creer es esta comparación con datos sin estructura y la estabilidad al re-muestrear.",
+    "chosenNote": "◆ Elegido por ti. La lectura de arriba es la de este agrupador; el ganador sigue marcado con ★.",
+    "sample": {
+      "title": "Ajustado sobre una muestra de {sample} de tus {rows} filas; las demás se asignaron al grupo más cercano.",
+      "why": "Por qué: con más de {max} filas, el agrupamiento jerárquico necesitaría más memoria de la que un navegador puede dar (sobre todo en un teléfono) sin cerrar la pestaña. Los demás agrupadores usan todas tus filas."
+    },
+    "profiles": {
+      "title": "Qué distingue a los {count} grupos",
+      "separating": "Lo que más separa a los grupos: {list}.",
+      "noSeparating": "Ninguna columna separa a los grupos con claridad.",
+      "how": "η² (numéricas) y V de Cramér (categóricas) van de 0 a 1: cuánto de la variación de esa columna se explica por el grupo. Las cifras están en las unidades de tus columnas.",
+      "strength": {
+        "numeric": "η²",
+        "categorical": "V de Cramér"
+      },
+      "size": "{size} filas · {share} %",
+      "numeric": "«{column}»: {value} (promedio de los grupos: {average})",
+      "categorical": "«{column}»: sobre todo «{mode}» ({share} % del grupo)",
+      "noValue": "«{column}»: sin valores en este grupo",
+      "all": "Ver las otras {count} columnas",
+      "all_one": "Ver la otra columna",
+      "size_one": "{size} fila · {share} %"
+    },
+    "noise": {
+      "title": "Fuera de todo grupo",
+      "desc": "HDBSCAN deja fuera las filas que no caen en ninguna zona densa: no las fuerza a un grupo.",
+      "label": "fuera de todo grupo"
+    },
+    "league": {
+      "title": "Los agrupadores: {count}",
+      "title_one": "Los agrupadores: 1",
+      "rule": "La tabla compara los agrupadores con la silueta sobre una muestra de {sample} filas: sirve para elegir. La lectura de arriba (contra datos sin estructura y re-muestreando) sirve para creer.",
+      "consensus": "Consenso: {votes} de {voters} agrupadores encontraron {k} grupos; entre ellos gana el de mayor puntaje.",
+      "cols": {
+        "model": "Agrupador",
+        "k": "Grupos",
+        "silhouette": "Silueta",
+        "noise": "Fuera de grupo",
+        "score": "Puntaje"
+      },
+      "kBy": {
+        "silhouette": "{k} · silueta",
+        "bic": "{k} · BIC",
+        "density": "{k} · densidad"
+      },
+      "status": {
+        "ok": "encontró grupos",
+        "no-converge": "no convergió: no vota, pero puedes elegirlo",
+        "no-structure": "no encontró dos grupos",
+        "error": "falló ({type})"
+      },
+      "backToWinner": "Volver al ganador",
+      "mark": {
+        "winner": "Ganador por consenso",
+        "winnerScore": "Ganador por puntaje"
+      },
+      "mobile": "silueta {silhouette} · fuera de grupo {noise}",
+      "scoreHow": "Puntaje = silueta × (1 − la parte fuera de grupo): HDBSCAN no gana dejando fuera las filas difíciles. La silueta va de −1 a 1: cuánto más cerca está cada fila de su grupo que del vecino.",
+      "noConsensus": "Sin consenso: cada agrupador encontró un número distinto de grupos, así que gana el de mayor puntaje.",
+      "time": "El agrupamiento tardó {seconds} s en este equipo."
+    },
+    "labels": {
+      "title": "Tus filas con su grupo",
+      "desc": "Descarga tu tabla con una columna más, «grupo», con el grupo de cada fila (o «fuera de todo grupo»). Se arma en tu navegador y no se guarda en ningún otro lado.",
+      "column": "grupo",
+      "fileSuffix": "agrupado",
+      "button": "Descargar filas con su grupo",
+      "fetching": "Preparando el archivo…",
+      "error": "No se pudo preparar el archivo. Vuelve a intentarlo.",
+      "unavailable": "El modelo activo ya no guarda el grupo de tus filas: se recuperó de un Nivel 2 que se canceló o no terminó. Vuelve a agrupar para descargarlas."
+    },
+    "use": {
+      "title": "Asignar filas nuevas",
+      "button": "Asignar filas nuevas",
+      "contents": "El archivo exportado lleva el preprocesamiento y la regla de asignación (los centros de los grupos), sin ninguna de tus filas."
+    },
+    "assign": {
+      "nearest-centroid": "Regla para filas nuevas: el grupo cuyo centro está más cerca.",
+      "gaussian": "Regla para filas nuevas: la mezcla gaussiana elige el grupo más probable y da su probabilidad.",
+      "centroid-radius": "Regla para filas nuevas: el grupo cuyo centro está más cerca, salvo que la fila quede más lejos que el miembro más lejano de ese grupo: entonces queda «fuera de todo grupo».",
+      "agreement": "Con esta regla, el {pct} % de tus filas cae en el mismo grupo que les dio el agrupador."
+    },
+    "plan": {
+      "title": "Agrupar filas parecidas, sin objetivo",
+      "what": "No hay nada que predecir: la app busca grupos de filas que se parecen entre sí. Sin objetivo no hay conjunto de prueba ni veredicto contra un baseline; lo que sirve para creer es comparar con datos sin estructura y repetir con partes de tus filas.",
+      "distanceNumeric": "El parecido se mide con tus {count} columnas numéricas: {columns}.",
+      "distanceAll": "Hay menos de dos columnas numéricas, así que el parecido se mide con todas: {columns}.",
+      "describeOnly": "Las categóricas ({columns}) describen los grupos, pero no forman el parecido.",
+      "excluded": {
+        "id-like": "«{column}» no entra: parece un identificador.",
+        "date": "«{column}» no entra: es una fecha, y las fechas no se usan para agrupar."
+      }
+    }
   }
 }

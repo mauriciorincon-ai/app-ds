@@ -4,7 +4,7 @@
 // entrenar, puntuar, exportar e importar el modelo; la orquestación pura
 // (split/veredicto/fuga/esquema/manifiesto) vive en el hilo principal.
 //
-// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"export-model"|"import-model", payload? }
+// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model", payload? }
 //            out { id, type: "progress"|"result"|"error", ... }  (result lleva command)
 // S5: durante "train" (la liga), pipeline.py llama a un callback JS antes de cada
 // paso y el runner lo reenvía como progress con `detail` {phase, member, index,
@@ -25,6 +25,8 @@ const STAGE = {
   train: "training",
   "fit-member": "training",
   score: "scoring",
+  // S7 (P13): las etiquetas por fila del agrupamiento, solo para el CSV local.
+  "cluster-labels": "exporting",
   "export-model": "exporting",
   "import-model": "importing",
 };
@@ -55,6 +57,7 @@ function ensureRuntime(post, id) {
         train: pyodide.globals.get("run_experiment"),
         "fit-member": pyodide.globals.get("fit_member"),
         score: pyodide.globals.get("score_new_data"),
+        "cluster-labels": pyodide.globals.get("cluster_labels"),
         "export-model": pyodide.globals.get("export_model"),
         "import-model": pyodide.globals.get("import_model"),
       };

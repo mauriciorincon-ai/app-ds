@@ -9,14 +9,23 @@
 // Un equipo concreto tarda distinto (WebKit ~1,4× en 2.000–5.000 filas; un móvil
 // 2–4×): por eso la estimación del Nivel 2 se CALIBRA con lo que el Nivel 1 tardó
 // de verdad en el equipo del usuario.
+//
+// S7: con varias categorías el costo crece con el número de clases K, y la forma
+// gana un factor (K/5)^d medido por miembro (sprints/SPRINT_007-spike-catalogo.md,
+// anexo A).
+import { matchTask } from "@/engine/despacho";
 import type {
   BinaryMemberId,
+  ClusterMemberId,
   MemberId,
   RegressionMemberId,
 } from "@/engine/roster";
+import { AGGLO_MAX_ROWS } from "@/engine/verdict";
 import type { TrainTask } from "@/engine/tarea";
 
 export type CostCoefficients = { t0: number; a: number; b: number; c: number };
+/** S7: los de varias categorías llevan además el exponente del número de clases. */
+export type MulticlassCostCoefficients = CostCoefficients & { d: number };
 
 export const COST_COEFFICIENTS: Record<BinaryMemberId, CostCoefficients> = {
   logistic: { t0: 0.037, a: 0.0243, b: 0.833, c: 0.593 },
@@ -59,11 +68,71 @@ export const REGRESSION_COST_COEFFICIENTS: Record<
   mlp: { t0: 0.153, a: 0.6372, b: 1.21, c: 1.158 },
 };
 
+/**
+ * S7: los mismos 14 en su forma nativa de K clases, ajustados en el spike de la F0
+ * (sprints/SPRINT_007-spike-catalogo.md, anexo A, Chromium sobre el build de
+ * producción) con un factor más: t_cv5 ≈ t0 + a·(n/1000)^b·(ancho/33)^c·(K/5)^d.
+ * `d` ~1 en la logística y HGB, ~0,8 en los boosting, ~0,3 en los bosques y ~0 en
+ * Ridge, Naive Bayes, el árbol y KNN.
+ */
+export const MULTICLASS_COST_COEFFICIENTS: Record<
+  BinaryMemberId,
+  MulticlassCostCoefficients
+> = {
+  logistic: { t0: 0.046, a: 0.0736, b: 0.794, c: 0.495, d: 1.002 },
+  logistic_balanced: { t0: 0.05, a: 0.0722, b: 0.796, c: 0.421, d: 0.942 },
+  ridge: { t0: 0.046, a: 0.0207, b: 0.956, c: 0.965, d: -0.029 },
+  naive_bayes: { t0: 0.04, a: 0.0177, b: 0.964, c: 0.267, d: 0.039 },
+  linear_svc: { t0: 0.043, a: 0.0248, b: 1.012, c: 0.572, d: 0.457 },
+  decision_tree: { t0: 0.043, a: 0.0291, b: 1.218, c: 0.682, d: 0.072 },
+  knn: { t0: 0.043, a: 0.0204, b: 1.641, c: 0.247, d: 0.108 },
+  hgb: { t0: 0.421, a: 3.696, b: 0.034, c: 0.496, d: 0.982 },
+  lightgbm: { t0: 0.458, a: 4.0262, b: 0.316, c: 0.158, d: 0.763 },
+  xgboost: { t0: 0.296, a: 2.2642, b: 0.478, c: 0.638, d: 0.859 },
+  extra_trees: { t0: 0.619, a: 0.5509, b: 1.106, c: 0.034, d: 0.336 },
+  forest: { t0: 0.826, a: 0.6017, b: 1.16, c: 0.362, d: 0.305 },
+  forest_balanced: { t0: 0.819, a: 0.5979, b: 1.163, c: 0.341, d: 0.312 },
+  mlp: { t0: 0.083, a: 0.694, b: 0.666, c: 0.667, d: 0.415 },
+};
+
+/**
+ * S7 (ADR 016): agrupar no hace CV. Cada agrupador BARRE sus k sobre todas las
+ * filas (siempre corre), y solo el retenido mide su LECTURA (referencia nula +
+ * estabilidad). Dos modelos por agrupador, medidos en el flujo real del producto
+ * (scripts/costos-agrupar, Chromium sobre el build de producción):
+ *   t ≈ t0 + a·(filas/1000)^b·(ancho/5)^c
+ * Contra el flujo entero medido, con la lectura del ganador real: de −31 % a +34 %
+ * (sprints/SPRINT_007-implementation-log.md, F2). El BARRIDO:
+ */
+export const CLUSTER_COST_COEFFICIENTS: Record<
+  ClusterMemberId,
+  CostCoefficients
+> = {
+  kmeans: { t0: 0.026, a: 0.0604, b: 0.925, c: 0.318 },
+  agglomerative: { t0: 0.008, a: 0.0535, b: 1.609, c: 0.359 },
+  gmm: { t0: 0.047, a: 0.042, b: 0.997, c: 2.482 },
+  hdbscan: { t0: 0.002, a: 0.0125, b: 1.834, c: 0.911 },
+};
+
+/** S7: la LECTURA del agrupador retenido (referencia nula + estabilidad + perfiles).
+ *  La de HDBSCAN y la de Agglomerative crecen ~n²: con miles de filas, son lo caro. */
+export const CLUSTER_READING_COEFFICIENTS: Record<
+  ClusterMemberId,
+  CostCoefficients
+> = {
+  kmeans: { t0: 0.035, a: 0.0138, b: 1.373, c: 0.398 },
+  agglomerative: { t0: 0.024, a: 0.0928, b: 1.981, c: 0.547 },
+  gmm: { t0: 0.047, a: 0.0259, b: 1.308, c: 0.958 },
+  hdbscan: { t0: 0.033, a: 0.0653, b: 2.006, c: 0.709 },
+};
+
 /** Los coeficientes de cada tarea. Un `Record` completo por tarea: sumar una a
  *  `TrainTask` sin sus coeficientes no compila (AU-S6-03). */
 export const COST_COEFFICIENTS_BY_TASK = {
   binaria: COST_COEFFICIENTS,
+  multiclase: MULTICLASS_COST_COEFFICIENTS,
   numerica: REGRESSION_COST_COEFFICIENTS,
+  agrupar: CLUSTER_COST_COEFFICIENTS,
 } as const satisfies Record<
   TrainTask,
   Partial<Record<MemberId, CostCoefficients>>
@@ -87,6 +156,8 @@ export function costCoefficients(
 const REFERENCE_WIDTH = 33;
 /** Fracción de train con que se ajusta cada fold en la CV de referencia (k=5). */
 const REFERENCE_FRACTION = 4 / 5;
+/** S7: número de clases de referencia del ajuste multiclase. */
+const REFERENCE_CLASSES = 5;
 
 export type CostInput = {
   /** Filas de entrenamiento. */
@@ -95,7 +166,34 @@ export type CostInput = {
   width: number;
   /** Pliegues de la CV. */
   k: number;
+  /** S7: clases del objetivo (solo con varias categorías; sin él, no se estima). */
+  classes?: number;
 };
+
+/** El factor (K/5)^d de varias categorías; las demás tareas no lo tienen. */
+function classFactor(
+  member: MemberId,
+  input: CostInput,
+  task: TrainTask,
+): number {
+  return matchTask(task, {
+    binaria: () => 1,
+    numerica: () => 1,
+    agrupar: () => 1,
+    multiclase: () => {
+      if (input.classes === undefined) {
+        throw new Error("costos: la multiclase necesita el número de clases");
+      }
+      const table: Partial<Record<MemberId, MulticlassCostCoefficients>> =
+        MULTICLASS_COST_COEFFICIENTS;
+      const d = table[member]?.d;
+      if (d === undefined) {
+        throw new Error(`costos: ${member} no compite en la tarea multiclase`);
+      }
+      return (input.classes / REFERENCE_CLASSES) ** d;
+    },
+  });
+}
 
 /**
  * Segundos estimados para UN miembro: su CV con k pliegues + el ajuste en train
@@ -108,10 +206,84 @@ export function estimateMemberSeconds(
   input: CostInput,
   task: TrainTask,
 ): number {
+  return matchTask(task, {
+    binaria: () => leagueMemberSeconds(member, input, task),
+    multiclase: () => leagueMemberSeconds(member, input, task),
+    numerica: () => leagueMemberSeconds(member, input, task),
+    agrupar: () => clusterMemberSeconds(member, input),
+  });
+}
+
+/** Ancho de referencia del ajuste de agrupar (columnas de la distancia de los
+ *  sintéticos medidos). */
+const CLUSTER_REFERENCE_WIDTH = 5;
+
+/** Segundos de una parte del flujo de un agrupador. Agglomerative, en modo muestra
+ *  por encima de AGGLO_MAX_ROWS, cuesta como con AGGLO_MAX_ROWS filas. */
+function clusterSeconds(
+  table: Partial<Record<MemberId, CostCoefficients>>,
+  member: MemberId,
+  input: CostInput,
+): number {
+  const coefficients = table[member];
+  if (!coefficients) {
+    throw new Error(`costos: ${member} no compite en la tarea agrupar`);
+  }
+  const { t0, a, b, c } = coefficients;
+  const rows = Math.max(
+    member === "agglomerative"
+      ? Math.min(input.nTrain, AGGLO_MAX_ROWS)
+      : input.nTrain,
+    1,
+  );
+  const width = Math.max(input.width, 1);
+  return t0 + a * (rows / 1000) ** b * (width / CLUSTER_REFERENCE_WIDTH) ** c;
+}
+
+/** S7: el barrido de k de un agrupador (corre siempre). */
+function clusterMemberSeconds(member: MemberId, input: CostInput): number {
+  return clusterSeconds(CLUSTER_COST_COEFFICIENTS, member, input);
+}
+
+/**
+ * Lo que la corrida suma UNA vez, además de cada miembro, para elegir y abrir el
+ * resultado. Con objetivo, nada: el test de cada miembro ya está en su estimación.
+ * Al agrupar, la lectura del retenido — que puede ser cualquiera de los que corren:
+ * se reserva la más cara (S7).
+ */
+export function selectionReserveSeconds(
+  members: readonly MemberId[],
+  input: CostInput,
+  task: TrainTask,
+): number {
+  const none = () => 0;
+  return matchTask(task, {
+    binaria: none,
+    multiclase: none,
+    numerica: none,
+    agrupar: () =>
+      Math.max(
+        0,
+        ...members.map((id) =>
+          clusterSeconds(CLUSTER_READING_COEFFICIENTS, id, input),
+        ),
+      ),
+  });
+}
+
+function leagueMemberSeconds(
+  member: MemberId,
+  input: CostInput,
+  task: TrainTask,
+): number {
   const { t0, a, b, c } = costCoefficients(member, task);
   const nTrain = Math.max(input.nTrain, 1);
   const width = Math.max(input.width, 1);
-  const variable = a * (nTrain / 1000) ** b * (width / REFERENCE_WIDTH) ** c;
+  const variable =
+    a *
+    (nTrain / 1000) ** b *
+    (width / REFERENCE_WIDTH) ** c *
+    classFactor(member, input, task);
   const fit = (fraction: number) =>
     t0 / 5 + (variable / 5) * (fraction / REFERENCE_FRACTION) ** b;
   const cv = input.k * fit((input.k - 1) / input.k);

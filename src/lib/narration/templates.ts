@@ -14,7 +14,7 @@ import {
   quantityDecimals,
   withUnit,
 } from "@/lib/quantity";
-import type { RegressionResult } from "@/workers/protocol";
+import type { MulticlassResult, RegressionResult } from "@/workers/protocol";
 
 export const TEMPLATE_TOP_FEATURES = 3;
 
@@ -168,6 +168,83 @@ export function buildRegressionTemplate(input: {
       parts.push(
         t("narration.template.regression.outliers", {
           share: (alert.share * 100).toFixed(1),
+        }),
+      );
+    }
+  }
+  return parts.join(" ");
+}
+
+/**
+ * S7 (P10): el texto estándar al clasificar en VARIAS categorías. Como en la
+ * regresión, sale del resultado (la IA no narra esta tarea), con los mismos
+ * números que la pantalla y cero red. Nombra clases del objetivo: vive solo en el
+ * navegador (regla dura 2).
+ */
+export function buildMulticlassTemplate(input: {
+  result: MulticlassResult;
+  locale: Locale;
+  edaAlerts?: EdaAlert[] | null;
+}): string {
+  const { result, locale, edaAlerts } = input;
+  const t = (key: string, params?: Record<string, string | number>) =>
+    translate(locale, key, params);
+  const { verdict } = result;
+  const k = result.classes.length;
+
+  // Con K clases la permutación no tiene dirección (pipeline.py): se nombra el
+  // peso, y solo «no se apoya en ella» cuando no lo tiene.
+  const list = result.explainability.features
+    .slice(0, TEMPLATE_TOP_FEATURES)
+    .map((feature) =>
+      isFeatureUsed(feature.importance)
+        ? feature.name
+        : `${feature.name} (${t("narration.template.direction.unused")})`,
+    )
+    .join(" · ");
+
+  const parts = [
+    t(`narration.template.verdict.${verdict.level}`, {
+      model: fmt(verdict.modelScore),
+      baseline: fmt(verdict.baselineScore),
+      metric: t(`results.metrics.${verdict.primaryMetric}`),
+      delta: fmt(Math.abs(verdict.delta)),
+    }),
+    t("narration.template.multiclass.metricNote", {
+      k,
+      chance: fmt(1 / k),
+      f1: fmt(result.model.f1_macro),
+    }),
+    t("narration.template.features", { list }),
+    t("narration.template.multiclass.noDirection"),
+    t("narration.template.method"),
+  ];
+
+  if (result.leakage.length > 0) {
+    const columns = result.leakage
+      .map((finding) =>
+        finding.class === undefined
+          ? finding.column
+          : t("narration.template.multiclass.leakageItem", {
+              column: finding.column,
+              class: finding.class,
+            }),
+      )
+      .join(", ");
+    parts.push(t("narration.template.multiclass.leakage", { columns }));
+  }
+  const idLike = (edaAlerts ?? [])
+    .filter((alert) => alert.kind === "id-like")
+    .map((alert) => alert.column);
+  if (idLike.length > 0) {
+    parts.push(t("narration.template.idLike", { columns: idLike.join(", ") }));
+  }
+  for (const alert of edaAlerts ?? []) {
+    if (alert.kind === "class-imbalance" && alert.class !== undefined) {
+      parts.push(
+        t("narration.template.multiclass.imbalance", {
+          class: alert.class,
+          rate: (alert.minorityRate * 100).toFixed(0),
         }),
       );
     }

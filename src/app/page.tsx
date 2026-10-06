@@ -1,23 +1,46 @@
 "use client";
 
-import { ConfigScreen } from "@/components/ConfigScreen";
+import dynamic from "next/dynamic";
 import { ErrorScreen } from "@/components/ErrorScreen";
-import { ResultsScreen } from "@/components/ResultsScreen";
-import { ScoreScreen } from "@/components/ScoreScreen";
+import { ScreenLoading } from "@/components/PageError";
 import { StartScreen } from "@/components/StartScreen";
-import { TrainingScreen } from "@/components/TrainingScreen";
 import { useExperiment } from "@/lib/useExperiment";
 
 // Workspace del experimento: una sola ruta, máquina de estados. Pyodide se carga
 // bajo demanda (al entrenar o importar), no aquí — la landing es liviana (fuera
 // del LCP).
+//
+// S7 (R15, decisión 7): la portada solo dibuja el inicio. Configurar, entrenar,
+// resultados y puntuar viajan en sus propios chunks y se piden al llegar a su
+// fase — con agrupar y multiclase dentro, el script de "/" pasó el budget de
+// 300 KB en la CI (321.841 B). Mientras el chunk llega, «Cargando…» (AU-S7-19); si no
+// llega, el límite de error de src/app/error.tsx lo dice.
+const ConfigScreen = dynamic(
+  () => import("@/components/ConfigScreen").then((m) => m.ConfigScreen),
+  { ssr: false, loading: ScreenLoading },
+);
+const TrainingScreen = dynamic(
+  () => import("@/components/TrainingScreen").then((m) => m.TrainingScreen),
+  { ssr: false, loading: ScreenLoading },
+);
+const ResultsScreen = dynamic(
+  () => import("@/components/ResultsScreen").then((m) => m.ResultsScreen),
+  { ssr: false, loading: ScreenLoading },
+);
+const ScoreScreen = dynamic(
+  () => import("@/components/ScoreScreen").then((m) => m.ScoreScreen),
+  { ssr: false, loading: ScreenLoading },
+);
 export default function Home() {
   const {
     state,
     loadCsv,
     selectTarget,
+    selectCluster,
     answerTask,
     run,
+    runCluster,
+    downloadClusterLabels,
     reset,
     goToScoring,
     backToResults,
@@ -42,9 +65,12 @@ export default function Home() {
           sanitation={state.sanitation}
           edaAlerts={state.edaAlerts}
           plan={state.plan}
+          clusterPlan={state.clusterPlan}
           onSelectTarget={selectTarget}
+          onSelectCluster={selectCluster}
           onAnswerTask={answerTask}
           onRun={run}
+          onRunCluster={runCluster}
           onBack={reset}
         />
       )}
@@ -55,6 +81,7 @@ export default function Home() {
           detail={state.progressDetail}
           level2={state.level2.status === "running" ? state.level2 : null}
           estimateS={state.routing?.level1EstimateS ?? null}
+          cluster={state.runMeta?.target === null}
           onCancel={cancelLevel2}
         />
       )}
@@ -79,6 +106,8 @@ export default function Home() {
           forced={state.forced}
           level2={state.level2}
           onRunLevel2={runLevel2}
+          labels={state.labels}
+          onDownloadLabels={downloadClusterLabels}
         />
       )}
 

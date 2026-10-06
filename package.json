@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "verificar:retiros": "node scripts/verificar-retiros.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage --passWithNoTests",
     "test:integration": "vitest run --config vitest.integration.config.ts",
@@ -17,6 +18,7 @@
   },
   "dependencies": {
     "@ai-sdk/groq": "^4.0.54",
+    "@sentry/browser": "^10.75.3",
     "@sentry/nextjs": "^10.75.3",
     "ai": "^7.0.127",
     "next": "16.3.8",

@@ -71,14 +71,17 @@ indique (o la más reciente en `portafolio/<slug>/ordenes/` de la planeadora,
      cualquier cambio (agrupar, reordenar, posponer) se propone y se aprueba ANTES de construir
      el segundo artefacto — jamás lo decidas sobre la marcha. Que ninguna mirada pida ajustes
      después no valida el desvío: es suerte, no proceso.
-   - (f) **Dos clases de mirada (kit v1.31.0):** el plan de miradas separa las de **FORMA**
-     (qué se construye — abren parada) de las de **TEXTO** (si se entiende — no bloquean:
-     «maquetado, no visto», veredicto al gate del MVP). Cada mirada en **matriz de una fila**
-     (archivo · botón/estado · qué mirar · respuesta esperada); **segundas vueltas sin parada**
-     (se ven al cierre de fase). Y **`gh pr checks` tras CADA push** de la fase, no al final.
+   - (f) **Tres clases de mirada (kit v1.36.0, método v1.38.0; antes dos, kit v1.31.0):** el plan de miradas
+     marca cuáles son de **DECISIÓN** (cambian una decisión del usuario, la promesa o su máquina: pantalla o
+     flujo nuevos fuera de la maqueta aprobada, cambio de forma que altera el uso, acciones sobre protecciones
+     del sistema) — **solo esas abren parada**, en matriz de una fila. Las de **FORMA** (estado nuevo de una
+     pantalla aprobada, variantes) y las de **TEXTO** se maquetan, se registran «maquetada, no vista» con fecha
+     y van al gate humano del MVP. Indiferibles siempre: G-Diseño y la FIDELIDAD del primer sprint con UI. En
+     duda, DECISIÓN.
 10. **Al concluir la construcción** (todas las fases aprobadas): corre **`/audita-sprint`**
    (auditoría final de dos fases — OBLIGATORIA, método v1.10.0) ANTES del summary definitivo
-   y de entregar la guía/gate ⭐ al usuario.
+   y de entregar la guía/gate ⭐ al usuario. *(Conservado del kit v1.35.0: la edición de v1.36.0
+   lo borró junto con el bloque de las clases de mirada — K-S7-1.)*
 
 ## Output esperado
 

@@ -6,18 +6,20 @@ import {
   type Placement,
   type Routing,
 } from "@/engine/encarrilador";
+import { matchByTask, taskOf } from "@/engine/despacho";
 import { selectOneSe, type MemberId } from "@/engine/roster";
 import {
   METRIC_RULES,
-  type MetricName,
   type Metrics,
+  type MulticlassMetrics,
+  type PrimaryMetric,
   type RegressionMetrics,
 } from "@/engine/verdict";
 import { useT } from "@/i18n/use-translation";
 import { formatEstimate } from "@/lib/duration";
 import { formatQuantity, quantityDecimals, withUnit } from "@/lib/quantity";
 import type { ChoiceState } from "@/lib/useExperiment";
-import type { ExperimentResult, LeagueRow } from "@/workers/protocol";
+import type { SupervisedResult, LeagueRow } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
 import type { FichaStatus } from "./FichaModelo";
 import { Badge, Button, Card } from "./ui";
@@ -32,7 +34,10 @@ import { Badge, Button, Card } from "./ui";
 // mejor», METRIC_RULES): el orden, la banda del error estándar y la marca del
 // mejor siguen esa dirección, y las cifras van en las unidades del objetivo.
 
-type AnyRow = LeagueRow<Metrics> | LeagueRow<RegressionMetrics>;
+type AnyRow =
+  | LeagueRow<Metrics>
+  | LeagueRow<MulticlassMetrics>
+  | LeagueRow<RegressionMetrics>;
 
 type Entry =
   | { kind: "ran"; row: AnyRow }
@@ -44,36 +49,46 @@ export function LeagueTable({
   routing,
   choice,
   onChoose,
+  minorityShare: profileMinority = null,
 }: {
-  result: ExperimentResult;
+  result: SupervisedResult;
   routing: Routing | null;
   choice: ChoiceState;
   onChoose: (member: MemberId) => void;
+  /** S7: la parte de la clase más chica en el dataset con que se entrenó (la del
+   *  reparto de E2), para la razón de una balanceada «fuera». */
+  minorityShare?: number | null;
 }) {
   const t = useT();
   const [showTest, setShowTest] = useState(false);
   const { selection } = result;
   const league: readonly AnyRow[] = result.league;
-  const task = result.task ?? "binaria";
+  const task = taskOf(result);
   const metric = selection.metric;
   const metricName = t(`results.metrics.${metric}`);
   const lower = METRIC_RULES[metric].direction === "lower";
   const short = (id: MemberId) => t(`results.candidates.short.${id}`);
-  // El puntaje de prueba de una fila en la métrica de la liga.
-  const testScore = (m: Metrics | RegressionMetrics): number =>
-    "mae" in m ? m.mae : m[metric as MetricName];
+  // El puntaje de prueba de una fila en la métrica de la liga, leído por SU nombre
+  // (AU-S7-41: sin fijar `balanced_accuracy` ni `mae` aquí; la métrica la decide
+  // `selection.metric`, la misma que gobierna METRIC_RULES). Las tres formas de
+  // métricas encajan en este tipo sin conversión.
+  const testScore = (
+    m: Partial<Record<PrimaryMetric, number | null>>,
+  ): number => m[metric] ?? Number.NaN;
   // Clasificación: 3 decimales (de 0 a 1). Estimar: unidades del objetivo, con
   // los decimales que pide el puntaje más chico de la tabla (R9).
-  const unitDecimals =
-    result.task === "numerica"
-      ? quantityDecimals(
-          league.flatMap((row) => (row.cv ? [row.cv.mean, row.cv.std] : [])),
-        )
-      : 0;
-  const fmt = (v: number) =>
-    result.task === "numerica"
-      ? withUnit(formatQuantity(v, unitDecimals), result.unit)
-      : v.toFixed(3);
+  const fixed3 = (v: number) => v.toFixed(3);
+  const fmt: (v: number) => string = matchByTask(result, {
+    binaria: () => fixed3,
+    multiclase: () => fixed3,
+    numerica: (regression) => {
+      const decimals = quantityDecimals(
+        league.flatMap((row) => (row.cv ? [row.cv.mean, row.cv.std] : [])),
+      );
+      return (v: number) =>
+        withUnit(formatQuantity(v, decimals), regression.unit);
+    },
+  });
 
   // La banda del error estándar: los que «empatan» con el mejor.
   const oneSe = selectOneSe(
@@ -106,10 +121,14 @@ export function LeagueTable({
   ];
 
   const rows = result.nTrain + result.nTest;
-  const minorityShare =
-    result.task === "numerica"
-      ? 0
-      : Math.min(result.positiveRate, 1 - result.positiveRate);
+  const minorityShare = matchByTask(result, {
+    binaria: (binary) => Math.min(binary.positiveRate, 1 - binary.positiveRate),
+    // La del reparto (train); sin perfil, la de la prueba (las filas de la matriz).
+    multiclase: (multi) =>
+      profileMinority ??
+      Math.min(...multi.perClass.map((c) => c.support)) / multi.nTest,
+    numerica: () => 0,
+  });
   const outReason = (p: Placement) =>
     t(`roster.reason.${p.outReason ?? p.reason}`, {
       rows,

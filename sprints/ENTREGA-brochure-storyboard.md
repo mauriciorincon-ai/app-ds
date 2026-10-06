@@ -6,6 +6,7 @@ propuesto: 2026-08-15
 aprobado: 2026-08-15
 aprobado_por: usuario (regla CERO del molde v2)
 branch: entrega/brochure-conoce
+delta_s7: decidido 2026-10-06 (§9) — D-A = A (E04b + quinta puerta), D-B = A (ES/EN en este PR)
 ---
 
 # Storyboard — El brochure vivo de Probeta DS (`/conoce`)
@@ -227,6 +228,9 @@ perder) y su garantía arquitectónica completa vive en capa 3, como pide la ord
 
 ## 5 · Capas y cuadre del conteo — **33/33**
 
+> Conteo del guion aprobado en el H1. El S6 lo llevó a 35 sin tocar este guion (tabla de mapeo en
+> `SPRINT_006-summary.md`); el delta del S7 (§9) propone 41.
+
 **Capa 1 — 4 tarjetas** (el orden ES la jerarquía):
 
 | #   | Tarjeta                              | Icono (DS) | Features |
@@ -298,3 +302,100 @@ No lo resuelve el builder — es una opción de la cuenta de Vercel del usuario.
 4. **Gate visual del usuario sobre la preview** (proceso con rondas, no sí/no).
 5. Última milla: `/conoce` de producción en incógnito, sin sesión.
 6. Al merge: `sprints/ENTREGA-brochure-summary.md` con el N y la tabla de mapeo completa.
+
+---
+
+## 9 · Delta del Sprint 007 — el catálogo (DECIDIDO 2026-10-06)
+
+> **Decisión del usuario (2026-10-06), literal:** «1. A, 2. A 3. Arreglalo 2 A». Lo que toca al
+> brochure: **D-A = A** (la escena E04b «Cuatro preguntas, la misma vara» + la quinta puerta) y **D-B =
+> A** (el brochure en ES y EN en este PR). El clímax no cambia. El veredicto visual de lo construido
+> va a la parada 7 del ⭐⭐ corto (Acto 2).
+
+> Regla CERO: ni una línea de HTML hasta que decidas. Lo que sigue propone qué cambia en el guion;
+> las §1–§8 de arriba siguen siendo el guion aprobado y no se reescriben.
+
+### 9.1 · Qué cambió en la app y qué volvió falso en la página
+
+El S7 cerró el catálogo del H2: la app **clasifica en varias categorías** (3 a 20, con la matriz K×K y
+la fuga por categoría) y **agrupa filas parecidas sin objetivo** (cuatro agrupadores, la lectura «los
+grupos existen / son frágiles / no hay estructura», perfiles, filas con su grupo y asignar filas
+nuevas). Frases del brochure de hoy que eso volvió falsas o incompletas:
+
+| Línea de `docs/BROCHURE.html` | Dice hoy | Por qué ya no basta |
+| --- | --- | --- |
+| :798 (V1) | «Una columna de dos opciones… o una cantidad» | También varias categorías, o ninguna columna (agrupar) |
+| :802 (fuga) | «La columna X podría ser un proxy del objetivo» | Con varias categorías nombra también **la categoría** que delata |
+| :803 (métricas) | Al clasificar, las cinco de dos clases | Con varias categorías decide la exactitud balanceada; al agrupar no hay prueba |
+| :808 (la pregunta) | «¿Categorías o una cantidad? Te lo pregunta» | Cierto, pero ahora **las dos respuestas entrenan** |
+| :842 (ejemplos) | «cinco ejemplos incluidos» | **Siete** (se sumaron «Planes de suscripción» y «Segmentos de clientes») |
+| :882 (narración) | «Narración con IA, solo si la pides» | Solo en la tarea de **dos clases**; las otras tres usan el texto estándar |
+| :1055 (lo fino) | «Varias categorías, todavía no.» | **Falso**: promesa aplazada que el S7 cumplió |
+| :1138 (diccionario) | «Desbalance: una de las dos respuestas…» | Con varias categorías, «una de las respuestas» |
+| :1157 y :1174 (pie) | 35 funcionalidades; historial hasta la Etapa 6 | Falta el S7 |
+
+### 9.2 · Las dos decisiones
+
+| Archivo | Qué decidir | Opciones | Respuesta esperada |
+| --- | --- | --- | --- |
+| este archivo, §9.3–§9.5 | **D-A · La forma del catálogo en la página** | **A (recomendada):** una escena nueva, «Cuatro preguntas, la misma vara» (E04b, entre las puertas y el corte), más una **quinta puerta**, «Agrupar sin objetivo». **B:** solo la quinta puerta (re-corte de E03/E04), sin escena nueva. **C:** corregir lo falso y el conteo, con las funcionalidades nuevas repartidas en las cuatro puertas de hoy | A, B o C |
+| `docs/BROCHURE.html` entero | **D-B · El inglés del brochure** (regla 16 de la constitución: el brochure es bilingüe; hoy solo existe en español, desde el H1) | **A (recomendada):** el brochure en ES y EN en este PR: mismo archivo, conmutador ES/EN visible, idioma inicial el del navegador, copy **redactado** en inglés (no traducido) y un e2e que exige las mismas escenas, puertas y conteo en los dos idiomas. El export (`brochure-export.json`) es un contrato compartido con la vitrina: su inglés lo anoto como desviación para la planeadora, que es su dueña. **B:** deuda declarada en el summary, con el S8 como sprint de pago | A o B |
+
+**El clímax (E06) no cambia, y es a propósito.** La promesa mayor sigue siendo el veredicto franco
+contra la mejor regla simple («▼ NO supera al baseline»). Agrupar no tiene veredicto: su honestidad
+(«○ No hay estructura de grupos») la cuenta la escena E04b, sin pelearle el pico al clímax. Si
+prefieres que el clímax la mencione, dilo al decidir.
+
+### 9.3 · E04b · «Cuatro preguntas, la misma vara» (solo con D-A = A)
+
+| Campo | Valor |
+| --- | --- |
+| **Mensaje** | Le puedes hacer cuatro preguntas a tu tabla, y en las cuatro la app te dice cuánto creerle. |
+| **Gramática** | G3 (corrida al entrar en el viewport, una sola vez). |
+| **Técnica** | Cuatro fichas de instrumento (una columna a 360 px; 2 × 2 desde ~640 px). Cada una lleva la **pregunta** en grande, un **ejemplo** en una línea y la **vara** con su símbolo: (1) «¿Sí o no?» · «¿renuncia o se queda?» · **▲ ＝ ▼** contra la mejor regla simple; (2) «¿Cuál de varias?» · «¿qué plan contrata?» · **✓** en la diagonal: dónde acierta y con qué se confunde; (3) «¿Cuánto?» · «¿cuántos kWh gastará?» · **±** el error en las unidades de tu columna; (4) «¿Qué grupos hay?» · «¿qué clientes se parecen?» · **● ⚠ ○** si los grupos existen, son frágiles o no hay estructura. Las fichas **asientan** con stagger de 70 ms y, dentro de cada una, el orden es pregunta → ejemplo → vara (jerárquico, jamás uniforme). Remate debajo: «En las cuatro, la app te dice cuánto creerle — también cuando la respuesta es que no.» |
+| **Cómo el motion cuenta el mensaje** | Las cuatro llegan iguales y se quedan quietas: la misma vara para todas. Nada se anima para adornar; la escena es un respiro antes del corte. |
+| **Assets** | Glifos SVG de trazo por ficha (estilo de los iconos del DS, como el SVG del clímax): ✓, una cuadrícula con su diagonal, una nube de puntos con su recta y tres racimos de puntos. 0 KB externos. |
+| **Propiedades** | Solo `transform` + `opacity`. Sin loop. |
+| **Reduced-motion** | Las cuatro fichas completas y quietas desde el primer frame. |
+| **Daltonismo** | El significado lo portan el símbolo y el texto de la vara; el color es el tercer refuerzo. |
+
+### 9.4 · La quinta puerta: «Agrupar sin objetivo» (con D-A = A o B)
+
+La entradilla de E03 pasa a «Cinco cosas, y las cinco de frente». La puerta entra la última, con el
+mismo stagger (la estrella sigue siendo el veredicto). Icono: un glifo propio de trazo, tres racimos de
+puntos, en el estilo del DS (el set de `ICON_PATHS` no tiene uno de grupos; se declara como el SVG del
+clímax). Resumen: «Cuando no hay nada que predecir: encuentra grupos y te dice si existen de verdad».
+
+| # | Funcionalidad | Sección del manual |
+| --- | --- | --- |
+| G1 | **Agrupa filas parecidas, sin objetivo.** Cuatro agrupadores prueban de 2 a 10 grupos y cada uno dice cómo eligió cuántos. | Agrupar filas parecidas, sin objetivo |
+| G2 | **Te dice si los grupos existen.** ● existen · ⚠ frágiles · ○ no hay estructura: compara con datos al azar y repite el agrupamiento. Sin prueba ni baseline, porque no hay respuesta que examinar. | ídem |
+| G3 | **Qué distingue a cada grupo.** Su tamaño y las columnas que más lo separan, en tus unidades; las filas que no caen en ningún grupo, aparte. | ídem |
+| G4 | **Tus filas con su grupo.** Tu tabla entera con una columna más, armada en tu navegador. | ídem |
+| G5 | **Asigna filas nuevas a un grupo.** Con la regla dicha y un archivo de modelo sin ninguna de tus filas. | ídem |
+
+### 9.5 · Delta por escena y conteo
+
+| Escena | Cambio |
+| --- | --- |
+| E01 · portada | Ninguno. |
+| E02 · la probeta | Ninguno (mide el recorrido, sea cual sea su largo). |
+| E03/E04 · las puertas | Quinta puerta (§9.4). En la del veredicto: **V-nueva «Clasifica en varias categorías»** (de 3 a 20, la exactitud balanceada contra dos baselines, la matriz con los aciertos marcados ✓ y la confusión más frecuente en palabras), y V1, fuga, métricas y la pregunta corregidas (§9.1). En datos: «siete ejemplos». En el porqué: la narración «en la tarea de dos clases». |
+| E04b · el catálogo | Nueva (§9.3), solo con D-A = A. |
+| E05 · el corte | Una frase más en la leyenda: «Al agrupar no hay respuesta que examinar, así que no hay segunda parte: la app repite el agrupamiento sobre partes de tus filas y lo compara con datos al azar.» |
+| E06 · clímax | Ninguno (ver §9.2). |
+| E07 · lo fino | «Varias categorías, todavía no» sale; entran los límites de agrupar (los grupos describen, no prueban una causa; el jerárquico usa una muestra por encima de 8,000 filas) y la narración solo en dos clases. Diccionario: exactitud balanceada, silueta, estabilidad y «fuera de todo grupo»; «Desbalance» corregido. |
+| E08 · cierre | **41** funcionalidades; historial con la **Etapa 7** («El catálogo: varias categorías y agrupar sin objetivo»). |
+
+**Conteo: 35 → 41** = la puerta del veredicto 12 → 13 (V-nueva) + la quinta puerta 5 (G1–G5); el
+resto no cambia (7 + 5 + 9 + 2 de lo fino). Con D-A = C, las mismas 6 entran en las puertas de hoy
+(V-nueva y G1–G3 en la del veredicto, G4 y G5 en «El modelo se usa») y el total es el mismo. La tabla
+de mapeo completa va en el summary del S7, como pide la regla 12.
+
+**Dial `MOTION_INTENSITY`:** sin cambios («instrumento calibrado»). **Riesgo registrado:** una escena
+más alarga el recorrido y puede diluir el clímax. Mitigación: E04b solo asienta, es corta, y va antes
+del corte, así que el último pico sigue siendo E06.
+
+**Pruebas que cambian:** `tests/e2e/brochure.spec.ts` (5 puertas, 41 en el pie, la visibilidad real de
+E04b con reduced-motion) y `tests/unit/brochure-export.test.ts` (el total y los grupos del export). Con
+D-B = A, además, la paridad ES/EN.

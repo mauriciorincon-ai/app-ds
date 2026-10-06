@@ -68,9 +68,29 @@ function dedupeRows(rows: string[][]): { rows: string[][]; removed: number } {
     const key = rowKey(row);
     if (seen.has(key)) continue;
     seen.add(key);
-    kept.push(row);
+    // S7 (AU-S7-01): una COPIA. La coerción de abajo vacía celdas basura de estas filas, y la
+    // tabla del usuario (la que vuelve en «tus filas con su grupo») no se toca.
+    kept.push([...row]);
   }
   return { rows: kept, removed: rows.length - kept.length };
+}
+
+/**
+ * S7: para cada fila ORIGINAL, el índice de su fila en la tabla deduplicada (la
+ * misma firma y el mismo orden estable que `dedupeRows`). Dos filas idénticas
+ * comparten índice. Lo usa el CSV de «tus filas con su grupo» para devolver la
+ * tabla del usuario entera —con sus duplicados y las columnas que el saneamiento
+ * apartó, como un identificador— y no la saneada.
+ */
+export function dedupeIndex(rows: readonly (readonly string[])[]): number[] {
+  const first = new Map<string, number>();
+  return rows.map((row) => {
+    const key = rowKey(row);
+    const seen = first.get(key);
+    if (seen !== undefined) return seen;
+    first.set(key, first.size);
+    return first.size - 1;
+  });
 }
 
 /**

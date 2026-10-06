@@ -1,0 +1,18 @@
+{
+  "task": "agrupar",
+  "predictions": [
+    2,
+    2,
+    1
+  ],
+  "probabilities": [
+    1,
+    1,
+    0.9999999991593835
+  ],
+  "novelty": {
+    "columns": [],
+    "affected_rows": 0,
+    "n_rows": 3
+  }
+}

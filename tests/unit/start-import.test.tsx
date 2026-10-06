@@ -2,6 +2,8 @@
 // SHA-256, ANTES de deserializar) es la real de model-file.ts — aquí se prueba
 // que la pantalla la comunica: resumen honesto, advertencia de versión y
 // rechazo claro sin tocar el payload.
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   cleanup,
   fireEvent,
@@ -16,7 +18,13 @@ import {
   packModelFile,
   type ModelFile,
 } from "@/lib/model-file";
-import type { ExperimentResult, RuntimeVersions } from "@/workers/protocol";
+import { assembleMulticlassResult } from "@/lib/experiment";
+import type {
+  ExperimentResult,
+  ExportResult,
+  MulticlassPipelineResult,
+  RuntimeVersions,
+} from "@/workers/protocol";
 import { StartScreen } from "@/components/StartScreen";
 import { leagueFields } from "./factories";
 
@@ -198,10 +206,11 @@ describe("StartScreen — cargar modelo guardado", () => {
   });
 
   it("un archivo de una tarea que esta versión no abre la NOMBRA (ADR 014 §3, AU-S6-02)", async () => {
+    // S7 (cambio esperado): varias categorías y agrupar ya se abren (D3
+    // cumplida). Una tarea que esta versión ni conoce se nombra tal como viene.
     for (const [task, named] of [
-      ["multiclase", "clasificación en varias categorías"],
-      // Una tarea que esta versión ni conoce: se nombra tal como viene.
-      ["agrupar", "agrupar"],
+      ["serie-tiempo", "serie-tiempo"],
+      ["regresion-temporal", "regresion-temporal"],
     ] as const) {
       const { onImport } = ui();
       const file = await packFixture();
@@ -219,6 +228,34 @@ describe("StartScreen — cargar modelo guardado", () => {
       expect(onImport).not.toHaveBeenCalled();
       cleanup();
     }
+  });
+
+  it("S7: un archivo de varias categorías se abre y su resumen dice cuántas, sin «clase positiva»", async () => {
+    const fixture = (name: string) =>
+      JSON.parse(
+        readFileSync(resolve(process.cwd(), "tests/fixtures", name), "utf8"),
+      ) as unknown;
+    const file = await packModelFile({
+      datasetName: "planes-suscripcion.csv",
+      result: assembleMulticlassResult(
+        fixture("contrato/train-result-multiclase.json") as MulticlassPipelineResult,
+        [],
+      ),
+      exported: fixture("contrato/export-result-multiclase.json") as ExportResult,
+    });
+    const { onImport } = ui();
+    uploadModelFile(JSON.stringify(file));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Clasifica «plan» en 5 categorías"),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByText(/Exactitud balanceada en prueba: 0\.54/),
+    ).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/clase positiva/);
+    fireEvent.click(screen.getByRole("button", { name: /Usar este modelo/ }));
+    expect(onImport).toHaveBeenCalledTimes(1);
   });
 
   it("archivo ajeno ⇒ 'no parece un modelo exportado por Probeta'", async () => {

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { matchTask } from "@/engine/despacho";
 import {
   isTrainableTask,
+  isTrainTask,
   type AmbiguousChoice,
   type Task,
   type TaskDetection,
@@ -12,10 +14,11 @@ import type { TargetUnit } from "@/workers/protocol";
 import { Button, Icon, type IconName } from "./ui";
 
 // E1 (S5): qué tipo de predicción plantea la columna elegida y por qué. La
-// honestidad acompaña: toda columna se puede elegir; si su tarea todavía no se
-// entrena, se dice de frente (no se esconde la columna ni se adivina). Si la
-// tarea se entrena pero el plan está bloqueado (p. ej. muy pocas filas), no hay
-// ✓: la tarjeta remite al motivo, que se muestra debajo.
+// honestidad acompaña: toda columna se puede elegir; si no sirve como objetivo,
+// se dice de frente (no se esconde la columna ni se adivina). Si la tarea se
+// entrena pero el plan está bloqueado (p. ej. muy pocas filas), no hay ✓: la
+// tarjeta remite al motivo, que se muestra debajo. S7: las tres tareas con
+// objetivo se entrenan (dos categorías, varias categorías y una cantidad).
 //
 // S6 (D2): una columna AMBIGUA (pocos números distintos) no se adivina: se
 // pregunta «¿categorías o una cantidad?», con la lectura más probable marcada
@@ -28,6 +31,7 @@ export function TaskCard({
   choice = null,
   unit = null,
   onAnswer,
+  onCluster,
 }: {
   detection: TaskDetection;
   blocked?: boolean;
@@ -39,6 +43,8 @@ export function TaskCard({
   /** Solo al estimar: la unidad leída del nombre de la columna. */
   unit?: TargetUnit | null;
   onAnswer?: (choice: AmbiguousChoice | null) => void;
+  /** S7: con una columna que no sirve como objetivo, agrupar en su lugar. */
+  onCluster?: () => void;
 }) {
   // Responder (o cambiar la respuesta) desmonta el control que tenía el foco: el
   // foco va a lo que aparece en su lugar, para que el teclado y el lector de
@@ -69,6 +75,7 @@ export function TaskCard({
       choice={choice}
       unit={unit}
       onAnswer={answer}
+      onCluster={onCluster}
       autoFocus={moveFocus}
     />
   );
@@ -172,6 +179,7 @@ function TaskStatus({
   choice,
   unit,
   onAnswer,
+  onCluster,
   autoFocus,
 }: {
   detection: TaskDetection;
@@ -181,6 +189,7 @@ function TaskStatus({
   choice: AmbiguousChoice | null;
   unit: TargetUnit | null;
   onAnswer?: (choice: AmbiguousChoice | null) => void;
+  onCluster?: () => void;
   autoFocus: boolean;
 }) {
   const t = useT();
@@ -233,19 +242,41 @@ function TaskStatus({
           {blocked
             ? t("task.blocked")
             : !trainable
-              ? // Una columna que no sirve como objetivo no espera una versión
-                // futura: se dice de frente (AU-S6-05).
+              ? // Una columna que no sirve como objetivo se dice de frente
+                // (AU-S6-05); una ambigua sin respuesta, que falta la respuesta.
                 t(
                   detection.task === "sin-objetivo"
                     ? "task.notUsable"
-                    : "task.notYet",
+                    : "errors.target-ambiguous",
                 )
-              : resolved === "numerica"
-                ? unit?.symbol
-                  ? t("task.estimate.unit", { unit: unit.symbol })
-                  : t("task.estimate.noUnit", { column: target })
+              : isTrainTask(resolved)
+                ? matchTask(resolved, {
+                    binaria: () => t("task.trainable"),
+                    // S7: cuántas categorías; la ambigua respondida, las suyas.
+                    multiclase: () =>
+                      t("task.multiclass.trainable", {
+                        count: detection.distinct,
+                      }),
+                    numerica: () =>
+                      unit?.symbol
+                        ? t("task.estimate.unit", { unit: unit.symbol })
+                        : t("task.estimate.noUnit", { column: target }),
+                  })
                 : t("task.trainable")}
         </p>
+        {/* S7 (P5): sin nada que predecir en esta columna, la otra pregunta. */}
+        {!trainable && detection.task === "sin-objetivo" && onCluster && (
+          <div>
+            <Button
+              variant="secondary"
+              icon="plus"
+              onClick={onCluster}
+              className="mt-1"
+            >
+              {t("task.clusterInstead")}
+            </Button>
+          </div>
+        )}
         {answered && onAnswer && (
           <div>
             <Button

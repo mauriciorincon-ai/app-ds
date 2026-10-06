@@ -278,7 +278,7 @@ describe("el veredicto en unidades (P5, R10)", () => {
     );
     expect(
       screen.getByRole("heading", {
-        name: "Métricas casi perfectas — sospechoso",
+        name: "Posible fuga de datos — sospechoso",
       }),
     ).toBeInTheDocument();
   });
@@ -763,7 +763,7 @@ describe("useExperiment al estimar (S6)", () => {
     });
   });
 
-  it("ambigua: sin respuesta no se entrena; «cantidad» planea la regresión; «categorías», no", () => {
+  it("ambigua: sin respuesta no se entrena; «cantidad» planea la regresión; «categorías», la multiclase (S7)", () => {
     const { result } = renderHook(() => useExperiment());
     act(() => result.current.loadCsv(CONSUMO, "consumo-energia.csv"));
     act(() => result.current.selectTarget("ocupantes"));
@@ -784,10 +784,19 @@ describe("useExperiment al estimar (S6)", () => {
     const sent = FakeWorker.last!.posted.at(-1)!.payload as PipelinePayload;
     expect(sent).toMatchObject({ task: "numerica", target: "ocupantes" });
 
+    // S7 (cambio esperado, R13): «Categorías» planea la multiclase.
     act(() => result.current.answerTask("multiclase"));
     expect(result.current.state.plan).toMatchObject({
       resolved: "multiclase",
-      routing: null,
+      blocked: null,
+    });
+    expect(result.current.state.plan?.routing).not.toBeNull();
+    act(() => result.current.run("ocupantes"));
+    const sentMulti = FakeWorker.last!.posted.at(-1)!.payload as PipelinePayload;
+    expect(sentMulti).toMatchObject({
+      task: "multiclase",
+      target: "ocupantes",
+      primary_metric: "balanced_accuracy",
     });
 
     // Un objetivo nuevo vuelve a preguntar.

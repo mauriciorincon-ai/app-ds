@@ -1,8 +1,8 @@
 // E1 — encarrilador de la TAREA (S5, ADR-010): mira la columna objetivo y decide
 // qué tipo de problema es, con su razón. Determinista y puro (no entrena nada;
-// solo cuenta valores distintos de la columna elegida). Solo la clasificación
-// binaria entrena en el S5; las demás tareas se nombran con honestidad («llega
-// en el S6/S7») en vez de esconder la columna.
+// solo cuenta valores distintos de la columna elegida). Desde el S7 se entrenan
+// las tres tareas con objetivo; una columna que no sirve como objetivo se nombra
+// con su razón en vez de esconderla.
 import { isNullToken, parseNumber } from "@/lib/ds/csv";
 
 export type Task =
@@ -38,6 +38,26 @@ export type TaskDetection = {
 export const AMBIGUOUS_MAX_DISTINCT = 10;
 /** Texto con más categorías que esto no se trata como clases. */
 export const MULTICLASS_MAX_CLASSES = 20;
+/** S7: con dos valores es binaria; varias categorías empiezan en tres (espejo de
+ *  MULTICLASS_MIN_CLASSES en pipeline.py, paridad en tests/unit/roster.test.ts). */
+export const MULTICLASS_MIN_CLASSES = 3;
+
+/**
+ * S7: orden de las clases por punto de código — el de `sorted()` de Python, que
+ * las codifica 0..K−1 y las coteja con las que manda TS. (El `sort()` de JS compara
+ * unidades UTF-16 y difiere fuera del plano básico: un emoji contra «ﬀ».) Lo usan la
+ * partición, la EDA y la fuga por clase (AU-S7-29): con un empate, la clase que se
+ * nombra es la misma en todos lados.
+ */
+export function byCodePoint(a: string, b: string): number {
+  const x = [...a];
+  const y = [...b];
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const d = x[i]!.codePointAt(0)! - y[i]!.codePointAt(0)!;
+    if (d !== 0) return d;
+  }
+  return x.length - y.length;
+}
 
 /** Todas las tareas que E1 nombra. Un `Record` completo: sumar una tarea a `Task`
  *  sin listarla aquí no compila. */
@@ -60,12 +80,38 @@ export function assertNever(value: never): never {
   throw new Error(`tarea sin rama propia: ${String(value)}`);
 }
 
-/** Las tareas que el MOTOR sabe entrenar (S6: también estimar una cantidad). */
-export type TrainTask = "binaria" | "numerica";
-export const TRAIN_TASKS: readonly TrainTask[] = ["binaria", "numerica"];
+/** Las tareas CON objetivo que el motor sabe entrenar (S6: también estimar una
+ *  cantidad). S7 (P1): lo que depende de tener un objetivo (la EDA supervisada, el
+ *  veredicto contra un baseline) va por esta unión. */
+export type SupervisedTask = "binaria" | "multiclase" | "numerica";
 
-/** Las tareas que la UI ofrece entrenar (S6 F2: también estimar una cantidad). */
-export const TRAINABLE_TASKS: readonly Task[] = ["binaria", "numerica"];
+/** S7 (ADR 016): agrupar filas parecidas, SIN objetivo. No es lo que E1 detecta en
+ *  una columna (`Task` no cambia): es una elección sobre el dataset entero. */
+export type ClusterTask = "agrupar";
+/** La etiqueta con que viaja (la cotejan los lectores de agrupar). */
+export const CLUSTER_TASK = "agrupar" satisfies ClusterTask;
+
+/** Todas las tareas que el MOTOR sabe entrenar. Toda decisión por tarea pasa por
+ *  engine/despacho.ts, que obliga a escribir la rama de cada una (S7, P2). */
+export type TrainTask = SupervisedTask | ClusterTask;
+
+/** Un `Record` completo: sumar una tarea a `TrainTask` sin listarla aquí no compila. */
+const TRAIN_TASK_NAMES: Record<TrainTask, true> = {
+  binaria: true,
+  multiclase: true,
+  numerica: true,
+  agrupar: true,
+};
+export const TRAIN_TASKS = Object.keys(TRAIN_TASK_NAMES) as TrainTask[];
+
+/** Las tareas de una columna que la UI ofrece entrenar: las tres con objetivo (S7
+ *  F3: la multiclase llega a la UI). Agrupar no es una tarea de columna: se elige
+ *  sobre el dataset entero (ConfigScreen). */
+export const TRAINABLE_TASKS: readonly Task[] = [
+  "binaria",
+  "multiclase",
+  "numerica",
+];
 
 /** Respuesta del usuario a la pregunta de una columna ambigua (D2 del S6). */
 export type AmbiguousChoice = "multiclase" | "numerica";
@@ -141,6 +187,8 @@ export function resolveTask(
   return detection.task === "ambigua" && choice ? choice : detection.task;
 }
 
-export function isTrainTask(task: Task): task is TrainTask {
-  return (TRAIN_TASKS as readonly Task[]).includes(task);
+/** ¿Entrena el motor esta tarea detectada? (Las de una columna son con objetivo:
+ *  agrupar no se detecta, se elige.) */
+export function isTrainTask(task: Task): task is SupervisedTask {
+  return (TRAIN_TASKS as readonly string[]).includes(task);
 }

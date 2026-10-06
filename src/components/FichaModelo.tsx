@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import {
   BALANCED_NOTES,
   FICHAS,
+  MULTICLASS_FICHA_FIELDS,
   REGRESSION_FICHA_FIELDS,
   REGRESSION_NOTES,
   type BalancedId,
@@ -12,7 +13,12 @@ import {
   type FichaId,
   type SharedId,
 } from "@/content/modelos";
-import { MEMBERS, memberNameKey, type MemberId } from "@/engine/roster";
+import {
+  MEMBERS,
+  memberNameKey,
+  type MemberId,
+} from "@/engine/roster";
+import { matchTask, taskOf } from "@/engine/despacho";
 import type { TrainTask } from "@/engine/tarea";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "./ui";
@@ -25,9 +31,18 @@ import { Button } from "./ui";
 
 export type FichaStatus =
   | { kind: "winner" }
+  // S7: al agrupar, el ganador por consenso (no hay validación cruzada) o, si cada
+  // agrupador encontró un número distinto de grupos, por puntaje (hasConsensus).
+  | { kind: "consensus" }
+  | { kind: "score" }
   | { kind: "chosen" }
   | { kind: "competitor"; rank: number; total: number }
   | { kind: "failed" }
+  // S7 (AU-S7-16): al agrupar no hay validación cruzada ni liga; el puesto es por
+  // puntaje y «no encontró dos grupos» no es «no concluyó».
+  | { kind: "clusterCompetitor"; rank: number; total: number }
+  | { kind: "clusterNoGroups" }
+  | { kind: "clusterFailed" }
   | { kind: "pending" }
   | { kind: "out"; reason: string }
   | { kind: "baseline" };
@@ -52,6 +67,8 @@ const SECTIONS: (keyof Ficha)[] = [
 
 const STATUS_MARK: Partial<Record<FichaStatus["kind"], string>> = {
   winner: "★",
+  consensus: "★",
+  score: "★",
   chosen: "◆",
 };
 
@@ -76,22 +93,42 @@ export default function FichaModelo({
     return () => opener?.focus();
   }, []);
 
-  const { id, status, task = "binaria" } = target;
+  const { id, status } = target;
+  const task = taskOf(target);
   // `base` es un MemberId; que sea una ficha lo fija tests/unit/modelos.test.ts.
   const fichaId = isBaselineFicha(id) ? id : (MEMBERS[id].base as FichaId);
-  // S6: al estimar, los apartados que solo hablan de clasificar se reemplazan.
-  const ficha: Ficha =
-    task === "numerica" && id in REGRESSION_FICHA_FIELDS
-      ? { ...FICHAS[fichaId], ...REGRESSION_FICHA_FIELDS[id as SharedId] }
-      : FICHAS[fichaId];
+  // S6: al estimar, los apartados que solo hablan de clasificar se reemplazan y
+  // los modelos compartidos suman cómo estiman.
+  const { ficha, regressionNote } = matchTask(task, {
+    binaria: () => ({ ficha: FICHAS[fichaId], regressionNote: null }),
+    // S7: los apartados que solo hablan de dos clases se reemplazan. Por la ficha BASE
+    // (AU-S7-15): la logística balanceada usa la de la logística y su reemplazo.
+    multiclase: () => ({
+      ficha:
+        fichaId in MULTICLASS_FICHA_FIELDS
+          ? {
+              ...FICHAS[fichaId],
+              ...MULTICLASS_FICHA_FIELDS[
+                fichaId as keyof typeof MULTICLASS_FICHA_FIELDS
+              ],
+            }
+          : FICHAS[fichaId],
+      regressionNote: null,
+    }),
+    // S7: los agrupadores tienen su propia ficha (no comparten id con otra tarea).
+    agrupar: () => ({ ficha: FICHAS[fichaId], regressionNote: null }),
+    numerica: () => ({
+      ficha:
+        id in REGRESSION_FICHA_FIELDS
+          ? { ...FICHAS[fichaId], ...REGRESSION_FICHA_FIELDS[id as SharedId] }
+          : FICHAS[fichaId],
+      regressionNote:
+        id in REGRESSION_NOTES ? REGRESSION_NOTES[id as SharedId] : null,
+    }),
+  });
   const balancedNote =
     !isBaselineFicha(id) && MEMBERS[id].balanced
       ? BALANCED_NOTES[id as BalancedId]
-      : null;
-  // S6: al estimar, los modelos compartidos suman cómo estiman.
-  const regressionNote =
-    task === "numerica" && id in REGRESSION_NOTES
-      ? REGRESSION_NOTES[id as SharedId]
       : null;
   const name = isBaselineFicha(id)
     ? t(`results.baselines.${id}`)
@@ -124,8 +161,8 @@ export default function FichaModelo({
               </span>
             )}
             {t(`ficha.status.${status.kind}`, {
-              rank: status.kind === "competitor" ? status.rank : 0,
-              total: status.kind === "competitor" ? status.total : 0,
+              rank: "rank" in status ? status.rank : 0,
+              total: "total" in status ? status.total : 0,
               reason: status.kind === "out" ? status.reason : "",
             })}
           </p>

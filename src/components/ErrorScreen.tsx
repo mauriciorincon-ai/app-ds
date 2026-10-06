@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/i18n/use-translation";
+import { csvLimitParams } from "@/lib/quantity";
 import type { WorkerErrorKind } from "@/workers/protocol";
 import { Button } from "./ui";
 
@@ -18,7 +19,7 @@ export function ErrorScreen({
         ⚠
       </span>
       <h1 className="text-2xl font-semibold">{t("errors.title")}</h1>
-      <p className="text-ink-muted">{t(`errors.${kind}`)}</p>
+      <p className="text-ink-muted">{t(`errors.${kind}`, csvLimitParams())}</p>
       <Button variant="secondary" icon="retry" onClick={onRetry}>
         {t("errors.retry")}
       </Button>
