@@ -8,6 +8,9 @@ import { expect, test } from "@playwright/test";
 // pasando 12 e2e + Lighthouse 100/100 — porque ningún gate automático miraba esa rama.
 
 test.describe("brochure vivo — /conoce", () => {
+  // S7 (D-B): la página abre en el idioma del navegador; estas pruebas la leen en español.
+  test.use({ locale: "es-ES" });
+
   test("la ruta responde y el titular está presente", async ({ page }) => {
     const respuesta = await page.goto("/conoce");
     expect(respuesta?.status()).toBe(200);
@@ -25,8 +28,9 @@ test.describe("brochure vivo — /conoce", () => {
   }) => {
     await page.goto("/conoce");
 
+    // S7 (D-A): cinco puertas — la quinta, «Agrupar sin objetivo».
     const botones = page.locator(".tarjeta h3 > button");
-    await expect(botones).toHaveCount(4);
+    await expect(botones).toHaveCount(5);
     for (const boton of await botones.all()) {
       await expect(boton).toHaveAttribute("aria-expanded", "false");
     }
@@ -72,6 +76,11 @@ test.describe("brochure vivo — /conoce", () => {
 
     const claves = [
       page.getByRole("heading", { level: 1 }),
+      // S7 · E04b: las cuatro fichas, completas y quietas desde el primer frame.
+      page.getByRole("heading", { name: "Cuatro preguntas, la misma vara" }),
+      page.getByRole("heading", { name: "¿Sí o no?" }),
+      page.getByRole("heading", { name: "¿Qué grupos hay?" }),
+      page.getByText("Los grupos existen, son frágiles o no hay estructura."),
       page.getByText("«Random Forest» NO supera al baseline"),
       page.getByText("Esto también te lo decimos."),
       page.locator(".conteo-glosa"),
@@ -98,7 +107,7 @@ test.describe("brochure vivo — /conoce", () => {
   }) => {
     await page.goto("/conoce");
     await expect(page.locator(".conteo-glosa")).toContainText(
-      "35 funcionalidades",
+      "41 funcionalidades",
     );
   });
 
@@ -123,5 +132,109 @@ test.describe("brochure vivo — /conoce", () => {
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();
     expect(resultado.violations).toEqual([]);
+  });
+});
+
+// S7 (decisión D-B del usuario): la misma página en español y en inglés. Abre en el idioma
+// del navegador, el conmutador la cambia, y los dos idiomas cuentan lo mismo: las mismas
+// escenas, puertas, funcionalidades por puerta, fichas, etapas y el mismo conteo.
+test.describe("brochure vivo — los dos idiomas", () => {
+  test.use({ locale: "en-US" });
+
+  test("con un navegador en inglés abre en inglés, y el conmutador vuelve al español", async ({
+    page,
+  }) => {
+    await page.goto("/conoce");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "Build a model you can defend",
+      }),
+    ).toBeVisible();
+    await expect(page).toHaveTitle("Probeta DS — Meet it");
+    await expect(page.locator(".conteo-glosa")).toContainText("41 features");
+    // axe también en inglés, con las puertas y lo fino abiertos.
+    for (const boton of await page.locator(".tarjeta h3 > button").all()) {
+      await boton.click();
+    }
+    for (const resumen of await page.locator("details > summary").all()) {
+      await resumen.click();
+    }
+    await page.waitForFunction(() =>
+      document.getAnimations().every((a) => a.playState !== "running"),
+    );
+    const enIngles = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    expect(enIngles.violations).toEqual([]);
+    await page.getByRole("button", { name: "Español" }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "es-CO");
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "Construye un modelo que puedas defender",
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Español" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  test("paridad: cada texto tiene su par, y los dos idiomas cuentan lo mismo", async ({
+    page,
+  }) => {
+    await page.goto("/conoce");
+    // Cada bloque en español va seguido de su par en inglés, con la misma etiqueta.
+    const huerfanos = await page.evaluate(() =>
+      [...document.querySelectorAll(".es")]
+        .filter((es) => {
+          const en = es.nextElementSibling;
+          return (
+            !en || !en.classList.contains("en") || en.tagName !== es.tagName
+          );
+        })
+        .map((es) => es.textContent?.trim().slice(0, 40)),
+    );
+    expect(huerfanos, "textos en español sin su par en inglés").toEqual([]);
+
+    const cuenta = () =>
+      page.evaluate(() => {
+        const visibles = (selector: string) =>
+          [...document.querySelectorAll(selector)].filter(
+            (el) => el.getClientRects().length > 0,
+          );
+        return {
+          escenas: visibles("section h2").length,
+          puertas: visibles(".tarjeta").length,
+          porPuerta: visibles(".tarjeta").map(
+            (t) => t.querySelectorAll(".features li").length,
+          ),
+          insignias: visibles(".tarjeta-n").map((n) => n.textContent),
+          fichas: visibles(".ficha-pregunta").length,
+          etapas: visibles(".historial tr").length,
+          conteo: document
+            .querySelector(".conteo-cifra")
+            ?.getAttribute("data-contador"),
+          // Lo visible es de UN solo idioma.
+          otroIdioma: visibles(
+            document.documentElement.lang === "en" ? ".es" : ".en",
+          ).length,
+        };
+      });
+    const ingles = await cuenta();
+    await page.getByRole("button", { name: "Español" }).click();
+    const espanol = await cuenta();
+    expect(ingles.otroIdioma).toBe(0);
+    expect(espanol.otroIdioma).toBe(0);
+    expect({ ...ingles, otroIdioma: 0 }).toEqual({ ...espanol, otroIdioma: 0 });
+    expect(espanol.puertas).toBe(5);
+    expect(espanol.fichas).toBe(4);
+    expect(espanol.conteo).toBe("41");
+    expect(
+      espanol.porPuerta.reduce((a, b) => a + b, 0) + 2,
+      "las funcionalidades de las puertas + las 2 de «lo fino» = el conteo del pie",
+    ).toBe(41);
   });
 });

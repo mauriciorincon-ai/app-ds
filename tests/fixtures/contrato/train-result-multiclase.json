@@ -1,0 +1,270 @@
+{
+  "task": "multiclase",
+  "classes": [
+    "basico",
+    "empresa",
+    "estandar",
+    "estudiante",
+    "premium"
+  ],
+  "n_train": 150,
+  "n_test": 50,
+  "baselines": {
+    "majority": {
+      "balanced_accuracy": 0.2,
+      "f1_macro": 0.11014492753623188,
+      "accuracy": 0.38,
+      "log_loss": 22.34706510125264,
+      "auc_ovr": 0.5
+    },
+    "logistic": {
+      "balanced_accuracy": 0.5375757575757576,
+      "f1_macro": 0.5434108527131783,
+      "accuracy": 0.64,
+      "log_loss": 0.7833932651132928,
+      "auc_ovr": 0.9088813321710336
+    }
+  },
+  "model": {
+    "balanced_accuracy": 0.5375757575757576,
+    "f1_macro": 0.5434108527131783,
+    "accuracy": 0.64,
+    "log_loss": 0.7833932651132928,
+    "auc_ovr": 0.9088813321710336
+  },
+  "model_name": "logistic",
+  "winner": "logistic",
+  "league": [
+    {
+      "name": "logistic",
+      "status": "ok",
+      "cv": {
+        "mean": 0.5955238095238096,
+        "std": 0.12129781942694777,
+        "folds": [
+          0.4542857142857143,
+          0.5,
+          0.6833333333333333,
+          0.7833333333333333,
+          0.5566666666666666
+        ]
+      },
+      "test": {
+        "balanced_accuracy": 0.5375757575757576,
+        "f1_macro": 0.5434108527131783,
+        "accuracy": 0.64,
+        "log_loss": 0.7833932651132928,
+        "auc_ovr": 0.9088813321710336
+      },
+      "error_type": null,
+      "elapsed_ms": 54
+    },
+    {
+      "name": "ridge",
+      "status": "ok",
+      "cv": {
+        "mean": 0.4415064935064935,
+        "std": 0.038024278658616316,
+        "folds": [
+          0.3923809523809524,
+          0.5,
+          0.41515151515151516,
+          0.4333333333333333,
+          0.4666666666666666
+        ]
+      },
+      "test": {
+        "balanced_accuracy": 0.4242424242424242,
+        "f1_macro": 0.3551020408163265,
+        "accuracy": 0.56,
+        "log_loss": null,
+        "auc_ovr": null
+      },
+      "error_type": null,
+      "elapsed_ms": 43
+    },
+    {
+      "name": "hgb",
+      "status": "ok",
+      "cv": {
+        "mean": 0.5994199134199134,
+        "std": 0.05180278823962084,
+        "folds": [
+          0.5995238095238096,
+          0.6833333333333333,
+          0.5787878787878789,
+          0.6121212121212121,
+          0.5233333333333333
+        ]
+      },
+      "test": {
+        "balanced_accuracy": 0.4605635300372143,
+        "f1_macro": 0.4477584204413472,
+        "accuracy": 0.54,
+        "log_loss": 1.2283868478011197,
+        "auc_ovr": 0.8864699950575556
+      },
+      "error_type": null,
+      "elapsed_ms": 466
+    },
+    {
+      "name": "forest",
+      "status": "ok",
+      "cv": {
+        "mean": 0.5057229437229438,
+        "std": 0.0552432477342888,
+        "folds": [
+          0.43952380952380954,
+          0.6,
+          0.4757575757575757,
+          0.4833333333333333,
+          0.53
+        ]
+      },
+      "test": {
+        "balanced_accuracy": 0.5482828282828283,
+        "f1_macro": 0.525054945054945,
+        "accuracy": 0.62,
+        "log_loss": 0.8406203240782075,
+        "auc_ovr": 0.883110339901884
+      },
+      "error_type": null,
+      "elapsed_ms": 945
+    }
+  ],
+  "cv": {
+    "k": 5,
+    "scoring": "balanced_accuracy",
+    "rule": "one-se",
+    "best": "hgb",
+    "se": 0.02316691118556377
+  },
+  "elapsed_ms": 1672,
+  "confusion_matrix": [
+    [
+      19,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      3,
+      0,
+      0,
+      3
+    ],
+    [
+      3,
+      0,
+      3,
+      1,
+      2
+    ],
+    [
+      2,
+      0,
+      1,
+      2,
+      0
+    ],
+    [
+      0,
+      5,
+      1,
+      0,
+      5
+    ]
+  ],
+  "per_class": [
+    {
+      "precision": 0.7916666666666666,
+      "recall": 1,
+      "f1": 0.8837209302325582,
+      "support": 19
+    },
+    {
+      "precision": 0.375,
+      "recall": 0.5,
+      "f1": 0.42857142857142855,
+      "support": 6
+    },
+    {
+      "precision": 0.6,
+      "recall": 0.3333333333333333,
+      "f1": 0.42857142857142855,
+      "support": 9
+    },
+    {
+      "precision": 0.6666666666666666,
+      "recall": 0.4,
+      "f1": 0.5,
+      "support": 5
+    },
+    {
+      "precision": 0.5,
+      "recall": 0.45454545454545453,
+      "f1": 0.47619047619047616,
+      "support": 11
+    }
+  ],
+  "explainability": {
+    "method": "permutation_importance",
+    "scoring": "balanced_accuracy",
+    "n_repeats": 10,
+    "features": [
+      {
+        "name": "uso_gb_mes",
+        "kind": "numeric",
+        "importance": 0.12120361509835198,
+        "std": 0.02920658183653688,
+        "direction": null
+      },
+      {
+        "name": "usuarios",
+        "kind": "numeric",
+        "importance": 0.10012227538543332,
+        "std": 0.02902777504391481,
+        "direction": null
+      },
+      {
+        "name": "llamadas_soporte_mes",
+        "kind": "numeric",
+        "importance": 0.04796491228070178,
+        "std": 0.05096475426041637,
+        "direction": null
+      },
+      {
+        "name": "antiguedad_meses",
+        "kind": "numeric",
+        "importance": 0.03504093567251464,
+        "std": 0.03408064313231235,
+        "direction": null
+      },
+      {
+        "name": "pago",
+        "kind": "categorical",
+        "importance": -0.026744284954811258,
+        "std": 0.039193893666533315,
+        "direction": null
+      },
+      {
+        "name": "region",
+        "kind": "categorical",
+        "importance": -0.032236044657097264,
+        "std": 0.028763109902280766,
+        "direction": null
+      }
+    ]
+  },
+  "preprocessing": {
+    "numeric_medians": {
+      "usuarios": 2,
+      "uso_gb_mes": 52,
+      "antiguedad_meses": 34.5,
+      "llamadas_soporte_mes": 1
+    },
+    "rare_categories": {}
+  }
+}

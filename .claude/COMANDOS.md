@@ -1,5 +1,8 @@
 # Slash Commands — Kit General
 
+> Vive en `.claude/COMANDOS.md`, FUERA de `.claude/commands/` (kit v1.38.0, ds K-S6-1): todo `.md` dentro de esa
+> carpeta se registra como comando, y este README aparecía como `/README` en la lista.
+
 Comandos reutilizables que Claude Code puede invocar en cualquier app del pipeline. Cada archivo es un `.md` con frontmatter que Claude Code carga desde `.claude/commands/` de la app.
 
 ## Comandos incluidos

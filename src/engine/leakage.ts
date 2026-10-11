@@ -5,6 +5,8 @@
 // promete atrapar todos los casos: es una advertencia ("esta columna podría ser
 // un proxy del objetivo"), no una garantía. Se calcula SOLO sobre train.
 
+import { byCodePoint } from "@/engine/tarea";
+
 export type LeakageColumn =
   | { name: string; kind: "numeric"; values: readonly (number | null)[] }
   | { name: string; kind: "categorical"; values: readonly (string | null)[] };
@@ -21,6 +23,10 @@ export type LeakageFinding = {
   column: string;
   score: number; // 0..1 — mayor = más sospechoso
   reason: LeakageReason;
+  /** S7 (P6): con varias categorías, la clase que la columna delata (la de mayor
+   *  puntaje). Es un valor del objetivo: vive solo en el navegador (regla dura 2).
+   *  En la binaria no viaja (las dos clases dan el mismo puntaje). */
+  class?: string;
 };
 
 // Umbral por defecto: relación univariada casi perfecta. Deliberadamente alto
@@ -42,6 +48,12 @@ export const ETA_MIN_SUPPORT = 5;
  *  columna casi vacía ya no cambia el veredicto a «sospechoso» por nada. Decidido
  *  por delegación del usuario (bitácora, D8). */
 export const LEAKAGE_MIN_PAIRS = 10;
+/** S7 (D8, decisión del usuario en el STOP de la F0): una clase se evalúa contra el
+ *  resto solo si ella Y el resto tienen al menos estas filas con valor. Con 5, la
+ *  falsa alarma exacta de una numérica por azar (|AUC − ½| ≥ 0,48, Mann-Whitney sin
+ *  empates) es ≤ 0,794 %; con 4 sería 1,587 % (spike del S7, §2.1). Aplica a la
+ *  binaria y a la multiclase: la regla vive aquí, en un sitio. */
+export const LEAKAGE_CLASS_MIN_SUPPORT = 5;
 
 /**
  * AUC univariada por rangos (equivalente al estadístico de Mann-Whitney U
@@ -131,57 +143,110 @@ export function categoryPurity(
 }
 
 /**
- * Recorre las columnas y devuelve las sospechosas de fuga (score ≥ threshold),
- * ordenadas de más a menos sospechosa. Ignora nulos por columna emparejando
- * cada valor con su target.
+ * S7 (P6): la pureza NORMALIZADA de una categórica frente a una clase (uno contra
+ * el resto): 0 = lo que da la clase mayoritaria sin mirar la columna, 1 = cada
+ * categoría determina la clase. La cruda (`categoryPurity`) sale alta por
+ * construcción con una clase chica (el resto ya es casi todo): en el spike dio
+ * falsa alarma en el 56–62 % de los sorteos al azar con una clase del 2 %; la
+ * normalizada, en 0 %. null si todas las filas son de la misma clase.
+ */
+export function normalizedPurity(
+  values: readonly string[],
+  target: readonly (0 | 1)[],
+): number | null {
+  const n = values.length;
+  if (n === 0 || n !== target.length) return null;
+  const positives = target.filter((t) => t === 1).length;
+  const base = Math.max(positives, n - positives) / n;
+  if (base >= 1) return null;
+  return (categoryPurity(values, target) - base) / (1 - base);
+}
+
+/** Una columna contra una clase (uno contra el resto), solo con las filas que
+ *  tienen valor; null si la clase o el resto no llegan al soporte mínimo. */
+function scoreAgainstClass(
+  column: LeakageColumn,
+  isClass: readonly (0 | 1)[],
+  minSupport: number,
+): { score: number; reason: LeakageReason } | null {
+  const labels: (0 | 1)[] = [];
+  const numbers: number[] = [];
+  const categories: string[] = [];
+  column.values.forEach((value, i) => {
+    if (value === null) return;
+    if (column.kind === "numeric") {
+      if (!Number.isFinite(value)) return;
+      numbers.push(value as number);
+    } else {
+      categories.push(value as string);
+    }
+    labels.push(isClass[i]);
+  });
+  const inClass = labels.filter((t) => t === 1).length;
+  if (Math.min(inClass, labels.length - inClass) < minSupport) return null;
+  if (column.kind === "numeric") {
+    const auc = rankAuc(numbers, labels);
+    // Agnóstico a la dirección.
+    return { score: Math.max(auc, 1 - auc), reason: "near-perfect-separation" };
+  }
+  return {
+    score: normalizedPurity(categories, labels) ?? 0,
+    reason: "category-purity",
+  };
+}
+
+const bySuspicion = (a: LeakageFinding, b: LeakageFinding) => b.score - a.score;
+
+/**
+ * Binaria: recorre las columnas y devuelve las sospechosas de fuga (score ≥
+ * threshold), ordenadas de más a menos sospechosa. Ignora nulos por columna
+ * emparejando cada valor con su target. S7 (D8): con el soporte mínimo por clase
+ * y la pureza normalizada — la misma regla que la multiclase con K = 2 (las dos
+ * clases dan el mismo puntaje, así que se evalúa una).
  */
 export function detectLeakage(
   columns: readonly LeakageColumn[],
   target: readonly (0 | 1)[],
   threshold: number = DEFAULT_LEAKAGE_THRESHOLD,
+  minSupport: number = LEAKAGE_CLASS_MIN_SUPPORT,
 ): LeakageFinding[] {
-  const findings: LeakageFinding[] = [];
+  return columns
+    .flatMap((column) => {
+      const scored = scoreAgainstClass(column, target, minSupport);
+      return scored && scored.score >= threshold
+        ? [{ column: column.name, ...scored }]
+        : [];
+    })
+    .sort(bySuspicion);
+}
 
-  for (const column of columns) {
-    if (column.kind === "numeric") {
-      const values: number[] = [];
-      const labels: (0 | 1)[] = [];
-      column.values.forEach((value, i) => {
-        if (value !== null && Number.isFinite(value)) {
-          values.push(value);
-          labels.push(target[i]);
+/**
+ * S7 (P6): fuga POR CLASE con varias categorías. Cada clase contra el resto, con
+ * el soporte mínimo de cada lado; una columna se marca si delata alguna clase, y
+ * el hallazgo nombra la que más delata.
+ */
+export function detectLeakageByClass(
+  columns: readonly LeakageColumn[],
+  labels: readonly string[],
+  threshold: number = DEFAULT_LEAKAGE_THRESHOLD,
+  minSupport: number = LEAKAGE_CLASS_MIN_SUPPORT,
+): LeakageFinding[] {
+  const classes = [...new Set(labels)].sort(byCodePoint);
+  const indicators = classes.map(
+    (c) => [c, labels.map((l) => (l === c ? 1 : 0))] as const,
+  );
+  return columns
+    .flatMap((column) => {
+      let best: LeakageFinding | null = null;
+      for (const [cls, isClass] of indicators) {
+        const scored = scoreAgainstClass(column, isClass, minSupport);
+        if (scored && scored.score >= threshold && (!best || scored.score > best.score)) {
+          best = { column: column.name, ...scored, class: cls };
         }
-      });
-      const auc = rankAuc(values, labels);
-      const score = Math.max(auc, 1 - auc); // agnóstico a la dirección
-      if (score >= threshold) {
-        findings.push({
-          column: column.name,
-          score,
-          reason: "near-perfect-separation",
-        });
       }
-    } else {
-      const values: string[] = [];
-      const labels: (0 | 1)[] = [];
-      column.values.forEach((value, i) => {
-        if (value !== null) {
-          values.push(value);
-          labels.push(target[i]);
-        }
-      });
-      const purity = categoryPurity(values, labels);
-      if (purity >= threshold) {
-        findings.push({
-          column: column.name,
-          score: purity,
-          reason: "category-purity",
-        });
-      }
-    }
-  }
-
-  return findings.sort((a, b) => b.score - a.score);
+      return best ? [best] : [];
+    })
+    .sort(bySuspicion);
 }
 
 // --- S6: objetivo continuo -------------------------------------------------

@@ -167,7 +167,9 @@ describe("ScoreScreen — resultados", () => {
       screen.getByText(/«region»: 2 valores con categorías nunca vistas/),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/adivinando en 1 de 2 filas \(50%\)/),
+      // R9 (S7, AU-S7-33): en español, «50 %» con espacio no separable (Testing
+      // Library lo normaliza a un espacio; el byte se mira en el texto crudo).
+      screen.getByText(/adivinando en 1 de 2 filas \(50 %\)/),
     ).toBeInTheDocument();
   });
 
@@ -181,8 +183,11 @@ describe("ScoreScreen — resultados", () => {
 
   it("distribución + vista previa con columnas nuevas y descarga del CSV", () => {
     ui(SCORED);
-    // Distribución: una tile por clase, ambas con 1 fila (50%).
-    expect(screen.getAllByText("1 (50%)")).toHaveLength(2);
+    // Distribución: una tile por clase, ambas con 1 fila (50 %, con espacio no
+    // separable en español: R9, AU-S7-33).
+    expect(screen.getAllByText("1 (50 %)")).toHaveLength(2);
+    expect(document.body.textContent).toContain("1 (50\u00a0%)");
+    expect(document.body.textContent).toContain("filas (50\u00a0%)");
     // Vista previa con los nombres resueltos de las columnas nuevas.
     expect(screen.getByText("prediccion")).toBeInTheDocument();
     expect(screen.getByText("probabilidad_si")).toBeInTheDocument();

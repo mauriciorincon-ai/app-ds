@@ -1,0 +1,60 @@
+{
+  "payload_b64": "eJydVl9sU1UY39Z1Wze6P24qYyARNW7AKgM0e0DbZJqCTTomPEAiOTntPe257P4p",
+  "versions": {
+    "pyodide": "314.0.2",
+    "sklearn": "1.8.0",
+    "python": "3.14.2",
+    "xgboost": "2.1.4",
+    "lightgbm": "4.6.0"
+  },
+  "schema": {
+    "numeric": [
+      "gasto_mensual_usd",
+      "visitas_mes",
+      "antiguedad_meses"
+    ],
+    "categorical": [],
+    "task": "agrupar",
+    "groups": 3,
+    "noise": false,
+    "assign": {
+      "method": "nearest-centroid",
+      "centroids": [
+        [
+          -0.1629805545500356,
+          1.1112299898704914,
+          -0.034501386934417254
+        ],
+        [
+          -0.806811410530195,
+          -0.9195225366843115,
+          -0.026584132660520562
+        ],
+        [
+          1.8088031996513811,
+          -0.40894384114911786,
+          0.11508745957795155
+        ]
+      ],
+      "radii": null,
+      "sample_rows": null
+    }
+  },
+  "training_profile": {
+    "numeric": {
+      "gasto_mensual_usd": {
+        "min": 55.71,
+        "max": 784.41
+      },
+      "visitas_mes": {
+        "min": 1,
+        "max": 19
+      },
+      "antiguedad_meses": {
+        "min": 1,
+        "max": 60
+      }
+    },
+    "categorical": {}
+  }
+}

@@ -32,14 +32,25 @@ export const LEVEL_MARK: Record<
   loses: { tone: "negative", mark: "▼" },
 };
 
-/** Con una fuga sospechada, el titular es la sospecha — igual en las dos tareas
- *  (un solo sitio: AU-S6-42). */
-export function suspiciousBanner(t: (key: string) => string): Banner {
+/** Con una fuga sospechada, el titular es la sospecha — igual en todas las tareas
+ *  (un solo sitio: AU-S6-42). La alarma la da UNA columna, medida en las filas
+ *  donde tiene valor, y la cifra global puede quedar lejos de «perfecta» (planes con
+ *  fuga plantada: exactitud balanceada 0.78). S7 (AU-S7-20, decisión del usuario):
+ *  el titular dice la sospecha en las tres tareas con objetivo, y el detalle, lo que
+ *  se encontró: una columna que predice el objetivo, o una que delata una categoría. */
+export function suspiciousBanner(
+  t: (key: string) => string,
+  kind: "column" | "class" = "column",
+): Banner {
   return {
     tone: "caution",
     mark: "⚠",
     headline: t("results.verdict.suspicious"),
-    detail: t("results.verdict.suspiciousDetail"),
+    detail: t(
+      kind === "class"
+        ? "results.verdict.suspiciousClassDetail"
+        : "results.verdict.suspiciousDetail",
+    ),
   };
 }
 
@@ -58,7 +69,11 @@ export function VerdictCard({
           {banner.mark}
         </span>
         <div>
-          <h1 className={`text-xl font-semibold ${TONE_CLASS[banner.tone]}`}>
+          {/* tabIndex −1: el foco llega aquí tras «Elegir» (AU-S7-39), sin entrar al tabulador. */}
+          <h1
+            tabIndex={-1}
+            className={`text-xl font-semibold ${TONE_CLASS[banner.tone]}`}
+          >
             {banner.headline}
           </h1>
           <p className="mt-1 text-sm text-ink-muted">{banner.detail}</p>

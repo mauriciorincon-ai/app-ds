@@ -1,18 +1,20 @@
 // Tests de componentes (Testing Library) — pago de la deuda S1 "cobertura de
 // la capa UI". Cubren los componentes nuevos del S2 (estados del porqué,
 // consentimiento, model card) + smoke de las pantallas S1.
-import { fireEvent, render, screen } from "@testing-library/react";
+import { existsSync } from "node:fs";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { Metrics } from "@/engine/verdict";
 import { I18nProvider } from "@/i18n/provider";
 import { summarizeDataset } from "@/lib/experiment";
+import { buildModelCard } from "@/lib/modelcard";
 import type { BinaryResult } from "@/workers/protocol";
 import { ConfigScreen } from "@/components/ConfigScreen";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { ModelCardView } from "@/components/ModelCardView";
 import { ResultsScreen } from "@/components/ResultsScreen";
-import { StartScreen } from "@/components/StartScreen";
+import { EXAMPLES, StartScreen } from "@/components/StartScreen";
 import { TrainingScreen } from "@/components/TrainingScreen";
 import { WhySection } from "@/components/WhySection";
 import { leagueFields } from "./factories";
@@ -189,10 +191,18 @@ describe("ModelCardView", () => {
   it("ofrece la descarga; la vista previa se monta SOLO al abrir (sin duplicar títulos)", () => {
     const { container } = ui(
       <ModelCardView
-        result={result()}
-        meta={{ datasetName: "marketing.csv", cols: 7, ...RUN_META }}
-        sanitation={null}
-        verifiedNarrative={null}
+        datasetName="marketing.csv"
+        build={(locale) =>
+          buildModelCard({
+            locale,
+            datasetName: "marketing.csv",
+            cols: 7,
+            ...RUN_META,
+            result: result(),
+            sanitation: null,
+            verifiedNarrative: null,
+          })
+        }
       />,
     );
     expect(
@@ -271,7 +281,7 @@ describe("ResultsScreen (integración de la pantalla)", () => {
       />,
     );
     expect(
-      screen.getByText("Métricas casi perfectas — sospechoso"),
+      screen.getByText("Posible fuga de datos — sospechoso"),
     ).toBeInTheDocument();
     // La columna marcada aparece en la alerta, la plantilla y la model card.
     expect(screen.getAllByText(/monto_recuperado/).length).toBeGreaterThan(0);
@@ -279,11 +289,67 @@ describe("ResultsScreen (integración de la pantalla)", () => {
 });
 
 describe("pantallas S1 (smoke)", () => {
-  it("StartScreen: dropzone + 4 ejemplos (incl. el sucio de S4)", () => {
+  it("StartScreen: dropzone + los ejemplos (incl. el sucio de S4 y los dos del S7)", () => {
     ui(<StartScreen onLoad={() => {}} onImport={() => {}} />);
     expect(screen.getByText("Empieza tu experimento")).toBeInTheDocument();
     expect(screen.getByText("Campaña de marketing")).toBeInTheDocument();
     expect(screen.getByText("Clientes (datos sucios)")).toBeInTheDocument();
+    expect(screen.getByText("Planes de suscripción")).toBeInTheDocument();
+    expect(screen.getByText("Segmentos de clientes")).toBeInTheDocument();
+  });
+
+  // S7: un botón de ejemplo con un archivo mal escrito daría un 404 a quien lo pulse.
+  it("cada ejemplo existe en public/datasets/ (lo que sirve la app) y en el kit de prueba", () => {
+    for (const { file } of EXAMPLES) {
+      expect(existsSync(`public/datasets/${file}`), `public/datasets/${file}`).toBe(true);
+      expect(existsSync(`docs/kit-de-prueba/${file}`), `docs/kit-de-prueba/${file}`).toBe(true);
+    }
+  });
+
+  it("S7: «Planes de suscripción» y «Segmentos de clientes» cargan SU archivo con su nombre", async () => {
+    const fetchSpy = vi.fn(async (url: string) => new Response(`csv:${url}`));
+    vi.stubGlobal("fetch", fetchSpy);
+    try {
+      const onLoad = vi.fn();
+      ui(<StartScreen onLoad={onLoad} onImport={() => {}} />);
+      fireEvent.click(screen.getByRole("button", { name: /Planes de suscripción/ }));
+      await waitFor(() =>
+        expect(onLoad).toHaveBeenCalledWith(
+          "csv:/datasets/planes-suscripcion.csv",
+          "planes-suscripcion.csv",
+        ),
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Segmentos de clientes/ }));
+      await waitFor(() =>
+        expect(onLoad).toHaveBeenCalledWith(
+          "csv:/datasets/segmentos-clientes.csv",
+          "segmentos-clientes.csv",
+        ),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // S7 (design-system R9): los conteos llevan miles con coma, como toda cifra de la app,
+  // y en la misma pantalla que la nota de la muestra del jerárquico («8,000»).
+  it("ConfigScreen: el conteo de filas lleva separador de miles (R9)", () => {
+    const dataset = summarizeDataset({
+      headers: ["x", "y"],
+      rows: Array.from({ length: 1200 }, (_, i) => [String(i), String(i % 2)]),
+    });
+    ui(
+      <ConfigScreen
+        dataset={dataset}
+        sanitation={null}
+        edaAlerts={null}
+        plan={null}
+        onSelectTarget={() => {}}
+        onRun={() => {}}
+        onBack={() => {}}
+      />,
+    );
+    expect(screen.getByText("1,200 filas · 2 columnas")).toBeInTheDocument();
   });
 
   it("ConfigScreen: preview + selección de objetivo", () => {

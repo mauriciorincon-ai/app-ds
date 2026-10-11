@@ -1,6 +1,6 @@
 // Genera los datasets de ejemplo empaquetados (sintéticos, anonimizados,
-// reproducibles) en public/datasets/. Clasificación (S1–S4) y regresión (S6),
-// cada familia con un dataset de FUGA PLANTADA para demostrar el chequeo de fuga. Ejecutar: node scripts/make-example-datasets.mjs
+// reproducibles) en public/datasets/. Clasificación (S1–S4), regresión (S6), varias
+// categorías y agrupar (S7); cada tarea con objetivo trae un dataset de FUGA PLANTADA para demostrar el chequeo de fuga. Ejecutar: node scripts/make-example-datasets.mjs
 //
 // Todo es sintético (ninguna persona real). El seed hace la generación
 // determinista: el mismo comando produce siempre los mismos CSV.
@@ -204,6 +204,120 @@ function housePriceLeak(n = 200, seed = 707) {
   );
 }
 
+// Normal estándar (Box-Muller) sobre el mismo generador sembrado.
+function gauss(rng) {
+  const u = Math.max(rng(), 1e-12);
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng());
+}
+
+/** Una clase según sus pesos (los pesos suman 1). */
+function weighted(rng, weights) {
+  let r = rng();
+  for (const [key, w] of Object.entries(weights)) {
+    if ((r -= w) < 0) return key;
+  }
+  return Object.keys(weights).at(-1);
+}
+
+// 7) Planes de suscripción — MULTICLASE (S7), objetivo `plan` con 5 clases
+// desbalanceadas (~40/25/15/12/8 %). Señal real y SOLAPADA: ninguna columna legítima
+// separa sola una clase (si no, sería una «fuga» de mentira). `region` no lleva señal.
+// Con `planted`, `cargo_corporativo_usd` solo tiene valor en la clase «empresa» (se
+// factura DESPUÉS de contratar ese plan) → delata UNA clase: la fuga por clase debe
+// nombrar la columna y la clase; sin ella, el ejemplo entrena.
+const PLAN_SHARES = { basico: 0.4, estandar: 0.25, premium: 0.15, empresa: 0.12, estudiante: 0.08 };
+const PLAN_PROFILE = {
+  basico: { users: 1.5, gb: 20, calls: 1, annual: 0.3 },
+  estandar: { users: 2.5, gb: 60, calls: 1.5, annual: 0.35 },
+  premium: { users: 4, gb: 150, calls: 2, annual: 0.55 },
+  empresa: { users: 7, gb: 260, calls: 3.5, annual: 0.65 },
+  estudiante: { users: 1.3, gb: 35, calls: 0.8, annual: 0.2 },
+};
+function subscriptionPlans(n = 200, seed = 808, planted = false) {
+  const rng = mulberry32(seed);
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const plan = weighted(rng, PLAN_SHARES);
+    const p = PLAN_PROFILE[plan];
+    const users = Math.max(1, Math.round(p.users * Math.exp(0.45 * gauss(rng))));
+    const gb = round(p.gb * Math.exp(0.55 * gauss(rng)), 1);
+    const months = plan === "estudiante" ? 1 + Math.floor(rng() * 36) : 1 + Math.floor(rng() * 72);
+    const calls = Math.max(0, Math.round(p.calls + 1.1 * gauss(rng)));
+    const payment = rng() < p.annual ? "anual" : "mensual";
+    const region = pick(rng, ["norte", "sur", "centro", "costa"]);
+    const row = [users, gb, months, calls, payment, region];
+    if (planted) row.push(plan === "empresa" ? round(40 + rng() * 260) : 0);
+    row.push(plan);
+    rows.push(row);
+  }
+  const headers = ["usuarios", "uso_gb_mes", "antiguedad_meses", "llamadas_soporte_mes", "pago", "region"];
+  if (planted) headers.push("cargo_corporativo_usd");
+  headers.push("plan");
+  return toCsv(headers, rows);
+}
+
+// 8) Segmentos de clientes — AGRUPAR (S7), sin objetivo. Tres grupos plantados
+// (~40/35/25 %) que se separan en gasto y visitas; `antiguedad_meses` es ruido común
+// a los tres. `cliente_id` es un identificador: la app debe excluirlo y DECIRLO.
+function customerSegments(n = 300, seed = 909) {
+  const rng = mulberry32(seed);
+  const groups = {
+    ahorro: { share: 0.4, spend: 80, visits: 2.5, channel: { tienda: 0.6, web: 0.3, app: 0.1 } },
+    frecuente: { share: 0.35, spend: 220, visits: 12, channel: { tienda: 0.2, web: 0.3, app: 0.5 } },
+    premium: { share: 0.25, spend: 620, visits: 5, channel: { tienda: 0.45, web: 0.45, app: 0.1 } },
+  };
+  const shares = Object.fromEntries(Object.entries(groups).map(([k, g]) => [k, g.share]));
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const g = groups[weighted(rng, shares)];
+    const spend = round(g.spend * Math.exp(0.15 * gauss(rng)), 2);
+    const visits = Math.max(1, Math.round(g.visits * Math.exp(0.22 * gauss(rng))));
+    const months = 1 + Math.floor(rng() * 60);
+    const channel = weighted(rng, g.channel);
+    rows.push([`C${String(i + 1).padStart(4, "0")}`, spend, visits, months, channel]);
+  }
+  return toCsv(["cliente_id", "gasto_mensual_usd", "visitas_mes", "antiguedad_meses", "canal"], rows);
+}
+
+// 9) Mediciones sin grupos — AGRUPAR SIN ESTRUCTURA (S7). Una sola nube: cuatro
+// numéricas independientes y una categórica al azar. La app debe decir «no hay
+// estructura» sin esconder la tabla de agrupadores.
+function noGroups(n = 300, seed = 1010) {
+  const rng = mulberry32(seed);
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    rows.push([
+      round(20 + 3 * gauss(rng), 1),
+      round(50 + 10 * gauss(rng), 1),
+      round(1013 + 8 * gauss(rng), 1),
+      round(45 + 6 * gauss(rng), 1),
+      pick(rng, ["a", "b", "c"]),
+    ]);
+  }
+  return toCsv(["temperatura_c", "humedad_pct", "presion_hpa", "ruido_db", "zona"], rows);
+}
+
+// 10) Tiendas por ciudad — SOLO KIT (S7). `ciudad` toma 30 valores que se repiten:
+// demasiados para ser categorías y no es un identificador (no hay un valor por fila,
+// así que el saneamiento no la aparta). Elegida como objetivo, la app dice que no
+// sirve y ofrece agrupar filas parecidas en su lugar (mirada M3 de la guía). Las
+// ventas en USD de cinco cifras sirven de extremo de magnitud.
+function storesByCity(n = 120, seed = 1111) {
+  const rng = mulberry32(seed);
+  const cities = Array.from({ length: 30 }, (_, i) => `ciudad_${String(i + 1).padStart(2, "0")}`);
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const big = rng() < 0.5;
+    rows.push([
+      cities[i % cities.length],
+      round((big ? 52000 : 18000) * Math.exp(0.2 * gauss(rng)), 0),
+      Math.max(50, Math.round((big ? 2400 : 900) * Math.exp(0.25 * gauss(rng)))),
+      round((big ? 420 : 160) * Math.exp(0.15 * gauss(rng)), 0),
+    ]);
+  }
+  return toCsv(["ciudad", "ventas_mes_usd", "visitas_mes", "superficie_m2"], rows);
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   await mkdir(kitDir, { recursive: true });
@@ -214,6 +328,10 @@ async function main() {
     "clientes-sucio.csv": messyCustomers(),
     "consumo-energia.csv": energyConsumption(),
     "precio-fuga-plantada.csv": housePriceLeak(),
+    "planes-suscripcion.csv": subscriptionPlans(),
+    "planes-fuga-plantada.csv": subscriptionPlans(200, 818, true),
+    "segmentos-clientes.csv": customerSegments(),
+    "sin-grupos.csv": noGroups(),
   };
   for (const [name, content] of Object.entries(files)) {
     await writeFile(resolve(outDir, name), content, "utf8");
@@ -225,6 +343,20 @@ async function main() {
   const medium = energyConsumption(5000, 606);
   await writeFile(resolve(kitDir, "consumo-energia-mediano.csv"), medium, "utf8");
   console.log(`[datasets] consumo-energia-mediano.csv — ${medium.trimEnd().split("\n").length - 1} filas (solo kit)`);
+  // Solo kit de prueba (S7): 5.000 filas para el Nivel 2 de la liga multiclase.
+  const plans = subscriptionPlans(5000, 828);
+  await writeFile(resolve(kitDir, "planes-suscripcion-mediano.csv"), plans, "utf8");
+  console.log(`[datasets] planes-suscripcion-mediano.csv — ${plans.trimEnd().split("\n").length - 1} filas (solo kit)`);
+  // Solo kit de prueba (S7): más de 8.000 filas para ver la muestra del jerárquico
+  // (decisión 8) y una columna que no sirve como objetivo (M3).
+  const kitOnly = {
+    "segmentos-grande.csv": customerSegments(9000, 919),
+    "tiendas-ciudades.csv": storesByCity(),
+  };
+  for (const [name, content] of Object.entries(kitOnly)) {
+    await writeFile(resolve(kitDir, name), content, "utf8");
+    console.log(`[datasets] ${name} — ${content.trimEnd().split("\n").length - 1} filas (solo kit)`);
+  }
 }
 
 main().catch((error) => {

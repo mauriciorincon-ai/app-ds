@@ -1,0 +1,109 @@
+{
+  "emitted_by": "pipeline.py del S6 (main 6f50c43, sin cambios en pipeline.py), 2026-10-04",
+  "score_payload": {
+    "headers": [
+      "superficie_m2",
+      "ocupantes",
+      "anio_construccion",
+      "calefaccion",
+      "aislamiento",
+      "temp_media_c"
+    ],
+    "rows": [
+      [
+        "85",
+        "3",
+        "1998",
+        "gas",
+        "medio",
+        "12.4"
+      ],
+      [
+        "140",
+        "4",
+        "1975",
+        "electrica",
+        "bajo",
+        "6.1"
+      ],
+      [
+        "62",
+        "2",
+        "2015",
+        "bomba_calor",
+        "alto",
+        "15.8"
+      ],
+      [
+        "900",
+        "5",
+        "2001",
+        "gas",
+        "medio",
+        "10.2"
+      ],
+      [
+        "110",
+        "1",
+        "1984",
+        "geotermia",
+        "alto",
+        "9.7"
+      ],
+      [
+        "48",
+        "2",
+        "2019",
+        "bomba_calor",
+        "alto",
+        "18.3"
+      ],
+      [
+        "175",
+        "6",
+        "1969",
+        "electrica",
+        "bajo",
+        "4.5"
+      ],
+      [
+        "95",
+        "3",
+        "2008",
+        "gas",
+        "alto",
+        "13.9"
+      ]
+    ]
+  },
+  "score": {
+    "task": "numerica",
+    "predictions": [
+      278.55734152415675,
+      503.14788627773044,
+      174.72583903916058,
+      1189.9952356167105,
+      232.8805871617044,
+      143.88348006373826,
+      643.9652631564859,
+      246.35954360870267
+    ],
+    "probabilities": null,
+    "novelty": {
+      "columns": [
+        {
+          "column": "superficie_m2",
+          "kind": "numeric",
+          "count": 1
+        },
+        {
+          "column": "calefaccion",
+          "kind": "categorical",
+          "count": 1
+        }
+      ],
+      "affected_rows": 2,
+      "n_rows": 8
+    }
+  }
+}

@@ -10,8 +10,10 @@
 import {
   calibrationFactor,
   estimateMemberSeconds,
+  selectionReserveSeconds,
   type CostInput,
 } from "@/engine/costos";
+import { matchTask } from "@/engine/despacho";
 import {
   byPriority,
   MEMBERS,
@@ -24,7 +26,9 @@ import type { TrainTask } from "@/engine/tarea";
 export const LEVEL1_CEILING_S = 5;
 /** Con menos filas, la red neuronal no aprende nada estable (F0: mala con 200 filas). */
 export const MLP_MIN_ROWS = 500;
-/** Con la minoritaria ≥ 40 %, la variante balanceada repite a su modelo base. */
+/** Con la minoritaria ≥ 40 %, la variante balanceada repite a su modelo base.
+ *  S7: con K clases la regla es minoritaria × K ≥ 0,4 × 2 (el mismo número re-expresado:
+ *  con dos clases es idéntica; con K ≥ 3 una minoritaria de 1/K nunca llega al 40 %). */
 export const BALANCED_MIN_MINORITY = 0.4;
 /** Pliegues de la CV (F0-6): 5, y 3 por encima de 20.000 filas. */
 export const CV_K = 5;
@@ -42,8 +46,11 @@ export type RouteProfile = {
   nTrain: number;
   /** Columnas tras one-hot (estimadas). */
   width: number;
-  /** Proporción de la clase minoritaria en train (0..0,5); null sin clases (numérica). */
+  /** Proporción de la clase minoritaria en train (0..1/K); null sin clases (numérica). */
   minorityShare: number | null;
+  /** S7: clases del objetivo, solo con varias categorías (escalan los costos y la
+   *  regla de las balanceadas). */
+  classes?: number;
   /** Pliegues de la CV. */
   k: number;
 };
@@ -95,12 +102,29 @@ export function chooseCvK(
   return k >= 2 ? k : null;
 }
 
+/** Cuántas clases tiene el objetivo; null si no hay clases (estimar). */
+function classCount(profile: RouteProfile): number | null {
+  return matchTask(profile.task, {
+    binaria: () => 2,
+    multiclase: () => {
+      if (profile.classes === undefined) {
+        throw new Error("encarrilador: la multiclase necesita el número de clases");
+      }
+      return profile.classes;
+    },
+    numerica: () => null,
+    agrupar: () => null,
+  });
+}
+
 function outReasonFor(id: MemberId, profile: RouteProfile): OutReason | null {
   if (id === "mlp" && profile.rows < MLP_MIN_ROWS) return "mlp-few-rows";
+  const classes = classCount(profile);
   if (
     MEMBERS[id].balanced &&
     profile.minorityShare !== null &&
-    profile.minorityShare >= BALANCED_MIN_MINORITY
+    classes !== null &&
+    profile.minorityShare * classes >= BALANCED_MIN_MINORITY * 2
   ) {
     return "balanced-not-needed";
   }
@@ -122,10 +146,17 @@ export function routeModels(
     nTrain: profile.nTrain,
     width: profile.width,
     k: profile.k,
+    classes: profile.classes,
   };
   const task = profile.task;
   const forcedSet = new Set(forced);
   const placements: Placement[] = [];
+  // S7: al agrupar, la lectura del retenido se suma UNA vez (la más cara posible
+  // entre los que corren); con objetivo, la reserva es 0.
+  const reserve = (ids: readonly MemberId[]) =>
+    selectionReserveSeconds(ids, cost, task);
+  const inLevel1 = () =>
+    placements.filter((p) => p.level === 1).map((p) => p.id);
   let used = 0;
   for (const id of ROSTER_BY_TASK[task]) {
     const estimateS = estimateMemberSeconds(id, cost, task);
@@ -142,11 +173,12 @@ export function routeModels(
       placements.push({
         id,
         level: 1,
-        reason: estimateS <= ceilingS ? "fits-ceiling" : "always-first",
+        reason:
+          estimateS + reserve([id]) <= ceilingS ? "fits-ceiling" : "always-first",
         estimateS,
       });
       used += estimateS;
-    } else if (used + estimateS <= ceilingS) {
+    } else if (used + estimateS + reserve([...inLevel1(), id]) <= ceilingS) {
       placements.push({ id, level: 1, reason: "fits-ceiling", estimateS });
       used += estimateS;
     } else {
@@ -167,8 +199,8 @@ export function routeModels(
     level1,
     level2,
     out: level("out"),
-    level1EstimateS: sum(level1),
-    unionEstimateS: sum([...level1, ...level2]),
+    level1EstimateS: sum(level1) + reserve(level1),
+    unionEstimateS: sum([...level1, ...level2]) + reserve([...level1, ...level2]),
   };
 }
 
@@ -233,6 +265,15 @@ export function planLevel2(
   const factor = calibrationFactor(measured.membersMs, ranEstimateS);
   const fixedS = Math.max(0, measured.totalMs - measured.membersMs) / 1000;
   const roster = rosterFor(routing, 2);
+  // S7: al agrupar, la parte fija incluye la lectura del retenido — y en el Nivel
+  // 2 el retenido puede ser uno más caro: se toma la mayor de las dos.
+  const reserveS =
+    factor *
+    selectionReserveSeconds(
+      roster,
+      { nTrain: profile.nTrain, width: profile.width, k: profile.k },
+      profile.task,
+    );
   return {
     roster,
     added: roster.filter((id) => !ranSet.has(id)),
@@ -240,6 +281,7 @@ export function planLevel2(
       (p) => (p.level === "out" || p.reason === "forced") && !ranSet.has(p.id),
     ),
     estimateS:
-      factor * roster.reduce((acc, id) => acc + estimateOf(id), 0) + fixedS,
+      factor * roster.reduce((acc, id) => acc + estimateOf(id), 0) +
+      Math.max(fixedS, reserveS),
   };
 }

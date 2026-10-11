@@ -385,7 +385,11 @@ describe("Python → TS: export y puntuación de REGRESIÓN", () => {
 
   it("carnadas del export (schema.task, schema.target_stats)", () => {
     runBaits("export-regresión", exported, validateExportResult, [
-      ["schema.task", (e) => (e.schema.task = "multiclase")],
+      // S7 (cambio esperado): «multiclase» ya es una tarea registrada; una tarea
+      // que nadie entrena se nombra como tal, y una de regresión que dice ser
+      // multiclase se lee con la forma multiclase y le faltan sus clases.
+      ["schema.task", (e) => (e.schema.task = "serie-tiempo")],
+      ["schema.classes", (e) => (e.schema.task = "multiclase")],
       ["schema.task", (e) => delete e.schema.task],
       ["schema.target_stats", (e) => delete e.schema.target_stats],
       [
@@ -406,6 +410,171 @@ describe("Python → TS: export y puntuación de REGRESIÓN", () => {
         ["probabilities", (s) => (s.probabilities = [0.5, 0.5, 0.5])],
         ["predictions", (s) => s.predictions.pop()],
       ],
+    );
+  });
+});
+
+// --- S7: varias categorías (fixtures emitidos por tests/integration/multiclase.test.ts)
+
+const PAYLOAD_MULTI = fixture<PipelinePayload & { test_counts: number[] }>(
+  "payload-multiclase",
+);
+/** Lo que useExperiment manda al lector con varias categorías. */
+const SENT_MULTI = {
+  task: "multiclase" as const,
+  roster: PAYLOAD_MULTI.roster,
+  cv_k: PAYLOAD_MULTI.cv_k,
+  primary_metric: PAYLOAD_MULTI.primary_metric,
+  classes: PAYLOAD_MULTI.classes!,
+  testCounts: PAYLOAD_MULTI.test_counts,
+};
+
+describe("Python → TS: liga de VARIAS CATEGORÍAS (train)", () => {
+  const train = fixture("train-result-multiclase");
+  // El miembro con la MENOR exactitud balanceada de CV.
+  const lowest = (t: Json): MemberId =>
+    t.league
+      .filter((r: Json) => r.status === "ok")
+      .reduce((a: Json, b: Json) => (b.cv.mean < a.cv.mean ? b : a)).name;
+
+  it("el fixture real que emitió Pyodide valida (y una binaria no pasa por multiclase)", () => {
+    expect(validateTrainResult(train, SENT_MULTI)).toMatchObject({ ok: true });
+    expect(
+      validateTrainResult(fixture("train-result"), SENT_MULTI),
+    ).toEqual({ ok: false, field: "task" });
+  });
+
+  it("carnadas por campo: se rechazan NOMBRANDO el campo", () => {
+    runBaits("train-multiclase", train, (v) => validateTrainResult(v, SENT_MULTI), [
+      ["task", (t) => (t.task = "binaria")],
+      ["task", (t) => delete t.task],
+      // Las clases son las que TS envió: largo, orden y únicas.
+      ["classes", (t) => t.classes.pop()],
+      ["classes", (t) => t.classes.reverse()],
+      ["classes", (t) => (t.classes[1] = t.classes[0])],
+      ["classes[0]", (t) => (t.classes[0] = 3)],
+      ["n_test", (t) => (t.n_test += 1)],
+      ["model.balanced_accuracy", (t) => (t.model.balanced_accuracy = 1.5)],
+      ["model.f1_macro", (t) => (t.model.f1_macro = -0.1)],
+      ["model.accuracy", (t) => delete t.model.accuracy],
+      ["model.log_loss", (t) => (t.model.log_loss = -1)],
+      ["model.auc_ovr", (t) => (t.model.auc_ovr = 2)],
+      ["model", (t) => (t.model.balanced_accuracy /= 2)],
+      [
+        "baselines.majority.balanced_accuracy",
+        (t) => delete t.baselines.majority.balanced_accuracy,
+      ],
+      ["baselines.logistic.f1_macro", (t) => (t.baselines.logistic.f1_macro = "x")],
+      // La logística miembro y la baseline son el mismo ajuste (como la lineal, AU-S6-39).
+      ["baselines.logistic", (t) => (t.baselines.logistic.accuracy /= 2)],
+      ["league[0].cv.mean", (t) => delete t.league[0].cv.mean],
+      [
+        "league[0].test.balanced_accuracy",
+        (t) => (t.league[0].test.balanced_accuracy = 1.2),
+      ],
+      ["league[0].name", (t) => (t.league[0].name = "linear")],
+      ["cv.scoring", (t) => (t.cv.scoring = "roc_auc")],
+      ["cv.best", (t) => (t.cv.best = lowest(t))],
+      ["winner", (t) => (t.winner = lowest(t))],
+      // La matriz K×K: forma, filas = filas de prueba de cada clase, enteros ≥ 0.
+      ["confusion_matrix", (t) => t.confusion_matrix.pop()],
+      ["confusion_matrix", (t) => t.confusion_matrix[0].pop()],
+      [
+        "confusion_matrix",
+        (t) => {
+          // Mismo total, pero una fila que no es la de su clase.
+          t.confusion_matrix[0][0] -= 1;
+          t.confusion_matrix[1][0] += 1;
+        },
+      ],
+      ["confusion_matrix[0][0]", (t) => (t.confusion_matrix[0][0] = -1)],
+      ["confusion_matrix[0][0]", (t) => (t.confusion_matrix[0][0] = 1.5)],
+      ["per_class[0].recall", (t) => (t.per_class[0].recall = 1.5)],
+      ["per_class", (t) => (t.per_class[0].support += 1)],
+      ["per_class", (t) => t.per_class.pop()],
+    ]);
+  });
+});
+
+describe("Python → TS: elección manual con varias categorías (fit-member)", () => {
+  const fit = fixture("fit-member-result-multiclase");
+  const sentFit = {
+    member: fit.model_name as MemberId,
+    task: "multiclase" as const,
+    nTest: SENT_MULTI.testCounts.reduce((a, b) => a + b, 0),
+    classes: SENT_MULTI.classes,
+    testCounts: SENT_MULTI.testCounts,
+  };
+
+  it("el fixture real valida (y tiene que ser el miembro pedido)", () => {
+    expect(validateMemberFit(fit, sentFit).ok).toBe(true);
+    expect(validateMemberFit(fit, { ...sentFit, member: "hgb" })).toEqual({
+      ok: false,
+      field: "model_name",
+    });
+  });
+
+  it("carnadas por campo", () => {
+    runBaits("fit-member-multiclase", fit, (v) => validateMemberFit(v, sentFit), [
+      ["task", (f) => (f.task = "numerica")],
+      ["model.f1_macro", (f) => (f.model.f1_macro = 2)],
+      ["model.log_loss", (f) => (f.model.log_loss = "x")],
+      ["confusion_matrix", (f) => f.confusion_matrix.pop()],
+      ["confusion_matrix", (f) => (f.confusion_matrix[0][0] += 1)],
+      ["per_class[0].f1", (f) => delete f.per_class[0].f1],
+      ["per_class", (f) => (f.per_class[0].support += 1)],
+    ]);
+  });
+});
+
+describe("Python → TS: export y puntuación con VARIAS CATEGORÍAS", () => {
+  const exported = fixture("export-result-multiclase");
+  const score = fixture("score-result-multiclase");
+  const sentScore = { task: "multiclase" as const, classes: SENT_MULTI.classes };
+
+  it("los fixtures reales validan", () => {
+    expect(validateExportResult(exported).ok).toBe(true);
+    expect(validateScoreResult(score, sentScore).ok).toBe(true);
+  });
+
+  it("carnadas del export (schema.task, schema.classes)", () => {
+    runBaits("export-multiclase", exported, validateExportResult, [
+      ["schema.task", (e) => (e.schema.task = "serie-tiempo")],
+      ["schema.classes", (e) => delete e.schema.classes],
+      ["schema.classes", (e) => (e.schema.classes = ["a", "b"])],
+      ["schema.classes", (e) => (e.schema.classes[1] = e.schema.classes[0])],
+    ]);
+  });
+
+  it("carnadas de la puntuación (una clase del modelo y la probabilidad de ESA clase)", () => {
+    runBaits(
+      "score-multiclase",
+      score,
+      (v) => validateScoreResult(v, sentScore),
+      [
+        ["task", (s) => (s.task = "numerica")],
+        ["predictions[0]", (s) => (s.predictions[0] = 3)],
+        ["predictions", (s) => (s.predictions[0] = "zzz-otra")],
+        ["predictions", (s) => s.predictions.pop()],
+        // Por debajo de 1/K no puede ser la probabilidad de la clase predicha.
+        ["probabilities", (s) => (s.probabilities[0] = 0.1)],
+        ["probabilities", (s) => (s.probabilities[0] = 1.5)],
+        ["probabilities", (s) => s.probabilities.pop()],
+        ["probabilities[0]", (s) => (s.probabilities[0] = "0.5")],
+      ],
+    );
+  });
+});
+
+describe("TS → Python: el payload multiclase lo emite el serializador real de TS", () => {
+  it("trae la tarea, la exactitud balanceada, las clases en orden y solo ids del roster multiclase", () => {
+    expect(PAYLOAD_MULTI.task).toBe("multiclase");
+    expect(PAYLOAD_MULTI.primary_metric).toBe("balanced_accuracy");
+    expect(PAYLOAD_MULTI.classes).toEqual([...PAYLOAD_MULTI.classes!].sort());
+    for (const id of PAYLOAD_MULTI.roster)
+      expect(isMemberOf("multiclase", id)).toBe(true);
+    expect(PAYLOAD_MULTI.test_counts.reduce((a, b) => a + b, 0)).toBe(
+      PAYLOAD_MULTI.test_idx.length,
     );
   });
 });

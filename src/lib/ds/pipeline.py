@@ -27,6 +27,23 @@ S6 — estimar una cantidad (ADR-013): el payload trae `task` ("binaria" |
 (`_REGRESSORS`), KFold, MAE en unidades (menor es mejor) y baselines mediana +
 lineal; devuelve además una muestra predicho-vs-real y los cuantiles de residuos
 de TODO el test (valores del objetivo: viven solo en el navegador).
+
+S7 — clasificar en varias categorías (ADR 015): `task: "multiclase"` reusa los 14
+miembros de la binaria en su forma nativa (sklearn, LightGBM y XGBoost resuelven K
+clases solos), con el objetivo codificado 0..K−1 en el orden de `classes` (lo manda
+TS y se coteja con los datos), CV estratificada con k ≤ la clase más chica de train,
+la exactitud balanceada como métrica primaria (decisión del usuario en el STOP de la
+F0) y baselines mayoritaria + logística multinomial. Todo decide por `_by_task`: una
+tarea registrada sin sus ramas no corre (S7, P2).
+
+S7 — agrupar sin objetivo (ADR 016): `task: "agrupar"` entra por `run_clustering`
+(y `fit_cluster_member`), con su propio payload SIN objetivo ni partición: el
+preprocesador se ajusta sobre TODAS las filas (no hay prueba que proteger, y se
+declara). Compiten K-Means, Agglomerative (ward), GMM y HDBSCAN; cada uno elige su k
+(silueta sobre UNA muestra compartida, BIC, densidad), el ganador sale por CONSENSO
+y lo que «sirve para creer» es la lectura contra la referencia nula (el mismo
+agrupador sobre datos sin estructura) y la estabilidad por re-muestreo. Las
+etiquetas por fila jamás viajan en el resultado (P13).
 """
 
 import base64
@@ -41,7 +58,10 @@ import zlib
 
 import numpy as np
 import pandas as pd
+from scipy.cluster.hierarchy import fcluster, linkage
+from scipy.stats import chi2_contingency
 from sklearn.base import clone
+from sklearn.cluster import HDBSCAN, KMeans
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import (
@@ -64,17 +84,23 @@ from sklearn.linear_model import (
 )
 from sklearn.metrics import (
     accuracy_score,
+    adjusted_rand_score,
+    balanced_accuracy_score,
     confusion_matrix,
     f1_score,
+    log_loss,
     mean_absolute_error,
     mean_absolute_percentage_error,
     mean_squared_error,
     median_absolute_error,
+    precision_recall_fscore_support,
     precision_score,
     r2_score,
     recall_score,
     roc_auc_score,
+    silhouette_score,
 )
+from sklearn.mixture import GaussianMixture
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
@@ -96,6 +122,11 @@ warnings.filterwarnings(
 # Modelo fitted retenido tras run_experiment/import_model (S3). Vive a nivel de
 # módulo dentro del worker: es lo que permite puntuar y exportar sin re-entrenar.
 _MODEL = None
+
+# S7 (P13): las etiquetas por fila del agrupamiento retenido viven AQUÍ, fuera de
+# todo resultado: ni el JSON de la liga, ni el esquema, ni el archivo exportado las
+# llevan. Solo `cluster_labels` las entrega, para el CSV local del usuario.
+_CLUSTER_LABELS = None
 
 
 # Espejo EXACTO de NULL_TOKENS/isNullToken de csv.ts (paridad TS↔Python,
@@ -225,16 +256,22 @@ def _explainability(pipe, X_test, y_test, features, numeric, seed, task):
     S6: en regresión la importancia es cuánto SUBE el MAE al permutar la columna
     (en unidades del objetivo) y la dirección es la de Spearman.
     """
-    if _is_regression(task):
-        scoring, method = "neg_mean_absolute_error", "spearman"
-    else:
-        scoring = "roc_auc" if len(np.unique(y_test)) > 1 else "accuracy"
-        method = "pearson"
+    # S7: con K clases no hay UNA dirección («sube la probabilidad de…» depende de la
+    # clase): la importancia se mide con la primaria y la dirección no se afirma.
+    scoring, method = _by_task(task, {
+        "binaria": lambda: (
+            "roc_auc" if len(np.unique(y_test)) > 1 else "accuracy",
+            "pearson",
+        ),
+        "multiclase": lambda: ("balanced_accuracy", None),
+        "numerica": lambda: ("neg_mean_absolute_error", "spearman"),
+        "agrupar": _supervised_only,
+    })()
     pi = permutation_importance(
         pipe, X_test, y_test,
         n_repeats=10, random_state=seed, scoring=scoring, n_jobs=1,
     )
-    directions = _feature_directions(X_test, y_test, numeric, method)
+    directions = {} if method is None else _feature_directions(X_test, y_test, numeric, method)
     numeric_set = set(numeric)
     order = np.argsort(pi.importances_mean)[::-1]
     return {
@@ -313,6 +350,8 @@ SCORER = {
     # S6: sklearn maximiza; el signo se invierte al leer los folds ⇒ cv.mean es el
     # MAE en las unidades del objetivo (menor es mejor).
     "mae": "neg_mean_absolute_error",
+    # S7: la primaria de varias categorías (cuenta cada clase por igual).
+    "balanced_accuracy": "balanced_accuracy",
 }
 
 # Espejo de METRIC_RULES (engine/verdict.ts): la dirección de cada métrica primaria.
@@ -324,6 +363,7 @@ METRIC_DIRECTION = {
     "precision": "higher",
     "recall": "higher",
     "mae": "lower",
+    "balanced_accuracy": "higher",
 }
 
 # Qué métricas primarias admite cada tarea (la elige TS; Python no la re-deriva).
@@ -333,8 +373,15 @@ MIN_REGRESSION_TEST_ROWS = 2
 
 TASK_METRICS = {
     "binaria": ("auc", "f1", "accuracy", "precision", "recall"),
+    "multiclase": ("balanced_accuracy",),
     "numerica": ("mae",),
 }
+
+# S7: cuántas clases admite una tarea de varias categorías. Espejo de
+# MULTICLASS_MAX_CLASSES en engine/tarea.ts (paridad en tests/unit/roster.test.ts);
+# con dos es binaria.
+MULTICLASS_MIN_CLASSES = 3
+MULTICLASS_MAX_CLASSES = 20
 
 
 def _xgboost(seed):
@@ -441,15 +488,733 @@ _REGRESSORS = {
     ),
 }
 
+# --- S7: agrupar sin objetivo (ADR 016) --------------------------------------
+#
+# Sin objetivo no hay prueba que proteger: el preprocesador se ajusta sobre TODAS
+# las filas (la UI y la model card lo declaran). Lo que «sirve para creer» es la
+# lectura del ganador contra la REFERENCIA NULA (el mismo agrupador, con su k, sobre
+# datos uniformes en la caja de la muestra rotada por PCA: estadístico gap,
+# Tibshirani 2001) y la ESTABILIDAD por re-muestreo. Constantes fijadas en el STOP
+# de la F0 con el spike (sprints/SPRINT_007-spike-catalogo.md §2.2 y §3); espejo en
+# engine/verdict.ts y engine/roster.ts, paridad en tests/unit/roster.test.ts.
+
+CLUSTER_K_MIN = 2
+CLUSTER_K_MAX = 10
+# Con al menos tantas numéricas, la distancia usa SOLO las numéricas: en el spike el
+# one-hot de las categóricas fabricaba grupos. Las categóricas describen los perfiles.
+CLUSTER_MIN_NUMERIC = 2
+# HDBSCAN: tamaño mínimo de grupo = max(5, n/50) (spike: 3 de 3 plantados).
+HDBSCAN_MIN_CLUSTER_SIZE = 5
+HDBSCAN_ROWS_PER_MIN_CLUSTER = 50
+KMEANS_N_INIT = 5
+# La silueta se mide sobre UNA muestra sembrada que comparten todos los agrupadores
+# y todos los k (O(n²) en memoria sobre todas las filas).
+SILHOUETTE_SAMPLE = 2000
+STABILITY_RUNS = 10
+STABILITY_FRACTION = 0.8
+NULL_DRAWS = 3
+# La lectura: «los grupos existen» si el gap ≥ 0,10 y el ARI medio ≥ 0,7;
+# «frágiles» si el gap alcanza y el ARI no; «no hay estructura» si el gap no alcanza.
+CLUSTER_GAP_MIN = 0.10
+CLUSTER_STABILITY_MIN = 0.7
+# Por encima, Agglomerative (O(n²) en memoria) se ajusta sobre una muestra sembrada
+# de este tamaño y asigna el resto al grupo más cercano — etiquetado, nunca oculto
+# (decisión 8 del STOP de la F0).
+AGGLO_MAX_ROWS = 8000
+# Cuántas columnas «que más separan» se nombran (de mostrar, no de decidir).
+SEPARATING_TOP = 3
+
+
+def _hdbscan_min_size(n):
+    return max(HDBSCAN_MIN_CLUSTER_SIZE, n // HDBSCAN_ROWS_PER_MIN_CLUSTER)
+
+
+def _k_cap(n):
+    """El k más alto que la estabilidad puede medir: la submuestra (f·n filas)
+    necesita al menos k + 1 filas para la silueta y el ARI."""
+    return min(CLUSTER_K_MAX, int(STABILITY_FRACTION * n) - 1)
+
+
+def _relabel_by_size(labels):
+    """Grupos 0..k−1 del más grande al más chico (empate: el de etiqueta menor); el
+    ruido (−1) se queda. Devuelve las etiquetas nuevas y old→new."""
+    groups = [g for g in np.unique(labels) if g >= 0]
+    order = sorted(groups, key=lambda g: (-int((labels == g).sum()), int(g)))
+    mapping = {int(old): new for new, old in enumerate(order)}
+    out = np.array([mapping.get(int(v), -1) for v in labels], dtype=int)
+    return out, mapping
+
+
+def _sample_silhouette(ctx, labels):
+    """Silueta sobre la muestra compartida, sin el ruido. None si no hay dos grupos."""
+    idx = ctx["sample"]
+    labs = labels[idx]
+    keep = labs >= 0
+    idx, labs = idx[keep], labs[keep]
+    groups = len(np.unique(labs))
+    if groups < 2 or groups >= len(idx):
+        return None
+    return float(silhouette_score(ctx["Z"][idx], labs))
+
+
+def _sizes(labels):
+    return [int((labels == g).sum()) for g in range(int(labels.max()) + 1)] if (labels >= 0).any() else []
+
+
+def _cluster_row(name, k_by):
+    return {
+        "name": name,
+        "status": "ok",
+        "error_type": None,
+        "k": None,
+        "k_by": k_by,
+        "silhouette_by_k": None,
+        "bic_by_k": None,
+        "silhouette": None,
+        "noise_share": None,
+        "score": None,
+        "sizes": None,
+        "sample_rows": None,
+    }
+
+
+def _finish(row, labels, silhouette, refit, rows, extra=None):
+    """Cierra la fila de un agrupador con su configuración elegida."""
+    labels, mapping = _relabel_by_size(labels)
+    noise = float((labels < 0).mean())
+    k = int(len([g for g in np.unique(labels) if g >= 0]))
+    row["k"] = k
+    row["sizes"] = _sizes(labels)
+    row["silhouette"] = silhouette
+    if row["k_by"] == "density":
+        row["noise_share"] = noise
+    if k < 2 or silhouette is None:
+        row["status"] = "no-structure"
+    else:
+        row["score"] = silhouette * (1.0 - noise)
+    return {
+        "row": row,
+        "labels": labels,
+        "mapping": mapping,
+        "refit": refit,
+        "stability_rows": rows,
+        **(extra or {}),
+    }
+
+
+def _sweep_kmeans(ctx):
+    """K-Means: k por silueta máxima (empate → el k menor)."""
+    row = _cluster_row("kmeans", "silhouette")
+    by_k, best = [], None
+    for k in ctx["ks"]:
+        labels = KMeans(n_clusters=k, n_init=KMEANS_N_INIT, random_state=ctx["seed"]).fit(
+            ctx["Z"]
+        ).labels_
+        s = _sample_silhouette(ctx, labels)
+        by_k.append({"k": k, "silhouette": s})
+        if s is not None and (best is None or s > best[1]):
+            best = (k, s, labels)
+    row["silhouette_by_k"] = by_k
+    if best is None:
+        row["status"] = "no-structure"
+        return {"row": row}
+    k_b = best[0]
+    return _finish(
+        row, best[2], best[1],
+        lambda Z, seed: KMeans(n_clusters=k_b, n_init=KMEANS_N_INIT, random_state=seed).fit(Z).labels_,
+        np.arange(ctx["n"]),
+    )
+
+
+def _ward_labels(Z, k):
+    return fcluster(linkage(Z, method="ward"), k, criterion="maxclust") - 1
+
+
+def _nearest(Z, centroids):
+    """Índice del centroide más cercano (euclídea) y su distancia, por fila. Con la
+    forma expandida ‖z‖² − 2 z·c + ‖c‖²: memoria filas × grupos, no × columnas."""
+    d2 = (Z**2).sum(axis=1)[:, None] - 2.0 * (Z @ centroids.T) + (centroids**2).sum(axis=1)[None, :]
+    d2 = np.maximum(d2, 0.0)
+    nearest = d2.argmin(axis=1)
+    return nearest, np.sqrt(d2[np.arange(len(Z)), nearest])
+
+
+def _group_centroids(Z, labels, k):
+    return np.array([Z[labels == g].mean(axis=0) for g in range(k)])
+
+
+def _sweep_agglomerative(ctx):
+    """Agglomerative (ward): UN linkage, cortado para cada k (silueta máxima). Con
+    más de AGGLO_MAX_ROWS filas, el linkage se ajusta sobre una muestra sembrada de
+    ese tamaño y el resto va al centroide más cercano — `sample_rows` lo declara."""
+    row = _cluster_row("agglomerative", "silhouette")
+    Z, n = ctx["Z"], ctx["n"]
+    if n > AGGLO_MAX_ROWS:
+        rng = np.random.default_rng(ctx["seed"] + 3000)
+        base = np.sort(rng.choice(n, AGGLO_MAX_ROWS, replace=False))
+        row["sample_rows"] = AGGLO_MAX_ROWS
+    else:
+        base = np.arange(n)
+    L = linkage(Z[base], method="ward")
+    by_k, best = [], None
+    for k in ctx["ks"]:
+        base_labels = fcluster(L, k, criterion="maxclust") - 1
+        if len(base) == n:
+            labels = base_labels
+        else:
+            found = int(base_labels.max()) + 1
+            labels = _nearest(Z, _group_centroids(Z[base], base_labels, found))[0]
+            labels[base] = base_labels
+        s = _sample_silhouette(ctx, labels)
+        by_k.append({"k": k, "silhouette": s})
+        if s is not None and (best is None or s > best[1]):
+            best = (k, s, labels)
+    row["silhouette_by_k"] = by_k
+    if best is None:
+        row["status"] = "no-structure"
+        return {"row": row}
+    k_b = best[0]
+    # La estabilidad re-muestrea dentro de las filas del linkage (en modo muestra,
+    # la muestra): re-ajustar sobre más no cabría.
+    return _finish(row, best[2], best[1], lambda Zr, seed: _ward_labels(Zr, k_b), base)
+
+
+def _sweep_gmm(ctx):
+    """Mezcla gaussiana: k por BIC mínimo (empate → el k menor). Un k que no se
+    puede ajustar (covarianza degenerada) se salta; sin ninguno, el miembro falla."""
+    row = _cluster_row("gmm", "bic")
+    by_k, best, last_error = [], None, None
+    for k in ctx["ks"]:
+        try:
+            gm = GaussianMixture(n_components=k, random_state=ctx["seed"]).fit(ctx["Z"])
+        except Exception as error:  # noqa: BLE001 — solo el tipo
+            last_error = error
+            continue
+        bic = float(gm.bic(ctx["Z"]))
+        by_k.append({"k": k, "bic": bic})
+        if best is None or bic < best[1]:
+            best = (k, bic, gm)
+    if best is None:
+        raise last_error
+    row["bic_by_k"] = by_k
+    k_b, _, gm = best
+    labels = gm.predict(ctx["Z"])
+    swept = _finish(
+        row, labels, _sample_silhouette(ctx, labels),
+        lambda Z, seed: GaussianMixture(n_components=k_b, random_state=seed).fit(Z).predict(Z),
+        np.arange(ctx["n"]),
+        {"gmm": gm},
+    )
+    if row["status"] == "ok" and not gm.converged_:
+        row["status"] = "no-converge"
+    return swept
+
+
+def _sweep_hdbscan(ctx):
+    """HDBSCAN: sin k que elegir; los grupos los da la densidad, con tamaño mínimo
+    max(5, n/50). El ruido (−1) es «fuera de todo grupo» y el puntaje lo castiga:
+    silueta sin el ruido × (1 − cuota de ruido)."""
+    row = _cluster_row("hdbscan", "density")
+    mcs = _hdbscan_min_size(ctx["n"])
+    # S7 (AU-S7-02, decisión 1 del usuario): la regla de tamaño max(5, n/50) se aplica a las
+    # filas de CADA ajuste —el barrido, la referencia nula y cada re-muestreo—. Con el tamaño
+    # del total, la nula (sobre la muestra de 2.000) no encontraba ningún grupo, valía 0 y la
+    # lectura «existen» se daba sin comparar contra datos sin estructura.
+    refit = lambda Z, seed: HDBSCAN(min_cluster_size=_hdbscan_min_size(len(Z))).fit(Z).labels_
+    if ctx["n"] < mcs:
+        # S7 (AU-S7-30): menos filas que el tamaño mínimo de un grupo: todas quedan fuera de
+        # todo grupo («sin estructura»), en vez de un error de sklearn.
+        return _finish(row, np.full(ctx["n"], -1), None, refit, np.arange(ctx["n"]))
+    labels = HDBSCAN(min_cluster_size=mcs).fit(ctx["Z"]).labels_
+    return _finish(
+        row, labels, _sample_silhouette(ctx, labels),
+        refit,
+        np.arange(ctx["n"]),
+    )
+
+
+# Los agrupadores, con su barrido. El ORDEN lo manda TS (engine/roster.ts).
+_CLUSTERERS = {
+    "kmeans": _sweep_kmeans,
+    "agglomerative": _sweep_agglomerative,
+    "gmm": _sweep_gmm,
+    "hdbscan": _sweep_hdbscan,
+}
+
+
+def select_consensus(league):
+    """El ganador entre agrupadores (decisión 4 del STOP de la F0; espejo EXACTO de
+    selectClusterWinner en engine/verdict.ts, que lo recalcula): el k en el que
+    coinciden más agrupadores `ok` (empate → el k cuyo mejor miembro tiene más
+    puntaje; luego el k menor) y, entre ellos, el de mayor puntaje (empate → el
+    primero del orden). Sin ninguno `ok`, la liga está vacía."""
+    eligible = [row for row in league if row["status"] == "ok"]
+    if not eligible:
+        raise RuntimeError("league-empty")
+    by_k = {}
+    for row in eligible:
+        by_k.setdefault(row["k"], []).append(row)
+    k = max(by_k, key=lambda k: (len(by_k[k]), max(r["score"] for r in by_k[k]), -k))
+    winner = None
+    for row in by_k[k]:
+        if winner is None or row["score"] > winner["score"]:
+            winner = row
+    return {"k": k, "votes": len(by_k[k]), "voters": len(eligible), "winner": winner["name"]}
+
+
+def _reading_level(gap, ari_mean):
+    """Espejo EXACTO de computeClusterReading (engine/verdict.ts)."""
+    if gap >= CLUSTER_GAP_MIN and ari_mean >= CLUSTER_STABILITY_MIN:
+        return "exist"
+    if gap >= CLUSTER_GAP_MIN:
+        return "fragile"
+    return "none"
+
+
+def _null_score(ctx, refit):
+    """El mismo agrupador, con su configuración, sobre NULL_DRAWS conjuntos uniformes
+    en la caja de la muestra rotada por PCA (mismo tamaño que la muestra)."""
+    Zs = ctx["Z"][ctx["sample"]]
+    mu = Zs.mean(axis=0)
+    _, _, Vt = np.linalg.svd(Zs - mu, full_matrices=False)
+    rot = (Zs - mu) @ Vt.T
+    lo, hi = rot.min(axis=0), rot.max(axis=0)
+    rng = np.random.default_rng(ctx["seed"] + 2000)
+    scores = []
+    for _ in range(NULL_DRAWS):
+        Zn = rng.uniform(lo, hi, size=rot.shape) @ Vt + mu
+        labels = refit(Zn, ctx["seed"])
+        keep = labels >= 0
+        groups = len(np.unique(labels[keep]))
+        if keep.sum() < 3 or groups < 2 or groups >= keep.sum():
+            scores.append(0.0)
+            continue
+        scores.append(float(silhouette_score(Zn[keep], labels[keep])) * float(keep.mean()))
+    return float(np.mean(scores))
+
+
+def _stability(ctx, swept):
+    """STABILITY_RUNS submuestras sembradas (fracción STABILITY_FRACTION de las filas
+    del ajuste), cada una re-ajustada con la misma configuración; ARI contra las
+    etiquetas del ajuste completo en las filas compartidas (el ruido es una etiqueta)."""
+    base = swept["stability_rows"]
+    rng = np.random.default_rng(ctx["seed"] + 1000)
+    aris = []
+    for r in range(STABILITY_RUNS):
+        idx = base[np.sort(rng.choice(len(base), int(STABILITY_FRACTION * len(base)), replace=False))]
+        labels = swept["refit"](ctx["Z"][idx], ctx["seed"] + 1 + r)
+        aris.append(float(adjusted_rand_score(swept["labels"][idx], labels)))
+    return {
+        "ari_mean": float(np.mean(aris)),
+        "ari_min": float(np.min(aris)),
+        "runs": STABILITY_RUNS,
+        "fraction": STABILITY_FRACTION,
+    }
+
+
+def _eta_squared(values, labels):
+    """Parte de la varianza de una numérica que explican los grupos (0..1)."""
+    keep = ~np.isnan(values)
+    x, g = values[keep], labels[keep]
+    if len(x) < 2 or len(np.unique(g)) < 2:
+        return 0.0
+    total = float(((x - x.mean()) ** 2).sum())
+    if total <= 0:
+        return 0.0
+    between = sum(
+        float((g == v).sum()) * (float(x[g == v].mean()) - float(x.mean())) ** 2
+        for v in np.unique(g)
+    )
+    return min(1.0, between / total)
+
+
+def _cramers_v(values, labels):
+    """Asociación de una categórica con los grupos (V de Cramér, 0..1)."""
+    keep = values.notna().to_numpy()
+    if keep.sum() < 2:
+        return 0.0
+    table = pd.crosstab(labels[keep], values[keep].to_numpy())
+    if min(table.shape) < 2:
+        return 0.0
+    chi2 = chi2_contingency(table.to_numpy(), correction=False)[0]
+    return float(min(1.0, math.sqrt(chi2 / (table.to_numpy().sum() * (min(table.shape) - 1)))))
+
+
+def _cluster_profiles(ctx, labels):
+    """Perfil de cada grupo en las unidades del usuario (medias y modas sobre los
+    valores CRUDOS, no los escalados) y las columnas que más lo separan. Son datos
+    del usuario: viven solo en el navegador (regla dura 2)."""
+    df, n = ctx["df"], ctx["n"]
+    numeric, categorical = ctx["profile_numeric"], ctx["profile_categorical"]
+    groups = []
+    for g in range(int(labels.max()) + 1 if (labels >= 0).any() else 0):
+        mask = labels == g
+        size = int(mask.sum())
+        num = {}
+        for col in numeric:
+            values = df[col].to_numpy(dtype=float)[mask]
+            values = values[~np.isnan(values)]
+            num[col] = float(values.mean()) if len(values) else None
+        cat = {}
+        for col in categorical:
+            values = df[col][mask].dropna()
+            if len(values) == 0:
+                cat[col] = None
+                continue
+            counts = values.astype(str).value_counts()
+            # La más frecuente; a igual cuenta, la primera en orden (determinista).
+            top = sorted(counts.index, key=lambda v: (-int(counts[v]), v))[0]
+            cat[col] = {"mode": str(top), "share": float(counts[top] / len(values))}
+        groups.append({"group": g, "size": size, "share": size / n, "numeric": num, "categorical": cat})
+    noise_size = int((labels < 0).sum())
+    keep = labels >= 0
+    strengths = [
+        {"column": col, "kind": "numeric",
+         "strength": _eta_squared(df[col].to_numpy(dtype=float)[keep], labels[keep])}
+        for col in numeric
+    ] + [
+        {"column": col, "kind": "categorical",
+         "strength": _cramers_v(df[col][keep].reset_index(drop=True), labels[keep])}
+        for col in categorical
+    ]
+    separating = sorted(strengths, key=lambda s: -s["strength"])[:SEPARATING_TOP]
+    return {
+        "groups": groups,
+        "noise": {"size": noise_size, "share": noise_size / n} if noise_size else None,
+        "separating": separating,
+    }
+
+
+_ASSIGN_METHOD = {
+    "kmeans": "nearest-centroid",
+    "agglomerative": "nearest-centroid",
+    "gmm": "gaussian",
+    "hdbscan": "centroid-radius",
+}
+
+
+def _cluster_rule(name, ctx, swept):
+    """La regla con que se asigna una fila nueva (P12), sin filas de entrenamiento:
+    K-Means y Agglomerative, el centroide más cercano; GMM, su mezcla gaussiana;
+    HDBSCAN, el centroide más cercano SI la fila cae dentro del radio de ese grupo
+    (el miembro más lejano en el ajuste) — si no, «fuera de todo grupo» (−1)."""
+    Z, labels = ctx["Z"], swept["labels"]
+    k = swept["row"]["k"]
+    centroids = _group_centroids(Z, labels, k)
+    method = _ASSIGN_METHOD[name]
+    radii = None
+    if method == "centroid-radius":
+        radii = np.array([
+            float(np.sqrt(((Z[labels == g] - centroids[g]) ** 2).sum(axis=1)).max())
+            for g in range(k)
+        ])
+    rule = {
+        "method": method,
+        "centroids": centroids,
+        "radii": radii,
+        "gmm": swept.get("gmm"),
+        # GMM predice sus componentes originales: se re-etiquetan como el ajuste.
+        "mapping": swept["mapping"] if method == "gaussian" else None,
+        "sample_rows": swept["row"]["sample_rows"],
+    }
+    return rule
+
+
+def _gaussian(rule, Z):
+    """La mezcla gaussiana restringida a los componentes que tuvieron filas en el
+    ajuste (uno vacío no es un grupo): el grupo más probable y su probabilidad."""
+    present = sorted(rule["mapping"])
+    proba = rule["gmm"].predict_proba(Z)[:, present]
+    proba = proba / proba.sum(axis=1, keepdims=True)
+    best = proba.argmax(axis=1)
+    groups = np.array([rule["mapping"][present[int(i)]] for i in best], dtype=int)
+    return groups, proba.max(axis=1)
+
+
+def _assign(rule, Z):
+    """Aplica la regla de asignación: grupos 0..k−1 y −1 = fuera de todo grupo."""
+    if rule["method"] == "gaussian":
+        return _gaussian(rule, Z)[0]
+    nearest, distance = _nearest(Z, rule["centroids"])
+    if rule["method"] == "centroid-radius":
+        nearest = np.where(distance <= rule["radii"][nearest], nearest, -1)
+    return nearest
+
+
+def _cluster_validate(p, *, league=True):
+    """Valida el payload de agrupar (el lado que LEE del contrato TS → Python): sin
+    objetivo ni partición — si alguno llega, se rechaza nombrándolo."""
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in ("target", "train_idx", "test_idx", "primary_metric", "cv_k", "classes"):
+        if key in p:
+            _contract(key)
+    for key in ("headers", "rows", "numeric", "categorical"):
+        if not isinstance(p.get(key), list):
+            _contract(key)
+    for key in ("numeric", "categorical"):
+        if any(not isinstance(c, str) or c not in p["headers"] for c in p[key]):
+            _contract(key)
+    if not _is_int(p.get("seed")):
+        _contract("seed")
+    # TS decide qué columnas forman la distancia; Python no la re-deriva, la coteja.
+    numeric_distance = len(p["numeric"]) >= CLUSTER_MIN_NUMERIC
+    expected = "numeric" if numeric_distance else "all"
+    if p.get("distance") != expected or len(p["numeric"]) + len(p["categorical"]) == 0:
+        _contract("distance")
+    k_range = p.get("k_range")
+    if not (
+        isinstance(k_range, list)
+        and len(k_range) == 2
+        and all(_is_int(v) for v in k_range)
+        and CLUSTER_K_MIN <= k_range[0] <= k_range[1] <= _k_cap(len(p["rows"]))
+    ):
+        _contract("k_range")
+    if not _is_int(p.get("stability_runs")) or p["stability_runs"] != STABILITY_RUNS:
+        _contract("stability_runs")
+    if league:
+        roster = p.get("roster")
+        if (
+            not isinstance(roster, list)
+            or len(roster) == 0
+            or len(set(roster)) != len(roster)
+            or any(name not in _CLUSTERERS for name in roster)
+        ):
+            _contract("roster")
+    elif p.get("member") not in _CLUSTERERS:
+        _contract("member")
+
+
+def _cluster_prepare(p):
+    """Frame, distancia y muestra de la silueta. El preprocesador se ajusta sobre
+    TODAS las filas: agrupar no tiene prueba (declarado)."""
+    numeric, categorical = list(p["numeric"]), list(p["categorical"])
+    df = _build_frame(p["headers"], p["rows"], numeric)
+    distance_numeric = numeric
+    distance_categorical = [] if p["distance"] == "numeric" else categorical
+    features = distance_numeric + distance_categorical
+    preprocessor = _make_preprocessor(distance_numeric, distance_categorical)
+    Z = np.asarray(preprocessor.fit_transform(df[features]), dtype=float)
+    n = len(df)
+    rng = np.random.default_rng(int(p["seed"]))
+    sample = np.sort(rng.choice(n, min(n, SILHOUETTE_SAMPLE), replace=False))
+    return {
+        "df": df,
+        "Z": Z,
+        "n": n,
+        "seed": int(p["seed"]),
+        "ks": list(range(p["k_range"][0], p["k_range"][1] + 1)),
+        "sample": sample,
+        "preprocessor": preprocessor,
+        "distance_numeric": distance_numeric,
+        "distance_categorical": distance_categorical,
+        "profile_numeric": numeric,
+        "profile_categorical": categorical,
+    }
+
+
+def _cluster_details(name, ctx, swept):
+    """Lo que solo se calcula para el agrupador RETENIDO (el ganador o el elegido):
+    la lectura, los perfiles y la regla de asignación. Puede lanzar: se llama ANTES
+    de retener (AU-S5-07)."""
+    score = swept["row"]["score"]
+    null = _null_score(ctx, swept["refit"])
+    stability = _stability(ctx, swept)
+    gap = score - null
+    rule = _cluster_rule(name, ctx, swept)
+    agreement = float((_assign(rule, ctx["Z"]) == swept["labels"]).mean())
+    rare = {}
+    if ctx["distance_categorical"]:
+        onehot = ctx["preprocessor"].named_transformers_["cat"].named_steps["onehot"]
+        infreq = getattr(onehot, "infrequent_categories_", None)
+        if infreq is not None:
+            for col, cats in zip(ctx["distance_categorical"], infreq):
+                if cats is not None and len(cats) > 0:
+                    rare[col] = sorted(str(c) for c in cats)
+    return {
+        "reading": {
+            "level": _reading_level(gap, stability["ari_mean"]),
+            "score": score,
+            "null_score": null,
+            "gap": gap,
+            "stability": stability,
+        },
+        "profiles": _cluster_profiles(ctx, swept["labels"]),
+        "assignment": {
+            "method": rule["method"],
+            "train_agreement": agreement,
+            "sample_rows": rule["sample_rows"],
+        },
+        "preprocessing": {"rare_categories": rare},
+        "_rule": rule,
+    }
+
+
+def _retain_cluster(ctx, swept, details):
+    """Retiene el agrupador: el preprocesador, la regla de asignación (sin filas de
+    entrenamiento) y el perfil de las columnas. Las etiquetas, aparte (P13)."""
+    global _MODEL, _CLUSTER_LABELS
+    rule = details["_rule"]
+    schema = {
+        "numeric": ctx["distance_numeric"],
+        "categorical": ctx["distance_categorical"],
+        "task": "agrupar",
+        "groups": swept["row"]["k"],
+        "noise": rule["method"] == "centroid-radius",
+        "assign": {
+            "method": rule["method"],
+            "centroids": [[float(v) for v in c] for c in rule["centroids"]],
+            "radii": None if rule["radii"] is None else [float(v) for v in rule["radii"]],
+            "sample_rows": rule["sample_rows"],
+        },
+    }
+    _MODEL = {
+        "pipe": ctx["preprocessor"],
+        "schema": schema,
+        "training_profile": _training_profile(
+            ctx["df"], ctx["distance_numeric"], ctx["distance_categorical"]
+        ),
+        "assign": {
+            "method": rule["method"],
+            "centroids": rule["centroids"],
+            "radii": rule["radii"],
+            "gmm": rule["gmm"],
+            "mapping": rule["mapping"],
+            "sample_rows": rule["sample_rows"],
+        },
+    }
+    _CLUSTER_LABELS = [int(v) for v in swept["labels"]]
+
+
+def _public(details):
+    return {key: value for key, value in details.items() if not key.startswith("_")}
+
+
+def run_clustering(p, on_progress=None):
+    """Agrupar: cada agrupador barre su k sobre las MISMAS filas preprocesadas → el
+    ganador por consenso → recién entonces su lectura (referencia nula +
+    estabilidad), sus perfiles y su regla de asignación. Un agrupador que falla no
+    tumba la liga (solo viaja el TIPO de error: regla dura 2)."""
+    started = time.perf_counter()
+    _cluster_validate(p)
+    ctx = _cluster_prepare(p)
+    order = list(p["roster"])
+    total = len(order)
+
+    def progress(phase, index, name):
+        if on_progress is not None:
+            on_progress(
+                json.dumps({"phase": phase, "member": name, "index": index, "total": total})
+            )
+
+    league, swept_by_name = [], {}
+    for index, name in enumerate(order):
+        progress("cluster", index, name)
+        t = time.perf_counter()
+        try:
+            swept = _CLUSTERERS[name](ctx)
+            swept_by_name[name] = swept
+            row = swept["row"]
+        except Exception as error:  # noqa: BLE001 — se registra el TIPO, nunca el mensaje
+            row = _cluster_row(name, _CLUSTER_K_BY[name])
+            row["status"] = "error"
+            row["error_type"] = type(error).__name__
+        row["elapsed_ms"] = _elapsed_ms(t)
+        league.append(row)
+
+    consensus = select_consensus(league)
+    winner = consensus.pop("winner")
+    progress("stability", order.index(winner), winner)
+    details = _cluster_details(winner, ctx, swept_by_name[winner])
+    _retain_cluster(ctx, swept_by_name[winner], details)
+    return json.dumps(
+        {
+            "task": "agrupar",
+            "n_rows": ctx["n"],
+            "distance": p["distance"],
+            "silhouette_sample": int(len(ctx["sample"])),
+            "k_range": list(p["k_range"]),
+            "league": league,
+            "consensus": consensus,
+            "winner": winner,
+            "model_name": winner,
+            **_public(details),
+            "elapsed_ms": _elapsed_ms(started),
+        }
+    )
+
+
+_CLUSTER_K_BY = {
+    "kmeans": "silhouette",
+    "agglomerative": "silhouette",
+    "gmm": "bic",
+    "hdbscan": "density",
+}
+
+
+def fit_cluster_member(p):
+    """Elección manual al agrupar (U1): re-barre UN agrupador con la misma semilla
+    (reproduce su fila de la liga) y lo retiene con su lectura, sus perfiles y su
+    regla. TS lo registra como «elegido por ti»."""
+    _cluster_validate(p, league=False)
+    ctx = _cluster_prepare(p)
+    name = p["member"]
+    swept = _CLUSTERERS[name](ctx)
+    if swept["row"]["status"] not in ("ok", "no-converge"):
+        raise RuntimeError("member-without-groups")
+    details = _cluster_details(name, ctx, swept)
+    _retain_cluster(ctx, swept, details)
+    return json.dumps(
+        {
+            "task": "agrupar",
+            "model_name": name,
+            "k": swept["row"]["k"],
+            "score": swept["row"]["score"],
+            **_public(details),
+        }
+    )
+
+
+def cluster_labels(payload_json="{}"):
+    """S7 (P13): las etiquetas por fila del agrupamiento retenido, SOLO para el CSV
+    local del usuario (jamás en un resultado, un esquema o un archivo exportado)."""
+    if _CLUSTER_LABELS is None:
+        raise RuntimeError("no-labels")
+    return json.dumps({"labels": _CLUSTER_LABELS})
+
+
+def _score_cluster(model, X):
+    """S7: el grupo de cada fila nueva con la regla del modelo (−1 = fuera de todo
+    grupo). Solo la mezcla gaussiana da una probabilidad (la del grupo asignado)."""
+    Z = np.asarray(model["pipe"].transform(X), dtype=float)
+    rule = model["assign"]
+    groups = _assign(rule, Z)
+    probabilities = None
+    if rule["method"] == "gaussian":
+        probabilities = [float(v) for v in _gaussian(rule, Z)[1]]
+    return {
+        "task": "agrupar",
+        "predictions": [int(v) for v in groups],
+        "probabilities": probabilities,
+    }
+
+
 # Un roster por tarea. `_FACTORIES` sigue siendo el de clasificación (el S5 lo
-# referencia por nombre); este mapa los reúne sin copiarlos.
-_FACTORIES_BY_TASK = {"binaria": _FACTORIES, "numerica": _REGRESSORS}
+# referencia por nombre); este mapa los reúne sin copiarlos. S7: la multiclase usa
+# los MISMOS 14 clasificadores (cada uno resuelve K clases en su forma nativa).
+_FACTORIES_BY_TASK = {
+    "binaria": _FACTORIES,
+    "multiclase": _FACTORIES,
+    "numerica": _REGRESSORS,
+    # S7 (ADR 016): los agrupadores (su sección, justo arriba).
+    "agrupar": _CLUSTERERS,
+}
 
 
 def roster_ids(payload_json="{}"):
     """Ids del roster de una tarea (ordenados) — para la paridad TS↔Python.
     Sin `task`, el de clasificación binaria (lo que el S5 preguntaba)."""
-    task = json.loads(payload_json or "{}").get("task", "binaria")
+    task = _task_of(json.loads(payload_json or "{}"))
     return json.dumps(sorted(_FACTORIES_BY_TASK[task]))
 
 
@@ -466,16 +1231,41 @@ def _contract(field):
     raise ValueError(f"contract:{field}")
 
 
-def _is_regression(task):
-    """La rama de una tarea. Una tarea sin ramas propias en este archivo es un error
-    de contrato que NOMBRA el campo, jamás la binaria por descarte: si mañana se
-    registra «multiclase» en `_FACTORIES_BY_TASK` sin escribir sus ramas, no se
-    binariza en silencio (ds S6, AU-S6-03)."""
-    if task == "numerica":
-        return True
-    if task == "binaria":
-        return False
+def _task_of(record):
+    """EL único «sin tarea = binaria» de este archivo (espejo de `taskOf` en
+    engine/despacho.ts): los payloads y esquemas del S5 no la traían."""
+    return record.get("task", "binaria")
+
+
+def _by_task(task, branches):
+    """Despacho EXHAUSTIVO por tarea (S7, P2; espejo de engine/despacho.ts). Cada
+    sitio escribe la rama de TODAS las tareas de `_FACTORIES_BY_TASK`: si falta
+    una, falla aunque la pedida sea otra — registrar «multiclase» sin escribir sus
+    ramas rompe la primera corrida de cualquier tarea en vez de binarizar en
+    silencio (ds S6, AU-S6-03). La tarea pedida sin rama es un error de contrato
+    que NOMBRA el campo, jamás la binaria por descarte; por eso se mira primero."""
+    if task not in branches:
+        _contract("task")
+    if set(branches) != set(_FACTORIES_BY_TASK):
+        raise RuntimeError("dispatch-incomplete")
+    return branches[task]
+
+
+def _supervised():
+    """Rama de una tarea con objetivo donde no hay nada que hacer."""
+
+
+def _supervised_only():
+    """La rama de agrupar en un camino supervisado: inalcanzable (run_experiment y
+    fit_member despachan antes por tarea); si llega igual, se nombra la tarea."""
     _contract("task")
+
+
+def _route_task(p):
+    """La tarea con que se despacha un payload ENTRANTE. Sin `task` (o con uno que
+    no es texto), la rama supervisada lo valida y lo rechaza nombrando el campo."""
+    task = _task_of(p) if isinstance(p, dict) else None
+    return task if isinstance(task, str) else _task_of({})
 
 
 def _is_int(value):
@@ -497,13 +1287,35 @@ def _validate_payload(p, *, league=True):
     task = p.get("task")
     if not isinstance(task, str) or task not in _FACTORIES_BY_TASK:
         _contract("task")
+    # S7: agrupar no tiene objetivo ni prueba; su payload entra por run_clustering.
+    _by_task(task, {
+        "binaria": _supervised,
+        "multiclase": _supervised,
+        "numerica": _supervised,
+        "agrupar": _supervised_only,
+    })()
     factories = _FACTORIES_BY_TASK[task]
     if p.get("primary_metric") not in TASK_METRICS[task]:
         _contract("primary_metric")
     # S6 (AU-S6-08): con menos filas de prueba no hay métricas que creer (el R² de
     # una sola fila es NaN y rompe el JSON). TS lo rechaza antes con su propio texto.
-    if task == "numerica" and len(p["test_idx"]) < MIN_REGRESSION_TEST_ROWS:
+    # La binaria no tenía tope propio (su texto vive en TS): 0 conserva la conducta.
+    min_test = _by_task(task, {
+        "binaria": 0,
+        "multiclase": 0,
+        "numerica": MIN_REGRESSION_TEST_ROWS,
+        "agrupar": 0,
+    })
+    if len(p["test_idx"]) < min_test:
         _contract("test_idx")
+    # S7: las clases viajan SOLO con varias categorías (TS las calcula y Python las
+    # coteja con los datos en _multiclass_target).
+    _by_task(task, {
+        "binaria": lambda: "classes" in p and _contract("classes"),
+        "multiclase": lambda: _validate_classes(p.get("classes")),
+        "numerica": lambda: "classes" in p and _contract("classes"),
+        "agrupar": _supervised_only,
+    })()
     if league:
         roster = p.get("roster")
         if (
@@ -517,6 +1329,19 @@ def _validate_payload(p, *, league=True):
             _contract("cv_k")
     elif p.get("member") not in factories:
         _contract("member")
+
+
+def _validate_classes(classes):
+    """S7: una lista de 3 a MULTICLASS_MAX_CLASSES textos, antes de tocar los datos.
+    Que sean distintas, en orden y LAS de los datos lo exige _multiclass_target (son
+    exactamente los valores distintos ordenados): repetirlo aquí no podría fallar
+    nunca por sí solo («¿puede fallar siquiera?»)."""
+    if (
+        not isinstance(classes, list)
+        or not all(isinstance(c, str) for c in classes)
+        or not MULTICLASS_MIN_CLASSES <= len(classes) <= MULTICLASS_MAX_CLASSES
+    ):
+        _contract("classes")
 
 
 def _decimals(text):
@@ -552,6 +1377,41 @@ def _target_stats(y_train, raw_train):
     }
 
 
+def _binary_target(df, p):
+    """Objetivo binario → 0/1. Positiva = la clase MINORITARIA (el evento de
+    interés); empate → la mayor lexicográficamente (determinista)."""
+    target = df[p["target"]].astype("string")
+    counts = target.value_counts()
+    classes = sorted(counts.index.tolist())
+    positive = min(classes, key=lambda c: (counts[c], [-ord(ch) for ch in c]))
+    y = (target == positive).astype(int).to_numpy()
+    return y, classes, positive, None
+
+
+def _multiclass_target(df, p):
+    """S7: el objetivo 0..K−1 en el orden de `classes` (XGBoost exige esa forma).
+    Las clases las manda TS; si los datos traen otras, el contrato se rompe
+    nombrando el campo (sin valores: regla dura 2)."""
+    target = df[p["target"]].astype("string")
+    classes = list(p["classes"])
+    if sorted(target.dropna().unique().tolist()) != classes:
+        _contract("classes")
+    index = {c: i for i, c in enumerate(classes)}
+    y = target.map(index).astype(int).to_numpy()
+    return y, classes, None, None
+
+
+def _numeric_target(df, p, train_idx):
+    """S6: el objetivo en sus unidades (float) y su resumen en TRAIN."""
+    y = pd.to_numeric(df[p["target"]], errors="coerce").to_numpy(dtype=float)
+    # TS valida que todo el objetivo sea numérico; si llega otra cosa, se nombra
+    # el campo (sin valores: regla dura 2).
+    if not np.all(np.isfinite(y)):
+        _contract("target")
+    stats = _target_stats(y[train_idx], df[p["target"]].iloc[train_idx].tolist())
+    return y, None, None, stats
+
+
 def _prepare(p):
     """Frame, objetivo y partición — compartido por la liga y fit_member. Binaria:
     objetivo 0/1. Numérica (S6): el objetivo en sus unidades (float)."""
@@ -563,23 +1423,12 @@ def _prepare(p):
     train_idx = np.array(p["train_idx"], dtype=int)
     test_idx = np.array(p["test_idx"], dtype=int)
 
-    if _is_regression(task):
-        y = pd.to_numeric(df[p["target"]], errors="coerce").to_numpy(dtype=float)
-        # TS valida que todo el objetivo sea numérico; si llega otra cosa, se
-        # nombra el campo (sin valores: regla dura 2).
-        if not np.all(np.isfinite(y)):
-            _contract("target")
-        classes = positive = None
-        stats = _target_stats(y[train_idx], df[p["target"]].iloc[train_idx].tolist())
-    else:
-        # Objetivo binario → 0/1. Positiva = la clase MINORITARIA (el evento de interés);
-        # empate → la mayor lexicográficamente (determinista).
-        target = df[p["target"]].astype("string")
-        counts = target.value_counts()
-        classes = sorted(counts.index.tolist())
-        positive = min(classes, key=lambda c: (counts[c], [-ord(ch) for ch in c]))
-        y = (target == positive).astype(int).to_numpy()
-        stats = None
+    y, classes, positive, stats = _by_task(task, {
+        "binaria": lambda: _binary_target(df, p),
+        "multiclase": lambda: _multiclass_target(df, p),
+        "numerica": lambda: _numeric_target(df, p, train_idx),
+        "agrupar": _supervised_only,
+    })()
 
     X = df[features]
     return {
@@ -616,11 +1465,12 @@ def _cross_validate(name, ctx, k):
     de su fold (el test anti-fuga de la CV lo vigila con un espía). S6: con un
     objetivo continuo no hay clases que estratificar ⇒ KFold barajado; los folds
     de una métrica «menor es mejor» se devuelven en sus unidades (signo invertido)."""
-    splitter = (
-        KFold(k, shuffle=True, random_state=ctx["seed"])
-        if _is_regression(ctx["task"])
-        else StratifiedKFold(k, shuffle=True, random_state=ctx["seed"])
-    )
+    splitter = _by_task(ctx["task"], {
+        "binaria": lambda: StratifiedKFold(k, shuffle=True, random_state=ctx["seed"]),
+        "multiclase": lambda: StratifiedKFold(k, shuffle=True, random_state=ctx["seed"]),
+        "numerica": lambda: KFold(k, shuffle=True, random_state=ctx["seed"]),
+        "agrupar": _supervised_only,
+    })()
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         cv = cross_validate(
@@ -697,15 +1547,17 @@ def _selected_details(pipe, y_pred, ctx):
     (binaria) o predicho-vs-real y residuos (numérica), explicabilidad y lo que
     el preprocesamiento aprendió (de train)."""
     numeric, categorical = ctx["numeric"], ctx["categorical"]
-    if _is_regression(ctx["task"]):
-        task_details = {
+    task_details = _by_task(ctx["task"], {
+        "binaria": lambda: {
+            "confusion_matrix": confusion_matrix(ctx["y_test"], y_pred, labels=[0, 1]).tolist()
+        },
+        "multiclase": lambda: _multiclass_details(ctx["y_test"], y_pred, len(ctx["classes"])),
+        "numerica": lambda: {
             "pred_vs_real": _pred_vs_real(ctx["y_test"], y_pred),
             "residuals": _residuals(ctx["y_test"], y_pred),
-        }
-    else:
-        task_details = {
-            "confusion_matrix": confusion_matrix(ctx["y_test"], y_pred, labels=[0, 1]).tolist()
-        }
+        },
+        "agrupar": _supervised_only,
+    })()
     explainability = _explainability(
         pipe, ctx["X_test"], ctx["y_test"], ctx["features"], numeric, ctx["seed"], ctx["task"]
     )
@@ -735,27 +1587,57 @@ def _selected_details(pipe, y_pred, ctx):
     }
 
 
+def _multiclass_details(y_true, y_pred, n_classes):
+    """S7: la matriz K×K (filas = clase real, columnas = predicha, en el orden de
+    `classes`) y las métricas de cada clase sobre TEST."""
+    labels = list(range(n_classes))
+    precision, recall, f1, support = precision_recall_fscore_support(
+        y_true, y_pred, labels=labels, zero_division=0
+    )
+    return {
+        "confusion_matrix": confusion_matrix(y_true, y_pred, labels=labels).tolist(),
+        "per_class": [
+            {
+                "precision": float(precision[i]),
+                "recall": float(recall[i]),
+                "f1": float(f1[i]),
+                "support": int(support[i]),
+            }
+            for i in labels
+        ],
+    }
+
+
 def _retain(pipe, ctx, target):
     """S3/S4: retener el modelo SELECCIONADO (el que recibe el veredicto) + esquema
     + perfil de train — lo que score_new_data y export_model necesitan."""
-    global _MODEL
-    if _is_regression(ctx["task"]):
-        schema = {
-            "numeric": ctx["numeric"],
-            "categorical": ctx["categorical"],
-            "target": target,
-            "task": "numerica",
-            "target_stats": ctx["target_stats"],
-        }
-    else:
-        schema = {
+    global _MODEL, _CLUSTER_LABELS
+    _CLUSTER_LABELS = None
+    schema = _by_task(ctx["task"], {
+        "binaria": lambda: {
             "numeric": ctx["numeric"],
             "categorical": ctx["categorical"],
             "target": target,
             "classes": ctx["classes"],
             "positive_class": ctx["positive"],
             "task": "binaria",
-        }
+        },
+        "multiclase": lambda: {
+            "numeric": ctx["numeric"],
+            "categorical": ctx["categorical"],
+            "target": target,
+            "classes": ctx["classes"],
+            "task": "multiclase",
+        },
+        "numerica": lambda: {
+            "numeric": ctx["numeric"],
+            "categorical": ctx["categorical"],
+            "target": target,
+            "task": "numerica",
+            "target_stats": ctx["target_stats"],
+        },
+        "agrupar": _supervised_only,
+    })()
     _MODEL = {
         "pipe": pipe,
         "schema": schema,
@@ -765,27 +1647,119 @@ def _retain(pipe, ctx, target):
     }
 
 
+def _binary_baselines(ctx):
+    """Los rivales honestos de la binaria: la clase mayoritaria y una logística."""
+    baselines = {}
+    for name, estimator in (
+        ("majority", DummyClassifier(strategy="most_frequent")),
+        ("logistic", LogisticRegression(max_iter=1000, random_state=ctx["seed"])),
+    ):
+        _, y_pred, y_score = _fit_score(
+            estimator, clone(ctx["preprocessor"]), ctx["X_train"], ctx["y_train"], ctx["X_test"]
+        )
+        baselines[name] = _metrics(ctx["y_test"], y_pred, y_score)
+    return baselines
+
+
+def _multiclass_baselines(ctx):
+    """S7: la clase mayoritaria y la logística multinomial — la MISMA fábrica que el
+    miembro `logistic`, así su puntaje de prueba como miembro es el del baseline (TS
+    lo coteja, como la lineal del S6)."""
+    baselines = {}
+    for name, estimator in (
+        ("majority", DummyClassifier(strategy="most_frequent")),
+        ("logistic", _FACTORIES["logistic"](ctx["seed"])),
+    ):
+        pipe = Pipeline([("prep", clone(ctx["preprocessor"])), ("model", estimator)])
+        pipe.fit(ctx["X_train"], ctx["y_train"])  # <-- ajuste SOLO sobre train
+        baselines[name] = _multiclass_metrics(
+            ctx["y_test"], pipe.predict(ctx["X_test"]), _proba(pipe, ctx["X_test"]),
+            len(ctx["classes"]),
+        )
+    return baselines
+
+
+def _proba(pipe, X):
+    """La matriz de probabilidades, o None si el modelo decide sin darlas (ridge, SVM
+    lineal): no se inventan (S5)."""
+    return pipe.predict_proba(X) if hasattr(pipe, "predict_proba") else None
+
+
+def _multiclass_metrics(y_true, y_pred, proba, n_classes):
+    """S7: métricas de TEST con K clases (las del spike de la F0). `log_loss` y
+    `auc_ovr` necesitan probabilidades (null sin ellas); el AUC uno contra el resto,
+    además, que la prueba tenga filas de todas las clases."""
+    labels = list(range(n_classes))
+    metrics = {
+        "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
+        "f1_macro": float(
+            f1_score(y_true, y_pred, average="macro", labels=labels, zero_division=0)
+        ),
+        "accuracy": float(accuracy_score(y_true, y_pred)),
+        "log_loss": None,
+        "auc_ovr": None,
+    }
+    if proba is not None:
+        metrics["log_loss"] = float(log_loss(y_true, proba, labels=labels))
+        if len(np.unique(y_true)) == n_classes:
+            metrics["auc_ovr"] = float(
+                roc_auc_score(y_true, proba, multi_class="ovr", average="macro", labels=labels)
+            )
+    return metrics
+
+
+def _regression_baselines(ctx):
+    """S6 (decisión del usuario en el STOP de la F0): con MAE la constante óptima es
+    la MEDIANA (no la media), y la lineal es el rival estructural."""
+    baselines = {}
+    for name, estimator in (
+        ("median", DummyRegressor(strategy="median")),
+        ("linear", LinearRegression()),
+    ):
+        pipe = Pipeline([("prep", clone(ctx["preprocessor"])), ("model", estimator)])
+        pipe.fit(ctx["X_train"], ctx["y_train"])  # <-- ajuste SOLO sobre train
+        baselines[name] = _reg_metrics(ctx["y_test"], pipe.predict(ctx["X_test"]))
+    return baselines
+
+
 def _elapsed_ms(start):
     return int(round((time.perf_counter() - start) * 1000))
 
 
 def run_experiment(payload_json, on_progress=None):
+    """La entrada del comando «train»: la liga de una tarea con objetivo, o (S7)
+    agrupar sin objetivo. El despacho es por tarea y exhaustivo."""
+    p = json.loads(payload_json)
+    return _by_task(_route_task(p), {
+        "binaria": lambda: _run_league(p, on_progress),
+        "multiclase": lambda: _run_league(p, on_progress),
+        "numerica": lambda: _run_league(p, on_progress),
+        "agrupar": lambda: run_clustering(p, on_progress),
+    })()
+
+
+def _run_league(p, on_progress=None):
     """La liga: CV de cada miembro (en el orden de TS) → selección por un error
     estándar → recién entonces se abre el test, UNA vez, para todos (F0-5: el
     test de los perdedores se calcula en la misma corrida, etiquetado «no sirve
     para elegir»). `on_progress(json)` se llama antes de cada paso (worker → UI).
     """
     started = time.perf_counter()
-    p = json.loads(payload_json)
     _validate_payload(p)
     ctx = _prepare(p)
     k = int(p["cv_k"])
     # Binaria: k > clase minoritaria de train ⇒ hay folds sin positivos. Numérica:
     # k > filas de train ⇒ hay folds vacíos. TS ya lo acota; aquí se verifica.
-    if _is_regression(ctx["task"]):
-        if k > len(ctx["train_idx"]):
-            _contract("cv_k")
-    elif k > int(np.bincount(ctx["y_train"], minlength=2).min()):
+    # Multiclase (S7): k > la clase más chica de train ⇒ hay folds sin esa clase.
+    k_max = _by_task(ctx["task"], {
+        "binaria": lambda: int(np.bincount(ctx["y_train"], minlength=2).min()),
+        "multiclase": lambda: int(
+            np.bincount(ctx["y_train"], minlength=len(ctx["classes"])).min()
+        ),
+        "numerica": lambda: len(ctx["train_idx"]),
+        "agrupar": _supervised_only,
+    })()
+    if k > k_max:
         _contract("cv_k")
     order = list(p["roster"])
     total = len(order)
@@ -819,27 +1793,13 @@ def run_experiment(payload_json, on_progress=None):
 
     # 3) Recién ahora se abre el test: baselines (rivales honestos) y cada miembro
     #    ajustado en train completo. Solo el pipeline del ganador queda en memoria.
-    X_train, y_train, X_test, y_test = ctx["X_train"], ctx["y_train"], ctx["X_test"], ctx["y_test"]
-    baselines = {}
-    if _is_regression(ctx["task"]):
-        # S6 (decisión del usuario en el STOP de la F0): con MAE la constante
-        # óptima es la MEDIANA (no la media), y la lineal es el rival estructural.
-        for name, estimator in (
-            ("median", DummyRegressor(strategy="median")),
-            ("linear", LinearRegression()),
-        ):
-            pipe = Pipeline([("prep", clone(ctx["preprocessor"])), ("model", estimator)])
-            pipe.fit(X_train, y_train)  # <-- ajuste SOLO sobre train
-            baselines[name] = _reg_metrics(y_test, pipe.predict(X_test))
-    else:
-        for name, estimator in (
-            ("majority", DummyClassifier(strategy="most_frequent")),
-            ("logistic", LogisticRegression(max_iter=1000, random_state=ctx["seed"])),
-        ):
-            _, y_pred, y_score = _fit_score(
-                estimator, clone(ctx["preprocessor"]), X_train, y_train, X_test
-            )
-            baselines[name] = _metrics(y_test, y_pred, y_score)
+    X_train, y_train, X_test = ctx["X_train"], ctx["y_train"], ctx["X_test"]
+    baselines = _by_task(ctx["task"], {
+        "binaria": lambda: _binary_baselines(ctx),
+        "multiclase": lambda: _multiclass_baselines(ctx),
+        "numerica": lambda: _regression_baselines(ctx),
+        "agrupar": _supervised_only,
+    })()
 
     winner_pipe = winner_pred = None
     for index, row in enumerate(league):
@@ -868,15 +1828,17 @@ def run_experiment(payload_json, on_progress=None):
     details = _selected_details(winner_pipe, winner_pred, ctx)
     _retain(winner_pipe, ctx, p["target"])
 
-    if _is_regression(ctx["task"]):
-        task_fields = {"task": "numerica", "target_stats": ctx["target_stats"]}
-    else:
-        task_fields = {
+    task_fields = _by_task(ctx["task"], {
+        "binaria": lambda: {
             "task": "binaria",
             "classes": ctx["classes"],
             "positive_class": ctx["positive"],
             "positive_rate": float(ctx["y"].mean()),
-        }
+        },
+        "multiclase": lambda: {"task": "multiclase", "classes": ctx["classes"]},
+        "numerica": lambda: {"task": "numerica", "target_stats": ctx["target_stats"]},
+        "agrupar": _supervised_only,
+    })()
     return json.dumps(
         {
             **task_fields,
@@ -903,17 +1865,33 @@ def run_experiment(payload_json, on_progress=None):
 
 def _test_metrics(pipe, y_pred, ctx):
     """Métricas de TEST según la tarea (binaria: necesita el puntaje continuo)."""
-    if _is_regression(ctx["task"]):
-        return _reg_metrics(ctx["y_test"], y_pred)
-    return _metrics(ctx["y_test"], y_pred, _scores(pipe, ctx["X_test"]))
+    return _by_task(ctx["task"], {
+        "binaria": lambda: _metrics(ctx["y_test"], y_pred, _scores(pipe, ctx["X_test"])),
+        "multiclase": lambda: _multiclass_metrics(
+            ctx["y_test"], y_pred, _proba(pipe, ctx["X_test"]), len(ctx["classes"])
+        ),
+        "numerica": lambda: _reg_metrics(ctx["y_test"], y_pred),
+        "agrupar": _supervised_only,
+    })()
 
 
 def fit_member(payload_json):
+    """La entrada del comando «fit-member»: un miembro elegido a mano (U1), con
+    objetivo o (S7) agrupando."""
+    p = json.loads(payload_json)
+    return _by_task(_route_task(p), {
+        "binaria": lambda: _fit_league_member(p),
+        "multiclase": lambda: _fit_league_member(p),
+        "numerica": lambda: _fit_league_member(p),
+        "agrupar": lambda: fit_cluster_member(p),
+    })()
+
+
+def _fit_league_member(p):
     """Elección manual (U1): ajusta UN miembro en train completo y lo retiene en
     lugar del ganador. Mismo split, misma semilla ⇒ reproduce exactamente su fila
     de la liga (determinismo, vigilado por un test). No hay CV: la elección ya la
     hizo el usuario y TS la registra como «elegido por ti»."""
-    p = json.loads(payload_json)
     _validate_payload(p, league=False)
     ctx = _prepare(p)
     name = p["member"]
@@ -978,33 +1956,51 @@ def score_new_data(payload_json):
         "affected_rows": int(row_flags.sum()),
         "n_rows": int(len(X)),
     }
-    # S6: un modelo de regresión devuelve la cantidad estimada, en las unidades del
-    # objetivo; no hay clase ni probabilidad que dar (no se inventa).
-    if _is_regression(schema.get("task", "binaria")):
-        return json.dumps(
-            {
-                "task": "numerica",
-                "predictions": [float(v) for v in pipe.predict(X)],
-                "probabilities": None,
-                "novelty": novelty,
-            }
-        )
+    scored = _by_task(_task_of(schema), {
+        "binaria": lambda: _score_binary(pipe, X, schema),
+        "multiclase": lambda: _score_multiclass(pipe, X, schema),
+        "numerica": lambda: _score_numeric(pipe, X),
+        "agrupar": lambda: _score_cluster(_MODEL, X),
+    })()
+    return json.dumps({**scored, "novelty": novelty})
+
+
+def _score_binary(pipe, X, schema):
+    """La etiqueta ORIGINAL de la clase (jamás 0/1) y la probabilidad de la positiva."""
     pred01 = pipe.predict(X)
     # S5: ridge y el SVM lineal deciden la clase sin dar una probabilidad. No se
     # inventa una (honestidad): `probabilities` viaja null y la UI lo dice.
     proba = pipe.predict_proba(X)[:, 1] if hasattr(pipe, "predict_proba") else None
     positive = schema["positive_class"]
     negative = next(c for c in schema["classes"] if c != positive)
+    return {
+        "task": "binaria",
+        "predictions": [positive if v == 1 else negative for v in pred01],
+        "probabilities": None if proba is None else [float(v) for v in proba],
+        "positive_class": positive,
+    }
 
-    return json.dumps(
-        {
-            "task": "binaria",
-            "predictions": [positive if v == 1 else negative for v in pred01],
-            "probabilities": None if proba is None else [float(v) for v in proba],
-            "positive_class": positive,
-            "novelty": novelty,
-        }
-    )
+
+def _score_multiclass(pipe, X, schema):
+    """S7: la etiqueta ORIGINAL de la clase predicha y la probabilidad de ESA clase
+    (null si el modelo no da probabilidades: no se inventa)."""
+    classes = schema["classes"]
+    proba = _proba(pipe, X)
+    return {
+        "task": "multiclase",
+        "predictions": [classes[int(v)] for v in pipe.predict(X)],
+        "probabilities": None if proba is None else [float(v) for v in proba.max(axis=1)],
+    }
+
+
+def _score_numeric(pipe, X):
+    """S6: la cantidad estimada, en las unidades del objetivo; no hay clase ni
+    probabilidad que dar (no se inventa)."""
+    return {
+        "task": "numerica",
+        "predictions": [float(v) for v in pipe.predict(X)],
+        "probabilities": None,
+    }
 
 
 def export_model(payload_json="{}"):
@@ -1020,6 +2016,14 @@ def export_model(payload_json="{}"):
             "pipe": _MODEL["pipe"],
             "schema": _MODEL["schema"],
             "training_profile": _MODEL["training_profile"],
+            # S7: agrupar puntúa con su regla de asignación (centroides, radios o
+            # la mezcla gaussiana). Jamás las etiquetas de entrenamiento (P13).
+            **_by_task(_task_of(_MODEL["schema"]), {
+                "binaria": dict,
+                "multiclase": dict,
+                "numerica": dict,
+                "agrupar": lambda: {"assign": _MODEL["assign"]},
+            })(),
         },
         protocol=5,
     )
@@ -1041,7 +2045,7 @@ def import_model(payload_json):
     MANIFIESTO, pero quien puntúa es el del pickle — si no coinciden, el
     archivo miente y se rechaza en vez de puntuar con otro esquema.
     """
-    global _MODEL
+    global _MODEL, _CLUSTER_LABELS
     p = json.loads(payload_json)
     blob = zlib.decompress(base64.b64decode(p["payload_b64"]))
     restored = pickle.loads(blob)
@@ -1052,16 +2056,32 @@ def import_model(payload_json):
     expected = p.get("expected_schema")
     if expected is not None and restored["schema"] != expected:
         raise RuntimeError("schema-mismatch")
+
+    def assign():
+        # S7: un archivo de agrupar sin su regla de asignación no puede puntuar.
+        if not isinstance(restored.get("assign"), dict):
+            raise RuntimeError("invalid-payload")
+        return {"assign": restored["assign"]}
+
     _MODEL = {
         "pipe": restored["pipe"],
         "schema": restored["schema"],
         "training_profile": restored["training_profile"],
+        **_by_task(_task_of(restored["schema"]), {
+            "binaria": dict,
+            "multiclase": dict,
+            "numerica": dict,
+            "agrupar": assign,
+        })(),
     }
+    # Un modelo importado no trae etiquetas de entrenamiento (P13).
+    _CLUSTER_LABELS = None
     return json.dumps({"ok": True})
 
 
 def reset_model(payload_json="{}"):
     """Olvida el modelo retenido (higiene para tests de integración)."""
-    global _MODEL
+    global _MODEL, _CLUSTER_LABELS
     _MODEL = None
+    _CLUSTER_LABELS = None
     return json.dumps({"ok": True})

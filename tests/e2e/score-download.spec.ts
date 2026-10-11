@@ -9,7 +9,7 @@ import { expect, test } from "@playwright/test";
 // public/datasets/marketing-campania.csv (lección D1).
 
 // 4 filas: dispositivo «holograma» ×2 (categoría nunca vista) y edad 999 ×1
-// (fuera del rango de train) ⇒ 3 filas afectadas de 4 (75%).
+// (fuera del rango de train) ⇒ 3 filas afectadas de 4 (75 %).
 const NEW_CSV = [
   "edad,ingreso_mensual,visitas_web,correos_abiertos,region,dispositivo",
   "34,5000,10,5,sur,holograma",
@@ -79,7 +79,9 @@ test("entrenar → puntuar con novedad plantada → descargar, sin datos en la r
   ).toBeVisible();
   await expect(page.getByText(/«edad»: 1 valor fuera del rango/)).toBeVisible();
   await expect(
-    page.getByText(/adivinando en 3 de 4 filas \(75%\)/),
+    // R9 (S7, AU-S7-33): en español, «75 %» (espacio no separable; Playwright lo normaliza
+    // a un espacio, por eso `\s`; el byte lo exige tests/unit/score-screen.test.tsx).
+    page.getByText(/adivinando en 3 de 4 filas \(75\s%\)/),
   ).toBeVisible();
 
   // Vista previa con las columnas nuevas resueltas.

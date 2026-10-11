@@ -69,7 +69,8 @@ Escala (rem, base 16): `display` 2.25/600 · `h1` 1.75/600 · `h2` 1.25/600 · `
 
 ## Componentes canon
 
-shadcn/ui **personalizados** con estos tokens (nunca el default):
+**Primitivos propios** en `src/components/ui.tsx`, con estos tokens (no se instaló shadcn/ui ni
+Radix: ADR 019; los diálogos son el `<dialog>` nativo):
 
 - **Button** — `primary` (acento sólido), `secondary` (hairline + ink), `ghost`. Alto 44px (táctil),
   radio `md`, foco con ring de `accent`. **Todo botón de acción lleva icono de trazo a la
@@ -184,8 +185,9 @@ se muestra con su etiqueta, toda marca lleva símbolo **relleno** + texto (dalto
 usuario: un tinte sutil no comunica), y todo botón de acción lleva su icono de trazo a la izquierda.
 
 - **TaskCard** (en ConfigScreen, E1) — el tipo de predicción del objetivo elegido con su razón en
-  números (_«2 valores distintos → clasificación binaria»_); si la tarea aún no se entrena, lo dice
-  en `ink-muted` y deshabilita «Entrenar modelos» sin esconder la columna. Si la tarea se entrena
+  números (_«2 valores distintos → clasificación binaria»_); si la columna no sirve como objetivo, ⚠
+  `caution` y el botón secundario «Agrupar filas parecidas en su lugar» (S7); la columna nunca se
+  esconde. Si la tarea se entrena
   pero el plan está bloqueado (p. ej. muy pocas filas), tampoco hay ✓: ⚠ `caution` y la frase
   remite al motivo, que se muestra debajo. El selector ofrece TODAS las columnas como «columna ·
   tarea».
@@ -297,6 +299,66 @@ aprobadas por el usuario el 2026-10-04 con la preview abierta.
   objetivo, sin probabilidad (se dice por qué). El mosaico de clases se reemplaza por tres
   MetricTile: mínimo · mediana · máximo.
 
+### Añadidos Sprint 007 — varias categorías y agrupar (mismos tokens, cero valores nuevos; ADR 015 y 016)
+
+Miradas de FORMA M1 (resultados de varias categorías), M2 (resultados de agrupar) y M3 («agrupar en
+su lugar»): maquetadas, no vistas. Su veredicto viaja al gate ⭐⭐ del cierre del ciclo H2: M1 a la
+parada 4 y M2 a la parada 5 del ⭐⭐ corto de la guía v4; M3 a la prueba I7, del ⭐ completo, fuera del
+corto y declarada en la guía (la orden fija el corto en unos 20 minutos; plan del S7, D4).
+
+- **Símbolos (se suman a los del S1–S6; nunca solo color):**
+  - **●** «Los grupos existen» (`positive`), **⚠** «son frágiles» (`caution`), **○** «No hay
+    estructura de grupos» (`ink`). ○ también marca la tarjeta «Fuera de todo grupo»: el mismo
+    significado, «sin grupo».
+  - **◆ queda reservado para «Elegido por ti»** en toda la app. La lectura de agrupar lo usaba hasta
+    el décimo commit del S7, y lo vigila una prueba.
+  - **★** sigue siendo el ganador: «★ Ganador por consenso» si al menos dos agrupadores coinciden;
+    si no, «★ Ganador por puntaje».
+  - **✓** marca los aciertos en la diagonal de la matriz de confusión, con «acierto:» en `sr-only`.
+- **Inicio:** siete ejemplos en la misma grilla (`sm:grid-cols-2 lg:grid-cols-3`). Los dos nuevos
+  son «Planes de suscripción» y «Segmentos de clientes».
+- **Configuración:**
+  - El selector empieza con **«Sin objetivo: agrupar filas parecidas»**. Su valor no choca con una
+    columna del mismo nombre.
+  - **TaskCard:** con varias categorías, ✓ `positive` y _«Vas a clasificar en N categorías…»_. Con
+    una columna que no sirve como objetivo, ⚠ y el botón secundario **«Agrupar filas parecidas en su
+    lugar»** (icono `plus`).
+  - **La tarjeta del plan de agrupar:** qué columnas forman el parecido, cuáles solo describen y
+    cuáles quedan fuera con su razón. Con más de 8,000 filas suma la nota de la muestra del
+    jerárquico, en caja `sunken` con `info`.
+  - **RosterCard al agrupar:** «agrupadores», no «modelos». Explica cómo elige k cada uno, y no habla
+    de validación cruzada.
+- **Resultados de varias categorías** (`MulticlassResults`):
+  - **VerdictCard** como siempre. Con una fuga, el titular es «⚠ Posible fuga de datos — sospechoso»
+    en las tres tareas con objetivo (decisión 2 del usuario en la auditoría del S7); «métricas casi
+    perfectas» ya no es un titular.
+  - Cinco MetricTile (`grid-cols-2`, `sm:grid-cols-5`): exactitud balanceada · F1 macro · exactitud ·
+    pérdida logarítmica · AUC uno contra el resto. Sin probabilidades, «—», nunca un número
+    inventado.
+  - **ConfusionTable:** región con desplazamiento propio (`role="region"`, enfocable, nombrada por su
+    título), así que la página nunca se desplaza de lado. Los nombres de fila se leen enteros
+    (`break-words`, 6–9 rem); cada columna lleva delante el número de su fila («2·») y recorta el
+    nombre con el completo en `title`, porque arriba un nombre largo no cabe. La frase de la confusión
+    más frecuente va debajo.
+  - **PerClassTable:** precisión, sensibilidad, F1 y filas de prueba por categoría.
+- **Resultados de agrupar** (`ClusterResults`):
+  - **La lectura es el h1** (VerdictCard con ● / ⚠ / ○), con su porqué en cifras y la frase de que
+    no hay prueba ni baseline.
+  - **Tarjetas de grupo** (`sm:grid-cols-2`): tamaño en mono, las columnas que separan con η² o V de
+    Cramér y el promedio de los grupos al lado. Las demás columnas van en un `details` con
+    `summary` de 44 px.
+  - «Fuera de todo grupo» va en una tarjeta de borde punteado.
+  - **La tabla de agrupadores:** el mismo patrón que la LeagueTable, con fila `border-l-4 accent` para
+    el ganador y `border-l-4 ink` + `sunken` para el elegido. Cada cifra va con su columna: grupos y
+    cómo se eligieron, silueta, fuera de grupo y puntaje.
+  - **El Nivel 2 al agrupar:** «Nivel 2: todos los agrupadores», con su propio copy.
+- **Cifras (R9, ampliado):** los conteos (filas, muestras) siguen la misma regla que las cantidades:
+  «8,000» en los dos idiomas (`thousands` = `formatQuantity(n, 0)`). Las cifras diminutas de un
+  perfil van en notación científica, nunca «0».
+- **Puntuar:** con varias categorías, `<objetivo>_predicho` + `<objetivo>_probabilidad` (la
+  probabilidad de esa categoría) y su nota. Al agrupar, la columna `grupo` desde 1 o «fuera de todo
+  grupo», y `grupo_probabilidad` solo con la mezcla gaussiana.
+
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).
@@ -306,7 +368,9 @@ aprobadas por el usuario el 2026-10-04 con la preview abierta.
 3. **Entrenamiento** → el progreso honesto (qué modelo, en qué fase); en el Nivel 2, cancelar.
 4. **Resultados** → el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
    métricas, matriz y advertencias lo sostienen. Al estimar (S6), el veredicto va en unidades y el
-   **PredichoVsReal** ocupa el lugar de la matriz.
+   **PredichoVsReal** ocupa el lugar de la matriz. Con varias categorías (S7), la matriz es K×K.
+   Al agrupar (S7), la **lectura** ocupa el lugar del veredicto, y los grupos y la tabla de
+   agrupadores la sostienen.
 5. **Error** → el mensaje llano + la acción de recuperación.
 6. **Usar el modelo (S3)** → el **NoveltyPanel** antes de descargar; la descarga lo sostiene.
    Encabezado estático (candidato LCP, patrón lcp-nace-estatico).

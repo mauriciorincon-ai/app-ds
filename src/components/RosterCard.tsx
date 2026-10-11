@@ -5,9 +5,11 @@ import {
   type Placement,
   type Routing,
 } from "@/engine/encarrilador";
-import { useT } from "@/i18n/use-translation";
+import { AGGLO_MAX_ROWS } from "@/engine/verdict";
+import { useI18n } from "@/i18n/provider";
 import { formatEstimate } from "@/lib/duration";
-import { Card } from "./ui";
+import { thousands } from "@/lib/quantity";
+import { Card, Icon } from "./ui";
 
 // E2 (S5): quién compite y en qué nivel, con una razón por modelo. Lo que queda
 // fuera es una RECOMENDACIÓN con su razón (regla dura 3: no se esconde).
@@ -17,6 +19,7 @@ export function RosterCard({
   minorityShare,
   k,
   smallSample,
+  cluster = false,
 }: {
   routing: Routing;
   rows: number;
@@ -24,8 +27,11 @@ export function RosterCard({
   minorityShare: number | null;
   k: number;
   smallSample: boolean;
+  /** S7: agrupar — sin validación cruzada; cada agrupador elige su k. */
+  cluster?: boolean;
 }) {
-  const t = useT();
+  const { t } = useI18n();
+  const n = (value: number) => thousands(value);
   const name = (id: Placement["id"]) => t(`results.candidates.short.${id}`);
   const level2 = routing.placements.filter((p) => p.level === 2);
   const out = routing.placements.filter((p) => p.level === "out");
@@ -43,7 +49,7 @@ export function RosterCard({
 
       <section className="flex flex-col gap-1.5">
         <h3 className="text-sm font-medium">
-          {t("roster.level1", {
+          {t(cluster ? "roster.cluster.level1" : "roster.level1", {
             count: routing.level1.length,
             time: formatEstimate(routing.level1EstimateS),
           })}
@@ -65,7 +71,9 @@ export function RosterCard({
       {level2.length > 0 && (
         <section className="flex flex-col gap-1.5">
           <h3 className="text-sm font-medium">
-            {t("roster.level2", { count: level2.length })}
+            {t(cluster ? "roster.cluster.level2" : "roster.level2", {
+              count: level2.length,
+            })}
           </h3>
           <ul className="flex flex-col gap-1 text-sm text-ink-muted">
             {level2.map((p) => (
@@ -81,7 +89,7 @@ export function RosterCard({
             ))}
           </ul>
           <p className="text-xs text-ink-muted">
-            {t("roster.level2Hint", {
+            {t(cluster ? "roster.cluster.level2Hint" : "roster.level2Hint", {
               time: formatEstimate(routing.unionEstimateS),
             })}
           </p>
@@ -105,13 +113,36 @@ export function RosterCard({
         </section>
       )}
 
-      <p className="text-xs text-ink-muted">{t("roster.cv", { k })}</p>
+      {cluster ? (
+        <>
+          <p className="text-xs text-ink-muted">{t("roster.clusterK")}</p>
+          <p className="text-xs text-ink-muted">
+            {t("roster.clusterNote", { max: k })}
+          </p>
+          {/* Decisión 8 del usuario: la muestra del jerárquico, antes de correr. En la
+              caja `sunken` con `info` que dice design-system.md (AU-S7-38), la misma
+              forma que la nota de Resultados (AggloSampleNote). */}
+          {rows > AGGLO_MAX_ROWS && (
+            <p className="flex items-start gap-2 rounded-md border border-hairline bg-sunken p-3 text-xs">
+              <Icon name="info" className="mt-0.5 shrink-0 text-ink-muted" />
+              {t("roster.clusterSample", {
+                sample: n(AGGLO_MAX_ROWS),
+                rows: n(rows),
+              })}
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="text-xs text-ink-muted">{t("roster.cv", { k })}</p>
+      )}
       {smallSample && (
         <p className="text-xs text-caution">
           <span aria-hidden className="mr-1">
             ⚠
           </span>
-          {t("roster.smallSample", { rows })}
+          {t(cluster ? "roster.cluster.smallSample" : "roster.smallSample", {
+            rows,
+          })}
         </p>
       )}
       {out.length > 0 && (

@@ -1,0 +1,299 @@
+{
+  "task": "agrupar",
+  "n_rows": 300,
+  "distance": "numeric",
+  "silhouette_sample": 300,
+  "k_range": [
+    2,
+    10
+  ],
+  "league": [
+    {
+      "name": "kmeans",
+      "status": "ok",
+      "error_type": null,
+      "k": 5,
+      "k_by": "silhouette",
+      "silhouette_by_k": [
+        {
+          "k": 2,
+          "silhouette": 0.3473068414027573
+        },
+        {
+          "k": 3,
+          "silhouette": 0.4816822526452405
+        },
+        {
+          "k": 4,
+          "silhouette": 0.4754479171254881
+        },
+        {
+          "k": 5,
+          "silhouette": 0.5074813959227422
+        },
+        {
+          "k": 6,
+          "silhouette": 0.48558148056661005
+        },
+        {
+          "k": 7,
+          "silhouette": 0.46090288881800023
+        },
+        {
+          "k": 8,
+          "silhouette": 0.45481324252000643
+        },
+        {
+          "k": 9,
+          "silhouette": 0.45293510004945803
+        },
+        {
+          "k": 10,
+          "silhouette": 0.45943756748053405
+        }
+      ],
+      "bic_by_k": null,
+      "silhouette": 0.5074813959227422,
+      "noise_share": null,
+      "score": 0.5074813959227422,
+      "sizes": [
+        63,
+        62,
+        60,
+        59,
+        56
+      ],
+      "sample_rows": null,
+      "elapsed_ms": 30
+    },
+    {
+      "name": "agglomerative",
+      "status": "ok",
+      "error_type": null,
+      "k": 3,
+      "k_by": "silhouette",
+      "silhouette_by_k": [
+        {
+          "k": 2,
+          "silhouette": 0.3473068414027573
+        },
+        {
+          "k": 3,
+          "silhouette": 0.4814448941162654
+        },
+        {
+          "k": 4,
+          "silhouette": 0.47342324444778283
+        },
+        {
+          "k": 5,
+          "silhouette": 0.4810682252642616
+        },
+        {
+          "k": 6,
+          "silhouette": 0.46486660392836077
+        },
+        {
+          "k": 7,
+          "silhouette": 0.4522644567535366
+        },
+        {
+          "k": 8,
+          "silhouette": 0.4496735580295352
+        },
+        {
+          "k": 9,
+          "silhouette": 0.4411214724961039
+        },
+        {
+          "k": 10,
+          "silhouette": 0.43988879068863146
+        }
+      ],
+      "bic_by_k": null,
+      "silhouette": 0.4814448941162654,
+      "noise_share": null,
+      "score": 0.4814448941162654,
+      "sizes": [
+        120,
+        117,
+        63
+      ],
+      "sample_rows": null,
+      "elapsed_ms": 11
+    },
+    {
+      "name": "gmm",
+      "status": "ok",
+      "error_type": null,
+      "k": 3,
+      "k_by": "bic",
+      "silhouette_by_k": null,
+      "bic_by_k": [
+        {
+          "k": 2,
+          "bic": 1912.853716640452
+        },
+        {
+          "k": 3,
+          "bic": 1312.127182522066
+        },
+        {
+          "k": 4,
+          "bic": 1330.108584923127
+        },
+        {
+          "k": 5,
+          "bic": 1365.8893663424228
+        },
+        {
+          "k": 6,
+          "bic": 1403.7226484552327
+        },
+        {
+          "k": 7,
+          "bic": 1451.1639034894492
+        },
+        {
+          "k": 8,
+          "bic": 1477.4659343411245
+        },
+        {
+          "k": 9,
+          "bic": 1510.9560778437976
+        },
+        {
+          "k": 10,
+          "bic": 1532.4307481639153
+        }
+      ],
+      "silhouette": 0.4814448941162654,
+      "noise_share": null,
+      "score": 0.4814448941162654,
+      "sizes": [
+        120,
+        117,
+        63
+      ],
+      "sample_rows": null,
+      "elapsed_ms": 47
+    },
+    {
+      "name": "hdbscan",
+      "status": "ok",
+      "error_type": null,
+      "k": 3,
+      "k_by": "density",
+      "silhouette_by_k": null,
+      "bic_by_k": null,
+      "silhouette": 0.4814448941162654,
+      "noise_share": 0,
+      "score": 0.4814448941162654,
+      "sizes": [
+        120,
+        117,
+        63
+      ],
+      "sample_rows": null,
+      "elapsed_ms": 3
+    }
+  ],
+  "consensus": {
+    "k": 3,
+    "votes": 3,
+    "voters": 4
+  },
+  "winner": "agglomerative",
+  "model_name": "agglomerative",
+  "reading": {
+    "level": "exist",
+    "score": 0.4814448941162654,
+    "null_score": 0.23065768021406097,
+    "gap": 0.25078721390220443,
+    "stability": {
+      "ari_mean": 0.8764611151263345,
+      "ari_min": 0.5335665799853416,
+      "runs": 10,
+      "fraction": 0.8
+    }
+  },
+  "profiles": {
+    "groups": [
+      {
+        "group": 0,
+        "size": 120,
+        "share": 0.4,
+        "numeric": {
+          "gasto_mensual_usd": 216.5713333333333,
+          "visitas_mes": 12,
+          "antiguedad_meses": 28.325
+        },
+        "categorical": {
+          "canal": {
+            "mode": "app",
+            "share": 0.48333333333333334
+          }
+        }
+      },
+      {
+        "group": 1,
+        "size": 117,
+        "share": 0.39,
+        "numeric": {
+          "gasto_mensual_usd": 82.53358974358974,
+          "visitas_mes": 2.5641025641025643,
+          "antiguedad_meses": 28.46153846153846
+        },
+        "categorical": {
+          "canal": {
+            "mode": "tienda",
+            "share": 0.6068376068376068
+          }
+        }
+      },
+      {
+        "group": 2,
+        "size": 63,
+        "share": 0.21,
+        "numeric": {
+          "gasto_mensual_usd": 627.0726984126983,
+          "visitas_mes": 4.936507936507937,
+          "antiguedad_meses": 30.904761904761905
+        },
+        "categorical": {
+          "canal": {
+            "mode": "tienda",
+            "share": 0.4444444444444444
+          }
+        }
+      }
+    ],
+    "noise": null,
+    "separating": [
+      {
+        "column": "gasto_mensual_usd",
+        "kind": "numeric",
+        "strength": 0.9515649719721518
+      },
+      {
+        "column": "visitas_mes",
+        "kind": "numeric",
+        "strength": 0.8588056610833628
+      },
+      {
+        "column": "canal",
+        "kind": "categorical",
+        "strength": 0.34814868258233833
+      }
+    ]
+  },
+  "assignment": {
+    "method": "nearest-centroid",
+    "train_agreement": 0.9966666666666667,
+    "sample_rows": null
+  },
+  "preprocessing": {
+    "rare_categories": {}
+  },
+  "elapsed_ms": 118
+}

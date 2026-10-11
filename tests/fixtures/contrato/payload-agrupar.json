@@ -1,0 +1,63 @@
+{
+  "task": "agrupar",
+  "headers": [
+    "gasto_mensual_usd",
+    "visitas_mes",
+    "antiguedad_meses",
+    "canal"
+  ],
+  "rows": [
+    [
+      "641.4",
+      "5",
+      "33",
+      "tienda"
+    ],
+    [
+      "684.69",
+      "4",
+      "9",
+      "web"
+    ],
+    [
+      "62.33",
+      "3",
+      "9",
+      "tienda"
+    ],
+    [
+      "182.4",
+      "11",
+      "45",
+      "web"
+    ],
+    [
+      "668.06",
+      "5",
+      "16",
+      "tienda"
+    ]
+  ],
+  "numeric": [
+    "gasto_mensual_usd",
+    "visitas_mes",
+    "antiguedad_meses"
+  ],
+  "categorical": [
+    "canal"
+  ],
+  "distance": "numeric",
+  "seed": 42,
+  "roster": [
+    "kmeans",
+    "agglomerative",
+    "gmm",
+    "hdbscan"
+  ],
+  "k_range": [
+    2,
+    10
+  ],
+  "stability_runs": 10,
+  "n_rows": 300
+}

@@ -54,7 +54,10 @@ Corre cada verificación en orden y reporta estado:
 
 ### 4. Build
 - [ ] `pnpm build` exitoso.
-- [ ] Bundle size no creció >10% vs main (medir con `next build` output).
+- [ ] Bundle size no creció >10 % **contra la base REAL del PR y con el mismo entorno de build (kit
+      v1.38.0):** `base=$(git merge-base origin/main HEAD)` → `next build` de esa base y de HEAD con el
+      mismo `.env.local` (o ninguno en ambos) y el mismo Node; se comparan los dos outputs. Un `main` local
+      viejo o un entorno distinto dan otra cifra *(ds S6: la primera comparación se descartó por eso)*.
 
 ### 5. Security
 - [ ] `pnpm audit --audit-level high` limpio. **Si sale rojo sin que tú tocaras dependencias, no
@@ -65,6 +68,9 @@ Corre cada verificación en orden y reporta estado:
       solo para lo clavado en profundidad, **acotando el selector al RANGO VULNERABLE**
       (`postcss@<8.5.18`) y con `^` en el reemplazo, **que no cruza de major** — nada de arrastrar
       una ruptura de API por un parche de seguridad.
+- [ ] **(app ds, S7 — AU-S7-05) Las excepciones de auditoría que vencen:** `pnpm verificar:retiros`
+      consulta cada aviso de `auditConfig.ignoreGhsas` y es rojo si ya publicó parche (la excepción
+      venció: bump, quitar el id, ADR superseded) o si no se pudo leer. Corre también en `quality`.
 - [ ] **Los overrides viven en `pnpm-workspace.yaml`, NO en `package.json`** (kit v1.16.0):
       **pnpm 11 ya no lee `pnpm.overrides` de `package.json` — lo ignora con un WARN y sigue.**
       Si este repo los tiene en el sitio viejo, su protección es **ficticia** y nada lo delata.

@@ -1,0 +1,96 @@
+{
+  "task": "agrupar",
+  "model_name": "gmm",
+  "k": 3,
+  "score": 0.4814448941162654,
+  "reading": {
+    "level": "exist",
+    "score": 0.4814448941162654,
+    "null_score": 0.25996685764714306,
+    "gap": 0.22147803646912234,
+    "stability": {
+      "ari_mean": 0.8304459612523848,
+      "ari_min": 0.33700012009075686,
+      "runs": 10,
+      "fraction": 0.8
+    }
+  },
+  "profiles": {
+    "groups": [
+      {
+        "group": 0,
+        "size": 120,
+        "share": 0.4,
+        "numeric": {
+          "gasto_mensual_usd": 216.5713333333333,
+          "visitas_mes": 12,
+          "antiguedad_meses": 28.325
+        },
+        "categorical": {
+          "canal": {
+            "mode": "app",
+            "share": 0.48333333333333334
+          }
+        }
+      },
+      {
+        "group": 1,
+        "size": 117,
+        "share": 0.39,
+        "numeric": {
+          "gasto_mensual_usd": 82.53358974358974,
+          "visitas_mes": 2.5641025641025643,
+          "antiguedad_meses": 28.46153846153846
+        },
+        "categorical": {
+          "canal": {
+            "mode": "tienda",
+            "share": 0.6068376068376068
+          }
+        }
+      },
+      {
+        "group": 2,
+        "size": 63,
+        "share": 0.21,
+        "numeric": {
+          "gasto_mensual_usd": 627.0726984126983,
+          "visitas_mes": 4.936507936507937,
+          "antiguedad_meses": 30.904761904761905
+        },
+        "categorical": {
+          "canal": {
+            "mode": "tienda",
+            "share": 0.4444444444444444
+          }
+        }
+      }
+    ],
+    "noise": null,
+    "separating": [
+      {
+        "column": "gasto_mensual_usd",
+        "kind": "numeric",
+        "strength": 0.9515649719721518
+      },
+      {
+        "column": "visitas_mes",
+        "kind": "numeric",
+        "strength": 0.8588056610833628
+      },
+      {
+        "column": "canal",
+        "kind": "categorical",
+        "strength": 0.34814868258233833
+      }
+    ]
+  },
+  "assignment": {
+    "method": "gaussian",
+    "train_agreement": 1,
+    "sample_rows": null
+  },
+  "preprocessing": {
+    "rare_categories": {}
+  }
+}

@@ -44,7 +44,8 @@ solo aparecen en veredicto/estados, cada uno con un tinte de fondo al 8–12% pa
 - **Nada comunica solo con color.** El veredicto y las métricas SIEMPRE llevan símbolo + texto:
   **▲** supera · **＝** empata · **▼** no supera · **⚠** fuga/aviso · **★** ganador de la
   validación cruzada (disco relleno + texto) · **◆** elegido por ti (disco relleno + texto) · **≈**
-  empata con el mejor · **✓** verificado/limpio · **⚙** saneamiento aplicado.
+  empata con el mejor · **✓** verificado/limpio · **⚙** saneamiento aplicado · **●** / **○** los
+  grupos existen / no hay estructura (S7).
 - **Todas las cifras en Geist Mono con `tabular-nums`** (métricas, %, matriz de confusión, tamaños
   de dataset). El mono es la firma del instrumento; la prosa va en Geist Sans.
 - **A11y desde el inicio:** táctil ≥44px, foco visible con ring de acento, contraste AA
@@ -61,7 +62,9 @@ componentes canon — con el **VerdictBanner** como pieza jerárquica — más l
 sprint (narración con importancia, scoring con novedad, saneamiento y, desde S5, la liga, los
 encarriladores y la ficha de cada modelo; desde S6, **estimar una cantidad** — el veredicto en
 unidades, la liga «menor es mejor», el gráfico estimado frente a real — y la pregunta de la columna
-ambigua).
+ambigua; desde S7, **varias categorías** — la exactitud balanceada, la matriz K×K con ✓ y la fuga
+por categoría — y **agrupar sin objetivo**: la lectura ● / ⚠ / ○, qué distingue a cada grupo y la
+tabla de agrupadores).
 
 ## Snippet idiomático
 

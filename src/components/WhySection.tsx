@@ -44,14 +44,20 @@ function directionKey(feature: FeatureImportance): string {
   return feature.direction;
 }
 
-/** S6: al estimar, la dirección se lee contra la cantidad («mayor consumo»). */
+/** S6: al estimar, la dirección se lee contra la cantidad («mayor consumo»).
+ *  S7: con varias categorías una columna numérica no empuja hacia un solo lado
+ *  (puede volver más probable una categoría y menos otra): se dice así. */
 function directionText(
   t: (key: string, params?: Record<string, string | number>) => string,
   feature: FeatureImportance,
   target: string,
   positiveClass: string | null,
+  classes: number | null,
 ): string {
   const key = directionKey(feature);
+  if (classes !== null && key !== "unused" && key !== "categorical") {
+    return t("why.direction.multiclass");
+  }
   if (positiveClass === null && (key === "positive" || key === "negative")) {
     return t(`why.directionQuantity.${key}`, { target });
   }
@@ -63,11 +69,13 @@ function ImportanceChart({
   target,
   positiveClass,
   unit,
+  classes,
 }: {
   explain: Explainability;
   target: string;
   positiveClass: string | null;
   unit: TargetUnit | null;
+  classes: number | null;
 }) {
   const t = useT();
   const features = explain.features.slice(0, MAX_BARS);
@@ -115,7 +123,7 @@ function ImportanceChart({
               />
             </div>
             <p className="mt-0.5 text-xs text-ink-muted">
-              {directionText(t, feature, target, positiveClass)}
+              {directionText(t, feature, target, positiveClass, classes)}
             </p>
           </li>
         );
@@ -133,6 +141,7 @@ export function WhySection({
   aiAvailable = true,
   onRequestNarration,
   unit = null,
+  classes = null,
 }: {
   explain: Explainability;
   /** Columna objetivo — las direcciones se leen contra ella (no contra "«0»"). */
@@ -147,6 +156,8 @@ export function WhySection({
   aiAvailable?: boolean;
   /** S6: al estimar, la unidad del objetivo (las importancias están en ella). */
   unit?: TargetUnit | null;
+  /** S7: con varias categorías, cuántas (sin clase positiva ni una dirección). */
+  classes?: number | null;
   onRequestNarration: () => void;
 }) {
   const t = useT();
@@ -169,13 +180,16 @@ export function WhySection({
           target={target}
           positiveClass={positiveClass}
           unit={unit}
+          classes={classes}
         />
         {/* Qué es la clase detectada + qué significan barra y dirección: sin
             esto, «0» no le dice nada a nadie (gate ⭐ S4, bloque C). */}
         <p className="mt-4 border-t border-hairline pt-3 text-xs text-ink-muted">
-          {positiveClass === null
-            ? t("why.quantityNote", { target })
-            : t("why.positiveClass", { target, positive: positiveClass })}
+          {classes !== null
+            ? t("why.multiclassNote", { target, count: classes })
+            : positiveClass === null
+              ? t("why.quantityNote", { target })
+              : t("why.positiveClass", { target, positive: positiveClass })}
         </p>
         <p className="mt-1 text-xs text-ink-muted">{t("why.legend")}</p>
       </Card>
@@ -198,7 +212,11 @@ export function WhySection({
           <span aria-hidden className="mr-1">
             ·
           </span>
-          {t("why.narration.aiNotForQuantity")}
+          {t(
+            classes !== null
+              ? "why.narration.aiNotForMulticlass"
+              : "why.narration.aiNotForQuantity",
+          )}
         </p>
       ) : (
         <Card className="p-5">

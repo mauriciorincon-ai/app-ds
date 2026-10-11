@@ -134,10 +134,30 @@ describe("POST /api/narrate", () => {
   // proveedor «caído», llegar al modelo daría 200 + provider-error, no 400.
   it("un payload que no es de clasificación binaria ⇒ 400, sin llegar al proveedor", async () => {
     enableMock("down");
-    const response = await POST(
-      request({ payload: { ...payload(), problem: "regression" } }),
-    );
-    expect(response.status).toBe(400);
+    // S7 (P10): tampoco varias categorías ni agrupar.
+    for (const problem of [
+      "regression",
+      "multiclass-classification",
+      "clustering",
+    ]) {
+      const response = await POST(
+        request({ payload: { ...payload(), problem } }),
+      );
+      expect(response.status, problem).toBe(400);
+    }
+  });
+
+  it("S7 (P10): métricas de varias categorías o de agrupar ⇒ 400, sin llegar al proveedor", async () => {
+    enableMock("down");
+    for (const extra of [{ f1_macro: 0.5 }, { silhouette: 0.4 }]) {
+      const body = payload();
+      const response = await POST(
+        request({
+          payload: { ...body, metrics: { ...body.metrics, ...extra } },
+        }),
+      );
+      expect(response.status, Object.keys(extra)[0]).toBe(400);
+    }
   });
 
   it("body inválido ⇒ 400 'invalid-request' (Zod es la puerta)", async () => {

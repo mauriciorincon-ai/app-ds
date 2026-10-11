@@ -12,14 +12,14 @@
     "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
   },
   "schema_version": "1.0.0",
-  "actualizado": "2026-10-04",
+  "actualizado": "2026-10-10",
   "app": {
     "slug": "ds",
     "nombre": "Probeta DS",
     "ciclo": "H2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 6,
+    "sprints_cerrados": 7,
     "version_repo": "0.1.0"
   },
   "promesa": {
@@ -29,7 +29,7 @@
     "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad."
   },
   "funcionalidades": {
-    "total": 35,
+    "total": 41,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
     "descartadas": [],
     "grupos": [
@@ -42,7 +42,7 @@
           {
             "id": "V1",
             "nombre": "Eliges qué predecir",
-            "que_hace": "Seleccionas la columna objetivo: dos categorías (sí/no, 0/1, aprobado/rechazado) o, desde el Sprint 006, una cantidad (un precio, un consumo, un tiempo).",
+            "que_hace": "Seleccionas la columna objetivo: dos categorías (sí/no, aprobado/rechazado), desde el Sprint 007 de 3 a 20 categorías (un plan, una región), o desde el Sprint 006 una cantidad (un precio, un consumo). Si no hay nada que predecir, la app agrupa las filas (grupo «Agrupar sin objetivo»).",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -59,20 +59,20 @@
           },
           {
             "id": "V4",
-            "nombre": "Aviso de métricas casi perfectas",
-            "que_hace": "Un resultado redondo casi siempre esconde una fuga, no un gran modelo. La app lo marca como sospechoso en vez de celebrarlo.",
+            "nombre": "Un resultado demasiado bueno no se celebra",
+            "que_hace": "Si una columna predice el objetivo casi a la perfección, el titular dice «Posible fuga de datos — sospechoso» en vez de «supera», en las tres tareas con objetivo (desde el Sprint 007, el mismo titular para todas).",
             "seccion_manual": "El veredicto honesto"
           },
           {
             "id": "V5",
             "nombre": "Advertencia de fuga con la columna nombrada",
-            "que_hace": "Señala por nombre la columna que podría ser un proxy del objetivo, y qué hacer con ella.",
+            "que_hace": "Señala por nombre la columna que podría ser un proxy del objetivo, y qué hacer con ella. Con varias categorías nombra también la categoría que la columna delata.",
             "seccion_manual": "El veredicto honesto"
           },
           {
             "id": "V6",
             "nombre": "Las métricas, todas sobre datos no vistos",
-            "que_hace": "Al clasificar: exactitud, precisión, sensibilidad, F1 y AUC. Al estimar: MAE, RMSE, R² y MedAE, en las unidades del objetivo. Calculadas siempre sobre el conjunto de prueba.",
+            "que_hace": "Con dos categorías: exactitud, precisión, sensibilidad, F1 y AUC. Con varias: la exactitud balanceada, que pesa igual cada categoría, y el F1 macro. Al estimar: MAE, RMSE, R² y MedAE, en las unidades de la columna. Todo sobre el conjunto de prueba.",
             "seccion_manual": "El veredicto honesto"
           },
           {
@@ -100,9 +100,15 @@
             "seccion_manual": "Estimar una cantidad"
           },
           {
+            "id": "V13",
+            "nombre": "Clasificar en varias categorías",
+            "que_hace": "De 3 a 20 categorías: la exactitud balanceada contra la categoría más frecuente y una regresión logística, la matriz de confusión con los aciertos marcados ✓ y, en una frase, la confusión más frecuente.",
+            "seccion_manual": "Clasificar en varias categorías"
+          },
+          {
             "id": "V12",
             "nombre": "¿Categorías o una cantidad? Te lo pregunta",
-            "que_hace": "Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada, y deja cambiar la respuesta.",
+            "que_hace": "Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada. Desde el Sprint 007, las dos respuestas entrenan.",
             "seccion_manual": "Estimar una cantidad"
           },
           {
@@ -127,7 +133,7 @@
           },
           {
             "id": "D2",
-            "nombre": "Cinco ejemplos incluidos",
+            "nombre": "Siete ejemplos incluidos",
             "que_hace": "Datos sintéticos empaquetados para recorrer la app entera sin traer nada propio.",
             "seccion_manual": "El veredicto honesto"
           },
@@ -140,7 +146,7 @@
           {
             "id": "D4",
             "nombre": "Límites dichos de frente",
-            "que_hace": "5 MB o 50 000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.",
+            "que_hace": "5 MB o 50,000 filas. Por encima avisa; no se cuelga fingiendo que trabaja.",
             "seccion_manual": "Limitaciones conocidas (Sprint 001)"
           },
           {
@@ -152,14 +158,14 @@
           {
             "id": "D6",
             "nombre": "Cinco alertas antes de entrenar",
-            "que_hace": "Columna que huele a fuga, columna que parece un identificador, objetivo desbalanceado y, al estimar, objetivo muy sesgado u objetivo con valores muy lejos del resto. Con símbolo y texto, nunca solo color.",
+            "que_hace": "Columna que huele a fuga, columna que parece un identificador, objetivo desbalanceado y, al estimar, objetivo muy sesgado u objetivo con valores muy lejos del resto. Con símbolo y texto, nunca solo color. Con varias categorías, la fuga y el desbalance nombran la categoría.",
             "seccion_manual": "Sobrevive datos reales"
           },
           {
             "id": "D7",
             "nombre": "Bloqueo del CSV con separador equivocado",
             "que_hace": "El caso típico de Excel en español: se nombra el separador real en vez de adivinarlo, porque una lectura adivinada convertiría columnas numéricas en categorías en silencio.",
-            "seccion_manual": "Historial · Sprint 004"
+            "seccion_manual": "Sobrevive datos reales"
           }
         ]
       },
@@ -172,7 +178,7 @@
           {
             "id": "P1",
             "nombre": "Gráfico de importancia con dirección",
-            "que_hace": "Importancia por permutación sobre el conjunto de prueba. Si el modelo no se apoya en una variable, se dice así: no se le pinta una flecha que la medición no respalda.",
+            "que_hace": "Importancia por permutación sobre el conjunto de prueba. Si el modelo no se apoya en una variable, se dice así: no se le pinta una flecha que la medición no respalda. Con varias categorías una variable no empuja en una sola dirección, y se dice.",
             "seccion_manual": "El porqué, contado honesto"
           },
           {
@@ -184,7 +190,7 @@
           {
             "id": "P3",
             "nombre": "Narración con IA, solo a petición",
-            "que_hace": "Marcada «✓ verificada con los números»: si cita una cifra o una variable que no existe, se descarta antes de mostrarse.",
+            "que_hace": "Solo con dos categorías, y marcada «✓ verificada con los números»: si cita una cifra o una variable que no existe, se descarta antes de mostrarse. Las demás tareas usan el texto estándar.",
             "seccion_manual": "El porqué, contado honesto"
           },
           {
@@ -196,7 +202,7 @@
           {
             "id": "P5",
             "nombre": "Model card descargable",
-            "que_hace": "La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites.",
+            "que_hace": "La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites; al agrupar, la lectura, los grupos y la regla de asignación.",
             "seccion_manual": "El porqué, contado honesto"
           }
         ]
@@ -234,7 +240,7 @@
           {
             "id": "U5",
             "nombre": "CSV puntuado sin pisar columnas",
-            "que_hace": "La tabla completa más la predicción y, si el modelo la da, su probabilidad; al estimar, la cantidad estimada (<objetivo>_estimado). Si ya existía una columna con ese nombre, la nueva sale con sufijo.",
+            "que_hace": "La tabla completa más la predicción y, si el modelo la da, su probabilidad (con varias categorías, la de la categoría predicha); al estimar, la cantidad estimada con los decimales de la columna. Si ya existía una columna con ese nombre, la nueva sale con sufijo.",
             "seccion_manual": "El modelo se usa"
           },
           {
@@ -266,6 +272,44 @@
       {
         "orden": 5,
         "estrella": false,
+        "nombre": "Agrupar sin objetivo",
+        "linea": "Cuando no hay nada que predecir: encuentra grupos y te dice si existen de verdad.",
+        "features": [
+          {
+            "id": "G1",
+            "nombre": "Agrupar filas parecidas, sin objetivo",
+            "que_hace": "K-Means, el jerárquico y la mezcla gaussiana prueban de 2 a 10 grupos y eligen cuántos (con la silueta o el BIC); HDBSCAN los encuentra por densidad. Cada uno dice cómo eligió.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          },
+          {
+            "id": "G2",
+            "nombre": "Te dice si los grupos existen",
+            "que_hace": "● existen · ⚠ frágiles · ○ no hay estructura: compara con el mismo agrupador sobre datos al azar y repite el agrupamiento sobre partes de las filas. Sin prueba ni baseline, porque no hay respuesta que examinar.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          },
+          {
+            "id": "G3",
+            "nombre": "Qué distingue a cada grupo",
+            "que_hace": "Su tamaño y las columnas que más lo separan, en las unidades del usuario; las filas que no caen en ningún grupo, aparte.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          },
+          {
+            "id": "G4",
+            "nombre": "Tus filas con su grupo",
+            "que_hace": "La tabla entera con una columna más, armada en el navegador en el momento; no se guarda en ningún otro lado.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          },
+          {
+            "id": "G5",
+            "nombre": "Asignar filas nuevas a un grupo",
+            "que_hace": "Con la regla dicha (el centro más cercano, el grupo más probable o «fuera de todo grupo») y un archivo de modelo sin ninguna fila del usuario.",
+            "seccion_manual": "Agrupar filas parecidas, sin objetivo"
+          }
+        ]
+      },
+      {
+        "orden": 6,
+        "estrella": false,
         "nombre": "Transversales",
         "linea": "Lo que acompaña a toda la app, no a una pantalla.",
         "features": [
@@ -278,7 +322,7 @@
           {
             "id": "T2",
             "nombre": "Diccionario de términos",
-            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y cada métrica, las de clasificar y las de estimar.",
+            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y cada métrica: las de clasificar, las de estimar y las de agrupar (silueta, estabilidad, «fuera de todo grupo»).",
             "seccion_manual": "Diccionario de términos"
           }
         ]
@@ -289,10 +333,10 @@
     {
       "clave": "funcionalidades",
       "etiqueta": "Funcionalidades",
-      "valor": 35,
+      "valor": 41,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. El Sprint 006 suma dos (estimar una cantidad y la pregunta de la columna ambigua). Ninguna funcionalidad se descartó."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. El Sprint 006 suma dos (estimar una cantidad y la pregunta «¿categorías o una cantidad?») y el Sprint 007 seis (clasificar en varias categorías y las cinco de agrupar sin objetivo)."
     },
     {
       "clave": "pantallas",
@@ -305,34 +349,34 @@
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 589,
+      "valor": 862,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-10-04: `pnpm test` 523 pruebas en 47 archivos + `pnpm test:integration` 66 pruebas en 7 archivos (estas últimas ejecutan Pyodide real)."
+      "detalle": "Salida del 2026-10-10 sobre el árbol final: `pnpm test` 761 pruebas en 62 archivos + `pnpm test:integration` 101 pruebas en 10 archivos (estas últimas ejecutan Pyodide real; una más se salta: el emisor del fixture del S6, que solo escribe con su variable de entorno)."
     },
     {
       "clave": "pruebas_e2e",
       "etiqueta": "Pruebas end-to-end",
-      "valor": 44,
+      "valor": 72,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida de `pnpm test:e2e` el 2026-10-04, sobre el build de producción: 14 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe incluido. Cero flaky."
+      "detalle": "Salida de la suite e2e entera el 2026-10-10, sobre el build de producción: 19 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe incluido. Cero flaky."
     },
     {
       "clave": "cobertura_lineas",
       "etiqueta": "Cobertura de líneas",
-      "valor": 94.54,
+      "valor": 94.49,
       "unidad": "%",
       "fuente": "medido",
-      "detalle": "v8 sobre engine, lib, components y workers; 2099 de 2220 líneas (salida de `pnpm test` del 2026-10-04). Los motores puros de engine/ llevan umbral propio más alto."
+      "detalle": "v8 sobre engine, lib, components y workers; 3053 de 3231 líneas (salida de `pnpm test` del 2026-10-10). Los motores puros de engine/ llevan umbral propio más alto."
     },
     {
       "clave": "dependencias_runtime",
       "etiqueta": "Dependencias en tiempo de ejecución",
-      "valor": 8,
+      "valor": 9,
       "unidad": "paquetes",
       "fuente": "medido",
-      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador. Lo recuenta tests/unit/brochure-export.test.ts contra package.json."
+      "detalle": "next, react, react-dom, zod, pino, @sentry/nextjs, @sentry/browser (el cliente liviano de la misma versión, ADR 018), ai y @ai-sdk/groq. El motor de ciencia de datos (pandas y scikit-learn) no está aquí: viaja como WebAssembly y corre en el navegador. Lo recuenta tests/unit/brochure-export.test.ts contra package.json."
     },
     {
       "clave": "filas_del_usuario_en_la_red",
@@ -340,7 +384,7 @@
       "valor": 0,
       "unidad": "filas",
       "fuente": "medido",
-      "detalle": "Cinco pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard y, desde el S6, regresion-score) inspeccionan la red durante su recorrido y fallan si alguna petición contiene valores del dataset. La única salida posible es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real."
+      "detalle": "Siete pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard, regresion-score y, desde el S7, multiclase-score y agrupar-score) inspeccionan la red durante su recorrido y fallan si alguna petición contiene valores del dataset. Lo único que sale con contenido del usuario es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real; los errores mandan a Sentry solo metadatos (filas, columnas, tarea), nunca valores."
     },
     {
       "clave": "gpu_requerida",
@@ -361,7 +405,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 63768,
+      "valor": 106236,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
@@ -369,10 +413,10 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 14,
+      "valor": 19,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/ (001–014). Lo recuenta tests/unit/brochure-export.test.ts."
+      "detalle": "Archivos de decisions/ (001–019). Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [
@@ -406,7 +450,7 @@
     "red_saliente": true,
     "escribe_en_las_fuentes": false,
     "usa_ia": true,
-    "detalle": "La app se sirve desde la web y tiene UNA ruta de servidor, así que no es una app local — pero los datos sí lo son: el perfilado, el saneamiento, el entrenamiento y el scoring corren en el navegador con Pyodide, y el dataset nunca se sube a ningún servidor porque no existe uno al que subirlo. La única salida es la narración con IA, y solo cuando el usuario pulsa su botón: viajan nombres de columnas y cifras agregadas —652 B en una medición real—, jamás filas. Los registros técnicos llevan metadatos (número de filas y columnas, tipos), nunca valores."
+    "detalle": "La app se sirve desde la web y tiene UNA ruta de servidor, así que no es una app local — pero los datos sí lo son: el perfilado, el saneamiento, el entrenamiento y el scoring corren en el navegador con Pyodide, y el dataset nunca se sube a ningún servidor porque no existe uno al que subirlo. Lo único que sale con contenido del usuario es la narración con IA, y solo cuando el usuario pulsa su botón: viajan nombres de columnas y cifras agregadas —652 B en una medición real—, jamás filas. Los errores mandan a Sentry solo metadatos (número de filas y columnas, tarea), nunca valores."
   },
   "enlaces": {
     "produccion": null,

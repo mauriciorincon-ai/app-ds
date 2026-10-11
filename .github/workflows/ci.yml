@@ -23,6 +23,10 @@ jobs:
           curl -sSfLO https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
           echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks_8.30.1_linux_x64.tar.gz" | sha256sum -c -
           tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
+          # S7 (AU-S7-13, AC-27): al PATH de los pasos siguientes, para que `pnpm test` corra la
+          # carnada del hook PreToolUse en vez de saltarla («skipped» no es verde; jq ya viene en
+          # ubuntu-latest). tests/unit/hook-secretos.test.ts falla si en la CI falta alguno.
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
           cd "$GITHUB_WORKSPACE"
           "$RUNNER_TEMP/gitleaks" dir . --no-banner --redact
       - uses: pnpm/action-setup@v6
@@ -44,6 +48,13 @@ jobs:
       # pyodide-budget.json — la DoD «crece ≤ 2 MB» medida en cada PR, no a mano (nació en rojo).
       - run: node scripts/verificar-peso-pyodide.mjs
       - run: pnpm audit --audit-level high
+      # S7 (AU-S7-05, AC-2; regla 18): cada excepción de la auditoría vence con un EVENTO (su aviso
+      # publica un parche, ADR 012). Consulta los avisos de ignoreGhsas y es rojo si alguno ya tiene
+      # parche o no se puede leer. Usa red: por eso vive aquí y no en `pnpm test` (regla 20).
+      - name: Regla 18 — excepciones de auditoría vencidas (verificar-retiros)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/verificar-retiros.mjs
 
   integration:
     runs-on: ubuntu-latest
@@ -55,6 +66,16 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      # S7 (AU-S7-13, AC-27): gitleaks también aquí, verificado por sha256 como en `quality`, para
+      # que tests/integration/gitleaks-hook.test.ts corra la carnada y el pre-commit en vez de
+      # saltarlos; la prueba falla si en la CI falta.
+      - name: gitleaks (para la carnada del pre-commit)
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -sSfLO https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks_8.30.1_linux_x64.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       # Pipeline anti-fuga en Pyodide/WASM (fit-solo-en-train). Descarga las
       # wheels de pandas/scikit-learn del CDN de Pyodide en la primera corrida.
       - run: pnpm test:integration
@@ -123,3 +144,9 @@ jobs:
       # el job no cambia de nombre (no toca la ruleset). Nació en rojo con scripts/demo-rojo.sh.
       - name: Lighthouse CI — categorías ≥ 0.9 (lighthouse-categorias.json)
         run: lhci assert --config=./lighthouse-categorias.json --aggregationMethod=median-run
+      # S7 (kit v1.37.0): lo que `lhci assert` no dice. AVISA (exit 0) si la mediana de un timing
+      # queda a menos del 10 % de su presupuesto (Lighthouse sobre localhost es bimodal), y FALLA si
+      # una URL medida no cae bajo ningún `path` de perf-budget.json. Nació en rojo con
+      # scripts/demo-rojo.sh (path del budget mutado → «/ no cae bajo ningún path»).
+      - name: Lighthouse — margen y presupuesto por URL medida (lighthouse-margen.mjs)
+        run: node scripts/lighthouse-margen.mjs

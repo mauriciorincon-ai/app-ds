@@ -1,0 +1,40 @@
+{
+  "task": "agrupar",
+  "predictions": [
+    -1,
+    0,
+    -1
+  ],
+  "probabilities": null,
+  "novelty": {
+    "columns": [
+      {
+        "column": "x1",
+        "kind": "numeric",
+        "count": 1
+      },
+      {
+        "column": "x2",
+        "kind": "numeric",
+        "count": 1
+      },
+      {
+        "column": "x3",
+        "kind": "numeric",
+        "count": 1
+      },
+      {
+        "column": "x4",
+        "kind": "numeric",
+        "count": 1
+      },
+      {
+        "column": "ruido",
+        "kind": "numeric",
+        "count": 1
+      }
+    ],
+    "affected_rows": 1,
+    "n_rows": 3
+  }
+}

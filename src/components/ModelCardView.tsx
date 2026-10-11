@@ -5,53 +5,30 @@
 // narración IA solo si quedó verificada (la decide el estado, no este componente).
 // El <pre> se monta SOLO al abrir el <details>: si viviera siempre en el DOM,
 // duplicaría los títulos de la pantalla (rompe lectores/tests en modo estricto).
+// S7: el documento lo arma cada tarea (`build`, con el idioma activo): con objetivo,
+// buildModelCard; al agrupar, buildClusterCard.
 import { useState } from "react";
-import type { SanitationReport } from "@/engine/sanitize";
+import type { Locale } from "@/i18n/config";
 import { useI18n } from "@/i18n/provider";
 import { downloadTextFile } from "@/lib/files";
-import { buildModelCard, modelCardFileName } from "@/lib/modelcard";
-import type { ExperimentResult } from "@/workers/protocol";
+import { modelCardFileName } from "@/lib/modelcard";
 import { Button, Card } from "./ui";
 
-export type ModelCardMeta = {
-  datasetName: string;
-  cols: number;
-  numericFeatures: number;
-  categoricalFeatures: number;
-  target: string;
-  seed: number;
-};
-
 export function ModelCardView({
-  result,
-  meta,
-  sanitation,
-  verifiedNarrative,
+  datasetName,
+  build,
 }: {
-  result: ExperimentResult;
-  meta: ModelCardMeta;
-  sanitation: SanitationReport | null;
-  verifiedNarrative: string | null;
+  datasetName: string;
+  build: (locale: Locale) => string;
 }) {
   const { locale, t } = useI18n();
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const markdown = buildModelCard({
-    locale,
-    datasetName: meta.datasetName,
-    cols: meta.cols,
-    numericFeatures: meta.numericFeatures,
-    categoricalFeatures: meta.categoricalFeatures,
-    target: meta.target,
-    seed: meta.seed,
-    result,
-    sanitation,
-    verifiedNarrative,
-  });
+  const markdown = build(locale);
 
   const download = () => {
     downloadTextFile(
-      modelCardFileName(meta.datasetName),
+      modelCardFileName(datasetName),
       markdown,
       "text/markdown;charset=utf-8",
     );

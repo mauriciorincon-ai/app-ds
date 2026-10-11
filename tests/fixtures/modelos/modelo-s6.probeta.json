@@ -1,0 +1,136 @@
+{
+  "format_version": 1,
+  "manifest": {
+    "task": "numerica",
+    "app": {
+      "name": "probeta-ds",
+      "version": "0.1.0"
+    },
+    "created_at": "2026-10-04T12:00:00.000Z",
+    "dataset": {
+      "name": "consumo-energia.csv",
+      "n_train": 150,
+      "n_test": 50
+    },
+    "training_profile": {
+      "numeric": {
+        "superficie_m2": {
+          "min": 42,
+          "max": 220
+        },
+        "ocupantes": {
+          "min": 1,
+          "max": 6
+        },
+        "anio_construccion": {
+          "min": 1960,
+          "max": 2022
+        },
+        "temp_media_c": {
+          "min": 2,
+          "max": 23.3
+        }
+      },
+      "categorical": {
+        "calefaccion": [
+          "bomba_calor",
+          "electrica",
+          "gas"
+        ],
+        "aislamiento": [
+          "alto",
+          "bajo",
+          "medio"
+        ]
+      }
+    },
+    "leakage": [],
+    "versions": {
+      "pyodide": "314.0.2",
+      "sklearn": "1.8.0",
+      "python": "3.14.2",
+      "xgboost": "2.1.4",
+      "lightgbm": "4.6.0"
+    },
+    "payload_sha256": "a5fd1d06ed2d6d32656a044aab35cfcce752c9912aed2534e8ab519c2dfb6682",
+    "payload_encoding": "pickle+zlib+base64",
+    "model_name": "linear",
+    "schema": {
+      "numeric": [
+        "superficie_m2",
+        "ocupantes",
+        "anio_construccion",
+        "temp_media_c"
+      ],
+      "categorical": [
+        "calefaccion",
+        "aislamiento"
+      ],
+      "target": "consumo_kwh",
+      "task": "numerica",
+      "target_stats": {
+        "mean": 374.72333333333336,
+        "std": 114.22423103377528,
+        "min": 148.8,
+        "max": 840.5,
+        "median": 365.4,
+        "decimals": 1
+      }
+    },
+    "metrics": {
+      "model": {
+        "mae": 43.77304092785411,
+        "rmse": 51.79941571868696,
+        "r2": 0.7304148889018502,
+        "medae": 42.339321730057875,
+        "mape": 0.13347321133957335
+      },
+      "baselines": {
+        "median": {
+          "mae": 80.88200000000002,
+          "rmse": 99.93280842646223,
+          "r2": -0.0033728976477038763,
+          "medae": 63.99999999999997,
+          "mape": 0.2770642383450275
+        },
+        "linear": {
+          "mae": 43.77304092785411,
+          "rmse": 51.79941571868696,
+          "r2": 0.7304148889018502,
+          "medae": 42.339321730057875,
+          "mape": 0.13347321133957335
+        }
+      }
+    },
+    "verdict": {
+      "level": "ties",
+      "primaryMetric": "mae",
+      "modelScore": 43.77304092785411,
+      "baselineScore": 43.77304092785411,
+      "delta": 0
+    },
+    "league": [
+      {
+        "name": "linear",
+        "status": "ok",
+        "cv_mean": 37.30695811188673,
+        "cv_std": 1.8435111545931702,
+        "test": {
+          "mae": 43.77304092785411,
+          "rmse": 51.79941571868696,
+          "r2": 0.7304148889018502,
+          "medae": 42.339321730057875,
+          "mape": 0.13347321133957335
+        }
+      }
+    ],
+    "selection": {
+      "by": "cv",
+      "cv_winner": "linear",
+      "k": 5,
+      "rule": "one-se",
+      "metric": "mae"
+    }
+  },
+  "payload": "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"
+}
