@@ -1531,7 +1531,69 @@ leí como imagen seis: la portada (360, ES), la escena E04b (360 ES y 1280 EN), 
 abierta (360 oscuro, EN), lo fino «Qué mide» (360 oscuro, EN) y el pie (360, ES). Los otros 22 no los
 leí.
 
-La tabla de demos en rojo de la Fase 2 se copia aquí al cerrar la fase.
+**Demos en rojo de la Fase 2** (B, C, la constitución y, desde F2-54, el auditor A). Todas con
+`scripts/demo-rojo.sh` y `--debe-nombrar`, escritas después de correrlas. El borrador vivía en el
+scratchpad; la limpieza de `/tmp` lo borró y se reconstruyó fila por fila desde el registro de la
+sesión (K-S7-8):
+
+| # | Hallazgo | Gate | Mutación | Rojo (lo que nombró) | Verde |
+| --- | --- | --- | --- | --- | --- |
+| F2-1 | AU-S7-12 | `tests/unit/demo-rojo.test.ts` (nuevo) | sin el corte por señal (`if false`) en `scripts/demo-rojo.sh`; la demo corrió con una copia de la herramienta, para no mutar el script en ejecución | «murió por una señal» | 3 de 3 |
+| F2-2 | AU-S7-13 | `tests/unit/hook-secretos.test.ts`, prueba nueva «en la CI, gitleaks y jq están» | la detección busca `gitleaks-inexistente`, corrida con `CI=1` | «en la CI faltan gitleaks o jq» | 4 de 4 |
+| F2-3 | AU-S7-13 | `tests/integration/gitleaks-hook.test.ts`, prueba nueva «en la CI, gitleaks está» | `execFileSync("gitleaks-inexistente", …)`, corrida con `CI=1` | «en la CI falta gitleaks» | 8 de 8 |
+| F2-4 | AU-S7-05 | `tests/unit/verificar-retiros.test.ts` (nuevo) sobre `scripts/verificar-retiros.mjs` (nuevo) | el aviso con parche no se marca (`if (false)`) | «ya tiene parche» | 5 de 5 |
+| F2-5 | AU-S7-11 | `tests/unit/multiclase-motor.test.ts`, prueba nueva «la fuga se mide SOLO en train» (la vieja pasa a llamarse «nombrando la columna y la clase») | la fuga multiclase medida con todas las filas (`rows.map((_, i) => i)` y `trimmed`) | «¿la fuga se mide con todas las filas?» | 19 de 19 |
+| F2-6 | AU-S7-32 | `tests/unit/observability.test.ts`: la forma cerrada del breadcrumb, ahora una prueba por tarea (`it.each(TRAIN_TASKS)`) | una clave `classes` más en el `data` de `probeta.league` | «con la tarea «agrupar»» (y las otras tres) | 8 de 8 (una primera corrida salió con exit 1 solo por un `--minimo-tests 9` mal contado; se repitió entera con 8) |
+| F2-7 | AU-S7-28 | `tests/unit/despacho.test.ts`: el tripwire ve las comparaciones contra `CLUSTER_TASK` (los tres lectores de `contract.ts` quedan en `ALLOWED` con su razón) | una línea `task === CLUSTER_TASK` en `src/lib/modelcard.ts` | «src/lib/modelcard.ts:2 (comparación con constante)» | 10 de 10 |
+| F2-8 | AU-S7-27 | `tsc --noEmit` sobre `CLUSTER_K_BY` y `CLUSTER_ASSIGN` con `satisfies Record<ClusterMemberId, …>` | un agrupador nuevo, `"spectral"`, en `CLUSTER_MEMBER_IDS` | «src/workers/contract.ts(934,12): … does not satisfy … Record<… "spectral", ClusterKBy>» (y `:940` para la asignación) | `tsc` limpio |
+| F2-9 | AU-S7-31 | `tests/unit/verificar-dependencias.test.ts`: prueba nueva «una degradación declarada sin razón es rojo», y la aserción condicional pasa a incondicional | la validación de entradas desactivada (`if (false)`) en `scripts/verificar-dependencias.mjs` | «una degradación declarada sin razón es rojo» | 8 de 8 |
+| F2-10 | AU-S7-29 | `tests/unit/leakage.test.ts`, prueba nueva del empate «ﬀ» frente a un emoji (`byCodePoint` pasa al motor, `src/engine/tarea.ts`) | la fuga por clase vuelve al `sort()` de JS | «en el orden de Python» | 22 de 22 |
+| F2-11 | AU-S7-29 | `tests/unit/multiclase-motor.test.ts`, prueba nueva del empate de la clase más chica en la EDA | la EDA vuelve al `sort()` de JS | «empate de la más chica» | 20 de 20 |
+| F2-12 | AU-S7-03 | `tests/unit/cardinalidades.test.ts` (nuevo): ninguna cifra de tareas, agrupadores, categorías ni límites en `messages/{es,en}.json`, y las que se muestran salen de su constante. Al nacer cazó una más: el «máx. 100 MB» del archivo de modelo | `(hasta {max}, como` → `(hasta 20, como` en `messages/es.json` | «config.target.help: Puedes elegir…» | 4 de 4 |
+| F2-13 | AU-S7-06 | `tests/unit/contract-agrupar.test.ts`, carnada nueva «vota sin ninguna silueta» (train-agrupar 46 → 51 con las de AU-S7-09 y AU-S7-26) | sin la guarda `scored.length === 0` en `contract.ts` | «Reduce of empty array» (el lector lanzaba en vez de nombrar) | 12 de 12 |
+| F2-14 | AU-S7-08 | carnada nueva «todos los centros un ancho de más» (export-agrupar 8 → 10 con la de `sample_rows`) | el cotejo del ancho desactivado (`if (false && …)`) | «detectó 9 de 10» | 12 de 12 |
+| F2-15 | AU-S7-09 | carnada nueva `reading.labels` (el lector de etiquetas pasa a ser recursivo) | el lector solo mira el nivel de arriba (`path === ""`) | «reading.labels» | 12 de 12 |
+| F2-16 | AU-S7-07 | 7 carnadas nuevas de coherencia del manifiesto de agrupar (14 → 21) | sin el cotejo de `assignment.method` contra el esquema en `model-file.ts` | «carnada NO detectada: manifest.assignment.method» | 12 de 12 |
+| F2-17 | AU-S7-09 | prueba nueva «P13 por estructura»: un `labels`, un `row_groups` o un campo extra en el resultado no llegan al manifiesto | la lectura vuelve a copiarse entera (`{ ...cluster.reading, …}`) | «el manifiesto lleva "labels"» | 12 de 12 |
+| F2-18 | AU-S7-01 | `tests/unit/sanitize.test.ts` «no muta la tabla de entrada» y `tests/unit/agrupar-ui.test.tsx` «con basura coaccionada, el CSV conserva la celda y ningún grupo sale NaN» (nuevas) | `kept.push(row)` (sin copiar) en `src/engine/sanitize.ts` | «sanitizeTable mutó la tabla de entrada» y «la celda «?» se perdió: expected 'C0001,641.4,,33,tienda,1'» | 41 de 41 |
+| F2-19 | AU-S7-01 | `tests/unit/sanitize.test.ts` «el índice cuadra también con basura coaccionada y duplicados» (nueva). **Su primera versión no podía caer:** con 30 filas, 4 basuras dejaban la columna bajo el 90 % numérico y no había coerción; la demo lo delató (no nombró lo esperado) y la tabla pasó a 60 filas | la misma mutación | «el duplicado no comparte índice con su gemela» | 13 de 13 |
+| F2-20 | AU-S7-02 (decisión 1) | `tests/integration/agrupar.test.ts`, prueba nueva «con 6.000 filas, la nula de HDBSCAN no vale 0» (Pyodide real) | el re-ajuste de HDBSCAN vuelve al tamaño mínimo del total (`min_cluster_size=mcs`) | «la referencia nula de HDBSCAN vale 0 con más de 2.000 filas» | 2 de 2 |
+| F2-21 | AU-S7-30 | misma suite, prueba nueva «con 4 filas, HDBSCAN dice sin estructura» | sin la guarda `ctx["n"] < mcs` | «HDBSCAN con 4 filas: ValueError» | 2 de 2 |
+| F2-22 | AU-S7-04 | `tests/unit/agrupar-ui.test.tsx`, prueba nueva «la card nombra solo a los agrupadores que compitieron» (ES y EN); la línea se arma con la liga que corrió | la línea vuelve al texto fijo de los cuatro en `messages/es.json` | «la card nombra un agrupador que no corrió» | 30 de 30 |
+| F2-23 | AU-S7-14 | `tests/unit/multiclase-ui.test.tsx`, dos pruebas nuevas sobre la configuración con `computeEdaAlerts` real (clientes-sucio → `canal`, planes-fuga-plantada → `plan`) | (a) la rama de varias categorías del desbalance apagada; (b) la de la fuga apagada | (a) «el aviso dice «usa AUC»»; (b) «separa casi a la perfección la categoría» | 14 de 14 |
+| F2-24 | AU-S7-15 | `tests/unit/multiclase-ui.test.tsx`: la prueba de fichas pasa a recorrer TODAS las de la liga de varias categorías y sus baselines (antes solo las que tenían reemplazo). Al ampliarse cazó otro defecto: la logística balanceada mostraba el texto binario («sí»/«no»), porque el reemplazo se buscaba por el id de la variante y no por su ficha base | la búsqueda vuelve al id de la variante en `FichaModelo.tsx` | «logistic_balanced: los apartados de dos clases» | 27 de 27 |
+| F2-25 | AU-S7-15 | la misma prueba, para la mayoritaria («el veredicto se mide con AUC o F1») | la entrada `majority` de `MULTICLASS_FICHA_FIELDS` retirada | «majority: los apartados de dos clases» | 27 de 27 |
+| F2-26 | AU-S7-10 | `tests/unit/agrupar-ui.test.tsx`, prueba nueva «la peor repetición, en pantalla y en la card» (ES y EN) | la línea del mínimo apagada en `ClusterResults.tsx` (`{false && reading.level !== "none" && (`) | «re-muestreo más distinto» | 2 de 2 |
+| F2-27 | AU-S7-23 | misma suite, «una media diminuta (~1e-11) no sale «0.00» en la card» | la card vuelve a `formatQuantity(value, 2)` | «1.20e-11» | 1 de 1 |
+| F2-28 | AU-S7-33 | `tests/unit/multiclase-ui.test.tsx`, «la matriz escribe 1,800, no 1800» | la celda vuelve a `{count}` en `MulticlassResults.tsx` | «1,800» | 1 de 1 |
+| F2-29 | AU-S7-36 | misma suite, «sin probabilidad, puntuar no habla de ordenar por riesgo» | la rama de varias categorías vuelve a `score.noProbabilities` en `ScoreScreen.tsx` | «Este modelo decide la categoría» | 1 de 1 |
+| F2-30 | AU-S7-35 | `agrupar-ui`, «las categorías raras agrupadas llegan a la card de agrupar» (ES y EN) | la línea apagada en `modelcard.ts` (`false && …`) | «Categorías raras agrupadas» | 2 de 2 |
+| F2-31 | AU-S7-36 | `agrupar-ui`, «la card de agrupar no promete la partición temporal» (ES y EN) | la card vuelve a `modelcard.limits.dates` | «aún no» | 2 de 2 |
+| F2-32 | AU-S7-16 (c) | `agrupar-ui`, «la card con muestra pequeña habla de agrupar» (ES y EN) | la card vuelve a `modelcard.selection.smallSample` | «puntajes de validación cruzada» | 2 de 2 |
+| F2-33 | AU-S7-16 (a) | `agrupar-ui`, «la ficha de un competidor: su puesto por puntaje» (abre la ficha desde la tabla, por su botón) | el estado vuelve a `kind: "competitor"` en `ClusterResults.tsx` | «por puntaje» | 1 de 1 |
+| F2-34 | AU-S7-16 (b) | `agrupar-ui`, «la barra de progreso al agrupar no se llama «validación cruzada»» | el `aria-label` vuelve a `training.training` | «Buscando grupos» | 1 de 1 |
+| F2-35 | AU-S7-17 | `agrupar-ui`, «quién compite, el Nivel 2 pendiente y su corrida…» con «sin perder nada» en `FALSE_FOR_CLUSTER` y la `TrainingScreen` con `onCancel` | `Level2Card.tsx` vuelve a `level2.cancelHint` | «sin perder nada» | 1 de 1 |
+| F2-36 | AU-S7-18, AU-S7-40 | `agrupar-ui`, ««Agrupar filas parecidas en su lugar» lleva a agrupar y el foco al título» (el botón se pulsa, con el gancho real) | sin el `.focus()` (`if (false && autoFocus)`) en `ConfigScreen.tsx` | «el foco no está en el título de agrupar» | 1 de 1 |
+| F2-37 | AU-S7-39 | `agrupar-ui`, «tras «Elegir», el foco va al h1 de la lectura, no a <body>» | sin el `.focus()` en `ResultsScreen.tsx` | «tras elegir, el foco no está en el h1» | 1 de 1 |
+| F2-38 | AU-S7-19 | `tests/unit/page-error.test.tsx` (nuevo), «cada pantalla con chunk propio declara su «Cargando…»» | `ConfigScreen` sin `loading` en `src/app/page.tsx` | «una pantalla dinámica sin loading» | 1 de 1 |
+| F2-39 | AU-S7-19 | misma suite, «un error del código no se disfraza de «revisa tu conexión»» | `PageError.tsx` dice siempre `errors.chunk` | «Revisa tu conexión» | 1 de 1 |
+| F2-40 | AU-S7-17 | `agrupar-ui`, «Nivel 2 al agrupar → cancelar → descargar las filas: «unavailable»» (gancho con `FakeWorker`) | el error `no-labels` vuelve a mapearse a `"error"` en `useExperiment.ts` | «unavailable» | 1 de 1 |
+| F2-41 | AU-S7-34 | `agrupar-ui`, «un grupo de una fila se dice en singular» | sin `count: group.size` en `ClusterResults.tsx` | «1 fila» | 1 de 1 |
+| F2-42 | AU-S7-33 | `multiclase-ui`, «los mosaicos de puntuar: miles con coma y «%» con espacio no separable» | el mosaico vuelve a `${count}` en `ScoreScreen.tsx` | «1,800 (90» | 1 de 1 |
+| F2-43 | AU-S7-33 | `multiclase-ui`, «la model card: la partición, el soporte y la matriz, con miles» | el soporte vuelve a `${c.support}` en `modelcard.ts` | «1,803» | 1 de 1 |
+| F2-44 | AU-S7-03 (ampliación) | `tests/unit/cardinalidades.test.ts`: dos patrones nuevos (un tope de filas escrito a mano) y la cifra de `errors.csv-too-many-rows` sale de `MAX_ROWS`. Al nacer cazó «El archivo supera las 50 000 filas» (cifra fija y con espacio de miles) | `{rows}` → `50 000` en `messages/es.json` | «errors.csv-too-many-rows» | 4 de 4 |
+| F2-45 | AU-S7-19 | `tests/e2e/chunks.spec.ts` (nuevo), «si el chunk no llega, la página lo dice» (build de producción; la red del navegador corta los chunks) | `src/app/error.tsx` devuelve `null` (`return error ? null : …`) | «No se pudo cargar esta parte» | 1 de 1 |
+| F2-46 | AU-S7-19 | misma spec, «mientras llega el chunk de la fase siguiente, «Cargando…»» (la red retiene los chunks) | `ConfigScreen` sin `loading` en `src/app/page.tsx` | «Cargando…» | 1 de 1 |
+| F2-47 | AU-S7-21 | `tests/e2e/multiclase.spec.ts`, R10 ampliada: el nombre largo de la fila se lee entero en la matriz y en la tabla por categoría, y la columna lleva el número de su fila | la cabecera de fila vuelve a `truncate` en `MulticlassResults.tsx` | «el nombre largo de la fila se recorta» | 1 de 1 |
+| F2-48 | AU-S7-40 | `tests/e2e/multiclase-score.spec.ts`: la cabecera termina en `plan_predicho, plan_probabilidad`, con p ∈ [1/K, 1] | el CSV puntuado sin probabilidades (`buildScoredCsv(…, null, …)`) en `ScoreScreen.tsx` | «plan_probabilidad» | 1 de 1 |
+| F2-49 | AU-S7-17 (la otra rama) | `agrupar-ui`, «cancelar mientras guarda la instantánea: las filas con su grupo se siguen descargando». Nació de la pasada de capturas ampliada: cancelar en esa fase NO pierde las filas con su grupo, y el aviso «hay que volver a agrupar» era absoluto; pasa a «si cancelas cuando ya está agrupando…» | sin la rama de la instantánea en `cancelLevel2` (`if (false && snapshotPending)`): el worker se reinicia | «cancelar la instantánea no reinicia el worker» | 1 de 1 |
+| F2-50 | Brochure ES/EN (D-B) | `tests/e2e/brochure.spec.ts`, nueva «paridad: cada texto tiene su par, y los dos idiomas cuentan lo mismo» (build de producción, dos dispositivos) | el par inglés de «Esto también te lo decimos.» retirado de `docs/BROCHURE.html` | «textos en español sin su par en inglés» | 2 de 2 |
+| F2-51 | Brochure E04b (D-A) | la e2e obligatoria de reduced-motion, ampliada a la escena E04b (el título y dos fichas, con opacidad 1 y tamaño real) | sin la regla de reduced-motion de las fichas (`.ficha > * { opacity: 1 … }`) | «¿Sí o no?» | 2 de 2 |
+| F2-52 | Brochure ES/EN (D-B) | nueva «con un navegador en inglés abre en inglés, y el conmutador vuelve al español» (con axe en inglés) | el script del `<head>` fija siempre el español | «es-CO» | 2 de 2 |
+| F2-53 | Brochure, conteo | «el conteo del pie está en el DOM como texto desde el primer byte», ahora con 41 | el pie vuelve a «35 funcionalidades» | «41 funcionalidades» | 2 de 2 |
+| F2-54 | AU-A-02 | `tests/unit/cardinalidades-docs.test.ts` (nuevo): 13 reglas que exigen la cifra de su constante en el manual, el brochure, el export y `design-system.md`, cada una con al menos una coincidencia, y «los otros tres» prohibido | `muestra de hasta 2,000 filas` → `3,000` en `docs/MANUAL-DE-USO.md` | «docs/MANUAL-DE-USO.md:521: «muestra de hasta 3,000 filas» — esperado 2,000» | 15 de 15 |
+| F2-55 | AU-A-02 | la misma prueba, regla prohibida | «Los demás agrupadores usan todas tus filas» vuelve a «Los otros tres usan todas tus filas» | «docs/MANUAL-DE-USO.md:493: … Los otros tres usan» | 15 de 15 |
+| F2-56 | AU-A-11 | `brochure-export.test.ts`, nueva «cada sección del manual que cita el export existe en el manual» (al nacer cazó D7, que apuntaba a una fila del historial: el manual ganó la viñeta «Un CSV separado por punto y coma») | la `seccion_manual` de G1 pasa a «Agrupar» | «G1: «Agrupar»» | 9 de 9 |
 
 ### Fase 2 del auditor A (2026-10-10)
 
@@ -1566,6 +1628,44 @@ con la orden vigente sin cambios y pasa el PR 19 de borrador a normal. Avísame 
 | T3  | TEXTO | Preview → «Segmentos de clientes» → Agrupar                                | la frase de que agrupar no tiene prueba ni baseline          | ¿se entiende por qué no hay veredicto?                                            | sí                                    | maquetado, no visto | I2 (parada 5)                                                         |
 
 Ninguna se da por vista aquí: su veredicto viaja al ⭐⭐ (Acto 2).
+
+**La pasada de capturas final** (cierra AU-A-03 y AU-S7-22). `scripts/capturas-s7.mjs` sobre el build
+de producción de `2dfe387` (`NARRATION_PROVIDER=mock pnpm start -p 3000`), 2026-10-10, de 22:52 a
+22:58 (carga 3.23 al arrancar y 14.39 al terminar; la pasada no mide tiempos):
+
+- **Salió con exit 0: 116 encuadres** a 360 y 1280 px, en claro y oscuro, de la app y de la guía v4.
+- **66 líneas «OK interacción»**, entre ellas:
+  - las fichas, «Ver puntajes de prueba», «Elegir» con el foco al `h1`, «Volver al ganador» e «Incluir
+    de todos modos» con varias categorías;
+  - las dos model cards descargadas (4,702 y 3,407 caracteres);
+  - «Elegir» GMM, la ficha de un agrupador que no ganó y las filas con su grupo (300 filas, con la
+    columna `grupo`);
+  - «Agrupar filas parecidas en su lugar» y el cambio a English;
+  - **«Cancelar el Nivel 2» al agrupar vuelve al resultado anterior, y tras cancelar «Descargar filas con
+    su grupo» dice que ya no se puede**, a 360 y a 1280 px. Es la promesa del copy de AU-S7-17 en el
+    runtime real.
+- **Medidas, todas en OK:**
+  - `scrollWidth ≤ clientWidth` en cada encuadre;
+  - las fichas caben en la ventana (663 ≤ 780 y 670 ≤ 900);
+  - la matriz de 20 clases se desplaza dentro de su recuadro (1,753 > 278 y 1,801 > 686);
+  - el nombre largo lleva su título completo;
+  - la cifra diminuta sale «9.52e-11 (promedio de los grupos: 5.53e-11)»;
+  - la nota de la muestra aparece 2 veces;
+  - la guía muestra «0/7 con el filtro ⭐⭐ corto».
+- **Leídos como imagen (7 de 116):** `360-light-27c-cancelado` (el aviso en «Tus filas con su grupo»),
+  `360-light-11-veredicto-fuga` (el titular único), `360-light-10-matriz-veinte` (columnas numeradas y el
+  nombre de 60 caracteres partido en líneas), `360-dark-14-lectura` (con el peor re-muestreo),
+  `guia-360-light-corto` (el filtro «⭐ H1» a 360 px), `360-light-22-cifras-diminutas` y
+  `1280-dark-15-tabla-agrupadores`. Ningún defecto. Los otros 109 no los leí.
+
+**La suite completa sobre `2dfe387`**, con los comandos de la CI, el 2026-10-10 de 22:59 a 23:05:
+
+- `pnpm test`: 62 archivos, **760 de 760**. Cobertura: 94.49 % de líneas y 93.28 % de sentencias;
+  `engine/` 98.98 % de líneas.
+- `pnpm test:integration` (Pyodide real): **101 pasan y 1 se salta** (102). La saltada es el emisor del
+  fixture del S6, que solo escribe con su variable.
+- La e2e entera sobre el build de producción, en los dos dispositivos: **72 de 72**, ninguna con
+  reintento (4.2 min).
 
 ## Fricciones del kit (SEPARADAS del producto)
 
@@ -1609,3 +1709,9 @@ Ninguna se da por vista aquí: su veredicto viaja al ⭐⭐ (Acto 2).
   buscar el texto viejo en `tests/e2e/`. Propuesta para `/audita-sprint` Fase 2: todo pago que cambie un
   texto visible busca el literal viejo en `tests/` (unit **y** e2e) en el mismo paso, y la e2e completa
   corre en local antes de empujar el lote de copy.
+- **K-S7-8 · La evidencia que vive en el scratchpad no sobrevive a una pausa larga.** Entre el 2026-10-06
+  y el 2026-10-10, macOS limpió `/tmp`: se fueron los archivos sueltos del scratchpad (la tabla de demos
+  F2-1..F2-53, los scripts de e2e, los logs de corridas), y quedaron las carpetas. La tabla se
+  reconstruyó fila por fila desde el registro de la sesión. Propuesta para el método: la evidencia de
+  una demo o de una corrida va a la bitácora del repo **en cuanto se produce** (regla 22 la pide después
+  del hecho, no al cierre de la fase), y el scratchpad queda solo para lo descartable.

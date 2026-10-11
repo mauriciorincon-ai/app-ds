@@ -266,6 +266,32 @@ antes de entrar, y en el brochure lleva su par EN. Orden:
 4. **Al final, sobre el árbol completo:** la pasada de capturas entera (cierra AU-A-03 y AU-S7-22), la
    suite completa (unit, integración, e2e) y la segunda casilla 4 por otro auditor.
 
+### Pago de A (Fase 2, 2026-10-10)
+
+El usuario aprobó la Fase 1 de A el 2026-10-10 («Retoma el plan de pago de los 16 hallazgos…, cierra el
+sprint con la orden vigente sin cambios»). El largo del ⭐⭐ corto se resuelve por la orden («≤ ~20
+min»): **opción B**. Gates en `9e79332` y copy y documentos en `2dfe387`. Demos en la tabla F2 de la
+bitácora.
+
+| Id      | Pago                                                                                                                                                                                                                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| AU-A-01 | Opción B. La parada 2 lleva cuatro de las cinco segundas vueltas del S6 (móvil con precios de seis dígitos, desktop con consumo); la FAQ del R² negativo va en G2 y M3 en I7, declaradas en «Qué deja fuera» y en `design-system.md`. Filtro «⭐ H1». La matriz de miradas, en la bitácora |
+| AU-A-02 | `tests/unit/cardinalidades-docs.test.ts` (13 reglas + «los otros tres» prohibido), rojos F2-54 y F2-55; «los demás agrupadores» en el manual                                                                                                                                               |
+| AU-A-03 | La pasada completa sobre `2dfe387` salió con exit 0: 116 encuadres y 66 «OK interacción», entre ellas «tras cancelar, «Descargar filas con su grupo» dice que ya no se puede» a 360 y 1280 px. El copy queda como está                                                                     |
+| AU-A-04 | El manual acota «usa el AUC» a dos categorías, el diccionario dice la métrica de cada caso y «Clasificar en varias categorías» suma «Antes de entrenar»                                                                                                                                    |
+| AU-A-05 | Verificado: el bundle público de producción lleva el host de ingesta de Sentry. Brochure ES/EN, export y BLUEPRINT dicen que con un error salen metadatos                                                                                                                                  |
+| AU-A-06 | README ES/EN sin «publicar»; el manual sin «llegará más adelante»                                                                                                                                                                                                                          |
+| AU-A-07 | (a) I8 cita «los demás agrupadores»; (b) «Qué deja fuera» da el porqué verdadero del Nivel 2 en desktop (texto honesto, sin e2e nueva); (c) B4; (d) B3 y G6 con `data-origen="mejora"`: el filtro cuenta 5; (e) I2 con el peor re-muestreo; (f) R9                                         |
+| AU-A-08 | D10 en la bitácora; ADR 015 §6, ADR 017 y la tarjeta de varias categorías con el titular único                                                                                                                                                                                             |
+| AU-A-09 | La tarjeta de la pregunta ambigua sin «próxima versión»; `design-system.md:188`; `config.warnings.date` ES/EN sin «en esta versión»                                                                                                                                                        |
+| AU-A-10 | `design-system.md` con la `ConfusionTable` como se dibuja; las dos tarjetas de `design-sync`, leídas como imagen                                                                                                                                                                           |
+| AU-A-11 | Siete specs de red, T2 con las métricas de agrupar, `sprints_cerrados: 7`; la prueba de `seccion_manual` (rojo F2-56) cazó D7 y el manual ganó la viñeta del punto y coma                                                                                                                  |
+| AU-A-12 | Las filas de `verificar-retiros` y de cardinalidades; «tres tareas nuevas»; la cifra de Lighthouse ⟦re-leída de la última corrida; se registra al terminar⟧                                                                                                                                |
+| AU-A-13 | README del kit, BLUEPRINT y guía con la regla de cifras. El barrido R9 opcional no se tomó: la regex `\d \d{3}` da por cifras las coordenadas del SVG del BLUEPRINT («0 960»)                                                                                                              |
+| AU-A-14 | «Outside every group», el pie, los requisitos y la puerta 1 en inglés                                                                                                                                                                                                                      |
+| AU-A-15 | El manual dice qué cuesta cancelar el Nivel 2 al agrupar, y la sección de la liga remite a esa excepción                                                                                                                                                                                   |
+| AU-A-16 | Manual, brochure ES/EN y export G1: K-Means, el jerárquico y la mezcla gaussiana prueban de 2 a 10 grupos; HDBSCAN los encuentra por densidad                                                                                                                                              |
+
 ## Anexo · Auditor B — motor, contrato, gates y dependencias
 
 ### Auditoría S7, fase 1: auditor B (motor, contrato, gates y dependencias)
