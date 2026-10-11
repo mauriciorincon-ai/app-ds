@@ -384,7 +384,7 @@
       "valor": 0,
       "unidad": "filas",
       "fuente": "medido",
-      "detalle": "Siete pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard, regresion-score y, desde el S7, multiclase-score y agrupar-score) inspeccionan la red durante su recorrido y fallan si alguna petición contiene valores del dataset. Lo único que sale con contenido del usuario es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real; los errores mandan a Sentry solo metadatos (filas, columnas, tarea), nunca valores."
+      "detalle": "Siete pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard, regresion-score, multiclase-score y agrupar-score) inspeccionan la red y fallan si una petición lleva valores del dataset. Lo único que sale con contenido del usuario es la narración con IA, a petición y solo con agregados: 652 B medidos. Sentry recibe solo metadatos (filas, columnas, tarea), nunca valores."
     },
     {
       "clave": "gpu_requerida",

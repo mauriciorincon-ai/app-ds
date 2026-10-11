@@ -41,6 +41,9 @@ const exportado = JSON.parse(
 
 const brochure = readFileSync("docs/BROCHURE.html", "utf8");
 
+// Tope de `metricas[].detalle` del contrato de ficha técnica de CV Viva.
+const DETALLE_MAX = 400;
+
 describe("brochure-export.json", () => {
   it("el total cuadra con el pie del BROCHURE.html", () => {
     const pie = brochure.match(/data-contador="(\d+)"/);
@@ -80,10 +83,17 @@ describe("brochure-export.json", () => {
     const admitidas = ["medido", "calculada", "declarado", "estimacion"];
     for (const metrica of exportado.metricas) {
       expect(admitidas, `métrica «${metrica.clave}»`).toContain(metrica.fuente);
+      // El contrato de ficha técnica de CV Viva (app-hoja-de-vida,
+      // docs/contrato-ficha-tecnica/plantilla.ficha-tecnica.json: «detalle: 1–400 caracteres») rechaza
+      // un detalle más largo y su build cae. Con solo `> 0`, un detalle de 490 pasó aquí en el S7.
       expect(
         metrica.detalle.length,
         `métrica «${metrica.clave}»`,
       ).toBeGreaterThan(0);
+      expect(
+        metrica.detalle.length,
+        `métrica «${metrica.clave}»: detalle de ${metrica.detalle.length} caracteres, el contrato de CV Viva admite ${DETALLE_MAX}`,
+      ).toBeLessThanOrEqual(DETALLE_MAX);
     }
   });
 

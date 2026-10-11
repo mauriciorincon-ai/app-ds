@@ -1762,3 +1762,27 @@ cobertura sobre el árbol: 761 de 761 y 94.49 % de líneas (3,053 de 3,231).
   reconstruyó fila por fila desde el registro de la sesión. Propuesta para el método: la evidencia de
   una demo o de una corrida va a la bitácora del repo **en cuanto se produce** (regla 22 la pide después
   del hecho, no al cierre de la fase), y el scratchpad queda solo para lo descartable.
+
+## Después del merge (2026-10-11) · tope de 400 del `detalle` de las métricas del export
+
+Pedido de la sesión de CV Viva (app-hoja-de-vida, PR de contenido de la vitrina): el contrato de ficha
+técnica de CV Viva (`docs/contrato-ficha-tecnica/plantilla.ficha-tecnica.json`: «detalle: 1–400
+caracteres») rechaza el `detalle` de `filas_del_usuario_en_la_red`, que medía 490, y su build cae.
+`brochure-export.test.ts` solo exigía `length > 0`. Rama `fix/brochure-export-detalle-400`, desde `main`
+(`3647b37`).
+
+- **Gate:** el test «toda métrica lleva su fuente…» exige además `detalle.length ≤ 400`
+  (`DETALLE_MAX`), con el contrato citado en el comentario.
+- **Rojo natural**, antes de tocar el export: 1 de 9 fallan, nombrando «métrica
+  «filas_del_usuario_en_la_red»: detalle de 490 caracteres, el contrato de CV Viva admite 400». Las otras
+  diez métricas miden entre 81 y 319: ninguna más pasa del tope.
+- **Texto:** el `detalle` pasa a 400 caracteres con todos sus hechos (las siete e2e por nombre, la
+  narración a petición con agregados, 652 B medidos, Sentry solo con metadatos). Caen «desde el S7»,
+  «durante su recorrido» y «en una narración real». Valor, unidad, fuente y las demás métricas no
+  cambian; `funcionalidades.total` sigue en 41. Verde: 9 de 9.
+- **Demo con `scripts/demo-rojo.sh`** (F2-58): mutación `agregados: 652 B medidos.` →
+  `agregados: 652 B medidos en una narración real.` (422 caracteres) → rojo nombrando
+  «filas_del_usuario_en_la_red»: detalle de 422 caracteres» → restaurado (Python + `cmp`) → verde con 9
+  pruebas, exit 0. Un primer intento salió exit 1 porque el `--debe-nombrar` decía 421: el script
+  rechazó un rojo que no nombraba lo esperado, que es su trabajo.
+- **`pnpm test`** (el comando de la CI, con cobertura): 62 archivos, 761 de 761, líneas 94.49 %.
