@@ -175,7 +175,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Limitaciones conocidas (Sprint 003):**
   - El archivo `.probeta.json` **solo lo entiende Probeta** (no es un formato estándar de
-    intercambio). Publicar el modelo para que otros lo usen llegará más adelante.
+    intercambio): quien quiera usar tu modelo necesita abrirlo en Probeta.
   - El CSV nuevo tiene los **mismos límites** de siempre: 5 MB o 50,000 filas.
   - El aviso de novedad detecta **valores nunca vistos**; no puede detectar cambios más sutiles
     (por ejemplo, que la relación entre variables haya cambiado con el tiempo).
@@ -197,12 +197,18 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Celdas basura convertidas a vacío:** si una columna es casi toda numérica pero tiene algún
     `"error"` suelto, esas celdas se vacían (contadas) y la columna se trata como número.
 
+- **Un CSV separado por punto y coma:** es lo que guarda Excel en español. La app no adivina el
+  separador: te dice que tu archivo separa con punto y coma (;) y que lo vuelvas a guardar como «CSV
+  (delimitado por comas)». Adivinarlo podría convertir columnas numéricas en categorías sin avisarte.
+
 - **Alertas antes de entrenar (exploración de datos):** al elegir el objetivo, la app revisa tus
   columnas y te avisa —con símbolo y texto, nunca solo color— de:
   - una columna que predice el objetivo **casi a la perfección** (posible fuga: un dato que no
     tendrías al predecir de verdad),
   - una columna que **parece un identificador** (aporta poco para generalizar),
-  - un **objetivo desbalanceado** (una clase es rara) — por eso el veredicto usa AUC.
+  - un **objetivo desbalanceado** (una respuesta es mucho más rara que las otras): con dos
+    categorías, por eso el veredicto usa el AUC; con varias, la alerta nombra la categoría más chica
+    y el veredicto usa la exactitud balanceada.
 
 - **Boosting que compite:** además del Random Forest, la app entrenaba un **HistGradientBoosting**,
   con el mismo preprocesamiento y el mismo veredicto. _Desde el Sprint 005 esto cambió:_ compiten
@@ -278,7 +284,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   Nivel 2»** vuelve a correr la liga entera con la misma validación cruzada.
   - **Puedes cancelar mientras corre** («Cancelar el Nivel 2»): vuelves al resultado anterior sin
     perder nada. La app tarda unos segundos en recuperar el modelo; mientras tanto, _Usar el
-    modelo_ y _Exportar_ esperan.
+    modelo_ y _Exportar_ esperan. Al agrupar hay una excepción: mira «Tus filas con su grupo».
   - Si el Nivel 2 no pudiera terminar (por ejemplo, por falta de memoria en un móvil), también
     vuelve el resultado anterior y te lo dice.
 
@@ -413,6 +419,10 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   categoría si **ella y el resto tienen al menos 5 filas con valor** en esa columna. _Desde el Sprint
   007, la clasificación en dos categorías usa la misma regla._
 
+- **Antes de entrenar,** la app te avisa si una columna separa casi a la perfección **una** categoría
+  del resto (nombra la columna y la categoría) y si una categoría es mucho más rara que las demás (la
+  nombra, con su porcentaje).
+
 - **Si una categoría tiene muy pocas filas:** la validación cruzada necesita al menos **2 filas de
   cada categoría** en el entrenamiento. Si alguna no llega, la app no entrena y te dice **cuál** es:
   prueba con más filas o junta las categorías más raras en una sola.
@@ -442,7 +452,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   2. **Revisa el plan.** Una tarjeta te dice **con qué columnas se mide el parecido** (las numéricas,
      si hay al menos dos; si no, todas), cuáles **solo describen** los grupos (las de categorías) y
      cuáles **no entran** y por qué (un identificador, una fecha).
-  3. **Quién compite:** cuatro agrupadores que prueban de **2 a 10 grupos** sobre todas tus filas.
+  3. **Quién compite:** K-Means, el jerárquico y la mezcla gaussiana prueban de **2 a 10 grupos** y
+     eligen cuántos (con la silueta o el BIC); HDBSCAN los encuentra por densidad. Cada uno dice cómo
+     eligió.
      **K-Means** y el **jerárquico** eligen cuántos grupos con la _silueta_; la **mezcla gaussiana**
      (GMM), con el _BIC_; **HDBSCAN** no necesita que se lo digan: los encuentra por densidad.
   4. **Pulsa _Agrupar filas_.**
@@ -478,15 +490,17 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Con más de 8,000 filas, el jerárquico usa una muestra:** se ajusta sobre **8,000 filas al azar**
   (siempre las mismas para tus datos) y asigna el resto al grupo más cercano. Lo hace para no agotar
-  la memoria del navegador, sobre todo en un teléfono, sin cerrar la pestaña. Los otros tres usan
-  todas tus filas. La app te lo dice **antes de agrupar**, junto a la lectura si el jerárquico gana,
+  la memoria del navegador, sobre todo en un teléfono, sin cerrar la pestaña. Los demás agrupadores
+  usan todas tus filas. La app te lo dice **antes de agrupar**, junto a la lectura si el jerárquico gana,
   en su fila de la tabla, en la model card y en el archivo exportado. Con datos grandes, el
   jerárquico puede quedar para el **Nivel 2**.
 
 - **Tus filas con su grupo:** **«Descargar filas con su grupo»** te da tu tabla con una columna más,
   **`grupo`**, con el número de grupo de cada fila (desde 1) o «fuera de todo grupo». Se arma en tu
   navegador en el momento y no se guarda en ningún otro lado: ni en el resultado, ni en la model card,
-  ni en el archivo exportado.
+  ni en el archivo exportado. Si corres el Nivel 2 y lo cancelas cuando ya está agrupando, vuelves al
+  resultado anterior, pero para descargar tus filas con su grupo hay que volver a agrupar: la app te
+  lo dice.
 
 - **Asignar filas nuevas:** pulsa **«Asignar filas nuevas»** y sube un CSV con las columnas que
   forman el parecido (no hay objetivo que quitar). Cada fila recibe su grupo con una regla que la app
@@ -593,7 +607,7 @@ cuando una te frene.
 | Término                    | Qué significa                                                                                                                              |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Fuga de datos**          | Una columna que ya contiene la respuesta disfrazada. Infla las métricas y hace inútil el modelo en la vida real. La app la busca y avisa.  |
-| **Desbalance de clases**   | Una de las dos respuestas es mucho más rara que la otra. Obliga a mirar AUC en vez de aciertos.                                            |
+| **Desbalance de clases**   | Una de las respuestas es mucho más rara que las otras. Obliga a mirar una métrica que no se deje engañar: el AUC con dos categorías, la exactitud balanceada con varias. |
 | **Saneamiento**            | La limpieza que la app hace antes de entrenar (filas repetidas, columnas identificadoras o constantes, celdas basura), siempre con conteo. |
 | **Columna identificadora** | Una columna con un valor distinto en cada fila (un código de cliente). No predice nada; se excluye.                                        |
 | **Novedad**                | Al puntuar datos nuevos: valores que el modelo nunca vio al entrenar. En esas filas está adivinando, y te lo dice.                         |
@@ -659,7 +673,7 @@ cuando una te frene.
   jerárquico compara cada fila con todas las demás: con muchas filas necesita más memoria de la que
   un navegador puede dar, sobre todo en un teléfono, y la pestaña se cerraría. Por eso se ajusta sobre
   8,000 filas al azar (siempre las mismas para tus datos) y asigna el resto al grupo más cercano. Los
-  otros tres agrupadores usan todas tus filas, y la app te lo dice antes de agrupar y donde se lee el
+  demás agrupadores usan todas tus filas, y la app te lo dice antes de agrupar y donde se lee el
   resultado.
 - **«Los grupos existen», ¿quiere decir que son reales?** Quiere decir que tus filas forman grupos
   que se separan mejor que el azar y que se repiten. No dice **por qué** existen ni que vayan a
@@ -683,4 +697,4 @@ cuando una te frene.
 | 004    | **Diccionario de términos** (pedido en el gate ⭐, prueba E3) + aviso de CSV con punto y coma.                                                                                                                                                                                                                       |
 | 005    | La liga honesta (14 modelos con validación cruzada, ganador por la regla de un error estándar, prueba a pedido y etiquetada, elección manual «elegido por ti», tipo de predicción de cada columna, quién compite por nivel, ficha de cada modelo, Nivel 2 cancelable).                                               |
 | 006    | Estimar una cantidad (liga de 11 modelos que estiman, veredicto en las unidades de la columna contra la mediana y la regresión lineal, gráfico estimado frente a real, la pregunta «¿categorías o una cantidad?», `<columna>_estimado` al puntuar, avisos de sesgo y atípicos) + diccionario y preguntas de estimar. |
-| 007    | Clasificar en varias categorías (de 3 a 20, la liga en exactitud balanceada, matriz de confusión con ✓, fuga que nombra la columna y la categoría, `<columna>_predicho` y `_probabilidad`) y agrupar filas parecidas sin objetivo (cuatro agrupadores, ganador por consenso, lectura contra datos sin estructura y estabilidad, qué distingue a cada grupo, «fuera de todo grupo», la muestra del jerárquico, tus filas con su grupo, asignar filas nuevas) + dos ejemplos en el inicio, diccionario y preguntas de las dos. |
+| 007    | Clasificar en varias categorías (de 3 a 20 categorías, la liga en exactitud balanceada, matriz de confusión con ✓, fuga que nombra la columna y la categoría, `<columna>_predicho` y `_probabilidad`) y agrupar filas parecidas sin objetivo (cuatro agrupadores, ganador por consenso, lectura contra datos sin estructura y estabilidad, qué distingue a cada grupo, «fuera de todo grupo», la muestra del jerárquico, tus filas con su grupo, asignar filas nuevas) + dos ejemplos en el inicio, diccionario y preguntas de las dos. |

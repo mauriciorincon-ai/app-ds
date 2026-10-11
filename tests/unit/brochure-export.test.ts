@@ -123,4 +123,26 @@ describe("brochure-export.json", () => {
       }
     }
   });
+
+  it("cada sección del manual que cita el export existe en el manual", () => {
+    // S7 (AU-A-11): una `seccion_manual` que no está en el manual deja la feature sin respaldo, y el
+    // conteo «cuadrado contra el manual» deja de serlo. Cuenta como sección un encabezado
+    // («### Nombre · desde Sprint N») o una viñeta en negrita («- **Nombre:**»).
+    const manual = readFileSync(
+      exportado.funcionalidades.fuente_del_conteo,
+      "utf8",
+    );
+    const secciones = new Set<string>();
+    for (const linea of manual.split("\n")) {
+      const encabezado = /^#{2,4} (.+?)(?: · .*)?$/.exec(linea);
+      if (encabezado) secciones.add(encabezado[1].trim());
+      const vineta = /^\s*- \*\*(.+?):?\*\*/.exec(linea);
+      if (vineta) secciones.add(vineta[1].trim());
+    }
+    const sinRespaldo = exportado.funcionalidades.grupos
+      .flatMap((grupo) => grupo.features)
+      .filter((feature) => !secciones.has(feature.seccion_manual))
+      .map((feature) => `${feature.id}: «${feature.seccion_manual}»`);
+    expect(sinRespaldo, "secciones del manual que no existen").toEqual([]);
+  });
 });

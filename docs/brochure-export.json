@@ -12,14 +12,14 @@
     "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
   },
   "schema_version": "1.0.0",
-  "actualizado": "2026-10-06",
+  "actualizado": "2026-10-10",
   "app": {
     "slug": "ds",
     "nombre": "Probeta DS",
     "ciclo": "H2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 6,
+    "sprints_cerrados": 7,
     "version_repo": "0.1.0"
   },
   "promesa": {
@@ -165,7 +165,7 @@
             "id": "D7",
             "nombre": "Bloqueo del CSV con separador equivocado",
             "que_hace": "El caso típico de Excel en español: se nombra el separador real en vez de adivinarlo, porque una lectura adivinada convertiría columnas numéricas en categorías en silencio.",
-            "seccion_manual": "Historial · Sprint 004"
+            "seccion_manual": "Sobrevive datos reales"
           }
         ]
       },
@@ -278,7 +278,7 @@
           {
             "id": "G1",
             "nombre": "Agrupar filas parecidas, sin objetivo",
-            "que_hace": "Cuatro agrupadores (K-Means, jerárquico, mezcla gaussiana y HDBSCAN) prueban de 2 a 10 grupos sobre todas las filas, y cada uno dice cómo eligió cuántos.",
+            "que_hace": "K-Means, el jerárquico y la mezcla gaussiana prueban de 2 a 10 grupos y eligen cuántos (con la silueta o el BIC); HDBSCAN los encuentra por densidad. Cada uno dice cómo eligió.",
             "seccion_manual": "Agrupar filas parecidas, sin objetivo"
           },
           {
@@ -322,7 +322,7 @@
           {
             "id": "T2",
             "nombre": "Diccionario de términos",
-            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y cada métrica, las de clasificar y las de estimar.",
+            "que_hace": "Cada palabra de la app explicada en una línea: baseline, veredicto, fuga, desbalance, importancia, novedad, model card y cada métrica: las de clasificar, las de estimar y las de agrupar (silueta, estabilidad, «fuera de todo grupo»).",
             "seccion_manual": "Diccionario de términos"
           }
         ]
@@ -384,7 +384,7 @@
       "valor": 0,
       "unidad": "filas",
       "fuente": "medido",
-      "detalle": "Cinco pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard y, desde el S6, regresion-score) inspeccionan la red durante su recorrido y fallan si alguna petición contiene valores del dataset. La única salida posible es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real."
+      "detalle": "Siete pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard, regresion-score y, desde el S7, multiclase-score y agrupar-score) inspeccionan la red durante su recorrido y fallan si alguna petición contiene valores del dataset. Lo único que sale con contenido del usuario es la narración con IA, a petición del usuario y solo con agregados: 652 B medidos en una narración real; los errores mandan a Sentry solo metadatos (filas, columnas, tarea), nunca valores."
     },
     {
       "clave": "gpu_requerida",
@@ -405,7 +405,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 105799,
+      "valor": 106236,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
@@ -450,7 +450,7 @@
     "red_saliente": true,
     "escribe_en_las_fuentes": false,
     "usa_ia": true,
-    "detalle": "La app se sirve desde la web y tiene UNA ruta de servidor, así que no es una app local — pero los datos sí lo son: el perfilado, el saneamiento, el entrenamiento y el scoring corren en el navegador con Pyodide, y el dataset nunca se sube a ningún servidor porque no existe uno al que subirlo. La única salida es la narración con IA, y solo cuando el usuario pulsa su botón: viajan nombres de columnas y cifras agregadas —652 B en una medición real—, jamás filas. Los registros técnicos llevan metadatos (número de filas y columnas, tipos), nunca valores."
+    "detalle": "La app se sirve desde la web y tiene UNA ruta de servidor, así que no es una app local — pero los datos sí lo son: el perfilado, el saneamiento, el entrenamiento y el scoring corren en el navegador con Pyodide, y el dataset nunca se sube a ningún servidor porque no existe uno al que subirlo. Lo único que sale con contenido del usuario es la narración con IA, y solo cuando el usuario pulsa su botón: viajan nombres de columnas y cifras agregadas —652 B en una medición real—, jamás filas. Los errores mandan a Sentry solo metadatos (número de filas y columnas, tarea), nunca valores."
   },
   "enlaces": {
     "produccion": null,
