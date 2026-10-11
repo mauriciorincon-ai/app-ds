@@ -185,8 +185,9 @@ se muestra con su etiqueta, toda marca lleva símbolo **relleno** + texto (dalto
 usuario: un tinte sutil no comunica), y todo botón de acción lleva su icono de trazo a la izquierda.
 
 - **TaskCard** (en ConfigScreen, E1) — el tipo de predicción del objetivo elegido con su razón en
-  números (_«2 valores distintos → clasificación binaria»_); si la tarea aún no se entrena, lo dice
-  en `ink-muted` y deshabilita «Entrenar modelos» sin esconder la columna. Si la tarea se entrena
+  números (_«2 valores distintos → clasificación binaria»_); si la columna no sirve como objetivo, ⚠
+  `caution` y el botón secundario «Agrupar filas parecidas en su lugar» (S7); la columna nunca se
+  esconde. Si la tarea se entrena
   pero el plan está bloqueado (p. ej. muy pocas filas), tampoco hay ✓: ⚠ `caution` y la frase
   remite al motivo, que se muestra debajo. El selector ofrece TODAS las columnas como «columna ·
   tarea».
@@ -301,8 +302,9 @@ aprobadas por el usuario el 2026-10-04 con la preview abierta.
 ### Añadidos Sprint 007 — varias categorías y agrupar (mismos tokens, cero valores nuevos; ADR 015 y 016)
 
 Miradas de FORMA M1 (resultados de varias categorías), M2 (resultados de agrupar) y M3 («agrupar en
-su lugar»): maquetadas, no vistas. Su veredicto viaja al gate ⭐⭐ del cierre del ciclo H2 (paradas 4
-y 5 del ⭐⭐ corto de la guía v4; plan del S7, D4).
+su lugar»): maquetadas, no vistas. Su veredicto viaja al gate ⭐⭐ del cierre del ciclo H2: M1 a la
+parada 4 y M2 a la parada 5 del ⭐⭐ corto de la guía v4; M3 a la prueba I7, del ⭐ completo, fuera del
+corto y declarada en la guía (la orden fija el corto en unos 20 minutos; plan del S7, D4).
 
 - **Símbolos (se suman a los del S1–S6; nunca solo color):**
   - **●** «Los grupos existen» (`positive`), **⚠** «son frágiles» (`caution`), **○** «No hay
@@ -334,8 +336,10 @@ y 5 del ⭐⭐ corto de la guía v4; plan del S7, D4).
     pérdida logarítmica · AUC uno contra el resto. Sin probabilidades, «—», nunca un número
     inventado.
   - **ConfusionTable:** región con desplazamiento propio (`role="region"`, enfocable, nombrada por su
-    título), así que la página nunca se desplaza de lado. Nombres recortados (`truncate`, 7–9 rem)
-    con el nombre completo en `title`. La frase de la confusión más frecuente va debajo.
+    título), así que la página nunca se desplaza de lado. Los nombres de fila se leen enteros
+    (`break-words`, 6–9 rem); cada columna lleva delante el número de su fila («2·») y recorta el
+    nombre con el completo en `title`, porque arriba un nombre largo no cabe. La frase de la confusión
+    más frecuente va debajo.
   - **PerClassTable:** precisión, sensibilidad, F1 y filas de prueba por categoría.
 - **Resultados de agrupar** (`ClusterResults`):
   - **La lectura es el h1** (VerdictCard con ● / ⚠ / ○), con su porqué en cifras y la frase de que

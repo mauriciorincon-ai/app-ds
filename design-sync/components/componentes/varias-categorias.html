@@ -40,8 +40,9 @@
     <h1>Clasificar en varias categorías <span class="mono" style="font-size:13px">· S7 · ADR 015 y 017</span></h1>
     La métrica que decide es la <b>exactitud balanceada</b>: cada categoría pesa igual y el azar da
     exactamente 1/K. La matriz K×K marca los aciertos con <b>✓</b> (y «acierto:» para el lector de
-    pantalla) y se desplaza dentro de su propio recuadro. Una fuga que delata <b>una</b> categoría
-    tiene su propio titular: la cifra global puede quedar lejos de perfecta.
+    pantalla) y se desplaza dentro de su propio recuadro. Una fuga lleva el mismo titular en las tres
+    tareas con objetivo; con varias categorías, el detalle dice que la columna separa <b>una</b>
+    categoría del resto: la cifra global puede quedar lejos de perfecta.
   </div>
 
   <div class="card verdict beats">
@@ -67,13 +68,13 @@
     <p style="font-size:13px;color:#586172;margin:0 0 8px">Cada fila es la categoría real; cada columna, la que predijo el modelo. ✓ marca los aciertos.</p>
     <div class="scroll" role="region" tabindex="0" aria-label="Matriz de confusión (prueba)">
       <table class="mono">
-        <thead><tr><th>Real ↓ · Predicha →</th><th>basico</th><th>empresa</th><th>estandar</th><th>estudiante</th><th>premium</th></tr></thead>
+        <thead><tr><th>Real ↓ · Predicha →</th><th><span aria-hidden="true">1·</span>basico</th><th><span aria-hidden="true">2·</span>empresa</th><th><span aria-hidden="true">3·</span>estandar</th><th><span aria-hidden="true">4·</span>estudiante</th><th><span aria-hidden="true">5·</span>premium</th></tr></thead>
         <tbody>
-          <tr><th>basico</th><td class="hit">✓ <span class="sr">acierto:</span>14</td><td>0</td><td>1</td><td>4</td><td>0</td></tr>
-          <tr><th>empresa</th><td>0</td><td class="hit">✓ <span class="sr">acierto:</span>4</td><td>0</td><td>0</td><td>2</td></tr>
-          <tr><th>estandar</th><td>2</td><td>1</td><td class="hit">✓ <span class="sr">acierto:</span>3</td><td>1</td><td>2</td></tr>
-          <tr><th>estudiante</th><td>0</td><td>0</td><td>1</td><td class="hit">✓ <span class="sr">acierto:</span>4</td><td>0</td></tr>
-          <tr><th>premium</th><td>0</td><td>5</td><td>1</td><td>0</td><td class="hit">✓ <span class="sr">acierto:</span>5</td></tr>
+          <tr><th><span aria-hidden="true">1·</span>basico</th><td class="hit">✓ <span class="sr">acierto:</span>14</td><td>0</td><td>1</td><td>4</td><td>0</td></tr>
+          <tr><th><span aria-hidden="true">2·</span>empresa</th><td>0</td><td class="hit">✓ <span class="sr">acierto:</span>4</td><td>0</td><td>0</td><td>2</td></tr>
+          <tr><th><span aria-hidden="true">3·</span>estandar</th><td>2</td><td>1</td><td class="hit">✓ <span class="sr">acierto:</span>3</td><td>1</td><td>2</td></tr>
+          <tr><th><span aria-hidden="true">4·</span>estudiante</th><td>0</td><td>0</td><td>1</td><td class="hit">✓ <span class="sr">acierto:</span>4</td><td>0</td></tr>
+          <tr><th><span aria-hidden="true">5·</span>premium</th><td>0</td><td>5</td><td>1</td><td>0</td><td class="hit">✓ <span class="sr">acierto:</span>5</td></tr>
         </tbody>
       </table>
     </div>

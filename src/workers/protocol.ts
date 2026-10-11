@@ -76,7 +76,7 @@ export type DatasetSummary = {
   previewRows: string[][];
   /** S5 (E1): la tarea que cada columna plantearía como objetivo, con su razón. */
   targetTasks: Record<string, TaskDetection>;
-  /** Columnas que parecen fecha (aviso S1: no se usa split temporal aún). */
+  /** Columnas que parecen fecha (aviso S1: no entran al análisis; la app no parte por tiempo). */
   dateColumns: string[];
 };
 

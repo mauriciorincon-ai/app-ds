@@ -119,7 +119,7 @@
       "date": "parece fecha"
     },
     "warnings": {
-      "date": "Detectamos columnas que parecen fecha ({cols}). En esta versión no se usan para dividir por tiempo; se ignoran como predictores."
+      "date": "Detectamos columnas que parecen fecha ({cols}). No entran al análisis: la app no parte los datos por tiempo."
     },
     "train": "Entrenar modelos",
     "back": "Cambiar de dataset",

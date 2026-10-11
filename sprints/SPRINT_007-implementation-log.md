@@ -96,6 +96,14 @@ Surgida en la F4 (2026-10-06), de la auditoría de la constitución contra el c�
   viaja el segundo idioma (p. ej. `nombre`/`que_hace` como mapa `{es, en}`, cambio mayor, o campos
   `_en` opcionales, cambio menor) para que la vitrina lo pueda mostrar.
 
+Surgida en la F4 (2026-10-06), declarada el 2026-10-10 a pedido del auditor A (AU-A-08):
+
+- **D10 · El titular de fuga, el mismo en las tres tareas con objetivo** (decisión 2 del usuario en la
+  auditoría, 2026-10-06). Toca la binaria y la regresión, que la orden dejaba fuera salvo D8:
+  «Métricas casi perfectas — sospechoso» pasa a «Posible fuga de datos — sospechoso», con un detalle
+  que dice qué se encontró. Sin umbral nuevo. ADR 015 §6 y ADR 017 lo dicen así. Pedido a la
+  planeadora: ninguno; se declara.
+
 ## Fase 0 — constitución + delta del kit + deuda con sitio + datasets + spike
 
 ### Constitución sincronizada (2026-10-04)
@@ -1524,6 +1532,40 @@ abierta (360 oscuro, EN), lo fino «Qué mide» (360 oscuro, EN) y el pie (360, 
 leí.
 
 La tabla de demos en rojo de la Fase 2 se copia aquí al cerrar la fase.
+
+### Fase 2 del auditor A (2026-10-10)
+
+**La instrucción del usuario** (2026-10-10, literal): «Lee sprints/SPRINT_007-auditoria.md y el final de
+SPRINT_007-implementation-log.md. Retoma el plan de pago de los 16 hallazgos donde quedó, cierra el sprint
+con la orden vigente sin cambios y pasa el PR 19 de borrador a normal. Avísame cuando esté listo.»
+
+- **Aprueba la Fase 1 del auditor A y su plan de pago** («retoma el plan de pago de los 16 hallazgos»).
+- **El largo del ⭐⭐ corto (AU-A-01) se resuelve por la orden «sin cambios»**: «~7 paradas, ≤ ~20 min».
+  La opción A (unos 22 minutos) cambiaba ese tope; queda la **B**. Las 7 paradas siguen sumando unos 20
+  minutos:
+  - La parada 2 carga cuatro de las cinco segundas vueltas del S6 sin sumar minutos: el móvil entrena
+    con `precio-fuga-plantada.csv` (precios de seis dígitos) y el desktop con Consumo de energía. Siguen
+    siendo dos corridas.
+  - La quinta segunda vuelta, la FAQ del R² negativo, va en G2, del ⭐ completo.
+  - M3 queda en I7, del ⭐ completo, declarada en «Qué deja fuera» y en `design-system.md`.
+- **AU-A-05, verificado antes de pagar:** el bundle público de producción lleva el host de ingesta de
+  Sentry, así que producción tiene DSN. Lo leí sin sesión el 2026-10-10, sin escribir la URL. La frase
+  pública se paga por la rama «si existe»: lo único que sale con contenido del usuario es la narración, y
+  con un error salen metadatos.
+
+**Miradas del S7, FORMA y TEXTO** (regla 10; matriz de una fila por mirada). Cada destino lo verifiqué en
+`docs/GUIA-DE-PRUEBA.html` antes de escribir esta tabla (chips «⭐⭐ corto · N de 7» y «⭐ gate H2»):
+
+| #   | Clase | Archivo / lugar                                                            | Botón / estado                                               | Qué mirar                                                                         | Respuesta esperada                    | Estado              | Destino en la guía                                                    |
+| --- | ----- | -------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------- | ------------------- | --------------------------------------------------------------------- |
+| M1  | FORMA | Preview → «Planes de suscripción» → objetivo `plan` → Entrenar             | veredicto · liga · matriz de confusión                       | ¿se entiende contra qué se compara y dónde se equivoca, sin color?                | sí, sin depender del color            | maquetado, no visto | H2, parada 4 del ⭐⭐ corto                                           |
+| M2  | FORMA | Preview → «Segmentos de clientes» → «Sin objetivo: agrupar» → Agrupar      | lectura · tabla de agrupadores · perfiles                    | ¿se entiende cuántos grupos, qué los distingue y cuánto creerle, sin veredicto?   | sí                                    | maquetado, no visto | I2, parada 5 del ⭐⭐ corto                                           |
+| M3  | FORMA | Preview → sube `tiendas-ciudades.csv` → objetivo «ciudad»                  | «Agrupar filas parecidas en su lugar»                        | ¿se entiende por qué no sirve y la salida?                                        | sí                                    | maquetado, no visto | I7, del ⭐ completo; fuera del corto, declarado (opción B)            |
+| T1  | TEXTO | Preview → resultados de varias categorías (y de estimar)                   | la línea «Mira la exactitud balanceada…» («Cuál mirar…» al estimar) | ¿dice qué cifra mirar?                                                     | sí                                    | maquetado, no visto | H2 (parada 4); al estimar, G4 (parada 2) y G2                          |
+| T2  | TEXTO | `docs/MANUAL-DE-USO.md` → Preguntas frecuentes                              | «¿Por qué no hay veredicto contra un baseline al agrupar?»   | ¿se entiende sin saber estadística, y dice lo mismo que la pantalla?              | sí                                    | maquetado, no visto | I2 (parada 5), lectura opcional                                       |
+| T3  | TEXTO | Preview → «Segmentos de clientes» → Agrupar                                | la frase de que agrupar no tiene prueba ni baseline          | ¿se entiende por qué no hay veredicto?                                            | sí                                    | maquetado, no visto | I2 (parada 5)                                                         |
+
+Ninguna se da por vista aquí: su veredicto viaja al ⭐⭐ (Acto 2).
 
 ## Fricciones del kit (SEPARADAS del producto)
 

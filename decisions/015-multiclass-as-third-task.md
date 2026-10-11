@@ -47,9 +47,10 @@ new task would have fallen silently into the binary branch.
    - The most frequent confusion in one sentence, and per-category precision, recall, F1 and support.
    - Explanations by permutation on balanced accuracy, with «no single direction» stated instead of
      an arrow.
-   - A per-category leak (ADR 017) gets its own headline, «Possible data leak — suspicious»: the
-     column reveals one category, so the overall figure can be far from perfect (planted example:
-     0.78).
+   - A leak gets the same headline in every task with a target, «Possible data leak — suspicious»
+     (user decision 2 of the S7 audit, 2026-10-06). With several categories its detail says the
+     column separates one category from the rest, so the overall figure can be far from perfect
+     (planted example: 0.78).
 7. **Scoring.** The scored CSV adds `<target>_predicted` and `<target>_probability`: the probability
    of the predicted category, with a note that it can be low even when it is the most likely one.
    Formula neutralisation (AU-S6-33) applies.

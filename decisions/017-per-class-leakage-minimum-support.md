@@ -34,5 +34,5 @@ with a 2 % class. S6 recorded this as debt D8 for the binary task too.
 
 - One rule, in one place, for both classification tasks. Regression keeps its own continuous check
   (|Spearman| / explained variance, S6).
-- A per-class flag does not imply near-perfect overall metrics. The multiclass headline says
-  «possible data leak» instead (ADR 015).
+- A per-class flag does not imply near-perfect overall metrics; the headline says «possible data
+  leak» in every task with a target (ADR 015).

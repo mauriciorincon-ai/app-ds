@@ -119,7 +119,7 @@
       "date": "looks like a date"
     },
     "warnings": {
-      "date": "We found columns that look like dates ({cols}). This version doesn't split by time; they're ignored as predictors."
+      "date": "We found columns that look like dates ({cols}). They don't enter the analysis: the app doesn't split the data by time."
     },
     "train": "Train models",
     "back": "Change dataset",

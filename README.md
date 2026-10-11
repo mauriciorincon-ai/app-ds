@@ -6,8 +6,9 @@
 
 ## Español
 
-Probeta DS lleva a profesionales que no son científicos de datos por el ciclo completo: cargar un CSV,
-limpiarlo, entenderlo, modelar, comprobar y publicar. Sirve para clasificar en dos o en varias
+Probeta DS lleva a profesionales que no son científicos de datos por el ciclo: cargar un CSV,
+limpiarlo, entenderlo, modelar, comprobar el resultado y llevarse el modelo en un archivo para puntuar
+datos nuevos. Sirve para clasificar en dos o en varias
 categorías, estimar una cantidad o agrupar filas parecidas sin objetivo. La honestidad es automática:
 la selección del modelo vive en validación cruzada dentro de entrenamiento, la prueba se abre una sola
 vez, cada resultado se compara con un baseline y una posible fuga de datos se nombra.
@@ -46,8 +47,9 @@ pnpm dev              # copia los assets de Pyodide y arranca en http://localhos
 
 ## English
 
-Probeta DS walks professionals who are not data scientists through the whole cycle: load a CSV,
-clean it, understand it, model, check and publish. It classifies into two or several categories,
+Probeta DS walks professionals who are not data scientists through the cycle: load a CSV, clean it,
+understand it, model, check the result, and take the model away in a file to score new data. It
+classifies into two or several categories,
 estimates a quantity, or groups similar rows without a target. Honesty is automatic: model selection
 lives in cross-validation inside the training set, the test set is opened once, every result is
 compared against a baseline, and a possible data leak is named.
