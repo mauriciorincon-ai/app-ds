@@ -286,11 +286,41 @@ bitácora.
 | AU-A-09 | La tarjeta de la pregunta ambigua sin «próxima versión»; `design-system.md:188`; `config.warnings.date` ES/EN sin «en esta versión»                                                                                                                                                        |
 | AU-A-10 | `design-system.md` con la `ConfusionTable` como se dibuja; las dos tarjetas de `design-sync`, leídas como imagen                                                                                                                                                                           |
 | AU-A-11 | Siete specs de red, T2 con las métricas de agrupar, `sprints_cerrados: 7`; la prueba de `seccion_manual` (rojo F2-56) cazó D7 y el manual ganó la viñeta del punto y coma                                                                                                                  |
-| AU-A-12 | Las filas de `verificar-retiros` y de cardinalidades; «tres tareas nuevas»; la cifra de Lighthouse ⟦re-leída de la última corrida; se registra al terminar⟧                                                                                                                                |
+| AU-A-12 | Las filas de `verificar-retiros` y de cardinalidades; «tres tareas nuevas»; la cifra de Lighthouse re-medida en el `/deploy-check` sobre una copia `git archive` de `cd8358e` (242.1 KiB y 3,075 ms, mediana de 3), con los avisos de `2fae8c2` (3,215 ms) y `be03c3c` (3,152 ms) dichos   |
 | AU-A-13 | README del kit, BLUEPRINT y guía con la regla de cifras. El barrido R9 opcional no se tomó: la regex `\d \d{3}` da por cifras las coordenadas del SVG del BLUEPRINT («0 960»)                                                                                                              |
 | AU-A-14 | «Outside every group», el pie, los requisitos y la puerta 1 en inglés                                                                                                                                                                                                                      |
 | AU-A-15 | El manual dice qué cuesta cancelar el Nivel 2 al agrupar, y la sección de la liga remite a esa excepción                                                                                                                                                                                   |
 | AU-A-16 | Manual, brochure ES/EN y export G1: K-Means, el jerárquico y la mezcla gaussiana prueban de 2 a 10 grupos; HDBSCAN los encuentra por densidad                                                                                                                                              |
+
+## Segunda casilla 4 (2026-10-10)
+
+Un auditor independiente, que no construyó el sprint, corrió la segunda pasada de la casilla 4 en solo lectura,
+sobre el diff de la Fase 2 (`44a0f31..1cc2fc8`) y `sprints/SPRINT_007-summary.md`. Buscó promesas aplazadas
+por su vocabulario y siguió cada ajuste a sus frases hermanas. A cada frase de evidencia le exigió su corrida
+(regla 22): logs, runs de CI, la tabla de demos, las capturas y los JSON del `/deploy-check`. **12 hallazgos:
+1 Alto, 3 Medios y 8 Bajos.** Recomendación: requiere ajustes. Todos se pagaron en el commit siguiente.
+
+| Id   | Sev.  | Hallazgo                                                                                                     | Pago                                                                                                            |
+| ---- | ----- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| H-1  | Alto  | El summary decía el PR ya pasado a normal antes de correr `gh pr ready` (plan escrito en pasado)             | El summary dice cuándo se hace (con los checks del último push en `success`) y la evidencia va al cuerpo del PR |
+| H-2  | Medio | «116 encuadres con `scrollWidth ≤ clientWidth`»: 74 son de página y 42 recortes de elemento que no lo miden  | Summary y bitácora: «74 de página (74 de 74) y 42 recortes de un elemento, que no miden el ancho»               |
+| H-3  | Medio | `lighthouse-margen` avisó también en `2fae8c2` (3,215 ms, margen 8.1 %); el texto decía «una vez»            | Summary, BLUEPRINT, AU-A-12 y la fila de `2fae8c2` en la bitácora: 2 de 12 corridas desde la portada liviana    |
+| H-4  | Medio | El export decía 861 pruebas (árbol de `2dfe387`); el árbol final tiene una unitaria más                      | `pnpm test` con cobertura sobre el árbol final: 761 de 761, 94.49 %; export en 862 (761 + 101)                  |
+| H-5  | Bajo  | «17.4 % del tope de 300 KiB» dividía entre 300,000 B                                                         | 19.3 % contra 307,200 B, en el summary y la bitácora                                                            |
+| H-6  | Bajo  | La carnada del hook corre sin saltarse desde `dbdd81f` (701 de 701), no desde `2fae8c2`                      | Summary y bitácora: la primera corrida de verificar-retiros y la de 701 de 701 van en la fila de `dbdd81f`      |
+| H-7  | Bajo  | «Desde el último push» para una prueba que aún no había corrido en la CI                                     | «En la CI del último push», leída con `gh pr checks 19` y escrita en el cuerpo del PR                           |
+| H-8  | Bajo  | «`.env.example` no cambió», y el último commit lo cambia                                                     | «solo comenta la línea del DSN público opcional (K-S7-4)»                                                       |
+| H-9  | Bajo  | AU-A-12 con un marcador sin resolver                                                                         | La cifra re-medida en el `/deploy-check` con los dos avisos dichos                                              |
+| H-10 | Bajo  | `modelcard.cluster.members` decía que todos los agrupadores prueban de 2 a 10 grupos (hermana de AU-A-16)    | ES/EN: «los que eligen cuántos grupos prueban de {min} a {max}», más la variante `_one`                         |
+| H-11 | Bajo  | El manual solo decía la pérdida de las filas con su grupo al cancelar; también pasa si el Nivel 2 no termina | El manual lo dice en «Tus filas con su grupo» y en la viñeta del Nivel 2 que no termina                         |
+| H-12 | Bajo  | `design-sync/`: «50 000 filas» y «1 240» con espacio de miles                                                | «50,000» y «1,240»                                                                                              |
+
+Lo que el auditor verificó y resistió: ninguna promesa aplazada en las superficies; las frases hermanas
+coherentes (titular de fuga, fechas, Sentry con metadatos, «los demás agrupadores», los siete ejemplos); las citas
+de la guía con sus parámetros en `messages/es.json`; las corridas finales (760 de 760, 101 + 1, 72 de 72); las 23
+listas de carnadas y las cuatro de `_validate_payload`; la pasada de capturas (exit 0, 116 PNG, 66 interacciones,
+7 leídos como imagen antes del commit que lo dice); el `/deploy-check`; las demos F2-1..F2-57 contra la salida de
+`demo-rojo.sh`; cero enlaces.
 
 ## Anexo · Auditor B — motor, contrato, gates y dependencias
 

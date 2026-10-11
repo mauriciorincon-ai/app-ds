@@ -349,10 +349,10 @@
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 861,
+      "valor": 862,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-10-10: `pnpm test` 760 pruebas en 62 archivos + `pnpm test:integration` 101 pruebas en 10 archivos (estas últimas ejecutan Pyodide real; una más se salta: el emisor del fixture del S6, que solo escribe con su variable de entorno)."
+      "detalle": "Salida del 2026-10-10 sobre el árbol final: `pnpm test` 761 pruebas en 62 archivos + `pnpm test:integration` 101 pruebas en 10 archivos (estas últimas ejecutan Pyodide real; una más se salta: el emisor del fixture del S6, que solo escribe con su variable de entorno)."
     },
     {
       "clave": "pruebas_e2e",

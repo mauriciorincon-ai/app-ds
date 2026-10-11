@@ -286,7 +286,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     perder nada. La app tarda unos segundos en recuperar el modelo; mientras tanto, _Usar el
     modelo_ y _Exportar_ esperan. Al agrupar hay una excepción: mira «Tus filas con su grupo».
   - Si el Nivel 2 no pudiera terminar (por ejemplo, por falta de memoria en un móvil), también
-    vuelve el resultado anterior y te lo dice.
+    vuelve el resultado anterior y te lo dice (al agrupar, con la misma excepción).
 
 - **Cuando no se puede comparar con honestidad, la app lo dice con su razón:**
   - Si tu objetivo tiene dos valores escritos de dos formas (por ejemplo «1» y «1.0»), te pide
@@ -498,9 +498,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 - **Tus filas con su grupo:** **«Descargar filas con su grupo»** te da tu tabla con una columna más,
   **`grupo`**, con el número de grupo de cada fila (desde 1) o «fuera de todo grupo». Se arma en tu
   navegador en el momento y no se guarda en ningún otro lado: ni en el resultado, ni en la model card,
-  ni en el archivo exportado. Si corres el Nivel 2 y lo cancelas cuando ya está agrupando, vuelves al
-  resultado anterior, pero para descargar tus filas con su grupo hay que volver a agrupar: la app te
-  lo dice.
+  ni en el archivo exportado. Si corres el Nivel 2 y lo cancelas cuando ya está agrupando, o no llega
+  a terminar, vuelves al resultado anterior, pero para descargar tus filas con su grupo hay que volver
+  a agrupar: la app te lo dice.
 
 - **Asignar filas nuevas:** pulsa **«Asignar filas nuevas»** y sube un CSV con las columnas que
   forman el parecido (no hay objetivo que quitar). Cada fila recibe su grupo con una regla que la app

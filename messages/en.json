@@ -628,7 +628,8 @@
       "distanceNumeric": "Similarity is measured with {count} numeric columns ({columns}); the categorical ones ({categorical}) only describe the groups.",
       "distanceAll": "Similarity is measured with every column, numeric and categorical ({columns}), because there are fewer than two numeric ones.",
       "pipeline": "Imputation, scaling and one-hot inside a scikit-learn Pipeline, fitted on all rows: grouping has no split and no test (seed {seed}).",
-      "members": "{count} clusterers competed, trying {min} to {max} groups: {how}.",
+      "members": "{count} clusterers competed (those that choose how many groups try {min} to {max}): {how}.",
+      "members_one": "1 clusterer competed: {how}.",
       "kBy": {
         "silhouette": "{models} choose by silhouette (on a sample of {sample} rows)",
         "silhouette_one": "{models} chooses by silhouette (on a sample of {sample} rows)",

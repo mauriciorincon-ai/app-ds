@@ -1498,12 +1498,12 @@ visto aquí.
 ### Fase 2 de la auditoría (pago de B, C y la constitución)
 
 **CI de `dbdd81f`** (gates y motor, parte 1; run 37408832924): quality, integration, e2e y lighthouse en
-`success`, más Vercel.
+`success`, más Vercel. `quality` corrió 701 de 701 unitarias **sin ninguna saltada** (AU-S7-13), y el paso
+«Regla 18 — verificar-retiros» corrió aquí por primera vez.
 
 **CI de `2fae8c2`** (copy, parte 2; run 37409352000): 6 de 6 `success`. `quality` corrió 716 de 716
-unitarias **sin ninguna saltada**: la carnada del hook ya no se salta en la CI (AU-S7-13), y el paso nuevo
-«Regla 18 — verificar-retiros» corrió por primera vez en este PR: «GHSA-vfj7-8cjw-p6xm sigue sin parche
-publicado — la excepción sigue vigente». `integration`: 101 más 1 saltada, el emisor del fixture del S6
+unitarias sin ninguna saltada, y verificar-retiros dijo «GHSA-vfj7-8cjw-p6xm sigue sin parche publicado — la
+excepción sigue vigente». `lighthouse-margen` avisó: LCP 3,215 ms, margen 8.1 %. `integration`: 101 más 1 saltada, el emisor del fixture del S6
 (`modelo-s6.test.ts`), que solo escribe con su variable de entorno y no es un gate. e2e 64 de 64.
 
 **CI de `a39525b`** (copy y UI, parte 3; run 37411615946): quality (743 de 743), integration,
@@ -1646,7 +1646,7 @@ de producción de `2dfe387` (`NARRATION_PROVIDER=mock pnpm start -p 3000`), 2026
     su grupo» dice que ya no se puede**, a 360 y a 1280 px. Es la promesa del copy de AU-S7-17 en el
     runtime real.
 - **Medidas, todas en OK:**
-  - `scrollWidth ≤ clientWidth` en cada encuadre;
+  - `scrollWidth ≤ clientWidth` en los 74 encuadres de página (los 42 recortes de un elemento no lo miden);
   - las fichas caben en la ventana (663 ≤ 780 y 670 ≤ 900);
   - la matriz de 20 clases se desplaza dentro de su recuadro (1,753 > 278 y 1,801 > 686);
   - el nombre largo lleva su título completo;
@@ -1668,6 +1668,10 @@ de producción de `2dfe387` (`NARRATION_PROVIDER=mock pnpm start -p 3000`), 2026
 - La e2e entera sobre el build de producción, en los dos dispositivos: **72 de 72**, ninguna con
   reintento (4.2 min).
 
+**CI de `cd8358e`** (el push de `9e79332`, `2dfe387` y `cd8358e`; run 38110479449): 6 de 6 `success`. `quality`
+760 de 760, con verificar-retiros y el peso del motor (39.58 MiB); `integration` 101 más 1 saltada; `e2e` 72 de 72
+(15.0 min); `lighthouse-margen`: «ninguna mediana a menos del 10 % de su presupuesto».
+
 ### `/deploy-check` (2026-10-10)
 
 **§4 y §8 · El bundle y Lighthouse de `/` contra `merge-base`, con el entorno de la CI.** Copias
@@ -1685,7 +1689,7 @@ terminar, y las dos copias corrieron seguidas en las mismas condiciones.
 Por corrida: el LCP de la base dio 3,410, 3,091 y 3,095 ms, y el de HEAD 3,087, 3,075 y 3,074 ms. Las
 categorías dieron performance 0.92–0.94 en la base y 0.94 en HEAD; accesibilidad, buenas prácticas y
 SEO, 1 en las seis corridas. El script **no creció: bajó un 13.8 %** (las pantallas bajo demanda y
-`@sentry/browser`, ADR 018). Contra el budget queda a 17.4 % del tope de 300 KiB (242.1 KiB). El LCP
+`@sentry/browser`, ADR 018). Contra el budget queda a 19.3 % del tope de 300 KiB (307,200 B; 242.1 KiB). El LCP
 local queda a 12.1 % de los 3,500 ms; la CI de `be03c3c` midió 3,152 ms con el aviso del margen (9.9 %).
 
 **§5 · Seguridad.**
@@ -1694,12 +1698,21 @@ local queda a 12.1 % de los 3,500 ms; la CI de `be03c3c` midió 3,152 ms con el 
 - `node scripts/verificar-retiros.mjs`: «GHSA-vfj7-8cjw-p6xm sigue sin parche publicado — la excepción
   sigue vigente».
 - Los overrides viven en `pnpm-workspace.yaml`.
-- Sin variables de entorno nuevas: `.env.example` no cambió.
+- Sin variables de entorno nuevas: `.env.example` solo comenta la línea del DSN público opcional (K-S7-4).
 - Sin `@ts-ignore`: los `@ts-expect-error` nuevos son los del gate del despacho, cada uno con su razón.
 
 **§9 · Cero enlaces.** `git grep -nE "vercel[.]app|workers[.]dev|pages[.]dev" -- ':!pnpm-lock.yaml'`
 salió vacío (exit 1) sobre el árbol de `cd8358e`, y el homepage del repo es el propio repo. Se
 repite después del último `git add` del cierre.
+
+### La segunda casilla 4 (2026-10-10)
+
+Otro auditor independiente, sobre `44a0f31..1cc2fc8` y el summary: 12 hallazgos (1 Alto, 3 Medios y 8 Bajos),
+con su tabla y su pago en `sprints/SPRINT_007-auditoria.md` («Segunda casilla 4»). Se pagaron todos en el
+commit siguiente. El único cambio de copy de la app es `modelcard.cluster.members` (H-10): busqué el literal
+viejo en `tests/` (solo lo usa `agrupar-ui.test.tsx`, por «Compitieron|clusterers competed», que sigue
+coincidiendo) y la e2e completa corrió en local antes del push (K-S7-7): 72 de 72, sin reintentos (3.2 min). Después del pago, `pnpm test` con
+cobertura sobre el árbol: 761 de 761 y 94.49 % de líneas (3,053 de 3,231).
 
 ## Fricciones del kit (SEPARADAS del producto)
 

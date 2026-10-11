@@ -628,7 +628,8 @@
       "distanceNumeric": "El parecido se mide con {count} columnas numéricas ({columns}); las categóricas ({categorical}) solo describen los grupos.",
       "distanceAll": "El parecido se mide con todas las columnas, numéricas y categóricas ({columns}), porque hay menos de dos numéricas.",
       "pipeline": "Imputación, escalado y one-hot dentro de un Pipeline de scikit-learn, ajustado sobre todas las filas: al agrupar no hay partición ni prueba (semilla {seed}).",
-      "members": "Compitieron {count} agrupadores probando de {min} a {max} grupos: {how}.",
+      "members": "Compitieron {count} agrupadores (los que eligen cuántos grupos prueban de {min} a {max}): {how}.",
+      "members_one": "Compitió 1 agrupador: {how}.",
       "kBy": {
         "silhouette": "{models} eligen por silueta (sobre una muestra de {sample} filas)",
         "silhouette_one": "{models} elige por silueta (sobre una muestra de {sample} filas)",
