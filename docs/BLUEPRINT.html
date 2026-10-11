@@ -84,7 +84,7 @@
     <rect class="caja" x="40" y="114" width="300" height="74" rx="9"/>
     <text class="titulo-caja" x="190" y="136" text-anchor="middle">UI — Next.js 16 + React 19</text>
     <text class="detalle-caja" x="190" y="153" text-anchor="middle">Tailwind · ES/EN · pantallas de resultados bajo demanda</text>
-    <text class="detalle-caja" x="190" y="169" text-anchor="middle">portada liviana: 237.6 KiB de script (budget 300 KiB)</text>
+    <text class="detalle-caja" x="190" y="169" text-anchor="middle">portada liviana: 242.1 KiB de script (budget 300 KiB)</text>
 
     <rect class="caja" x="40" y="198" width="300" height="138" rx="9"/>
     <text class="titulo-caja" x="190" y="220" text-anchor="middle">Web Worker — Pyodide 314.0.2 (fijado)</text>
@@ -224,7 +224,7 @@
       <tr><td>Contrato TypeScript ↔ Python, con carnadas por campo</td><td><code>quality</code> + <code>integration</code></td><td>Un campo mal formado en cualquier dirección (payload, resultado de la liga, puntuar, exportar, manifiesto): el lector lo rechaza nombrándolo. Los fixtures los escribe Pyodide real.</td></tr>
       <tr><td>Integración con Pyodide real</td><td><code>integration</code></td><td>Que el preprocesador vea la prueba (espía anti-fuga), que la elección del ganador mire la prueba, o que la ida y vuelta exportar → importar → puntuar no dé lo mismo que el modelo recién entrenado. Los archivos de modelo del S5 y del S6 siguen importando.</td></tr>
       <tr><td>e2e + axe + reduced-motion</td><td><code>e2e</code></td><td>Las cuatro tareas de punta a punta en móvil y escritorio, axe en los dos temas, la página sin desplazamiento lateral a 360 px y las pantallas visibles y quietas con «reducir movimiento».</td></tr>
-      <tr><td>Lighthouse: budget, categorías y margen</td><td><code>lighthouse</code></td><td>La portada por encima de <span class="num">300 KiB</span> de script o de <span class="num">3,500 ms</span> de LCP simulado (mediana de 3 corridas), cualquier categoría por debajo de 0.9, y un aviso si una mediana queda a menos del 10 % de su budget. Al cierre del H2: <span class="num">237.6 KiB</span> y <span class="num">3,074 ms</span>, sin aviso.</td></tr>
+      <tr><td>Lighthouse: budget, categorías y margen</td><td><code>lighthouse</code></td><td>La portada por encima de <span class="num">300 KiB</span> de script o de <span class="num">3,500 ms</span> de LCP simulado (mediana de 3 corridas), cualquier categoría por debajo de 0.9, y un aviso si una mediana queda a menos del 10 % de su budget. Al cierre del H2 (copia tipo CI de <code>cd8358e</code>, 2026-10-10, mediana de 3): <span class="num">242.1 KiB</span> y <span class="num">3,075 ms</span>; la CI de ese commit, sin aviso. La de <code>be03c3c</code>, sin cambios de código, avisó con <span class="num">3,152 ms</span> (margen 9.9 %): el margen ronda el 10 %.</td></tr>
       <tr><td>Dependabot con techo de 2 PRs (<code>dependabot-config.test.ts</code>)</td><td>GitHub + <code>quality</code></td><td>Una configuración que abra más de dos PRs de dependencias a la vez, o que mezcle un salto mayor en el lote semanal.</td></tr>
     </tbody>
   </table>

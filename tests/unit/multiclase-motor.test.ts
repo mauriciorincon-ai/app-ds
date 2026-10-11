@@ -266,6 +266,26 @@ describe("prepareRun con varias categorías", () => {
     ]);
   });
 
+  // S7 (P6, «sin ella, entrena»; la hermana de la de regresión, AU-S6-22): el MISMO archivo sin
+  // la columna plantada entrena y no marca nada. Si la regla por clase diera falsas alarmas en
+  // las columnas legítimas, esta prueba las nombra.
+  it("planes SIN la columna plantada: entrena sin aviso de fuga", () => {
+    const table = kit("planes-fuga-plantada.csv");
+    const drop = table.headers.indexOf("cargo_corporativo_usd");
+    expect(drop).toBeGreaterThanOrEqual(0);
+    const withoutLeak: CsvTable = {
+      headers: table.headers.filter((_, i) => i !== drop),
+      rows: table.rows.map((row) => row.filter((_, i) => i !== drop)),
+    };
+    const run = prepareRun(withoutLeak, "plan", 42);
+    expect(run.ok).toBe(true);
+    expect(
+      run.ok && run.leakage.map((f) => `${f.column} (${f.class})`),
+      "columnas legítimas marcadas como fuga",
+    ).toEqual([]);
+    expect(run.ok && run.payload.task).toBe("multiclase");
+  });
+
   // S7 (AU-S7-11): una columna que delata la clase «a» SOLO en las filas de train (en las de
   // prueba es azar). Medida sobre train, se marca; medida sobre todas las filas, su AUC baja y
   // no se marca. Así esta prueba cae si la fuga dejara de medirse solo en train.
@@ -362,6 +382,8 @@ describe("la plantilla local de varias categorías (P10: la IA no la narra)", ()
         { kind: "class-imbalance", minorityRate: 0.05, class: "estudiante" },
       ],
     });
-    expect(text).toContain("La categoría más chica, «estudiante», es el 5\u00a0%");
+    expect(text).toContain(
+      "La categoría más chica, «estudiante», es el 5\u00a0%",
+    );
   });
 });

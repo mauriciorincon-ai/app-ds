@@ -349,26 +349,26 @@
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 589,
+      "valor": 861,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-10-04: `pnpm test` 523 pruebas en 47 archivos + `pnpm test:integration` 66 pruebas en 7 archivos (estas últimas ejecutan Pyodide real)."
+      "detalle": "Salida del 2026-10-10: `pnpm test` 760 pruebas en 62 archivos + `pnpm test:integration` 101 pruebas en 10 archivos (estas últimas ejecutan Pyodide real; una más se salta: el emisor del fixture del S6, que solo escribe con su variable de entorno)."
     },
     {
       "clave": "pruebas_e2e",
       "etiqueta": "Pruebas end-to-end",
-      "valor": 44,
+      "valor": 72,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida de `pnpm test:e2e` el 2026-10-04, sobre el build de producción: 14 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe incluido. Cero flaky."
+      "detalle": "Salida de la suite e2e entera el 2026-10-10, sobre el build de producción: 19 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe incluido. Cero flaky."
     },
     {
       "clave": "cobertura_lineas",
       "etiqueta": "Cobertura de líneas",
-      "valor": 94.54,
+      "valor": 94.49,
       "unidad": "%",
       "fuente": "medido",
-      "detalle": "v8 sobre engine, lib, components y workers; 2099 de 2220 líneas (salida de `pnpm test` del 2026-10-04). Los motores puros de engine/ llevan umbral propio más alto."
+      "detalle": "v8 sobre engine, lib, components y workers; 3053 de 3231 líneas (salida de `pnpm test` del 2026-10-10). Los motores puros de engine/ llevan umbral propio más alto."
     },
     {
       "clave": "dependencias_runtime",

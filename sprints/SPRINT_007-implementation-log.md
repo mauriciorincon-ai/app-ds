@@ -1594,6 +1594,7 @@ sesión (K-S7-8):
 | F2-54 | AU-A-02 | `tests/unit/cardinalidades-docs.test.ts` (nuevo): 13 reglas que exigen la cifra de su constante en el manual, el brochure, el export y `design-system.md`, cada una con al menos una coincidencia, y «los otros tres» prohibido | `muestra de hasta 2,000 filas` → `3,000` en `docs/MANUAL-DE-USO.md` | «docs/MANUAL-DE-USO.md:521: «muestra de hasta 3,000 filas» — esperado 2,000» | 15 de 15 |
 | F2-55 | AU-A-02 | la misma prueba, regla prohibida | «Los demás agrupadores usan todas tus filas» vuelve a «Los otros tres usan todas tus filas» | «docs/MANUAL-DE-USO.md:493: … Los otros tres usan» | 15 de 15 |
 | F2-56 | AU-A-11 | `brochure-export.test.ts`, nueva «cada sección del manual que cita el export existe en el manual» (al nacer cazó D7, que apuntaba a una fila del historial: el manual ganó la viñeta «Un CSV separado por punto y coma») | la `seccion_manual` de G1 pasa a «Agrupar» | «G1: «Agrupar»» | 9 de 9 |
+| F2-57 | P6 del plan («sin ella, entrena»), cazado al armar el summary | `multiclase-motor.test.ts`, nueva «planes SIN la columna plantada: entrena sin aviso de fuga» (la hermana de la de regresión) | `DEFAULT_LEAKAGE_THRESHOLD` de 0.98 a 0.6 en `src/engine/leakage.ts` | «columnas legítimas marcadas como fuga»: usuarios, uso_gb_mes y llamadas_soporte_mes (empresa), antiguedad_meses (estudiante) | 1 de 1 |
 
 ### Fase 2 del auditor A (2026-10-10)
 
@@ -1666,6 +1667,39 @@ de producción de `2dfe387` (`NARRATION_PROVIDER=mock pnpm start -p 3000`), 2026
   fixture del S6, que solo escribe con su variable.
 - La e2e entera sobre el build de producción, en los dos dispositivos: **72 de 72**, ninguna con
   reintento (4.2 min).
+
+### `/deploy-check` (2026-10-10)
+
+**§4 y §8 · El bundle y Lighthouse de `/` contra `merge-base`, con el entorno de la CI.** Copias
+`git archive` de `6f50c43` (merge-base con `origin/main`) y de `cd8358e` en el scratchpad, sin
+`.env.local` (el script aborta si aparece: K-S7-4) y sin worktree. En cada una: `pnpm install
+--frozen-lockfile`, `pnpm build` y LHCI 0.15.1 con 3 corridas. La carga era 8.44 al arrancar y 4.35 al
+terminar, y las dos copias corrieron seguidas en las mismas condiciones.
+
+| Medida (mediana de 3)   | `6f50c43` (base) | `cd8358e` (HEAD) |  Cambio |
+| ----------------------- | ---------------: | ---------------: | ------: |
+| Script transferido, `/` |        287,637 B |        247,868 B | −13.8 % |
+| Total transferido, `/`  |        380,332 B |        340,916 B | −10.4 % |
+| LCP simulado            |         3,095 ms |         3,075 ms |  −20 ms |
+
+Por corrida: el LCP de la base dio 3,410, 3,091 y 3,095 ms, y el de HEAD 3,087, 3,075 y 3,074 ms. Las
+categorías dieron performance 0.92–0.94 en la base y 0.94 en HEAD; accesibilidad, buenas prácticas y
+SEO, 1 en las seis corridas. El script **no creció: bajó un 13.8 %** (las pantallas bajo demanda y
+`@sentry/browser`, ADR 018). Contra el budget queda a 17.4 % del tope de 300 KiB (242.1 KiB). El LCP
+local queda a 12.1 % de los 3,500 ms; la CI de `be03c3c` midió 3,152 ms con el aviso del margen (9.9 %).
+
+**§5 · Seguridad.**
+
+- `pnpm audit --audit-level high`: exit 0, con 1 alto ignorado por el ADR 012.
+- `node scripts/verificar-retiros.mjs`: «GHSA-vfj7-8cjw-p6xm sigue sin parche publicado — la excepción
+  sigue vigente».
+- Los overrides viven en `pnpm-workspace.yaml`.
+- Sin variables de entorno nuevas: `.env.example` no cambió.
+- Sin `@ts-ignore`: los `@ts-expect-error` nuevos son los del gate del despacho, cada uno con su razón.
+
+**§9 · Cero enlaces.** `git grep -nE "vercel[.]app|workers[.]dev|pages[.]dev" -- ':!pnpm-lock.yaml'`
+salió vacío (exit 1) sobre el árbol de `cd8358e`, y el homepage del repo es el propio repo. Se
+repite después del último `git add` del cierre.
 
 ## Fricciones del kit (SEPARADAS del producto)
 
