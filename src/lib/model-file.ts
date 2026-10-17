@@ -5,6 +5,7 @@
 // integridad: el import valida forma, versión de formato y SHA-256 del payload
 // ANTES de que el payload (pickle) toque Pyodide. Un archivo ajeno o corrupto
 // se rechaza aquí, en TS puro, sin deserializar nada.
+import { sha256Hex } from "@/lib/sha256";
 import {
   declaredTask,
   matchByTask,
@@ -576,12 +577,9 @@ export function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
-export async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", bytes as BufferSource);
-  return [...new Uint8Array(digest)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
+// S8: la función vive en src/lib/sha256.ts (la usa también el Protocolo); se re-exporta
+// aquí para quien ya la importaba desde el manifiesto.
+export { sha256Hex };
 
 // --- Empaquetar (export) --------------------------------------------------
 

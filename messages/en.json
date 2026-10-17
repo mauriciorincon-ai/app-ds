@@ -98,6 +98,11 @@
         "hint": "Only load .probeta.json files exported by Probeta. The file's payload was never touched."
       },
       "retry": "Choose another file"
+    },
+    "protocol": {
+      "title": "Prefer the slow path?",
+      "desc": "Protocolo DS takes you through {count} gated stages with your own data: you don't move on to the next one until the previous one is met.",
+      "link": "Open Protocolo DS"
     }
   },
   "config": {
@@ -957,6 +962,103 @@
         "id-like": "“{column}” is left out: it looks like an identifier.",
         "date": "“{column}” is left out: it's a date, and dates aren't used for grouping."
       }
+    }
+  },
+  "protocol": {
+    "title": "Protocolo DS",
+    "subtitle": "The slow path: {count} gated stages. Each one asks you for a task with your data and opens the next only once you meet its criterion. There is no skip button.",
+    "privacy": "Your data never leaves your browser. The notebook is kept in this browser; the CSV isn't: when you come back you load it again and its fingerprint tells whether it's the same one.",
+    "back": "Back to Probeta",
+    "loading": "Opening your notebook…",
+    "storage": {
+      "memory": "This browser won't let the notebook be saved (it may be a private window): if you close the tab, it's lost. Export your notebook before leaving.",
+      "write-failed": "The notebook couldn't be saved in this browser. It's still in this tab: export it so you don't lose it."
+    },
+    "data": {
+      "title": "Your data",
+      "button": "Load my CSV",
+      "replace": "Load another CSV",
+      "loaded": "{name} · {rows} rows × {cols} columns · fingerprint {hash}",
+      "reload": "Your notebook worked with {name} ({rows} rows). Load it again to continue: the fingerprint will confirm it's the same one.",
+      "same": "It's the notebook's file: the fingerprint matches.",
+      "new-version": "Recorded as a new version of the data: the stages that use it are checked again.",
+      "different": {
+        "title": "This isn't the notebook's file",
+        "body": "Its fingerprint is different. Is it a new version of the same data, or another project?",
+        "version": "A new version of the same data",
+        "other": "Another project: new notebook",
+        "cancel": "Don't load it"
+      }
+    },
+    "stages": {
+      "title": "The stages"
+    },
+    "stage": {
+      "label": "Stage {n}",
+      "task": "What it asks of you",
+      "why": "Why it exists",
+      "criterion": "To open the next one",
+      "terms": "Terms",
+      "closed-by": "It opens once you meet stage {n}.",
+      "not-built": "This stage isn't built: you can see its criterion, but it doesn't open.",
+      "no-form": "This stage has no form.",
+      "edit": "Correct it",
+      "cancel-edit": "Leave it as it was",
+      "edit-warning": "If you correct it, the stages built on top of it are checked again.",
+      "reverify": {
+        "sin-datos": "It uses your data: load it again to check this stage.",
+        "datos-distintos": "The loaded data isn't the data it was checked with: check it again.",
+        "anterior-cambio": "You corrected an earlier stage: check this one again."
+      },
+      "rejected": {
+        "etapa-cerrada": "Stage {n} doesn't open without stage {m}.",
+        "no-construida": "Stage {n} isn't built.",
+        "sin-datos": "Load your data: stage {n} uses it.",
+        "datos-invalidos": "«{field}» is missing or doesn't fit.",
+        "criterio-no-cumplido": "The criterion isn't met. Missing: {missing}.",
+        "etapa-desconocida": "Stage {n} doesn't exist."
+      }
+    },
+    "status": {
+      "cerrada": "Closed",
+      "abierta": "Open",
+      "cumplida": "Met",
+      "por-verificar": "To be checked",
+      "detenida": "Stopped",
+      "no-construida": "Not built"
+    },
+    "notebook": {
+      "title": "Notebook",
+      "desc": "Each gate leaves its evidence here, with dates and numbers. It only grows: correcting adds a new entry.",
+      "empty": "The notebook is empty: the first evidence arrives when you meet stage 1.",
+      "entry": "Stage {n} · {title}",
+      "with-data": "With {name}",
+      "superseded": "Corrected later",
+      "loads": "Data it worked with",
+      "load": "{date} · {name} · {rows} rows · fingerprint {hash}",
+      "export": "Export notebook",
+      "import": "Import notebook",
+      "new": "Start another notebook",
+      "new-confirm": "Start a new notebook? The current one is replaced in this browser; export it first if you want to keep it.",
+      "new-yes": "Yes, start another",
+      "new-no": "Cancel",
+      "imported": "Notebook imported. Load the CSV it was made with to check the stages that use the data.",
+      "started": "New notebook.",
+      "unreadable": "The notebook saved in this browser couldn't be read; you started an empty one. If you exported it before, import it.",
+      "yes": "Yes",
+      "no": "No",
+      "import-error": {
+        "too-large": "The file is over {mb} MB: it isn't a notebook.",
+        "invalid-json": "The file isn't JSON: it isn't a Protocol notebook.",
+        "invalid-format": "The file isn't a valid notebook: the field «{field}» fails.",
+        "unsupported-version": "The notebook is version «{version}», which this app can't read."
+      }
+    },
+    "glossary": {
+      "title": "Glossary",
+      "desc": "Short definitions of the terms the gates use.",
+      "more": "Read more in Google's glossary",
+      "attribution": "The «read more» links go to Google's machine learning glossary, published under a CC BY 4.0 license."
     }
   }
 }

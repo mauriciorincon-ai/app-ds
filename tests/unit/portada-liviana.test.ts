@@ -29,6 +29,13 @@ const LAZY = [
   "src/components/FichaModelo.tsx",
   "src/content/modelos.ts",
   "src/lib/modelcard.ts",
+  // S8 (ADR 020): el Protocolo DS vive en /protocolo; la portada solo lleva su enlace
+  // y la cuenta de etapas (src/engine/protocolo/ids.ts, sin imports).
+  "src/components/protocolo/ProtocoloApp.tsx",
+  "src/engine/protocolo/compuerta.ts",
+  "src/lib/protocolo/useProtocolo.ts",
+  "src/content/protocolo.ts",
+  "src/content/glosario.ts",
 ];
 
 function resolveSpec(from: string, spec: string): string | null {

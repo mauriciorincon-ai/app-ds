@@ -98,6 +98,11 @@
         "hint": "Solo carga archivos .probeta.json exportados por Probeta. El contenido del archivo no se tocó."
       },
       "retry": "Elegir otro archivo"
+    },
+    "protocol": {
+      "title": "¿Prefieres el camino lento?",
+      "desc": "Protocolo DS te lleva por {count} etapas con compuertas, con tus propios datos: no avanzas a la siguiente sin cumplir la anterior.",
+      "link": "Abrir el Protocolo DS"
     }
   },
   "config": {
@@ -957,6 +962,103 @@
         "id-like": "«{column}» no entra: parece un identificador.",
         "date": "«{column}» no entra: es una fecha, y las fechas no se usan para agrupar."
       }
+    }
+  },
+  "protocol": {
+    "title": "Protocolo DS",
+    "subtitle": "El camino lento: {count} etapas con compuertas. Cada una te pide una tarea con tus datos y abre la siguiente solo cuando cumples su criterio. No hay botón para saltar.",
+    "privacy": "Tus datos no salen de tu navegador. El cuaderno se guarda en este navegador; el CSV no: al volver, lo cargas de nuevo y su huella dice si es el mismo.",
+    "back": "Volver a Probeta",
+    "loading": "Abriendo tu cuaderno…",
+    "storage": {
+      "memory": "Este navegador no deja guardar el cuaderno (puede ser una ventana privada): si cierras la pestaña, se pierde. Exporta tu cuaderno antes de irte.",
+      "write-failed": "No se pudo guardar el cuaderno en este navegador. Sigue en esta pestaña: expórtalo para no perderlo."
+    },
+    "data": {
+      "title": "Tus datos",
+      "button": "Cargar mi CSV",
+      "replace": "Cargar otro CSV",
+      "loaded": "{name} · {rows} filas × {cols} columnas · huella {hash}",
+      "reload": "Tu cuaderno trabajó con {name} ({rows} filas). Cárgalo de nuevo para seguir: la huella confirmará que es el mismo.",
+      "same": "Es el mismo archivo del cuaderno: la huella coincide.",
+      "new-version": "Anotado como otra versión de los datos: las etapas que los usan vuelven a verificarse.",
+      "different": {
+        "title": "Este archivo no es el del cuaderno",
+        "body": "Su huella es otra. ¿Es una versión nueva de los mismos datos, o es otro proyecto?",
+        "version": "Otra versión de los mismos datos",
+        "other": "Otro proyecto: cuaderno nuevo",
+        "cancel": "No cargarlo"
+      }
+    },
+    "stages": {
+      "title": "Las etapas"
+    },
+    "stage": {
+      "label": "Etapa {n}",
+      "task": "Qué te pide",
+      "why": "Por qué existe",
+      "criterion": "Para abrir la siguiente",
+      "terms": "Términos",
+      "closed-by": "Se abre cuando cumplas la etapa {n}.",
+      "not-built": "Esta etapa no está construida: se ve su criterio, pero no abre.",
+      "no-form": "Esta etapa no tiene formulario.",
+      "edit": "Corregir",
+      "cancel-edit": "Dejarla como estaba",
+      "edit-warning": "Si la corriges, las etapas que se construyeron sobre ella vuelven a verificarse.",
+      "reverify": {
+        "sin-datos": "Usa tus datos: cárgalos de nuevo para verificarla.",
+        "datos-distintos": "Los datos cargados no son con los que se verificó: vuelve a verificarla.",
+        "anterior-cambio": "Corregiste una etapa anterior: vuelve a verificarla."
+      },
+      "rejected": {
+        "etapa-cerrada": "La etapa {n} no abre sin la {m}.",
+        "no-construida": "La etapa {n} no está construida.",
+        "sin-datos": "Carga tus datos: la etapa {n} los usa.",
+        "datos-invalidos": "Falta o no cuadra «{field}».",
+        "criterio-no-cumplido": "El criterio no se cumple. Falta: {missing}.",
+        "etapa-desconocida": "La etapa {n} no existe."
+      }
+    },
+    "status": {
+      "cerrada": "Cerrada",
+      "abierta": "Abierta",
+      "cumplida": "Cumplida",
+      "por-verificar": "Por verificar",
+      "detenida": "Detenida",
+      "no-construida": "Sin construir"
+    },
+    "notebook": {
+      "title": "Cuaderno",
+      "desc": "Cada compuerta deja aquí su evidencia, con fecha y números. Solo crece: corregir añade una entrada nueva.",
+      "empty": "El cuaderno está vacío: la primera evidencia llega al cumplir la etapa 1.",
+      "entry": "Etapa {n} · {title}",
+      "with-data": "Con {name}",
+      "superseded": "Corregida después",
+      "loads": "Datos con que se trabajó",
+      "load": "{date} · {name} · {rows} filas · huella {hash}",
+      "export": "Exportar cuaderno",
+      "import": "Importar cuaderno",
+      "new": "Empezar otro cuaderno",
+      "new-confirm": "¿Empezar un cuaderno nuevo? El actual se reemplaza en este navegador; expórtalo antes si lo quieres conservar.",
+      "new-yes": "Sí, empezar otro",
+      "new-no": "Cancelar",
+      "imported": "Cuaderno importado. Carga el CSV con que se hizo para verificar las etapas que usan los datos.",
+      "started": "Cuaderno nuevo.",
+      "unreadable": "El cuaderno guardado en este navegador no se pudo leer; empezaste uno vacío. Si lo exportaste antes, impórtalo.",
+      "yes": "Sí",
+      "no": "No",
+      "import-error": {
+        "too-large": "El archivo supera {mb} MB: no es un cuaderno.",
+        "invalid-json": "El archivo no es JSON: no es un cuaderno del Protocolo.",
+        "invalid-format": "El archivo no es un cuaderno válido: falla el campo «{field}».",
+        "unsupported-version": "El cuaderno es de la versión «{version}», que esta app no lee."
+      }
+    },
+    "glossary": {
+      "title": "Glosario",
+      "desc": "Definiciones breves de los términos que usan las compuertas.",
+      "more": "Leer más en el glosario de Google",
+      "attribution": "Los enlaces «leer más» llevan al glosario de aprendizaje automático de Google, publicado con licencia CC BY 4.0."
     }
   }
 }
