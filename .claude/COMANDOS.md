@@ -9,14 +9,14 @@ Comandos reutilizables que Claude Code puede invocar en cualquier app del pipeli
 
 | Comando | Cuándo usarlo |
 |---|---|
-| `/plan-sprint` | Al iniciar sesión de trabajo. Lee la orden de construcción de la planeadora y propone plan de ejecución por fases. |
+| `/plan-sprint` | Al abrir el sprint (plan mode). Lee el archivo del sprint de la planeadora y propone un plan de ≤ 3 fases con horas; espera el «construye» (kit v2.0.0: 5 pasos). |
 | `/self-review` | Antes de crear PR. Revisa el diff como staff engineer estricto. |
 | `/security-audit` | Antes de merge a main, o cada 2-3 sprints. OWASP Top 10 checklist. |
-| `/deploy-check` | Antes de mergear a main (perfil WEB). Verificaciones exhaustivas (tests, lint, build, a11y, perf). |
-| `/release-check` | Perfil ESCRITORIO (kit v1.27.0). **No se estampa en esta app** (perfil WEB: el cierre usa `/deploy-check`). |
+| `/deploy-check` | Antes de abrir el PR (perfil WEB). ≤ 10 casillas MANUALES; todo lo demás lo corre la CI (kit v2.0.0). |
+| `/release-check` | Antes de abrir el PR (perfil ESCRITORIO). Sustituye a `/deploy-check`: ≤ 10 casillas manuales — binario, TCC, ventana protegida, no persistencia, cargo audit (kit v2.0.0). |
 | `/run-tests` | Corrida completa de la suite (unit + integration + e2e + a11y). |
-| `/audita-sprint` | OBLIGATORIO al concluir la construcción, antes de la guía/gate ⭐ y del summary (método v1.10.0). Dos fases: auditor independiente (solo lectura, todas las severidades con archivo:línea) → aprobación → pagos de TODOS los hallazgos. |
-| `/design-sync` | Al cierre de ciclo, DESPUÉS del gate ⭐⭐ y solo cuando el usuario lo invoca (lleva `disable-model-invocation`): publica el design system con el bundle `design-sync/` del repo. |
+| `/audita-sprint` | Al concluir la construcción, antes del cierre ejecutivo. UNA pasada de un auditor independiente en solo lectura, 4 casillas; críticos y altos se pagan en el sprint, medios y bajos al lote del hito (kit v2.0.0). |
+| `/design-sync` | Al cierre del hito, DESPUÉS del gate humano y solo cuando el usuario lo invoca (lleva `disable-model-invocation`): publica el design system con el bundle `design-sync/` del repo. |
 
 ## Cómo Claude Code los usa
 

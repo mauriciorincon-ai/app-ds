@@ -73,8 +73,14 @@ pasaron() { grep -oE '[0-9]+ passed' "$1" | tail -n 1 | grep -oE '^[0-9]+' || ec
 
 # Server viejo en el puerto: se mata POR PUERTO, no por nombre de proceso (K-S5-11).
 if [ -n "$puerto" ]; then
-  pids=$(lsof -ti ":$puerto" 2>/dev/null || true)
-  if [ -n "$pids" ]; then echo "demo-rojo: matando proceso(s) en :$puerto → $pids"; kill $pids 2>/dev/null || true; sleep 1; fi
+  # kit v1.40.0 (K-S4-7; adoptado en el S8): SOLO procesos de este repo (su línea de comando contiene $PWD) y del propio usuario;
+  # un server ajeno en el puerto se reporta y aborta, jamás se mata.
+  pids=""; ajenos=""
+  for pid in $(lsof -ti ":$puerto" 2>/dev/null || true); do
+    if ps -o command= -p "$pid" 2>/dev/null | grep -qF "$PWD"; then pids="$pids $pid"; else ajenos="$ajenos $pid"; fi
+  done
+  if [ -n "$ajenos" ]; then echo "demo-rojo: ✗ el puerto $puerto lo ocupa un proceso que NO es de este repo ($ajenos): no se mata; ciérralo tú o usa otro puerto" >&2; restaurar; exit 1; fi
+  if [ -n "$pids" ]; then echo "demo-rojo: matando proceso(s) propios en :$puerto →$pids"; kill $pids 2>/dev/null || true; sleep 1; fi
   if lsof -ti ":$puerto" >/dev/null 2>&1; then echo "demo-rojo: ✗ el puerto $puerto sigue ocupado (EADDRINUSE seguro)" >&2; restaurar; exit 1; fi
 fi
 
