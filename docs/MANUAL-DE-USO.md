@@ -17,7 +17,7 @@ nunca se suben a ningún servidor.
 ## Primeros pasos
 
 No hay que instalar nada ni crear una cuenta. Abre la app en el navegador y ya puedes empezar. En la
-esquina superior derecha puedes cambiar el idioma entre **Español** e **English**.
+esquina superior derecha puedes cambiar el idioma entre **Español** e **English**. La página abre en español. La primera vez que eliges **English**, tu navegador baja el diccionario en inglés, que es un archivo aparte; mientras llega, la página sigue en español.
 
 ## Features
 
@@ -587,10 +587,11 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      hoy»**. Con sí o no, la salida es fija: si la regla se cumple, se actúa; si no, no. Con varias opciones o
      una cantidad, eliges qué se hace en cada caso. Es una **referencia**, no un resultado: se mide sobre
      todas tus filas, y la **etapa 8** la vuelve a medir sobre la prueba.
-  8. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
+  8. **Etapa 6 · La prueba sellada.** Antes de entrenar, la app aparta una parte de tus datos como **prueba**: la etapa 7 entrena y compara con esa prueba cerrada, y la etapa 8 la abre una sola vez. La app **sugiere** el esquema con lo que registraste en la etapa 2: si tienes una **fecha** y una **unidad que se repite**, te pregunta si el modelo se usará con **unidades nuevas** o con las que ya conoces; si solo tienes fecha, reparte **por tiempo**; si solo tienes una unidad que se repite, **por grupo**; si no tienes ninguna, **estratificada** (al azar, guardando la proporción de cada clase). Puedes elegir otro esquema, pero escribes **por qué**: el cuaderno guarda el sugerido, el que elegiste y tu razón. Después eliges el **tamaño** de la prueba (de cada 100 filas, entre 10 y 40; se sugiere 20) y, en los esquemas por tiempo, el **horizonte**: cuánto tarda en conocerse el resultado, en días o en meses. No tiene valor por omisión: lo escribes tú, y 0 significa que el resultado se conoce al decidir. La tabla **«Cómo quedan tus filas»** cuenta por lado (entrenamiento, hueco, prueba y fuera): filas, unidades, fechas y clases. **No muestra ninguna fila de la prueba**, solo conteos y rangos. Las filas que no entran a ningún lado se cuentan por motivo: sin objetivo, sin fecha (en los esquemas por tiempo), sin unidad (en los de grupo), en el hueco o de unidades que están en la prueba. La **verificación** vuelve a contar sobre tu tabla que ninguna fila esté en los dos lados, que ninguna unidad esté en los dos lados y, por tiempo, que ninguna fila de entrenamiento caiga dentro del horizonte. **Registrar la etapa 6 la sella**: el sello son 64 caracteres que salen de tu huella, del esquema, de sus parámetros, de la semilla y de qué filas son la prueba; la pantalla muestra los primeros doce. Al recargar y volver a cargar tu CSV, el sello **se vuelve a calcular**: si cuadra, la etapa sigue cumplida; si no, queda por verificar y la 7 no abre. El contador cuenta **pruebas distintas** selladas: volver a registrar la misma no suma.
+  9. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
      «tu unidad se repite: 361 filas para 100 unidades», «con tus costos actúas desde 0.17, no
      desde 0.5».
-  9. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
+  10. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
      queda como una entrada nueva; las etapas que se construyeron sobre la anterior vuelven a
      **«Por verificar»**.
 
@@ -607,7 +608,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Qué lleva el archivo:** no trae las filas de tu CSV, pero sí datos que salen de él: los nombres de
     tus columnas, los valores del objetivo con sus conteos, medias, la fecha mínima y la máxima, el
     nombre del archivo y su huella, además de tus respuestas. Desde la etapa 4 suma también los puntajes
-    por columna que encontró la app y tu procedencia y tus estados por columna. Trátalo con el cuidado que le darías a
+    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Trátalo con el cuidado que le darías a
     tus datos.
   - **Ventana privada:** el navegador no deja guardar. La página lo avisa («Exporta tu cuaderno antes de
     irte»): si cierras la pestaña, se pierde.
@@ -628,8 +629,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   navegador**: viven en el cuaderno de este navegador y en el archivo que tú bajas. A Sentry solo llega
   el número de la etapa y el resultado (registrada, cerrada…), nunca un valor.
 
-- **Limitaciones conocidas (Sprints 008 a 010):**
-  - Hoy están construidas las etapas 1 a 5; las demás se ven con su criterio pero **no abren**.
+- **Limitaciones conocidas (Sprints 008 a 011):**
+  - Hoy están construidas las etapas 1 a 6; las demás se ven con su criterio pero **no abren**.
   - El Protocolo cubre las tres tareas **con objetivo** (dos clases, varias o una cantidad); **sin
     objetivo** no aplica y se va a «agrupar» en Probeta.
   - El tamaño de muestra con **varias clases** es una **aproximación**: se calcula «una contra el
@@ -673,6 +674,16 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
       tu cuaderno y en el archivo que bajas. No sale de tu navegador.
     - Los números se escriben con punto o coma decimal y sin separador de miles, igual que en las etapas 1 y 3
       (`1.5` o `1,5`; `1,500` no se lee y el campo lo dice). Lo que escribes como `1,5` se guarda como `1.5`.
+  - **Etapa 6, límites (Sprint 011):**
+    - **El sello es higiene y trazabilidad, no una promesa.** Dice si la prueba que describe el cuaderno es la que sale de tus datos con esos parámetros. No dice que la prueba sea buena ni que nadie la haya mirado antes.
+    - Un cuaderno editado a mano **con el sello y los parámetros coherentes** no se detecta: la app recalcula que los números cuadran con tus datos, no quién los escribió. Si cambias un parámetro y no el sello, sí se detecta.
+    - Las **filas idénticas** pueden caer una en cada lado: no se quitan duplicados. La etapa 4 dice cuántas hay.
+    - Las filas **sin fecha** (en los esquemas por tiempo) o **sin unidad** (en los de grupo) quedan fuera, contadas. No se reparten en silencio.
+    - **El horizonte lo pones tú.** La app no lo infiere: si lo escribes corto, la verificación se cumple con un hueco que quizá no alcance.
+    - Con **dos clases**, cada lado necesita casos de las dos. Con varias, una clase que falta en la prueba es un aviso, no un bloqueo.
+    - El aviso de **pocos casos** (menos de 10 de una clase en un lado) es una **convención** del programa, no una prueba estadística.
+    - La partición es determinista: el mismo archivo y los mismos parámetros dan siempre la misma prueba y el mismo sello.
+    - La razón admite 500 caracteres. Queda en tu cuaderno y en el archivo que bajas; no sale de tu navegador.
 
 ## Diccionario de términos
 
@@ -785,6 +796,11 @@ cuando una te frene.
 | **Umbral**                | La probabilidad a partir de la cual actúas. Con tus costos sale una cifra concreta.                                                            |
 | **Tasa base**             | Con qué frecuencia ocurre el caso en tus datos, sin modelo.                                                                                    |
 | **Parámetros candidatos** | Cuántos números distintos puede aprender el modelo de tus columnas: uno por columna numérica y una menos que las categorías por cada columna de texto. |
+| **Partición por tiempo** | Separar entrenamiento y prueba por fecha: la prueba son tus filas más recientes y el modelo aprende de las anteriores. Es como se usará: con el pasado, para decidir lo que viene. |
+| **Partición por grupo** | Separar por unidad (cliente, tienda, paciente): todas las filas de una unidad caen del mismo lado. Si no, el modelo se evalúa con unidades que ya vio. |
+| **Horizonte** | Cuánto tarda en conocerse el resultado desde que decides. En una partición por tiempo, ese tiempo es el hueco entre entrenamiento y prueba. Lo escribes tú. |
+| **Hueco** | Las filas entre el entrenamiento y la prueba, de la duración del horizonte. No entran a ningún lado: su resultado todavía no se conoce al decidir. |
+| **Prueba sellada** | La parte de tus datos que se aparta antes de entrenar y se marca con un sello, un código que sale de qué filas son. Si la prueba cambia, el sello no cuadra. Es higiene y trazabilidad, no una promesa. |
 
 ## Preguntas frecuentes
 
@@ -867,3 +883,4 @@ cuando una te frene.
 | 008    | Protocolo DS, el camino lento (etapas 1 a 3 con compuertas que no se saltan, cuaderno que sobrevive a cerrar la pestaña y se exporta e importa, glosario consultable).                                                                                                                                                                                                                                                                                                                                                                  |
 | 009    | Protocolo DS, etapa 4 «¿existe al decidir?» (apuesta antes de revelar, lo que encontró la app: fuga por valores y por vacíos, identificadores, filas repetidas y cambio entre periodos; inventario por columna con procedencia, momento y estado; acción en bloque con declaración; confirmaciones al reemplazar el cuaderno).
 | 010    | Protocolo DS, etapa 5 «La línea base sin modelo y la regla de hoy» (lo que ya se logra sin modelo, en la moneda de tu decisión y con la métrica estándar, rotulado como referencia; la regla de hoy escrita con hasta dos condiciones y medida en tus filas; el resumen del cuaderno). Además: los radios se leen en tema oscuro, y un identificador numérico se detecta en la etapa 4.)
+| 011    | Protocolo DS, etapa 6 «La prueba sellada» (la sugerencia del esquema con su porqué, cuatro esquemas, la pregunta de unidades nuevas o conocidas, el horizonte y el hueco en días o meses, la tabla por lado sin filas, la verificación de solape y el sello que se recalcula al recargar y cuenta pruebas distintas). Además: el inglés se descarga al elegirlo; la etapa 5 acepta «1,5» como número en una salida numérica y su resumen muestra vacíos, métricas y aciertos.
