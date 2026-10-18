@@ -25,11 +25,26 @@ import {
   type Esquema,
   type UnidadHorizonte,
 } from "./particion";
+import { sha256TextoSync } from "./sha256";
 
 /** La semilla de los pliegues es del motor, como la de la etapa 6: otra forma de volver a mirar. */
 export const SEMILLA_7 = 20261025;
 /** Con menos de dos pliegues no hay validación cruzada. */
 export const K_MIN = 2;
+
+/**
+ * Cuántos pliegues se piden: los de Probeta, 5, y 3 con muchas filas. Espejo de CV_K, CV_K_LARGE y
+ * CV_LARGE_FROM_ROWS de engine/encarrilador.ts, sin importarlo (el motor del Protocolo va en la página
+ * inicial y el encarrilador no); la paridad la vigila tests/unit/protocolo-pliegues.test.ts.
+ */
+export const K_PEDIDO = 5;
+export const K_PEDIDO_GRANDE = 3;
+export const FILAS_GRANDE = 20_001;
+export const kPedidoPara = (filas: number): number =>
+  filas >= FILAS_GRANDE ? K_PEDIDO_GRANDE : K_PEDIDO;
+
+/** La primera línea de la receta de la huella de los pliegues; cambia si la receta cambia. */
+export const RECETA_PLIEGUES = "PROTOCOLO-DS/PLIEGUES/1";
 
 export type ParametrosPliegues = {
   readonly esquema: Esquema;
@@ -376,3 +391,18 @@ export const sinSolape = (v: VerificacionPliegues): boolean =>
   v.solapeUnidades === 0 &&
   v.validacionAntes === 0 &&
   v.fueraDelEntrenamiento === 0;
+
+/**
+ * La huella de los pliegues: SHA-256 de qué filas entrenan y cuáles validan en cada uno, en orden. El
+ * cuaderno guarda la huella y los tamaños, no los índices; la compuerta vuelve a repartir y la compara.
+ */
+export function huellaPliegues(r: Pliegues): string {
+  const lineas = [RECETA_PLIEGUES, `esquema=${r.esquema}`, `k=${r.k}`];
+  r.pliegues.forEach((p, j) =>
+    lineas.push(
+      `${j + 1}:e=${p.entrenamiento.join(",")}`,
+      `${j + 1}:v=${p.validacion.join(",")}`,
+    ),
+  );
+  return sha256TextoSync(lineas.join("\n"));
+}

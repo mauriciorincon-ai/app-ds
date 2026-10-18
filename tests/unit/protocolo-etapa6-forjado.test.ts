@@ -74,9 +74,10 @@ function estados(cuaderno: Cuaderno) {
     );
 }
 
-const SELLADA = ["cumplida", "cumplida", "no-construida"];
-// un sello que no cuadra: la 6 vuelve a «por verificar» y la 7 (sin construir) no cambia nada
-const NO_CUADRA = ["cumplida", "por-verificar:no-cuadra", "no-construida"];
+// S12: con la 6 sellada, la 7 abre
+const SELLADA = ["cumplida", "cumplida", "abierta"];
+// un sello que no cuadra: la 6 vuelve a «por verificar» y la 7 no abre sin ella (S12: ya construida)
+const NO_CUADRA = ["cumplida", "por-verificar:no-cuadra", "cerrada"];
 
 describe("la etapa 6 de un cuaderno editado a mano no gana nada", () => {
   it("el cuaderno honesto, exportado e importado, sigue sellado (el ida y vuelta no lo rompe)", () => {

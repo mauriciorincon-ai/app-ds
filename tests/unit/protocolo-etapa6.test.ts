@@ -440,7 +440,7 @@ describe("las trampas, en los números del usuario", () => {
 });
 
 describe("la compuerta", () => {
-  it("con la 6 sellada, la 6 queda cumplida y la 7 se ve sin construir", () => {
+  it("con la 6 sellada, la 6 queda cumplida, la 7 abre y la 8 se ve sin construir", () => {
     const r = registrar(PROTOCOLO6, BAJAS.cuaderno, 6, datos(BAJAS, NUEVAS), {
       huella: HUELLA,
       tabla: BAJAS.tabla,
@@ -450,13 +450,14 @@ describe("la compuerta", () => {
     const estados = evaluar(PROTOCOLO6, r.cuaderno, HUELLA, BAJAS.tabla).map(
       (e) => e.estado.tipo,
     );
-    expect(estados.slice(0, 7)).toEqual([
+    expect(estados.slice(0, 8)).toEqual([
       "cumplida",
       "cumplida",
       "cumplida",
       "cumplida",
       "cumplida",
       "cumplida",
+      "abierta",
       "no-construida",
     ]);
   });

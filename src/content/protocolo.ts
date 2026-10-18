@@ -131,6 +131,14 @@ export const CONTENIDO_ETAPAS: Readonly<Record<EtapaId, ContenidoEtapa>> = {
       es: "Un ganador comparado con la línea base, con la prueba todavía cerrada.",
       en: "A winner compared with the baseline, with the test set still closed.",
     },
+    tarea: {
+      es: "Corre la liga de Probeta con lo que decidiste: las columnas en «usar», tus costos y pliegues que siguen el esquema sellado, solo con el entrenamiento. Lee por qué ganó el que ganó, cómo le va contra lo que ya se logra sin modelo y si hay señal o solo azar. Al registrar, el resultado queda en tu cuaderno; la prueba sigue cerrada.",
+      en: "Run Probeta's league with what you decided: the columns you kept in use, your costs and folds that follow the sealed scheme, on the training rows only. Read why the winner won, how it does against what you already get without a model, and whether there's signal or just chance. When you record it, the result goes into your notebook; the test set stays closed.",
+    },
+    porque: {
+      es: "Elegir mirando la prueba es ajustarla: cada modelo probado contra ella la gasta un poco. Aquí se elige con validación cruzada dentro del entrenamiento, con pliegues que respetan tu esquema.\nEl puntaje con que se elige es una medida de selección, y es optimista: por eso el ganador se compara con la línea base pliegue a pliegue, en la moneda de tu decisión, y una permutación dice si hay señal.\nLa etapa 8 abre la prueba una sola vez para medir sin sesgo; si el ganador no supera la línea base, también pasa, y queda escrito.",
+      en: "Choosing while looking at the test set fits it: each model tried against it uses it up a little. Here the choice is made with cross-validation inside the training rows, with folds that respect your scheme.\nThe score used to choose is a selection measure, and it's optimistic: that's why the winner is compared with the baseline fold by fold, in the currency of your decision, and a permutation says whether there's signal.\nStage 8 opens the test set once to measure without bias; if the winner doesn't beat the baseline, it passes too, and it's written down.",
+    },
   },
   8: {
     titulo: {
