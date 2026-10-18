@@ -65,12 +65,15 @@ test("etapa 6 con crédito: estratificada sugerida, conteos por lado, sello, y n
   await axeBothThemes(page);
   await sinDesborde(page, 360);
 
-  // registrar es sellar: la compuerta acepta, el foco vuelve al título, la 7 se ve sin construir
+  // registrar es sellar: la compuerta acepta, el foco vuelve al título, la 7 abre (S12) y la 8 se ve sin construir
   await e6.getByRole("button", { name: "Registrar la etapa 6" }).click();
   await expect(e6.getByText("Cumplida")).toBeVisible();
   await expect(page.locator("#etapa-6-titulo")).toBeFocused();
   await expect(
-    page.locator("#etapa-7").getByText("Sin construir"),
+    page.locator("#etapa-7").getByText("Abierta", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#etapa-8").getByText("Sin construir"),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen6");
   await expect(resumen).toContainText("Esquema: Estratificada.");
