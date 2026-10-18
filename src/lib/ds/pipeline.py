@@ -1459,13 +1459,16 @@ def _member_pipe(name, ctx):
     )
 
 
-def _cross_validate(name, ctx, k):
+def _cross_validate(name, ctx, k, splits=None):
     """CV estratificada DENTRO de train. El preprocesador va DENTRO del Pipeline
     que se valida ⇒ se reajusta en cada fold y jamás ve las filas de validación
     de su fold (el test anti-fuga de la CV lo vigila con un espía). S6: con un
     objetivo continuo no hay clases que estratificar ⇒ KFold barajado; los folds
-    de una métrica «menor es mejor» se devuelven en sus unidades (signo invertido)."""
-    splitter = _by_task(ctx["task"], {
+    de una métrica «menor es mejor» se devuelven en sus unidades (signo invertido).
+    S12: con `splits` (pares de índices de entrenamiento y validación que arma el
+    Protocolo según el esquema sellado) se usan esos pliegues; sin ellos, igual que
+    siempre."""
+    splitter = splits if splits is not None else _by_task(ctx["task"], {
         "binaria": lambda: StratifiedKFold(k, shuffle=True, random_state=ctx["seed"]),
         "multiclase": lambda: StratifiedKFold(k, shuffle=True, random_state=ctx["seed"]),
         "numerica": lambda: KFold(k, shuffle=True, random_state=ctx["seed"]),
@@ -2085,3 +2088,280 @@ def reset_model(payload_json="{}"):
     _MODEL = None
     _CLUSTER_LABELS = None
     return json.dumps({"ok": True})
+
+
+# --- S12 (Protocolo DS, etapa 7): la liga SOLO con el entrenamiento ---------------------------
+#
+# Una entrada aparte de run_experiment: el flujo de Probeta no cambia. Aquí la prueba NO EXISTE: el
+# payload trae solo las filas del entrenamiento sellado en la etapa 6 y los pliegues que arma TS
+# (src/engine/protocolo/pliegues.ts) según el esquema, como posiciones dentro de esas filas. Si llega
+# `test_idx` o `train_idx`, el contrato se rompe nombrándolos: este modo no tiene con qué abrir la
+# prueba. Devuelve la liga (validación cruzada en esos pliegues y selección por un error estándar),
+# las predicciones fuera de pliegue del ganador (TS las mide con la moneda de la decisión) y la
+# prueba de permutación del ganador con los mismos pliegues. Errores: solo el tipo, nunca un valor.
+
+VALIDATION_TASKS = ("binaria", "multiclase", "numerica")
+# Tope de permutaciones que el contrato admite (TS pide entre 20 y 200).
+PERMUTATIONS_MAX = 1000
+
+
+def _validate_validation_payload(p):
+    """Valida el payload de la etapa 7 antes de tocar los datos."""
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in ("test_idx", "train_idx"):
+        if key in p:
+            _contract(key)
+    for key in ("headers", "rows", "numeric", "categorical", "folds", "roster"):
+        if not isinstance(p.get(key), list):
+            _contract(key)
+    if not isinstance(p.get("target"), str) or p["target"] not in p["headers"]:
+        _contract("target")
+    if not _is_int(p.get("seed")):
+        _contract("seed")
+    task = p.get("task")
+    if not isinstance(task, str) or task not in VALIDATION_TASKS:
+        _contract("task")
+    if p.get("primary_metric") not in TASK_METRICS[task]:
+        _contract("primary_metric")
+    if len(p["numeric"]) + len(p["categorical"]) == 0:
+        _contract("features")
+    factories = _FACTORIES_BY_TASK[task]
+    roster = p["roster"]
+    if (
+        len(roster) == 0
+        or len(set(roster)) != len(roster)
+        or any(name not in factories for name in roster)
+    ):
+        _contract("roster")
+    n = len(p["rows"])
+    folds = p["folds"]
+    if len(folds) < 2:
+        _contract("folds")
+    for fold in folds:
+        if not isinstance(fold, dict) or set(fold) != {"train", "val"}:
+            _contract("folds")
+        train, val = fold["train"], fold["val"]
+        if not isinstance(train, list) or not isinstance(val, list):
+            _contract("folds")
+        if len(train) < 2 or len(val) < 1:
+            _contract("folds")
+        if not all(_is_int(i) and 0 <= i < n for i in train + val):
+            _contract("folds")
+        if len(set(train)) != len(train) or len(set(val)) != len(val) or set(train) & set(val):
+            _contract("folds")
+
+    def binary():
+        if "classes" in p:
+            _contract("classes")
+        if not isinstance(p.get("positive"), str):
+            _contract("positive")
+
+    def other(check_classes):
+        def run():
+            if "positive" in p:
+                _contract("positive")
+            check_classes()
+        return run
+
+    _by_task(task, {
+        "binaria": binary,
+        "multiclase": other(lambda: _validate_classes(p.get("classes"))),
+        "numerica": other(lambda: "classes" in p and _contract("classes")),
+        "agrupar": _supervised_only,
+    })()
+    perm = p.get("permutations")
+    if (
+        not isinstance(perm, dict)
+        or set(perm) != {"budget_ms", "min", "max"}
+        or not all(_is_int(perm[key]) and perm[key] >= 0 for key in perm)
+        or perm["min"] > perm["max"]
+        or perm["max"] > PERMUTATIONS_MAX
+    ):
+        _contract("permutations")
+
+
+def _prepare_validation(p):
+    """El frame y el objetivo de las filas de entrenamiento. Binaria: 1 = la clase que la etapa 2
+    dijo que significa «hay que actuar» (no la minoritaria, como en Probeta)."""
+    numeric = list(p["numeric"])
+    categorical = list(p["categorical"])
+    features = numeric + categorical
+    df = _build_frame(p["headers"], p["rows"], numeric)
+    task = p["task"]
+
+    def binary():
+        target = df[p["target"]].astype("string")
+        classes = sorted(target.dropna().unique().tolist())
+        if target.isna().any() or len(classes) != 2 or p["positive"] not in classes:
+            _contract("positive")
+        return (target == p["positive"]).astype(int).to_numpy(), classes, p["positive"]
+
+    def multiclass():
+        y, classes, _, _ = _multiclass_target(df, p)
+        return y, classes, None
+
+    def numeric_target():
+        y = pd.to_numeric(df[p["target"]], errors="coerce").to_numpy(dtype=float)
+        if not np.all(np.isfinite(y)):
+            _contract("target")
+        return y, None, None
+
+    y, classes, positive = _by_task(task, {
+        "binaria": binary,
+        "multiclase": multiclass,
+        "numerica": numeric_target,
+        "agrupar": _supervised_only,
+    })()
+    return {
+        "task": task,
+        "factories": _FACTORIES_BY_TASK[task],
+        "numeric": numeric,
+        "categorical": categorical,
+        "features": features,
+        "classes": classes,
+        "positive": positive,
+        "y": y,
+        "X_train": df[features],
+        "y_train": y,
+        "seed": int(p["seed"]),
+        "metric": p["primary_metric"],
+        "preprocessor": _make_preprocessor(numeric, categorical),
+    }
+
+
+def _positive_proba(pipe, X):
+    """Binaria: la probabilidad de «hay que actuar», o None si el modelo no la da (ridge, SVM
+    lineal): no se inventa; TS decide entonces con la clase que predice."""
+    if not hasattr(pipe, "predict_proba"):
+        return None
+    return [float(v) for v in pipe.predict_proba(X)[:, 1]]
+
+
+def _finite(values):
+    if not all(math.isfinite(v) for v in values):
+        raise ArithmeticError("non-finite-prediction")
+    return values
+
+
+def _out_of_fold(name, ctx, splits):
+    """Las predicciones del ganador en la validación de cada pliegue, entrenado SOLO con el
+    entrenamiento de ese pliegue (el preprocesador también). Una lista por pliegue, alineada con
+    sus índices de validación."""
+    X, y = ctx["X_train"], ctx["y_train"]
+    out = []
+    for train, val in splits:
+        pipe = _member_pipe(name, ctx).fit(X.iloc[train], y[train])
+        pred = pipe.predict(X.iloc[val])
+
+        def binary_fold():
+            proba = _positive_proba(pipe, X.iloc[val])
+            return {
+                "pred": [int(v) for v in pred],
+                "proba": None if proba is None else _finite(proba),
+            }
+
+        out.append(
+            _by_task(ctx["task"], {
+                "binaria": binary_fold,
+                "multiclase": lambda: {
+                    "pred": [ctx["classes"][int(v)] for v in pred],
+                    "proba": None,
+                },
+                "numerica": lambda: {"pred": _finite([float(v) for v in pred]), "proba": None},
+                "agrupar": _supervised_only,
+            })()
+        )
+    return out
+
+
+def _permutation(name, ctx, splits, cfg, cv_ms, step):
+    """¿Hay señal o solo azar? Se barajan las etiquetas DEL ENTRENAMIENTO y se vuelve a correr la
+    CV del ganador con los mismos pliegues. Cuántas veces: el presupuesto de tiempo dividido por lo
+    que tardó su CV, entre el mínimo y el máximo pedidos. Una permutación que no se puede puntuar
+    (un pliegue sin una de las clases) no cuenta y se dice cuántas fueron."""
+    n = int(min(cfg["max"], max(cfg["min"], cfg["budget_ms"] // max(int(cv_ms), 1))))
+    rng = np.random.default_rng(ctx["seed"])
+    scores = []
+    failed = 0
+    for index in range(n):
+        step(index, n)
+        shuffled = {**ctx, "y_train": rng.permutation(ctx["y_train"])}
+        try:
+            cv, _ = _cross_validate(name, shuffled, len(splits), splits)
+            scores.append(cv["mean"])
+        except Exception:  # noqa: BLE001 — se cuenta, sin mensaje (puede traer valores)
+            failed += 1
+    return {"n": n, "failed": failed, "scores": scores}
+
+
+def run_validation(payload_json, on_progress=None):
+    """La entrada del comando «validate» (S12, etapa 7 del Protocolo DS)."""
+    started = time.perf_counter()
+    p = json.loads(payload_json)
+    _validate_validation_payload(p)
+    ctx = _prepare_validation(p)
+    splits = [
+        (np.asarray(fold["train"], dtype=int), np.asarray(fold["val"], dtype=int))
+        for fold in p["folds"]
+    ]
+    k = len(splits)
+    order = list(p["roster"])
+
+    def progress(phase, index, total, name):
+        if on_progress is not None:
+            on_progress(
+                json.dumps({"phase": phase, "member": name, "index": index, "total": total})
+            )
+
+    league = []
+    for index, name in enumerate(order):
+        progress("cv", index, len(order), name)
+        t = time.perf_counter()
+        row = {"name": name, "status": "ok", "cv": None, "test": None, "error_type": None}
+        try:
+            row["cv"], converged = _cross_validate(name, ctx, k, splits)
+            if not converged:
+                row["status"] = "no-converge"
+        except Exception as error:  # noqa: BLE001 — se registra el TIPO, nunca el mensaje
+            row["status"] = "error"
+            row["error_type"] = type(error).__name__
+        row["elapsed_ms"] = _elapsed_ms(t)
+        league.append(row)
+
+    best, winner, se = select_one_se(league, k, METRIC_DIRECTION[ctx["metric"]])
+    winner_row = next(row for row in league if row["name"] == winner)
+    oof = _out_of_fold(winner, ctx, splits)
+    permutation = _permutation(
+        winner,
+        ctx,
+        splits,
+        p["permutations"],
+        winner_row["elapsed_ms"],
+        lambda index, total: progress("perm", index, total, winner),
+    )
+    task_fields = _by_task(ctx["task"], {
+        "binaria": lambda: {"classes": ctx["classes"], "positive_class": ctx["positive"]},
+        "multiclase": lambda: {"classes": ctx["classes"]},
+        "numerica": dict,
+        "agrupar": _supervised_only,
+    })()
+    return json.dumps(
+        {
+            "task": ctx["task"],
+            **task_fields,
+            "n_rows": int(len(ctx["y_train"])),
+            "league": league,
+            "winner": winner,
+            "cv": {
+                "k": k,
+                "scoring": SCORER[ctx["metric"]],
+                "rule": "one-se",
+                "best": best,
+                "se": se,
+            },
+            "oof": oof,
+            "permutation": {**permutation, "observed": winner_row["cv"]["mean"]},
+            "elapsed_ms": _elapsed_ms(started),
+        }
+    )
