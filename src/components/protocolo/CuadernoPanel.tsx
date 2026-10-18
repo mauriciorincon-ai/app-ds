@@ -15,7 +15,7 @@ import { ACTUAR, NO_ACTUAR, resumenEtapa5 } from "@/engine/protocolo/etapa5";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import { cifra, fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
-import { thousands } from "@/lib/quantity";
+import { formatQuantity, thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
 import { Confirmacion } from "./Confirmacion";
 import { reglaTexto } from "./regla-texto";
@@ -88,6 +88,14 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
       : valor === NO_ACTUAR
         ? t("protocol.stage.5.summary.no-act")
         : valor;
+  // La métrica estándar al lado del costo (clasificación: exactitud balanceada; un número: error
+  // medio) y los aciertos por cada 100, con los mismos rótulos de la tabla de la etapa.
+  const metrica = t(
+    r.clasificacion
+      ? "protocol.stage.5.table.col-balanced"
+      : "protocol.stage.5.table.col-error",
+  );
+  const aciertos100 = (a: number) => formatQuantity(a * 100, 1);
   return (
     <ul
       className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
@@ -103,6 +111,34 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
             .join(" · "),
         })}
       </li>
+      {r.referencias.some((x) => x.metrica !== null) && (
+        <li>
+          {t("protocol.stage.5.summary.metrics", {
+            metrica,
+            list: r.referencias
+              .filter((x) => x.metrica !== null)
+              .map((x) => `${nombre(x.id)}: ${cifra(x.metrica!)}`)
+              .join(" · "),
+          })}
+        </li>
+      )}
+      {r.clasificacion && (
+        <li>
+          {t("protocol.stage.5.summary.hits", {
+            list: r.referencias
+              .filter((x) => x.aciertos !== null)
+              .map((x) => `${nombre(x.id)}: ${aciertos100(x.aciertos!)}`)
+              .join(" · "),
+          })}
+        </li>
+      )}
+      {r.sinAnterior !== null && r.sinAnterior > 0 && (
+        <li>
+          {t("protocol.stage.5.summary.no-previous", {
+            n: thousands(r.sinAnterior),
+          })}
+        </li>
+      )}
       {r.regla === "hay" && r.reglaCosto100 !== null && (
         <>
           <li>
@@ -119,6 +155,26 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
               no: salida(r.no),
             })}
           </li>
+          {r.reglaMetrica !== null && (
+            <li>
+              {t("protocol.stage.5.summary.rule-metric", {
+                metrica,
+                valor: cifra(r.reglaMetrica),
+              })}
+              {r.reglaAciertos !== null &&
+                ` ${t("protocol.stage.5.summary.rule-hits", {
+                  valor: aciertos100(r.reglaAciertos),
+                })}`}
+            </li>
+          )}
+          {r.reglaVacios !== null && r.reglaVacios > 0 && (
+            <li>
+              {t("protocol.stage.5.summary.rule-empty", {
+                vacios: thousands(r.reglaVacios),
+                filas: thousands(r.filas),
+              })}
+            </li>
+          )}
         </>
       )}
       {r.regla === "ninguna" && (

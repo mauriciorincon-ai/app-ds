@@ -671,7 +671,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
       para las filas sin unidad o sin fecha; la pantalla dice cuántas son.
     - Lo que escribes en la regla, incluidos los valores que eliges de tu columna (como «informal»), queda en
       tu cuaderno y en el archivo que bajas. No sale de tu navegador.
-    - Los números se escriben con punto decimal y sin separador de miles, igual que en las etapas 1 y 3.
+    - Los números se escriben con punto o coma decimal y sin separador de miles, igual que en las etapas 1 y 3
+      (`1.5` o `1,5`; `1,500` no se lee y el campo lo dice). Lo que escribes como `1,5` se guarda como `1.5`.
 
 ## Diccionario de términos
 

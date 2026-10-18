@@ -206,6 +206,7 @@ describe("contenido del Protocolo {es, en}", () => {
         "regla-operador",
         "regla-valor",
         "regla-salida",
+        "regla-salida-numero",
         "regla-medida",
       ],
     } as const;

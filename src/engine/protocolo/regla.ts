@@ -6,7 +6,9 @@
 //  · una celda vacía (o que no se lee como número en una columna numérica) NUNCA cumple una
 //    condición, tampoco «≠» ni «no es»: la app no adivina qué haría la gente con un dato ausente;
 //  · el texto se compara exacto (mayúsculas y espacios internos cuentan; los de los extremos no);
-//  · los números se escriben con punto decimal, sin separador de miles: «1,5» es ambiguo y se rechaza.
+//  · aquí los números llegan en su forma canónica (punto decimal, sin separador de miles): el
+//    formulario convierte «1,5» en «1.5» antes de registrar; «1,500» no se lee (¿uno y medio o mil
+//    quinientos?) y el campo lo dice.
 import type { VistaColumna } from "./tabla";
 
 export const OPERADORES_NUMERO = ["<", "<=", ">", ">=", "=", "!="] as const;

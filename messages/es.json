@@ -1590,8 +1590,9 @@
           "regla-union": "cómo se unen las dos condiciones («y» u «o»)",
           "regla-columna": "una regla que use solo columnas que dejaste en «usar» en la etapa 4",
           "regla-operador": "un operador que sirva para el tipo de la columna",
-          "regla-valor": "un valor bien escrito (un número con punto decimal, o un texto)",
+          "regla-valor": "un valor bien escrito (un número con punto o coma decimal y sin separador de miles, o un texto)",
           "regla-salida": "qué se hace cuando la regla se cumple y cuando no",
+          "regla-salida-numero": "un número bien escrito para cuando la regla se cumple y para cuando no (con punto o coma decimal, sin separador de miles)",
           "regla-medida": "una regla que se pueda medir en tus datos"
         },
         "trap": {
@@ -1611,7 +1612,13 @@
           "rule-then": "Si se cumple: {si}. Si no: {no}.",
           "rule-none": "Regla de hoy: no hay regla.",
           "act": "actuar",
-          "no-act": "no actuar"
+          "no-act": "no actuar",
+          "metrics": "{metrica}, sin modelo: {list}",
+          "hits": "Aciertos de cada 100, sin modelo: {list}",
+          "no-previous": "El último valor por unidad usó la mediana en {n} filas (sin valor anterior, sin unidad o sin fecha).",
+          "rule-metric": "Tu regla de hoy, {metrica}: {valor}.",
+          "rule-hits": "Aciertos de cada 100 con tu regla: {valor}.",
+          "rule-empty": "En {vacios} de {filas} filas una columna de la regla está vacía y ahí la condición no se cumple."
         }
       }
     },

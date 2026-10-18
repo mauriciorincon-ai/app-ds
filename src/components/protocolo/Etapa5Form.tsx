@@ -6,7 +6,7 @@
 // la etapa 8 la vuelve a medir sobre la prueba. Solo se ofrecen las columnas que la etapa 4 dejó
 // en «usar». La compuerta decide al registrar; este formulario solo propone.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { matchTask } from "@/engine/despacho";
+import { byTask, matchTask } from "@/engine/despacho";
 import { formaDe } from "@/engine/protocolo/etapa1";
 import { columnasParaEntrenar } from "@/engine/protocolo/etapa4";
 import {
@@ -55,6 +55,9 @@ export function Etapa5Form({
   const tabla = datos?.tabla ?? null;
   const e1 = previas[1];
   const forma = e1 ? formaDe(e1.respuestas) : null;
+  const salidaNumerica =
+    forma !== null &&
+    byTask(forma, { binaria: false, multiclase: false, numerica: true });
   const previo = useMemo(
     () => entradaDesdeRespuestas(anterior?.respuestas ?? {}),
     [anterior],
@@ -107,13 +110,14 @@ export function Etapa5Form({
                 : c.valor,
             ),
             union: conCol.length >= 2 ? union : "",
-            si,
-            no,
+            // lo que el campo numérico acepta («1,5») se guarda en su forma canónica («1.5»)
+            si: salidaNumerica ? canonico(si) : si,
+            no: salidaNumerica ? canonico(no) : no,
           }
         : { ...ENTRADA_5_VACIA, regla },
     // `conCol` se rearma en cada render; sus partes son las que importan.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [regla, conds, usables, union, si, no, tabla],
+    [regla, conds, usables, union, si, no, tabla, salidaNumerica],
   );
 
   const base = useMemo(

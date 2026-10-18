@@ -1590,8 +1590,9 @@
           "regla-union": "how the two conditions are joined («and» or «or»)",
           "regla-columna": "a rule that only uses columns you left in «use» in stage 4",
           "regla-operador": "an operator that fits the column's type",
-          "regla-valor": "a well-written value (a number with a decimal point, or a text)",
+          "regla-valor": "a well-written value (a number with a decimal point or comma and no thousands separator, or a text)",
           "regla-salida": "what is done when the rule holds and when it doesn't",
+          "regla-salida-numero": "a well-written number for when the rule holds and for when it doesn't (with a decimal point or comma, no thousands separator)",
           "regla-medida": "a rule that can be measured on your data"
         },
         "trap": {
@@ -1611,7 +1612,13 @@
           "rule-then": "If it holds: {si}. If not: {no}.",
           "rule-none": "Rule of today: there is no rule.",
           "act": "act",
-          "no-act": "don't act"
+          "no-act": "don't act",
+          "metrics": "{metrica}, without a model: {list}",
+          "hits": "Hits out of 100, without a model: {list}",
+          "no-previous": "The last value per unit used the median in {n} rows (no earlier value, no unit or no date).",
+          "rule-metric": "Your rule of today, {metrica}: {valor}.",
+          "rule-hits": "Hits out of 100 with your rule: {valor}.",
+          "rule-empty": "In {vacios} of {filas} rows a column of the rule is empty, so the condition does not hold there."
         }
       }
     },

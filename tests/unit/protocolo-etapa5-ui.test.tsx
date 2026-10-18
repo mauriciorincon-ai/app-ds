@@ -416,6 +416,65 @@ describe("la salida según la forma de la decisión", () => {
     expect(screen.queryByText("Aciertos de cada 100")).toBeNull();
     expect(screen.getByText("Error medio")).toBeTruthy();
   });
+
+  const NUMERICA = () =>
+    armar4(
+      "num.csv",
+      "numerica",
+      {
+        objetivo: "valor",
+        positivo: "",
+        unidadColumna: null,
+        momentoColumna: null,
+        momentoTexto: "hoy",
+        ordenFecha: null,
+      },
+      csv(
+        "x,valor",
+        ...[1, 2, 3, 4, 10, 1, 2, 3, 4, 10].map((v, i) => `${i % 3},${v}`),
+      ),
+    );
+  const estimaciones = (si: string, no: string) => {
+    hayRegla();
+    elegir("Columna", "x", condicion(0));
+    fireEvent.change(within(condicion(0)).getByLabelText("Valor"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Si la regla se cumple, se estima"),
+      {
+        target: { value: si },
+      },
+    );
+    fireEvent.change(
+      screen.getByLabelText("Si la regla no se cumple, se estima"),
+      { target: { value: no } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Registrar la etapa 5/ }),
+    );
+  };
+
+  it("B2: una estimación con coma decimal se acepta y se registra con punto", () => {
+    const { registrado } = montar(NUMERICA());
+    estimaciones("1,5", "2,25");
+    expect(registrado.rechazo).toBeNull();
+    expect(registrado.datos?.respuestas.regla_si).toBe("1.5");
+    expect(registrado.datos?.respuestas.regla_no).toBe("2.25");
+    expect(registrado.datos?.chequeos.regla_costo).not.toBeNull();
+  });
+
+  it("B2: «1,500» no se lee y el rechazo pide un número bien escrito, no «qué se hace»", () => {
+    const { registrado } = montar(NUMERICA());
+    estimaciones("1,500", "2");
+    expect(registrado.rechazo).toMatchObject({
+      tipo: "criterio-no-cumplido",
+      faltan: ["regla-salida-numero"],
+    });
+    expect(screen.getByRole("alert").textContent).toMatch(
+      /un número bien escrito para cuando la regla se cumple/,
+    );
+  });
 });
 
 describe("registrar", () => {
@@ -563,6 +622,14 @@ describe("el cuaderno", () => {
       /Regla de hoy: ingreso_mensual menor o igual que \(≤\) 3000 y empleo no es informal/,
     );
     expect(resumen).toMatch(/Si se cumple: actuar\. Si no: no actuar\./);
+    // B4: la métrica estándar y los aciertos, sin modelo y con tu regla
+    expect(resumen).toMatch(
+      /Exactitud balanceada \(0 a 1\), sin modelo: Nunca actuar: [\d.]+ · Siempre actuar: /,
+    );
+    expect(resumen).toMatch(/Aciertos de cada 100, sin modelo: Nunca actuar: /);
+    expect(resumen).toMatch(
+      /Tu regla de hoy, Exactitud balanceada \(0 a 1\): [\d.]+\. Aciertos de cada 100 con tu regla: [\d.]+\./,
+    );
     // no vuelca los mapas crudos
     expect(resumen).not.toContain("nunca-actuar");
   });
