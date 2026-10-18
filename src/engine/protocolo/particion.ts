@@ -574,9 +574,12 @@ export type Lado = {
 export function contarLado(d: Diseno, filas: readonly number[]): Lado {
   let clases: Record<string, number> | null = null;
   if (d.clases) {
-    clases = {};
-    for (const f of d.filas) clases[d.clases[f]!] ??= 0;
-    for (const f of filas) clases[d.clases[f]!]! += 1;
+    // Un Map, no un objeto: una clase puede llamarse «constructor» o «__proto__» (S12).
+    const cuenta = new Map<string, number>();
+    for (const f of d.filas) cuenta.set(d.clases[f]!, 0);
+    for (const f of filas)
+      cuenta.set(d.clases[f]!, cuenta.get(d.clases[f]!)! + 1);
+    clases = Object.fromEntries(cuenta);
   }
   const fechas = d.fechas
     ? filas

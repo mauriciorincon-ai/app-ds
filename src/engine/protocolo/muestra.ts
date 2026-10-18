@@ -159,14 +159,15 @@ export function muestraMulticlase(entrada: {
   parametros: number;
   proporciones: Readonly<Record<string, number>>;
 }): MuestraMulticlase {
-  const porClase: Record<string, number> = {};
+  // Un Map, no un objeto: una clase puede llamarse «__proto__» (S12).
+  const porClase = new Map<string, number>();
   let mejor: { clase: string; muestra: MuestraBinaria } | null = null;
   for (const [clase, prevalencia] of Object.entries(entrada.proporciones)) {
     const muestra = muestraBinaria({
       parametros: entrada.parametros,
       prevalencia,
     });
-    porClase[clase] = muestra.final;
+    porClase.set(clase, muestra.final);
     if (!mejor || muestra.final > mejor.muestra.final)
       mejor = { clase, muestra };
   }
@@ -175,7 +176,7 @@ export function muestraMulticlase(entrada: {
     final: mejor.muestra.final,
     clase: mejor.clase,
     manda: mejor.muestra.manda,
-    porClase,
+    porClase: Object.fromEntries(porClase),
   };
 }
 
