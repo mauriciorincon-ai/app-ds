@@ -99,6 +99,13 @@ async function cumplirEtapa2Bajas(page: Page) {
   await expect(e2.getByText("Cumplida")).toBeVisible();
 }
 
+/** El cuaderno se escribe en IndexedDB sin bloquear: recargar antes de «Guardado» pierde la última entrada. */
+async function esperarGuardado(page: Page) {
+  await expect(
+    page.getByTestId("cuaderno-guardado").filter({ hasText: "Guardado" }),
+  ).toBeVisible();
+}
+
 const ANTES = "Antes de decidir";
 const DESPUES = "Después de decidir (o del resultado)";
 
@@ -274,6 +281,7 @@ test("etapa 4 con bajas: fuga por vacíos, identificador, repetidas y deriva; la
   );
 
   // Recargar NO devuelve la apuesta: queda fija en esta pestaña (la huella dice que es el mismo archivo)
+  await esperarGuardado(page);
   await page.reload();
   await expect(page.getByText("Abriendo tu cuaderno…")).toBeHidden();
   await cargarCsv(page, "bajas-con-fuga.csv");
@@ -306,6 +314,7 @@ test("etapa 4 con bajas: fuga por vacíos, identificador, repetidas y deriva; la
   await expect(e4.getByText("Cumplida")).toBeVisible();
 
   // La etapa 4 depende de los datos: tras recargar pide el archivo y vuelve a verificar contra él
+  await esperarGuardado(page);
   await page.reload();
   await expect(page.getByText("Abriendo tu cuaderno…")).toBeHidden();
   await expect(
