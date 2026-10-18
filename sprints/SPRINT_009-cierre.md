@@ -10,7 +10,7 @@ pr:
 
 # Sprint 009 «¿Existe al decidir?» — cierre ejecutivo (BORRADOR: se completa al cierre)
 
-## PUNTO DE REANUDACIÓN (borrar al cerrar) — F1 CERRADA · F2 casi cerrada (falta la corrida e2e completa limpia)
+## PUNTO DE REANUDACIÓN (borrar al cerrar) — F1 CERRADA · F2 CERRADA · sigue F3 (Haiku)
 
 **F1 (7 commits `[F1]`):** M2/M3 (`Confirmacion.tsx`) · B13 · motor `src/engine/protocolo/{deriva,duplicados,etapa4}.ts` · kit
 `bajas-con-fuga.csv` · forjado + demo en rojo (`recalcular` off → 11 de 15 fallan nombrando «una fuga escondida»; restaurado 15/15) ·
@@ -25,17 +25,26 @@ términos) / `protocolo-ds.ts` / `formularios.tsx`, 150 claves `{es,en}` (+11 `_
 foco al título de la tarjeta al registrar (genérico, también etapas 1–3). Pruebas: `protocolo-etapa4-ui` 15, `protocolo-apuesta` 11,
 dialogos 10, e2e `protocolo-etapa4.spec.ts` (credito + bajas; mobile y desktop; axe 2 temas; 360 px; 0 `/api/narrate`; ninguna fila
 del CSV en la red ni en el export).
-**Medido:** `pnpm test` 1068+ verdes (motor del Protocolo 96 % líneas / 87 % ramas) · Lighthouse local (CI mirror): `/protocolo`
-script 272,019 B (S8: 251,726; +20.3 KB; presupuesto 307,200; corte 290 KB = 296,960 → bajo la línea, sin `next/dynamic`), total
-369,459 B, LCP 3011 ms (< 3500), TBT 0; `/` 241,685 B; categorías ≥ 0.9 y margen ✓ · capturas `scripts/capturas-s9.mjs`: 56 encuadres
-(14 vistas × 360/1280 × claro/oscuro), 56 interacciones con efecto, 0 fallas de desborde; LEÍ 39 de 56 (cada una de las 14 vistas
-en un ancho y un tema; 13 de 14 en los dos temas); hallazgos de la lectura ya pagados: plurales «1 marcadas», marcador del
-`<summary>`, ayuda de procedencia contradictoria, título largo cortado por el borde, procedencia de 200 caracteres en un campo de una
-línea. **Deuda (medio, lote del hito):** radios sin marcar se ven como círculo blanco relleno en tema oscuro porque la app no declara
-`color-scheme: dark` (`src/app/globals.css:22`; heredado de S8; no se tocó por tocar a Probeta).
-**Falta:** (1) resultado de `CI=1 pnpm exec playwright test` completo (corrida en curso; hubo fallos rápidos en desktop mientras corrían
-otras tareas pesadas: repetir limpia y SIN flaky) · (2) Lighthouse otra vez tras los últimos cambios · (3) commit del foco del bloque,
-`olvidarApuesta` y sus pruebas · luego mensaje de fin de F2 con `/model claude-haiku-5-5`.
+**Medido (F2, tras el último cambio):** `pnpm typecheck && pnpm lint && pnpm test` verdes: 81 archivos, 1079/1079 (motor del Protocolo
+96,05 % líneas / 86,7 % ramas) · e2e COMPLETO `playwright test` en modo CI (build + start, 2 proyectos, retries 2): **88 de 88, 0 fallos,
+0 flaky** (8,2 min, `--workers=3`, puerto 3300). Dos corridas previas en el 3000 murieron a mitad con `ERR_CONNECTION_REFUSED` sin que yo
+tocara nada (el 3000 lo comparten otras sesiones de esta máquina; 16 GB con ~100 MB libres): se aisló en otro puerto con una config
+temporal fuera del repo, y no es un defecto de la app. Aquella corrida sí destapó un flaky REAL del spec nuevo (recargar antes de que
+IndexedDB terminara de guardar la última entrada): arreglado esperando «Guardado» (commit `1c392ca`) y rehecho el 88/88 · Lighthouse
+local (espejo del job): `/protocolo` script 272,312 B (S8: 251,726; +20.6 KB; presupuesto 307,200; corte 290 KB = 296,960 → sin
+`next/dynamic`), total 369,757 B, LCP 2788 ms, TBT 4 ms, categorías 0.97/1/1/1; `/` 241,877 B; margen y categorías ✓ · capturas
+`scripts/capturas-s9.mjs`: 56 encuadres, 56 interacciones con efecto, 0 desbordes; LEÍ 39 de 56 (cada una de las 14 vistas en un
+ancho y un tema; 13 de 14 en los dos temas). Hallazgos de la lectura ya pagados: plurales («1 marcadas»), marcador del `<summary>`,
+ayuda de procedencia contradictoria, título largo cortado por el borde, procedencia de 200 caracteres en un campo de una línea.
+**Deuda (medio, lote del hito):** (D1) radios sin marcar se ven como círculo blanco relleno en tema oscuro: la app no declara
+`color-scheme: dark` (`src/app/globals.css:22`; heredado de S8; no se tocó por tocar a Probeta) · (D2) `hallazgos4` en frío ≈ 2,1 s a
+50 000×79 en el hilo principal (la pantalla pinta «Calculando…» antes; un Worker lo quitaría) · (D3) la apuesta editada a mano en el
+`.protocolo.json` no se detecta (declarado; prueba `LÍMITE DECLARADO`).
+**Falta (F3, Haiku 5.5 · `/model claude-haiku-5-5`):** manual (sección «Etapa 4», fila 009, líneas «construidas las etapas…» ~604 y ~805;
+límites: fuga univariada, apuesta fija en esta pestaña, la compuerta verifica coherencia no verdad, umbrales PSI = convención) · guía
+«Nuevo · S9» (prefijo `guia-ds:s9:`, J1/J5 reescritas) · auditoría Sonnet·high de una pasada (subagente, solo lectura) ·
+`/deploy-check` · cierre ≤ 40 líneas con `node scripts/horas-sprint.mjs` · cero-enlaces tras el último `git add` ·
+`gh pr list --state open` · push · PR normal · `gh pr checks` al final.
 **Luego F2 (Sonnet 5.5):** `Etapa4Form.tsx` (apuesta → revelación → inventario → bloque; nada que dependa de hallazgos se MONTA antes
 de fijar la apuesta; apuesta en `sessionStorage` atada a huella+evidencias 2–3; foco al título al revelar; `role="status"` único
 para cambios automáticos; `useReducer` + filas `memo`; orden por riesgo UNA vez), `CampoCasillas`, registrar en `ids.ts`
