@@ -4,7 +4,7 @@ opened: 2026-10-18 · closed: 2026-10-18 · pr: #25
 ---
 # Sprint 010 «Lo que ya se logra sin modelo» — cierre ejecutivo
 **Nombre:** S10 · etapa 5 del Protocolo DS (línea base sin modelo y regla de hoy); D1 y M1 del S9 pagados.
-**Objetivo planeado:** la etapa 5 abre con la 4 cumplida; referencias sin modelo en la moneda de la decisión; regla de hoy medida; compuerta con porqué. **Resultado:** cumplido, salvo un check rojo: Lighthouse de la CI, por peso. **Estado:** listo para merge cuando la CI confirme el presupuesto de 320 KB; los demás checks pasan en `ef85b7f`.
+**Objetivo planeado:** la etapa 5 abre con la 4 cumplida; referencias sin modelo en la moneda de la decisión; regla de hoy medida; compuerta con porqué. **Resultado:** cumplido, salvo un check rojo: Lighthouse de la CI, por peso. **Estado:** listo para merge cuando la CI confirme el presupuesto de 320 KB; los demás checks pasaron en el commit de código `ed77512`.
 **Tiempo:** estimado 3 h · real 1,7 h (script; no ve el trabajo previo al primer commit de cada fase; la sesión va de 10:24 al último commit, 11:47) · diferencia −1,3 h.
 **Horas (`horas-sprint.mjs`, al cerrar el código):**
 ```
