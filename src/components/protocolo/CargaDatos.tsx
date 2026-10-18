@@ -4,13 +4,14 @@
 // sí, en el cuaderno: al volver, el usuario lo carga de nuevo y la huella dice si es el mismo.
 // Si es otro, la app pregunta si es otra versión de los mismos datos o es otro proyecto (lo
 // que el código no puede saber se pregunta).
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ultimaCarga, type Cuaderno } from "@/engine/protocolo/cuaderno";
 import { useI18n } from "@/i18n/provider";
 import { huellaCorta } from "@/lib/protocolo/formato";
 import type { DatosCargados } from "@/lib/protocolo/useProtocolo";
 import { csvLimitParams, thousands } from "@/lib/quantity";
-import { Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { Confirmacion } from "./Confirmacion";
 
 export function CargaDatos({
   datos,
@@ -31,7 +32,13 @@ export function CargaDatos({
 }) {
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
+  // «Otro proyecto» reemplaza el cuaderno: pide un segundo sí antes de hacerlo (M3 del S8).
+  const [reemplazando, setReemplazando] = useState(false);
   const previa = ultimaCarga(cuaderno);
+  const descartar = () => {
+    setReemplazando(false);
+    onDescartar();
+  };
 
   return (
     <section aria-labelledby="datos-titulo" className="flex flex-col gap-3">
@@ -61,7 +68,11 @@ export function CargaDatos({
         {t("start.dropzone.hint", csvLimitParams())}
       </p>
       <div>
-        <Button icon="upload" onClick={() => inputRef.current?.click()}>
+        <Button
+          icon="upload"
+          data-boton="cargar"
+          onClick={() => inputRef.current?.click()}
+        >
           {datos ? t("protocol.data.replace") : t("protocol.data.button")}
         </Button>
         <input
@@ -81,31 +92,81 @@ export function CargaDatos({
       </div>
 
       {pendiente && (
-        <Card role="alertdialog" className="flex flex-col gap-3 p-4">
-          <p className="font-medium">{t("protocol.data.different.title")}</p>
-          <p className="text-sm text-ink-muted">
-            {t("protocol.data.different.body")}
-          </p>
-          <p className="font-mono text-xs">
-            {t("protocol.data.loaded", {
-              name: pendiente.carga.nombre,
-              rows: thousands(pendiente.carga.filas),
-              cols: pendiente.carga.columnas,
-              hash: huellaCorta(pendiente.carga.sha256),
-            })}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button icon="retry" onClick={onVersion}>
-              {t("protocol.data.different.version")}
-            </Button>
-            <Button variant="secondary" icon="plus" onClick={onOtro}>
-              {t("protocol.data.different.other")}
-            </Button>
-            <Button variant="ghost" icon="x" onClick={onDescartar}>
-              {t("protocol.data.different.cancel")}
-            </Button>
-          </div>
-        </Card>
+        <Confirmacion
+          // Cada paso es su propio diálogo: el foco vuelve a entrar y el nombre se relee.
+          key={reemplazando ? "reemplazo" : "eleccion"}
+          testId="protocolo-dialogo-datos"
+          titulo={t(
+            reemplazando
+              ? "protocol.data.different.replace-title"
+              : "protocol.data.different.title",
+          )}
+          onCancelar={reemplazando ? () => setReemplazando(false) : descartar}
+          devolverA={() =>
+            document.querySelector<HTMLElement>('[data-boton="cargar"]')
+          }
+          cuerpo={
+            reemplazando ? (
+              <p>
+                {t("protocol.data.different.replace-body", {
+                  n: cuaderno.evidencias.length,
+                })}
+              </p>
+            ) : (
+              <>
+                <p className="text-ink-muted">
+                  {t("protocol.data.different.body")}
+                </p>
+                <p className="font-mono text-xs">
+                  {t("protocol.data.loaded", {
+                    name: pendiente.carga.nombre,
+                    rows: thousands(pendiente.carga.filas),
+                    cols: pendiente.carga.columnas,
+                    hash: huellaCorta(pendiente.carga.sha256),
+                  })}
+                </p>
+              </>
+            )
+          }
+          acciones={
+            reemplazando ? (
+              <>
+                <Button icon="check" onClick={onOtro}>
+                  {t("protocol.data.different.replace-yes")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  icon="back"
+                  data-autofocus
+                  onClick={() => setReemplazando(false)}
+                >
+                  {t("protocol.data.different.back")}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button icon="retry" onClick={onVersion}>
+                  {t("protocol.data.different.version")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  icon="plus"
+                  onClick={() => setReemplazando(true)}
+                >
+                  {t("protocol.data.different.other")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  icon="x"
+                  data-autofocus
+                  onClick={descartar}
+                >
+                  {t("protocol.data.different.cancel")}
+                </Button>
+              </>
+            )
+          }
+        />
       )}
     </section>
   );

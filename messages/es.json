@@ -987,7 +987,11 @@
         "body": "Su huella es otra. ¿Es una versión nueva de los mismos datos, o es otro proyecto?",
         "version": "Otra versión de los mismos datos",
         "other": "Otro proyecto: cuaderno nuevo",
-        "cancel": "No cargarlo"
+        "cancel": "No cargarlo",
+        "replace-title": "¿Empezar un cuaderno nuevo con este archivo?",
+        "replace-body": "Esto reemplaza tu cuaderno actual ({n} entradas) en este navegador. Expórtalo antes si lo quieres conservar.",
+        "replace-yes": "Sí, empezar otro",
+        "back": "Volver"
       }
     },
     "stages": {
@@ -1277,6 +1281,13 @@
       "new-yes": "Sí, empezar otro",
       "new-no": "Cancelar",
       "imported": "Cuaderno importado. Carga el CSV con que se hizo para verificar las etapas que usan los datos.",
+      "import-confirm": {
+        "title": "¿Reemplazar tu cuaderno por el del archivo?",
+        "body": "Tu cuaderno actual tiene {now} entradas y el del archivo, {incoming}. Al reemplazarlo, el actual deja de estar en este navegador: expórtalo antes si lo quieres conservar.",
+        "export-first": "Exportar el actual primero",
+        "yes": "Sí, reemplazar",
+        "cancel": "Cancelar"
+      },
       "started": "Cuaderno nuevo.",
       "unreadable": "El cuaderno guardado en este navegador no se pudo leer; empezaste uno vacío. Si lo exportaste antes, impórtalo.",
       "yes": "Sí",

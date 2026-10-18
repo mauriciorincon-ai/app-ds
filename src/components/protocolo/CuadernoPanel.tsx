@@ -15,6 +15,7 @@ import { useI18n } from "@/i18n/provider";
 import { fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
 import { thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
+import { Confirmacion } from "./Confirmacion";
 
 function Entrada({
   evidencia,
@@ -91,20 +92,30 @@ function Entrada({
 export function CuadernoPanel({
   cuaderno,
   guardado,
+  importePendiente,
   onExportar,
   onImportar,
+  onConfirmarImporte,
+  onDescartarImporte,
   onNuevo,
 }: {
   cuaderno: Cuaderno;
   /** `null`: este navegador no guarda (memoria); `false`: escribiendo; `true`: guardado. */
   guardado: boolean | null;
+  /** Un cuaderno válido importado que espera confirmación para reemplazar el actual. */
+  importePendiente: Cuaderno | null;
   onExportar: () => { nombre: string; contenido: string };
   onImportar: (file: File) => void;
+  onConfirmarImporte: () => void;
+  onDescartarImporte: () => void;
   onNuevo: () => void;
 }) {
   const { locale, t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [confirmando, setConfirmando] = useState(false);
+  // Los botones que abren un diálogo a donde vuelve el foco al cerrarlo.
+  const boton = (id: string) => () =>
+    document.querySelector<HTMLElement>(`[data-boton="${id}"]`);
 
   function exportar() {
     const { nombre, contenido } = onExportar();
@@ -174,6 +185,7 @@ export function CuadernoPanel({
         <Button
           variant="secondary"
           icon="import"
+          data-boton="importar"
           onClick={() => inputRef.current?.click()}
         >
           {t("protocol.notebook.import")}
@@ -181,6 +193,7 @@ export function CuadernoPanel({
         <Button
           variant="ghost"
           icon="plus"
+          data-boton="nuevo"
           onClick={() => setConfirmando(true)}
         >
           {t("protocol.notebook.new")}
@@ -202,31 +215,69 @@ export function CuadernoPanel({
       </div>
 
       {confirmando && (
-        <div
-          role="alertdialog"
-          aria-label={t("protocol.notebook.new")}
-          className="flex flex-col gap-2 rounded-md border border-caution/40 p-3"
-        >
-          <p className="text-sm">{t("protocol.notebook.new-confirm")}</p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              icon="check"
-              onClick={() => {
-                setConfirmando(false);
-                onNuevo();
-              }}
-            >
-              {t("protocol.notebook.new-yes")}
-            </Button>
-            <Button
-              variant="ghost"
-              icon="x"
-              onClick={() => setConfirmando(false)}
-            >
-              {t("protocol.notebook.new-no")}
-            </Button>
-          </div>
-        </div>
+        <Confirmacion
+          testId="protocolo-dialogo-nuevo"
+          titulo={t("protocol.notebook.new")}
+          cuerpo={<p>{t("protocol.notebook.new-confirm")}</p>}
+          onCancelar={() => setConfirmando(false)}
+          devolverA={boton("nuevo")}
+          acciones={
+            <>
+              <Button
+                icon="check"
+                onClick={() => {
+                  setConfirmando(false);
+                  onNuevo();
+                }}
+              >
+                {t("protocol.notebook.new-yes")}
+              </Button>
+              <Button
+                variant="ghost"
+                icon="x"
+                data-autofocus
+                onClick={() => setConfirmando(false)}
+              >
+                {t("protocol.notebook.new-no")}
+              </Button>
+            </>
+          }
+        />
+      )}
+
+      {importePendiente && (
+        <Confirmacion
+          testId="protocolo-dialogo-importar"
+          titulo={t("protocol.notebook.import-confirm.title")}
+          cuerpo={
+            <p>
+              {t("protocol.notebook.import-confirm.body", {
+                now: cuaderno.evidencias.length,
+                incoming: importePendiente.evidencias.length,
+              })}
+            </p>
+          }
+          onCancelar={onDescartarImporte}
+          devolverA={boton("importar")}
+          acciones={
+            <>
+              <Button variant="secondary" icon="download" onClick={exportar}>
+                {t("protocol.notebook.import-confirm.export-first")}
+              </Button>
+              <Button icon="import" onClick={onConfirmarImporte}>
+                {t("protocol.notebook.import-confirm.yes")}
+              </Button>
+              <Button
+                variant="ghost"
+                icon="x"
+                data-autofocus
+                onClick={onDescartarImporte}
+              >
+                {t("protocol.notebook.import-confirm.cancel")}
+              </Button>
+            </>
+          }
+        />
       )}
     </section>
   );

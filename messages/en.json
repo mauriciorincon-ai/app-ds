@@ -987,7 +987,11 @@
         "body": "Its fingerprint is different. Is it a new version of the same data, or another project?",
         "version": "A new version of the same data",
         "other": "Another project: new notebook",
-        "cancel": "Don't load it"
+        "cancel": "Don't load it",
+        "replace-title": "Start a new notebook with this file?",
+        "replace-body": "This replaces your current notebook ({n} entries) in this browser. Export it first if you want to keep it.",
+        "replace-yes": "Yes, start another",
+        "back": "Back"
       }
     },
     "stages": {
@@ -1277,6 +1281,13 @@
       "new-yes": "Yes, start another",
       "new-no": "Cancel",
       "imported": "Notebook imported. Load the CSV it was made with to check the stages that use the data.",
+      "import-confirm": {
+        "title": "Replace your notebook with the one in the file?",
+        "body": "Your current notebook has {now} entries and the file's has {incoming}. Replacing it removes the current one from this browser: export it first if you want to keep it.",
+        "export-first": "Export the current one first",
+        "yes": "Yes, replace",
+        "cancel": "Cancel"
+      },
       "started": "New notebook.",
       "unreadable": "The notebook saved in this browser couldn't be read; you started an empty one. If you exported it before, import it.",
       "yes": "Yes",
