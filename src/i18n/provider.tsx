@@ -15,6 +15,11 @@ import {
   LOCALE_STORAGE_KEY,
   type Locale,
 } from "./config";
+import {
+  cargarIdioma,
+  estadoDeIdioma,
+  suscribirDiccionarios,
+} from "./dictionaries";
 import { translate, type TParams } from "./translate";
 
 export type { TParams };
@@ -51,7 +56,14 @@ function writeLocale(next: Locale): void {
 }
 
 type I18nContextValue = {
+  /** El idioma con que se pinta: el pedido cuando su diccionario ya llegó; si no, el español. */
   locale: Locale;
+  /** El idioma que la persona eligió. Va por delante de `locale` mientras su diccionario carga. */
+  requestedLocale: Locale;
+  /** El diccionario del idioma pedido está en camino. */
+  loading: boolean;
+  /** El diccionario del idioma pedido no pudo cargarse: la página sigue en español. */
+  failed: boolean;
   setLocale: (next: Locale) => void;
   t: (key: string, params?: TParams) => string;
 };
@@ -59,13 +71,33 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const locale = useSyncExternalStore(subscribe, readLocale, getServerLocale);
+  const requestedLocale = useSyncExternalStore(
+    subscribe,
+    readLocale,
+    getServerLocale,
+  );
+  // S11: solo el español va en el bundle de la página; el inglés llega con `import()`. Mientras
+  // no llega, se pinta en español (la página se prerenderiza así) y nunca una clave cruda.
+  const estado = useSyncExternalStore(
+    suscribirDiccionarios,
+    () => estadoDeIdioma(requestedLocale),
+    () => "lista" as const,
+  );
+  const locale = estado === "lista" ? requestedLocale : defaultLocale;
+
+  useEffect(() => {
+    void cargarIdioma(requestedLocale);
+  }, [requestedLocale]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const setLocale = useCallback((next: Locale) => writeLocale(next), []);
+  const setLocale = useCallback((next: Locale) => {
+    // Pedirlo otra vez tras un fallo reintenta la carga.
+    void cargarIdioma(next);
+    writeLocale(next);
+  }, []);
 
   const t = useCallback(
     (key: string, params?: TParams) => translate(locale, key, params),
@@ -73,8 +105,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<I18nContextValue>(
-    () => ({ locale, setLocale, t }),
-    [locale, setLocale, t],
+    () => ({
+      locale,
+      requestedLocale,
+      loading: estado === "cargando",
+      failed: estado === "fallo",
+      setLocale,
+      t,
+    }),
+    [locale, requestedLocale, estado, setLocale, t],
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

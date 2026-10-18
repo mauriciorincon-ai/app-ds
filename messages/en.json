@@ -6,7 +6,8 @@
   "language": {
     "label": "Language",
     "es": "Español",
-    "en": "English"
+    "en": "English",
+    "failed": "English could not be loaded. The page stays in Spanish; check your connection and press «English» again."
   },
   "common": {
     "loading": "Loading…",
