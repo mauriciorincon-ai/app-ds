@@ -12,6 +12,7 @@ import {
 } from "@/engine/protocolo/cuaderno";
 import { resumenEtapa4 } from "@/engine/protocolo/etapa4";
 import { ACTUAR, NO_ACTUAR, resumenEtapa5 } from "@/engine/protocolo/etapa5";
+import { resumenEtapa6, sellosDistintos } from "@/engine/protocolo/etapa6";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import { cifra, fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
@@ -184,6 +185,68 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
   );
 }
 
+/** La etapa 6: el esquema (y el sugerido con tu razón, si elegiste otro), los lados, el sello. */
+function ResumenEtapa6({
+  datos,
+  sellos,
+}: {
+  datos: DatosEtapa;
+  /** Pruebas distintas selladas en el cuaderno hasta esta evidencia, incluida. */
+  sellos: number;
+}) {
+  const { t } = useI18n();
+  const r = resumenEtapa6(datos);
+  const nombre = (e: string) => t(`protocol.stage.6.scheme.${e}`);
+  const n = (x: number | null) => thousands(x ?? 0);
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen6"
+    >
+      <li>
+        {r.sugerido !== "" && r.esquema !== r.sugerido
+          ? t("protocol.stage.6.summary.scheme-changed", {
+              esquema: nombre(r.esquema),
+              sugerido: nombre(r.sugerido),
+              razon: r.razon,
+            })
+          : t("protocol.stage.6.summary.scheme", {
+              esquema: nombre(r.esquema),
+            })}
+      </li>
+      {(r.unidades === "nuevas" || r.unidades === "conocidas") && (
+        <li>{t(`protocol.stage.6.summary.units-${r.unidades}`)}</li>
+      )}
+      <li>
+        {t("protocol.stage.6.summary.sizes", {
+          entrenamiento: n(r.entrenamiento),
+          prueba: n(r.prueba),
+          hueco: n(r.hueco),
+          fuera: n(r.fuera),
+        })}
+      </li>
+      {r.corte !== null && r.horizonte !== null && (
+        <li>
+          {t("protocol.stage.6.summary.cut", {
+            corte: r.corte,
+            h: r.horizonte,
+            unidad:
+              r.horizonteUnidad === "dias" || r.horizonteUnidad === "meses"
+                ? t(`protocol.stage.6.form.${r.horizonteUnidad}`)
+                : "",
+          })}
+        </li>
+      )}
+      {r.sello !== null && (
+        <li className="font-mono text-xs">
+          {t("protocol.stage.6.summary.seal", { sello: huellaCorta(r.sello) })}
+        </li>
+      )}
+      <li>{t("protocol.stage.6.summary.seals", { n: sellos })}</li>
+    </ul>
+  );
+}
+
 function Entrada({
   evidencia,
   cuaderno,
@@ -240,20 +303,33 @@ function Entrada({
       </p>
       {evidencia.etapa === 4 && <ResumenEtapa4 datos={evidencia.datos} />}
       {evidencia.etapa === 5 && <ResumenEtapa5 datos={evidencia.datos} />}
-      {evidencia.etapa !== 4 && evidencia.etapa !== 5 && filas.length > 0 && (
-        <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-          {filas.map(([clave, valor]) => (
-            <div key={clave} className="contents">
-              <dt className="min-w-0 text-ink-muted [overflow-wrap:anywhere]">
-                {t(clave)}
-              </dt>
-              <dd className="min-w-0 [overflow-wrap:anywhere]">
-                {leerValor(valor)}
-              </dd>
-            </div>
-          ))}
-        </dl>
+      {evidencia.etapa === 6 && (
+        <ResumenEtapa6
+          datos={evidencia.datos}
+          sellos={sellosDistintos(
+            cuaderno.evidencias
+              .filter((e) => e.etapa === 6 && e.seq <= evidencia.seq)
+              .map((e) => e.datos),
+          )}
+        />
       )}
+      {evidencia.etapa !== 4 &&
+        evidencia.etapa !== 5 &&
+        evidencia.etapa !== 6 &&
+        filas.length > 0 && (
+          <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+            {filas.map(([clave, valor]) => (
+              <div key={clave} className="contents">
+                <dt className="min-w-0 text-ink-muted [overflow-wrap:anywhere]">
+                  {t(clave)}
+                </dt>
+                <dd className="min-w-0 [overflow-wrap:anywhere]">
+                  {leerValor(valor)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
     </li>
   );
 }

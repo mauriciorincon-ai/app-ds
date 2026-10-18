@@ -79,6 +79,7 @@ export function ProtocoloApp() {
       />
       <Etapas
         evaluadas={p.evaluadas}
+        cuaderno={p.cuaderno}
         datos={p.datos}
         listo={p.listo}
         onRegistrar={p.registrarEtapa}

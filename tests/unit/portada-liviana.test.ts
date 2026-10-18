@@ -42,6 +42,11 @@ const LAZY = [
   "src/engine/protocolo/etapa4.ts",
   "src/engine/protocolo/deriva.ts",
   "src/engine/protocolo/duplicados.ts",
+  // S11: la etapa 6 (su pantalla, la partición y el SHA-256 síncrono del sello).
+  "src/components/protocolo/Etapa6Form.tsx",
+  "src/engine/protocolo/etapa6.ts",
+  "src/engine/protocolo/particion.ts",
+  "src/engine/protocolo/sha256.ts",
 ];
 
 function resolveSpec(from: string, spec: string): string | null {

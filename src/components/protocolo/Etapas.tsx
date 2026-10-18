@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CONTENIDO_ETAPAS } from "@/content/protocolo";
 import type { EstadoEtapa, EtapaEvaluada } from "@/engine/protocolo/compuerta";
+import type { Cuaderno } from "@/engine/protocolo/cuaderno";
 import type { DatosEtapa, EtapaId, Previas } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import type { DatosCargados } from "@/lib/protocolo/useProtocolo";
@@ -58,15 +59,28 @@ function evidenciaDe(estado: EstadoEtapa): DatosEtapa | null {
     : null;
 }
 
+/** Lo que una etapa registró antes en el cuaderno: todo, o lo anterior a la evidencia `hasta`. */
+function historiaDe(
+  cuaderno: Cuaderno | undefined,
+  etapa: EtapaId,
+  hasta?: number,
+): DatosEtapa[] {
+  return (cuaderno?.evidencias ?? [])
+    .filter((e) => e.etapa === etapa && (hasta === undefined || e.seq < hasta))
+    .map((e) => e.datos);
+}
+
 function Tarjeta({
   evaluada,
   evaluadas,
+  cuaderno,
   datos,
   listo,
   onRegistrar,
 }: {
   evaluada: EtapaEvaluada;
   evaluadas: readonly EtapaEvaluada[];
+  cuaderno?: Cuaderno;
   datos: DatosCargados | null;
   listo: boolean;
   onRegistrar: (etapa: EtapaId, datos: DatosEtapa) => RechazoRegistro | null;
@@ -189,6 +203,7 @@ function Tarjeta({
                 trampas={etapa.trampas(
                   estado.evidencia.datos,
                   previasDe(evaluadas, etapa.id),
+                  historiaDe(cuaderno, etapa.id, estado.evidencia.seq),
                 )}
               />
             )}
@@ -228,6 +243,7 @@ function Tarjeta({
                 datos={datos}
                 anterior={evidenciaDe(estado)}
                 previas={previasDe(evaluadas, etapa.id)}
+                historia={historiaDe(cuaderno, etapa.id)}
                 onRegistrar={(d) => {
                   const rechazo = onRegistrar(etapa.id, d);
                   if (!rechazo) {
@@ -250,11 +266,14 @@ function Tarjeta({
 
 export function Etapas({
   evaluadas,
+  cuaderno,
   datos,
   listo,
   onRegistrar,
 }: {
   evaluadas: readonly EtapaEvaluada[];
+  /** Para la historia de cada etapa (la 6 cuenta sus sellos). */
+  cuaderno?: Cuaderno;
   datos: DatosCargados | null;
   listo: boolean;
   onRegistrar: (etapa: EtapaId, datos: DatosEtapa) => RechazoRegistro | null;
@@ -271,6 +290,7 @@ export function Etapas({
             key={evaluada.etapa.id}
             evaluada={evaluada}
             evaluadas={evaluadas}
+            cuaderno={cuaderno}
             datos={datos}
             listo={listo}
             onRegistrar={onRegistrar}

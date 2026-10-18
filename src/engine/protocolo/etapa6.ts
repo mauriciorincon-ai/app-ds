@@ -558,19 +558,24 @@ export function resumenEtapa6(datos: DatosEtapa): ResumenEtapa6 {
   };
 }
 
-/** Vuelve a partir y a sellar la tabla cargada con esas mismas respuestas. */
+/**
+ * Vuelve a partir y a sellar la tabla cargada con esas mismas respuestas. Todo sale de la tabla,
+ * también el sello: nada de lo registrado se copia (la demo en rojo copia aquí el sello registrado y
+ * la prueba de forjado tiene que caer).
+ */
 function recalcular(
   datos: DatosEtapa,
   previas: Previas,
   tabla: CsvTable,
   huella: string | null = null,
 ): DatosEtapa {
-  return datosEtapa6(
+  const hoy = datosEtapa6(
     tabla,
     entradaDesdeRespuestas(datos.respuestas),
     previas,
     huella,
   );
+  return hoy;
 }
 
 export const ETAPA_6: EtapaConstruida = {
