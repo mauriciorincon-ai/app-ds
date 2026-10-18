@@ -8,6 +8,7 @@ import {
   profileColumn,
   type CsvTable,
 } from "@/lib/ds/csv";
+import { EDA_ID_RATIO_THRESHOLD } from "@/engine/eda";
 import { NUMERIC_COERCION_THRESHOLD, sanitizeTable } from "@/engine/sanitize";
 import {
   MULTICLASS_MAX_CLASSES,
@@ -221,4 +222,39 @@ export function vistaColumna(
     valores: crudos.map((c) => (isNullToken(c) ? null : c.trim())),
     fecha: profileColumn(nombre, crudos).looksLikeDate,
   };
+}
+
+/**
+ * Cuánto del rango de una columna entera cubren sus valores para llamarla «en secuencia».
+ * Un identificador numérico (1..N, o un autoincremental con huecos) llena casi todo su rango;
+ * una medida entera (ingreso, visitas) con tantos valores distintos como filas queda dispersa.
+ * Convención del Protocolo, no un teorema: el límite se declara en el manual.
+ */
+export const ID_NUMERICO_SECUENCIA_MIN = 0.9;
+
+/**
+ * S10 (M1 del S9): ¿es una columna numérica un identificador? Enteros, casi todos distintos
+ * (el mismo umbral que Probeta usa para el texto) Y en secuencia. Con «tantos valores distintos
+ * como filas» solo, ocho columnas de medida del kit de prueba (ingreso, monto, precio…) se
+ * marcarían como identificador: por eso se exige también la secuencia. Un id numérico al azar y
+ * disperso no se detecta (se declara). Devuelve la proporción de distintos, o null si no lo es.
+ */
+export function identificadorNumerico(
+  valores: readonly (number | null)[],
+): number | null {
+  const distintos = new Set<number>();
+  let minimo = Infinity;
+  let maximo = -Infinity;
+  for (const v of valores) {
+    if (v === null) continue;
+    if (!Number.isInteger(v)) return null;
+    distintos.add(v);
+    if (v < minimo) minimo = v;
+    if (v > maximo) maximo = v;
+  }
+  if (distintos.size === 0 || valores.length === 0) return null;
+  const proporcion = distintos.size / valores.length;
+  if (proporcion < EDA_ID_RATIO_THRESHOLD) return null;
+  const densidad = distintos.size / (maximo - minimo + 1);
+  return densidad >= ID_NUMERICO_SECUENCIA_MIN ? proporcion : null;
 }
