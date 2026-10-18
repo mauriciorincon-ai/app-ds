@@ -3,50 +3,31 @@ sprint: 008
 app: ds
 hito: H-2
 opened: 2026-10-17
-closed:
+closed: 2026-10-17
 branch: sprint-008/protocolo-esqueleto
-pr:
+pr: 23
 ---
-
-# Sprint 008 — cierre ejecutivo (BORRADOR: se completa al cierre)
-
-## PUNTO DE REANUDACIÓN (borrar al cerrar) — F3 a medio camino, tras `[F3]` parcial
-
-**Hecho y verificado en F3:** motor de las etapas 1–3 (`src/engine/protocolo/etapa{1,2,3}.ts`, `muestra.ts`,
-`fechas.ts`, `tabla.ts`, `valores.ts`), formularios (`src/components/protocolo/Etapa{1,2,3}Form.tsx`), textos
-`{es, en}`, kit (`renovaciones-mensuales.csv`), e2e `tests/e2e/protocolo.spec.ts` (12/12 ×3 pasadas), pasada de
-capturas `scripts/capturas-s8.mjs`, manual, guía v5 (bloque J), README del kit.
-**Falta, en este orden:** (1) `pnpm build` + `pnpm test:e2e` COMPLETO (CI=1, hay un server viejo en :3000: matarlo);
-(2) `/audita-sprint` de UNA pasada con un subagente Sonnet · high (4 casillas; críticos y altos se pagan aquí;
-medios y bajos van al cierre con `archivo:línea`); (3) casilla de frases caducadas en manual/README/guía/brochure
-(buscar «todavía no», «aún no», «por ahora», «próximamente»…); (4) `/deploy-check` (≤ 10 casillas);
-(5) `node scripts/horas-sprint.mjs` y pegar su salida; (6) completar este cierre (≤ 40 líneas, sin esta sección);
-(7) `git push -u origin sprint-008/protocolo-esqueleto`, `gh pr list --state open`, `gh pr create` (NORMAL, no
-borrador), `gh pr checks` AL FINAL (5 checks con conclusión propia, `un-pr-vivo` incluido); (8) decir al usuario el
-«Para mergear» con el comando de la ruleset (en el plan) y la lista de PRs abiertos (debe ser uno).
-**Reglas vivas:** Sonnet 5.5 requerido en F3 (relevo: 2 intentos o 20 min); Co-Authored-By de quien corra el commit;
-cero enlaces tras el último `git add`; evidencia DESPUÉS del hecho (regla 27); nada de worktrees.
-
-## Evidencia (anotada en cuanto se produce)
-
-- F1 `f1396c0`: `cmp` núcleo = planeadora, centinela presente; `pnpm test` 769/769 (64 archivos), líneas 94.49 %.
-- F2 `eae8099`: demo en rojo de la compuerta (`scripts/demo-rojo.sh`, exit 0): `compuerta.ts` `if (bloquea !== null)` →
-  `if (bloquea !== null && false)` → 4 de 14 en rojo, nombró «la etapa 2 no abre sin la 1»; restaurado, verde 14/14.
-  `.protocolo.json`: «[contrato .protocolo.json] detectó 20 de 20».
-- F3, tamaño de muestra: `protocolo-muestra.test.ts` 21/21 contra el ejemplo de Chagas de Riley (parte II, § 5.1:
-  622.31 · 667.41 · 220.85) y los vectores del paquete `pmsampsize` 1.1.3 (binaria 4.2–4.4; una cantidad 2.1–2.6).
-  El artículo redondea a mano y da 668; con las cifras exactas el criterio (ii) da 662, que es lo que da el paquete.
-  La investigación citaba el arXiv 2207.12892 como Riley (BMJ 2020): es Pate et al. (2023); el BMJ no se pudo abrir (403).
-- F3, carnadas de campo de las etapas: «[contrato 1 · 8 campos] detectó 8 de 8» y las demás (5/5, 4/4, 21/21, 9/9).
-- F3, `pnpm test` (con cobertura): 72 archivos, 912/912; `src/engine/protocolo` 94.47 % de líneas, ramas 88.27 %
-  (el umbral de `src/engine/**` cayó a 79.74 % de ramas con las etapas sin probar: lo atrapó el gate y se pagó con
-  carnadas por campo y por rama).
-- F3, e2e `protocolo.spec.ts`: 36 de 36 (6 pruebas × 2 dispositivos × 3 repeticiones) sobre el build de producción.
-  Hallazgos del e2e/capturas, todos pagados: columna inexistente al cargar otra versión de los datos (rompía el
-  render), «Guardado» dicho antes de que IndexedDB terminara (un estado armado desde una foto borraba el contador de
-  escrituras), nombre de columna de 110 caracteres que desbordaba el cuaderno a 360 px, umbral de ~1e-20 escrito
-  «0.00» y razón de 1e20 en quince ceros (ahora notación científica), un dato duplicado con otros decimales.
-- F3, pasada de capturas (`scripts/capturas-s8.mjs`, 360 y 1280 px, claro y oscuro, español): 56 encuadres,
-  40 interacciones activadas, 0 fallas (scrollWidth ≤ clientWidth en todos). LEÍDOS COMO IMAGEN: 11 de los 56
-  (360 claro: portada, etapas 1, 2 y 3, cuaderno, detenida, glosario, inglés, extremos de la etapa 1 y 2; 360 oscuro:
-  etapa 3 y extremo de la etapa 2; 1280 claro: etapa 2). Los 45 restantes se midieron, no se leyeron.
+# Sprint 008 «El esqueleto del Protocolo» — cierre ejecutivo
+**Objetivo:** adoptar el núcleo v2.3.0 y construir el contrato del Protocolo DS (compuerta sin salto, cuaderno atado a la huella SHA-256, persistencia, porqué y glosario `{es, en}`) con las etapas 1–3 funcionando y la 4–10 visibles y cerradas. **Resultado:** cumplido · **Estado:** listo para merge.
+**Tiempo:** estimado 8 h · real = salida del script (abajo) · diferencia −5 h: el script no cuenta lo previo al primer commit y son 6 commits; ninguna fase pasó del +50 %.
+### Horas del sprint (`scripts/horas-sprint.mjs`, rango `origin/main..HEAD`, heurística git-hours: huecos ≤ 2 h + 0,5 h por sesión)
+| Commits | Sesiones | Horas activas | Span (primer → último commit) |
+|---:|---:|---:|---|
+| 7 | 1 | 3,2 h | 2026-10-17 17:34 → 2026-10-17 20:13 (2,7 h) |
+| Fase | Commits | Horas activas |
+|---|---:|---:|
+| F1 | 1 | 0,5 h |
+| F2 | 1 | 0,5 h |
+| F3 | 5 | 2,1 h |
+**Fases (estimado → real):** F1 kit v2.3.0 1,5 → 0,5 h ✔ · F2 esqueleto (compuerta, cuaderno, archivo, ruta) 3 → 0,5 h ✔ · F3 etapas 1–3 + cierre 3,5 → 2,1 h ✔.
+**Entregables:** `CLAUDE.md` núcleo + kit (anexo, horas, cero-enlaces, `un-pr-vivo`, comandos) · `src/engine/protocolo/` (compuerta, cuaderno, etapas 1–3, Riley, fechas) · `/protocolo` · `.protocolo.json` · glosario 23 términos · CSV `renovaciones-mensuales` · ADR 020 · manual · guía v5 (bloque J).
+**No completado:** etapas 4–10 (por diseño: visibles y cerradas). FORMA y TEXTO «maquetadas, no vistas» → gate humano del hito (de 56 capturas, 11 leídas como imagen; el resto medido).
+**Desviaciones:** Lighthouse sigue en 3 corridas + mediana (núcleo: 1) · del `ci.yml` del kit solo el paso «Cero enlaces» · se copió `deploy-check.md` · 1 línea del export (`decisiones_registradas` 19→20) · etapa 1 pregunta la forma de la decisión · sin demo en rojo de `un-pr-vivo` (violaría la regla 18) · la puerta usa `Link prefetch={false}`, no `<a>` · `cero-enlaces.test.ts` lleva `@vitest-environment node` · ⭐⭐ Acto 2 del S7 sin recorrer · la investigación citaba mal a Riley (fórmulas de PMC6519266 y del paquete `pmsampsize`).
+**Decisiones:** ADR 020 · `zod/mini` en el cliente: el zod completo pesa 93 KB gz y `/protocolo` salía a 326 KB de script contra 307 KB de presupuesto; ahora 252 KB, LCP 2,9 s (3,5 s), categorías 0,95/1/1/1.
+**Pruebas (después del hecho):** unitarias 951/951 (74 archivos; motor del Protocolo 95,16 % líneas, 89,77 % ramas) · integración 101 (1 omitido: modo `EMIT` de fixtures, ya estaba) · e2e 84/84 con 0 flaky · Lighthouse de la CI en local verde · demo en rojo de la compuerta (`protocolo-compuerta`, 4 de 14 en rojo) y del recálculo (`protocolo-forjado`, nombró «una cifra cambiada…», verde 8/8). `un-pr-vivo` y «Cero enlaces» corren por primera vez en este PR: no hay histórico.
+**Auditoría (Sonnet · high, una pasada, independiente):** alcance completo salvo 2 desviaciones no declaradas (ya arriba) · **A1** `leerNumero` leía «1,500» como 1.5 — pagado · f11cc6e · **A2** un `.protocolo.json` editado a mano pasaba la etapa 2 — la compuerta recalcula contra la tabla — pagado · f11cc6e · seguridad/privacidad sin críticos ni altos · frases caducadas: 6 halladas, 4 pagadas (portada «diez etapas», README `sprints/`, manual ×2) y 2 al hito (`docs/BLUEPRINT.html:68`; brochure y export sin el Protocolo).
+**Deuda al lote del hito (M/B, `archivo:línea`):** M1 `muestra.ts:29`, `Etapa3Form.tsx:193` (R² supuesto y «una contra el resto» sin decirse en pantalla) · M2 `CargaDatos.tsx:84`, `CuadernoPanel.tsx:206` (`alertdialog` sin nombre ni foco; axe serio) · M3 `useProtocolo.ts:332,267` (importar y «otro proyecto» reemplazan el cuaderno sin confirmar) · M4 `almacen.ts:74` (dos pestañas: última escritura gana; sin reproducir) · M6 `etapa3.ts:227` (P declarado menor que el contado, sin aviso) · B1 `tabla.ts:52` (clase llamada `constructor`) · B2 `etapa1.ts:89,105` (suma de 1e308) · B3 `archivo.ts:101` (campo sin truncar) · B4 `etapa1.ts:42`, `etapa3.ts:72` (texto largo rechazado con mensaje equivocado) · B5 campos sin lector (`etapas.ts:60`, `muestra.ts:48`, `cuaderno.ts`) · B6 cardinalidad cableada (`archivo.ts:28`, `messages/es.json:1047`, `etapa1.ts:35`) · B7 `useProtocolo.ts:153-268` (`guardar` dentro de un updater) · B8 `Glosario.tsx:19` (32 px) · B9 `Etapa3Form.tsx:69,90` (el aviso sobrevive a «suficiente») · B10 `un-pr-vivo.yml` (el principal falla si se abre un complementario) · B11 `design-system.md` sin los patrones del Protocolo · B13 guía J6 y manual dicen «no trae tu CSV» pero el archivo lleva derivados (clases, medias, fechas).
+**Aprendizajes:** correr el Lighthouse de la CI en local antes del PR (el job estrena ruta) atrapó los 326 KB · un criterio que lee chequeos de la tabla se recalcula contra la tabla · `hover:opacity-90` + puntero dejado por un clic = flaky que el reintento de la CI esconde.
+**Recomendación y esfuerzo-beneficio:** S9 = etapa 4 (fuga) sobre este contrato, pagando antes M2 y M3 · esfuerzo-beneficio alto: el contrato ya se probó con tres etapas.
+**Modelo por fase:** F1 Sonnet 5.5 · F2 Opus 5.5 · F3 Sonnet 5.5 (los tres como se requería, sin desvío) · auditor Sonnet 5.5 · Haiku no se usó. **Relevos:** ninguno.
+**Para mergear:** squash y borrar la rama; después `/cierre-sprint ds`. Una vez, para exigir el nuevo check: `gh api repos/mauriciorincon-ai/app-ds/rulesets/18694785 | jq '{name,target,enforcement,conditions,bypass_actors,rules:(.rules|map(if .type=="required_status_checks" then .parameters.required_status_checks += [{"context":"un-pr-vivo"}] else . end))}' | gh api -X PUT repos/mauriciorincon-ai/app-ds/rulesets/18694785 --input -`
