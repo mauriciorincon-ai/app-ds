@@ -10,6 +10,7 @@
 //    No hay otra API: no se puede marcar cumplida una etapa sin su evidencia.
 //
 // Motor puro y determinista: el reloj llega como argumento.
+import type { CsvTable } from "@/lib/ds/csv";
 import { ultimaEvidencia, type Cuaderno, type Evidencia } from "./cuaderno";
 import type {
   DatosEtapa,
@@ -18,6 +19,7 @@ import type {
   EtapaId,
   Previas,
 } from "./etapas";
+import { mismoRegistro } from "./valores";
 
 export type MotivoReverificar =
   /** La etapa usa los datos y todavía no se cargó el archivo en esta sesión. */
@@ -25,7 +27,9 @@ export type MotivoReverificar =
   /** El archivo cargado no es el que verificó esta etapa (otra huella). */
   | "datos-distintos"
   /** Una etapa anterior se corrigió después de registrar esta. */
-  | "anterior-cambio";
+  | "anterior-cambio"
+  /** Lo registrado no es lo que dan los datos cargados con esas respuestas (cuaderno editado). */
+  | "no-cuadra";
 
 export type EstadoEtapa =
   /** La anterior no está cumplida: no se abre. */
@@ -71,12 +75,30 @@ function anteriorCambio(
   return false;
 }
 
+type Construida = Extract<DefinicionEtapa, { construida: true }>;
+
+/** ¿Lo registrado es lo que la tabla cargada da hoy para esas respuestas? */
+function cuadraConLaTabla(
+  etapa: Construida,
+  datos: DatosEtapa,
+  previas: Previas,
+  tabla: CsvTable,
+): boolean {
+  if (!etapa.recalcular) return true;
+  const hoy = etapa.recalcular(datos, previas, tabla);
+  return (
+    mismoRegistro(datos.respuestas, hoy.respuestas) &&
+    mismoRegistro(datos.chequeos, hoy.chequeos)
+  );
+}
+
 /** El estado de una etapa que la compuerta deja abrir (la anterior está cumplida). */
 function estadoAbrible(
-  etapa: Extract<DefinicionEtapa, { construida: true }>,
+  etapa: Construida,
   protocolo: DefinicionProtocolo,
   cuaderno: Cuaderno,
   huella: string | null,
+  tabla: CsvTable | null,
   previas: Previas,
 ): EstadoEtapa {
   const evidencia = ultimaEvidencia(cuaderno, etapa.id);
@@ -92,6 +114,12 @@ function estadoAbrible(
   const lectura = etapa.leer(evidencia.datos);
   if (!lectura.ok)
     return { tipo: "abierta", evidencia, faltan: [lectura.campo] };
+  if (etapa.recalcular) {
+    if (tabla === null)
+      return { tipo: "por-verificar", evidencia, motivo: "sin-datos" };
+    if (!cuadraConLaTabla(etapa, evidencia.datos, previas, tabla))
+      return { tipo: "por-verificar", evidencia, motivo: "no-cuadra" };
+  }
   const veredicto = etapa.criterio(evidencia.datos, previas);
   if (veredicto.tipo === "cumple") return { tipo: "cumplida", evidencia };
   if (veredicto.tipo === "detenida")
@@ -102,12 +130,14 @@ function estadoAbrible(
 /**
  * El estado de cada etapa, en orden. Solo la PRIMERA etapa que no está cumplida puede estar
  * abierta (o por verificar, o detenida); todas las que vienen después están cerradas por
- * ella, y las que no están construidas lo dicen.
+ * ella, y las que no están construidas lo dicen. `tabla` es la tabla cuya huella es `huella`:
+ * las etapas que calculan sobre ella (`recalcular`) se comparan contra lo que da hoy.
  */
 export function evaluar(
   protocolo: DefinicionProtocolo,
   cuaderno: Cuaderno,
   huella: string | null,
+  tabla: CsvTable | null = null,
 ): readonly EtapaEvaluada[] {
   const previas: Partial<Record<EtapaId, DatosEtapa>> = {};
   let bloquea: EtapaId | null = null;
@@ -118,7 +148,14 @@ export function evaluar(
     }
     if (bloquea !== null)
       return { etapa, estado: { tipo: "cerrada", bloquea } };
-    const estado = estadoAbrible(etapa, protocolo, cuaderno, huella, previas);
+    const estado = estadoAbrible(
+      etapa,
+      protocolo,
+      cuaderno,
+      huella,
+      tabla,
+      previas,
+    );
     if (estado.tipo === "cumplida") previas[etapa.id] = estado.evidencia.datos;
     else bloquea = etapa.id;
     return { etapa, estado };
@@ -166,9 +203,15 @@ export function registrar(
   cuaderno: Cuaderno,
   id: EtapaId,
   datos: DatosEtapa,
-  contexto: { readonly huella: string | null; readonly ahora: Date },
+  contexto: {
+    readonly huella: string | null;
+    readonly ahora: Date;
+    /** La tabla de esa huella: las etapas que calculan sobre ella la necesitan. */
+    readonly tabla?: CsvTable | null;
+  },
 ): ResultadoRegistro {
-  const evaluadas = evaluar(protocolo, cuaderno, contexto.huella);
+  const tabla = contexto.tabla ?? null;
+  const evaluadas = evaluar(protocolo, cuaderno, contexto.huella, tabla);
   const actual = evaluadas.find((e) => e.etapa.id === id);
   if (!actual)
     return { ok: false, rechazo: { tipo: "etapa-desconocida", etapa: id } };
@@ -180,7 +223,10 @@ export function registrar(
       ok: false,
       rechazo: { tipo: "etapa-cerrada", etapa: id, bloquea: estado.bloquea },
     };
-  if (etapa.dependeDeDatos && contexto.huella === null)
+  if (
+    etapa.dependeDeDatos &&
+    (contexto.huella === null || (etapa.recalcular && tabla === null))
+  )
     return { ok: false, rechazo: { tipo: "sin-datos", etapa: id } };
   const lectura = etapa.leer(datos);
   if (!lectura.ok)
@@ -197,6 +243,17 @@ export function registrar(
     previas[anterior.etapa.id] = anterior.estado.evidencia.datos;
     base[anterior.etapa.id] = anterior.estado.evidencia.seq;
   }
+  // Lo que la etapa trae calculado sobre la tabla tiene que ser lo que la tabla da: la compuerta
+  // no confía en los chequeos que le llegan, los vuelve a calcular.
+  if (
+    etapa.recalcular &&
+    tabla &&
+    !cuadraConLaTabla(etapa, datos, previas, tabla)
+  )
+    return {
+      ok: false,
+      rechazo: { tipo: "datos-invalidos", etapa: id, campo: "chequeos" },
+    };
   const veredicto = etapa.criterio(datos, previas);
   if (veredicto.tipo === "falta")
     return {

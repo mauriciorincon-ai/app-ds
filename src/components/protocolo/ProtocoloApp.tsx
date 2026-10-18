@@ -3,7 +3,7 @@
 // Protocolo DS (S8, VISION v2.0.0 § 8, ADR 020): el modo lento. Ruta propia (/protocolo),
 // fuera del chunk de la portada; sin worker, sin Pyodide y sin IA (regla dura 5).
 import Link from "next/link";
-import { ETAPA_IDS } from "@/engine/protocolo/ids";
+import { ETAPA_IDS, ETAPAS_ABIERTAS } from "@/engine/protocolo/ids";
 import { useI18n } from "@/i18n/provider";
 import { useProtocolo } from "@/lib/protocolo/useProtocolo";
 import { Icon } from "@/components/ui";
@@ -23,7 +23,10 @@ export function ProtocoloApp() {
           {t("protocol.title")}
         </h1>
         <p className="max-w-prose text-ink-muted">
-          {t("protocol.subtitle", { count: ETAPA_IDS.length })}
+          {t("protocol.subtitle", {
+            count: ETAPA_IDS.length,
+            ...ETAPAS_ABIERTAS,
+          })}
         </p>
         <p className="max-w-prose text-sm text-ink-muted">
           {t("protocol.privacy")}

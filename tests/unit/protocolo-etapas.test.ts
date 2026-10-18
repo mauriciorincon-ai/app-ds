@@ -4,7 +4,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { evaluar, registrar } from "@/engine/protocolo/compuerta";
-import { cuadernoVacio, type Cuaderno } from "@/engine/protocolo/cuaderno";
+import {
+  cuadernoVacio,
+  ultimaEvidencia,
+  type Cuaderno,
+} from "@/engine/protocolo/cuaderno";
 import { datosEtapa2, type EntradaEtapa2 } from "@/engine/protocolo/etapa2";
 import { chequeos1 } from "@/engine/protocolo/etapa1";
 import { chequeos3 } from "@/engine/protocolo/etapa3";
@@ -53,13 +57,40 @@ const NUMERICA = datos1({
 
 const HUELLA = "d".repeat(64);
 
+// La compuerta vuelve a calcular la etapa 2 contra la tabla cargada: cada prueba que registra o
+// evalúa esa etapa le pasa la tabla sobre la que se armó.
+const TABLAS = new WeakMap<DatosEtapa, CsvTable>();
+
+function etapa2(
+  t: CsvTable,
+  entrada: EntradaEtapa2,
+  etapa1: DatosEtapa,
+): DatosEtapa {
+  const datos = datosEtapa2(t, entrada, etapa1);
+  TABLAS.set(datos, t);
+  return datos;
+}
+
+function tablaDe(cuaderno: Cuaderno, datos?: DatosEtapa): CsvTable | null {
+  const e2 = ultimaEvidencia(cuaderno, 2)?.datos;
+  return (datos && TABLAS.get(datos)) || (e2 && TABLAS.get(e2)) || null;
+}
+
+function evaluarDS(cuaderno: Cuaderno, huella: string | null = HUELLA) {
+  return evaluar(PROTOCOLO_DS, cuaderno, huella, tablaDe(cuaderno));
+}
+
 function paso(
   cuaderno: Cuaderno,
   id: EtapaId,
   datos: DatosEtapa,
   huella: string | null = HUELLA,
 ) {
-  return registrar(PROTOCOLO_DS, cuaderno, id, datos, { huella, ahora: AHORA });
+  return registrar(PROTOCOLO_DS, cuaderno, id, datos, {
+    huella,
+    tabla: tablaDe(cuaderno, datos),
+    ahora: AHORA,
+  });
 }
 
 function cumplir(cuaderno: Cuaderno, id: EtapaId, datos: DatosEtapa): Cuaderno {
@@ -149,7 +180,7 @@ describe("etapa 1 · la decisión y lo que cuesta equivocarse", () => {
 
 describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensuales.csv)", () => {
   const t = tabla("renovaciones-mensuales.csv");
-  const e2 = datosEtapa2(t, ENTRADA_RENOVACIONES, BINARIA);
+  const e2 = etapa2(t, ENTRADA_RENOVACIONES, BINARIA);
   const c = e2.chequeos;
 
   it("cuenta filas, vacíos, tasa base y unidades en los datos", () => {
@@ -179,9 +210,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
 
   it("cumple con la etapa 1 cumplida y la deja registrada con la huella", () => {
     const cuaderno = cumplir(cumplir(cuadernoVacio(AHORA), 1, BINARIA), 2, e2);
-    const estados = evaluar(PROTOCOLO_DS, cuaderno, HUELLA).map(
-      (e) => e.estado.tipo,
-    );
+    const estados = evaluarDS(cuaderno).map((e) => e.estado.tipo);
     expect(estados.slice(0, 3)).toEqual(["cumplida", "cumplida", "abierta"]);
     expect(cuaderno.evidencias[1]).toMatchObject({
       etapa: 2,
@@ -191,7 +220,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
   });
 
   it("un objetivo de otra forma que la decisión no cumple, nombrando la tarea", () => {
-    const e = datosEtapa2(
+    const e = etapa2(
       t,
       { ...ENTRADA_RENOVACIONES, objetivo: "plan", positivo: "" },
       BINARIA,
@@ -205,7 +234,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
   });
 
   it("dos clases: el valor «hay que actuar» debe ser uno de los dos que hay", () => {
-    const e = datosEtapa2(
+    const e = etapa2(
       t,
       { ...ENTRADA_RENOVACIONES, positivo: "quizá" },
       BINARIA,
@@ -215,7 +244,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
   });
 
   it("una columna de fecha que no se lee no cumple; el momento escrito sí", () => {
-    const mala = datosEtapa2(
+    const mala = etapa2(
       t,
       { ...ENTRADA_RENOVACIONES, momentoColumna: "plan" },
       BINARIA,
@@ -224,7 +253,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
     const base = cumplir(cuadernoVacio(AHORA), 1, BINARIA);
     const r = paso(base, 2, mala);
     expect(!r.ok && r.rechazo).toMatchObject({ faltan: ["fecha"] });
-    const escrita = datosEtapa2(
+    const escrita = etapa2(
       t,
       {
         ...ENTRADA_RENOVACIONES,
@@ -239,7 +268,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
   it("otra versión de los datos sin las columnas elegidas no rompe: esas columnas cuentan como vacías y la etapa no cumple", () => {
     // Hallazgo del e2e: cargar otro archivo dejaba al formulario apuntando a columnas que no existen.
     const otra = tabla("planes-suscripcion.csv");
-    const e = datosEtapa2(otra, ENTRADA_RENOVACIONES, BINARIA);
+    const e = etapa2(otra, ENTRADA_RENOVACIONES, BINARIA);
     expect(e.chequeos.tarea_detectada).toBe("sin-objetivo");
     expect(e.chequeos.unidad_vacios).toBe(otra.rows.length);
     expect(e.chequeos.fecha_estado).toBe("ninguna");
@@ -248,26 +277,16 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
   });
 
   it("sin columna objetivo el Protocolo se detiene y lleva a agrupar (G-Plan 3a)", () => {
-    const sin = datosEtapa2(
-      t,
-      { ...ENTRADA_RENOVACIONES, objetivo: null },
-      BINARIA,
-    );
+    const sin = etapa2(t, { ...ENTRADA_RENOVACIONES, objetivo: null }, BINARIA);
     expect(sin.chequeos).toEqual({});
     const cuaderno = cumplir(cumplir(cuadernoVacio(AHORA), 1, BINARIA), 2, sin);
-    const e2Estado = evaluar(PROTOCOLO_DS, cuaderno, HUELLA)[1]!.estado;
+    const e2Estado = evaluarDS(cuaderno)[1]!.estado;
     expect(e2Estado).toMatchObject({ tipo: "detenida", razon: "sin-objetivo" });
-    expect(evaluar(PROTOCOLO_DS, cuaderno, HUELLA)[2]!.estado.tipo).toBe(
-      "cerrada",
-    );
+    expect(evaluarDS(cuaderno)[2]!.estado.tipo).toBe("cerrada");
   });
 
   it("el cuaderno no tiene un camino de salto: la etapa 3 no abre con la 2 detenida", () => {
-    const sin = datosEtapa2(
-      t,
-      { ...ENTRADA_RENOVACIONES, objetivo: null },
-      BINARIA,
-    );
+    const sin = etapa2(t, { ...ENTRADA_RENOVACIONES, objetivo: null }, BINARIA);
     const cuaderno = cumplir(cumplir(cuadernoVacio(AHORA), 1, BINARIA), 2, sin);
     const r = paso(cuaderno, 3, { respuestas: {}, chequeos: {} });
     expect(!r.ok && r.rechazo).toMatchObject({
@@ -279,7 +298,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
 
   it("varias clases: las clases de los datos sin costo en la etapa 1 se nombran", () => {
     const planes = tabla("planes-suscripcion.csv");
-    const completa = datosEtapa2(
+    const completa = etapa2(
       planes,
       {
         ...ENTRADA_RENOVACIONES,
@@ -303,7 +322,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
       opciones: OPCIONES.slice(0, 4),
       costos: { basico: 5, estandar: 10, premium: 40, empresa: 80 },
     });
-    const incompleta = datosEtapa2(
+    const incompleta = etapa2(
       planes,
       {
         ...ENTRADA_RENOVACIONES,
@@ -322,7 +341,7 @@ describe("etapa 2 · el objetivo y la unidad, con su momento (renovaciones-mensu
 
   it("estimar: una columna numérica con muchos valores sirve; el costo de la constante sale del cuantil", () => {
     const energia = tabla("consumo-energia.csv");
-    const e = datosEtapa2(
+    const e = etapa2(
       energia,
       {
         ...ENTRADA_RENOVACIONES,
@@ -409,7 +428,7 @@ describe("fechas: nunca se adivina el orden", () => {
 
 describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
   const t = tabla("renovaciones-mensuales.csv");
-  const e2 = datosEtapa2(t, ENTRADA_RENOVACIONES, BINARIA);
+  const e2 = etapa2(t, ENTRADA_RENOVACIONES, BINARIA);
   const base = cumplir(cumplir(cuadernoVacio(AHORA), 1, BINARIA), 2, e2);
   const previa = previas([1, BINARIA], [2, e2]);
 
@@ -451,9 +470,7 @@ describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
     const d = datos3({ parametros: 3 });
     expect(d.chequeos.suficiente).toBe(true);
     const cuaderno = cumplir(base, 3, d);
-    const estados = evaluar(PROTOCOLO_DS, cuaderno, HUELLA).map(
-      (e) => e.estado.tipo,
-    );
+    const estados = evaluarDS(cuaderno).map((e) => e.estado.tipo);
     expect(estados.slice(0, 4)).toEqual([
       "cumplida",
       "cumplida",
@@ -482,18 +499,20 @@ describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
 
   it("«explicar una causa» detiene el Protocolo con su razón, y se puede reformular", () => {
     const cuaderno = cumplir(base, 3, datos3({ proposito: "explicar" }));
-    expect(evaluar(PROTOCOLO_DS, cuaderno, HUELLA)[2]!.estado).toMatchObject({
+    expect(evaluarDS(cuaderno)[2]!.estado).toMatchObject({
       tipo: "detenida",
       razon: "causal",
     });
     const reformulado = cumplir(cuaderno, 3, datos3({ proposito: "predecir" }));
-    expect(evaluar(PROTOCOLO_DS, reformulado, HUELLA)[2]!.estado.tipo).toBe(
-      "cumplida",
-    );
+    expect(evaluarDS(reformulado)[2]!.estado.tipo).toBe("cumplida");
   });
 
   it("la ficha incompleta nombra lo que falta", () => {
-    const r = paso(base, 3, datos3({ poblacion: " ", exclusiones: "", parametros: null }));
+    const r = paso(
+      base,
+      3,
+      datos3({ poblacion: " ", exclusiones: "", parametros: null }),
+    );
     expect(!r.ok && r.rechazo).toMatchObject({
       tipo: "criterio-no-cumplido",
       faltan: ["poblacion", "exclusiones", "parametros"],
@@ -501,7 +520,7 @@ describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
   });
 
   it("con la fecha leída en la etapa 2 no se pide el periodo; sin ella, sí", () => {
-    const sinFecha = datosEtapa2(
+    const sinFecha = etapa2(
       t,
       {
         ...ENTRADA_RENOVACIONES,
@@ -537,7 +556,7 @@ describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
 
   it("estimar pide el R² anticipado y usa los cuatro criterios", () => {
     const energia = tabla("consumo-energia.csv");
-    const e2n = datosEtapa2(
+    const e2n = etapa2(
       energia,
       {
         ...ENTRADA_RENOVACIONES,
@@ -570,8 +589,13 @@ describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
     // 200 filas no alcanzan: la desviación residual pide 234 + P. Sin aviso, no cumple.
     expect(chequeos.suficiente).toBe(false);
     expect(chequeos.manda).toBe("varianza");
-    const sinAviso = paso(b, 3, { respuestas: con, chequeos: chequeos as DatosEtapa["chequeos"] });
-    expect(!sinAviso.ok && sinAviso.rechazo).toMatchObject({ faltan: ["muestra"] });
+    const sinAviso = paso(b, 3, {
+      respuestas: con,
+      chequeos: chequeos as DatosEtapa["chequeos"],
+    });
+    expect(!sinAviso.ok && sinAviso.rechazo).toMatchObject({
+      faltan: ["muestra"],
+    });
     const m = muestraCantidad({
       parametros: 6,
       r2: 0.3,
@@ -591,7 +615,7 @@ describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
 
   it("varias clases: uno contra el resto, con la clase que manda", () => {
     const planes = tabla("planes-suscripcion.csv");
-    const e2m = datosEtapa2(
+    const e2m = etapa2(
       planes,
       {
         ...ENTRADA_RENOVACIONES,
@@ -623,7 +647,7 @@ describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
   it("si cambia la etapa 2, la 3 vuelve a verificarse (se construyó sobre la anterior)", () => {
     const cuaderno = cumplir(base, 3, datos3({ parametros: 3 }));
     const corregido = cumplir(cuaderno, 2, e2);
-    expect(evaluar(PROTOCOLO_DS, corregido, HUELLA)[2]!.estado).toMatchObject({
+    expect(evaluarDS(corregido)[2]!.estado).toMatchObject({
       tipo: "por-verificar",
       motivo: "anterior-cambio",
     });

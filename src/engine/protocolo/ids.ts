@@ -6,6 +6,16 @@
 export const ETAPA_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 export type EtapaId = (typeof ETAPA_IDS)[number];
 
+/** Las etapas que abren hoy, seguidas desde la 1 (la compuerta no deja huecos). La portada y el
+ *  encabezado lo dicen con estas cifras; `tests/unit/protocolo-contenido.test.ts` fija que
+ *  coincide con las etapas construidas de `PROTOCOLO_DS`. */
+export const ETAPAS_CONSTRUIDAS = [1, 2, 3] as const;
+/** Los parámetros `{from}` y `{to}` de los textos que lo dicen. */
+export const ETAPAS_ABIERTAS = {
+  from: ETAPAS_CONSTRUIDAS[0],
+  to: ETAPAS_CONSTRUIDAS[ETAPAS_CONSTRUIDAS.length - 1]!,
+} as const;
+
 /** Los términos que las compuertas enlazan; cada uno tiene su entrada en
  *  src/content/glosario.ts (la paridad la exige el tipo y tests/unit/protocolo-contenido). */
 export const TERMINO_IDS = [

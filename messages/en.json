@@ -101,7 +101,7 @@
     },
     "protocol": {
       "title": "Prefer the slow path?",
-      "desc": "Protocolo DS takes you through {count} gated stages with your own data: you don't move on to the next one until the previous one is met.",
+      "desc": "Protocolo DS is the path of {count} gated stages with your own data: you don't move on to the next one until the previous one is met. Today, stages {from} to {to} open.",
       "link": "Open Protocolo DS"
     }
   },
@@ -966,7 +966,7 @@
   },
   "protocol": {
     "title": "Protocolo DS",
-    "subtitle": "The slow path: {count} gated stages. Each one asks you for a task with your data and opens the next only once you meet its criterion. There is no skip button.",
+    "subtitle": "The slow path: {count} gated stages, of which stages {from} to {to} open today. Each one asks you for a task with your data and opens the next only once you meet its criterion. There is no skip button.",
     "privacy": "Your data never leaves your browser. The notebook is kept in this browser; the CSV isn't: when you come back you load it again and its fingerprint tells whether it's the same one.",
     "back": "Back to Probeta",
     "loading": "Opening your notebook…",
@@ -1008,7 +1008,8 @@
       "reverify": {
         "sin-datos": "It uses your data: load it again to check this stage.",
         "datos-distintos": "The loaded data isn't the data it was checked with: check it again.",
-        "anterior-cambio": "You corrected an earlier stage: check this one again."
+        "anterior-cambio": "You corrected an earlier stage: check this one again.",
+        "no-cuadra": "What's recorded doesn't match what your data give for those answers (was the file edited?): record it again."
       },
       "rejected": {
         "etapa-cerrada": "Stage {n} doesn't open without stage {m}.",
@@ -1296,7 +1297,8 @@
       "attribution": "The «read more» links go to Google's machine learning glossary, published under a CC BY 4.0 license."
     },
     "form": {
-      "submit": "Record stage {n}"
+      "submit": "Record stage {n}",
+      "number-unreadable": "This doesn't read as a number. Use digits with a decimal point or comma and no thousands separator (for example 1500 or 1500.5)."
     },
     "criterion": {
       "contraccion": "keeping the model from overfitting",

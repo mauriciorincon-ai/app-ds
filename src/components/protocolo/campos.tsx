@@ -4,6 +4,7 @@
 // (design-system.md) y sin dependencias nuevas. Cada campo lleva su etiqueta enlazada, su ayuda
 // descrita por `aria-describedby` y 44 px de alto táctil.
 import { useId, type ReactNode } from "react";
+import { useI18n } from "@/i18n/provider";
 
 const BASE =
   "min-h-11 w-full rounded-md border border-hairline bg-surface px-3 py-2 text-sm text-ink";
@@ -47,19 +48,37 @@ export function CampoTexto({
   onCambio: (valor: string) => void;
   numerico?: boolean;
 }) {
+  const { t } = useI18n();
+  // Un número que no se lee (p. ej. «1,500», que no se sabe si es uno y medio o mil quinientos)
+  // se dice en el campo: callar lo contaría como cero y la compuerta lo rechazaría sin razón.
+  const ilegible =
+    numerico && valor.trim() !== "" && leerNumero(valor) === null;
   return (
     <Campo etiqueta={etiqueta} ayuda={ayuda}>
       {({ id, describedBy }) => (
-        <input
-          id={id}
-          type="text"
-          inputMode={numerico ? "decimal" : undefined}
-          autoComplete="off"
-          aria-describedby={describedBy}
-          value={valor}
-          onChange={(event) => onCambio(event.target.value)}
-          className={BASE}
-        />
+        <>
+          <input
+            id={id}
+            type="text"
+            inputMode={numerico ? "decimal" : undefined}
+            autoComplete="off"
+            aria-describedby={
+              [describedBy, ilegible ? `${id}-ilegible` : undefined]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
+            aria-invalid={ilegible || undefined}
+            value={valor}
+            onChange={(event) => onCambio(event.target.value)}
+            className={BASE}
+          />
+          {ilegible && (
+            <p id={`${id}-ilegible`} className="text-xs text-ink">
+              <span aria-hidden="true">⚠ </span>
+              {t("protocol.form.number-unreadable")}
+            </p>
+          )}
+        </>
       )}
     </Campo>
   );
@@ -169,9 +188,15 @@ export function CampoOpciones<T extends string>({
   );
 }
 
-/** Lo que el usuario escribe como número: acepta coma o punto decimal, nada más. */
+/** «1,500» o «1.500»: ¿uno y medio o mil quinientos? No se adivina (un cero a la izquierda,
+ *  «0,500», sí es un decimal: un grupo de miles no empieza en cero). */
+const MILES_AMBIGUO = /^[+-]?[1-9]\d{0,2}([.,]\d{3})+$/;
+
+/** Lo que el usuario escribe como número: coma o punto decimal, sin separador de miles. */
 export function leerNumero(texto: string): number | null {
-  const limpio = texto.trim().replace(",", ".");
+  const crudo = texto.trim();
+  if (MILES_AMBIGUO.test(crudo)) return null;
+  const limpio = crudo.replace(",", ".");
   if (!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(limpio)) return null;
   const n = Number(limpio);
   return Number.isFinite(n) ? n : null;

@@ -568,8 +568,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      **«Por verificar»**.
 
 - **El cuaderno:** cada vez que cumples una etapa, el cuaderno anota **qué se verificó, cuándo, con qué
-  archivo y con qué números**. Solo crece: nada se borra. Se guarda **en este navegador** y, al volver,
-  sigue ahí. Lo ves al final de la página.
+  archivo y con qué números**. Solo crece: corregir una etapa añade una entrada y no borra la
+  anterior (importar otro cuaderno, o empezar uno nuevo, sí lo reemplaza). Se guarda **en este
+  navegador** y, al volver, sigue ahí. Lo ves al final de la página.
   - **Al volver:** cargas de nuevo tu CSV. Si es el mismo, la **huella coincide** y las etapas que usan
     los datos siguen cumplidas. Si es otro, la app **pregunta** si es **otra versión de los mismos
     datos** (las etapas que los usan vuelven a verificarse) o **otro proyecto** (cuaderno nuevo).
@@ -603,8 +604,12 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Las fechas se leen en ISO (2026-01-31) y como día/mes/año o mes/día/año con cuatro cifras de año;
     una fecha imposible (30 de febrero) queda como «sin leer», no se corrige.
   - Hay **un cuaderno por navegador**: para trabajar en paralelo, exporta uno y empieza otro.
-  - Un cuaderno modificado a mano **no gana nada**: lo registrado se vuelve a calcular y, si no cuadra,
-    la etapa no cumple.
+  - Un cuaderno modificado a mano **no gana nada**: con tus datos cargados, lo que la etapa 2 calculó
+    sobre ellos se vuelve a calcular, y si no coincide la etapa pasa a «por verificar» y la siguiente
+    no abre. Los criterios de las etapas 1 y 3 se calculan de tus respuestas y se recalculan siempre.
+  - Los números se escriben **sin separador de miles**, con punto o coma decimal (`1500` o `1500.5`).
+    `1,500` o `1.500` no se leen, porque no se sabe si son uno y medio o mil quinientos; el campo te
+    lo dice.
 
 ## Diccionario de términos
 
@@ -711,7 +716,7 @@ cuando una te frene.
 | **Unidad de análisis**    | Qué es una fila: un cliente, una visita, un mes de una tienda. Si la misma unidad aparece en varias filas, no se puede repartir al azar.       |
 | **Umbral**                | La probabilidad a partir de la cual actúas. Con tus costos sale una cifra concreta.                                                            |
 | **Tasa base**             | Con qué frecuencia ocurre el caso en tus datos, sin modelo.                                                                                    |
-| **Parámetros candidatos** | Cuántos números distintos puede aprender el modelo de tus columnas: uno por columna numérica y una menos que las categorías por cada de texto. |
+| **Parámetros candidatos** | Cuántos números distintos puede aprender el modelo de tus columnas: uno por columna numérica y una menos que las categorías por cada columna de texto. |
 
 ## Preguntas frecuentes
 

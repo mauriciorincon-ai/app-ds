@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ETAPA_IDS } from "@/engine/protocolo/ids";
+import { ETAPA_IDS, ETAPAS_ABIERTAS } from "@/engine/protocolo/ids";
 import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
@@ -148,7 +148,10 @@ export function StartScreen({
       <section className="flex flex-col gap-2 rounded-lg border border-hairline bg-surface p-4">
         <h2 className="font-medium">{t("start.protocol.title")}</h2>
         <p className="text-sm text-ink-muted">
-          {t("start.protocol.desc", { count: ETAPA_IDS.length })}
+          {t("start.protocol.desc", {
+            count: ETAPA_IDS.length,
+            ...ETAPAS_ABIERTAS,
+          })}
         </p>
         <Link
           href="/protocolo"

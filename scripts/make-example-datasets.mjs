@@ -321,7 +321,7 @@ function storesByCity(n = 120, seed = 1111) {
 // 11) Renovaciones mensuales — SOLO KIT (S8, Protocolo DS). El mismo cliente aparece en varias
 // filas (una por mes observado): es la unidad repetida que el Protocolo debe señalar, y la
 // partición al azar entre entrenar y probar la rompería. `mes_observado` es una fecha ISO
-// (el kit no tenía ninguna). `renovo` es la decisión (sí/no, ~25 % de sí).
+// (el kit no tenía ninguna). `renovo` es la decisión (sí/no, ~18 % de sí).
 function monthlyRenewals(clients = 100, seed = 1212) {
   const rng = mulberry32(seed);
   const rows = [];

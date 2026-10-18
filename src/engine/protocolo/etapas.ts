@@ -6,6 +6,7 @@
 //
 // El criterio se RECALCULA siempre desde lo registrado (nunca se guarda un «cumple»): un
 // cuaderno importado no puede declarar cumplida una etapa que no cumple.
+import type { CsvTable } from "@/lib/ds/csv";
 import type { EtapaId, TerminoId } from "./ids";
 
 export { ETAPA_IDS, TERMINO_IDS } from "./ids";
@@ -64,6 +65,13 @@ export type EtapaConstruida = Comun & {
   leer(datos: DatosEtapa): Lectura;
   /** El criterio de salida, recalculado desde lo registrado y las etapas previas. */
   criterio(datos: DatosEtapa, previas: Previas): Veredicto;
+  /**
+   * Solo las etapas cuyos chequeos salen de la TABLA cargada (y no de las respuestas): vuelve a
+   * armar lo que esa etapa registraría hoy con esas mismas respuestas. La compuerta lo compara
+   * con lo registrado, así que un cuaderno editado a mano —con la huella correcta pero
+   * chequeos inventados— no pasa. Una etapa que lo declara tiene que depender de los datos.
+   */
+  recalcular?(datos: DatosEtapa, previas: Previas, tabla: CsvTable): DatosEtapa;
   /** Lo que la etapa evitó, calculado en los datos del usuario («en tus datos…»). */
   trampas(datos: DatosEtapa, previas: Previas): readonly Trampa[];
 };

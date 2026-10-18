@@ -14,7 +14,12 @@ import type {
 import { CLAVES_1 } from "@/engine/protocolo/etapa1";
 import { CLAVES_2 } from "@/engine/protocolo/etapa2";
 import { CLAVES_3 } from "@/engine/protocolo/etapa3";
-import { ETAPA_IDS, TERMINO_IDS } from "@/engine/protocolo/ids";
+import {
+  ETAPA_IDS,
+  ETAPAS_ABIERTAS,
+  ETAPAS_CONSTRUIDAS,
+  TERMINO_IDS,
+} from "@/engine/protocolo/ids";
 import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
 import { translate } from "@/i18n/translate";
 import type { RechazoArchivo } from "@/lib/protocolo/archivo";
@@ -48,6 +53,7 @@ const MOTIVOS: MotivoReverificar[] = [
   "sin-datos",
   "datos-distintos",
   "anterior-cambio",
+  "no-cuadra",
 ];
 const RECHAZOS: RechazoRegistro["tipo"][] = [
   "etapa-desconocida",
@@ -65,6 +71,22 @@ const ARCHIVO: RechazoArchivo[] = [
 ];
 
 describe("contenido del Protocolo {es, en}", () => {
+  it("las etapas que la portada y el encabezado dicen que abren son las que PROTOCOLO_DS construye", () => {
+    const construidas = PROTOCOLO_DS.filter((e) => e.construida).map(
+      (e) => e.id,
+    );
+    expect([...ETAPAS_CONSTRUIDAS]).toEqual(construidas);
+    // seguidas desde la 1: el rango «de la {from} a la {to}» no esconde un hueco
+    expect(construidas).toEqual(
+      ETAPA_IDS.filter((id) => id <= ETAPAS_ABIERTAS.to),
+    );
+    for (const lang of ["es", "en"] as const)
+      for (const clave of ["start.protocol.desc", "protocol.subtitle"])
+        expect(
+          translate(lang, clave, { count: 10, ...ETAPAS_ABIERTAS }),
+        ).toMatch(new RegExp(`${ETAPAS_ABIERTAS.from}.*${ETAPAS_ABIERTAS.to}`));
+  });
+
   it("cada etapa tiene título y criterio en los dos idiomas; las construidas, tarea y porqué", () => {
     for (const id of ETAPA_IDS) {
       const c = CONTENIDO_ETAPAS[id];

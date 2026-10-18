@@ -46,9 +46,10 @@ pnpm dev              # copia los assets de Pyodide y arranca en http://localhos
 - [`docs/BLUEPRINT.html`](docs/BLUEPRINT.html): la infraestructura tal como está construida.
 - [`design-system.md`](design-system.md): la fuente de verdad visual.
 - [`decisions/`](decisions/): las decisiones de arquitectura (ADR).
-- [`sprints/`](sprints/): la bitácora, la auditoría y el resumen de cada sprint. La historia de la app
-  vive ahí y en el historial de git; el `CHANGELOG` del kit con que se estampó el repo no aplica a la
-  app y no se mantiene aquí.
+- [`sprints/`](sprints/): la historia de cada sprint. Del 1 al 7, su bitácora, auditoría y resumen;
+  desde el 8, un solo cierre ejecutivo (`SPRINT_NNN-cierre.md`) que los reemplaza. La historia de la
+  app vive ahí y en el historial de git; el `CHANGELOG` del kit con que se estampó el repo no aplica
+  a la app y no se mantiene aquí.
 
 ## English
 
@@ -92,6 +93,7 @@ pnpm dev              # copies the Pyodide assets and starts on http://localhost
 - [`docs/BLUEPRINT.html`](docs/BLUEPRINT.html): the infrastructure as built.
 - [`design-system.md`](design-system.md): the visual source of truth.
 - [`decisions/`](decisions/): architecture decision records (ADRs).
-- [`sprints/`](sprints/): each sprint's log, audit and summary. The app's history lives there and in
-  the git log; the `CHANGELOG` of the kit this repo was stamped from does not apply to the app and is
-  not kept here.
+- [`sprints/`](sprints/): each sprint's history. Sprints 1 to 7 keep a log, an audit and a summary;
+  from sprint 8 on, a single executive close (`SPRINT_NNN-cierre.md`) replaces them. The app's history
+  lives there and in the git log; the `CHANGELOG` of the kit this repo was stamped from does not apply
+  to the app and is not kept here.

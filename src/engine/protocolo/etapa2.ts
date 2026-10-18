@@ -37,6 +37,7 @@ import {
   positivo,
   texto,
   textoLleno,
+  type Registro,
 } from "./valores";
 
 const RESPUESTAS = [
@@ -222,6 +223,30 @@ export function datosEtapa2(
     });
   }
   return { respuestas, chequeos };
+}
+
+/** Lo que se respondió en el formulario, leído de lo registrado (el inverso de `datosEtapa2`). */
+export function entradaDesdeRespuestas(r: Registro): EntradaEtapa2 {
+  const orden = r.orden_fecha;
+  return {
+    objetivo: texto(r, "objetivo"),
+    positivo: texto(r, "positivo") ?? "",
+    unidadColumna: texto(r, "unidad_columna"),
+    momentoColumna: texto(r, "momento_columna"),
+    momentoTexto: texto(r, "momento_texto") ?? "",
+    ordenFecha: orden === "dia-mes" || orden === "mes-dia" ? orden : null,
+  };
+}
+
+/** Lo que esta etapa registraría hoy con esas respuestas sobre la tabla cargada. */
+function recalcular(
+  datos: DatosEtapa,
+  previas: Previas,
+  tabla: CsvTable,
+): DatosEtapa {
+  const etapa1 = previas[1];
+  if (!etapa1) return { respuestas: {}, chequeos: {} };
+  return datosEtapa2(tabla, entradaDesdeRespuestas(datos.respuestas), etapa1);
 }
 
 function leer(datos: DatosEtapa): Lectura {
@@ -429,6 +454,6 @@ export const ETAPA_2: EtapaConstruida = {
   ],
   leer,
   criterio,
+  recalcular,
   trampas,
 };
-

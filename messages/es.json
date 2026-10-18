@@ -101,7 +101,7 @@
     },
     "protocol": {
       "title": "¿Prefieres el camino lento?",
-      "desc": "Protocolo DS te lleva por {count} etapas con compuertas, con tus propios datos: no avanzas a la siguiente sin cumplir la anterior.",
+      "desc": "Protocolo DS es el camino de {count} etapas con compuertas, con tus propios datos: no avanzas a la siguiente sin cumplir la anterior. Hoy abren de la etapa {from} a la {to}.",
       "link": "Abrir el Protocolo DS"
     }
   },
@@ -966,7 +966,7 @@
   },
   "protocol": {
     "title": "Protocolo DS",
-    "subtitle": "El camino lento: {count} etapas con compuertas. Cada una te pide una tarea con tus datos y abre la siguiente solo cuando cumples su criterio. No hay botón para saltar.",
+    "subtitle": "El camino lento: {count} etapas con compuertas, de las que hoy abren de la {from} a la {to}. Cada una te pide una tarea con tus datos y abre la siguiente solo cuando cumples su criterio. No hay botón para saltar.",
     "privacy": "Tus datos no salen de tu navegador. El cuaderno se guarda en este navegador; el CSV no: al volver, lo cargas de nuevo y su huella dice si es el mismo.",
     "back": "Volver a Probeta",
     "loading": "Abriendo tu cuaderno…",
@@ -1008,7 +1008,8 @@
       "reverify": {
         "sin-datos": "Usa tus datos: cárgalos de nuevo para verificarla.",
         "datos-distintos": "Los datos cargados no son con los que se verificó: vuelve a verificarla.",
-        "anterior-cambio": "Corregiste una etapa anterior: vuelve a verificarla."
+        "anterior-cambio": "Corregiste una etapa anterior: vuelve a verificarla.",
+        "no-cuadra": "Lo registrado no coincide con lo que dan tus datos con esas respuestas (¿se editó el archivo?): vuelve a registrarla."
       },
       "rejected": {
         "etapa-cerrada": "La etapa {n} no abre sin la {m}.",
@@ -1296,7 +1297,8 @@
       "attribution": "Los enlaces «leer más» llevan al glosario de aprendizaje automático de Google, publicado con licencia CC BY 4.0."
     },
     "form": {
-      "submit": "Registrar la etapa {n}"
+      "submit": "Registrar la etapa {n}",
+      "number-unreadable": "No se lee como número. Escribe solo cifras con punto o coma decimal y sin separador de miles (por ejemplo 1500 o 1500.5)."
     },
     "criterion": {
       "contraccion": "que el modelo no se pase de ajustado",

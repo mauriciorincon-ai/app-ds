@@ -295,6 +295,7 @@ export function useProtocolo(
       const actual = estadoRef.current;
       const resultado = registrar(PROTOCOLO_DS, actual.cuaderno, etapa, datos, {
         huella: actual.datos?.carga.sha256 ?? null,
+        tabla: actual.datos?.tabla ?? null,
         ahora: reloj(),
       });
       if (!resultado.ok) {
@@ -375,6 +376,7 @@ export function useProtocolo(
         PROTOCOLO_DS,
         estado.cuaderno,
         estado.datos?.carga.sha256 ?? null,
+        estado.datos?.tabla ?? null,
       ),
     [estado.cuaderno, estado.datos],
   );
