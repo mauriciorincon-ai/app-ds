@@ -573,10 +573,24 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      columnas que tienen alguna alerta se responden **una por una**. Las que no tienen ninguna pueden
      marcarse **en bloque**, pero solo si declaras que se llenan antes de decidir: esa declaración queda
      en el cuaderno, y se puede deshacer.
-  7. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
+  7. **Etapa 5 · La línea base sin modelo y la regla de hoy.** Antes de abrir cualquier modelo, la app
+     te muestra **lo que ya se logra sin modelo**, en la moneda de tu decisión. Con **sí o no**: nunca
+     actuar y siempre actuar (la clase más frecuente queda marcada). Con **varias opciones**: decir siempre
+     la clase más frecuente y elegir siempre la opción fija más barata con tus costos. Con **una cantidad**:
+     estimar siempre la mediana, el promedio y, si tus costos son distintos, el cuantil de tus costos; y, si
+     la etapa 2 registró una unidad que se repite y leyó tus fechas, repetir el último valor de la misma
+     unidad. Cada fila dice el **costo por cada 100 decisiones** y la métrica estándar (exactitud balanceada
+     en las clasificaciones, error medio en una cantidad), y los aciertos de cada 100 cuando hay clases.
+     Después escribes **la regla que tu gente aplica hoy**: hasta dos condiciones (columna, operador y valor)
+     unidas por «y» u «o», o dices que **no hay regla**. Solo puedes usar las columnas que dejaste en
+     **«usar»** en la etapa 4. La app mide la regla en tus filas y la añade a la tabla como **«Tu regla de
+     hoy»**. Con sí o no, la salida es fija: si la regla se cumple, se actúa; si no, no. Con varias opciones o
+     una cantidad, eliges qué se hace en cada caso. Es una **referencia**, no un resultado: se mide sobre
+     todas tus filas, y la **etapa 7** la vuelve a medir sobre la prueba.
+  8. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
      «tu unidad se repite: 361 filas para 100 unidades», «con tus costos actúas desde 0.17, no
      desde 0.5».
-  8. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
+  9. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
      queda como una entrada nueva; las etapas que se construyeron sobre la anterior vuelven a
      **«Por verificar»**.
 
@@ -614,8 +628,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   navegador**: viven en el cuaderno de este navegador y en el archivo que tú bajas. A Sentry solo llega
   el número de la etapa y el resultado (registrada, cerrada…), nunca un valor.
 
-- **Limitaciones conocidas (Sprints 008 y 009):**
-  - Hoy están construidas las etapas 1, 2, 3 y 4; las demás se ven con su criterio pero **no abren**.
+- **Limitaciones conocidas (Sprints 008 a 010):**
+  - Hoy están construidas las etapas 1 a 5; las demás se ven con su criterio pero **no abren**.
   - El Protocolo cubre las tres tareas **con objetivo** (dos clases, varias o una cantidad); **sin
     objetivo** no aplica y se va a «agrupar» en Probeta.
   - El tamaño de muestra con **varias clases** es una **aproximación**: se calcula «una contra el
@@ -643,6 +657,21 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
       0,25) son una **convención**, no una prueba estadística; el D de Kolmogorov-Smirnov es solo
       informativo.
     - Con pocas filas por periodo, el cambio **no se mide** y la app lo dice: no inventa una cifra.
+    - Un identificador numérico se detecta solo si son enteros casi todos distintos **y en secuencia**
+      (1, 2, 3…, con pocos huecos). Un código numérico disperso al azar **no se detecta**: ciérralo tú
+      en el inventario («excluir»).
+
+  - **Etapa 5, límites (Sprint 010):**
+    - Es una **referencia**, no un resultado. Se mide sobre todas tus filas, no sobre la prueba: que tu
+      regla gane aquí no prueba nada sobre datos nuevos.
+    - Una celda vacía **no cumple** la condición, tampoco «distinto de» ni «no es»; la pantalla dice en
+      cuántas filas pasa.
+    - La app **no sabe** qué hace tu gente: que escribas una regla y la midas no prueba que la usen.
+    - Con una cantidad, el último valor por unidad usa la **mediana** para la primera fila de cada unidad y
+      para las filas sin unidad o sin fecha; la pantalla dice cuántas son.
+    - Lo que escribes en la regla, incluidos los valores que eliges de tu columna (como «informal»), queda en
+      tu cuaderno y en el archivo que bajas. No sale de tu navegador.
+    - Los números se escriben con punto decimal y sin separador de miles, igual que en las etapas 1 y 3.
 
 ## Diccionario de términos
 
@@ -836,3 +865,4 @@ cuando una te frene.
 | 007    | Clasificar en varias categorías (de 3 a 20 categorías, la liga en exactitud balanceada, matriz de confusión con ✓, fuga que nombra la columna y la categoría, `<columna>_predicho` y `_probabilidad`) y agrupar filas parecidas sin objetivo (cuatro agrupadores, ganador por consenso, lectura contra datos sin estructura y estabilidad, qué distingue a cada grupo, «fuera de todo grupo», la muestra del jerárquico, tus filas con su grupo, asignar filas nuevas) + dos ejemplos en el inicio, diccionario y preguntas de las dos. |
 | 008    | Protocolo DS, el camino lento (etapas 1 a 3 con compuertas que no se saltan, cuaderno que sobrevive a cerrar la pestaña y se exporta e importa, glosario consultable).                                                                                                                                                                                                                                                                                                                                                                  |
 | 009    | Protocolo DS, etapa 4 «¿existe al decidir?» (apuesta antes de revelar, lo que encontró la app: fuga por valores y por vacíos, identificadores, filas repetidas y cambio entre periodos; inventario por columna con procedencia, momento y estado; acción en bloque con declaración; confirmaciones al reemplazar el cuaderno).
+| 010    | Protocolo DS, etapa 5 «La línea base sin modelo y la regla de hoy» (lo que ya se logra sin modelo, en la moneda de tu decisión y con la métrica estándar, rotulado como referencia; la regla de hoy escrita con hasta dos condiciones y medida en tus filas; el resumen del cuaderno). Además: los radios se leen en tema oscuro, y un identificador numérico se detecta en la etapa 4.)
