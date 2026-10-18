@@ -40,6 +40,7 @@ import {
   leerCuaderno,
   type RechazoArchivo,
 } from "@/lib/protocolo/archivo";
+import { olvidarApuesta } from "@/lib/protocolo/apuesta";
 import { csvLimitParams } from "@/lib/quantity";
 import { sha256Hex } from "@/lib/sha256";
 
@@ -274,6 +275,7 @@ export function useProtocolo(
     setEstado((p) => {
       if (!p.pendiente) return p;
       const cuaderno = agregarCarga(cuadernoVacio(reloj()), p.pendiente.carga);
+      olvidarApuesta();
       guardar(cuaderno);
       return {
         ...p,
@@ -365,6 +367,7 @@ export function useProtocolo(
         }));
         return;
       }
+      olvidarApuesta();
       guardar(lectura.cuaderno);
       setEstado((p) => ({
         ...p,
@@ -380,6 +383,7 @@ export function useProtocolo(
   const confirmarImporte = useCallback(() => {
     const entrante = estadoRef.current.importePendiente;
     if (!entrante) return;
+    olvidarApuesta();
     guardar(entrante);
     setEstado((p) => ({
       ...p,
@@ -398,6 +402,7 @@ export function useProtocolo(
     setEstado((p) => {
       const base = cuadernoVacio(reloj());
       const cuaderno = p.datos ? agregarCarga(base, p.datos.carga) : base;
+      olvidarApuesta();
       guardar(cuaderno);
       return { ...p, cuaderno, aviso: { clave: "protocol.notebook.started" } };
     });

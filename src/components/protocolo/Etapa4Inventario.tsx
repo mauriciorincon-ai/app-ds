@@ -279,6 +279,16 @@ function PanelBloque({
   const { t } = useI18n();
   const id = useId();
   const [declarado, setDeclarado] = useState(false);
+  // Marcar o deshacer cambia qué botones hay: el que tenía el foco desaparece, y el foco pasa al
+  // título del panel (que anuncia el cambio) en vez de perderse.
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+  const enfocar = useRef(false);
+  useEffect(() => {
+    if (enfocar.current) {
+      enfocar.current = false;
+      tituloRef.current?.focus();
+    }
+  });
   if (nombres.length === 0 && hechas === 0) return null;
   return (
     <section
@@ -286,7 +296,12 @@ function PanelBloque({
       className="flex flex-col gap-2 rounded-md border border-hairline bg-sunken p-3 text-sm"
       data-testid="protocolo-bloque"
     >
-      <h5 id={`${id}-titulo`} className="font-medium">
+      <h5
+        id={`${id}-titulo`}
+        ref={tituloRef}
+        tabIndex={-1}
+        className="font-medium"
+      >
         {t(k("bulk.title"))}
       </h5>
       {nombres.length > 0 && (
@@ -316,6 +331,7 @@ function PanelBloque({
               data-testid="protocolo-bloque-aplicar"
               onClick={() => {
                 setDeclarado(false);
+                enfocar.current = true;
                 onAplicar();
               }}
             >
@@ -337,6 +353,7 @@ function PanelBloque({
             data-testid="protocolo-bloque-deshacer"
             onClick={() => {
               setDeclarado(false);
+              enfocar.current = true;
               onDeshacer();
             }}
           >

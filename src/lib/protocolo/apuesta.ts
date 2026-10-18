@@ -1,7 +1,7 @@
 // Protocolo DS (S9, etapa 4): la apuesta se fija al ver los hallazgos. Si el navegador la olvidara
 // (recargar la página, cancelar «Corregir»), el usuario podría apostar de nuevo con la respuesta a
 // la vista y la comparación dejaría de enseñar algo. Por eso se guarda mientras dura la pestaña,
-// atada al archivo (huella) y a lo que se respondió en las etapas 2 y 3: si cambian, es otra apuesta.
+// atada al archivo (huella) y a lo que se respondió en las etapas 1 a 3: si cambian, es otra apuesta.
 //
 // Regla dura 2: vive solo en este navegador (`sessionStorage`) y nunca viaja a observabilidad. Si
 // el navegador no la deja guardar, la apuesta vale mientras la pantalla siga abierta.
@@ -24,10 +24,11 @@ function resumen(texto: string): string {
   return (h >>> 0).toString(16).padStart(8, "0");
 }
 
-/** Qué apuesta es: este archivo y estas respuestas de las etapas 2 y 3. */
+/** Qué apuesta es: este archivo y estas respuestas de las etapas 1 a 3. */
 export function claveApuesta(huella: string, previas: Previas): string {
   return `${huella.slice(0, 16)}:${resumen(
     JSON.stringify([
+      previas[1]?.respuestas ?? null,
       previas[2]?.respuestas ?? null,
       previas[3]?.respuestas ?? null,
     ]),
@@ -67,5 +68,14 @@ export function fijarApuesta(clave: string, apuesta: ApuestaFija): void {
     );
   } catch {
     // sin almacenamiento: la apuesta vale mientras la pantalla siga abierta
+  }
+}
+
+/** Un cuaderno nuevo (o uno que reemplaza al actual) empieza sin apuesta: no hereda la de otro. */
+export function olvidarApuesta(): void {
+  try {
+    window.sessionStorage.removeItem(CLAVE);
+  } catch {
+    // sin almacenamiento: no hay nada que olvidar
   }
 }
