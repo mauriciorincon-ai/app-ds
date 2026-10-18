@@ -607,6 +607,60 @@ describe("las trampas", () => {
   });
 });
 
+describe("las trampas no afirman lo que el usuario aún no respondió (auditoría S9, A1)", () => {
+  it("con el inventario sin responder, no dice «la dejaste fuera» ni «nada para entrenar»", () => {
+    const d = datosBajas(BAJAS, {}, {});
+    const claves = ETAPA_4.trampas(d, BAJAS.previas).map((t) => t.clave);
+    expect(claves).not.toContain("fuga-excluida");
+    expect(claves).not.toContain("fuga-vacios-excluida");
+    expect(claves).not.toContain("nada-para-entrenar");
+    // lo que sí se sabe sin respuestas, sigue
+    expect(claves).toContain("filas-repetidas");
+  });
+
+  it("con columnas sin responder o en «no sé», «excluida» no se dice; con todas excluidas sí", () => {
+    const mezcla = datosBajas(
+      BAJAS,
+      { ...FILAS_BAJAS, motivo_baja: ["despues", "nose", ""] },
+      {},
+    );
+    expect(
+      ETAPA_4.trampas(mezcla, BAJAS.previas).map((t) => t.clave),
+    ).not.toContain("fuga-vacios-excluida");
+    const todas = datosBajas(
+      BAJAS,
+      Object.fromEntries(
+        Object.keys(FILAS_BAJAS).map((c) => [c, ["despues", "excluir", ""]]),
+      ),
+      {},
+    );
+    expect(ETAPA_4.trampas(todas, BAJAS.previas).map((t) => t.clave)).toContain(
+      "fuga-vacios-excluida",
+    );
+  });
+
+  it("«nada para entrenar» solo cuando todo está respondido y nada quedó en «usar»", () => {
+    const sinUsar = datosBajas(
+      BAJAS,
+      Object.fromEntries(
+        Object.keys(FILAS_BAJAS).map((c) => [c, ["antes", "nose", ""]]),
+      ),
+      {},
+    );
+    expect(
+      ETAPA_4.trampas(sinUsar, BAJAS.previas).map((t) => t.clave),
+    ).toContain("nada-para-entrenar");
+    const aMedias = datosBajas(
+      BAJAS,
+      { ...FILAS_BAJAS, plan: ["", "", ""] },
+      {},
+    );
+    expect(
+      ETAPA_4.trampas(aMedias, BAJAS.previas).map((t) => t.clave),
+    ).not.toContain("nada-para-entrenar");
+  });
+});
+
 describe("entradaDesdeAnterior", () => {
   it("realinea por NOMBRE cuando cambian las columnas, y una columna con alerta sale del bloque", () => {
     const anterior = datosBajas(BAJAS);
