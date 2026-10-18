@@ -54,7 +54,13 @@ import type {
   Veredicto,
 } from "./etapas";
 import { fechasPorFila } from "./fechas";
-import { indiceDe, nombreClase, valoresDe, vistaColumna } from "./tabla";
+import {
+  identificadorNumerico,
+  indiceDe,
+  nombreClase,
+  valoresDe,
+  vistaColumna,
+} from "./tabla";
 import {
   booleano,
   claveExtra,
@@ -231,16 +237,25 @@ function calcular(
   const puntajes = (hallazgos: readonly LeakageFinding[]) =>
     Object.fromEntries(hallazgos.map((h) => [h.column, h.score]));
 
-  // --- identificadores (los de Probeta; una columna numérica con basura no lo es)
-  const identificador = Object.fromEntries(
-    idLikeAlerts(tabla, objetivo).flatMap((a) => {
+  // --- identificadores: los de texto, de Probeta; los numéricos (enteros casi todos distintos y en
+  // secuencia) por la regla propia del Protocolo (S10, M1). Una medida continua no lo es.
+  const identificador = Object.fromEntries([
+    ...idLikeAlerts(tabla, objetivo).flatMap((a) => {
       if (a.kind !== "id-like") return [];
       const k = columnas.indexOf(a.column);
       return k >= 0 && vistas[k]!.tipo !== "numero"
         ? [[a.column, a.score] as const]
         : [];
     }),
-  );
+    ...columnas.flatMap((nombre, k) => {
+      const vista = vistas[k]!;
+      if (vista.tipo !== "numero") return [];
+      const puntaje = identificadorNumerico(
+        filas.map((i) => vista.valores[i] ?? null),
+      );
+      return puntaje === null ? [] : [[nombre, puntaje] as const];
+    }),
+  ]);
 
   // --- fuga univariada: sin el objetivo, la unidad ni el momento, sin identificadores ni fechas
   const candidatas: LeakageColumn[] = [];

@@ -11,12 +11,14 @@ import {
   type Evidencia,
 } from "@/engine/protocolo/cuaderno";
 import { resumenEtapa4 } from "@/engine/protocolo/etapa4";
+import { ACTUAR, NO_ACTUAR, resumenEtapa5 } from "@/engine/protocolo/etapa5";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
-import { fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
+import { cifra, fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
 import { thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
 import { Confirmacion } from "./Confirmacion";
+import { reglaTexto } from "./regla-texto";
 
 /**
  * La etapa 4 registra listas largas (una entrada por columna): el cuaderno muestra lo que
@@ -63,6 +65,65 @@ function ResumenEtapa4({ datos }: { datos: DatosEtapa }) {
           estado: t(`protocol.stage.4.summary.drift-state.${r.derivaEstado}`),
         })}
       </li>
+    </ul>
+  );
+}
+
+/**
+ * La etapa 5 registra mapas y listas por referencia: el cuaderno muestra lo que importa —lo que
+ * se logra sin modelo, en la moneda de la decisión, y la regla de hoy con su medida— y recuerda
+ * que es una referencia. El archivo exportado trae el detalle completo.
+ */
+function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
+  const { t } = useI18n();
+  const r = resumenEtapa5(datos);
+  const nombre = (id: string) =>
+    t(`protocol.stage.5.ref.${id}`, {
+      clase: r.claseMayoritaria ?? "",
+      opcion: r.opcionBarata ?? "",
+    });
+  const salida = (valor: string) =>
+    valor === ACTUAR
+      ? t("protocol.stage.5.summary.act")
+      : valor === NO_ACTUAR
+        ? t("protocol.stage.5.summary.no-act")
+        : valor;
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen5"
+    >
+      <li>
+        {t("protocol.stage.5.summary.reference", { filas: thousands(r.filas) })}
+      </li>
+      <li>
+        {t("protocol.stage.5.summary.refs", {
+          list: r.referencias
+            .map((x) => `${nombre(x.id)}: ${cifra(x.costo100)}`)
+            .join(" · "),
+        })}
+      </li>
+      {r.regla === "hay" && r.reglaCosto100 !== null && (
+        <>
+          <li>
+            {t("protocol.stage.5.summary.rule", {
+              regla: reglaTexto(t, r.condiciones, r.tipos, r.union),
+              cumple: thousands(r.cumple ?? 0),
+              filas: thousands(r.filas),
+              costo: cifra(r.reglaCosto100),
+            })}
+          </li>
+          <li>
+            {t("protocol.stage.5.summary.rule-then", {
+              si: salida(r.si),
+              no: salida(r.no),
+            })}
+          </li>
+        </>
+      )}
+      {r.regla === "ninguna" && (
+        <li>{t("protocol.stage.5.summary.rule-none")}</li>
+      )}
     </ul>
   );
 }
@@ -122,7 +183,8 @@ function Entrada({
         {!vigente && ` · ${t("protocol.notebook.superseded")}`}
       </p>
       {evidencia.etapa === 4 && <ResumenEtapa4 datos={evidencia.datos} />}
-      {evidencia.etapa !== 4 && filas.length > 0 && (
+      {evidencia.etapa === 5 && <ResumenEtapa5 datos={evidencia.datos} />}
+      {evidencia.etapa !== 4 && evidencia.etapa !== 5 && filas.length > 0 && (
         <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
           {filas.map(([clave, valor]) => (
             <div key={clave} className="contents">

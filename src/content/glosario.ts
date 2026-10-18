@@ -190,6 +190,21 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
       en: "A code computed from the file's exact content (SHA-256). If a single byte changes, the fingerprint changes: that's how the app knows you're back with the same data.",
     },
   },
+  // S10 (etapa 5)
+  "regla-de-hoy": {
+    termino: { es: "Regla de hoy", en: "Today's rule" },
+    definicion: {
+      es: "Lo que la gente que decide ya hace, escrito como una o dos condiciones sobre tus columnas («si el ingreso es menor que 3000, se actúa»). No se entrena: se mide en tus datos para saber qué logra hoy y qué tendría que superar un modelo.",
+      en: "What the people who decide already do, written as one or two conditions on your columns («if income is below 3000, act»). It isn't trained: it's measured on your data to learn what it achieves today and what a model would have to beat.",
+    },
+  },
+  "costo-esperado": {
+    termino: { es: "Costo esperado", en: "Expected cost" },
+    definicion: {
+      es: "Cuánto cuestan, en promedio, los errores de una forma de decidir, con los costos que escribiste en la etapa 1. Se lee por cada 100 decisiones y en tu unidad: es la moneda que compara el modelo con no hacer nada y con tu regla de hoy.",
+      en: "How much the mistakes of a way of deciding cost on average, using the costs you wrote in stage 1. It is read per 100 decisions and in your unit: it's the currency that compares the model with doing nothing and with today's rule.",
+    },
+  },
   // S9 (etapa 4)
   "existe-al-decidir": {
     termino: { es: "Existe al decidir", en: "Exists when you decide" },

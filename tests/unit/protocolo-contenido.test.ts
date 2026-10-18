@@ -15,6 +15,7 @@ import { CLAVES_1 } from "@/engine/protocolo/etapa1";
 import { CLAVES_2 } from "@/engine/protocolo/etapa2";
 import { CLAVES_3 } from "@/engine/protocolo/etapa3";
 import { CLAVES_4, TRAMPAS_4 } from "@/engine/protocolo/etapa4";
+import { CLAVES_5, TRAMPAS_5 } from "@/engine/protocolo/etapa5";
 import {
   ETAPA_IDS,
   ETAPAS_ABIERTAS,
@@ -140,6 +141,7 @@ describe("contenido del Protocolo {es, en}", () => {
       2: CLAVES_2,
       3: CLAVES_3,
       4: CLAVES_4,
+      5: CLAVES_5,
     } as const;
     const faltan: string[] = [];
     for (const [n, claves] of Object.entries(etapas))
@@ -194,6 +196,18 @@ describe("contenido del Protocolo {es, en}", () => {
         "procedencia",
         "bloque",
       ],
+      5: [
+        "etapas-previas",
+        "referencias",
+        "regla",
+        "regla-condicion",
+        "regla-union",
+        "regla-columna",
+        "regla-operador",
+        "regla-valor",
+        "regla-salida",
+        "regla-medida",
+      ],
     } as const;
     const paradas = { 2: ["sin-objetivo"], 3: ["causal"] } as const;
     const sin: string[] = [];
@@ -240,6 +254,7 @@ describe("contenido del Protocolo {es, en}", () => {
       ],
       3: ["causal", "muestra-alcanza", "muestra-corta", "periodo"],
       4: TRAMPAS_4,
+      5: TRAMPAS_5,
     } as const;
     const sin: string[] = [];
     for (const l of IDIOMAS)

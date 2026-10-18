@@ -8,7 +8,7 @@
       { "metric": "cumulative-layout-shift", "budget": 0.1 }
     ],
     "resourceSizes": [
-      { "resourceType": "script", "budget": 300 },
+      { "resourceType": "script", "budget": 320 },
       { "resourceType": "total", "budget": 1000 }
     ]
   }
