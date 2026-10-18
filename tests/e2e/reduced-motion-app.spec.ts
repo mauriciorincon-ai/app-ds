@@ -33,6 +33,10 @@ async function transitionOff(locator: Locator): Promise<boolean> {
 async function expectReallyVisible(locator: Locator) {
   await expect(locator).toBeVisible();
   await locator.scrollIntoViewIfNeeded();
+  // El puntero que dejó el clic anterior puede caer sobre el botón (`hover:opacity-90`, 0.9):
+  // se aparca fuera para medir el estado en reposo, no el de pasar el cursor (S8: era una
+  // carrera que el reintento del CI escondía).
+  await locator.page().mouse.move(0, 0);
   expect(await effectiveOpacity(locator)).toBe(1);
   const box = await locator.boundingBox();
   expect(box && box.width > 0 && box.height > 0).toBe(true);
