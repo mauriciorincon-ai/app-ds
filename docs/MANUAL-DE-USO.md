@@ -577,9 +577,15 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Exportar cuaderno** baja un archivo `.protocolo.json`: es tu respaldo y lo que llevas a otra
     máquina. **Importar cuaderno** lo devuelve. Un archivo que no es un cuaderno válido se rechaza
     **diciendo qué campo falla**.
+  - **Qué lleva el archivo:** no trae las filas de tu CSV, pero sí datos que salen de él: los nombres de
+    tus columnas, los valores del objetivo con sus conteos, medias, la fecha mínima y la máxima, el
+    nombre del archivo y su huella, además de tus respuestas. Trátalo con el cuidado que le darías a
+    tus datos.
   - **Ventana privada:** el navegador no deja guardar. La página lo avisa («Exporta tu cuaderno antes de
     irte»): si cierras la pestaña, se pierde.
-  - **Empezar otro cuaderno** reemplaza el de este navegador, tras confirmarlo.
+  - **Lo que reemplaza el cuaderno siempre pide confirmar:** **Empezar otro cuaderno**, **importar**
+    un cuaderno cuando el actual ya tiene entradas, y **«Otro proyecto»** al cargar otro CSV (que pide un
+    segundo sí). Escape o un clic fuera del diálogo cancelan; nada se reemplaza sin tu sí.
 
 - **Los estados de cada etapa:** **Cerrada** (falta cumplir la anterior), **Abierta** (puedes
   trabajarla), **Cumplida**, **Por verificar** (tus datos cambiaron o corregiste una etapa anterior),
