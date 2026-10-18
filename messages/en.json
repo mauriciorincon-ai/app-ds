@@ -1468,7 +1468,7 @@
           "pocas-filas": "Change between periods wasn't measured: with so few rows, a small change can't be told apart from chance.",
           "apuesta": "Your bet — hits: {aciertos} · surprises: {sorpresas} · bets the app doesn't flag: {falsas}. The app looks at one column at a time: it can't see what leaks only in combination.",
           "sin-hallazgos": "The app found nothing to flag. That doesn't prove there is no leakage: it only looks at one column at a time.",
-          "nada-para-entrenar": "You excluded every column: none of them will train a model."
+          "nada-para-entrenar": "No column will train a model: all of them are on «exclude» or «don't know»."
         },
         "summary": {
           "bet": "Your bet: {list}",

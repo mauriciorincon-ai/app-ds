@@ -776,18 +776,20 @@ function trampas(datos: DatosEtapa): readonly Trampa[] {
   ) => {
     const top = masFuerte(m);
     if (!top) return;
-    const decidida = Object.keys(m).find((col) => estadoDe(col) === "usar");
-    salida.push(
-      decidida
-        ? {
-            clave: usada,
-            params: { columna: decidida, n: Object.keys(m).length },
-          }
-        : {
-            clave: excluida,
-            params: { columna: top[0], n: Object.keys(m).length },
-          },
-    );
+    const cols = Object.keys(m);
+    // Solo se dice lo que el inventario ya dice: «usada» si alguna está en «usar»; «excluida» si
+    // TODAS están en «excluir». Con columnas sin responder o en «no sé», no se afirma nada.
+    const decidida = cols.find((col) => estadoDe(col) === "usar");
+    if (decidida !== undefined)
+      salida.push({
+        clave: usada,
+        params: { columna: decidida, n: cols.length },
+      });
+    else if (cols.every((col) => estadoDe(col) === "excluir"))
+      salida.push({
+        clave: excluida,
+        params: { columna: top[0], n: cols.length },
+      });
   };
   decir(fuga, "fuga-excluida", "fuga-usada");
   decir(vacios, "fuga-vacios-excluida", "fuga-vacios-usada");
@@ -837,7 +839,12 @@ function trampas(datos: DatosEtapa): readonly Trampa[] {
     filas === 0 &&
     um === 0;
   if (sinNada) salida.push({ clave: "sin-hallazgos", params: {} });
-  if (columnasParaEntrenar(datos).length === 0 && estado.length > 0)
+  // Solo cuando TODO está respondido y nada quedó en «usar»: sin respuestas no hay nada que decir.
+  if (
+    estado.length > 0 &&
+    estado.every((e) => e !== "") &&
+    columnasParaEntrenar(datos).length === 0
+  )
     salida.push({ clave: "nada-para-entrenar", params: {} });
   return salida;
 }

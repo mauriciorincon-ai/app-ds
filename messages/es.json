@@ -1468,7 +1468,7 @@
           "pocas-filas": "No se midió el cambio entre periodos: con tan pocas filas, un cambio chico no se distingue del azar.",
           "apuesta": "Tu apuesta — aciertos: {aciertos} · sorpresas: {sorpresas} · apostadas que la app no marca: {falsas}. La app mira una columna a la vez: no ve lo que filtra solo en combinación.",
           "sin-hallazgos": "La app no encontró nada que marcar. Eso no prueba que no haya fuga: solo mira una columna a la vez.",
-          "nada-para-entrenar": "Excluiste todas las columnas: ninguna entrenará un modelo."
+          "nada-para-entrenar": "Ninguna columna entrenará un modelo: todas están en «excluir» o en «no sé»."
         },
         "summary": {
           "bet": "Tu apuesta: {list}",
