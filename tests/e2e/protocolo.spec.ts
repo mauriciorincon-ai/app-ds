@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
 
-// S8 (ADR 020) — Protocolo DS: las etapas 1–3 se recorren con datos propios y la compuerta
+// S8 (ADR 020) — Protocolo DS: las etapas 1–3 (la 4, en protocolo-etapa4.spec.ts) se recorren con datos propios y la compuerta
 // no deja saltar. Un CSV del kit (renovaciones-mensuales.csv: el mismo cliente en varias filas,
 // una fecha ISO, renovó sí/no) recorre la decisión, el objetivo y el diseño; la etapa 2 no abre
 // sin la 1; el cuaderno sobrevive a recargar la página (IndexedDB), la huella dice si es el mismo
@@ -148,10 +148,16 @@ test("la compuerta: la etapa 2 no abre sin la 1, no hay botón de saltar, y 1–
   await e3.getByRole("button", { name: "Registrar la etapa 3" }).click();
   await expect(e3.getByText("Cumplida")).toBeVisible();
 
-  // La etapa 4 se ve con su criterio y no abre.
+  // La etapa 4 abre con la 3 cumplida y pide la APUESTA antes de mostrar nada de los datos; la
+  // 5 se ve con su criterio y no abre.
   const e4 = page.locator("#etapa-4");
-  await expect(e4.getByText("Sin construir")).toBeVisible();
-  await expect(e4.getByRole("button")).toHaveCount(0);
+  await expect(e4.getByText("Abierta", { exact: true })).toBeVisible();
+  await expect(e4.getByLabel("Sí, marco las que creo")).toBeVisible();
+  await expect(e4.getByTestId("protocolo-revelar")).toBeDisabled();
+  await expect(e4.getByTestId("protocolo-hallazgo-fuga")).toHaveCount(0);
+  await expect(
+    page.locator("#etapa-5").getByText("Sin construir"),
+  ).toBeVisible();
 
   // El cuaderno se escribió solo: una evidencia por etapa.
   await expect(
@@ -341,9 +347,8 @@ test("«explicar una causa» detiene el Protocolo, y reformular lo reabre", asyn
   await e3.getByRole("button", { name: "Registrar la etapa 3" }).click();
   await expect(e3.getByText("Detenida")).toBeVisible();
   await expect(e3.getByText(/Estás buscando una causa/)).toBeVisible();
-  await expect(
-    page.locator("#etapa-4").getByText("Sin construir"),
-  ).toBeVisible();
+  // Con la 3 detenida, la 4 sigue cerrada.
+  await expect(page.locator("#etapa-4").getByText("Cerrada")).toBeVisible();
   await axeBothThemes(page);
 });
 
