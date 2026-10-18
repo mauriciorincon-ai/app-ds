@@ -171,3 +171,27 @@ export function leerFechas(
     sinLeer,
   };
 }
+
+/**
+ * La fecha de CADA fila (`AAAA-MM-DD`, o `null` si la celda está vacía o no se lee), para medir
+ * la deriva entre periodos. Usa `leerFechas` y el orden que esa lectura dedujo, así que no puede
+ * discrepar con lo que la etapa 2 registró; `null` si la columna no se lee entera como fecha.
+ */
+export function fechasPorFila(
+  valores: readonly string[],
+  orden?: Exclude<OrdenFecha, "iso"> | null,
+): { readonly orden: OrdenFecha; readonly fechas: (string | null)[] } | null {
+  const lectura = leerFechas(valores, orden);
+  if (lectura.tipo !== "leida") return null;
+  const fechas = valores.map((crudo): string | null => {
+    if (isNullToken(crudo)) return null;
+    const v = leerValor(crudo.trim());
+    if (v.tipo === "iso") return v.fecha;
+    if (v.tipo === "latina") {
+      const [dia, mes] = lectura.orden === "dia-mes" ? [v.a, v.b] : [v.b, v.a];
+      return esReal(v.anio, mes, dia) ? aTexto(v.anio, mes, dia) : null;
+    }
+    return null;
+  });
+  return { orden: lectura.orden, fechas };
+}

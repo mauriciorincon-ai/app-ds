@@ -8,7 +8,7 @@ import {
   profileColumn,
   type CsvTable,
 } from "@/lib/ds/csv";
-import { sanitizeTable } from "@/engine/sanitize";
+import { NUMERIC_COERCION_THRESHOLD, sanitizeTable } from "@/engine/sanitize";
 import {
   MULTICLASS_MAX_CLASSES,
   detectTask,
@@ -33,7 +33,7 @@ export type PerfilObjetivo = {
 };
 
 /** Cómo se llama una clase: el texto limpio; en una columna numérica, el número normalizado. */
-function nombreClase(valor: string, numerica: boolean): string {
+export function nombreClase(valor: string, numerica: boolean): string {
   if (!numerica) return valor.trim();
   const n = parseNumber(valor);
   return n === null ? valor.trim() : String(n);
@@ -185,4 +185,40 @@ export function numerosDe(tabla: CsvTable, columna: string): number[] {
     .filter((v) => !isNullToken(v))
     .map(parseNumber)
     .filter((n): n is number => n !== null);
+}
+
+/**
+ * Una columna tal como la lee el Protocolo para la etapa 4: con la regla de coerción del
+ * saneamiento de Probeta (si al menos el 90 % de lo que tiene se lee como número, es numérica
+ * y la basura pasa a vacío, contada) pero SIN quitar filas ni columnas. Así el mismo CSV da
+ * la misma lectura que en Probeta, y una celda «error» no vuelve «categórica» una columna de edades.
+ */
+export type VistaColumna =
+  | {
+      readonly tipo: "numero";
+      readonly valores: readonly (number | null)[];
+      /** Celdas con texto que no es número, tratadas como vacías. */
+      readonly basura: number;
+    }
+  | {
+      readonly tipo: "texto";
+      readonly valores: readonly (string | null)[];
+      /** Parece una fecha (la regla de Probeta): no es una variable para el modelo. */
+      readonly fecha: boolean;
+    };
+
+export function vistaColumna(
+  nombre: string,
+  crudos: readonly string[],
+): VistaColumna {
+  const llenos = crudos.filter((c) => !isNullToken(c)).length;
+  const numeros = crudos.map((c) => (isNullToken(c) ? null : parseNumber(c)));
+  const buenos = numeros.filter((n) => n !== null).length;
+  if (llenos > 0 && buenos / llenos >= NUMERIC_COERCION_THRESHOLD)
+    return { tipo: "numero", valores: numeros, basura: llenos - buenos };
+  return {
+    tipo: "texto",
+    valores: crudos.map((c) => (isNullToken(c) ? null : c.trim())),
+    fecha: profileColumn(nombre, crudos).looksLikeDate,
+  };
 }
