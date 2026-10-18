@@ -547,6 +547,80 @@ export function ordenPorRiesgo(chequeos: Registro): string[] {
     .map(({ c }) => c);
 }
 
+/** Por qué una columna lleva alerta, de lo más grave a lo menos (la pantalla pone un rótulo a cada una). */
+export type MotivoAlerta =
+  | "fuga"
+  | "fuga-vacios"
+  | "identificador"
+  | "deriva-alta"
+  | "deriva-moderada"
+  | "rol"
+  | "apuesta";
+
+/**
+ * Los motivos de alerta de una columna. «Deriva moderada» se muestra pero NO cuenta como alerta
+ * (no está en `alertas`); la apuesta del usuario sí.
+ */
+export function motivosDeAlerta(
+  chequeos: Registro,
+  apuesta: readonly string[],
+  columna: string,
+): MotivoAlerta[] {
+  const [fuga, vacios, ident, psi] = [
+    mapa(chequeos, "fuga") ?? {},
+    mapa(chequeos, "fuga_vacios") ?? {},
+    mapa(chequeos, "identificador") ?? {},
+    mapa(chequeos, "deriva_psi") ?? {},
+  ];
+  const motivos: MotivoAlerta[] = [];
+  if (Object.hasOwn(fuga, columna)) motivos.push("fuga");
+  if (Object.hasOwn(vacios, columna)) motivos.push("fuga-vacios");
+  if (Object.hasOwn(ident, columna)) motivos.push("identificador");
+  if (Object.hasOwn(psi, columna)) {
+    if (psi[columna]! >= PSI_ALERTA) motivos.push("deriva-alta");
+    else if (psi[columna]! >= PSI_MODERADA) motivos.push("deriva-moderada");
+  }
+  if ((lista(chequeos, "roles") ?? []).includes(columna)) motivos.push("rol");
+  if (apuesta.includes(columna)) motivos.push("apuesta");
+  return motivos;
+}
+
+export type ResumenEtapa4 = {
+  readonly apuesta: readonly string[];
+  readonly ninguna: boolean;
+  readonly aciertos: readonly string[];
+  readonly sorpresas: readonly string[];
+  readonly falsas: readonly string[];
+  readonly alertas: number;
+  readonly usar: number;
+  readonly excluir: number;
+  readonly nose: number;
+  readonly sinResponder: number;
+  readonly enBloque: number;
+  readonly derivaEstado: string;
+};
+
+/** Lo esencial de una evidencia de la etapa 4, para el cuaderno (no las listas crudas). */
+export function resumenEtapa4(datos: DatosEtapa): ResumenEtapa4 {
+  const [r, c] = [datos.respuestas, datos.chequeos];
+  const estado = lista(r, "estado") ?? [];
+  const cuenta = (e: string) => estado.filter((x) => x === e).length;
+  return {
+    apuesta: lista(r, "apuesta") ?? [],
+    ninguna: booleano(r, "apuesta_ninguna") === true,
+    aciertos: lista(c, "aciertos") ?? [],
+    sorpresas: lista(c, "sorpresas") ?? [],
+    falsas: lista(c, "falsas_alarmas") ?? [],
+    alertas: (lista(c, "alertas") ?? []).length,
+    usar: cuenta("usar"),
+    excluir: cuenta("excluir"),
+    nose: cuenta("nose"),
+    sinResponder: cuenta(""),
+    enBloque: (lista(r, "en_bloque") ?? []).length,
+    derivaEstado: texto(c, "deriva_estado") ?? "",
+  };
+}
+
 function leer(datos: DatosEtapa): Lectura {
   const r = datos.respuestas;
   const extra = claveExtra(r, RESPUESTAS);
@@ -785,8 +859,14 @@ export const ETAPA_4: EtapaConstruida = {
   id: 4,
   construida: true,
   dependeDeDatos: true,
-  // La pantalla suma los términos nuevos del glosario (procedencia, deriva…) al registrar la etapa.
-  terminos: ["fuga-de-datos"],
+  terminos: [
+    "existe-al-decidir",
+    "fuga-de-datos",
+    "procedencia",
+    "columna-identificador",
+    "duplicado",
+    "deriva",
+  ],
   preguntas: ["apuesta", "procedencia", "momento", "estado"],
   chequeos: ["fuga", "identificador", "duplicados", "deriva", "apuesta"],
   leer,

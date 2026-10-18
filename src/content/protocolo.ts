@@ -80,6 +80,14 @@ export const CONTENIDO_ETAPAS: Readonly<Record<EtapaId, ContenidoEtapa>> = {
       es: "Cada columna en «usar», «excluir» o «no sé»; las «no sé» no entrenan.",
       en: "Every column marked «use», «exclude» or «don't know»; the «don't know» ones don't train.",
     },
+    tarea: {
+      es: "Apuesta qué columnas crees que filtran el resultado. Luego mira lo que encontró la app (fuga, identificadores, filas repetidas, cambios entre periodos) y, columna por columna, di quién la produce, si existe cuando se decide y si la usas.",
+      en: "Bet which columns you think leak the outcome. Then see what the app found (leakage, identifiers, repeated rows, changes between periods) and, column by column, say who produces it, whether it exists when you decide, and whether you use it.",
+    },
+    porque: {
+      es: "Una columna que se llena después del resultado hace que el modelo se vea genial en tus datos y falle en la vida real.\nApostar antes de ver te enseña dónde se te escapa la fuga: la comparación queda en tu cuaderno.\nLo que no sabes cuándo se llena no entrena: «no sé» nunca entra al modelo.",
+      en: "A column filled in after the outcome makes the model look great on your data and fail in real life.\nBetting before you look shows you where leakage slips past you: the comparison is kept in your notebook.\nWhat you don't know when it's filled in doesn't train: «don't know» never enters the model.",
+    },
   },
   5: {
     titulo: {

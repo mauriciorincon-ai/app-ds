@@ -164,10 +164,15 @@ export function CampoOpciones<T extends string>({
   onCambio: (valor: T) => void;
 }) {
   const nombre = useId();
+  const ayudaId = ayuda ? `${nombre}-ayuda` : undefined;
   return (
-    <fieldset className="flex flex-col gap-1">
+    <fieldset className="flex flex-col gap-1" aria-describedby={ayudaId}>
       <legend className="text-sm font-medium">{leyenda}</legend>
-      {ayuda && <p className="text-xs text-ink-muted">{ayuda}</p>}
+      {ayuda && (
+        <p id={ayudaId} className="text-xs text-ink-muted">
+          {ayuda}
+        </p>
+      )}
       <div className="flex flex-col gap-1">
         {opciones.map((opcion) => (
           <label
@@ -181,6 +186,54 @@ export function CampoOpciones<T extends string>({
               onChange={() => onCambio(opcion.valor)}
             />
             {opcion.texto}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/**
+ * Un grupo de casillas (varias a la vez) con la etiqueta como leyenda. Con muchas opciones (un
+ * archivo de 80 columnas) la lista se desplaza dentro de su caja: las casillas son enfocables, así
+ * que el teclado la recorre completa.
+ */
+export function CampoCasillas({
+  leyenda,
+  ayuda,
+  opciones,
+  marcadas,
+  onCambio,
+}: {
+  leyenda: string;
+  ayuda?: string;
+  opciones: readonly string[];
+  marcadas: readonly string[];
+  onCambio: (opcion: string, marcada: boolean) => void;
+}) {
+  const id = useId();
+  const ayudaId = ayuda ? `${id}-ayuda` : undefined;
+  const marcadasSet = new Set(marcadas);
+  return (
+    <fieldset className="flex flex-col gap-1" aria-describedby={ayudaId}>
+      <legend className="text-sm font-medium">{leyenda}</legend>
+      {ayuda && (
+        <p id={ayudaId} className="text-xs text-ink-muted">
+          {ayuda}
+        </p>
+      )}
+      <div className="grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2">
+        {opciones.map((opcion) => (
+          <label
+            key={opcion}
+            className="flex min-h-11 items-center gap-2 rounded-md border border-hairline bg-surface px-3 text-sm [overflow-wrap:anywhere]"
+          >
+            <input
+              type="checkbox"
+              checked={marcadasSet.has(opcion)}
+              onChange={(event) => onCambio(opcion, event.target.checked)}
+            />
+            {opcion}
           </label>
         ))}
       </div>

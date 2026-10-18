@@ -8,6 +8,7 @@ import type { EtapaId } from "@/engine/protocolo/ids";
 import { Etapa1Form } from "./Etapa1Form";
 import { Etapa2Form } from "./Etapa2Form";
 import { Etapa3Form } from "./Etapa3Form";
+import { Etapa4Form } from "./Etapa4Form";
 import type { PropsFormulario } from "./formulario-base";
 
 export const FORMULARIOS: Readonly<
@@ -16,4 +17,5 @@ export const FORMULARIOS: Readonly<
   1: Etapa1Form,
   2: Etapa2Form,
   3: Etapa3Form,
+  4: Etapa4Form,
 };

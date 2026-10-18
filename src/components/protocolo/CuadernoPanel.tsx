@@ -10,12 +10,62 @@ import {
   type Cuaderno,
   type Evidencia,
 } from "@/engine/protocolo/cuaderno";
-import type { Valor } from "@/engine/protocolo/etapas";
+import { resumenEtapa4 } from "@/engine/protocolo/etapa4";
+import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import { fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
 import { thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
 import { Confirmacion } from "./Confirmacion";
+
+/**
+ * La etapa 4 registra listas largas (una entrada por columna): el cuaderno muestra lo que
+ * importa de ellas —tu apuesta contra los hallazgos, cuántas columnas usas, la declaración en
+ * bloque— y el archivo exportado trae el detalle completo.
+ */
+function ResumenEtapa4({ datos }: { datos: DatosEtapa }) {
+  const { t } = useI18n();
+  const r = resumenEtapa4(datos);
+  const lista = (nombres: readonly string[]) =>
+    nombres.length > 0
+      ? nombres.join(", ")
+      : t("protocol.stage.4.summary.none");
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen4"
+    >
+      <li>
+        {r.ninguna
+          ? t("protocol.stage.4.summary.bet-none")
+          : t("protocol.stage.4.summary.bet", { list: lista(r.apuesta) })}
+      </li>
+      <li>
+        {t("protocol.stage.4.summary.compare", {
+          hits: lista(r.aciertos),
+          surprises: lista(r.sorpresas),
+          false: lista(r.falsas),
+        })}
+      </li>
+      <li>
+        {t("protocol.stage.4.summary.counts", {
+          usar: r.usar,
+          excluir: r.excluir,
+          nose: r.nose,
+        })}
+      </li>
+      <li>{t("protocol.stage.4.summary.alerts", { n: r.alertas })}</li>
+      {r.enBloque > 0 && (
+        <li>{t("protocol.stage.4.summary.bulk", { n: r.enBloque })}</li>
+      )}
+      <li>
+        {t("protocol.stage.4.summary.drift", {
+          estado: t(`protocol.stage.4.summary.drift-state.${r.derivaEstado}`),
+        })}
+      </li>
+    </ul>
+  );
+}
 
 function Entrada({
   evidencia,
@@ -71,7 +121,8 @@ function Entrada({
           ` · ${t("protocol.notebook.with-data", { name: carga.nombre })}`}
         {!vigente && ` · ${t("protocol.notebook.superseded")}`}
       </p>
-      {filas.length > 0 && (
+      {evidencia.etapa === 4 && <ResumenEtapa4 datos={evidencia.datos} />}
+      {evidencia.etapa !== 4 && filas.length > 0 && (
         <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
           {filas.map(([clave, valor]) => (
             <div key={clave} className="contents">
