@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
 
-// S8 (ADR 020) — Protocolo DS: las etapas 1–3 se recorren con datos propios y la compuerta
+// S8 (ADR 020) — Protocolo DS: las etapas 1–3 (la 4, en protocolo-etapa4.spec.ts) se recorren con datos propios y la compuerta
 // no deja saltar. Un CSV del kit (renovaciones-mensuales.csv: el mismo cliente en varias filas,
 // una fecha ISO, renovó sí/no) recorre la decisión, el objetivo y el diseño; la etapa 2 no abre
 // sin la 1; el cuaderno sobrevive a recargar la página (IndexedDB), la huella dice si es el mismo
@@ -148,10 +148,16 @@ test("la compuerta: la etapa 2 no abre sin la 1, no hay botón de saltar, y 1–
   await e3.getByRole("button", { name: "Registrar la etapa 3" }).click();
   await expect(e3.getByText("Cumplida")).toBeVisible();
 
-  // La etapa 4 se ve con su criterio y no abre.
+  // La etapa 4 abre con la 3 cumplida y pide la APUESTA antes de mostrar nada de los datos; la
+  // 5 se ve con su criterio y no abre.
   const e4 = page.locator("#etapa-4");
-  await expect(e4.getByText("Sin construir")).toBeVisible();
-  await expect(e4.getByRole("button")).toHaveCount(0);
+  await expect(e4.getByText("Abierta", { exact: true })).toBeVisible();
+  await expect(e4.getByLabel("Sí, marco las que creo")).toBeVisible();
+  await expect(e4.getByTestId("protocolo-revelar")).toBeDisabled();
+  await expect(e4.getByTestId("protocolo-hallazgo-fuga")).toHaveCount(0);
+  await expect(
+    page.locator("#etapa-5").getByText("Sin construir"),
+  ).toBeVisible();
 
   // El cuaderno se escribió solo: una evidencia por etapa.
   await expect(
@@ -204,16 +210,42 @@ test("el cuaderno sobrevive a recargar: la huella reconoce el mismo archivo y av
 
   // Otro archivo: pregunta si es otra versión o es otro proyecto.
   await cargarCsv(page, OTRO_CSV);
-  const dialogo = page
-    .getByRole("alertdialog", { name: /.*/ })
-    .filter({ hasText: "no es el del cuaderno" });
+  // M2 (S8 → S9): el diálogo tiene nombre (axe `aria-dialog-name`), el foco entra en él,
+  // Escape lo cancela y el foco vuelve al botón que abrió el flujo.
+  const dialogo = page.getByRole("alertdialog", {
+    name: "Este archivo no es el del cuaderno",
+  });
   await expect(dialogo).toBeVisible();
+  await expect(
+    dialogo.getByRole("button", { name: "No cargarlo" }),
+  ).toBeFocused();
+  await axeBothThemes(page, "dialog");
+  await page.keyboard.press("Escape");
+  await expect(dialogo).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Cargar otro CSV" }),
+  ).toBeFocused();
+  await expect(page.locator("#etapa-2").getByText("Cumplida")).toBeVisible();
+
+  await cargarCsv(page, OTRO_CSV);
   await dialogo.getByRole("button", { name: "No cargarlo" }).click();
   await expect(dialogo).toBeHidden();
   await expect(page.locator("#etapa-2").getByText("Cumplida")).toBeVisible();
 
-  // Una versión nueva de los datos: lo que los usa vuelve a verificarse.
+  // «Otro proyecto» reemplaza el cuaderno: pide un segundo sí, con Volver.
   await cargarCsv(page, OTRO_CSV);
+  await dialogo
+    .getByRole("button", { name: "Otro proyecto: cuaderno nuevo" })
+    .click();
+  const segundo = page.getByRole("alertdialog", {
+    name: "¿Empezar un cuaderno nuevo con este archivo?",
+  });
+  await expect(segundo).toContainText("2 entradas");
+  await axeBothThemes(page, "dialog");
+  await segundo.getByRole("button", { name: "Volver" }).click();
+  await expect(dialogo).toBeVisible();
+
+  // Una versión nueva de los datos: lo que los usa vuelve a verificarse.
   await dialogo
     .getByRole("button", { name: "Otra versión de los mismos datos" })
     .click();
@@ -244,6 +276,17 @@ test("el cuaderno se exporta, se reemplaza y se importa; un archivo malo se rech
 
   // Empezar otro cuaderno lo vacía (con confirmación); importar lo devuelve.
   await page.getByRole("button", { name: "Empezar otro cuaderno" }).click();
+  const nuevo = page.getByRole("alertdialog", {
+    name: "Empezar otro cuaderno",
+  });
+  await expect(nuevo.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await axeBothThemes(page, "dialog");
+  await page.keyboard.press("Escape");
+  await expect(nuevo).toBeHidden();
+  await expect(
+    page.getByTestId("cuaderno-evidencias").locator("> li"),
+  ).toHaveCount(1);
+  await page.getByRole("button", { name: "Empezar otro cuaderno" }).click();
   await page.getByRole("button", { name: "Sí, empezar otro" }).click();
   await expect(page.getByText("El cuaderno está vacío")).toBeVisible();
   await page.getByTestId("protocolo-importar").setInputFiles(archivo);
@@ -252,6 +295,26 @@ test("el cuaderno se exporta, se reemplaza y se importa; un archivo malo se rech
     page.getByTestId("cuaderno-evidencias").locator("> li"),
   ).toHaveCount(1);
   await expect(page.locator("#etapa-1").getByText("Cumplida")).toBeVisible();
+
+  // M3 (S8 → S9): importar sobre un cuaderno con entradas pide un sí; Escape no reemplaza.
+  await page.getByTestId("protocolo-importar").setInputFiles(archivo);
+  const reemplazo = page.getByRole("alertdialog", {
+    name: "¿Reemplazar tu cuaderno por el del archivo?",
+  });
+  await expect(reemplazo).toBeVisible();
+  await expect(
+    reemplazo.getByRole("button", { name: "Cancelar" }),
+  ).toBeFocused();
+  await axeBothThemes(page, "dialog");
+  await page.keyboard.press("Escape");
+  await expect(reemplazo).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Importar cuaderno" }),
+  ).toBeFocused();
+  await page.getByTestId("protocolo-importar").setInputFiles(archivo);
+  await reemplazo.getByRole("button", { name: "Sí, reemplazar" }).click();
+  await expect(reemplazo).toBeHidden();
+  await expect(page.getByText(/Cuaderno importado/)).toBeVisible();
 
   // Un cuaderno con el umbral cambiado a mano se rechaza nombrando el campo (nunca se confía).
   const malo = JSON.parse(readFileSync(archivo, "utf8")) as Record<
@@ -284,9 +347,8 @@ test("«explicar una causa» detiene el Protocolo, y reformular lo reabre", asyn
   await e3.getByRole("button", { name: "Registrar la etapa 3" }).click();
   await expect(e3.getByText("Detenida")).toBeVisible();
   await expect(e3.getByText(/Estás buscando una causa/)).toBeVisible();
-  await expect(
-    page.locator("#etapa-4").getByText("Sin construir"),
-  ).toBeVisible();
+  // Con la 3 detenida, la 4 sigue cerrada.
+  await expect(page.locator("#etapa-4").getByText("Cerrada")).toBeVisible();
   await axeBothThemes(page);
 });
 

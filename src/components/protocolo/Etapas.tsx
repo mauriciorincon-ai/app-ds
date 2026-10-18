@@ -4,7 +4,7 @@
 // texto + color: nada comunica solo con color) y su criterio. Solo la etapa abierta (o por
 // verificar, o detenida) muestra su formulario; una cumplida se puede corregir. No hay control
 // para saltar: la única forma de avanzar es que la compuerta acepte lo registrado.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CONTENIDO_ETAPAS } from "@/content/protocolo";
 import type { EstadoEtapa, EtapaEvaluada } from "@/engine/protocolo/compuerta";
 import type { DatosEtapa, EtapaId, Previas } from "@/engine/protocolo/etapas";
@@ -75,6 +75,16 @@ function Tarjeta({
   const { etapa, estado } = evaluada;
   const contenido = CONTENIDO_ETAPAS[etapa.id];
   const [corrigiendo, setCorrigiendo] = useState(false);
+  // Al registrar, el formulario desaparece: el foco no puede quedarse en el aire (lo oye quien
+  // usa lector de pantalla) y pasa al título de la tarjeta, que ya dice «cumplida».
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+  const enfocarTitulo = useRef(false);
+  useEffect(() => {
+    if (enfocarTitulo.current) {
+      enfocarTitulo.current = false;
+      tituloRef.current?.focus();
+    }
+  });
   const Formulario = FORMULARIOS[etapa.id];
   const trabajable =
     estado.tipo === "abierta" ||
@@ -94,7 +104,12 @@ function Tarjeta({
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 id={tituloId} className="font-semibold">
+        <h3
+          id={tituloId}
+          ref={tituloRef}
+          tabIndex={-1}
+          className="font-semibold"
+        >
           <span className="font-mono text-ink-muted">
             {t("protocol.stage.label", { n: etapa.id })}
           </span>{" "}
@@ -215,7 +230,10 @@ function Tarjeta({
                 previas={previasDe(evaluadas, etapa.id)}
                 onRegistrar={(d) => {
                   const rechazo = onRegistrar(etapa.id, d);
-                  if (!rechazo) setCorrigiendo(false);
+                  if (!rechazo) {
+                    enfocarTitulo.current = true;
+                    setCorrigiendo(false);
+                  }
                   return rechazo;
                 }}
               />

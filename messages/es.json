@@ -987,7 +987,11 @@
         "body": "Su huella es otra. ¿Es una versión nueva de los mismos datos, o es otro proyecto?",
         "version": "Otra versión de los mismos datos",
         "other": "Otro proyecto: cuaderno nuevo",
-        "cancel": "No cargarlo"
+        "cancel": "No cargarlo",
+        "replace-title": "¿Empezar un cuaderno nuevo con este archivo?",
+        "replace-body": "Esto reemplaza tu cuaderno actual ({n} entradas) en este navegador. Expórtalo antes si lo quieres conservar.",
+        "replace-yes": "Sí, empezar otro",
+        "back": "Volver"
       }
     },
     "stages": {
@@ -1251,6 +1255,239 @@
           "muestra-corta": "Con {parametros} parámetros candidatos hacen falta al menos {requerido} filas (manda: {manda}). Tienes {disponible}: no alcanzan, y el modelo puede aprender ruido y fallar en datos nuevos.",
           "periodo": "Tus datos cubren del {minimo} al {maximo}: el modelo solo habla de ese periodo."
         }
+      },
+      "4": {
+        "need-data": "Esta etapa usa tus datos y las etapas 1, 2 y 3: cárgalos y cúmplelas primero.",
+        "no-findings": "No se pudo leer el objetivo de la etapa 2 en este archivo. Vuelve a la etapa 2 y revisa tu elección.",
+        "computing": "Calculando sobre tus filas… con un archivo grande puede tardar unos segundos.",
+        "step": {
+          "bet": {
+            "title": "1 · Tu apuesta"
+          },
+          "reveal": {
+            "title": "2 · Lo que encontró la app"
+          },
+          "inventory": {
+            "title": "3 · Columna por columna"
+          }
+        },
+        "bet": {
+          "intro": "Antes de ver nada: ¿qué columnas crees que filtran el resultado, es decir, que traen información que no tendrías en el momento de decidir? Cuando veas lo que encontró la app, tu apuesta queda fija: así la comparación te enseña dónde se te escapa.",
+          "mode": {
+            "legend": "¿Qué apuestas?",
+            "some": "Sí, marco las que creo",
+            "none": "Ninguna"
+          },
+          "pick": {
+            "legend": "Columnas que crees que filtran el resultado",
+            "help": "{count} marcadas. Marca las que, a tu juicio, se llenan o se conocen después del resultado.",
+            "help_one": "{count} marcada. Marca las que, a tu juicio, se llenan o se conocen después del resultado."
+          },
+          "why-off": {
+            "mode": "Elige primero: marcar columnas, o «ninguna».",
+            "some": "Marca al menos una columna, o elige «ninguna»."
+          },
+          "reveal": "Ver lo que encontró la app",
+          "locked": "Tu apuesta quedó fija: {list}.",
+          "locked-none": "Tu apuesta quedó fija: ninguna columna filtra el resultado."
+        },
+        "reveal": {
+          "intro": "Esto es lo que la app encontró en tus datos. Mira una columna a la vez: lo que filtra solo en combinación con otras no lo ve."
+        },
+        "find": {
+          "leak": {
+            "title": "Columnas que casi adivinan el resultado",
+            "item": "{columna}: puntaje {score} de 1",
+            "why": "Una columna que por sí sola casi adivina el resultado suele ser un dato que se llena después de que ocurre, o una copia de él. Con ella el modelo se vería muy bien en tus datos y fallaría en la vida real."
+          },
+          "blank": {
+            "title": "Columnas que solo se llenan cuando ocurre el resultado",
+            "item": "{columna}: que esté vacía o llena separa el resultado (puntaje {score} de 1)",
+            "why": "Si una columna está vacía hasta que pasa lo que quieres predecir (una fecha de baja, un motivo de cierre), no existe en el momento de decidir."
+          },
+          "id": {
+            "title": "Columnas que parecen un identificador",
+            "item": "{columna}: {pct} % de sus filas tienen un valor distinto",
+            "why": "Un identificador (un folio, un correo) sirve para reconocer filas, no para predecir: el modelo lo memoriza y no aprende nada que sirva con casos nuevos."
+          },
+          "dup": {
+            "title": "Filas repetidas",
+            "rows": "Copias exactas de otra fila: {n} de {filas}.",
+            "unit": "Filas con la misma unidad en el mismo momento: {n}.",
+            "why": "Si una copia cae en entrenar y otra en probar, el puntaje se ve mejor de lo que es."
+          },
+          "drift": {
+            "title": "Cambio entre periodos (deriva)",
+            "measured": "Se comparó el periodo reciente (desde el {corte}, {reciente} filas) contra el anterior ({historico} filas).",
+            "item": {
+              "alert": "{columna}: PSI {psi} (alerta)",
+              "moderate": "{columna}: PSI {psi} (cambio moderado)"
+            },
+            "ks": "· D de KS {ks}",
+            "none": "Ninguna columna cambió de forma apreciable entre los dos periodos.",
+            "skipped": "No se pudo medir (muy pocos valores en un periodo): {list}.",
+            "why": "El PSI compara cómo se reparten los valores entre dos periodos: menos de 0.10 es estable, de 0.10 a 0.25 moderado y desde 0.25 alerta. Esos umbrales son una convención de la industria (Lewis, 1994), no una prueba estadística; el D de KS es solo informativo.",
+            "state": {
+              "sin-fecha": "No medible: en la etapa 2 no elegiste una columna de fecha, y sin ella no hay «antes» ni «después».",
+              "una-fecha": "No medible: todas las filas con fecha son del mismo día.",
+              "fecha-concentrada": "No medible: más de la mitad de las filas caen en el último día, y no queda un periodo anterior con qué compararlo.",
+              "pocas-filas": "No medible: con tan pocas filas por periodo, un cambio chico no se distingue del azar."
+            }
+          },
+          "none": "La app no encontró nada que marcar. Eso no prueba que no haya fuga: solo mira una columna a la vez."
+        },
+        "compare": {
+          "title": "Tu apuesta contra lo que encontró la app",
+          "note": "«La app no la marca» no significa «no filtra»: la app mira una columna a la vez. Y tu apuesta no cambia: es lo que pensabas antes de ver.",
+          "empty": "No apostaste ninguna columna y la app no marcó fugas: coinciden.",
+          "hits": "Acertaste: {list}.",
+          "surprises": "Te sorprendieron (filtran y no las apostaste): {list}.",
+          "false": "Apostaste y la app no las marca: {list}."
+        },
+        "inv": {
+          "intro": "Para cada columna: quién o qué la produce, si existe cuando se decide y si la usas. Lo que se llena después de decidir no puede entrenar el modelo, y lo que no sabes tampoco.",
+          "alerts": "{count} columnas con alerta: se responden una por una.",
+          "details": "Revisar una por una ({n})",
+          "progress": {
+            "missing": "Faltan {count} de {total} columnas por responder.",
+            "done": "Todas con estado: usar {usar} · excluir {excluir} · no sé {nose}.",
+            "missing_one": "Falta 1 de {total} columnas por responder."
+          },
+          "alerts_one": "1 columna con alerta: se responde una por una."
+        },
+        "alert": {
+          "fuga": "Filtra el resultado",
+          "fuga-vacios": "Vacía hasta el resultado",
+          "identificador": "Parece identificador",
+          "deriva-alta": "Cambió mucho entre periodos",
+          "deriva-moderada": "Cambio moderado",
+          "rol": "Unidad o fecha de la etapa 2",
+          "apuesta": "Tu apuesta"
+        },
+        "row": {
+          "alerts": "Alertas de esta columna",
+          "procedencia": {
+            "label": "¿Quién o qué la produce?",
+            "help": "Por ejemplo: «lo registra el vendedor al abrir la cuenta». Opcional.",
+            "required": "Obligatoria: tiene una alerta y la dejas en «usar».",
+            "help-alert": "Por ejemplo: «lo registra el vendedor al abrir la cuenta». Solo es obligatoria si la dejas en «usar»."
+          },
+          "momento": "¿Cuándo se llena, frente al momento de decidir?",
+          "estado": {
+            "label": "¿La usas?",
+            "help": {
+              "despues": "Se llena después de decidir: solo puede excluirse.",
+              "nose": "Si no sabes cuándo se llena, no puede entrenar: exclúyela o déjala en «no sé».",
+              "blank": "«Usar» aparece cuando dices que se llena antes de decidir."
+            }
+          }
+        },
+        "momento": {
+          "antes": "Antes de decidir",
+          "despues": "Después de decidir (o del resultado)",
+          "nose": "No sé"
+        },
+        "estado": {
+          "pick": "Elige…",
+          "usar": "Usar",
+          "excluir": "Excluir",
+          "nose": "No sé (no entrena)"
+        },
+        "auto": {
+          "despues": "{columna}: se llena después de decidir, así que se excluye.",
+          "nose": "{columna}: no sabes cuándo se llena, así que no entrena («no sé»)."
+        },
+        "bulk": {
+          "title": "Responder en bloque las columnas sin alerta",
+          "desc": "Estas {count} columnas no tienen ninguna alerta. Si todas se llenan antes del momento de decidir, puedes marcarlas en «usar» de una vez. Lo que declares queda en tu cuaderno.",
+          "names": "Ver las {count} columnas",
+          "declare": "Declaro que estas {count} columnas se llenan antes del momento de decidir.",
+          "apply": "Marcar las {count} en «usar»",
+          "undo": "Deshacer",
+          "done": "Marcaste {count} columnas en «usar» con tu declaración.",
+          "applied": "{count} columnas marcadas en «usar» con tu declaración.",
+          "undone": "Deshiciste la acción en bloque.",
+          "desc_one": "Esta columna no tiene ninguna alerta. Si se llena antes del momento de decidir, puedes marcarla en «usar» de una vez. Lo que declares queda en tu cuaderno.",
+          "names_one": "Ver la columna",
+          "declare_one": "Declaro que esta columna se llena antes del momento de decidir.",
+          "apply_one": "Marcar la columna en «usar»",
+          "done_one": "Marcaste 1 columna en «usar» con tu declaración.",
+          "applied_one": "1 columna marcada en «usar» con tu declaración."
+        },
+        "field": {
+          "apuesta": "Tu apuesta (columnas que crees que filtran)",
+          "apuesta_ninguna": "Apostaste que ninguna filtra",
+          "procedencia": "Procedencia, por columna",
+          "momento": "Cuándo se llena, por columna",
+          "estado": "Estado, por columna",
+          "en_bloque": "Columnas que declaraste en bloque (se llenan antes de decidir)"
+        },
+        "check": {
+          "columnas": "Columnas revisadas",
+          "roles": "Unidad y fecha de la etapa 2",
+          "filas": "Filas del archivo",
+          "fuga": "Fuga por valores (puntaje por columna)",
+          "fuga_vacios": "Fuga por vacíos (puntaje por columna)",
+          "identificador": "Parecen identificador (proporción de valores distintos)",
+          "duplicados_fila": "Filas copia exacta de otra",
+          "duplicados_unidad_momento": "Filas con la misma unidad en el mismo momento",
+          "deriva_estado": "Cambio entre periodos",
+          "deriva_corte": "Periodo reciente desde",
+          "deriva_historico": "Filas del periodo anterior",
+          "deriva_reciente": "Filas del periodo reciente",
+          "deriva_psi": "PSI por columna",
+          "deriva_ks": "D de KS por columna",
+          "deriva_sin_medir": "Sin poder medir el cambio",
+          "alertas": "Columnas con alerta",
+          "aciertos": "Aciertos de tu apuesta",
+          "sorpresas": "Sorpresas",
+          "falsas_alarmas": "Apostadas que la app no marca"
+        },
+        "missing": {
+          "etapas-previas": "las etapas 1, 2 y 3 cumplidas",
+          "nombres-columnas": "nombres de columna distintos entre sí y distintos del objetivo",
+          "apuesta": "tu apuesta: columnas marcadas, o «ninguna»",
+          "estado": "un estado en cada columna («usar», «excluir» o «no sé»)",
+          "despues-excluir": "«excluir» en las columnas que se llenan después de decidir",
+          "nose-usar": "que ninguna columna con momento «no sé» quede en «usar»",
+          "usar-sin-antes": "el momento «antes de decidir» en cada columna que usas",
+          "procedencia": "la procedencia de cada columna con alerta que usas",
+          "bloque": "que la acción en bloque solo incluya columnas sin alerta, usadas y llenadas antes de decidir"
+        },
+        "trap": {
+          "fuga-excluida": "La columna {columna} casi adivina el resultado (con esa señal hay {n} en total) y la dejaste fuera del entrenamiento: así el modelo no hace trampa sin que lo sepas.",
+          "fuga-usada": "Dejaste en «usar» la columna {columna}, que casi adivina el resultado (con esa señal hay {n} en total): es probable que el modelo se vea mejor de lo que será en la vida real.",
+          "fuga-vacios-excluida": "La columna {columna} solo se llena cuando ocurre el resultado (con esa señal hay {n} en total) y la excluiste: no existe en el momento de decidir.",
+          "fuga-vacios-usada": "Dejaste en «usar» la columna {columna}, que solo se llena cuando ocurre el resultado (con esa señal hay {n} en total): el modelo vería la respuesta.",
+          "filas-repetidas": "Copias exactas de otra fila: {n} de {filas}. Si una cae en entrenar y otra en probar, el puntaje se ve mejor de lo que es.",
+          "unidad-momento-repetida": "Filas con la misma unidad en el mismo momento: {n}. Revisa si son copias o dos eventos distintos.",
+          "deriva": "La columna {columna} cambió mucho desde el {corte} (PSI {psi}): lo que el modelo aprenda del pasado puede no valer hoy.",
+          "sin-fecha": "No se midió el cambio entre periodos: en la etapa 2 no elegiste una columna de fecha.",
+          "una-fecha": "No se midió el cambio entre periodos: todas las fechas son del mismo día.",
+          "fecha-concentrada": "No se midió el cambio entre periodos: más de la mitad de las filas caen en el último día.",
+          "pocas-filas": "No se midió el cambio entre periodos: con tan pocas filas, un cambio chico no se distingue del azar.",
+          "apuesta": "Tu apuesta — aciertos: {aciertos} · sorpresas: {sorpresas} · apostadas que la app no marca: {falsas}. La app mira una columna a la vez: no ve lo que filtra solo en combinación.",
+          "sin-hallazgos": "La app no encontró nada que marcar. Eso no prueba que no haya fuga: solo mira una columna a la vez.",
+          "nada-para-entrenar": "Ninguna columna entrenará un modelo: todas están en «excluir» o en «no sé»."
+        },
+        "summary": {
+          "bet": "Tu apuesta: {list}",
+          "bet-none": "Tu apuesta: ninguna columna filtra",
+          "compare": "Aciertos: {hits} · sorpresas: {surprises} · apostadas que la app no marca: {false}",
+          "counts": "Usar: {usar} · excluir: {excluir} · no sé: {nose}",
+          "alerts": "Columnas con alerta: {n}",
+          "bulk": "Declaraste que {count} columnas se llenan antes de decidir (marcadas en bloque).",
+          "drift": "Cambio entre periodos: {estado}",
+          "drift-state": {
+            "medida": "medido",
+            "sin-fecha": "no medible (sin fecha)",
+            "una-fecha": "no medible (una sola fecha)",
+            "fecha-concentrada": "no medible (fechas concentradas)",
+            "pocas-filas": "no medible (pocas filas)"
+          },
+          "none": "ninguna",
+          "bulk_one": "Declaraste que 1 columna se llena antes de decidir (marcada en bloque)."
+        }
       }
     },
     "status": {
@@ -1277,6 +1514,13 @@
       "new-yes": "Sí, empezar otro",
       "new-no": "Cancelar",
       "imported": "Cuaderno importado. Carga el CSV con que se hizo para verificar las etapas que usan los datos.",
+      "import-confirm": {
+        "title": "¿Reemplazar tu cuaderno por el del archivo?",
+        "body": "Tu cuaderno actual tiene {now} entradas y el del archivo, {incoming}. Al reemplazarlo, el actual deja de estar en este navegador: expórtalo antes si lo quieres conservar.",
+        "export-first": "Exportar el actual primero",
+        "yes": "Sí, reemplazar",
+        "cancel": "Cancelar"
+      },
       "started": "Cuaderno nuevo.",
       "unreadable": "El cuaderno guardado en este navegador no se pudo leer; empezaste uno vacío. Si lo exportaste antes, impórtalo.",
       "yes": "Sí",

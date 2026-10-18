@@ -14,6 +14,7 @@ import type {
 import { CLAVES_1 } from "@/engine/protocolo/etapa1";
 import { CLAVES_2 } from "@/engine/protocolo/etapa2";
 import { CLAVES_3 } from "@/engine/protocolo/etapa3";
+import { CLAVES_4, TRAMPAS_4 } from "@/engine/protocolo/etapa4";
 import {
   ETAPA_IDS,
   ETAPAS_ABIERTAS,
@@ -134,7 +135,12 @@ describe("contenido del Protocolo {es, en}", () => {
   });
 
   it("cada campo que una etapa puede registrar tiene su etiqueta en el cuaderno, en los dos idiomas", () => {
-    const etapas = { 1: CLAVES_1, 2: CLAVES_2, 3: CLAVES_3 } as const;
+    const etapas = {
+      1: CLAVES_1,
+      2: CLAVES_2,
+      3: CLAVES_3,
+      4: CLAVES_4,
+    } as const;
     const faltan: string[] = [];
     for (const [n, claves] of Object.entries(etapas))
       for (const l of IDIOMAS) {
@@ -176,6 +182,17 @@ describe("contenido del Protocolo {es, en}", () => {
         "muestra",
         "chequeos",
         "etapas-previas",
+      ],
+      4: [
+        "etapas-previas",
+        "nombres-columnas",
+        "apuesta",
+        "estado",
+        "despues-excluir",
+        "nose-usar",
+        "usar-sin-antes",
+        "procedencia",
+        "bloque",
       ],
     } as const;
     const paradas = { 2: ["sin-objetivo"], 3: ["causal"] } as const;
@@ -222,6 +239,7 @@ describe("contenido del Protocolo {es, en}", () => {
         "costo-constante",
       ],
       3: ["causal", "muestra-alcanza", "muestra-corta", "periodo"],
+      4: TRAMPAS_4,
     } as const;
     const sin: string[] = [];
     for (const l of IDIOMAS)

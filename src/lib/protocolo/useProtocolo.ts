@@ -40,6 +40,7 @@ import {
   leerCuaderno,
   type RechazoArchivo,
 } from "@/lib/protocolo/archivo";
+import { olvidarApuesta } from "@/lib/protocolo/apuesta";
 import { csvLimitParams } from "@/lib/quantity";
 import { sha256Hex } from "@/lib/sha256";
 
@@ -59,6 +60,8 @@ export type EstadoProtocolo = {
   readonly datos: DatosCargados | null;
   /** Un archivo distinto del del cuaderno, que espera «es otra versión» o «es otro proyecto». */
   readonly pendiente: DatosCargados | null;
+  /** Un cuaderno importado y válido que espera el sí del usuario para reemplazar el actual. */
+  readonly importePendiente: Cuaderno | null;
   readonly aviso: Aviso | null;
   readonly error: Aviso | null;
   /** Escrituras al navegador que todavía no terminaron (el «Guardado» solo se dice sin pendientes). */
@@ -114,7 +117,10 @@ export type AccionesProtocolo = {
   descartarPendiente(): void;
   registrarEtapa(etapa: EtapaId, datos: DatosEtapa): RechazoRegistro | null;
   exportar(): { nombre: string; contenido: string };
+  /** Lee el archivo; con un cuaderno con entradas, espera `confirmarImporte` antes de reemplazarlo. */
   importar(file: File): Promise<void>;
+  confirmarImporte(): void;
+  descartarImporte(): void;
   nuevoCuaderno(): void;
 };
 
@@ -130,6 +136,7 @@ export function useProtocolo(
     cuaderno: cuadernoVacio(reloj()),
     datos: null,
     pendiente: null,
+    importePendiente: null,
     aviso: null,
     error: null,
     guardando: 0,
@@ -268,6 +275,7 @@ export function useProtocolo(
     setEstado((p) => {
       if (!p.pendiente) return p;
       const cuaderno = agregarCarga(cuadernoVacio(reloj()), p.pendiente.carga);
+      olvidarApuesta();
       guardar(cuaderno);
       return {
         ...p,
@@ -350,10 +358,21 @@ export function useProtocolo(
         }));
         return;
       }
+      // Un cuaderno con entradas no se reemplaza en silencio (M3 del S8): espera el sí.
+      if (estadoRef.current.cuaderno.evidencias.length > 0) {
+        setEstado((p) => ({
+          ...p,
+          importePendiente: lectura.cuaderno,
+          error: null,
+        }));
+        return;
+      }
+      olvidarApuesta();
       guardar(lectura.cuaderno);
       setEstado((p) => ({
         ...p,
         cuaderno: lectura.cuaderno,
+        importePendiente: null,
         error: null,
         aviso: { clave: "protocol.notebook.imported" },
       }));
@@ -361,10 +380,29 @@ export function useProtocolo(
     [guardar],
   );
 
+  const confirmarImporte = useCallback(() => {
+    const entrante = estadoRef.current.importePendiente;
+    if (!entrante) return;
+    olvidarApuesta();
+    guardar(entrante);
+    setEstado((p) => ({
+      ...p,
+      cuaderno: entrante,
+      importePendiente: null,
+      error: null,
+      aviso: { clave: "protocol.notebook.imported" },
+    }));
+  }, [guardar]);
+
+  const descartarImporte = useCallback(() => {
+    setEstado((p) => ({ ...p, importePendiente: null }));
+  }, []);
+
   const nuevoCuaderno = useCallback(() => {
     setEstado((p) => {
       const base = cuadernoVacio(reloj());
       const cuaderno = p.datos ? agregarCarga(base, p.datos.carga) : base;
+      olvidarApuesta();
       guardar(cuaderno);
       return { ...p, cuaderno, aviso: { clave: "protocol.notebook.started" } };
     });
@@ -391,6 +429,8 @@ export function useProtocolo(
     registrarEtapa,
     exportar,
     importar,
+    confirmarImporte,
+    descartarImporte,
     nuevoCuaderno,
   };
 }

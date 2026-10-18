@@ -466,15 +466,16 @@ describe("etapa 3 · ¿predecir o explicar? y el diseño", () => {
     expect(d.chequeos.manda).toBe(m.manda);
   });
 
-  it("con la muestra suficiente cumple; la etapa 4 queda sin construir", () => {
+  it("con la muestra suficiente cumple; la etapa 4 abre y la 5 sigue sin construir", () => {
     const d = datos3({ parametros: 3 });
     expect(d.chequeos.suficiente).toBe(true);
     const cuaderno = cumplir(base, 3, d);
     const estados = evaluarDS(cuaderno).map((e) => e.estado.tipo);
-    expect(estados.slice(0, 4)).toEqual([
+    expect(estados.slice(0, 5)).toEqual([
       "cumplida",
       "cumplida",
       "cumplida",
+      "abierta",
       "no-construida",
     ]);
   });

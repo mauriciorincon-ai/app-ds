@@ -987,7 +987,11 @@
         "body": "Its fingerprint is different. Is it a new version of the same data, or another project?",
         "version": "A new version of the same data",
         "other": "Another project: new notebook",
-        "cancel": "Don't load it"
+        "cancel": "Don't load it",
+        "replace-title": "Start a new notebook with this file?",
+        "replace-body": "This replaces your current notebook ({n} entries) in this browser. Export it first if you want to keep it.",
+        "replace-yes": "Yes, start another",
+        "back": "Back"
       }
     },
     "stages": {
@@ -1251,6 +1255,239 @@
           "muestra-corta": "With {parametros} candidate parameters you need at least {requerido} rows (decided by: {manda}). You have {disponible}: not enough, and the model may learn noise and fail on new data.",
           "periodo": "Your data covers {minimo} to {maximo}: the model only speaks for that period."
         }
+      },
+      "4": {
+        "need-data": "This stage uses your data and stages 1, 2 and 3: load it and complete them first.",
+        "no-findings": "The target from stage 2 could not be read in this file. Go back to stage 2 and check your choice.",
+        "computing": "Computing over your rows… with a large file it can take a few seconds.",
+        "step": {
+          "bet": {
+            "title": "1 · Your bet"
+          },
+          "reveal": {
+            "title": "2 · What the app found"
+          },
+          "inventory": {
+            "title": "3 · Column by column"
+          }
+        },
+        "bet": {
+          "intro": "Before seeing anything: which columns do you think leak the outcome, meaning they carry information you wouldn't have at the moment of deciding? Once you see what the app found, your bet is locked: that way the comparison shows you where it slips past you.",
+          "mode": {
+            "legend": "What do you bet?",
+            "some": "Yes, I mark the ones I think",
+            "none": "None"
+          },
+          "pick": {
+            "legend": "Columns you think leak the outcome",
+            "help": "{count} marked. Mark the ones you think are filled in, or known, after the outcome.",
+            "help_one": "{count} marked. Mark the ones you think are filled in, or known, after the outcome."
+          },
+          "why-off": {
+            "mode": "Choose first: mark columns, or «none».",
+            "some": "Mark at least one column, or choose «none»."
+          },
+          "reveal": "See what the app found",
+          "locked": "Your bet is locked: {list}.",
+          "locked-none": "Your bet is locked: no column leaks the outcome."
+        },
+        "reveal": {
+          "intro": "This is what the app found in your data. It looks at one column at a time: it can't see what leaks only in combination with others."
+        },
+        "find": {
+          "leak": {
+            "title": "Columns that almost guess the outcome",
+            "item": "{columna}: score {score} out of 1",
+            "why": "A column that almost guesses the outcome on its own is usually something filled in after it happens, or a copy of it. With it, the model would look great on your data and fail in real life."
+          },
+          "blank": {
+            "title": "Columns that are only filled in when the outcome happens",
+            "item": "{columna}: whether it is empty or filled separates the outcome (score {score} out of 1)",
+            "why": "If a column stays empty until what you want to predict happens (a cancellation date, a closing reason), it doesn't exist at the moment of deciding."
+          },
+          "id": {
+            "title": "Columns that look like an identifier",
+            "item": "{columna}: {pct}% of its rows have a distinct value",
+            "why": "An identifier (an order number, an email) is for recognizing rows, not for predicting: the model memorizes it and learns nothing useful for new cases."
+          },
+          "dup": {
+            "title": "Repeated rows",
+            "rows": "Exact copies of another row: {n} of {filas}.",
+            "unit": "Rows with the same unit at the same moment: {n}.",
+            "why": "If one copy lands in training and another in testing, the score looks better than it is."
+          },
+          "drift": {
+            "title": "Change between periods (drift)",
+            "measured": "The recent period (from {corte}, {reciente} rows) was compared with the earlier one ({historico} rows).",
+            "item": {
+              "alert": "{columna}: PSI {psi} (alert)",
+              "moderate": "{columna}: PSI {psi} (moderate change)"
+            },
+            "ks": "· KS D {ks}",
+            "none": "No column changed appreciably between the two periods.",
+            "skipped": "Could not be measured (too few values in one period): {list}.",
+            "why": "The PSI compares how values are spread across two periods: below 0.10 is stable, 0.10 to 0.25 moderate and from 0.25 an alert. Those thresholds are an industry convention (Lewis, 1994), not a statistical test; the KS D is informational only.",
+            "state": {
+              "sin-fecha": "Not measurable: in stage 2 you didn't pick a date column, and without one there is no «before» or «after».",
+              "una-fecha": "Not measurable: all the rows with a date fall on the same day.",
+              "fecha-concentrada": "Not measurable: more than half the rows fall on the last day, and no earlier period is left to compare against.",
+              "pocas-filas": "Not measurable: with so few rows per period, a small change can't be told apart from chance."
+            }
+          },
+          "none": "The app found nothing to flag. That doesn't prove there is no leakage: it only looks at one column at a time."
+        },
+        "compare": {
+          "title": "Your bet against what the app found",
+          "note": "«The app doesn't flag it» doesn't mean «it doesn't leak»: the app looks at one column at a time. And your bet doesn't change: it's what you thought before seeing.",
+          "empty": "You bet on no column and the app flagged no leaks: they agree.",
+          "hits": "You got it right: {list}.",
+          "surprises": "Surprises (they leak and you didn't bet on them): {list}.",
+          "false": "You bet on them and the app doesn't flag them: {list}."
+        },
+        "inv": {
+          "intro": "For each column: who or what produces it, whether it exists when you decide, and whether you use it. What is filled in after deciding can't train the model, and neither can what you don't know.",
+          "alerts": "{count} columns with an alert: answer them one by one.",
+          "details": "Review one by one ({n})",
+          "progress": {
+            "missing": "{count} of {total} columns still to answer.",
+            "done": "All have a state: use {usar} · exclude {excluir} · don't know {nose}.",
+            "missing_one": "1 of {total} columns still to answer."
+          },
+          "alerts_one": "1 column with an alert: answer it on its own."
+        },
+        "alert": {
+          "fuga": "Leaks the outcome",
+          "fuga-vacios": "Empty until the outcome",
+          "identificador": "Looks like an identifier",
+          "deriva-alta": "Changed a lot between periods",
+          "deriva-moderada": "Moderate change",
+          "rol": "Unit or date from stage 2",
+          "apuesta": "Your bet"
+        },
+        "row": {
+          "alerts": "Alerts for this column",
+          "procedencia": {
+            "label": "Who or what produces it?",
+            "help": "For example: «the salesperson records it when opening the account». Optional.",
+            "required": "Required: it has an alert and you're leaving it on «use».",
+            "help-alert": "For example: «the salesperson records it when opening the account». It is only required if you leave it on «use»."
+          },
+          "momento": "When is it filled in, relative to the moment of deciding?",
+          "estado": {
+            "label": "Do you use it?",
+            "help": {
+              "despues": "It's filled in after deciding: it can only be excluded.",
+              "nose": "If you don't know when it's filled in, it can't train: exclude it or leave it on «don't know».",
+              "blank": "«Use» appears when you say it's filled in before deciding."
+            }
+          }
+        },
+        "momento": {
+          "antes": "Before deciding",
+          "despues": "After deciding (or after the outcome)",
+          "nose": "I don't know"
+        },
+        "estado": {
+          "pick": "Choose…",
+          "usar": "Use",
+          "excluir": "Exclude",
+          "nose": "Don't know (doesn't train)"
+        },
+        "auto": {
+          "despues": "{columna}: it's filled in after deciding, so it's excluded.",
+          "nose": "{columna}: you don't know when it's filled in, so it doesn't train («don't know»)."
+        },
+        "bulk": {
+          "title": "Answer the columns with no alert in bulk",
+          "desc": "These {count} columns have no alert. If they are all filled in before the moment of deciding, you can mark them all as «use» at once. What you declare is recorded in your notebook.",
+          "names": "See the {count} columns",
+          "declare": "I declare that these {count} columns are filled in before the moment of deciding.",
+          "apply": "Mark all {count} as «use»",
+          "undo": "Undo",
+          "done": "You marked {count} columns as «use» with your declaration.",
+          "applied": "{count} columns marked as «use» with your declaration.",
+          "undone": "You undid the bulk action.",
+          "desc_one": "This column has no alert. If it is filled in before the moment of deciding, you can mark it as «use» at once. What you declare is recorded in your notebook.",
+          "names_one": "See the column",
+          "declare_one": "I declare that this column is filled in before the moment of deciding.",
+          "apply_one": "Mark the column as «use»",
+          "done_one": "You marked 1 column as «use» with your declaration.",
+          "applied_one": "1 column marked as «use» with your declaration."
+        },
+        "field": {
+          "apuesta": "Your bet (columns you think leak)",
+          "apuesta_ninguna": "You bet that none leaks",
+          "procedencia": "Provenance, per column",
+          "momento": "When it's filled in, per column",
+          "estado": "State, per column",
+          "en_bloque": "Columns you declared in bulk (filled in before deciding)"
+        },
+        "check": {
+          "columnas": "Columns reviewed",
+          "roles": "Unit and date from stage 2",
+          "filas": "Rows in the file",
+          "fuga": "Leakage by values (score per column)",
+          "fuga_vacios": "Leakage by blanks (score per column)",
+          "identificador": "Look like an identifier (share of distinct values)",
+          "duplicados_fila": "Rows that are exact copies",
+          "duplicados_unidad_momento": "Rows with the same unit at the same moment",
+          "deriva_estado": "Change between periods",
+          "deriva_corte": "Recent period from",
+          "deriva_historico": "Rows in the earlier period",
+          "deriva_reciente": "Rows in the recent period",
+          "deriva_psi": "PSI per column",
+          "deriva_ks": "KS D per column",
+          "deriva_sin_medir": "Change could not be measured",
+          "alertas": "Columns with an alert",
+          "aciertos": "Hits of your bet",
+          "sorpresas": "Surprises",
+          "falsas_alarmas": "Bet on but not flagged by the app"
+        },
+        "missing": {
+          "etapas-previas": "stages 1, 2 and 3 completed",
+          "nombres-columnas": "column names that differ from each other and from the target",
+          "apuesta": "your bet: columns marked, or «none»",
+          "estado": "a state for every column («use», «exclude» or «don't know»)",
+          "despues-excluir": "«exclude» on the columns filled in after deciding",
+          "nose-usar": "that no column with an unknown moment stays on «use»",
+          "usar-sin-antes": "the moment «before deciding» on every column you use",
+          "procedencia": "the provenance of every column with an alert that you use",
+          "bloque": "that the bulk action only includes columns with no alert that you use and are filled in before deciding"
+        },
+        "trap": {
+          "fuga-excluida": "The column {columna} almost guesses the outcome ({n} columns show that signal in total) and you kept it out of training: that way the model doesn't cheat without you knowing.",
+          "fuga-usada": "You left {columna} on «use», and it almost guesses the outcome ({n} columns show that signal in total): the model will probably look better than it will in real life.",
+          "fuga-vacios-excluida": "The column {columna} is only filled in when the outcome happens ({n} columns show that signal in total) and you excluded it: it doesn't exist at the moment of deciding.",
+          "fuga-vacios-usada": "You left {columna} on «use», and it is only filled in when the outcome happens ({n} columns show that signal in total): the model would see the answer.",
+          "filas-repetidas": "Exact copies of another row: {n} of {filas}. If one lands in training and another in testing, the score looks better than it is.",
+          "unidad-momento-repetida": "Rows with the same unit at the same moment: {n}. Check whether they are copies or two different events.",
+          "deriva": "The column {columna} changed a lot since {corte} (PSI {psi}): what the model learns from the past may not hold today.",
+          "sin-fecha": "Change between periods wasn't measured: in stage 2 you didn't pick a date column.",
+          "una-fecha": "Change between periods wasn't measured: all the dates fall on the same day.",
+          "fecha-concentrada": "Change between periods wasn't measured: more than half the rows fall on the last day.",
+          "pocas-filas": "Change between periods wasn't measured: with so few rows, a small change can't be told apart from chance.",
+          "apuesta": "Your bet — hits: {aciertos} · surprises: {sorpresas} · bets the app doesn't flag: {falsas}. The app looks at one column at a time: it can't see what leaks only in combination.",
+          "sin-hallazgos": "The app found nothing to flag. That doesn't prove there is no leakage: it only looks at one column at a time.",
+          "nada-para-entrenar": "No column will train a model: all of them are on «exclude» or «don't know»."
+        },
+        "summary": {
+          "bet": "Your bet: {list}",
+          "bet-none": "Your bet: no column leaks",
+          "compare": "Hits: {hits} · surprises: {surprises} · bet on but not flagged: {false}",
+          "counts": "Use: {usar} · exclude: {excluir} · don't know: {nose}",
+          "alerts": "Columns with an alert: {n}",
+          "bulk": "You declared that {count} columns are filled in before deciding (marked in bulk).",
+          "drift": "Change between periods: {estado}",
+          "drift-state": {
+            "medida": "measured",
+            "sin-fecha": "not measurable (no date)",
+            "una-fecha": "not measurable (a single date)",
+            "fecha-concentrada": "not measurable (concentrated dates)",
+            "pocas-filas": "not measurable (too few rows)"
+          },
+          "none": "none",
+          "bulk_one": "You declared that 1 column is filled in before deciding (marked in bulk)."
+        }
       }
     },
     "status": {
@@ -1277,6 +1514,13 @@
       "new-yes": "Yes, start another",
       "new-no": "Cancel",
       "imported": "Notebook imported. Load the CSV it was made with to check the stages that use the data.",
+      "import-confirm": {
+        "title": "Replace your notebook with the one in the file?",
+        "body": "Your current notebook has {now} entries and the file's has {incoming}. Replacing it removes the current one from this browser: export it first if you want to keep it.",
+        "export-first": "Export the current one first",
+        "yes": "Yes, replace",
+        "cancel": "Cancel"
+      },
       "started": "New notebook.",
       "unreadable": "The notebook saved in this browser couldn't be read; you started an empty one. If you exported it before, import it.",
       "yes": "Yes",

@@ -46,8 +46,23 @@ const COMUNES = ["decision", "decisor", "cuando", "hoy", "forma", "unidad"];
 
 /** Todas las claves que esta etapa puede registrar (para el cuaderno y su paridad de textos). */
 export const CLAVES_1 = {
-  respuestas: [...COMUNES, "c_fp", "c_fn", "opciones", "costos", "c_sub", "c_sobre"],
-  chequeos: ["umbral", "razon", "n_opciones", "costo_menor", "costo_mayor", "cuantil"],
+  respuestas: [
+    ...COMUNES,
+    "c_fp",
+    "c_fn",
+    "opciones",
+    "costos",
+    "c_sub",
+    "c_sobre",
+  ],
+  chequeos: [
+    "umbral",
+    "razon",
+    "n_opciones",
+    "costo_menor",
+    "costo_mayor",
+    "cuantil",
+  ],
 } as const;
 
 function camposDe(forma: SupervisedTask): readonly string[] {
@@ -195,7 +210,8 @@ function trampas(datos: DatosEtapa): readonly Trampa[] {
     binaria: (): readonly Trampa[] => {
       const [umbral, razon] = [numero(c, "umbral"), numero(c, "razon")];
       if (umbral === null || razon === null) return [];
-      if (Math.abs(umbral - 0.5) < 1e-9) return [{ clave: "umbral-igual", params: {} }];
+      if (Math.abs(umbral - 0.5) < 1e-9)
+        return [{ clave: "umbral-igual", params: {} }];
       // `razon` es lo que cuesta un falso negativo frente a un falso positivo.
       return umbral < 0.5
         ? [{ clave: "umbral", params: { umbral, razon } }]
@@ -216,7 +232,8 @@ function trampas(datos: DatosEtapa): readonly Trampa[] {
     numerica: (): readonly Trampa[] => {
       const [cuantil, razon] = [numero(c, "cuantil"), numero(c, "razon")];
       if (cuantil === null || razon === null) return [];
-      if (Math.abs(cuantil - 0.5) < 1e-9) return [{ clave: "cuantil-igual", params: {} }];
+      if (Math.abs(cuantil - 0.5) < 1e-9)
+        return [{ clave: "cuantil-igual", params: {} }];
       // `razon` es lo que cuesta quedarse corto frente a pasarse.
       return cuantil > 0.5
         ? [{ clave: "cuantil", params: { cuantil, razon } }]

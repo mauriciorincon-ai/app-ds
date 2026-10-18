@@ -190,4 +190,40 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
       en: "A code computed from the file's exact content (SHA-256). If a single byte changes, the fingerprint changes: that's how the app knows you're back with the same data.",
     },
   },
+  // S9 (etapa 4)
+  "existe-al-decidir": {
+    termino: { es: "Existe al decidir", en: "Exists when you decide" },
+    definicion: {
+      es: "Una columna existe al decidir si, en el momento en que el modelo tiene que dar su respuesta, ya está llena y se conoce. Si se llena después del resultado, el modelo la vería al entrenar y no la tendría en la vida real.",
+      en: "A column exists when you decide if, at the moment the model has to give its answer, it is already filled in and known. If it is filled in after the outcome, the model would see it while training and wouldn't have it in real life.",
+    },
+  },
+  procedencia: {
+    termino: { es: "Procedencia", en: "Provenance" },
+    definicion: {
+      es: "Quién o qué produce el valor de una columna: una persona al registrar, un sensor, otro sistema, una fórmula. De ahí sale cuándo se llena y cuánto se puede confiar en ella.",
+      en: "Who or what produces the value of a column: a person entering it, a sensor, another system, a formula. From it you learn when it gets filled in and how far you can trust it.",
+    },
+  },
+  "columna-identificador": {
+    termino: { es: "Columna identificador", en: "Identifier column" },
+    definicion: {
+      es: "Una columna cuyos valores casi nunca se repiten (un folio, un correo, un id). Sirve para reconocer filas, no para predecir: el modelo la memoriza y no aprende nada que sirva con casos nuevos.",
+      en: "A column whose values almost never repeat (an order number, an email, an id). It is for recognizing rows, not for predicting: the model memorizes it and learns nothing useful for new cases.",
+    },
+  },
+  duplicado: {
+    termino: { es: "Fila duplicada", en: "Duplicate row" },
+    definicion: {
+      es: "Una fila idéntica a otra, o la misma unidad registrada dos veces en el mismo momento. Si una copia cae en entrenar y otra en probar, el puntaje parece mejor de lo que es.",
+      en: "A row identical to another, or the same unit recorded twice at the same moment. If one copy lands in training and another in testing, the score looks better than it is.",
+    },
+  },
+  deriva: {
+    termino: { es: "Deriva", en: "Drift" },
+    definicion: {
+      es: "Que los datos de ahora ya no se parecen a los de antes. Aquí se mide con el PSI, que compara cómo se reparten los valores entre dos periodos: menos de 0.10 es estable, de 0.10 a 0.25 moderado y desde 0.25 alerta. Esos umbrales son una convención, no una prueba estadística.",
+      en: "When today's data no longer looks like the past. Here it is measured with the PSI, which compares how values are spread across two periods: below 0.10 is stable, 0.10 to 0.25 moderate and from 0.25 an alert. Those thresholds are a convention, not a statistical test.",
+    },
+  },
 };

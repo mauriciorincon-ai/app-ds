@@ -560,10 +560,23 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      **población**, el **periodo** y las **exclusiones**, y la app calcula **cuántas filas hacen falta**
      para el número de variables que tienes (la cuenta de Riley y colaboradores) y lo compara con las
      tuyas. Si no alcanzan, **no te lo impide**: te pide **escribir tu aviso**, y queda en el cuaderno.
-  6. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
+  6. **Etapa 4 · ¿Existe al decidir?, columna por columna.** Primero **apuestas**: marcas las columnas
+     que crees que filtran el resultado (las que se llenan o se conocen después de que ocurre), o
+     «ninguna». Mientras no apuestas, la app no te muestra nada de lo que encontró; **sin apuesta no hay
+     revelación**. Al revelar, tu apuesta **queda fija** y ves lo que encontró el código: columnas que
+     casi adivinan el resultado, columnas que solo se llenan cuando ocurre, columnas que parecen un
+     identificador, filas repetidas y, si elegiste una columna de fecha en la etapa 2, el **cambio entre
+     periodos**. Una comparación te dice qué acertaste, qué te sorprendió y qué apostaste y la app no
+     marca. Después, **columna por columna** dices quién o qué la produce (la **procedencia**), si se
+     llena **antes** de decidir, **después** o **no sabes**, y si la **usas**, **excluyes** o **no
+     sabes**. Lo que se llena después solo se puede excluir; lo que no sabes **no entra al modelo**. Las
+     columnas que tienen alguna alerta se responden **una por una**. Las que no tienen ninguna pueden
+     marcarse **en bloque**, pero solo si declaras que se llenan antes de decidir: esa declaración queda
+     en el cuaderno, y se puede deshacer.
+  7. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
      «tu unidad se repite: 361 filas para 100 unidades», «con tus costos actúas desde 0.17, no
      desde 0.5».
-  7. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
+  8. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
      queda como una entrada nueva; las etapas que se construyeron sobre la anterior vuelven a
      **«Por verificar»**.
 
@@ -577,9 +590,16 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Exportar cuaderno** baja un archivo `.protocolo.json`: es tu respaldo y lo que llevas a otra
     máquina. **Importar cuaderno** lo devuelve. Un archivo que no es un cuaderno válido se rechaza
     **diciendo qué campo falla**.
+  - **Qué lleva el archivo:** no trae las filas de tu CSV, pero sí datos que salen de él: los nombres de
+    tus columnas, los valores del objetivo con sus conteos, medias, la fecha mínima y la máxima, el
+    nombre del archivo y su huella, además de tus respuestas. Desde la etapa 4 suma también los puntajes
+    por columna que encontró la app y tu procedencia y tus estados por columna. Trátalo con el cuidado que le darías a
+    tus datos.
   - **Ventana privada:** el navegador no deja guardar. La página lo avisa («Exporta tu cuaderno antes de
     irte»): si cierras la pestaña, se pierde.
-  - **Empezar otro cuaderno** reemplaza el de este navegador, tras confirmarlo.
+  - **Lo que reemplaza el cuaderno siempre pide confirmar:** **Empezar otro cuaderno**, **importar**
+    un cuaderno cuando el actual ya tiene entradas, y **«Otro proyecto»** al cargar otro CSV (que pide un
+    segundo sí). Escape o un clic fuera del diálogo cancelan; nada se reemplaza sin tu sí.
 
 - **Los estados de cada etapa:** **Cerrada** (falta cumplir la anterior), **Abierta** (puedes
   trabajarla), **Cumplida**, **Por verificar** (tus datos cambiaron o corregiste una etapa anterior),
@@ -594,8 +614,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   navegador**: viven en el cuaderno de este navegador y en el archivo que tú bajas. A Sentry solo llega
   el número de la etapa y el resultado (registrada, cerrada…), nunca un valor.
 
-- **Limitaciones conocidas (Sprint 008):**
-  - Hoy están construidas las etapas 1, 2 y 3; las demás se ven con su criterio pero **no abren**.
+- **Limitaciones conocidas (Sprints 008 y 009):**
+  - Hoy están construidas las etapas 1, 2, 3 y 4; las demás se ven con su criterio pero **no abren**.
   - El Protocolo cubre las tres tareas **con objetivo** (dos clases, varias o una cantidad); **sin
     objetivo** no aplica y se va a «agrupar» en Probeta.
   - El tamaño de muestra con **varias clases** es una **aproximación**: se calcula «una contra el
@@ -610,6 +630,19 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Los números se escriben **sin separador de miles**, con punto o coma decimal (`1500` o `1500.5`).
     `1,500` o `1.500` no se leen, porque no se sabe si son uno y medio o mil quinientos; el campo te
     lo dice.
+  - **Etapa 4, límites (Sprint 009):**
+    - La fuga se busca **una columna a la vez**: lo que filtra solo en combinación con otras no se
+      encuentra. Que la app no marque una columna **no prueba** que no filtre.
+    - Tu apuesta se fija al revelar y se recuerda **mientras la pestaña siga abierta**: recargar no la
+      cambia; cerrar la pestaña o empezar otro cuaderno sí. No se puede saber si la editaste a mano
+      en el archivo exportado.
+    - La compuerta verifica que el inventario **cuadra con los datos** y que cada columna tiene su
+      estado; no puede saber si tus respuestas sobre la procedencia o el momento son **verdad**.
+    - El cambio entre periodos solo se mide si elegiste una columna de fecha en la etapa 2, y no se
+      mide sobre el objetivo, la fecha, la unidad ni los identificadores. Los umbrales del PSI (0,10 y
+      0,25) son una **convención**, no una prueba estadística; el D de Kolmogorov-Smirnov es solo
+      informativo.
+    - Con pocas filas por periodo, el cambio **no se mide** y la app lo dice: no inventa una cifra.
 
 ## Diccionario de términos
 
@@ -714,6 +747,11 @@ cuando una te frene.
 | **Cuaderno**              | La lista de lo que cada etapa verificó, con fecha y números. Solo crece. Se exporta como `.protocolo.json`.                                    |
 | **Huella**                | Un código que sale del contenido exacto de tu archivo. Si cambia un solo byte, cambia: así se sabe si vuelves con los mismos datos.            |
 | **Unidad de análisis**    | Qué es una fila: un cliente, una visita, un mes de una tienda. Si la misma unidad aparece en varias filas, no se puede repartir al azar.       |
+| **Existe al decidir**     | Una columna existe al decidir si, cuando el modelo tiene que responder, ya está llena y se conoce. Si se llena después del resultado, el modelo la vería al entrenar y no la tendría en la vida real. |
+| **Procedencia**           | Quién o qué produce el valor de una columna: una persona al registrar, un sensor, otro sistema. De ahí sale cuándo se llena y cuánto confiar en ella. |
+| **Columna identificador** | Una columna cuyos valores casi nunca se repiten (un folio, un correo). Sirve para reconocer filas, no para predecir. |
+| **Fila duplicada**        | Una fila idéntica a otra, o la misma unidad registrada dos veces en el mismo momento. Si una copia cae en entrenar y otra en probar, el puntaje se ve mejor de lo que es. |
+| **Deriva**                | Que los datos de ahora ya no se parecen a los de antes. Se mide con el PSI entre dos periodos; menos de 0,10 es estable, de 0,10 a 0,25 moderado y desde 0,25 alerta (una convención, no una prueba). |
 | **Umbral**                | La probabilidad a partir de la cual actúas. Con tus costos sale una cifra concreta.                                                            |
 | **Tasa base**             | Con qué frecuencia ocurre el caso en tus datos, sin modelo.                                                                                    |
 | **Parámetros candidatos** | Cuántos números distintos puede aprender el modelo de tus columnas: uno por columna numérica y una menos que las categorías por cada columna de texto. |
@@ -797,3 +835,4 @@ cuando una te frene.
 | 006    | Estimar una cantidad (liga de 11 modelos que estiman, veredicto en las unidades de la columna contra la mediana y la regresión lineal, gráfico estimado frente a real, la pregunta «¿categorías o una cantidad?», `<columna>_estimado` al puntuar, avisos de sesgo y atípicos) + diccionario y preguntas de estimar. |
 | 007    | Clasificar en varias categorías (de 3 a 20 categorías, la liga en exactitud balanceada, matriz de confusión con ✓, fuga que nombra la columna y la categoría, `<columna>_predicho` y `_probabilidad`) y agrupar filas parecidas sin objetivo (cuatro agrupadores, ganador por consenso, lectura contra datos sin estructura y estabilidad, qué distingue a cada grupo, «fuera de todo grupo», la muestra del jerárquico, tus filas con su grupo, asignar filas nuevas) + dos ejemplos en el inicio, diccionario y preguntas de las dos. |
 | 008    | Protocolo DS, el camino lento (etapas 1 a 3 con compuertas que no se saltan, cuaderno que sobrevive a cerrar la pestaña y se exporta e importa, glosario consultable).                                                                                                                                                                                                                                                                                                                                                                  |
+| 009    | Protocolo DS, etapa 4 «¿existe al decidir?» (apuesta antes de revelar, lo que encontró la app: fuga por valores y por vacíos, identificadores, filas repetidas y cambio entre periodos; inventario por columna con procedencia, momento y estado; acción en bloque con declaración; confirmaciones al reemplazar el cuaderno).

@@ -10,11 +10,62 @@ import {
   type Cuaderno,
   type Evidencia,
 } from "@/engine/protocolo/cuaderno";
-import type { Valor } from "@/engine/protocolo/etapas";
+import { resumenEtapa4 } from "@/engine/protocolo/etapa4";
+import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import { fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
 import { thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
+import { Confirmacion } from "./Confirmacion";
+
+/**
+ * La etapa 4 registra listas largas (una entrada por columna): el cuaderno muestra lo que
+ * importa de ellas —tu apuesta contra los hallazgos, cuántas columnas usas, la declaración en
+ * bloque— y el archivo exportado trae el detalle completo.
+ */
+function ResumenEtapa4({ datos }: { datos: DatosEtapa }) {
+  const { t } = useI18n();
+  const r = resumenEtapa4(datos);
+  const lista = (nombres: readonly string[]) =>
+    nombres.length > 0
+      ? nombres.join(", ")
+      : t("protocol.stage.4.summary.none");
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen4"
+    >
+      <li>
+        {r.ninguna
+          ? t("protocol.stage.4.summary.bet-none")
+          : t("protocol.stage.4.summary.bet", { list: lista(r.apuesta) })}
+      </li>
+      <li>
+        {t("protocol.stage.4.summary.compare", {
+          hits: lista(r.aciertos),
+          surprises: lista(r.sorpresas),
+          false: lista(r.falsas),
+        })}
+      </li>
+      <li>
+        {t("protocol.stage.4.summary.counts", {
+          usar: r.usar,
+          excluir: r.excluir,
+          nose: r.nose,
+        })}
+      </li>
+      <li>{t("protocol.stage.4.summary.alerts", { n: r.alertas })}</li>
+      {r.enBloque > 0 && (
+        <li>{t("protocol.stage.4.summary.bulk", { count: r.enBloque })}</li>
+      )}
+      <li>
+        {t("protocol.stage.4.summary.drift", {
+          estado: t(`protocol.stage.4.summary.drift-state.${r.derivaEstado}`),
+        })}
+      </li>
+    </ul>
+  );
+}
 
 function Entrada({
   evidencia,
@@ -70,7 +121,8 @@ function Entrada({
           ` · ${t("protocol.notebook.with-data", { name: carga.nombre })}`}
         {!vigente && ` · ${t("protocol.notebook.superseded")}`}
       </p>
-      {filas.length > 0 && (
+      {evidencia.etapa === 4 && <ResumenEtapa4 datos={evidencia.datos} />}
+      {evidencia.etapa !== 4 && filas.length > 0 && (
         <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
           {filas.map(([clave, valor]) => (
             <div key={clave} className="contents">
@@ -91,20 +143,30 @@ function Entrada({
 export function CuadernoPanel({
   cuaderno,
   guardado,
+  importePendiente,
   onExportar,
   onImportar,
+  onConfirmarImporte,
+  onDescartarImporte,
   onNuevo,
 }: {
   cuaderno: Cuaderno;
   /** `null`: este navegador no guarda (memoria); `false`: escribiendo; `true`: guardado. */
   guardado: boolean | null;
+  /** Un cuaderno válido importado que espera confirmación para reemplazar el actual. */
+  importePendiente: Cuaderno | null;
   onExportar: () => { nombre: string; contenido: string };
   onImportar: (file: File) => void;
+  onConfirmarImporte: () => void;
+  onDescartarImporte: () => void;
   onNuevo: () => void;
 }) {
   const { locale, t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [confirmando, setConfirmando] = useState(false);
+  // Los botones que abren un diálogo a donde vuelve el foco al cerrarlo.
+  const boton = (id: string) => () =>
+    document.querySelector<HTMLElement>(`[data-boton="${id}"]`);
 
   function exportar() {
     const { nombre, contenido } = onExportar();
@@ -174,6 +236,7 @@ export function CuadernoPanel({
         <Button
           variant="secondary"
           icon="import"
+          data-boton="importar"
           onClick={() => inputRef.current?.click()}
         >
           {t("protocol.notebook.import")}
@@ -181,6 +244,7 @@ export function CuadernoPanel({
         <Button
           variant="ghost"
           icon="plus"
+          data-boton="nuevo"
           onClick={() => setConfirmando(true)}
         >
           {t("protocol.notebook.new")}
@@ -202,31 +266,69 @@ export function CuadernoPanel({
       </div>
 
       {confirmando && (
-        <div
-          role="alertdialog"
-          aria-label={t("protocol.notebook.new")}
-          className="flex flex-col gap-2 rounded-md border border-caution/40 p-3"
-        >
-          <p className="text-sm">{t("protocol.notebook.new-confirm")}</p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              icon="check"
-              onClick={() => {
-                setConfirmando(false);
-                onNuevo();
-              }}
-            >
-              {t("protocol.notebook.new-yes")}
-            </Button>
-            <Button
-              variant="ghost"
-              icon="x"
-              onClick={() => setConfirmando(false)}
-            >
-              {t("protocol.notebook.new-no")}
-            </Button>
-          </div>
-        </div>
+        <Confirmacion
+          testId="protocolo-dialogo-nuevo"
+          titulo={t("protocol.notebook.new")}
+          cuerpo={<p>{t("protocol.notebook.new-confirm")}</p>}
+          onCancelar={() => setConfirmando(false)}
+          devolverA={boton("nuevo")}
+          acciones={
+            <>
+              <Button
+                icon="check"
+                onClick={() => {
+                  setConfirmando(false);
+                  onNuevo();
+                }}
+              >
+                {t("protocol.notebook.new-yes")}
+              </Button>
+              <Button
+                variant="ghost"
+                icon="x"
+                data-autofocus
+                onClick={() => setConfirmando(false)}
+              >
+                {t("protocol.notebook.new-no")}
+              </Button>
+            </>
+          }
+        />
+      )}
+
+      {importePendiente && (
+        <Confirmacion
+          testId="protocolo-dialogo-importar"
+          titulo={t("protocol.notebook.import-confirm.title")}
+          cuerpo={
+            <p>
+              {t("protocol.notebook.import-confirm.body", {
+                now: cuaderno.evidencias.length,
+                incoming: importePendiente.evidencias.length,
+              })}
+            </p>
+          }
+          onCancelar={onDescartarImporte}
+          devolverA={boton("importar")}
+          acciones={
+            <>
+              <Button variant="secondary" icon="download" onClick={exportar}>
+                {t("protocol.notebook.import-confirm.export-first")}
+              </Button>
+              <Button icon="import" onClick={onConfirmarImporte}>
+                {t("protocol.notebook.import-confirm.yes")}
+              </Button>
+              <Button
+                variant="ghost"
+                icon="x"
+                data-autofocus
+                onClick={onDescartarImporte}
+              >
+                {t("protocol.notebook.import-confirm.cancel")}
+              </Button>
+            </>
+          }
+        />
       )}
     </section>
   );

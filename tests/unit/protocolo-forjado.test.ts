@@ -1,7 +1,8 @@
 // Protocolo DS (S8, auditoría A2): un cuaderno editado a mano no gana nada. El criterio de la
 // etapa 2 lee lo que el código calculó sobre la TABLA; la compuerta lo vuelve a calcular contra
 // la tabla cargada y, si no coincide, la etapa vuelve a «por verificar» y la siguiente no abre.
-// Se prueba con la definición real del Protocolo, por el mismo camino del usuario: exportar el
+// Se prueba con la definición real del Protocolo (la etapa 4 ya está construida: queda «cerrada»
+// mientras la 3 no cumple), por el mismo camino del usuario: exportar el
 // `.protocolo.json`, editarlo y leerlo de nuevo.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -115,7 +116,7 @@ describe("un cuaderno editado a mano no gana nada (A2)", () => {
       "cumplida",
       "cumplida",
       "abierta",
-      "no-construida",
+      "cerrada",
     ]);
   });
 
@@ -132,7 +133,7 @@ describe("un cuaderno editado a mano no gana nada (A2)", () => {
         "cumplida",
         "por-verificar",
         "cerrada",
-        "no-construida",
+        "cerrada",
       ]);
       const [, dos] = evaluar(PROTOCOLO_DS, editado, HUELLA, LIMPIA);
       expect(dos?.estado).toMatchObject({
@@ -169,7 +170,7 @@ describe("un cuaderno editado a mano no gana nada (A2)", () => {
       "cumplida",
       "por-verificar",
       "cerrada",
-      "no-construida",
+      "cerrada",
     ]);
   });
 
@@ -193,7 +194,7 @@ describe("un cuaderno editado a mano no gana nada (A2)", () => {
       "cumplida",
       "por-verificar",
       "cerrada",
-      "no-construida",
+      "cerrada",
     ]);
     const [, dos] = evaluar(PROTOCOLO_DS, honesto(), HUELLA, null);
     expect(dos?.estado).toMatchObject({ motivo: "sin-datos" });
