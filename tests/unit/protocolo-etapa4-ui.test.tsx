@@ -188,7 +188,7 @@ describe("el paso 2: la revelación", () => {
     ).toContain("referencia");
     expect(
       screen.getByTestId("protocolo-hallazgo-duplicados").textContent,
-    ).toMatch(/4 de 480 filas/);
+    ).toMatch(/4 de 480/);
     expect(
       screen.getByTestId("protocolo-hallazgo-deriva").textContent,
     ).toContain("2025-09-15");

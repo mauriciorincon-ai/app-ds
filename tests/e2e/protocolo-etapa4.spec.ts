@@ -261,10 +261,10 @@ test("etapa 4 con bajas: fuga por vacíos, identificador, repetidas y deriva; la
     e4.getByTestId("protocolo-hallazgo-identificador"),
   ).toContainText("referencia");
   await expect(e4.getByTestId("protocolo-hallazgo-duplicados")).toContainText(
-    "4 de 480 filas",
+    "Copias exactas de otra fila: 4 de 480",
   );
   await expect(e4.getByTestId("protocolo-hallazgo-duplicados")).toContainText(
-    "7 filas repiten la misma unidad",
+    "Filas con la misma unidad en el mismo momento: 7",
   );
   const deriva = e4.getByTestId("protocolo-hallazgo-deriva");
   await expect(deriva).toContainText("desde el 2025-09-15");
