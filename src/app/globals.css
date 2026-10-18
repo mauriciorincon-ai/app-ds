@@ -4,6 +4,7 @@
    (bg-surface, text-ink-muted, border-hairline…) que apuntan a estas variables;
    cero valores mágicos sueltos. */
 :root {
+  color-scheme: light;
   --bg: #fafaf7;
   --surface: #ffffff;
   --sunken: #f2f2ec;
@@ -21,6 +22,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --bg: #0e1116;
     --surface: #161a21;
     --sunken: #1c222b;
