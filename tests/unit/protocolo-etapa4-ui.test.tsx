@@ -5,13 +5,7 @@
 //  · el inventario: «después» solo deja «excluir», «no sé» no ofrece «usar», la acción en bloque
 //    exige la declaración y se deshace, y registrar pasa por el criterio de verdad;
 //  · 80 columnas: las que no tienen alerta no se montan hasta que se abren.
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DatosEtapa } from "@/engine/protocolo/etapas";
 import type { CsvTable } from "@/lib/ds/csv";
@@ -367,6 +361,10 @@ describe("el paso 3: el inventario", () => {
     fireEvent.click(screen.getByTestId("protocolo-bloque-declaro"));
     expect(aplicar).toBeEnabled();
     fireEvent.click(aplicar);
+    // el botón que tenía el foco desaparece: el foco pasa al título del panel, no se pierde
+    expect(document.activeElement?.textContent).toBe(
+      "Responder en bloque las columnas sin alerta",
+    );
     expect(screen.getByTestId("protocolo-bloque-hecho").textContent).toContain(
       "3 columnas",
     );
@@ -378,6 +376,9 @@ describe("el paso 3: el inventario", () => {
     );
 
     fireEvent.click(screen.getByTestId("protocolo-bloque-deshacer"));
+    expect(document.activeElement?.textContent).toBe(
+      "Responder en bloque las columnas sin alerta",
+    );
     expect(screen.getByTestId("protocolo-progreso").textContent).toMatch(
       /Faltan 9 de 9/,
     );

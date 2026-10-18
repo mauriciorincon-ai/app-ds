@@ -38,6 +38,7 @@ const { empaquetar } = await import("@/lib/protocolo/archivo");
 const { sha256Hex } = await import("@/lib/sha256");
 
 const AHORA = new Date("2026-10-18T12:00:00.000Z");
+const APUESTA = "probeta-protocolo:apuesta";
 const CSV_A =
   "id,fecha,renovo\n1,2026-01-05,si\n1,2026-02-05,no\n2,2026-01-09,si\n";
 const CSV_B = "id,fecha,renovo\n9,2026-03-05,no\n9,2026-04-05,si\n";
@@ -211,12 +212,14 @@ describe("importar un cuaderno (M3)", () => {
     await importar(archivo(1));
     await waitFor(() => expect(entradas()).toBe(1));
     await importar(archivo(2));
+    window.sessionStorage.setItem(APUESTA, "{}");
     fireEvent.click(
       within(await screen.findByRole("alertdialog")).getByRole("button", {
         name: "Sí, reemplazar",
       }),
     );
     await waitFor(() => expect(entradas()).toBe(2));
+    expect(window.sessionStorage.getItem(APUESTA)).toBeNull();
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(screen.getByText(/Cuaderno importado/)).toBeTruthy();
   });
@@ -273,10 +276,13 @@ describe("empezar otro cuaderno", () => {
       screen.getByRole("button", { name: "Empezar otro cuaderno" }),
     );
     dialogo = await screen.findByRole("alertdialog");
+    // un cuaderno nuevo no hereda la apuesta de la etapa 4 del anterior
+    window.sessionStorage.setItem(APUESTA, "{}");
     fireEvent.click(
       within(dialogo).getByRole("button", { name: "Sí, empezar otro" }),
     );
     await waitFor(() => expect(entradas()).toBe(0));
+    expect(window.sessionStorage.getItem(APUESTA)).toBeNull();
   });
 });
 
