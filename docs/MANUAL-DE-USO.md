@@ -586,7 +586,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      **«usar»** en la etapa 4. La app mide la regla en tus filas y la añade a la tabla como **«Tu regla de
      hoy»**. Con sí o no, la salida es fija: si la regla se cumple, se actúa; si no, no. Con varias opciones o
      una cantidad, eliges qué se hace en cada caso. Es una **referencia**, no un resultado: se mide sobre
-     todas tus filas, y la **etapa 7** la vuelve a medir sobre la prueba.
+     todas tus filas, y la **etapa 8** la vuelve a medir sobre la prueba.
   8. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
      «tu unidad se repite: 361 filas para 100 unidades», «con tus costos actúas desde 0.17, no
      desde 0.5».
