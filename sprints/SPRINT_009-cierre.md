@@ -5,7 +5,7 @@ hito: H-2
 opened: 2026-10-17
 closed: 2026-10-17
 branch: sprint-009/existe-al-decidir
-pr:
+pr: 24
 ---
 # Sprint 009 «¿Existe al decidir?» — cierre ejecutivo
 
