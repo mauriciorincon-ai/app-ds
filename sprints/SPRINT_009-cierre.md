@@ -10,23 +10,20 @@ pr:
 
 # Sprint 009 «¿Existe al decidir?» — cierre ejecutivo (BORRADOR: se completa al cierre)
 
-## PUNTO DE REANUDACIÓN (borrar al cerrar) — F1 casi cerrada
+## PUNTO DE REANUDACIÓN (borrar al cerrar) — F1 CERRADA, sigue la F2
 
-**Hecho y verificado (4 commits `[F1]` sobre `main`=5d01712, rama `sprint-009/existe-al-decidir`, sin empujar, sin PR):**
-M2/M3 (`Confirmacion.tsx` + `protocolo-dialogos.test.tsx` 10/10 + e2e `protocolo.spec.ts` 12/12 con axe en los 4 diálogos) ·
-B13 (guía J6 y manual) · motor `src/engine/protocolo/{deriva,duplicados,etapa4}.ts` + `fechasPorFila` + `vistaColumna`/`nombreClase`
-en `tabla.ts` · kit `bajas-con-fuga.csv` (480 filas) · pruebas `protocolo-{deriva,duplicados,etapa4}.test.ts` +
-`protocolo-etapa4-helpers.ts` (protocolo local `PROTOCOLO4`, `armar`, `inventario`, `datosBajas`). `pnpm test` 1033/1033; motor
-del Protocolo 96,62 % líneas / 88,24 % ramas. La etapa 4 NO está registrada en `PROTOCOLO_DS` (eso es F2).
-**Falta de la F1 (Sonnet 5.5):** (1) `tests/unit/protocolo-etapa4-forjado.test.ts` por exportar→editar→`leerArchivo(texto, PROTOCOLO4)`
-→`evaluar` (fuga escondida, alertas recortadas + `en_bloque` con una alerta, aciertos/duplicados/PSI/identificador inventados →
-`no-cuadra`; `registrar` con chequeos falsos → `datos-invalidos`/`chequeos`; sin tabla → `sin-datos`; ida y vuelta JSON honesta sigue
-cumplida; apuesta cambiada a mano NO se detecta = limitación declarada) y su **demo en rojo** (`scripts/demo-rojo.sh --archivo
-src/engine/protocolo/etapa4.ts --buscar '  recalcular,' --reemplazar '  // recalcular,' --gate 'pnpm exec vitest run
-tests/unit/protocolo-etapa4-forjado.test.ts' --debe-nombrar 'una fuga escondida' --esperar-verde <igual> --minimo-tests 8`);
-(2) `tests/integration/deriva-scipy.test.ts` (Pyodide): `chi2.ppf(0.99,5)` = `CHI2_99_GL5` y `ks_2samp(a,b).statistic` = `ksD`;
-(3) `portada-liviana.test.ts`: sumar `Etapa4Form`, `Confirmacion`, `etapa4` a la lista prohibida; (4) medir el tiempo en frío de
-`hallazgos4` a 50 000×79 (el test solo exige < 60 s; la cifra va al cierre).
+**F1 hecha y verificada (7 commits `[F1]` sobre `main`=5d01712, rama `sprint-009/existe-al-decidir`, sin empujar, sin PR):**
+M2/M3 (`Confirmacion.tsx`, `protocolo-dialogos.test.tsx` 10/10, e2e `protocolo.spec.ts` 12/12 con axe en los 4 diálogos) · B13 (guía J6 y
+manual) · motor `src/engine/protocolo/{deriva,duplicados,etapa4}.ts` + `fechasPorFila` + `vistaColumna` · kit `bajas-con-fuga.csv` ·
+pruebas del motor + `protocolo-etapa4-forjado.test.ts` (15) + `tests/integration/deriva-scipy.test.ts` (4) + `portada-liviana` (20).
+`pnpm typecheck && pnpm lint && pnpm test` verdes: 79 archivos, 1053/1053; motor del Protocolo 96,62 % líneas / 88,24 % ramas.
+**Demos en rojo (regla 27, tras correrlas):** (a) `etapa4.ts` con `recalcular` comentado → 11 de 15 pruebas del forjado fallan y la
+salida nombra «una fuga escondida»; restaurado, 15/15 · (b) `deriva.ts` con `CHI2_99_GL5` = 15.09 → el oráculo de scipy falla
+nombrando `chi2.ppf(0.99, 5)`; restaurado, 4/4. **scipy coincide** (1e-12) en χ² crítico, D de KS (con empates y constantes),
+cortes de quintiles (`inverted_cdf`) y PSI (= divergencia de Jeffreys con `rel_entr`).
+**Tiempo medido:** `hallazgos4` en frío a 50 000×79 ≈ 2,1 s (2071 / 2082 / 2108 ms, vitest·jsdom, esta máquina); la 2.ª llamada sale de
+la caché (< 50 ms). En la pantalla: pintar «Calculando…» ANTES de bloquear el hilo (setTimeout/transición), una sola vez por archivo.
+La etapa 4 NO está registrada en `PROTOCOLO_DS` (eso es F2).
 **Luego F2 (Sonnet 5.5):** `Etapa4Form.tsx` (apuesta → revelación → inventario → bloque; nada que dependa de hallazgos se MONTA antes
 de fijar la apuesta; apuesta en `sessionStorage` atada a huella+evidencias 2–3; foco al título al revelar; `role="status"` único
 para cambios automáticos; `useReducer` + filas `memo`; orden por riesgo UNA vez), `CampoCasillas`, registrar en `ids.ts`
