@@ -8,7 +8,9 @@
 // es un cuaderno, de otra versión o con un campo que no cuadra se rechaza diciendo cuál. La
 // forma la valida zod; la coherencia (orden de las evidencias, a qué previas apuntan, la forma
 // de lo que registró cada etapa) la valida este archivo con la definición del protocolo.
-import { z } from "zod";
+// `zod/mini`, no `zod`: la API funcional se desarma por módulos y la ruta /protocolo pesa ~85 KB
+// menos (presupuesto de script de perf-budget.json; el zod completo traía todos los esquemas).
+import * as z from "zod/mini";
 import { CUADERNO_VERSION, type Cuaderno } from "@/engine/protocolo/cuaderno";
 import {
   ETAPA_IDS,
@@ -25,6 +27,9 @@ export const MAX_PROTOCOL_FILE_BYTES = 2 * 1024 * 1024;
 const HEX64 = /^[0-9a-f]{64}$/;
 const ETAPA_CLAVE = /^(10|[1-9])$/;
 
+const hex64 = () => z.string().check(z.regex(HEX64));
+const entero = () => z.int();
+
 const valor = z.union([
   z.string(),
   z.number(),
@@ -40,23 +45,25 @@ const datosEtapa = z.strictObject({
 });
 
 const evidencia = z.strictObject({
-  seq: z.number().int().positive(),
-  etapa: z
-    .number()
-    .int()
-    .refine((n) => (ETAPA_IDS as readonly number[]).includes(n)),
+  seq: entero().check(z.positive()),
+  etapa: entero().check(
+    z.refine((n) => (ETAPA_IDS as readonly number[]).includes(n)),
+  ),
   fecha: z.iso.datetime(),
-  huella: z.string().regex(HEX64).nullable(),
-  base: z.record(z.string().regex(ETAPA_CLAVE), z.number().int().positive()),
+  huella: z.nullable(hex64()),
+  base: z.record(
+    z.string().check(z.regex(ETAPA_CLAVE)),
+    entero().check(z.positive()),
+  ),
   datos: datosEtapa,
 });
 
 const carga = z.strictObject({
   fecha: z.iso.datetime(),
-  sha256: z.string().regex(HEX64),
-  nombre: z.string().max(260),
-  filas: z.number().int().nonnegative(),
-  columnas: z.number().int().nonnegative(),
+  sha256: hex64(),
+  nombre: z.string().check(z.maxLength(260)),
+  filas: entero().check(z.nonnegative()),
+  columnas: entero().check(z.nonnegative()),
 });
 
 const cuadernoSchema = z.strictObject({
@@ -92,7 +99,7 @@ function ruta(partes: readonly PropertyKey[]): string {
 }
 
 function primerCampo(
-  error: z.ZodError,
+  error: { readonly issues: readonly z.core.$ZodIssue[] },
   prefijo: readonly PropertyKey[],
 ): string {
   const issue = error.issues[0]!;
