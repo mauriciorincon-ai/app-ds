@@ -14,6 +14,7 @@ import {
   datosEtapa5,
   por100,
   referencias5,
+  resumenEtapa5,
   valoresDeColumna,
   vistaDe,
   type EntradaEtapa5,
@@ -1092,5 +1093,130 @@ describe("la compuerta", () => {
     expect(referencias5(otra, CREDITO.previas)).not.toBe(
       referencias5(CREDITO.tabla, CREDITO.previas),
     );
+  });
+});
+
+// --- deuda del S10 pagada en el S11 -------------------------------------------------------------
+describe("B2: la salida de un número mal escrita tiene su propia falta", () => {
+  const n = numerica(1, 1);
+  const con = (si: string, no: string) =>
+    datosEtapa5(
+      n.tabla,
+      regla({
+        columnas: ["x"],
+        operadores: ["="],
+        valores: ["alto"],
+        si,
+        no,
+      }),
+      n.previas,
+    );
+
+  it("«1,500» (¿uno y medio o mil quinientos?) pide un número bien escrito, no «qué se hace»", () => {
+    const v = criterio(con("1,500", "2"), n.previas);
+    expect(v.tipo === "falta" && v.faltan).toContain("regla-salida-numero");
+    expect(v.tipo === "falta" && v.faltan).not.toContain("regla-salida");
+  });
+
+  it("en dos clases y varias clases la falta sigue siendo «qué se hace»", () => {
+    const v = criterio(
+      datosEtapa5(
+        MULTI.tabla,
+        regla({
+          columnas: ["x"],
+          operadores: ["<"],
+          valores: ["2"],
+          si: "a",
+          no: "zzz",
+        }),
+        MULTI.previas,
+      ),
+      MULTI.previas,
+    );
+    expect(v.tipo === "falta" && v.faltan).toContain("regla-salida");
+    expect(v.tipo === "falta" && v.faltan).not.toContain("regla-salida-numero");
+  });
+
+  it("dos estimaciones bien escritas cumplen", () => {
+    expect(criterio(con("1.5", "2.25"), n.previas)).toEqual({ tipo: "cumple" });
+  });
+});
+
+describe("B4: lo que la etapa registra llega al resumen del cuaderno", () => {
+  it("dos clases: vacíos, métrica y aciertos de la regla y de cada referencia", () => {
+    const tabla = csv(
+      "edad,baja",
+      "20,si",
+      ",si",
+      "40,no",
+      "50,no",
+      ",no",
+      "60,no",
+    );
+    const a = armar4(
+      "vacios.csv",
+      "binaria",
+      {
+        objetivo: "baja",
+        positivo: "si",
+        unidadColumna: null,
+        momentoColumna: null,
+        momentoTexto: "hoy",
+        ordenFecha: null,
+      },
+      tabla,
+    );
+    const d = datosEtapa5(
+      a.tabla,
+      regla({ columnas: ["edad"], operadores: ["!="], valores: ["40"] }),
+      a.previas,
+    );
+    const r = resumenEtapa5(d);
+    const c = d.chequeos;
+    expect(r.reglaVacios).toBe(2);
+    expect(r.reglaMetrica).toBe(numero(c, "regla_metrica"));
+    expect(r.reglaAciertos).toBe(numero(c, "regla_aciertos"));
+    expect(r.clasificacion).toBe(true);
+    expect(r.sinAnterior).toBeNull();
+    const [metrica, aciertos] = [
+      mapa(c, "base_metrica")!,
+      mapa(c, "base_aciertos")!,
+    ];
+    expect(r.referencias.length).toBeGreaterThan(0);
+    for (const x of r.referencias) {
+      expect(x.metrica).toBe(metrica[x.id]);
+      expect(x.aciertos).toBe(aciertos[x.id]);
+    }
+  });
+
+  it("un número: sin aciertos, y cuenta las filas que usaron la mediana por no tener valor anterior", () => {
+    const t = csv(
+      "u,mes,valor",
+      "A,2025-01-15,1",
+      "A,2025-02-15,5",
+      "B,2025-01-15,2",
+      "B,2025-03-15,6",
+      "C,2025-01-15,7",
+    );
+    const b = armar4(
+      "ult.csv",
+      "numerica",
+      {
+        objetivo: "valor",
+        positivo: "",
+        unidadColumna: "u",
+        momentoColumna: "mes",
+        momentoTexto: "",
+        ordenFecha: null,
+      },
+      t,
+      e1Con({ forma: "numerica", c_sub: 1, c_sobre: 1 }),
+    );
+    const r = resumenEtapa5(datosEtapa5(b.tabla, ENTRADA_5_VACIA, b.previas));
+    expect(r.clasificacion).toBe(false);
+    expect(r.referencias.every((x) => x.aciertos === null)).toBe(true);
+    expect(r.referencias.every((x) => x.metrica !== null)).toBe(true);
+    expect(r.sinAnterior).toBe(3);
+    expect(r.reglaMetrica).toBeNull();
   });
 });

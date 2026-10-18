@@ -83,9 +83,10 @@ function cuadraConLaTabla(
   datos: DatosEtapa,
   previas: Previas,
   tabla: CsvTable,
+  huella: string | null,
 ): boolean {
   if (!etapa.recalcular) return true;
-  const hoy = etapa.recalcular(datos, previas, tabla);
+  const hoy = etapa.recalcular(datos, previas, tabla, huella);
   return (
     mismoRegistro(datos.respuestas, hoy.respuestas) &&
     mismoRegistro(datos.chequeos, hoy.chequeos)
@@ -117,7 +118,7 @@ function estadoAbrible(
   if (etapa.recalcular) {
     if (tabla === null)
       return { tipo: "por-verificar", evidencia, motivo: "sin-datos" };
-    if (!cuadraConLaTabla(etapa, evidencia.datos, previas, tabla))
+    if (!cuadraConLaTabla(etapa, evidencia.datos, previas, tabla, huella))
       return { tipo: "por-verificar", evidencia, motivo: "no-cuadra" };
   }
   const veredicto = etapa.criterio(evidencia.datos, previas);
@@ -248,7 +249,7 @@ export function registrar(
   if (
     etapa.recalcular &&
     tabla &&
-    !cuadraConLaTabla(etapa, datos, previas, tabla)
+    !cuadraConLaTabla(etapa, datos, previas, tabla, contexto.huella)
   )
     return {
       ok: false,

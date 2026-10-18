@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { expect, type Page } from "@playwright/test";
 
-// Protocolo DS — los pasos que repiten los e2e de las etapas 4 y 5 (S10): son los mismos clics que
+// Protocolo DS — los pasos que repiten los e2e de las etapas 4, 5 y 6 (S10, S11): son los mismos clics que
 // hace una persona, con los dos archivos del kit (crédito sin fecha, bajas con unidad y fecha).
 
 export const KIT = (nombre: string) =>
@@ -164,4 +164,12 @@ export async function cumplirEtapa4Bajas(page: Page) {
   await responder(page, "referencia", { estado: "excluir" });
   await e4.getByRole("button", { name: "Registrar la etapa 4" }).click();
   await expect(e4.getByText("Cumplida")).toBeVisible();
+}
+
+/** Etapa 5: «no hay regla de hoy» (la 6 la necesita cumplida). */
+export async function cumplirEtapa5SinRegla(page: Page) {
+  const e5 = page.locator("#etapa-5");
+  await e5.getByLabel("No, hoy no hay regla").check();
+  await e5.getByRole("button", { name: "Registrar la etapa 5" }).click();
+  await expect(e5.getByText("Cumplida")).toBeVisible();
 }

@@ -26,6 +26,8 @@ export type PropsFormulario = {
   readonly anterior: DatosEtapa | null;
   /** Lo que registraron las etapas previas ya cumplidas. */
   readonly previas: Previas;
+  /** Todo lo que esta etapa registró antes en el cuaderno (la etapa 6 cuenta sus sellos, S11). */
+  readonly historia?: readonly DatosEtapa[];
   readonly onRegistrar: (datos: DatosEtapa) => RechazoRegistro | null;
 };
 

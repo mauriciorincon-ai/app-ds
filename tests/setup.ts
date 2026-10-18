@@ -19,3 +19,9 @@ if (!globalThis.crypto?.subtle) {
     configurable: true,
   });
 }
+
+// S11: el diccionario inglés ya no va en el bundle de la página sino que se carga al elegirlo. Las
+// pruebas son síncronas (`translate("en", …)`, localStorage en «en» y a aserciones inmediatas), así
+// que lo registran de entrada, como el servidor. `i18n-carga.test.tsx` reinicia los módulos para
+// probar la carga real.
+import "@/i18n/servidor";

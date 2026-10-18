@@ -90,7 +90,10 @@ test("etapa 5 con crédito: referencias, regla de hoy medida en vivo y registro"
   await expect(e5.getByText("Cumplida")).toBeVisible();
   await expect(page.locator("#etapa-5-titulo")).toBeFocused();
   await expect(
-    page.locator("#etapa-6").getByText("Sin construir"),
+    page.locator("#etapa-6").getByText("Abierta", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#etapa-7").getByText("Sin construir"),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen5");
   await expect(resumen).toContainText("no un resultado");

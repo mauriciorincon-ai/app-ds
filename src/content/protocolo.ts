@@ -116,6 +116,14 @@ export const CONTENIDO_ETAPAS: Readonly<Record<EtapaId, ContenidoEtapa>> = {
       es: "Un esquema de partición justificado y la prueba intacta.",
       en: "A justified split scheme and the test set untouched.",
     },
+    tarea: {
+      es: "Elige cómo se separan tus filas en entrenamiento y prueba. La app sugiere el esquema según tu etapa 2 (una fecha, una unidad que se repite) y dice por qué; si eliges otro, escribe por qué. Al registrar, la prueba queda sellada y apartada.",
+      en: "Choose how your rows are split into training and test. The app suggests the scheme from your stage 2 (a date, a unit that repeats) and says why; if you choose another one, write why. When you record it, the test set is sealed and set aside.",
+    },
+    porque: {
+      es: "Si la prueba se parece al entrenamiento más que la vida real (el mismo cliente en los dos lados, el futuro mezclado con el pasado), el error que se mida saldrá optimista.\nEl sello deja constancia de qué filas son la prueba: si cambian, la compuerta lo nota. Es higiene y trazabilidad, no una promesa.\nLa etapa 7 elige el modelo con la prueba todavía cerrada; la etapa 8 la abre una sola vez.",
+      en: "If the test set looks more like training than real life does (the same customer on both sides, the future mixed with the past), the error you measure will be optimistic.\nThe seal records which rows are the test set: if they change, the gate notices. It's hygiene and traceability, not a promise.\nStage 7 picks the model with the test set still closed; stage 8 opens it once.",
+    },
   },
   7: {
     titulo: { es: "Probeta como instrumento", en: "Probeta as the instrument" },

@@ -71,9 +71,22 @@ export type EtapaConstruida = Comun & {
    * con lo registrado, así que un cuaderno editado a mano —con la huella correcta pero
    * chequeos inventados— no pasa. Una etapa que lo declara tiene que depender de los datos.
    */
-  recalcular?(datos: DatosEtapa, previas: Previas, tabla: CsvTable): DatosEtapa;
-  /** Lo que la etapa evitó, calculado en los datos del usuario («en tus datos…»). */
-  trampas(datos: DatosEtapa, previas: Previas): readonly Trampa[];
+  recalcular?(
+    datos: DatosEtapa,
+    previas: Previas,
+    tabla: CsvTable,
+    /** La huella de esa tabla: la etapa 6 sella la prueba con ella (S11). */
+    huella?: string | null,
+  ): DatosEtapa;
+  /**
+   * Lo que la etapa evitó, calculado en los datos del usuario («en tus datos…»). `historia` son las
+   * evidencias anteriores de esta misma etapa en el cuaderno (la etapa 6 cuenta los sellos, S11).
+   */
+  trampas(
+    datos: DatosEtapa,
+    previas: Previas,
+    historia?: readonly DatosEtapa[],
+  ): readonly Trampa[];
 };
 
 /** Una etapa sin construir se ve con su criterio, pero no abre ni registra. */

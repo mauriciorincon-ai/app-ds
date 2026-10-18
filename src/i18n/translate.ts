@@ -3,8 +3,8 @@
 // puros que generan texto para el usuario (plantillas de narración, model card)
 // — así TODO el contenido visible vive en messages/{es,en}.json bajo el test de
 // paridad, también el que no pasa por componentes.
-import type { Locale } from "./config";
-import { dictionaries, type Dictionary } from "./dictionaries";
+import { defaultLocale, type Locale } from "./config";
+import { diccionarioDe, type Dictionary } from "./dictionaries";
 
 export type TParams = Record<string, string | number>;
 
@@ -37,7 +37,9 @@ export function translate(
   key: string,
   params?: TParams,
 ): string {
-  const dictionary = dictionaries[locale];
+  // Un idioma cuyo diccionario todavía no llegó (el inglés se carga bajo demanda, S11) cae al
+  // español: una frase en el otro idioma, nunca la clave cruda.
+  const dictionary = (diccionarioDe(locale) ?? diccionarioDe(defaultLocale))!;
   if (params?.count === 1) {
     const one = resolve(dictionary, `${key}_one`);
     if (one !== `${key}_one`) return interpolate(one, params);

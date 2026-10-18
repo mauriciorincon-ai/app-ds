@@ -90,12 +90,15 @@ export function CampoArea({
   valor,
   onCambio,
   filas = 3,
+  maximo,
 }: {
   etiqueta: string;
   ayuda?: string;
   valor: string;
   onCambio: (valor: string) => void;
   filas?: number;
+  /** Largo máximo (el mismo que acepta la etapa al leer lo registrado). */
+  maximo?: number;
 }) {
   return (
     <Campo etiqueta={etiqueta} ayuda={ayuda}>
@@ -103,6 +106,7 @@ export function CampoArea({
         <textarea
           id={id}
           rows={filas}
+          maxLength={maximo}
           aria-describedby={describedBy}
           value={valor}
           onChange={(event) => onCambio(event.target.value)}

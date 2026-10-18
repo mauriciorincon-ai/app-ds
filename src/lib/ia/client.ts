@@ -6,6 +6,7 @@
 // (NARRATION_PROVIDER: groq | mock); el system prompt vive SOLO aquí (server).
 import { createGroq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
+import "@/i18n/servidor"; // el prompt se arma en el idioma del usuario: el servidor tiene los dos
 import { translate } from "@/i18n/translate";
 import {
   graderOutputSchema,

@@ -205,6 +205,35 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
       en: "How much the mistakes of a way of deciding cost on average, using the costs you wrote in stage 1. It is read per 100 decisions and in your unit: it's the currency that compares the model with doing nothing and with today's rule.",
     },
   },
+  // S11 (etapa 6)
+  "particion-por-tiempo": {
+    termino: { es: "Partición por tiempo", en: "Time-based split" },
+    definicion: {
+      es: "Separar entrenamiento y prueba por fecha: la prueba son las filas más recientes y el modelo aprende solo con las anteriores. Es como se usará: con el pasado, para decidir sobre lo que viene.",
+      en: "Splitting training and test by date: the test set is the most recent rows and the model learns only from earlier ones. That's how it will be used: with the past, to decide about what comes next.",
+    },
+  },
+  "particion-por-grupo": {
+    termino: { es: "Partición por grupo", en: "Group split" },
+    definicion: {
+      es: "Separar por unidad (cliente, tienda, paciente) en vez de por fila: todas las filas de una unidad caen del mismo lado. Si no, el modelo se evalúa con unidades que ya vio y parece mejor de lo que es con unidades nuevas.",
+      en: "Splitting by unit (customer, store, patient) instead of by row: all of a unit's rows land on the same side. Otherwise the model is evaluated on units it has already seen and looks better than it is with new ones.",
+    },
+  },
+  horizonte: {
+    termino: { es: "Horizonte", en: "Horizon" },
+    definicion: {
+      es: "Cuánto tiempo pasa entre que decides y conoces el resultado (un mes para saber si un cliente se fue). En una partición por tiempo, ese tiempo queda como hueco entre entrenamiento y prueba, para que el entrenamiento no use resultados que se conocen dentro de la prueba.",
+      en: "How long it takes from deciding to knowing the outcome (a month to know whether a customer left). In a time-based split, that time is left as a gap between training and test, so training doesn't use outcomes that become known inside the test period.",
+    },
+  },
+  "prueba-sellada": {
+    termino: { es: "Prueba sellada", en: "Sealed test set" },
+    definicion: {
+      es: "La parte de tus datos que se aparta antes de entrenar y se marca con un sello: un código que sale de qué filas son. Si la prueba cambia, el sello no cuadra. Es higiene y trazabilidad, no una promesa: dice que la prueba es la misma, no que nadie la haya mirado.",
+      en: "The part of your data set aside before training and marked with a seal: a code computed from which rows it holds. If the test set changes, the seal doesn't match. It's hygiene and traceability, not a promise: it says the test set is the same, not that nobody looked at it.",
+    },
+  },
   // S9 (etapa 4)
   "existe-al-decidir": {
     termino: { es: "Existe al decidir", en: "Exists when you decide" },

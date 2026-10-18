@@ -865,7 +865,16 @@ function criterio(datos: DatosEtapa, previas: Previas): Veredicto {
         },
         numerica: () => esNumeroCanonico(si) && esNumeroCanonico(no),
       })();
-      if (!salidaBien) faltan.add("regla-salida");
+      // En un número, la salida mal escrita (p. ej. «1,500», o un archivo editado) tiene su propia
+      // falta: decir «qué se hace» cuando ya se escribió algo despista (B2 del S10).
+      if (!salidaBien)
+        faltan.add(
+          byTask(forma, {
+            binaria: "regla-salida",
+            multiclase: "regla-salida",
+            numerica: "regla-salida-numero",
+          }),
+        );
       if (
         faltan.size === 0 &&
         (numero(c, "regla_costo") === null ||
@@ -948,20 +957,43 @@ export type ResumenEtapa5 = {
   readonly filas: number;
   readonly cumple: number | null;
   readonly reglaCosto100: number | null;
-  /** Las referencias, en el orden registrado, con su costo por cada 100 decisiones. */
-  readonly referencias: readonly { id: string; costo100: number }[];
+  /** Las referencias, en el orden registrado: su costo por cada 100 decisiones y la métrica estándar. */
+  readonly referencias: readonly {
+    id: string;
+    costo100: number;
+    metrica: number | null;
+    /** Proporción de aciertos (solo clasificación). */
+    aciertos: number | null;
+  }[];
   readonly mejor: { id: string; costo100: number } | null;
   readonly claseMayoritaria: string | null;
   readonly opcionBarata: string | null;
+  /** Clasificación (dos o varias clases) frente a un número: decide qué métrica se rotula. */
+  readonly clasificacion: boolean;
+  readonly reglaMetrica: number | null;
+  readonly reglaAciertos: number | null;
+  /** Filas medidas donde alguna columna de la regla está vacía (ahí la condición no se cumple). */
+  readonly reglaVacios: number | null;
+  /** Último valor por unidad: filas que usaron la mediana por no tener valor anterior. */
+  readonly sinAnterior: number | null;
 };
 
 /** Lo esencial de una evidencia de la etapa 5, para el cuaderno (no las listas ni los mapas crudos). */
 export function resumenEtapa5(datos: DatosEtapa): ResumenEtapa5 {
   const [r, c] = [datos.respuestas, datos.chequeos];
   const costo = mapa(c, "base_costo") ?? {};
+  const [metrica, aciertos] = [
+    mapa(c, "base_metrica") ?? {},
+    mapa(c, "base_aciertos") ?? {},
+  ];
   const referencias = (lista(c, "base_ids") ?? [])
     .filter((id) => tienePropia(costo, id))
-    .map((id) => ({ id, costo100: por100(costo[id]!) }));
+    .map((id) => ({
+      id,
+      costo100: por100(costo[id]!),
+      metrica: tienePropia(metrica, id) ? metrica[id]! : null,
+      aciertos: tienePropia(aciertos, id) ? aciertos[id]! : null,
+    }));
   const mejor = referencias.reduce<{ id: string; costo100: number } | null>(
     (m, x) => (m === null || x.costo100 < m.costo100 ? x : m),
     null,
@@ -981,6 +1013,11 @@ export function resumenEtapa5(datos: DatosEtapa): ResumenEtapa5 {
     mejor,
     claseMayoritaria: texto(c, "clase_mayoritaria"),
     opcionBarata: texto(c, "opcion_barata"),
+    clasificacion: referencias.some((x) => x.aciertos !== null),
+    reglaMetrica: numero(c, "regla_metrica"),
+    reglaAciertos: numero(c, "regla_aciertos"),
+    reglaVacios: numero(c, "regla_vacios"),
+    sinAnterior: numero(c, "base_n_sin_anterior"),
   };
 }
 

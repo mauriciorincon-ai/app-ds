@@ -20,6 +20,10 @@ const Etapa4Form = dynamic(() =>
 const Etapa5Form = dynamic(() =>
   import("./Etapa5Form").then((m) => m.Etapa5Form),
 );
+// S11: la etapa 6, igual que la 4 y la 5.
+const Etapa6Form = dynamic(() =>
+  import("./Etapa6Form").then((m) => m.Etapa6Form),
+);
 
 export const FORMULARIOS: Readonly<
   Partial<Record<EtapaId, ComponentType<PropsFormulario>>>
@@ -29,4 +33,5 @@ export const FORMULARIOS: Readonly<
   3: Etapa3Form,
   4: Etapa4Form,
   5: Etapa5Form,
+  6: Etapa6Form,
 };

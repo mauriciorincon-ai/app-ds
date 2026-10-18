@@ -113,12 +113,13 @@ test("etapa 4 con fuga plantada: apuesta equivocada, sorpresa, bloque con declar
   await e4.getByRole("button", { name: "Registrar la etapa 4" }).click();
   await expect(e4.getByText("Cumplida")).toBeVisible();
   await expect(page.locator("#etapa-4-titulo")).toBeFocused();
-  // la etapa 5 abre con la 4 cumplida; la 6 se ve con su criterio y no abre
+  // la etapa 5 abre con la 4 cumplida; la 6 existe y sigue cerrada; la 7 se ve con su criterio y no abre
   await expect(
     page.locator("#etapa-5").getByText("Abierta", { exact: true }),
   ).toBeVisible();
+  await expect(page.locator("#etapa-6").getByText("Cerrada")).toBeVisible();
   await expect(
-    page.locator("#etapa-6").getByText("Sin construir"),
+    page.locator("#etapa-7").getByText("Sin construir"),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen4");
   await expect(resumen).toContainText("Tu apuesta: ingreso_mensual");

@@ -12,10 +12,11 @@ import {
 } from "@/engine/protocolo/cuaderno";
 import { resumenEtapa4 } from "@/engine/protocolo/etapa4";
 import { ACTUAR, NO_ACTUAR, resumenEtapa5 } from "@/engine/protocolo/etapa5";
+import { resumenEtapa6, sellosDistintos } from "@/engine/protocolo/etapa6";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import { cifra, fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
-import { thousands } from "@/lib/quantity";
+import { formatQuantity, thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
 import { Confirmacion } from "./Confirmacion";
 import { reglaTexto } from "./regla-texto";
@@ -88,6 +89,14 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
       : valor === NO_ACTUAR
         ? t("protocol.stage.5.summary.no-act")
         : valor;
+  // La métrica estándar al lado del costo (clasificación: exactitud balanceada; un número: error
+  // medio) y los aciertos por cada 100, con los mismos rótulos de la tabla de la etapa.
+  const metrica = t(
+    r.clasificacion
+      ? "protocol.stage.5.table.col-balanced"
+      : "protocol.stage.5.table.col-error",
+  );
+  const aciertos100 = (a: number) => formatQuantity(a * 100, 1);
   return (
     <ul
       className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
@@ -103,6 +112,34 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
             .join(" · "),
         })}
       </li>
+      {r.referencias.some((x) => x.metrica !== null) && (
+        <li>
+          {t("protocol.stage.5.summary.metrics", {
+            metrica,
+            list: r.referencias
+              .filter((x) => x.metrica !== null)
+              .map((x) => `${nombre(x.id)}: ${cifra(x.metrica!)}`)
+              .join(" · "),
+          })}
+        </li>
+      )}
+      {r.clasificacion && (
+        <li>
+          {t("protocol.stage.5.summary.hits", {
+            list: r.referencias
+              .filter((x) => x.aciertos !== null)
+              .map((x) => `${nombre(x.id)}: ${aciertos100(x.aciertos!)}`)
+              .join(" · "),
+          })}
+        </li>
+      )}
+      {r.sinAnterior !== null && r.sinAnterior > 0 && (
+        <li>
+          {t("protocol.stage.5.summary.no-previous", {
+            n: thousands(r.sinAnterior),
+          })}
+        </li>
+      )}
       {r.regla === "hay" && r.reglaCosto100 !== null && (
         <>
           <li>
@@ -119,11 +156,95 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
               no: salida(r.no),
             })}
           </li>
+          {r.reglaMetrica !== null && (
+            <li>
+              {t("protocol.stage.5.summary.rule-metric", {
+                metrica,
+                valor: cifra(r.reglaMetrica),
+              })}
+              {r.reglaAciertos !== null &&
+                ` ${t("protocol.stage.5.summary.rule-hits", {
+                  valor: aciertos100(r.reglaAciertos),
+                })}`}
+            </li>
+          )}
+          {r.reglaVacios !== null && r.reglaVacios > 0 && (
+            <li>
+              {t("protocol.stage.5.summary.rule-empty", {
+                vacios: thousands(r.reglaVacios),
+                filas: thousands(r.filas),
+              })}
+            </li>
+          )}
         </>
       )}
       {r.regla === "ninguna" && (
         <li>{t("protocol.stage.5.summary.rule-none")}</li>
       )}
+    </ul>
+  );
+}
+
+/** La etapa 6: el esquema (y el sugerido con tu razón, si elegiste otro), los lados, el sello. */
+function ResumenEtapa6({
+  datos,
+  sellos,
+}: {
+  datos: DatosEtapa;
+  /** Pruebas distintas selladas en el cuaderno hasta esta evidencia, incluida. */
+  sellos: number;
+}) {
+  const { t } = useI18n();
+  const r = resumenEtapa6(datos);
+  const nombre = (e: string) => t(`protocol.stage.6.scheme.${e}`);
+  const n = (x: number | null) => thousands(x ?? 0);
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen6"
+    >
+      <li>
+        {r.sugerido !== "" && r.esquema !== r.sugerido
+          ? t("protocol.stage.6.summary.scheme-changed", {
+              esquema: nombre(r.esquema),
+              sugerido: nombre(r.sugerido),
+              razon: r.razon,
+            })
+          : t("protocol.stage.6.summary.scheme", {
+              esquema: nombre(r.esquema),
+            })}
+      </li>
+      {(r.unidades === "nuevas" || r.unidades === "conocidas") && (
+        <li>{t(`protocol.stage.6.summary.units-${r.unidades}`)}</li>
+      )}
+      <li>
+        {t("protocol.stage.6.summary.sizes", {
+          entrenamiento: n(r.entrenamiento),
+          prueba: n(r.prueba),
+          hueco: n(r.hueco),
+          fuera: n(r.fuera),
+        })}
+      </li>
+      {r.corte !== null && r.horizonte !== null && (
+        <li>
+          {t("protocol.stage.6.summary.cut", {
+            corte: r.corte,
+            h: r.horizonte,
+            unidad:
+              r.horizonteUnidad === "dias" || r.horizonteUnidad === "meses"
+                ? t(
+                    `protocol.stage.6.form.${r.horizonteUnidad}${r.horizonte === 1 ? "-uno" : ""}`,
+                  )
+                : "",
+          })}
+        </li>
+      )}
+      {r.sello !== null && (
+        <li className="font-mono text-xs">
+          {t("protocol.stage.6.summary.seal", { sello: huellaCorta(r.sello) })}
+        </li>
+      )}
+      <li>{t("protocol.stage.6.summary.seals", { n: sellos })}</li>
     </ul>
   );
 }
@@ -184,20 +305,33 @@ function Entrada({
       </p>
       {evidencia.etapa === 4 && <ResumenEtapa4 datos={evidencia.datos} />}
       {evidencia.etapa === 5 && <ResumenEtapa5 datos={evidencia.datos} />}
-      {evidencia.etapa !== 4 && evidencia.etapa !== 5 && filas.length > 0 && (
-        <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-          {filas.map(([clave, valor]) => (
-            <div key={clave} className="contents">
-              <dt className="min-w-0 text-ink-muted [overflow-wrap:anywhere]">
-                {t(clave)}
-              </dt>
-              <dd className="min-w-0 [overflow-wrap:anywhere]">
-                {leerValor(valor)}
-              </dd>
-            </div>
-          ))}
-        </dl>
+      {evidencia.etapa === 6 && (
+        <ResumenEtapa6
+          datos={evidencia.datos}
+          sellos={sellosDistintos(
+            cuaderno.evidencias
+              .filter((e) => e.etapa === 6 && e.seq <= evidencia.seq)
+              .map((e) => e.datos),
+          )}
+        />
       )}
+      {evidencia.etapa !== 4 &&
+        evidencia.etapa !== 5 &&
+        evidencia.etapa !== 6 &&
+        filas.length > 0 && (
+          <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+            {filas.map(([clave, valor]) => (
+              <div key={clave} className="contents">
+                <dt className="min-w-0 text-ink-muted [overflow-wrap:anywhere]">
+                  {t(clave)}
+                </dt>
+                <dd className="min-w-0 [overflow-wrap:anywhere]">
+                  {leerValor(valor)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
     </li>
   );
 }
