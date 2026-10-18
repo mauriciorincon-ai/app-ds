@@ -1,7 +1,17 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
+import {
+  ANTES,
+  DESPUES,
+  KIT,
+  cargarCsv,
+  esperarGuardado,
+  prepararBajas,
+  prepararCredito,
+  responder,
+  sinDesborde,
+} from "./protocolo-pasos";
 
 // S9 — Protocolo DS, etapa 4 (¿existe al decidir?) con dos archivos del kit:
 //  · credito-fuga-plantada.csv (sin fecha, con `monto_recuperado` plantada): una apuesta
@@ -11,126 +21,6 @@ import { axeBothThemes } from "./axe-temas";
 //  · bajas-con-fuga.csv (con unidad y fecha): la fuga por vacíos, el identificador, las filas
 //    repetidas y la deriva; la apuesta sigue fija tras recargar la página, y la etapa se
 //    verifica de nuevo contra el archivo al volver a cargarlo.
-
-const KIT = (nombre: string) =>
-  resolve(process.cwd(), "docs/kit-de-prueba", nombre);
-
-// (Los pasos 1–3 repiten los de protocolo.spec.ts: son los mismos clics.)
-async function abrir(page: Page) {
-  await page.goto("/protocolo");
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Protocolo DS" }),
-  ).toBeVisible();
-  await expect(page.getByText("Abriendo tu cuaderno…")).toBeHidden();
-}
-
-async function cargarCsv(page: Page, archivo: string) {
-  await page.getByTestId("protocolo-csv").setInputFiles(KIT(archivo));
-}
-
-async function cumplirEtapa1(page: Page) {
-  const e1 = page.locator("#etapa-1");
-  await e1
-    .getByLabel("La decisión", { exact: true })
-    .fill("Llamar o no al cliente antes de que venza su plan");
-  await e1
-    .getByLabel("Quién la toma", { exact: true })
-    .fill("Jefa de retención");
-  await e1.getByLabel("Sí o no (actuar o no actuar)").check();
-  await e1.getByLabel("Unidad de costo", { exact: true }).fill("US$");
-  await e1.getByLabel(/Costo de actuar sin que hiciera falta/).fill("10");
-  await e1.getByLabel(/Costo de no actuar y que sí hiciera falta/).fill("50");
-  await e1.getByRole("button", { name: "Registrar la etapa 1" }).click();
-  await expect(e1.getByText("Cumplida")).toBeVisible();
-}
-
-async function cumplirEtapa3(page: Page, conFecha: boolean) {
-  const e3 = page.locator("#etapa-3");
-  await e3.getByLabel("Predecir lo que va a pasar").check();
-  await e3.getByLabel("Población").fill("Clientes del archivo");
-  await e3.getByLabel("Exclusiones").fill("Ninguna");
-  if (!conFecha) await e3.getByLabel("Periodo", { exact: true }).fill("2025");
-  if ((await e3.getByLabel("Tu aviso").count()) > 0)
-    await e3.getByLabel("Tu aviso").fill("Es un piloto; lo sé");
-  await e3.getByRole("button", { name: "Registrar la etapa 3" }).click();
-  await expect(e3.getByText("Cumplida")).toBeVisible();
-}
-
-async function prepararCredito(page: Page) {
-  await abrir(page);
-  await cumplirEtapa1(page);
-  await cargarCsv(page, "credito-fuga-plantada.csv");
-  const e2 = page.locator("#etapa-2");
-  await e2
-    .getByLabel("Columna objetivo", { exact: true })
-    .selectOption("incumplio");
-  await e2.getByLabel(/Valor que significa/).selectOption("1");
-  await e2.getByLabel("No hay columna: lo escribo").check();
-  await e2
-    .getByLabel("El momento, escrito")
-    .fill("El día que se pide el crédito");
-  await e2.getByRole("button", { name: "Registrar la etapa 2" }).click();
-  await expect(e2.getByText("Cumplida")).toBeVisible();
-  await cumplirEtapa3(page, false);
-}
-
-async function prepararBajas(page: Page) {
-  await abrir(page);
-  await cumplirEtapa1(page);
-  await cargarCsv(page, "bajas-con-fuga.csv");
-  await cumplirEtapa2Bajas(page);
-  await cumplirEtapa3(page, true);
-}
-
-async function cumplirEtapa2Bajas(page: Page) {
-  const e2 = page.locator("#etapa-2");
-  await e2
-    .getByLabel("Columna objetivo", { exact: true })
-    .selectOption("se_dio_de_baja");
-  await e2.getByLabel(/Valor que significa/).selectOption("si");
-  await e2.getByLabel(/Una columna identifica la unidad/).check();
-  await e2
-    .getByLabel("Columna que identifica la unidad")
-    .selectOption("cliente_id");
-  await e2
-    .getByLabel("Columna de fecha", { exact: true })
-    .selectOption("mes_observado");
-  await e2.getByRole("button", { name: "Registrar la etapa 2" }).click();
-  await expect(e2.getByText("Cumplida")).toBeVisible();
-}
-
-/** El cuaderno se escribe en IndexedDB sin bloquear: recargar antes de «Guardado» pierde la última entrada. */
-async function esperarGuardado(page: Page) {
-  await expect(
-    page.getByTestId("cuaderno-guardado").filter({ hasText: "Guardado" }),
-  ).toBeVisible();
-}
-
-const ANTES = "Antes de decidir";
-const DESPUES = "Después de decidir (o del resultado)";
-
-async function responder(
-  page: Page,
-  columna: string,
-  datos: { momento?: string; estado?: string; procedencia?: string },
-) {
-  const fila = page.locator(`#etapa-4 [data-columna="${columna}"]`);
-  if (datos.procedencia !== undefined)
-    await fila.getByLabel(/Quién o qué la produce/).fill(datos.procedencia);
-  if (datos.momento) await fila.getByLabel(datos.momento).check();
-  if (datos.estado)
-    await fila.getByLabel("¿La usas?").selectOption(datos.estado);
-}
-
-async function sinDesborde(page: Page, ancho: number) {
-  await page.setViewportSize({ width: ancho, height: 800 });
-  const desborde = await page.evaluate(
-    () =>
-      document.documentElement.scrollWidth -
-      document.documentElement.clientWidth,
-  );
-  expect(desborde, `desborde horizontal a ${ancho} px`).toBeLessThanOrEqual(0);
-}
 
 test("etapa 4 con fuga plantada: apuesta equivocada, sorpresa, bloque con declaración y registro", async ({
   page,
@@ -223,8 +113,12 @@ test("etapa 4 con fuga plantada: apuesta equivocada, sorpresa, bloque con declar
   await e4.getByRole("button", { name: "Registrar la etapa 4" }).click();
   await expect(e4.getByText("Cumplida")).toBeVisible();
   await expect(page.locator("#etapa-4-titulo")).toBeFocused();
+  // la etapa 5 abre con la 4 cumplida; la 6 se ve con su criterio y no abre
   await expect(
-    page.locator("#etapa-5").getByText("Sin construir"),
+    page.locator("#etapa-5").getByText("Abierta", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#etapa-6").getByText("Sin construir"),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen4");
   await expect(resumen).toContainText("Tu apuesta: ingreso_mensual");
