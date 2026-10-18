@@ -354,6 +354,65 @@ function monthlyRenewals(clients = 100, seed = 1212) {
   );
 }
 
+// 12) Bajas con fuga — SOLO KIT (S9, etapa 4 del Protocolo DS). Un cliente por varias filas (una
+// por mes) con todo lo que la etapa 4 debe encontrar, cada cosa en su columna:
+//  · `motivo_baja` solo se llena cuando el cliente SE DIO DE BAJA: la fuga por vacíos (no se
+//    conoce al decidir, se escribe cuando ya pasó);
+//  · `uso_mensual_gb` y `canal` cambian de distribución desde septiembre: deriva entre periodos;
+//  · `referencia` es única por fila: columna tipo identificador;
+//  · 4 filas repetidas exactas y 3 filas de la misma unidad el mismo día con otros valores
+//    (7 filas de más para «unidad + momento», 4 de ellas también exactas).
+// `tickets_soporte` y `antiguedad_meses` no tienen nada: son lo que sí existe al decidir.
+function monthlyChurnWithLeak(clients = 120, seed = 1313) {
+  const rng = mulberry32(seed);
+  const reasons = ["precio", "servicio", "mudanza", "competencia"];
+  const rows = [];
+  let ref = 1000;
+  for (let c = 1; c <= clients; c++) {
+    const plan = pick(rng, ["basico", "estandar", "premium"]);
+    const antiguedad = round(1 + rng() * 48);
+    const taste = rng() - 0.5;
+    const monthsSeen = 2 + Math.floor(rng() * 5);
+    const start = Math.floor(rng() * (12 - monthsSeen));
+    for (let k = 0; k < monthsSeen; k++) {
+      const month = start + k + 1;
+      const late = month >= 9;
+      const tickets = round(Math.max(0, 3 * rng() + (taste < 0 ? 2 : 0)), 0);
+      const uso = round(5 + rng() * 80 + (plan === "premium" ? 30 : 0) + (late ? 45 : 0), 1);
+      const channelRoll = rng();
+      const channel = late
+        ? channelRoll < 0.25 ? "web" : channelRoll < 0.45 ? "tienda" : "telefono"
+        : channelRoll < 0.6 ? "web" : channelRoll < 0.9 ? "tienda" : "telefono";
+      const logit = -1.9 - 0.02 * antiguedad + 0.3 * tickets + taste;
+      const churned = rng() < sigmoid(logit) ? "si" : "no";
+      rows.push([
+        `C${String(c).padStart(3, "0")}`,
+        `2025-${String(month).padStart(2, "0")}-15`,
+        plan,
+        channel,
+        antiguedad + k,
+        tickets,
+        uso,
+        churned === "si" ? pick(rng, reasons) : "",
+        `R-${++ref}`,
+        churned,
+      ]);
+    }
+  }
+  // 4 filas exactas repetidas y 3 de la misma unidad y día con otros valores.
+  for (const i of [10, 11, 12, 13]) rows.push([...rows[i]]);
+  for (const i of [40, 41, 42]) {
+    const copy = [...rows[i]];
+    copy[6] = round(copy[6] + 7.5, 1);
+    copy[8] = `R-${++ref}`;
+    rows.push(copy);
+  }
+  return toCsv(
+    ["cliente_id", "mes_observado", "plan", "canal", "antiguedad_meses", "tickets_soporte", "uso_mensual_gb", "motivo_baja", "referencia", "se_dio_de_baja"],
+    rows,
+  );
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   await mkdir(kitDir, { recursive: true });
@@ -390,6 +449,8 @@ async function main() {
     "tiendas-ciudades.csv": storesByCity(),
     // S8: el Protocolo DS carga datos propios; este es el del kit (no hay botón de ejemplo).
     "renovaciones-mensuales.csv": monthlyRenewals(),
+    // S9: la etapa 4 (fuga por vacíos, deriva, identificador, filas repetidas).
+    "bajas-con-fuga.csv": monthlyChurnWithLeak(),
   };
   for (const [name, content] of Object.entries(kitOnly)) {
     await writeFile(resolve(kitDir, name), content, "utf8");
