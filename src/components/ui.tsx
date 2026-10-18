@@ -20,9 +20,25 @@ export type IconName =
   | "info"
   | "stop"
   | "ruler"
-  | "tag";
+  | "tag"
+  // S8: la puerta al Protocolo y las etapas cerradas.
+  | "route"
+  | "lock";
 
 const ICON_PATHS: Record<IconName, ReactNode> = {
+  route: (
+    <>
+      <circle cx="6" cy="19" r="2" />
+      <circle cx="18" cy="5" r="2" />
+      <path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
   upload: (
     <>
       <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />

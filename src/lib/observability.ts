@@ -85,3 +85,38 @@ export function recordLeagueRun(meta: LeagueRunMeta): void {
     },
   });
 }
+
+// S8 — Protocolo DS: un breadcrumb por intento de registrar una etapa, con SOLO el número
+// de la etapa y el resultado (un nombre cerrado de la app). Jamás las respuestas, los costos,
+// las clases, el nombre del archivo ni la huella: eso vive solo en el cuaderno del navegador
+// (regla dura 2). La prueba fija las dos claves exactas (tests/unit/protocolo-observabilidad).
+export type ProtocolOutcome =
+  | "recorded"
+  | "closed"
+  | "not-built"
+  | "no-data"
+  | "invalid"
+  | "criterion-unmet"
+  | "unknown-stage";
+
+export function recordProtocolStep(stage: number, outcome: ProtocolOutcome): void {
+  Sentry.addBreadcrumb({
+    category: "probeta.protocol",
+    level: "info",
+    message: "protocol-step",
+    data: { stage, outcome },
+  });
+}
+
+/** Fallas del Protocolo (guardar en el navegador, un cuaderno ilegible): solo su tipo. */
+export type ProtocolErrorKind =
+  | "storage-write"
+  | "storage-unreadable"
+  | "import-rejected";
+
+export function reportProtocolError(kind: ProtocolErrorKind): void {
+  Sentry.captureMessage(`protocol-error:${kind}`, {
+    level: "error",
+    tags: { area: "protocol", kind },
+  });
+}

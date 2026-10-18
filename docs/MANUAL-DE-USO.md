@@ -10,8 +10,9 @@ Probeta DS te ayuda a construir un modelo de predicción a partir de tus datos y
 **con franqueza si ese modelo sirve o no**. Está pensada para profesionales que no son científicos de
 datos: tú traes una tabla, eliges qué quieres predecir, y la app entrena un modelo y te da un
 **veredicto honesto**. Si no tienes nada que predecir, también puede **encontrar grupos de filas
-parecidas** y decirte cuánto creerles. Todo ocurre **dentro de tu navegador** — tus datos nunca se
-suben a ningún servidor.
+parecidas** y decirte cuánto creerles. Y si prefieres ir despacio, **Protocolo DS** te lleva por
+etapas con compuertas, con tus propios datos. Todo ocurre **dentro de tu navegador** — tus datos
+nunca se suben a ningún servidor.
 
 ## Primeros pasos
 
@@ -525,6 +526,91 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - La fuga no aplica (no hay objetivo que una columna pueda delatar) y la narración con IA no se
     ofrece; la model card lo dice.
 
+### Protocolo DS, el camino lento · desde Sprint 008
+
+- **Qué hace:** Probeta es el laboratorio rápido: cargas un CSV y en minutos tienes un veredicto.
+  **Protocolo DS** es lo contrario: un camino lento, por etapas, para quien quiere un modelo que
+  pueda defender. Cada etapa te pide una tarea **con tus propios datos**, comprueba que la cumpliste
+  y **solo entonces abre la siguiente**. No hay botón para saltar una etapa: se cumple o se corrige.
+  Todo lo que verifica es código que corre en tu navegador, sin inteligencia artificial.
+
+- **Cómo se usa:**
+  1. **Entra.** En el inicio, la tarjeta **«¿Prefieres el camino lento?»** tiene el enlace **«Abrir el
+     Protocolo DS»**. El Protocolo no trae ejemplos: se trabaja con tus datos.
+  2. **Etapa 1 · La decisión y lo que cuesta equivocarse.** Escribes qué decisión cambia con el
+     modelo, quién la toma y cómo es (**sí o no**, **elegir entre varias opciones** o **cuánto**), y
+     cuánto te cuesta cada error, en tu unidad (dólares, horas, clientes…). De ahí sale lo que de
+     verdad te conviene: con dos opciones, **a partir de qué probabilidad actuar** (no siempre 0.5);
+     con una cantidad, **qué cuantil estimar** (si quedarte corto cuesta más que pasarte, no el
+     promedio). Esta etapa no usa tus datos.
+  3. **Carga tu CSV** (arriba, en «Tus datos»). Tiene el mismo límite que Probeta. El archivo **no se
+     guarda**: se guarda su **huella**, un código que sale de su contenido exacto.
+  4. **Etapa 2 · El objetivo y la unidad, con su momento.** Eliges la columna que quieres predecir; la
+     app dice qué tipo de problema es y comprueba que **coincide con la decisión de la etapa 1**. Con
+     dos valores, dices cuál es el caso «hay que actuar». Dices **qué es una fila** (cada fila, o una
+     columna que identifica a la misma persona, tienda o cliente) y **en qué momento se hace la
+     predicción** (una columna de fecha, o lo escribes). La app cuenta cuántas filas tiene cada
+     unidad, lee tus fechas **sin adivinar** (si «05/06/2026» puede ser día/mes o mes/día, **te
+     pregunta**) y calcula cuánto cuesta **no hacer nada**, que es contra lo que tiene que ganar el
+     modelo. Si **no tienes una columna objetivo**, el Protocolo se detiene y te lleva a «agrupar» de
+     Probeta.
+  5. **Etapa 3 · ¿Predecir o explicar? y el diseño.** Si lo que buscas es **una causa** (qué provoca
+     qué), el Protocolo se detiene y te lo dice: un modelo predictivo no responde eso, hace falta un
+     experimento; puedes reformular la pregunta como predicción. Si es predecir, escribes la
+     **población**, el **periodo** y las **exclusiones**, y la app calcula **cuántas filas hacen falta**
+     para el número de variables que tienes (la cuenta de Riley y colaboradores) y lo compara con las
+     tuyas. Si no alcanzan, **no te lo impide**: te pide **escribir tu aviso**, y queda en el cuaderno.
+  6. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
+     «tu unidad se repite: 361 filas para 100 unidades», «con tus costos actúas desde 0.17, no
+     desde 0.5».
+  7. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
+     queda como una entrada nueva; las etapas que se construyeron sobre la anterior vuelven a
+     **«Por verificar»**.
+
+- **El cuaderno:** cada vez que cumples una etapa, el cuaderno anota **qué se verificó, cuándo, con qué
+  archivo y con qué números**. Solo crece: corregir una etapa añade una entrada y no borra la
+  anterior (importar otro cuaderno, o empezar uno nuevo, sí lo reemplaza). Se guarda **en este
+  navegador** y, al volver, sigue ahí. Lo ves al final de la página.
+  - **Al volver:** cargas de nuevo tu CSV. Si es el mismo, la **huella coincide** y las etapas que usan
+    los datos siguen cumplidas. Si es otro, la app **pregunta** si es **otra versión de los mismos
+    datos** (las etapas que los usan vuelven a verificarse) o **otro proyecto** (cuaderno nuevo).
+  - **Exportar cuaderno** baja un archivo `.protocolo.json`: es tu respaldo y lo que llevas a otra
+    máquina. **Importar cuaderno** lo devuelve. Un archivo que no es un cuaderno válido se rechaza
+    **diciendo qué campo falla**.
+  - **Ventana privada:** el navegador no deja guardar. La página lo avisa («Exporta tu cuaderno antes de
+    irte»): si cierras la pestaña, se pierde.
+  - **Empezar otro cuaderno** reemplaza el de este navegador, tras confirmarlo.
+
+- **Los estados de cada etapa:** **Cerrada** (falta cumplir la anterior), **Abierta** (puedes
+  trabajarla), **Cumplida**, **Por verificar** (tus datos cambiaron o corregiste una etapa anterior),
+  **Detenida** (el criterio paró el Protocolo, p. ej. buscas una causa) y **Sin construir** (se ve su
+  criterio, pero no abre).
+
+- **Glosario:** al final de la página hay un glosario con definiciones breves de los términos de las
+  compuertas; cada término de una etapa enlaza a su entrada. Donde existe, **«Leer más en el glosario
+  de Google»** lleva a la entrada del glosario de aprendizaje automático de Google (CC BY 4.0).
+
+- **Privacidad:** tus respuestas, tus costos, los nombres de tus columnas y tus fechas **no salen de tu
+  navegador**: viven en el cuaderno de este navegador y en el archivo que tú bajas. A Sentry solo llega
+  el número de la etapa y el resultado (registrada, cerrada…), nunca un valor.
+
+- **Limitaciones conocidas (Sprint 008):**
+  - Hoy están construidas las etapas 1, 2 y 3; las demás se ven con su criterio pero **no abren**.
+  - El Protocolo cubre las tres tareas **con objetivo** (dos clases, varias o una cantidad); **sin
+    objetivo** no aplica y se va a «agrupar» en Probeta.
+  - El tamaño de muestra con **varias clases** es una **aproximación**: se calcula «una contra el
+    resto» y se toma la que pide más filas. Con una cantidad, el **R² anticipado** lo pones tú
+    (0.2 es una apuesta prudente si no tienes uno mejor).
+  - Las fechas se leen en ISO (2026-01-31) y como día/mes/año o mes/día/año con cuatro cifras de año;
+    una fecha imposible (30 de febrero) queda como «sin leer», no se corrige.
+  - Hay **un cuaderno por navegador**: para trabajar en paralelo, exporta uno y empieza otro.
+  - Un cuaderno modificado a mano **no gana nada**: con tus datos cargados, lo que la etapa 2 calculó
+    sobre ellos se vuelve a calcular, y si no coincide la etapa pasa a «por verificar» y la siguiente
+    no abre. Los criterios de las etapas 1 y 3 se calculan de tus respuestas y se recalculan siempre.
+  - Los números se escriben **sin separador de miles**, con punto o coma decimal (`1500` o `1500.5`).
+    `1,500` o `1.500` no se leen, porque no se sabe si son uno y medio o mil quinientos; el campo te
+    lo dice.
+
 ## Diccionario de términos
 
 Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
@@ -620,6 +706,18 @@ cuando una te frene.
 | **Dirección**                     | Hacia dónde empuja una variable: a mayor valor, más (o menos) probable la clase detectada. Solo se muestra si la variable pesa. |
 | **Model card**                    | La ficha del modelo: con qué datos se entrenó, qué mide, qué advertencias tiene. Para que otro pueda juzgarlo sin creerte a ti. |
 
+**Sobre el Protocolo** (desde Sprint 008)
+
+| Término                   | Qué significa                                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Compuerta**             | El criterio que una etapa debe cumplir para que se abra la siguiente. No se salta: se cumple o se corrige.                                     |
+| **Cuaderno**              | La lista de lo que cada etapa verificó, con fecha y números. Solo crece. Se exporta como `.protocolo.json`.                                    |
+| **Huella**                | Un código que sale del contenido exacto de tu archivo. Si cambia un solo byte, cambia: así se sabe si vuelves con los mismos datos.            |
+| **Unidad de análisis**    | Qué es una fila: un cliente, una visita, un mes de una tienda. Si la misma unidad aparece en varias filas, no se puede repartir al azar.       |
+| **Umbral**                | La probabilidad a partir de la cual actúas. Con tus costos sale una cifra concreta.                                                            |
+| **Tasa base**             | Con qué frecuencia ocurre el caso en tus datos, sin modelo.                                                                                    |
+| **Parámetros candidatos** | Cuántos números distintos puede aprender el modelo de tus columnas: uno por columna numérica y una menos que las categorías por cada columna de texto. |
+
 ## Preguntas frecuentes
 
 - **¿Mis datos se suben a algún sitio?** No. Todo el cálculo ocurre en tu navegador; el archivo nunca
@@ -698,3 +796,4 @@ cuando una te frene.
 | 005    | La liga honesta (14 modelos con validación cruzada, ganador por la regla de un error estándar, prueba a pedido y etiquetada, elección manual «elegido por ti», tipo de predicción de cada columna, quién compite por nivel, ficha de cada modelo, Nivel 2 cancelable).                                               |
 | 006    | Estimar una cantidad (liga de 11 modelos que estiman, veredicto en las unidades de la columna contra la mediana y la regresión lineal, gráfico estimado frente a real, la pregunta «¿categorías o una cantidad?», `<columna>_estimado` al puntuar, avisos de sesgo y atípicos) + diccionario y preguntas de estimar. |
 | 007    | Clasificar en varias categorías (de 3 a 20 categorías, la liga en exactitud balanceada, matriz de confusión con ✓, fuga que nombra la columna y la categoría, `<columna>_predicho` y `_probabilidad`) y agrupar filas parecidas sin objetivo (cuatro agrupadores, ganador por consenso, lectura contra datos sin estructura y estabilidad, qué distingue a cada grupo, «fuera de todo grupo», la muestra del jerárquico, tus filas con su grupo, asignar filas nuevas) + dos ejemplos en el inicio, diccionario y preguntas de las dos. |
+| 008    | Protocolo DS, el camino lento (etapas 1 a 3 con compuertas que no se saltan, cuaderno que sobrevive a cerrar la pestaña y se exporta e importa, glosario consultable).                                                                                                                                                                                                                                                                                                                                                                  |

@@ -98,6 +98,11 @@
         "hint": "Solo carga archivos .probeta.json exportados por Probeta. El contenido del archivo no se tocó."
       },
       "retry": "Elegir otro archivo"
+    },
+    "protocol": {
+      "title": "¿Prefieres el camino lento?",
+      "desc": "Protocolo DS es el camino de {count} etapas con compuertas, con tus propios datos: no avanzas a la siguiente sin cumplir la anterior. Hoy abren de la etapa {from} a la {to}.",
+      "link": "Abrir el Protocolo DS"
     }
   },
   "config": {
@@ -957,6 +962,378 @@
         "id-like": "«{column}» no entra: parece un identificador.",
         "date": "«{column}» no entra: es una fecha, y las fechas no se usan para agrupar."
       }
+    }
+  },
+  "protocol": {
+    "title": "Protocolo DS",
+    "subtitle": "El camino lento: {count} etapas con compuertas, de las que hoy abren de la {from} a la {to}. Cada una te pide una tarea con tus datos y abre la siguiente solo cuando cumples su criterio. No hay botón para saltar.",
+    "privacy": "Tus datos no salen de tu navegador. El cuaderno se guarda en este navegador; el CSV no: al volver, lo cargas de nuevo y su huella dice si es el mismo.",
+    "back": "Volver a Probeta",
+    "loading": "Abriendo tu cuaderno…",
+    "storage": {
+      "memory": "Este navegador no deja guardar el cuaderno (puede ser una ventana privada): si cierras la pestaña, se pierde. Exporta tu cuaderno antes de irte.",
+      "write-failed": "No se pudo guardar el cuaderno en este navegador. Sigue en esta pestaña: expórtalo para no perderlo."
+    },
+    "data": {
+      "title": "Tus datos",
+      "button": "Cargar mi CSV",
+      "replace": "Cargar otro CSV",
+      "loaded": "{name} · {rows} filas × {cols} columnas · huella {hash}",
+      "reload": "Tu cuaderno trabajó con {name} ({rows} filas). Cárgalo de nuevo para seguir: la huella confirmará que es el mismo.",
+      "same": "Es el mismo archivo del cuaderno: la huella coincide.",
+      "new-version": "Anotado como otra versión de los datos: las etapas que los usan vuelven a verificarse.",
+      "different": {
+        "title": "Este archivo no es el del cuaderno",
+        "body": "Su huella es otra. ¿Es una versión nueva de los mismos datos, o es otro proyecto?",
+        "version": "Otra versión de los mismos datos",
+        "other": "Otro proyecto: cuaderno nuevo",
+        "cancel": "No cargarlo"
+      }
+    },
+    "stages": {
+      "title": "Las etapas"
+    },
+    "stage": {
+      "label": "Etapa {n}",
+      "task": "Qué te pide",
+      "why": "Por qué existe",
+      "criterion": "Para abrir la siguiente",
+      "terms": "Términos",
+      "closed-by": "Se abre cuando cumplas la etapa {n}.",
+      "not-built": "Esta etapa no está construida: se ve su criterio, pero no abre.",
+      "no-form": "Esta etapa no tiene formulario.",
+      "edit": "Corregir",
+      "cancel-edit": "Dejarla como estaba",
+      "edit-warning": "Si la corriges, las etapas que se construyeron sobre ella vuelven a verificarse.",
+      "reverify": {
+        "sin-datos": "Usa tus datos: cárgalos de nuevo para verificarla.",
+        "datos-distintos": "Los datos cargados no son con los que se verificó: vuelve a verificarla.",
+        "anterior-cambio": "Corregiste una etapa anterior: vuelve a verificarla.",
+        "no-cuadra": "Lo registrado no coincide con lo que dan tus datos con esas respuestas (¿se editó el archivo?): vuelve a registrarla."
+      },
+      "rejected": {
+        "etapa-cerrada": "La etapa {n} no abre sin la {m}.",
+        "no-construida": "La etapa {n} no está construida.",
+        "sin-datos": "Carga tus datos: la etapa {n} los usa.",
+        "datos-invalidos": "Falta o no cuadra «{field}».",
+        "criterio-no-cumplido": "El criterio no se cumple. Falta: {missing}.",
+        "etapa-desconocida": "La etapa {n} no existe."
+      },
+      "trap-title": "En tus datos",
+      "1": {
+        "field": {
+          "decision": "La decisión",
+          "decisor": "Quién la toma",
+          "cuando": "Cuándo se toma",
+          "hoy": "Qué se hace hoy sin modelo",
+          "forma": "Cómo es la decisión",
+          "unidad": "Unidad de costo",
+          "c_fp": "Costo de actuar sin que hiciera falta (falso positivo)",
+          "c_fn": "Costo de no actuar y que sí hiciera falta (falso negativo)",
+          "opciones": "Las opciones entre las que se elige",
+          "costos": "Costo de equivocarse por clase real",
+          "costo_de": "Costo de equivocarte cuando lo real es «{clase}»",
+          "c_sub": "Costo de quedarte corto, por cada unidad de menos",
+          "c_sobre": "Costo de pasarte, por cada unidad de más"
+        },
+        "help": {
+          "decision": "Qué harás distinto según lo que diga el modelo. Por ejemplo: «llamar o no a un cliente antes de que venza su plan».",
+          "cuando": "El momento en que se toma. Opcional.",
+          "hoy": "Qué se hace hoy, sin modelo. Es contra eso que se medirá. Opcional.",
+          "forma": "Esto decide cómo se piden los costos.",
+          "unidad": "En qué mides el costo: US$, horas, clientes perdidos…",
+          "c_fp": "Lo que pierdes cada vez que actúas sin necesidad.",
+          "c_fn": "Lo que pierdes cada vez que se te escapa un caso.",
+          "opciones": "Una por línea, de tres en adelante.",
+          "c_sub": "Lo que pierdes por cada unidad que estimas de menos.",
+          "c_sobre": "Lo que pierdes por cada unidad que estimas de más."
+        },
+        "forma": {
+          "binaria": "Sí o no (actuar o no actuar)",
+          "multiclase": "Elegir entre varias opciones",
+          "numerica": "Cuánto (una cantidad)"
+        },
+        "check": {
+          "umbral": "Umbral teórico",
+          "razon": "Razón entre costos",
+          "n_opciones": "Opciones",
+          "costo_menor": "Costo del error más barato",
+          "costo_mayor": "Costo del error más caro",
+          "cuantil": "Cuantil que conviene estimar"
+        },
+        "missing": {
+          "decision": "la decisión",
+          "decisor": "quién la toma",
+          "forma": "cómo es la decisión",
+          "unidad": "la unidad de costo",
+          "costos": "los costos, todos mayores que cero (con varias opciones, de {min} a {max} opciones)",
+          "chequeos": "las cifras calculadas no cuadran con tus respuestas"
+        },
+        "trap": {
+          "umbral": "Con tus costos conviene actuar desde una probabilidad de {umbral}, no de 0.5: dejar escapar un caso te cuesta {razon} veces lo que una falsa alarma. Usar 0.5 por costumbre habría tratado los dos errores como si costaran lo mismo.",
+          "umbral-alto": "Con tus costos conviene actuar solo desde una probabilidad de {umbral}, no de 0.5: una falsa alarma te cuesta {razon} veces lo que dejar escapar un caso. Usar 0.5 por costumbre habría sido actuar de más.",
+          "umbral-igual": "Tus dos errores cuestan lo mismo: el umbral es 0.5, el de siempre.",
+          "costos": "El error más caro te cuesta {mayor} y el más barato {menor}. Un modelo que solo busca acertar más veces los trataría como si fueran iguales.",
+          "costos-iguales": "Todos tus errores cuestan lo mismo: acertar más veces es una buena medida.",
+          "cuantil": "Quedarte corto te cuesta {razon} veces lo que pasarte: conviene estimar el cuantil {cuantil}, no el promedio.",
+          "cuantil-bajo": "Pasarte te cuesta {razon} veces lo que quedarte corto: conviene estimar el cuantil {cuantil}, por debajo del promedio.",
+          "cuantil-igual": "Pasarte y quedarte corto cuestan lo mismo: la mediana es la estimación que conviene."
+        }
+      },
+      "2": {
+        "need-data": "Carga tu CSV arriba para trabajar esta etapa: aquí se verifica en tus datos.",
+        "pick": "Elige…",
+        "no-target": "No tengo una columna objetivo",
+        "field": {
+          "objetivo": "Columna objetivo",
+          "positivo": "Valor que significa «hay que actuar»",
+          "unidad": "Qué es una fila",
+          "unidad_columna": "Columna que identifica la unidad",
+          "momento": "Cuándo se conoce el objetivo",
+          "momento_columna": "Columna de fecha",
+          "momento_texto": "El momento, escrito",
+          "orden_fecha": "Cómo se escriben tus fechas"
+        },
+        "help": {
+          "objetivo": "Lo que quieres predecir, tal como se conoce después del hecho.",
+          "positivo": "Con dos valores, el programa necesita saber cuál es el caso que te importa.",
+          "unidad": "Si la misma persona, tienda o cliente aparece en varias filas, elige la columna que lo identifica.",
+          "momento": "Solo puede entrar al modelo lo que ya se sabía en ese momento.",
+          "momento_texto": "Por ejemplo: «al cierre de cada mes, antes de llamar».",
+          "orden_fecha": "Todos tus valores caben como día/mes y como mes/día; el programa no lo adivina."
+        },
+        "detected": {
+          "two-values": "La columna tiene {n} valores distintos: es de dos clases.",
+          "few-categories": "La columna tiene {n} categorías: se elige entre varias.",
+          "many-numbers": "La columna es numérica con {n} valores distintos: es una cantidad.",
+          "few-numbers": "La columna es numérica con solo {n} valores distintos: podrían ser clases o una cantidad. Tu decisión de la etapa 1 lo resuelve.",
+          "too-many-categories": "La columna tiene {n} categorías distintas: son demasiadas para ser clases, y no es un número.",
+          "constant": "La columna tiene un solo valor: no hay nada que predecir.",
+          "empty": "La columna está vacía."
+        },
+        "mismatch": "No coincide con la decisión que escribiste en la etapa 1 («{forma}»): corrige la etapa 1 o elige otra columna.",
+        "unidad": {
+          "fila": "Cada fila es una unidad distinta",
+          "columna": "Una columna identifica la unidad (varias filas pueden ser la misma)"
+        },
+        "momento": {
+          "columna": "Hay una columna de fecha",
+          "texto": "No hay columna: lo escribo"
+        },
+        "orden": {
+          "dia-mes": "Día/mes/año (31/01/2026)",
+          "mes-dia": "Mes/día/año (01/31/2026)"
+        },
+        "looks-date": "parece fecha",
+        "dates": {
+          "read": "Se leen {n} fechas, del {min} al {max}. Sin leer: {bad}. Vacías: {empty}.",
+          "ambigua": "Todos los valores caben como día/mes y como mes/día: responde cómo se escriben.",
+          "mezclada": "La columna mezcla formatos u órdenes distintos: corrígela en tu archivo.",
+          "ninguna": "Ningún valor de la columna se lee como fecha."
+        },
+        "summary": "{rows} filas con objetivo; {empty} sin valor.",
+        "stop": {
+          "sin-objetivo": "Sin una columna objetivo no hay nada que predecir, y el Protocolo se detiene aquí: cubre las tareas con objetivo (dos clases, varias o una cantidad). Para agrupar filas parecidas, usa «agrupar» en Probeta."
+        },
+        "stop-link": "Ir a Probeta para agrupar",
+        "check": {
+          "filas": "Filas",
+          "filas_utiles": "Filas con objetivo",
+          "objetivo_vacios": "Objetivo sin valor",
+          "tarea_detectada": "Tarea que detecta la app",
+          "tarea_motivo": "Por qué",
+          "clases": "Filas por valor",
+          "objetivo_media": "Promedio del objetivo",
+          "objetivo_desv": "Desviación del objetivo",
+          "tasa_base": "Tasa base del caso",
+          "mayoritaria": "Parte de la clase más frecuente",
+          "clase_mayoritaria": "Clase más frecuente",
+          "unidades": "Unidades distintas",
+          "filas_por_unidad_max": "Máximo de filas por unidad",
+          "unidad_repetida": "Hay unidades repetidas",
+          "unidad_vacios": "Filas sin unidad",
+          "fecha_estado": "Lectura de la fecha",
+          "fecha_min": "Primera fecha",
+          "fecha_max": "Última fecha",
+          "fecha_vacios": "Fechas vacías",
+          "fecha_sin_leer": "Fechas que no se leen",
+          "clases_sin_costo": "Clases sin costo en la etapa 1",
+          "costo_nunca_actuar": "Costo por fila de nunca actuar",
+          "costo_siempre_actuar": "Costo por fila de siempre actuar",
+          "costo_mayoria": "Costo por fila de decir siempre la clase más frecuente",
+          "costo_constante": "Costo por fila de estimar siempre lo mismo"
+        },
+        "missing": {
+          "objetivo": "la columna objetivo",
+          "tarea": "una columna que coincida con la decisión de la etapa 1",
+          "positivo": "cuál es el valor «hay que actuar»",
+          "costos": "un costo en la etapa 1 para cada clase de tus datos",
+          "unidad": "la columna de la unidad",
+          "momento": "el momento de la predicción",
+          "fecha": "una columna de fecha que se lea completa",
+          "etapa1": "la etapa 1 cumplida"
+        },
+        "trap": {
+          "unidad-fila": "Cada fila es una unidad. Si en realidad una misma persona, tienda o cliente aparece en varias filas, vuelve y elige la columna que lo identifica.",
+          "unidad-repetida": "Tu unidad se repite: {filas} filas para {unidades} unidades, hasta {maximo} filas por unidad. Si repartes las filas al azar entre entrenar y probar, la misma unidad quedará de los dos lados y el modelo parecerá mejor de lo que es. Queda escrito para la etapa 6.",
+          "unidad-unica": "Cada una de tus {unidades} unidades aparece en una sola fila: no hay riesgo de que la misma unidad quede en entrenar y en probar.",
+          "tasa-base": "El caso ocurre en el {tasaPct} % de tus filas: decir siempre «no» acertaría el {restoPct} % de las veces sin aprender nada.",
+          "mayoria": "La clase más frecuente («{clase}») es el {tasaPct} % de tus filas: decir siempre esa clase ya acierta tanto sin aprender nada.",
+          "costo-binaria": "Sin modelo, nunca actuar cuesta {nunca} por fila y siempre actuar cuesta {siempre}. Un modelo solo vale si cuesta menos que {menor}.",
+          "costo-mayoria": "Sin modelo, decir siempre la clase más frecuente cuesta {costo} por fila. Un modelo solo vale si cuesta menos.",
+          "costo-constante": "Sin modelo, estimar siempre el mismo valor (el cuantil de tus costos) cuesta {costo} por fila. Un modelo solo vale si cuesta menos."
+        }
+      },
+      "3": {
+        "need-data": "Esta etapa usa tus datos y las etapas 1 y 2: cárgalos y cúmplelas primero.",
+        "field": {
+          "proposito": "Qué buscas",
+          "poblacion": "Población",
+          "exclusiones": "Exclusiones",
+          "periodo_texto": "Periodo",
+          "parametros": "Parámetros candidatos",
+          "r2": "R² anticipado",
+          "aviso": "Tu aviso"
+        },
+        "help": {
+          "proposito": "Un modelo predictivo anticipa lo que va a pasar; no dice qué pasaría si cambias algo.",
+          "poblacion": "A quiénes se aplicará el modelo. Por ejemplo: «clientes con plan activo en México».",
+          "periodo_texto": "De cuándo a cuándo son tus datos.",
+          "exclusiones": "Qué dejaste fuera y por qué. Si nada, escribe «ninguna».",
+          "parametros": "Una por columna numérica y una menos que las categorías por cada columna de texto: el programa contó {n} en tus datos. Puedes cambiar la cifra.",
+          "r2": "Qué parte de la variación crees que explicarán las variables, entre 0 y 1. Si no tienes un valor mejor, 0.2 es una apuesta prudente (el ejemplo del paquete de los autores usa 0.2).",
+          "aviso": "Escribe por qué sigues adelante con una muestra corta. Queda en tu cuaderno."
+        },
+        "proposito": {
+          "predecir": "Predecir lo que va a pasar",
+          "explicar": "Explicar una causa (qué provoca qué)"
+        },
+        "period-from-data": "Periodo: del {min} al {max}, tomado de la fecha que leíste en la etapa 2.",
+        "size": {
+          "title": "Hacen falta {required} filas; tienes {available}.",
+          "enough": "La muestra alcanza.",
+          "short": "La muestra no alcanza: escribe tu aviso o reduce las variables candidatas.",
+          "events": "Eso son {events} casos del evento y {epp} por parámetro."
+        },
+        "check": {
+          "n_disponible": "Filas con objetivo",
+          "parametros": "Parámetros candidatos",
+          "n_requerido": "Filas que hacen falta",
+          "manda": "Criterio que manda",
+          "suficiente": "La muestra alcanza",
+          "contraccion": "Para que no se pase de ajustado",
+          "optimismo": "Para que el puntaje no sea optimista",
+          "riesgo_medio": "Para estimar qué tan frecuente es el caso",
+          "varianza": "Para estimar el error típico",
+          "media": "Para estimar el promedio",
+          "eventos": "Casos del evento",
+          "epp": "Casos por parámetro",
+          "clase_que_manda": "Clase que pide más filas",
+          "por_clase": "Filas que pide cada clase",
+          "parametros_contados": "Parámetros que contó el programa"
+        },
+        "missing": {
+          "poblacion": "la población",
+          "exclusiones": "las exclusiones",
+          "periodo": "el periodo",
+          "parametros": "los parámetros candidatos (un entero desde 1)",
+          "r2": "el R² anticipado, entre 0 y 1",
+          "muestra": "tu aviso: la muestra no alcanza",
+          "chequeos": "las cifras calculadas no cuadran con tus respuestas",
+          "etapas-previas": "las etapas 1 y 2 cumplidas"
+        },
+        "stop": {
+          "causal": "Estás buscando una causa. Un modelo predictivo no dice qué pasaría si cambias algo: para eso hace falta un experimento o un diseño causal, no este modelo. El Protocolo se detiene aquí. Si tu pregunta puede reformularse como predicción, corrige esta etapa."
+        },
+        "trap": {
+          "causal": "Predecir no es explicar: aunque el modelo acierte, no te dice qué pasaría si cambias algo. Para saber qué causa qué hace falta un experimento.",
+          "muestra-alcanza": "Con {parametros} parámetros candidatos hacen falta al menos {requerido} filas (manda: {manda}). Tienes {disponible}: alcanzan.",
+          "muestra-corta": "Con {parametros} parámetros candidatos hacen falta al menos {requerido} filas (manda: {manda}). Tienes {disponible}: no alcanzan, y el modelo puede aprender ruido y fallar en datos nuevos.",
+          "periodo": "Tus datos cubren del {minimo} al {maximo}: el modelo solo habla de ese periodo."
+        }
+      }
+    },
+    "status": {
+      "cerrada": "Cerrada",
+      "abierta": "Abierta",
+      "cumplida": "Cumplida",
+      "por-verificar": "Por verificar",
+      "detenida": "Detenida",
+      "no-construida": "Sin construir"
+    },
+    "notebook": {
+      "title": "Cuaderno",
+      "desc": "Cada compuerta deja aquí su evidencia, con fecha y números. Solo crece: corregir añade una entrada nueva.",
+      "empty": "El cuaderno está vacío: la primera evidencia llega al cumplir la etapa 1.",
+      "entry": "Etapa {n} · {title}",
+      "with-data": "Con {name}",
+      "superseded": "Corregida después",
+      "loads": "Datos con que se trabajó",
+      "load": "{date} · {name} · {rows} filas · huella {hash}",
+      "export": "Exportar cuaderno",
+      "import": "Importar cuaderno",
+      "new": "Empezar otro cuaderno",
+      "new-confirm": "¿Empezar un cuaderno nuevo? El actual se reemplaza en este navegador; expórtalo antes si lo quieres conservar.",
+      "new-yes": "Sí, empezar otro",
+      "new-no": "Cancelar",
+      "imported": "Cuaderno importado. Carga el CSV con que se hizo para verificar las etapas que usan los datos.",
+      "started": "Cuaderno nuevo.",
+      "unreadable": "El cuaderno guardado en este navegador no se pudo leer; empezaste uno vacío. Si lo exportaste antes, impórtalo.",
+      "yes": "Sí",
+      "no": "No",
+      "import-error": {
+        "too-large": "El archivo supera {mb} MB: no es un cuaderno.",
+        "invalid-json": "El archivo no es JSON: no es un cuaderno del Protocolo.",
+        "invalid-format": "El archivo no es un cuaderno válido: falla el campo «{field}».",
+        "unsupported-version": "El cuaderno es de la versión «{version}», que esta app no lee."
+      },
+      "saved": "Guardado en este navegador.",
+      "saving": "Guardando en este navegador…"
+    },
+    "glossary": {
+      "title": "Glosario",
+      "desc": "Definiciones breves de los términos que usan las compuertas.",
+      "more": "Leer más en el glosario de Google",
+      "attribution": "Los enlaces «leer más» llevan al glosario de aprendizaje automático de Google, publicado con licencia CC BY 4.0."
+    },
+    "form": {
+      "submit": "Registrar la etapa {n}",
+      "number-unreadable": "No se lee como número. Escribe solo cifras con punto o coma decimal y sin separador de miles (por ejemplo 1500 o 1500.5)."
+    },
+    "criterion": {
+      "contraccion": "que el modelo no se pase de ajustado",
+      "optimismo": "que el puntaje de entrenamiento no sea demasiado optimista",
+      "riesgo-medio": "estimar bien qué tan frecuente es el caso",
+      "varianza": "estimar bien el error típico",
+      "media": "estimar bien el promedio"
+    },
+    "value": {
+      "binaria": "sí o no",
+      "multiclase": "varias opciones",
+      "numerica": "una cantidad",
+      "fila": "cada fila",
+      "columna": "una columna",
+      "texto": "escrito por ti",
+      "predecir": "predecir",
+      "explicar": "explicar una causa",
+      "dia-mes": "día/mes",
+      "mes-dia": "mes/día",
+      "leida": "se lee",
+      "ambigua": "ambigua",
+      "mezclada": "mezclada",
+      "ninguna": "ninguna se lee",
+      "contraccion": "que el modelo no se pase de ajustado",
+      "optimismo": "que el puntaje de entrenamiento no sea demasiado optimista",
+      "riesgo-medio": "estimar bien qué tan frecuente es el caso",
+      "varianza": "estimar bien el error típico",
+      "media": "estimar bien el promedio",
+      "two-values": "dos valores",
+      "few-categories": "pocas categorías",
+      "many-numbers": "muchos números distintos",
+      "few-numbers": "pocos números distintos",
+      "too-many-categories": "demasiadas categorías",
+      "constant": "un solo valor",
+      "empty": "vacía"
     }
   }
 }

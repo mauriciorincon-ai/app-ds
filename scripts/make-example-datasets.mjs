@@ -318,6 +318,42 @@ function storesByCity(n = 120, seed = 1111) {
   return toCsv(["ciudad", "ventas_mes_usd", "visitas_mes", "superficie_m2"], rows);
 }
 
+// 11) Renovaciones mensuales — SOLO KIT (S8, Protocolo DS). El mismo cliente aparece en varias
+// filas (una por mes observado): es la unidad repetida que el Protocolo debe señalar, y la
+// partición al azar entre entrenar y probar la rompería. `mes_observado` es una fecha ISO
+// (el kit no tenía ninguna). `renovo` es la decisión (sí/no, ~18 % de sí).
+function monthlyRenewals(clients = 100, seed = 1212) {
+  const rng = mulberry32(seed);
+  const rows = [];
+  for (let c = 1; c <= clients; c++) {
+    const plan = pick(rng, ["basico", "estandar", "premium"]);
+    const antiguedad = round(1 + rng() * 48);
+    const taste = rng() - 0.5;
+    const monthsSeen = 2 + Math.floor(rng() * 4);
+    const start = Math.floor(rng() * (12 - monthsSeen));
+    for (let k = 0; k < monthsSeen; k++) {
+      const month = start + k + 1;
+      const tickets = round(Math.max(0, 3 * rng() + (taste < 0 ? 2 : 0)), 0);
+      const uso = round(5 + rng() * 80 + (plan === "premium" ? 30 : 0), 1);
+      const logit = -2.2 + 0.03 * antiguedad - 0.35 * tickets + 0.01 * uso + taste;
+      const renewed = rng() < sigmoid(logit) ? "si" : "no";
+      rows.push([
+        `C${String(c).padStart(3, "0")}`,
+        `2025-${String(month).padStart(2, "0")}-15`,
+        plan,
+        antiguedad + k,
+        tickets,
+        uso,
+        renewed,
+      ]);
+    }
+  }
+  return toCsv(
+    ["cliente_id", "mes_observado", "plan", "antiguedad_meses", "tickets_soporte", "uso_mensual_gb", "renovo"],
+    rows,
+  );
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   await mkdir(kitDir, { recursive: true });
@@ -352,6 +388,8 @@ async function main() {
   const kitOnly = {
     "segmentos-grande.csv": customerSegments(9000, 919),
     "tiendas-ciudades.csv": storesByCity(),
+    // S8: el Protocolo DS carga datos propios; este es el del kit (no hay botón de ejemplo).
+    "renovaciones-mensuales.csv": monthlyRenewals(),
   };
   for (const [name, content] of Object.entries(kitOnly)) {
     await writeFile(resolve(kitDir, name), content, "utf8");

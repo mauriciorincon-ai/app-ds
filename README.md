@@ -13,9 +13,14 @@ categorías, estimar una cantidad o agrupar filas parecidas sin objetivo. La hon
 la selección del modelo vive en validación cruzada dentro de entrenamiento, la prueba se abre una sola
 vez, cada resultado se compara con un baseline y una posible fuga de datos se nombra.
 
-**Tus datos no salen de tu navegador.** El cómputo (pandas y scikit-learn en WebAssembly, con Pyodide)
-corre en un Web Worker de tu equipo. Ningún servidor recibe el dataset, y los registros de errores solo
-llevan metadatos (cuántas filas y columnas), nunca valores ni nombres de columnas.
+Tiene dos modos con el mismo motor y promesas distintas: **Probeta**, el laboratorio rápido, y
+**Protocolo DS**, el camino lento de diez etapas con compuertas que no se saltan, con tus propios
+datos y un cuaderno que guarda lo que cada etapa verificó. El manual dice qué etapas están construidas.
+
+**Tus datos no salen de tu navegador.** El cómputo de Probeta (pandas y scikit-learn en WebAssembly,
+con Pyodide) corre en un Web Worker de tu equipo; el Protocolo calcula en tu navegador y guarda su
+cuaderno ahí mismo. Ningún servidor recibe el dataset, y los registros de errores solo llevan
+metadatos (cuántas filas y columnas), nunca valores ni nombres de columnas.
 
 ### Correrla en tu equipo
 
@@ -41,9 +46,10 @@ pnpm dev              # copia los assets de Pyodide y arranca en http://localhos
 - [`docs/BLUEPRINT.html`](docs/BLUEPRINT.html): la infraestructura tal como está construida.
 - [`design-system.md`](design-system.md): la fuente de verdad visual.
 - [`decisions/`](decisions/): las decisiones de arquitectura (ADR).
-- [`sprints/`](sprints/): la bitácora, la auditoría y el resumen de cada sprint. La historia de la app
-  vive ahí y en el historial de git; el `CHANGELOG` del kit con que se estampó el repo no aplica a la
-  app y no se mantiene aquí.
+- [`sprints/`](sprints/): la historia de cada sprint. Del 1 al 7, su bitácora, auditoría y resumen;
+  desde el 8, un solo cierre ejecutivo (`SPRINT_NNN-cierre.md`) que los reemplaza. La historia de la
+  app vive ahí y en el historial de git; el `CHANGELOG` del kit con que se estampó el repo no aplica
+  a la app y no se mantiene aquí.
 
 ## English
 
@@ -54,9 +60,14 @@ estimates a quantity, or groups similar rows without a target. Honesty is automa
 lives in cross-validation inside the training set, the test set is opened once, every result is
 compared against a baseline, and a possible data leak is named.
 
-**Your data never leaves your browser.** The computation (pandas and scikit-learn in WebAssembly,
-through Pyodide) runs in a Web Worker on your machine. No server receives the dataset, and error
-reports carry metadata only (how many rows and columns), never values or column names.
+It has two modes on the same engine with different promises: **Probeta**, the quick lab, and
+**Protocolo DS**, the slow path of ten stages with gates that can't be skipped, on your own data and
+with a notebook that keeps what each stage verified. The manual says which stages are built.
+
+**Your data never leaves your browser.** Probeta's computation (pandas and scikit-learn in
+WebAssembly, through Pyodide) runs in a Web Worker on your machine; the Protocol computes in your
+browser and keeps its notebook there. No server receives the dataset, and error reports carry
+metadata only (how many rows and columns), never values or column names.
 
 ### Running it locally
 
@@ -82,6 +93,7 @@ pnpm dev              # copies the Pyodide assets and starts on http://localhost
 - [`docs/BLUEPRINT.html`](docs/BLUEPRINT.html): the infrastructure as built.
 - [`design-system.md`](design-system.md): the visual source of truth.
 - [`decisions/`](decisions/): architecture decision records (ADRs).
-- [`sprints/`](sprints/): each sprint's log, audit and summary. The app's history lives there and in
-  the git log; the `CHANGELOG` of the kit this repo was stamped from does not apply to the app and is
-  not kept here.
+- [`sprints/`](sprints/): each sprint's history. Sprints 1 to 7 keep a log, an audit and a summary;
+  from sprint 8 on, a single executive close (`SPRINT_NNN-cierre.md`) replaces them. The app's history
+  lives there and in the git log; the `CHANGELOG` of the kit this repo was stamped from does not apply
+  to the app and is not kept here.
