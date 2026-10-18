@@ -1503,7 +1503,7 @@
           "col-hits": "Hits out of 100",
           "majority": "The most frequent in your rows",
           "rule": "Your rule of today",
-          "note": "This is a reference, not a result: it is measured on all {rows} of your rows. Stage 7 measures it again on the test set."
+          "note": "This is a reference, not a result: it is measured on all {rows} of your rows. Stage 8 measures it again on the test set."
         },
         "ref": {
           "nunca-actuar": "Never act",
@@ -1604,7 +1604,7 @@
           "sin-anterior": "{n} rows have no earlier value for their unit: there «the last value» used the median."
         },
         "summary": {
-          "reference": "Reference over {filas} rows, not a result: stage 7 measures it again on the test set.",
+          "reference": "Reference over {filas} rows, not a result: stage 8 measures it again on the test set.",
           "refs": "Without a model, per 100 decisions: {list}",
           "rule": "Rule of today: {regla}. It holds in {cumple} of {filas} rows and costs {costo} per 100 decisions.",
           "rule-then": "If it holds: {si}. If not: {no}.",

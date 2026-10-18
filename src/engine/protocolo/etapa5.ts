@@ -5,7 +5,7 @@
 // balanceada en clasificación, error medio en un número.
 //
 // Es una REFERENCIA, no un resultado: se mide sobre todas las filas (la partición es la etapa 6)
-// y la etapa 7 la vuelve a medir sobre la prueba. Ninguna regla de hoy "entrena": se escribe y se
+// y la etapa 8 la vuelve a medir sobre la prueba. Ninguna regla de hoy "entrena": se escribe y se
 // mide. Solo puede usar columnas que la etapa 4 dejó en «usar» (una regla que mira lo que se
 // llena después del resultado también "acertaría").
 //

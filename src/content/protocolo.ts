@@ -103,8 +103,8 @@ export const CONTENIDO_ETAPAS: Readonly<Record<EtapaId, ContenidoEtapa>> = {
       en: "See what you already get without a model, in the currency of your decision. Then write the rule your people apply today (up to two conditions on the columns you left in «use») or say there is none, and the app measures it on your rows.",
     },
     porque: {
-      es: "Sin saber qué se logra sin modelo, cualquier número de un modelo parece bueno.\nLa regla de hoy es el rival real: si el modelo no la supera, no hay para qué cambiarla.\nEs una referencia sobre todas tus filas; la etapa 7 la vuelve a medir sobre la prueba.",
-      en: "Without knowing what you get with no model, any model number looks good.\nToday's rule is the real rival: if the model doesn't beat it, there is no reason to replace it.\nIt is a reference over all your rows; stage 7 measures it again on the test set.",
+      es: "Sin saber qué se logra sin modelo, cualquier número de un modelo parece bueno.\nLa regla de hoy es el rival real: si el modelo no la supera, no hay para qué cambiarla.\nEs una referencia sobre todas tus filas; la etapa 8 la vuelve a medir sobre la prueba.",
+      en: "Without knowing what you get with no model, any model number looks good.\nToday's rule is the real rival: if the model doesn't beat it, there is no reason to replace it.\nIt is a reference over all your rows; stage 8 measures it again on the test set.",
     },
   },
   6: {

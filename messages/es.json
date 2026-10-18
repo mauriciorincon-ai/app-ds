@@ -1503,7 +1503,7 @@
           "col-hits": "Aciertos de cada 100",
           "majority": "La más frecuente en tus filas",
           "rule": "Tu regla de hoy",
-          "note": "Es una referencia, no un resultado: se mide sobre todas tus {rows} filas. La etapa 7 la vuelve a medir sobre la prueba."
+          "note": "Es una referencia, no un resultado: se mide sobre todas tus {rows} filas. La etapa 8 la vuelve a medir sobre la prueba."
         },
         "ref": {
           "nunca-actuar": "Nunca actuar",
@@ -1604,7 +1604,7 @@
           "sin-anterior": "{n} filas no tienen un valor anterior de su unidad: ahí «el último valor» usó la mediana."
         },
         "summary": {
-          "reference": "Referencia sobre {filas} filas, no un resultado: la etapa 7 la vuelve a medir sobre la prueba.",
+          "reference": "Referencia sobre {filas} filas, no un resultado: la etapa 8 la vuelve a medir sobre la prueba.",
           "refs": "Sin modelo, por cada 100 decisiones: {list}",
           "rule": "Regla de hoy: {regla}. Se cumple en {cumple} de {filas} filas y cuesta {costo} por cada 100 decisiones.",
           "rule-then": "Si se cumple: {si}. Si no: {no}.",

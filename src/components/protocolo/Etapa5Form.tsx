@@ -3,7 +3,7 @@
 // Protocolo DS (S10), etapa 5: lo que ya se logra sin modelo y la regla de hoy. La tabla de
 // referencias sale de TUS filas con los costos de la etapa 1; la regla (hasta dos condiciones) se
 // escribe aquí y se mide en vivo en las mismas filas. Todo es una REFERENCIA sobre todas tus filas:
-// la etapa 7 la vuelve a medir sobre la prueba. Solo se ofrecen las columnas que la etapa 4 dejó
+// la etapa 8 la vuelve a medir sobre la prueba. Solo se ofrecen las columnas que la etapa 4 dejó
 // en «usar». La compuerta decide al registrar; este formulario solo propone.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { matchTask } from "@/engine/despacho";
