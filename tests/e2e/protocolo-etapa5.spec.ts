@@ -38,7 +38,7 @@ test("etapa 5 con crédito: referencias, regla de hoy medida en vivo y registro"
     "referencia, no un resultado",
   );
   await expect(e5.getByTestId("protocolo-referencia")).toContainText(
-    "La etapa 7 la vuelve a medir sobre la prueba",
+    "La etapa 8 la vuelve a medir sobre la prueba",
   );
   const tabla = e5.getByRole("table");
   await expect(tabla).toContainText("Nunca actuar");

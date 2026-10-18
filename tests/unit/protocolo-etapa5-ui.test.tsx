@@ -84,11 +84,11 @@ beforeEach(() => {
 });
 
 describe("la tabla de referencias", () => {
-  it("dice que es una referencia sobre todas las filas y que la etapa 7 la vuelve a medir", () => {
+  it("dice que es una referencia sobre todas las filas y que la etapa 8 la vuelve a medir", () => {
     montar();
     const nota = screen.getByTestId("protocolo-referencia");
     expect(nota.textContent).toMatch(/referencia, no un resultado/);
-    expect(nota.textContent).toMatch(/etapa 7/);
+    expect(nota.textContent).toMatch(/etapa 8/);
     expect(nota.textContent).toContain(String(CREDITO.tabla.rows.length));
   });
 
@@ -557,7 +557,7 @@ describe("el cuaderno", () => {
     );
     const resumen = screen.getByTestId("cuaderno-resumen5").textContent!;
     expect(resumen).toMatch(/Referencia sobre \d+ filas, no un resultado/);
-    expect(resumen).toMatch(/etapa 7/);
+    expect(resumen).toMatch(/etapa 8/);
     expect(resumen).toMatch(/Nunca actuar: .* · Siempre actuar: /);
     expect(resumen).toMatch(
       /Regla de hoy: ingreso_mensual menor o igual que \(≤\) 3000 y empleo no es informal/,
