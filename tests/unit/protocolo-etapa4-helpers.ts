@@ -16,7 +16,11 @@ import {
   hallazgos4,
   type EntradaEtapa4,
 } from "@/engine/protocolo/etapa4";
-import { ETAPA_5 } from "@/engine/protocolo/etapa5";
+import {
+  ENTRADA_5_VACIA,
+  ETAPA_5,
+  datosEtapa5,
+} from "@/engine/protocolo/etapa5";
 import {
   ETAPAS_BASE,
   type DatosEtapa,
@@ -24,6 +28,7 @@ import {
   type Previas,
 } from "@/engine/protocolo/etapas";
 import { ETAPA_IDS } from "@/engine/protocolo/ids";
+import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 
 export const AHORA = new Date("2026-10-18T12:00:00.000Z");
@@ -251,4 +256,34 @@ export function armar4(
 /** Un CSV desde filas de texto (la primera es la cabecera). */
 export function csv(...lineas: string[]): CsvTable {
   return tablaDe(`${lineas.join("\n")}\n`);
+}
+
+/** El Protocolo con la etapa 6 construida: desde el sprint 11 es el de la app. */
+export const PROTOCOLO6: DefinicionProtocolo = PROTOCOLO_DS;
+
+/** Cumple las etapas 1–5 con la compuerta real: la 5, con «no hay regla de hoy». */
+export function armar5(
+  archivo: string,
+  forma: "binaria" | "multiclase" | "numerica",
+  entrada: EntradaEtapa2,
+  tabla: CsvTable = tablaKit(archivo),
+  e1: DatosEtapa = etapa1De(forma),
+): Armado {
+  const hasta4 = armar4(archivo, forma, entrada, tabla, e1);
+  const datos = datosEtapa5(
+    tabla,
+    { ...ENTRADA_5_VACIA, regla: "ninguna" },
+    hasta4.previas,
+  );
+  const r = registrar(PROTOCOLO6, hasta4.cuaderno, 5, datos, {
+    huella: HUELLA,
+    tabla,
+    ahora: AHORA,
+  });
+  if (!r.ok) throw new Error(`etapa 5: ${JSON.stringify(r.rechazo)}`);
+  return {
+    tabla,
+    cuaderno: r.cuaderno,
+    previas: { ...hasta4.previas, 5: datos },
+  };
 }
