@@ -16,6 +16,7 @@ import {
   hallazgos4,
   type EntradaEtapa4,
 } from "@/engine/protocolo/etapa4";
+import { ETAPA_5 } from "@/engine/protocolo/etapa5";
 import {
   ETAPAS_BASE,
   type DatosEtapa,
@@ -33,6 +34,14 @@ const CONSTRUIDAS = { 1: ETAPA_1, 2: ETAPA_2, 3: ETAPA_3, 4: ETAPA_4 } as const;
 export const PROTOCOLO4: DefinicionProtocolo = ETAPA_IDS.map(
   (id) =>
     (CONSTRUIDAS as Record<number, DefinicionProtocolo[number]>)[id] ??
+    ETAPAS_BASE[id],
+);
+
+const CONSTRUIDAS5 = { ...CONSTRUIDAS, 5: ETAPA_5 } as const;
+/** El Protocolo con la etapa 5 construida (en el sprint 10 se registra en `PROTOCOLO_DS` en la F2). */
+export const PROTOCOLO5: DefinicionProtocolo = ETAPA_IDS.map(
+  (id) =>
+    (CONSTRUIDAS5 as Record<number, DefinicionProtocolo[number]>)[id] ??
     ETAPAS_BASE[id],
 );
 
@@ -94,8 +103,8 @@ export function armar(
   forma: "binaria" | "multiclase" | "numerica",
   entrada: EntradaEtapa2,
   tabla: CsvTable = tablaKit(archivo),
+  e1: DatosEtapa = etapa1De(forma),
 ): Armado {
-  const e1 = etapa1De(forma);
   const e2 = datosEtapa2(tabla, entrada, e1);
   const base = { 1: e1, 2: e2 } as Previas;
   const r3 = {
@@ -196,4 +205,50 @@ export function datosBajas(
     inventario(h.columnas, filas, extra),
     armado.previas,
   );
+}
+
+/**
+ * Cumple las etapas 1–4 con la compuerta real sobre un CSV: toda columna «antes + usar», salvo las
+ * que la app marcó (fuga → «después + excluir»; identificador, unidad y fecha → «excluir»).
+ */
+export function armar4(
+  archivo: string,
+  forma: "binaria" | "multiclase" | "numerica",
+  entrada: EntradaEtapa2,
+  tabla: CsvTable = tablaKit(archivo),
+  e1: DatosEtapa = etapa1De(forma),
+): Armado {
+  const hasta3 = armar(archivo, forma, entrada, tabla, e1);
+  const h = hallazgos4(tabla, hasta3.previas);
+  if (!h) throw new Error("sin hallazgos");
+  const filas: Record<string, Fila> = {};
+  for (const c of h.columnas) {
+    const filtra = Object.hasOwn(h.fuga, c) || Object.hasOwn(h.fugaVacios, c);
+    filas[c] = filtra
+      ? ["despues", "excluir", "Se llena cuando ya pasó"]
+      : h.roles.includes(c) || Object.hasOwn(h.identificador, c)
+        ? ["", "excluir", ""]
+        : ["antes", "usar", "Registro propio"];
+  }
+  const datos = datosEtapa4(
+    tabla,
+    inventario(h.columnas, filas),
+    hasta3.previas,
+  );
+  const r = registrar(PROTOCOLO5, hasta3.cuaderno, 4, datos, {
+    huella: HUELLA,
+    tabla,
+    ahora: AHORA,
+  });
+  if (!r.ok) throw new Error(`etapa 4: ${JSON.stringify(r.rechazo)}`);
+  return {
+    tabla,
+    cuaderno: r.cuaderno,
+    previas: { ...hasta3.previas, 4: datos },
+  };
+}
+
+/** Un CSV desde filas de texto (la primera es la cabecera). */
+export function csv(...lineas: string[]): CsvTable {
+  return tablaDe(`${lineas.join("\n")}\n`);
 }
