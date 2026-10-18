@@ -378,3 +378,56 @@ describe("los sellos y el cuaderno", () => {
     expect(resumen).not.toContain("clases_prueba");
   });
 });
+
+// S12 — deuda del S11 (medio): «elegido» no se queda pegado a lo que ya era el sugerido.
+describe("corregir sin quedar pegado al esquema de antes", () => {
+  const RAZON = "¿Por qué eliges otro esquema que el sugerido?";
+  const conSugerido = datosEtapa6(
+    BAJAS.tabla,
+    {
+      ...ENTRADA_6_VACIA,
+      unidades: "nuevas",
+      esquema: "tiempo-grupo",
+      horizonte: 1,
+      horizonteUnidad: "meses",
+    },
+    BAJAS.previas,
+    HUELLA,
+  );
+
+  it("lo registrado con el sugerido sigue al sugerido de hoy: al cambiar las unidades no pide razón", () => {
+    montar(BAJAS, conSugerido, [conSugerido]);
+    conocidas();
+    expect(screen.getByLabelText("Por tiempo · sugerido")).toBeChecked();
+    expect(screen.queryByLabelText(RAZON)).toBeNull();
+  });
+
+  it("lo registrado como otro esquema, con su razón, se precarga", () => {
+    const otro = datosEtapa6(
+      BAJAS.tabla,
+      {
+        ...ENTRADA_6_VACIA,
+        unidades: "nuevas",
+        esquema: "estratificada",
+        razon: "Una primera mirada rápida",
+      },
+      BAJAS.previas,
+      HUELLA,
+    );
+    montar(BAJAS, otro, [otro]);
+    expect(screen.getByLabelText("Estratificada")).toBeChecked();
+    expect(screen.getByLabelText(RAZON)).toHaveValue(
+      "Una primera mirada rápida",
+    );
+  });
+
+  it("elegir otro y volver al sugerido no lo deja pegado: al cambiar las unidades sigue al nuevo sugerido", () => {
+    montar(BAJAS);
+    nuevas();
+    fireEvent.click(screen.getByLabelText("Estratificada"));
+    fireEvent.click(screen.getByLabelText("Por tiempo y por grupo · sugerido"));
+    conocidas();
+    expect(screen.getByLabelText("Por tiempo · sugerido")).toBeChecked();
+    expect(screen.queryByLabelText(RAZON)).toBeNull();
+  });
+});

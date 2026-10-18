@@ -85,8 +85,11 @@ export function Etapa6Form({
   );
 
   const [unidades, setUnidades] = useState(previo.unidades);
-  // el esquema que TÚ elegiste; sin elegir, se usa el sugerido
-  const [elegido, setElegido] = useState<"" | Esquema>(previo.esquema);
+  // el esquema que TÚ elegiste; sin elegir, se usa el sugerido. Al corregir, lo registrado solo se
+  // precarga como elegido si era OTRO que el sugerido de entonces; si era el sugerido, sigue al de hoy (S12).
+  const [elegido, setElegido] = useState<"" | Esquema>(
+    previo.esquema === anterior?.chequeos.sugerido ? "" : previo.esquema,
+  );
   const [razon, setRazon] = useState(previo.razon);
   const [tamanoTexto, setTamanoTexto] = useState(
     String(previo.tamano ?? TAMANO_SUGERIDO),
@@ -318,7 +321,7 @@ export function Etapa6Form({
               ? `${nombre(e)} · ${t("protocol.stage.6.form.suggested")}`
               : nombre(e),
         }))}
-        onCambio={setElegido}
+        onCambio={(e) => setElegido(e === sug ? "" : e)}
       />
 
       {esquema !== "" && sug !== null && esquema !== sug && (
