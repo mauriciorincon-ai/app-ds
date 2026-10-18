@@ -52,7 +52,7 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
   umbral: {
     termino: { es: "Umbral", en: "Threshold" },
     definicion: {
-      es: "La probabilidad a partir de la cual actúas. Con tus costos sale una cifra concreta; usar 0,5 por costumbre supone que los dos errores cuestan igual.",
+      es: "La probabilidad a partir de la cual actúas. Con tus costos sale una cifra concreta; usar 0.5 por costumbre supone que los dos errores cuestan igual.",
       en: "The probability above which you act. Your costs give a specific number; using 0.5 out of habit assumes both errors cost the same.",
     },
     google: "classification-threshold",
@@ -133,7 +133,7 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
   contraccion: {
     termino: { es: "Contracción", en: "Shrinkage" },
     definicion: {
-      es: "Cuánto habría que achicar las predicciones de un modelo para que no sean demasiado extremas en datos nuevos. Pedir que valga al menos 0,9 es pedir poco sobreajuste.",
+      es: "Cuánto habría que achicar las predicciones de un modelo para que no sean demasiado extremas en datos nuevos. Pedir que valga al menos 0.9 es pedir poco sobreajuste.",
       en: "How much a model's predictions would have to be pulled in so they aren't too extreme on new data. Asking for at least 0.9 is asking for little overfitting.",
     },
   },

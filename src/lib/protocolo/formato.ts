@@ -18,8 +18,19 @@ export function fecha(iso: string, locale: Locale): string {
   }).format(new Date(iso));
 }
 
+/**
+ * Una cifra del cuaderno o de una frase: miles con coma y dos decimales (R9), y en notación
+ * científica lo diminuto (~1e-11) y lo enorme (≥ 1e12), que de otro modo se leería «0.00» o
+ * como una fila de quince ceros (extremos de magnitud, regla 22).
+ */
+export function cifra(valor: number): string {
+  const abs = Math.abs(valor);
+  if (abs !== 0 && (abs < 1e-4 || abs >= 1e12)) return valor.toExponential(2);
+  return formatQuantity(valor, Number.isInteger(valor) ? 0 : 2);
+}
+
 function numero(n: number): string {
-  return formatQuantity(n, Number.isInteger(n) ? 0 : 2);
+  return cifra(n);
 }
 
 /** Un valor del cuaderno como texto (`si`/`no` llegan ya traducidos). */
@@ -35,4 +46,18 @@ export function valorTexto(
   return Object.entries(valor)
     .map(([clave, n]) => `${clave}: ${numero(n)}`)
     .join(" · ");
+}
+
+/**
+ * Una probabilidad o un cuantil entre 0 y 1 con los decimales que hacen falta para no escribir
+ * «0.00» (un umbral de 0.0016 no es cero) ni «1.00» (0.9995 no es uno): dos decimales cuando
+ * ninguno de los dos extremos está a menos de 0.01, y más si lo está.
+ */
+export function proporcion(valor: number): string {
+  if (!(valor > 0 && valor < 1)) return formatQuantity(valor, 2);
+  const margen = Math.min(valor, 1 - valor);
+  if (margen < 1e-6) return valor.toExponential(1);
+  const decimales =
+    margen >= 0.01 ? 2 : Math.min(12, Math.ceil(-Math.log10(margen)) + 1);
+  return formatQuantity(valor, decimales);
 }

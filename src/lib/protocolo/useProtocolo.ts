@@ -61,6 +61,8 @@ export type EstadoProtocolo = {
   readonly pendiente: DatosCargados | null;
   readonly aviso: Aviso | null;
   readonly error: Aviso | null;
+  /** Escrituras al navegador que todavía no terminaron (el «Guardado» solo se dice sin pendientes). */
+  readonly guardando: number;
 };
 
 const CSV_ERROR: Record<string, string> = {
@@ -130,6 +132,7 @@ export function useProtocolo(
     pendiente: null,
     aviso: null,
     error: null,
+    guardando: 0,
   }));
 
   useEffect(() => {
@@ -167,13 +170,22 @@ export function useProtocolo(
   const guardar = useCallback((cuaderno: Cuaderno) => {
     const almacen = almacenRef.current;
     if (!almacen) return;
-    almacen.guardar(cuaderno).catch(() => {
-      reportProtocolError("storage-write");
+    setEstado((previo) => ({ ...previo, guardando: previo.guardando + 1 }));
+    const terminar = (fallo: boolean) =>
       setEstado((previo) => ({
         ...previo,
-        error: { clave: "protocol.storage.write-failed" },
+        guardando: Math.max(0, previo.guardando - 1),
+        error: fallo
+          ? { clave: "protocol.storage.write-failed" }
+          : previo.error,
       }));
-    });
+    almacen.guardar(cuaderno).then(
+      () => terminar(false),
+      () => {
+        reportProtocolError("storage-write");
+        terminar(true);
+      },
+    );
   }, []);
 
   const aplicarCarga = useCallback(
@@ -291,13 +303,18 @@ export function useProtocolo(
       }
       recordProtocolStep(etapa, "recorded");
       guardar(resultado.cuaderno);
-      const siguiente = {
+      // Una actualización funcional: `guardar` acaba de sumar su escritura pendiente y un estado
+      // armado desde la foto de `actual` la borraría (el «Guardado» saldría antes de tiempo).
+      estadoRef.current = {
         ...actual,
         cuaderno: resultado.cuaderno,
         aviso: null,
       };
-      estadoRef.current = siguiente;
-      setEstado(siguiente);
+      setEstado((previo) => ({
+        ...previo,
+        cuaderno: resultado.cuaderno,
+        aviso: null,
+      }));
       return null;
     },
     [guardar, reloj],

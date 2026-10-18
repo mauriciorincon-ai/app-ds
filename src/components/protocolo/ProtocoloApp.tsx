@@ -82,6 +82,7 @@ export function ProtocoloApp() {
       />
       <CuadernoPanel
         cuaderno={p.cuaderno}
+        guardado={p.almacen === "indexeddb" ? p.guardando === 0 : null}
         onExportar={p.exportar}
         onImportar={(file) => void p.importar(file)}
         onNuevo={p.nuevoCuaderno}

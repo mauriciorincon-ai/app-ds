@@ -1017,6 +1017,239 @@
         "datos-invalidos": "«{field}» is missing or doesn't fit.",
         "criterio-no-cumplido": "The criterion isn't met. Missing: {missing}.",
         "etapa-desconocida": "Stage {n} doesn't exist."
+      },
+      "trap-title": "In your data",
+      "1": {
+        "field": {
+          "decision": "The decision",
+          "decisor": "Who makes it",
+          "cuando": "When it's made",
+          "hoy": "What's done today without a model",
+          "forma": "What shape the decision has",
+          "unidad": "Cost unit",
+          "c_fp": "Cost of acting when it wasn't needed (false positive)",
+          "c_fn": "Cost of not acting when it was needed (false negative)",
+          "opciones": "The options being chosen between",
+          "costos": "Cost of being wrong, by actual class",
+          "costo_de": "Cost of being wrong when the actual one is «{clase}»",
+          "c_sub": "Cost of falling short, per unit too low",
+          "c_sobre": "Cost of overshooting, per unit too high"
+        },
+        "help": {
+          "decision": "What you'll do differently depending on what the model says. For example: «call a customer or not before their plan expires».",
+          "cuando": "The moment it's made. Optional.",
+          "hoy": "What's done today, without a model. That is what the model will be measured against. Optional.",
+          "forma": "This decides how the costs are asked for.",
+          "unidad": "What you measure cost in: US$, hours, lost customers…",
+          "c_fp": "What you lose each time you act unnecessarily.",
+          "c_fn": "What you lose each time a case slips through.",
+          "opciones": "One per line, three or more.",
+          "c_sub": "What you lose for each unit you estimate too low.",
+          "c_sobre": "What you lose for each unit you estimate too high."
+        },
+        "forma": {
+          "binaria": "Yes or no (act or don't act)",
+          "multiclase": "Choosing between several options",
+          "numerica": "How much (an amount)"
+        },
+        "check": {
+          "umbral": "Theoretical threshold",
+          "razon": "Cost ratio",
+          "n_opciones": "Options",
+          "costo_menor": "Cost of the cheapest error",
+          "costo_mayor": "Cost of the costliest error",
+          "cuantil": "Quantile worth estimating"
+        },
+        "missing": {
+          "decision": "the decision",
+          "decisor": "who makes it",
+          "forma": "what shape the decision has",
+          "unidad": "the cost unit",
+          "costos": "the costs, all above zero (with several options, from {min} to {max} options)",
+          "chequeos": "the calculated figures don't match your answers"
+        },
+        "trap": {
+          "umbral": "With your costs you should act from a probability of {umbral}, not 0.5: letting a case slip costs you {razon} times what a false alarm does. Using 0.5 out of habit would have treated both errors as if they cost the same.",
+          "umbral-alto": "With your costs you should act only from a probability of {umbral}, not 0.5: a false alarm costs you {razon} times what letting a case slip does. Using 0.5 out of habit would have meant acting too much.",
+          "umbral-igual": "Your two errors cost the same: the threshold is 0.5, the usual one.",
+          "costos": "Your costliest error costs {mayor} and your cheapest {menor}. A model that only tries to be right more often would treat them as if they were equal.",
+          "costos-iguales": "All your errors cost the same: being right more often is a good measure.",
+          "cuantil": "Falling short costs you {razon} times what overshooting does: you should estimate the {cuantil} quantile, not the average.",
+          "cuantil-bajo": "Overshooting costs you {razon} times what falling short does: you should estimate the {cuantil} quantile, below the average.",
+          "cuantil-igual": "Overshooting and falling short cost the same: the median is the estimate that suits you."
+        }
+      },
+      "2": {
+        "need-data": "Load your CSV above to work on this stage: it is checked on your data.",
+        "pick": "Pick…",
+        "no-target": "I don't have a target column",
+        "field": {
+          "objetivo": "Target column",
+          "positivo": "Value that means «act»",
+          "unidad": "What one row is",
+          "unidad_columna": "Column that identifies the unit",
+          "momento": "When the target becomes known",
+          "momento_columna": "Date column",
+          "momento_texto": "The moment, written down",
+          "orden_fecha": "How your dates are written"
+        },
+        "help": {
+          "objetivo": "What you want to predict, as it is known after the fact.",
+          "positivo": "With two values, the program needs to know which one is the case you care about.",
+          "unidad": "If the same person, store or customer appears in several rows, pick the column that identifies it.",
+          "momento": "Only what was already known at that moment can enter the model.",
+          "momento_texto": "For example: «at the end of each month, before calling».",
+          "orden_fecha": "All your values fit both as day/month and as month/day; the program doesn't guess."
+        },
+        "detected": {
+          "two-values": "The column has {n} distinct values: it's a two-class target.",
+          "few-categories": "The column has {n} categories: it's a choice between several.",
+          "many-numbers": "The column is numeric with {n} distinct values: it's an amount.",
+          "few-numbers": "The column is numeric with only {n} distinct values: they could be classes or an amount. Your stage 1 decision settles it.",
+          "too-many-categories": "The column has {n} distinct categories: too many to be classes, and it isn't a number.",
+          "constant": "The column has a single value: there is nothing to predict.",
+          "empty": "The column is empty."
+        },
+        "mismatch": "It doesn't match the decision you wrote in stage 1 («{forma}»): correct stage 1 or pick another column.",
+        "unidad": {
+          "fila": "Each row is a different unit",
+          "columna": "A column identifies the unit (several rows can be the same one)"
+        },
+        "momento": {
+          "columna": "There's a date column",
+          "texto": "There's no column: I'll write it"
+        },
+        "orden": {
+          "dia-mes": "Day/month/year (31/01/2026)",
+          "mes-dia": "Month/day/year (01/31/2026)"
+        },
+        "looks-date": "looks like a date",
+        "dates": {
+          "read": "{n} dates are read, from {min} to {max}. Unreadable: {bad}. Empty: {empty}.",
+          "ambigua": "Every value fits both as day/month and as month/day: answer how they are written.",
+          "mezclada": "The column mixes different formats or orders: fix it in your file.",
+          "ninguna": "No value in the column reads as a date."
+        },
+        "summary": "{rows} rows with a target; {empty} without a value.",
+        "stop": {
+          "sin-objetivo": "Without a target column there is nothing to predict, and the Protocol stops here: it covers the tasks with a target (two classes, several, or an amount). To group similar rows, use «group» in Probeta."
+        },
+        "stop-link": "Go to Probeta to group",
+        "check": {
+          "filas": "Rows",
+          "filas_utiles": "Rows with a target",
+          "objetivo_vacios": "Target without a value",
+          "tarea_detectada": "Task the app detects",
+          "tarea_motivo": "Why",
+          "clases": "Rows per value",
+          "objetivo_media": "Target average",
+          "objetivo_desv": "Target deviation",
+          "tasa_base": "Base rate of the case",
+          "mayoritaria": "Share of the most frequent class",
+          "clase_mayoritaria": "Most frequent class",
+          "unidades": "Distinct units",
+          "filas_por_unidad_max": "Most rows per unit",
+          "unidad_repetida": "There are repeated units",
+          "unidad_vacios": "Rows without a unit",
+          "fecha_estado": "Date reading",
+          "fecha_min": "First date",
+          "fecha_max": "Last date",
+          "fecha_vacios": "Empty dates",
+          "fecha_sin_leer": "Dates that can't be read",
+          "clases_sin_costo": "Classes without a cost in stage 1",
+          "costo_nunca_actuar": "Cost per row of never acting",
+          "costo_siempre_actuar": "Cost per row of always acting",
+          "costo_mayoria": "Cost per row of always saying the most frequent class",
+          "costo_constante": "Cost per row of always estimating the same"
+        },
+        "missing": {
+          "objetivo": "the target column",
+          "tarea": "a column that matches the stage 1 decision",
+          "positivo": "which value means «act»",
+          "costos": "a cost in stage 1 for every class in your data",
+          "unidad": "the unit column",
+          "momento": "the moment of the prediction",
+          "fecha": "a date column that reads completely",
+          "etapa1": "stage 1 met"
+        },
+        "trap": {
+          "unidad-fila": "Each row is a unit. If the same person, store or customer actually appears in several rows, go back and pick the column that identifies it.",
+          "unidad-repetida": "Your unit repeats: {filas} rows for {unidades} units, up to {maximo} rows per unit. If you split the rows at random between training and testing, the same unit will end up on both sides and the model will look better than it is. It's written down for stage 6.",
+          "unidad-unica": "Each of your {unidades} units appears in a single row: there's no risk of the same unit landing in training and in testing.",
+          "tasa-base": "The case happens in {tasaPct}% of your rows: always saying «no» would be right {restoPct}% of the time without learning anything.",
+          "mayoria": "The most frequent class («{clase}») is {tasaPct}% of your rows: always saying that class is already right that often without learning anything.",
+          "costo-binaria": "Without a model, never acting costs {nunca} per row and always acting costs {siempre}. A model is only worth it if it costs less than {menor}.",
+          "costo-mayoria": "Without a model, always saying the most frequent class costs {costo} per row. A model is only worth it if it costs less.",
+          "costo-constante": "Without a model, always estimating the same value (the quantile of your costs) costs {costo} per row. A model is only worth it if it costs less."
+        }
+      },
+      "3": {
+        "need-data": "This stage uses your data and stages 1 and 2: load it and meet them first.",
+        "field": {
+          "proposito": "What you want",
+          "poblacion": "Population",
+          "exclusiones": "Exclusions",
+          "periodo_texto": "Period",
+          "parametros": "Candidate parameters",
+          "r2": "Anticipated R²",
+          "aviso": "Your warning"
+        },
+        "help": {
+          "proposito": "A predictive model anticipates what will happen; it doesn't say what would happen if you changed something.",
+          "poblacion": "Who the model will be applied to. For example: «customers with an active plan in Mexico».",
+          "periodo_texto": "From when to when your data runs.",
+          "exclusiones": "What you left out and why. If nothing, write «none».",
+          "parametros": "One per numeric column and one fewer than the categories for each text column: the program counted {n} in your data. You can change the figure.",
+          "r2": "What share of the variation you expect the variables to explain, between 0 and 1. If you have no better value, 0.2 is a prudent bet (the authors' package example uses 0.2).",
+          "aviso": "Write why you're going ahead with a short sample. It stays in your notebook."
+        },
+        "proposito": {
+          "predecir": "Predict what will happen",
+          "explicar": "Explain a cause (what causes what)"
+        },
+        "period-from-data": "Period: from {min} to {max}, taken from the date you read in stage 2.",
+        "size": {
+          "title": "You need {required} rows; you have {available}.",
+          "enough": "The sample is enough.",
+          "short": "The sample isn't enough: write your warning or reduce the candidate variables.",
+          "events": "That is {events} cases of the event and {epp} per parameter."
+        },
+        "check": {
+          "n_disponible": "Rows with a target",
+          "parametros": "Candidate parameters",
+          "n_requerido": "Rows needed",
+          "manda": "Criterion that decides",
+          "suficiente": "The sample is enough",
+          "contraccion": "So it doesn't overfit",
+          "optimismo": "So the score isn't optimistic",
+          "riesgo_medio": "To estimate how frequent the case is",
+          "varianza": "To estimate the typical error",
+          "media": "To estimate the average",
+          "eventos": "Cases of the event",
+          "epp": "Cases per parameter",
+          "clase_que_manda": "Class that asks for the most rows",
+          "por_clase": "Rows each class asks for",
+          "parametros_contados": "Parameters the program counted"
+        },
+        "missing": {
+          "poblacion": "the population",
+          "exclusiones": "the exclusions",
+          "periodo": "the period",
+          "parametros": "the candidate parameters (an integer from 1)",
+          "r2": "the anticipated R², between 0 and 1",
+          "muestra": "your warning: the sample isn't enough",
+          "chequeos": "the calculated figures don't match your answers",
+          "etapas-previas": "stages 1 and 2 met"
+        },
+        "stop": {
+          "causal": "You are looking for a cause. A predictive model doesn't say what would happen if you changed something: that takes an experiment or a causal design, not this model. The Protocol stops here. If your question can be rephrased as a prediction, correct this stage."
+        },
+        "trap": {
+          "causal": "Predicting isn't explaining: even if the model is right, it doesn't tell you what would happen if you changed something. Knowing what causes what takes an experiment.",
+          "muestra-alcanza": "With {parametros} candidate parameters you need at least {requerido} rows (decided by: {manda}). You have {disponible}: enough.",
+          "muestra-corta": "With {parametros} candidate parameters you need at least {requerido} rows (decided by: {manda}). You have {disponible}: not enough, and the model may learn noise and fail on new data.",
+          "periodo": "Your data covers {minimo} to {maximo}: the model only speaks for that period."
+        }
       }
     },
     "status": {
@@ -1052,13 +1285,53 @@
         "invalid-json": "The file isn't JSON: it isn't a Protocol notebook.",
         "invalid-format": "The file isn't a valid notebook: the field «{field}» fails.",
         "unsupported-version": "The notebook is version «{version}», which this app can't read."
-      }
+      },
+      "saved": "Saved in this browser.",
+      "saving": "Saving in this browser…"
     },
     "glossary": {
       "title": "Glossary",
       "desc": "Short definitions of the terms the gates use.",
       "more": "Read more in Google's glossary",
       "attribution": "The «read more» links go to Google's machine learning glossary, published under a CC BY 4.0 license."
+    },
+    "form": {
+      "submit": "Record stage {n}"
+    },
+    "criterion": {
+      "contraccion": "keeping the model from overfitting",
+      "optimismo": "keeping the training score from being too optimistic",
+      "riesgo-medio": "estimating how frequent the case is",
+      "varianza": "estimating the typical error",
+      "media": "estimating the average"
+    },
+    "value": {
+      "binaria": "yes or no",
+      "multiclase": "several options",
+      "numerica": "an amount",
+      "fila": "each row",
+      "columna": "a column",
+      "texto": "written by you",
+      "predecir": "predict",
+      "explicar": "explain a cause",
+      "dia-mes": "day/month",
+      "mes-dia": "month/day",
+      "leida": "readable",
+      "ambigua": "ambiguous",
+      "mezclada": "mixed",
+      "ninguna": "none readable",
+      "contraccion": "keeping the model from overfitting",
+      "optimismo": "keeping the training score from being too optimistic",
+      "riesgo-medio": "estimating how frequent the case is",
+      "varianza": "estimating the typical error",
+      "media": "estimating the average",
+      "two-values": "two values",
+      "few-categories": "few categories",
+      "many-numbers": "many distinct numbers",
+      "few-numbers": "few distinct numbers",
+      "too-many-categories": "too many categories",
+      "constant": "a single value",
+      "empty": "empty"
     }
   }
 }

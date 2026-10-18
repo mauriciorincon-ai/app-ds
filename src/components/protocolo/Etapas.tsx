@@ -12,7 +12,9 @@ import { useI18n } from "@/i18n/provider";
 import type { DatosCargados } from "@/lib/protocolo/useProtocolo";
 import type { RechazoRegistro } from "@/engine/protocolo/compuerta";
 import { Badge, Button, Icon, type IconName } from "@/components/ui";
+import Link from "next/link";
 import { FORMULARIOS } from "./formularios";
+import { Trampas } from "./formulario-base";
 import { TerminoLink } from "./Glosario";
 
 const MARCA: Record<
@@ -122,9 +124,21 @@ function Tarjeta({
         </p>
       )}
       {estado.tipo === "detenida" && (
-        <p role="status" className="mt-2 text-sm text-caution">
-          {t(`protocol.stage.${etapa.id}.stop.${estado.razon}`)}
-        </p>
+        <div
+          role="status"
+          className="mt-2 flex flex-col gap-2 text-sm text-caution"
+        >
+          <p>{t(`protocol.stage.${etapa.id}.stop.${estado.razon}`)}</p>
+          {estado.razon === "sin-objetivo" && (
+            <Link
+              href="/"
+              prefetch={false}
+              className="inline-flex min-h-11 items-center gap-2 self-start text-ink underline underline-offset-2"
+            >
+              {t("protocol.stage.2.stop-link")}
+            </Link>
+          )}
+        </div>
       )}
 
       {etapa.construida && estado.tipo !== "cerrada" && (
@@ -151,6 +165,18 @@ function Tarjeta({
               ))}
             </div>
           )}
+
+          {"evidencia" in estado &&
+            estado.evidencia &&
+            !(trabajable && listo && Formulario) && (
+              <Trampas
+                etapa={etapa.id}
+                trampas={etapa.trampas(
+                  estado.evidencia.datos,
+                  previasDe(evaluadas, etapa.id),
+                )}
+              />
+            )}
 
           {estado.tipo === "cumplida" && !corrigiendo && (
             <div>

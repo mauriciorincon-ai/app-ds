@@ -36,6 +36,13 @@ export type Veredicto =
 /** Lo que registraron las etapas anteriores ya cumplidas (por etapa). */
 export type Previas = Readonly<Partial<Record<EtapaId, DatosEtapa>>>;
 
+/** Una frase de «la trampa» que la etapa evitó, en los datos del usuario: una clave del
+ *  diccionario (`protocol.stage.<n>.trap.<clave>`) y sus parámetros. El motor no escribe texto. */
+export type Trampa = {
+  readonly clave: string;
+  readonly params: Readonly<Record<string, string | number>>;
+};
+
 /** Lectura de la forma de lo registrado: nombra el campo que no cuadra. */
 export type Lectura =
   { readonly ok: true } | { readonly ok: false; readonly campo: string };
@@ -57,6 +64,8 @@ export type EtapaConstruida = Comun & {
   leer(datos: DatosEtapa): Lectura;
   /** El criterio de salida, recalculado desde lo registrado y las etapas previas. */
   criterio(datos: DatosEtapa, previas: Previas): Veredicto;
+  /** Lo que la etapa evitó, calculado en los datos del usuario («en tus datos…»). */
+  trampas(datos: DatosEtapa, previas: Previas): readonly Trampa[];
 };
 
 /** Una etapa sin construir se ve con su criterio, pero no abre ni registra. */

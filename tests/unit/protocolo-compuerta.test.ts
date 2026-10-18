@@ -30,6 +30,7 @@ function etapa(id: EtapaId, dependeDeDatos: boolean): EtapaConstruida {
     terminos: [],
     preguntas: ["ok"],
     chequeos: [],
+    trampas: () => [],
     leer: (datos) =>
       typeof datos.respuestas.ok === "boolean"
         ? { ok: true }

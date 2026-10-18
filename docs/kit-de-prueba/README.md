@@ -85,3 +85,11 @@ contenido toque el motor de cómputo.
 
 Estos CSV se generan de forma determinista con `node scripts/make-example-datasets.mjs` (semilla
 fija). El mismo comando produce siempre los mismos archivos, aquí y en `public/datasets/`.
+
+## Protocolo DS (Sprint 008)
+
+| Archivo                        | Qué demuestra                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `renovaciones-mensuales.csv`   | 361 filas de 100 clientes sintéticos: **el mismo cliente aparece en varias filas** (`cliente_id`, de 2 a 5 meses), con una fecha ISO (`mes_observado`, de enero a noviembre de 2025) y la decisión `renovo` (sí o no, ~18 % de «si»). Es el dato del Protocolo DS: la etapa 2 señala la unidad repetida y lee la fecha; la etapa 3 calcula que con 5 parámetros hacen falta 464 filas (tienes 361). No tiene botón en la app: el Protocolo trabaja con tus datos. |
+
+Se regenera con `node scripts/make-example-datasets.mjs` (solo kit; los demás archivos salen idénticos).

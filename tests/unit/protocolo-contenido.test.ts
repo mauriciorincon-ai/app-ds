@@ -2,6 +2,7 @@
 // tiene título y criterio en los dos idiomas (las construidas, además, tarea y porqué); cada
 // término del glosario, término y definición; cada estado, motivo y rechazo que la UI puede
 // mostrar, su texto en los dos diccionarios.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CONTENIDO_ETAPAS } from "@/content/protocolo";
 import { GLOSARIO } from "@/content/glosario";
@@ -10,6 +11,9 @@ import type {
   MotivoReverificar,
   RechazoRegistro,
 } from "@/engine/protocolo/compuerta";
+import { CLAVES_1 } from "@/engine/protocolo/etapa1";
+import { CLAVES_2 } from "@/engine/protocolo/etapa2";
+import { CLAVES_3 } from "@/engine/protocolo/etapa3";
 import { ETAPA_IDS, TERMINO_IDS } from "@/engine/protocolo/ids";
 import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
 import { translate } from "@/i18n/translate";
@@ -105,5 +109,142 @@ describe("contenido del Protocolo {es, en}", () => {
     for (const l of IDIOMAS)
       for (const clave of claves)
         expect(translate(l, clave), `${l} ${clave}`).not.toBe(clave);
+  });
+
+  it("cada campo que una etapa puede registrar tiene su etiqueta en el cuaderno, en los dos idiomas", () => {
+    const etapas = { 1: CLAVES_1, 2: CLAVES_2, 3: CLAVES_3 } as const;
+    const faltan: string[] = [];
+    for (const [n, claves] of Object.entries(etapas))
+      for (const l of IDIOMAS) {
+        for (const id of claves.respuestas)
+          if (
+            translate(l, `protocol.stage.${n}.field.${id}`) ===
+            `protocol.stage.${n}.field.${id}`
+          )
+            faltan.push(`${l} etapa ${n} respuesta ${id}`);
+        for (const id of claves.chequeos)
+          if (
+            translate(l, `protocol.stage.${n}.check.${id}`) ===
+            `protocol.stage.${n}.check.${id}`
+          )
+            faltan.push(`${l} etapa ${n} chequeo ${id}`);
+      }
+    expect(faltan, "campos sin etiqueta").toEqual([]);
+  });
+
+  it("cada motivo de falta y de parada de las etapas construidas tiene su texto", () => {
+    const faltas = {
+      1: ["decision", "decisor", "forma", "unidad", "costos", "chequeos"],
+      2: [
+        "objetivo",
+        "tarea",
+        "positivo",
+        "costos",
+        "unidad",
+        "momento",
+        "fecha",
+        "etapa1",
+      ],
+      3: [
+        "poblacion",
+        "exclusiones",
+        "periodo",
+        "parametros",
+        "r2",
+        "muestra",
+        "chequeos",
+        "etapas-previas",
+      ],
+    } as const;
+    const paradas = { 2: ["sin-objetivo"], 3: ["causal"] } as const;
+    const sin: string[] = [];
+    for (const l of IDIOMAS) {
+      for (const [n, ids] of Object.entries(faltas))
+        for (const id of ids)
+          if (
+            translate(l, `protocol.stage.${n}.missing.${id}`) ===
+            `protocol.stage.${n}.missing.${id}`
+          )
+            sin.push(`${l} ${n} falta ${id}`);
+      for (const [n, ids] of Object.entries(paradas))
+        for (const id of ids)
+          if (
+            translate(l, `protocol.stage.${n}.stop.${id}`) ===
+            `protocol.stage.${n}.stop.${id}`
+          )
+            sin.push(`${l} ${n} parada ${id}`);
+    }
+    expect(sin).toEqual([]);
+  });
+
+  it("cada trampa que una etapa puede mostrar tiene su frase, y el porcentaje en español lleva espacio no separable", () => {
+    const trampas = {
+      1: [
+        "umbral",
+        "umbral-alto",
+        "umbral-igual",
+        "costos",
+        "costos-iguales",
+        "cuantil",
+        "cuantil-bajo",
+        "cuantil-igual",
+      ],
+      2: [
+        "unidad-fila",
+        "unidad-repetida",
+        "unidad-unica",
+        "tasa-base",
+        "mayoria",
+        "costo-binaria",
+        "costo-mayoria",
+        "costo-constante",
+      ],
+      3: ["causal", "muestra-alcanza", "muestra-corta", "periodo"],
+    } as const;
+    const sin: string[] = [];
+    for (const l of IDIOMAS)
+      for (const [n, ids] of Object.entries(trampas))
+        for (const id of ids) {
+          const clave = `protocol.stage.${n}.trap.${id}`;
+          const texto = translate(l, clave);
+          if (texto === clave) sin.push(`${l} ${clave}`);
+          if (l === "es" && /\d\}? ?%|\} %/.test(texto.replace(/\u00a0%/g, "")))
+            sin.push(`${l} ${clave}: el % va tras un espacio no separable`);
+        }
+    expect(sin).toEqual([]);
+    for (const criterio of [
+      "contraccion",
+      "optimismo",
+      "riesgo-medio",
+      "varianza",
+      "media",
+    ])
+      for (const l of IDIOMAS)
+        expect(translate(l, `protocol.criterion.${criterio}`)).not.toBe(
+          `protocol.criterion.${criterio}`,
+        );
+  });
+
+  it("ningún texto del Protocolo escribe una cifra con coma decimal (R9: punto decimal en los dos idiomas)", () => {
+    const planos = (valor: unknown): string[] =>
+      typeof valor === "string"
+        ? [valor]
+        : valor && typeof valor === "object"
+          ? Object.values(valor).flatMap(planos)
+          : [];
+    const textos = [
+      ...planos(CONTENIDO_ETAPAS),
+      ...planos(GLOSARIO),
+      ...IDIOMAS.flatMap((l) =>
+        planos(
+          (
+            JSON.parse(readFileSync(`messages/${l}.json`, "utf8")) as {
+              protocol: unknown;
+            }
+          ).protocol,
+        ),
+      ),
+    ];
+    expect(textos.filter((texto) => /\d,\d/.test(texto))).toEqual([]);
   });
 });

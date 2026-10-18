@@ -56,6 +56,15 @@ function abrirBase(fabrica: IDBFactory): Promise<IDBDatabase> {
   });
 }
 
+/** Resuelve cuando la transacción se COMPLETÓ (el dato quedó en disco), no cuando se pidió. */
+function completada(transaccion: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaccion.oncomplete = () => resolve();
+    transaccion.onerror = () => reject(transaccion.error);
+    transaccion.onabort = () => reject(transaccion.error);
+  });
+}
+
 function almacenIndexedDb(base: IDBDatabase): Almacen {
   const store = (modo: IDBTransactionMode) =>
     base.transaction(STORE, modo).objectStore(STORE);
@@ -63,10 +72,14 @@ function almacenIndexedDb(base: IDBDatabase): Almacen {
     tipo: "indexeddb",
     leer: async () => (await pedir(store("readonly").get(CLAVE))) ?? null,
     guardar: async (cuaderno) => {
-      await pedir(store("readwrite").put(cuaderno, CLAVE));
+      const escritura = store("readwrite");
+      escritura.put(cuaderno, CLAVE);
+      await completada(escritura.transaction);
     },
     borrar: async () => {
-      await pedir(store("readwrite").delete(CLAVE));
+      const escritura = store("readwrite");
+      escritura.delete(CLAVE);
+      await completada(escritura.transaction);
     },
   };
 }

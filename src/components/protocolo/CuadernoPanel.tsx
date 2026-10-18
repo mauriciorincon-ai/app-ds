@@ -10,6 +10,7 @@ import {
   type Cuaderno,
   type Evidencia,
 } from "@/engine/protocolo/cuaderno";
+import type { Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import { fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
 import { thousands } from "@/lib/quantity";
@@ -30,6 +31,19 @@ function Entrada({
     si: t("protocol.notebook.yes"),
     no: t("protocol.notebook.no"),
   };
+  // Un valor del cuaderno como texto: los nombres cerrados de la app (la forma de la decisión,
+  // el orden de las fechas…) en el idioma de la interfaz; lo que escribió el usuario, tal cual.
+  const leerValor = (valor: Valor): string => {
+    if (typeof valor === "string") {
+      const traducido = t(`protocol.value.${valor}`);
+      return traducido === `protocol.value.${valor}` ? valor : traducido;
+    }
+    return valorTexto(valor, palabras);
+  };
+  const vacio = (valor: Valor) =>
+    valor === null ||
+    valor === "" ||
+    (Array.isArray(valor) && valor.length === 0);
   const filas = [
     ...Object.entries(evidencia.datos.respuestas).map(
       ([id, v]) =>
@@ -39,7 +53,7 @@ function Entrada({
       ([id, v]) =>
         [`protocol.stage.${evidencia.etapa}.check.${id}`, v] as const,
     ),
-  ];
+  ].filter(([, valor]) => !vacio(valor));
   return (
     <li
       className={`rounded-md border border-hairline p-3 ${vigente ? "bg-surface" : "bg-sunken"}`}
@@ -60,8 +74,12 @@ function Entrada({
         <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
           {filas.map(([clave, valor]) => (
             <div key={clave} className="contents">
-              <dt className="text-ink-muted">{t(clave)}</dt>
-              <dd className="break-words">{valorTexto(valor, palabras)}</dd>
+              <dt className="min-w-0 text-ink-muted [overflow-wrap:anywhere]">
+                {t(clave)}
+              </dt>
+              <dd className="min-w-0 [overflow-wrap:anywhere]">
+                {leerValor(valor)}
+              </dd>
             </div>
           ))}
         </dl>
@@ -72,11 +90,14 @@ function Entrada({
 
 export function CuadernoPanel({
   cuaderno,
+  guardado,
   onExportar,
   onImportar,
   onNuevo,
 }: {
   cuaderno: Cuaderno;
+  /** `null`: este navegador no guarda (memoria); `false`: escribiendo; `true`: guardado. */
+  guardado: boolean | null;
   onExportar: () => { nombre: string; contenido: string };
   onImportar: (file: File) => void;
   onNuevo: () => void;
@@ -103,6 +124,16 @@ export function CuadernoPanel({
         {t("protocol.notebook.title")}
       </h2>
       <p className="text-sm text-ink-muted">{t("protocol.notebook.desc")}</p>
+      {guardado !== null && (
+        <p
+          role="status"
+          className="text-xs text-ink-muted"
+          data-testid="cuaderno-guardado"
+        >
+          <span aria-hidden="true">{guardado ? "✓ " : "… "}</span>
+          {t(guardado ? "protocol.notebook.saved" : "protocol.notebook.saving")}
+        </p>
+      )}
 
       {cuaderno.evidencias.length === 0 ? (
         <p className="text-sm text-ink-muted">{t("protocol.notebook.empty")}</p>
