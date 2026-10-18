@@ -149,15 +149,16 @@ test("la compuerta: la etapa 2 no abre sin la 1, no hay botón de saltar, y 1–
   await expect(e3.getByText("Cumplida")).toBeVisible();
 
   // La etapa 4 abre con la 3 cumplida y pide la APUESTA antes de mostrar nada de los datos; la
-  // 5 existe pero sigue cerrada hasta que la 4 se cumpla, y la 6 se ve con su criterio y no abre.
+  // 5 y la 6 existen pero siguen cerradas hasta que la 4 se cumpla, y la 7 se ve con su criterio y no abre.
   const e4 = page.locator("#etapa-4");
   await expect(e4.getByText("Abierta", { exact: true })).toBeVisible();
   await expect(e4.getByLabel("Sí, marco las que creo")).toBeVisible();
   await expect(e4.getByTestId("protocolo-revelar")).toBeDisabled();
   await expect(e4.getByTestId("protocolo-hallazgo-fuga")).toHaveCount(0);
   await expect(page.locator("#etapa-5").getByText("Cerrada")).toBeVisible();
+  await expect(page.locator("#etapa-6").getByText("Cerrada")).toBeVisible();
   await expect(
-    page.locator("#etapa-6").getByText("Sin construir"),
+    page.locator("#etapa-7").getByText("Sin construir"),
   ).toBeVisible();
 
   // El cuaderno se escribió solo: una evidencia por etapa.
