@@ -36,6 +36,12 @@ const LAZY = [
   "src/lib/protocolo/useProtocolo.ts",
   "src/content/protocolo.ts",
   "src/content/glosario.ts",
+  // S9: la etapa 4 (su pantalla, el diálogo compartido y los motores de hallazgos) tampoco.
+  "src/components/protocolo/Etapa4Form.tsx",
+  "src/components/protocolo/Confirmacion.tsx",
+  "src/engine/protocolo/etapa4.ts",
+  "src/engine/protocolo/deriva.ts",
+  "src/engine/protocolo/duplicados.ts",
 ];
 
 function resolveSpec(from: string, spec: string): string | null {
