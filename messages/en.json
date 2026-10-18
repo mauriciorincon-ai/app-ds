@@ -1653,7 +1653,9 @@
           "horizon-help": "That time is left as a gap between training and test. Write 0 if the outcome is known at the moment of deciding.",
           "horizon-unit": "Horizon unit",
           "dias": "days",
-          "meses": "months"
+          "dias-uno": "day",
+          "meses": "months",
+          "meses-uno": "month"
         },
         "scheme": {
           "estratificada": "Stratified",
@@ -1761,7 +1763,8 @@
           "hueco-dias-uno": "The 1-day gap leaves out {n} rows: their outcome would already be known inside the test period.",
           "hueco-meses": "The {h}-month gap leaves out {n} rows: their outcome would already be known inside the test period.",
           "hueco-meses-uno": "The 1-month gap leaves out {n} rows: their outcome would already be known inside the test period.",
-          "clase-rara": "The test set keeps {n} cases of «{clase}»: with very few, the error measured in stage 8 will be unstable.",
+          "clase-rara": "The test set keeps {n} cases of «{clase}», the class with the fewest: that's what stage 8 will have to measure it.",
+          "clase-escasa": "The test set keeps only {n} cases of «{clase}»: with so few, what stage 8 measures for that class will be unstable.",
           "clase-ausente": "The test set has no case of «{clase}»: stage 8 won't be able to measure that class.",
           "sellos": "You sealed {n} distinct test sets in this notebook: each different split is another way of looking, and it's counted."
         },

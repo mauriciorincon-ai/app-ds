@@ -410,6 +410,24 @@ describe("las trampas, en los números del usuario", () => {
     expect(criterio(d, a)).toEqual({ tipo: "cumple" });
   });
 
+  it("la clase con menos casos: cuántos quedan para medirla, y si son menos de 10, el aviso de escasa", () => {
+    // 200 filas (110 «0», 90 «1»): con una prueba de 20 de cada 100 quedan 18 «1»; con 10, quedan 9
+    expect(
+      trampa(
+        datos(CREDITO, E({ esquema: "estratificada" })),
+        CREDITO,
+        "clase-rara",
+      ),
+    ).toEqual({ clase: "1", n: 18 });
+    expect(
+      trampa(
+        datos(CREDITO, E({ esquema: "estratificada", tamano: 10 })),
+        CREDITO,
+        "clase-escasa",
+      ),
+    ).toEqual({ clase: "1", n: 9 });
+  });
+
   it("todas las frases tienen su clave declarada", () => {
     for (const e of [
       NUEVAS,

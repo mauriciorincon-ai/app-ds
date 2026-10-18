@@ -302,6 +302,34 @@ describe("los sellos y el cuaderno", () => {
     expect(screen.queryByText(/Sellaste 2 pruebas distintas/)).toBeNull();
   });
 
+  it("el cuaderno dice el horizonte en singular cuando es uno («1 mes», no «1 meses»)", async () => {
+    const { CuadernoPanel } =
+      await import("@/components/protocolo/CuadernoPanel");
+    const r = registrar(PROTOCOLO6, BAJAS.cuaderno, 6, otra, {
+      huella: HUELLA,
+      tabla: BAJAS.tabla,
+      ahora: AHORA,
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r.rechazo));
+    render(
+      <I18nProvider>
+        <CuadernoPanel
+          cuaderno={r.cuaderno}
+          guardado={null}
+          importePendiente={null}
+          onExportar={() => ({ nombre: "x.json", contenido: "{}" })}
+          onImportar={() => undefined}
+          onConfirmarImporte={() => undefined}
+          onDescartarImporte={() => undefined}
+          onNuevo={() => undefined}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByTestId("cuaderno-resumen6").textContent).toMatch(
+      /La prueba empieza el 2025-09-15; horizonte de 1 mes\./,
+    );
+  });
+
   it("el cuaderno resume el esquema con el sugerido y la razón, los lados, el sello y los sellos", async () => {
     const { CuadernoPanel } =
       await import("@/components/protocolo/CuadernoPanel");

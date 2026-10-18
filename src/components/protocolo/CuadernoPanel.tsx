@@ -232,7 +232,9 @@ function ResumenEtapa6({
             h: r.horizonte,
             unidad:
               r.horizonteUnidad === "dias" || r.horizonteUnidad === "meses"
-                ? t(`protocol.stage.6.form.${r.horizonteUnidad}`)
+                ? t(
+                    `protocol.stage.6.form.${r.horizonteUnidad}${r.horizonte === 1 ? "-uno" : ""}`,
+                  )
                 : "",
           })}
         </li>

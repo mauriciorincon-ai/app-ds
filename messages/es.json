@@ -1653,7 +1653,9 @@
           "horizon-help": "Ese tiempo queda como hueco entre entrenamiento y prueba. Escribe 0 si el resultado se conoce en el momento de decidir.",
           "horizon-unit": "Unidad del horizonte",
           "dias": "días",
-          "meses": "meses"
+          "dias-uno": "día",
+          "meses": "meses",
+          "meses-uno": "mes"
         },
         "scheme": {
           "estratificada": "Estratificada",
@@ -1761,7 +1763,8 @@
           "hueco-dias-uno": "El hueco de 1 día deja fuera {n} filas: su resultado se conocería ya dentro de la prueba.",
           "hueco-meses": "El hueco de {h} meses deja fuera {n} filas: su resultado se conocería ya dentro de la prueba.",
           "hueco-meses-uno": "El hueco de 1 mes deja fuera {n} filas: su resultado se conocería ya dentro de la prueba.",
-          "clase-rara": "La prueba deja {n} casos de «{clase}»: con muy pocos, el error que mida la etapa 8 será inestable.",
+          "clase-rara": "La prueba deja {n} casos de «{clase}», la clase con menos casos: son los que tendrá la etapa 8 para medirla.",
+          "clase-escasa": "La prueba deja solo {n} casos de «{clase}»: con tan pocos, lo que mida la etapa 8 para esa clase será inestable.",
           "clase-ausente": "La prueba no tiene ningún caso de «{clase}»: la etapa 8 no podrá medir esa clase.",
           "sellos": "Sellaste {n} pruebas distintas en este cuaderno: cada partición distinta es otra forma de mirar, y queda contada."
         },

@@ -12,7 +12,7 @@
 //
 // La pantalla y el cuaderno muestran conteos y rangos, nunca filas de la prueba. La etapa 7
 // entrena y compara con la prueba todavía cerrada; la etapa 8 la abre una vez.
-import { byTask, matchTask } from "@/engine/despacho";
+import { byTask } from "@/engine/despacho";
 import type { CsvTable } from "@/lib/ds/csv";
 import type {
   DatosEtapa,
@@ -112,9 +112,17 @@ export const TRAMPAS_6 = [
   "hueco-meses",
   "hueco-meses-uno",
   "clase-rara",
+  "clase-escasa",
   "clase-ausente",
   "sellos",
 ] as const;
+
+/**
+ * Por debajo de cuántos casos en la prueba la clase con menos casos se avisa como escasa. Es una
+ * convención para avisar, no un umbral estadístico: con menos, una sola fila mueve su medida en más
+ * de diez puntos de cada cien.
+ */
+export const CASOS_ESCASOS = 10;
 
 export const RAZON_MAX = 500;
 export const UNIDADES = ["nuevas", "conocidas"] as const;
@@ -485,31 +493,18 @@ function trampas(
       });
   }
 
-  const forma = previas[1] ? formaDe(previas[1].respuestas) : null;
+  // la clase con menos casos en la prueba (dos clases o varias): cuántos tendrá la etapa 8 para medirla
   const prueba = mapa(c, "clases_prueba");
-  if (forma && prueba)
-    matchTask(forma, {
-      binaria: () => {
-        const positivo = texto(previas[2]?.respuestas ?? {}, "positivo") ?? "";
-        salida.push({
-          clave: "clase-rara",
-          params: {
-            clase: positivo,
-            n: Object.hasOwn(prueba, positivo) ? prueba[positivo]! : 0,
+  const rara = prueba ? masRara(prueba) : null;
+  if (rara)
+    salida.push(
+      rara.n === 0
+        ? { clave: "clase-ausente", params: { clase: rara.clase } }
+        : {
+            clave: rara.n < CASOS_ESCASOS ? "clase-escasa" : "clase-rara",
+            params: rara,
           },
-        });
-      },
-      multiclase: () => {
-        const rara = masRara(prueba);
-        if (rara)
-          salida.push(
-            rara.n === 0
-              ? { clave: "clase-ausente", params: { clase: rara.clase } }
-              : { clave: "clase-rara", params: rara },
-          );
-      },
-      numerica: () => undefined,
-    });
+    );
 
   const sellos = sellosDistintos([...historia, datos]);
   if (sellos >= 2) salida.push({ clave: "sellos", params: { n: sellos } });
