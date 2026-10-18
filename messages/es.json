@@ -1280,7 +1280,8 @@
           },
           "pick": {
             "legend": "Columnas que crees que filtran el resultado",
-            "help": "{n} marcadas. Marca las que, a tu juicio, se llenan o se conocen después del resultado."
+            "help": "{count} marcadas. Marca las que, a tu juicio, se llenan o se conocen después del resultado.",
+            "help_one": "{count} marcada. Marca las que, a tu juicio, se llenan o se conocen después del resultado."
           },
           "why-off": {
             "mode": "Elige primero: marcar columnas, o «ninguna».",
@@ -1311,8 +1312,8 @@
           },
           "dup": {
             "title": "Filas repetidas",
-            "rows": "{n} de {filas} filas son copias exactas de otra.",
-            "unit": "{n} filas repiten la misma unidad en el mismo momento.",
+            "rows": "Copias exactas de otra fila: {n} de {filas}.",
+            "unit": "Filas con la misma unidad en el mismo momento: {n}.",
             "why": "Si una copia cae en entrenar y otra en probar, el puntaje se ve mejor de lo que es."
           },
           "drift": {
@@ -1345,12 +1346,14 @@
         },
         "inv": {
           "intro": "Para cada columna: quién o qué la produce, si existe cuando se decide y si la usas. Lo que se llena después de decidir no puede entrenar el modelo, y lo que no sabes tampoco.",
-          "alerts": "{n} columnas con alerta: se responden una por una.",
+          "alerts": "{count} columnas con alerta: se responden una por una.",
           "details": "Revisar una por una ({n})",
           "progress": {
-            "missing": "Faltan {n} de {total} columnas por responder.",
-            "done": "Todas con estado: usar {usar} · excluir {excluir} · no sé {nose}."
-          }
+            "missing": "Faltan {count} de {total} columnas por responder.",
+            "done": "Todas con estado: usar {usar} · excluir {excluir} · no sé {nose}.",
+            "missing_one": "Falta 1 de {total} columnas por responder."
+          },
+          "alerts_one": "1 columna con alerta: se responde una por una."
         },
         "alert": {
           "fuga": "Filtra el resultado",
@@ -1365,8 +1368,9 @@
           "alerts": "Alertas de esta columna",
           "procedencia": {
             "label": "¿Quién o qué la produce?",
-            "help": "Por ejemplo: «lo registra el vendedor al abrir la cuenta». Opcional si no tiene alerta.",
-            "required": "Obligatoria: tiene una alerta y la dejas en «usar»."
+            "help": "Por ejemplo: «lo registra el vendedor al abrir la cuenta». Opcional.",
+            "required": "Obligatoria: tiene una alerta y la dejas en «usar».",
+            "help-alert": "Por ejemplo: «lo registra el vendedor al abrir la cuenta». Solo es obligatoria si la dejas en «usar»."
           },
           "momento": "¿Cuándo se llena, frente al momento de decidir?",
           "estado": {
@@ -1395,14 +1399,20 @@
         },
         "bulk": {
           "title": "Responder en bloque las columnas sin alerta",
-          "desc": "Estas {n} columnas no tienen ninguna alerta. Si todas se llenan antes del momento de decidir, puedes marcarlas en «usar» de una vez. Lo que declares queda en tu cuaderno.",
-          "names": "Ver las {n} columnas",
-          "declare": "Declaro que estas {n} columnas se llenan antes del momento de decidir.",
-          "apply": "Marcar las {n} en «usar»",
+          "desc": "Estas {count} columnas no tienen ninguna alerta. Si todas se llenan antes del momento de decidir, puedes marcarlas en «usar» de una vez. Lo que declares queda en tu cuaderno.",
+          "names": "Ver las {count} columnas",
+          "declare": "Declaro que estas {count} columnas se llenan antes del momento de decidir.",
+          "apply": "Marcar las {count} en «usar»",
           "undo": "Deshacer",
-          "done": "Marcaste {n} columnas en «usar» con tu declaración.",
-          "applied": "{n} columnas marcadas en «usar» con tu declaración.",
-          "undone": "Deshiciste la acción en bloque."
+          "done": "Marcaste {count} columnas en «usar» con tu declaración.",
+          "applied": "{count} columnas marcadas en «usar» con tu declaración.",
+          "undone": "Deshiciste la acción en bloque.",
+          "desc_one": "Esta columna no tiene ninguna alerta. Si se llena antes del momento de decidir, puedes marcarla en «usar» de una vez. Lo que declares queda en tu cuaderno.",
+          "names_one": "Ver la columna",
+          "declare_one": "Declaro que esta columna se llena antes del momento de decidir.",
+          "apply_one": "Marcar la columna en «usar»",
+          "done_one": "Marcaste 1 columna en «usar» con tu declaración.",
+          "applied_one": "1 columna marcada en «usar» con tu declaración."
         },
         "field": {
           "apuesta": "Tu apuesta (columnas que crees que filtran)",
@@ -1445,18 +1455,18 @@
           "bloque": "que la acción en bloque solo incluya columnas sin alerta, usadas y llenadas antes de decidir"
         },
         "trap": {
-          "fuga-excluida": "Hay columnas que casi adivinan el resultado (la más fuerte: {columna}; son {n} en total) y las dejaste fuera del entrenamiento. Con ellas el modelo habría hecho trampa sin que lo supieras.",
-          "fuga-usada": "Dejaste en «usar» la columna {columna}, que casi adivina el resultado (son {n} con esa señal): es probable que el modelo se vea mejor de lo que será en la vida real.",
-          "fuga-vacios-excluida": "La columna {columna} solo se llena cuando ocurre el resultado (son {n} con esa señal) y la excluiste: no existe en el momento de decidir.",
-          "fuga-vacios-usada": "Dejaste en «usar» la columna {columna}, que solo se llena cuando ocurre el resultado (son {n} con esa señal): el modelo vería la respuesta.",
-          "filas-repetidas": "{n} de {filas} filas son copias exactas de otra: si una cae en entrenar y otra en probar, el puntaje se ve mejor de lo que es.",
-          "unidad-momento-repetida": "{n} filas repiten la misma unidad en el mismo momento: revisa si son copias o dos eventos distintos.",
+          "fuga-excluida": "La columna {columna} casi adivina el resultado (con esa señal hay {n} en total) y la dejaste fuera del entrenamiento: así el modelo no hace trampa sin que lo sepas.",
+          "fuga-usada": "Dejaste en «usar» la columna {columna}, que casi adivina el resultado (con esa señal hay {n} en total): es probable que el modelo se vea mejor de lo que será en la vida real.",
+          "fuga-vacios-excluida": "La columna {columna} solo se llena cuando ocurre el resultado (con esa señal hay {n} en total) y la excluiste: no existe en el momento de decidir.",
+          "fuga-vacios-usada": "Dejaste en «usar» la columna {columna}, que solo se llena cuando ocurre el resultado (con esa señal hay {n} en total): el modelo vería la respuesta.",
+          "filas-repetidas": "Copias exactas de otra fila: {n} de {filas}. Si una cae en entrenar y otra en probar, el puntaje se ve mejor de lo que es.",
+          "unidad-momento-repetida": "Filas con la misma unidad en el mismo momento: {n}. Revisa si son copias o dos eventos distintos.",
           "deriva": "La columna {columna} cambió mucho desde el {corte} (PSI {psi}): lo que el modelo aprenda del pasado puede no valer hoy.",
           "sin-fecha": "No se midió el cambio entre periodos: en la etapa 2 no elegiste una columna de fecha.",
           "una-fecha": "No se midió el cambio entre periodos: todas las fechas son del mismo día.",
           "fecha-concentrada": "No se midió el cambio entre periodos: más de la mitad de las filas caen en el último día.",
           "pocas-filas": "No se midió el cambio entre periodos: con tan pocas filas, un cambio chico no se distingue del azar.",
-          "apuesta": "Tu apuesta: {aciertos} aciertos, {sorpresas} sorpresas y {falsas} apostadas que la app no marca. La app mira una columna a la vez: no ve lo que filtra solo en combinación.",
+          "apuesta": "Tu apuesta — aciertos: {aciertos} · sorpresas: {sorpresas} · apostadas que la app no marca: {falsas}. La app mira una columna a la vez: no ve lo que filtra solo en combinación.",
           "sin-hallazgos": "La app no encontró nada que marcar. Eso no prueba que no haya fuga: solo mira una columna a la vez.",
           "nada-para-entrenar": "Excluiste todas las columnas: ninguna entrenará un modelo."
         },
@@ -1466,7 +1476,7 @@
           "compare": "Aciertos: {hits} · sorpresas: {surprises} · apostadas que la app no marca: {false}",
           "counts": "Usar: {usar} · excluir: {excluir} · no sé: {nose}",
           "alerts": "Columnas con alerta: {n}",
-          "bulk": "Declaraste que {n} columnas se llenan antes de decidir (marcadas en bloque).",
+          "bulk": "Declaraste que {count} columnas se llenan antes de decidir (marcadas en bloque).",
           "drift": "Cambio entre periodos: {estado}",
           "drift-state": {
             "medida": "medido",
@@ -1475,7 +1485,8 @@
             "fecha-concentrada": "no medible (fechas concentradas)",
             "pocas-filas": "no medible (pocas filas)"
           },
-          "none": "ninguna"
+          "none": "ninguna",
+          "bulk_one": "Declaraste que 1 columna se llena antes de decidir (marcada en bloque)."
         }
       }
     },

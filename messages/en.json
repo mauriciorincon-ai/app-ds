@@ -1280,7 +1280,8 @@
           },
           "pick": {
             "legend": "Columns you think leak the outcome",
-            "help": "{n} marked. Mark the ones you think are filled in, or known, after the outcome."
+            "help": "{count} marked. Mark the ones you think are filled in, or known, after the outcome.",
+            "help_one": "{count} marked. Mark the ones you think are filled in, or known, after the outcome."
           },
           "why-off": {
             "mode": "Choose first: mark columns, or «none».",
@@ -1311,8 +1312,8 @@
           },
           "dup": {
             "title": "Repeated rows",
-            "rows": "{n} of {filas} rows are exact copies of another.",
-            "unit": "{n} rows repeat the same unit at the same moment.",
+            "rows": "Exact copies of another row: {n} of {filas}.",
+            "unit": "Rows with the same unit at the same moment: {n}.",
             "why": "If one copy lands in training and another in testing, the score looks better than it is."
           },
           "drift": {
@@ -1345,12 +1346,14 @@
         },
         "inv": {
           "intro": "For each column: who or what produces it, whether it exists when you decide, and whether you use it. What is filled in after deciding can't train the model, and neither can what you don't know.",
-          "alerts": "{n} columns with an alert: answer them one by one.",
+          "alerts": "{count} columns with an alert: answer them one by one.",
           "details": "Review one by one ({n})",
           "progress": {
-            "missing": "{n} of {total} columns still to answer.",
-            "done": "All have a state: use {usar} · exclude {excluir} · don't know {nose}."
-          }
+            "missing": "{count} of {total} columns still to answer.",
+            "done": "All have a state: use {usar} · exclude {excluir} · don't know {nose}.",
+            "missing_one": "1 of {total} columns still to answer."
+          },
+          "alerts_one": "1 column with an alert: answer it on its own."
         },
         "alert": {
           "fuga": "Leaks the outcome",
@@ -1365,8 +1368,9 @@
           "alerts": "Alerts for this column",
           "procedencia": {
             "label": "Who or what produces it?",
-            "help": "For example: «the salesperson records it when opening the account». Optional if it has no alert.",
-            "required": "Required: it has an alert and you're leaving it on «use»."
+            "help": "For example: «the salesperson records it when opening the account». Optional.",
+            "required": "Required: it has an alert and you're leaving it on «use».",
+            "help-alert": "For example: «the salesperson records it when opening the account». It is only required if you leave it on «use»."
           },
           "momento": "When is it filled in, relative to the moment of deciding?",
           "estado": {
@@ -1395,14 +1399,20 @@
         },
         "bulk": {
           "title": "Answer the columns with no alert in bulk",
-          "desc": "These {n} columns have no alert. If they are all filled in before the moment of deciding, you can mark them all as «use» at once. What you declare is recorded in your notebook.",
-          "names": "See the {n} columns",
-          "declare": "I declare that these {n} columns are filled in before the moment of deciding.",
-          "apply": "Mark all {n} as «use»",
+          "desc": "These {count} columns have no alert. If they are all filled in before the moment of deciding, you can mark them all as «use» at once. What you declare is recorded in your notebook.",
+          "names": "See the {count} columns",
+          "declare": "I declare that these {count} columns are filled in before the moment of deciding.",
+          "apply": "Mark all {count} as «use»",
           "undo": "Undo",
-          "done": "You marked {n} columns as «use» with your declaration.",
-          "applied": "{n} columns marked as «use» with your declaration.",
-          "undone": "You undid the bulk action."
+          "done": "You marked {count} columns as «use» with your declaration.",
+          "applied": "{count} columns marked as «use» with your declaration.",
+          "undone": "You undid the bulk action.",
+          "desc_one": "This column has no alert. If it is filled in before the moment of deciding, you can mark it as «use» at once. What you declare is recorded in your notebook.",
+          "names_one": "See the column",
+          "declare_one": "I declare that this column is filled in before the moment of deciding.",
+          "apply_one": "Mark the column as «use»",
+          "done_one": "You marked 1 column as «use» with your declaration.",
+          "applied_one": "1 column marked as «use» with your declaration."
         },
         "field": {
           "apuesta": "Your bet (columns you think leak)",
@@ -1445,18 +1455,18 @@
           "bloque": "that the bulk action only includes columns with no alert that you use and are filled in before deciding"
         },
         "trap": {
-          "fuga-excluida": "Some columns almost guess the outcome (the strongest: {columna}; {n} in total) and you kept them out of training. With them the model would have cheated without you knowing.",
-          "fuga-usada": "You left {columna} on «use», and it almost guesses the outcome ({n} columns show that signal): the model will probably look better than it will in real life.",
-          "fuga-vacios-excluida": "The column {columna} is only filled in when the outcome happens ({n} columns show that signal) and you excluded it: it doesn't exist at the moment of deciding.",
-          "fuga-vacios-usada": "You left {columna} on «use», and it is only filled in when the outcome happens ({n} columns show that signal): the model would see the answer.",
-          "filas-repetidas": "{n} of {filas} rows are exact copies of another: if one lands in training and another in testing, the score looks better than it is.",
-          "unidad-momento-repetida": "{n} rows repeat the same unit at the same moment: check whether they are copies or two different events.",
+          "fuga-excluida": "The column {columna} almost guesses the outcome ({n} columns show that signal in total) and you kept it out of training: that way the model doesn't cheat without you knowing.",
+          "fuga-usada": "You left {columna} on «use», and it almost guesses the outcome ({n} columns show that signal in total): the model will probably look better than it will in real life.",
+          "fuga-vacios-excluida": "The column {columna} is only filled in when the outcome happens ({n} columns show that signal in total) and you excluded it: it doesn't exist at the moment of deciding.",
+          "fuga-vacios-usada": "You left {columna} on «use», and it is only filled in when the outcome happens ({n} columns show that signal in total): the model would see the answer.",
+          "filas-repetidas": "Exact copies of another row: {n} of {filas}. If one lands in training and another in testing, the score looks better than it is.",
+          "unidad-momento-repetida": "Rows with the same unit at the same moment: {n}. Check whether they are copies or two different events.",
           "deriva": "The column {columna} changed a lot since {corte} (PSI {psi}): what the model learns from the past may not hold today.",
           "sin-fecha": "Change between periods wasn't measured: in stage 2 you didn't pick a date column.",
           "una-fecha": "Change between periods wasn't measured: all the dates fall on the same day.",
           "fecha-concentrada": "Change between periods wasn't measured: more than half the rows fall on the last day.",
           "pocas-filas": "Change between periods wasn't measured: with so few rows, a small change can't be told apart from chance.",
-          "apuesta": "Your bet: {aciertos} hits, {sorpresas} surprises and {falsas} bets the app doesn't flag. The app looks at one column at a time: it can't see what leaks only in combination.",
+          "apuesta": "Your bet — hits: {aciertos} · surprises: {sorpresas} · bets the app doesn't flag: {falsas}. The app looks at one column at a time: it can't see what leaks only in combination.",
           "sin-hallazgos": "The app found nothing to flag. That doesn't prove there is no leakage: it only looks at one column at a time.",
           "nada-para-entrenar": "You excluded every column: none of them will train a model."
         },
@@ -1466,7 +1476,7 @@
           "compare": "Hits: {hits} · surprises: {surprises} · bet on but not flagged: {false}",
           "counts": "Use: {usar} · exclude: {excluir} · don't know: {nose}",
           "alerts": "Columns with an alert: {n}",
-          "bulk": "You declared that {n} columns are filled in before deciding (marked in bulk).",
+          "bulk": "You declared that {count} columns are filled in before deciding (marked in bulk).",
           "drift": "Change between periods: {estado}",
           "drift-state": {
             "medida": "measured",
@@ -1475,7 +1485,8 @@
             "fecha-concentrada": "not measurable (concentrated dates)",
             "pocas-filas": "not measurable (too few rows)"
           },
-          "none": "none"
+          "none": "none",
+          "bulk_one": "You declared that 1 column is filled in before deciding (marked in bulk)."
         }
       }
     },

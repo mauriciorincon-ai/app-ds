@@ -189,7 +189,7 @@ function Etapa4Contenido({
           {modo === "algunas" && (
             <CampoCasillas
               leyenda={t(k("bet.pick.legend"))}
-              ayuda={t(k("bet.pick.help"), { n: marcadas.length })}
+              ayuda={t(k("bet.pick.help"), { count: marcadas.length })}
               opciones={columnas}
               marcadas={marcadas}
               onCambio={(columna, marcada) =>

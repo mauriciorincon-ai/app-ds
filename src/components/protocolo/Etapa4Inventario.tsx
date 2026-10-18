@@ -36,7 +36,7 @@ import { useI18n } from "@/i18n/provider";
 import type { ApuestaFija } from "@/lib/protocolo/apuesta";
 import type { CsvTable } from "@/lib/ds/csv";
 import { Badge, Button, Icon } from "@/components/ui";
-import { CampoOpciones, CampoSelect, CampoTexto } from "./campos";
+import { CampoArea, CampoOpciones, CampoSelect } from "./campos";
 import { Registrar, Trampas, type PropsFormulario } from "./formulario-base";
 
 const k = (clave: string) => `protocol.stage.4.${clave}`;
@@ -191,63 +191,74 @@ const FilaColumna = memo(function FilaColumna({
           ),
         );
   return (
-    <fieldset
-      className="flex flex-col gap-3 rounded-md border border-hairline p-3"
-      data-testid="protocolo-columna"
-      data-columna={nombre}
-    >
-      <legend className="px-1 text-sm font-medium [overflow-wrap:anywhere]">
-        {nombre}
-      </legend>
-      {motivos.length > 0 && (
-        <ul className="flex flex-wrap gap-1" aria-label={t(k("row.alerts"))}>
-          {motivos.map((motivo) => (
-            <li key={motivo}>
-              <Badge tone={GRAVES.has(motivo) ? "caution" : "neutral"}>
-                {GRAVES.has(motivo) ? (
-                  <span aria-hidden="true">⚠</span>
-                ) : (
-                  <Icon name="info" className="h-3 w-3" />
-                )}
-                {t(k(`alert.${motivo}`))}
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      )}
-      <CampoTexto
-        etiqueta={t(k("row.procedencia.label"))}
-        ayuda={t(
-          k(obligatoria ? "row.procedencia.required" : "row.procedencia.help"),
+    // El borde va en un contenedor y el nombre en la leyenda: un nombre larguísimo se parte en
+    // líneas sin que el borde del fieldset lo atraviese.
+    <div className="rounded-md border border-hairline p-3">
+      <fieldset
+        className="flex min-w-0 flex-col gap-3"
+        data-testid="protocolo-columna"
+        data-columna={nombre}
+      >
+        <legend className="mb-3 text-sm font-medium [overflow-wrap:anywhere]">
+          {nombre}
+        </legend>
+        {motivos.length > 0 && (
+          <ul className="flex flex-wrap gap-1" aria-label={t(k("row.alerts"))}>
+            {motivos.map((motivo) => (
+              <li key={motivo}>
+                <Badge tone={GRAVES.has(motivo) ? "caution" : "neutral"}>
+                  {GRAVES.has(motivo) ? (
+                    <span aria-hidden="true">⚠</span>
+                  ) : (
+                    <Icon name="info" className="h-3 w-3" />
+                  )}
+                  {t(k(`alert.${motivo}`))}
+                </Badge>
+              </li>
+            ))}
+          </ul>
         )}
-        valor={procedencia}
-        onCambio={(valor) =>
-          onProcedencia(indice, valor.slice(0, PROCEDENCIA_MAX))
-        }
-      />
-      <CampoOpciones<Momento>
-        leyenda={t(k("row.momento"))}
-        valor={MOMENTOS.find((m) => m === momento) ?? null}
-        opciones={MOMENTOS.map((m) => ({
-          valor: m,
-          texto: t(k(`momento.${m}`)),
-        }))}
-        onCambio={(valor) => onMomento(indice, valor)}
-      />
-      <CampoSelect
-        etiqueta={t(k("row.estado.label"))}
-        ayuda={ayudaEstado}
-        valor={estado}
-        opciones={[
-          { valor: "", texto: t(k("estado.pick")) },
-          ...estadosPermitidos(momento).map((e) => ({
-            valor: e,
-            texto: t(k(`estado.${e}`)),
-          })),
-        ]}
-        onCambio={(valor) => onEstado(indice, valor)}
-      />
-    </fieldset>
+        <CampoArea
+          etiqueta={t(k("row.procedencia.label"))}
+          ayuda={t(
+            k(
+              obligatoria
+                ? "row.procedencia.required"
+                : alerta
+                  ? "row.procedencia.help-alert"
+                  : "row.procedencia.help",
+            ),
+          )}
+          filas={2}
+          valor={procedencia}
+          onCambio={(valor) =>
+            onProcedencia(indice, valor.slice(0, PROCEDENCIA_MAX))
+          }
+        />
+        <CampoOpciones<Momento>
+          leyenda={t(k("row.momento"))}
+          valor={MOMENTOS.find((m) => m === momento) ?? null}
+          opciones={MOMENTOS.map((m) => ({
+            valor: m,
+            texto: t(k(`momento.${m}`)),
+          }))}
+          onCambio={(valor) => onMomento(indice, valor)}
+        />
+        <CampoSelect
+          etiqueta={t(k("row.estado.label"))}
+          ayuda={ayudaEstado}
+          valor={estado}
+          opciones={[
+            { valor: "", texto: t(k("estado.pick")) },
+            ...estadosPermitidos(momento).map((e) => ({
+              valor: e,
+              texto: t(k(`estado.${e}`)),
+            })),
+          ]}
+          onCambio={(valor) => onEstado(indice, valor)}
+        />
+      </fieldset>
+    </div>
   );
 });
 
@@ -281,11 +292,11 @@ function PanelBloque({
       {nombres.length > 0 && (
         <>
           <p className="text-ink-muted">
-            {t(k("bulk.desc"), { n: nombres.length })}
+            {t(k("bulk.desc"), { count: nombres.length })}
           </p>
           <details>
-            <summary className="flex min-h-11 cursor-pointer items-center">
-              {t(k("bulk.names"), { n: nombres.length })}
+            <summary className="cursor-pointer py-3">
+              {t(k("bulk.names"), { count: nombres.length })}
             </summary>
             <p className="[overflow-wrap:anywhere]">{nombres.join(", ")}</p>
           </details>
@@ -296,7 +307,7 @@ function PanelBloque({
               onChange={(event) => setDeclarado(event.target.checked)}
               data-testid="protocolo-bloque-declaro"
             />
-            {t(k("bulk.declare"), { n: nombres.length })}
+            {t(k("bulk.declare"), { count: nombres.length })}
           </label>
           <div>
             <Button
@@ -308,14 +319,14 @@ function PanelBloque({
                 onAplicar();
               }}
             >
-              {t(k("bulk.apply"), { n: nombres.length })}
+              {t(k("bulk.apply"), { count: nombres.length })}
             </Button>
           </div>
         </>
       )}
       {hechas > 0 && (
         <p data-testid="protocolo-bloque-hecho">
-          {t(k("bulk.done"), { n: hechas })}
+          {t(k("bulk.done"), { count: hechas })}
         </p>
       )}
       {puedeDeshacer && (
@@ -496,7 +507,10 @@ export function Inventario({
             indices: pendientes,
             nombres: pendientes.map((i) => columnas[i]!),
           });
-          onAviso({ clave: "bulk.applied", params: { n: pendientes.length } });
+          onAviso({
+            clave: "bulk.applied",
+            params: { count: pendientes.length },
+          });
         }}
         onDeshacer={() => {
           dispatch({ tipo: "deshacer" });
@@ -507,7 +521,7 @@ export function Inventario({
       {conAlerta.length > 0 && (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium" data-testid="protocolo-con-alerta">
-            {t(k("inv.alerts"), { n: conAlerta.length })}
+            {t(k("inv.alerts"), { count: conAlerta.length })}
           </p>
           {conAlerta.map(fila)}
         </div>
@@ -519,7 +533,7 @@ export function Inventario({
           onToggle={(event) => setAbierto(event.currentTarget.open)}
           data-testid="protocolo-sin-alerta"
         >
-          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium">
+          <summary className="cursor-pointer py-3 text-sm font-medium">
             {t(k("inv.details"), { n: sinAlerta.length })}
           </summary>
           {abierto && (
@@ -533,7 +547,7 @@ export function Inventario({
       <p className="text-sm" data-testid="protocolo-progreso">
         {sinEstado > 0
           ? t(k("inv.progress.missing"), {
-              n: sinEstado,
+              count: sinEstado,
               total: columnas.length,
             })
           : t(k("inv.progress.done"), {

@@ -56,7 +56,7 @@ function ResumenEtapa4({ datos }: { datos: DatosEtapa }) {
       </li>
       <li>{t("protocol.stage.4.summary.alerts", { n: r.alertas })}</li>
       {r.enBloque > 0 && (
-        <li>{t("protocol.stage.4.summary.bulk", { n: r.enBloque })}</li>
+        <li>{t("protocol.stage.4.summary.bulk", { count: r.enBloque })}</li>
       )}
       <li>
         {t("protocol.stage.4.summary.drift", {
