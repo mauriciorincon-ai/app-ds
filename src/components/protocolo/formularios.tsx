@@ -24,6 +24,10 @@ const Etapa5Form = dynamic(() =>
 const Etapa6Form = dynamic(() =>
   import("./Etapa6Form").then((m) => m.Etapa6Form),
 );
+// S12: la etapa 7, con su worker de Pyodide y el armado del envío (encarrilador, ancho estimado).
+const Etapa7Form = dynamic(() =>
+  import("./Etapa7Form").then((m) => m.Etapa7Form),
+);
 
 export const FORMULARIOS: Readonly<
   Partial<Record<EtapaId, ComponentType<PropsFormulario>>>
@@ -34,4 +38,5 @@ export const FORMULARIOS: Readonly<
   4: Etapa4Form,
   5: Etapa5Form,
   6: Etapa6Form,
+  7: Etapa7Form,
 };

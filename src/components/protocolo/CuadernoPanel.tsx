@@ -13,9 +13,17 @@ import {
 import { resumenEtapa4 } from "@/engine/protocolo/etapa4";
 import { ACTUAR, NO_ACTUAR, resumenEtapa5 } from "@/engine/protocolo/etapa5";
 import { resumenEtapa6, sellosDistintos } from "@/engine/protocolo/etapa6";
+import { resumenEtapa7 } from "@/engine/protocolo/etapa7";
+import { por100 } from "@/engine/protocolo/etapa5";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
-import { cifra, fecha, huellaCorta, valorTexto } from "@/lib/protocolo/formato";
+import {
+  cifra,
+  fecha,
+  huellaCorta,
+  proporcion,
+  valorTexto,
+} from "@/lib/protocolo/formato";
 import { formatQuantity, thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
 import { Confirmacion } from "./Confirmacion";
@@ -186,6 +194,54 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
 }
 
 /** La etapa 6: el esquema (y el sugerido con tu razón, si elegiste otro), los lados, el sello. */
+/** S12: la etapa 7 en una lectura: el ganador con su medida de selección, el veredicto y la señal. */
+function ResumenEtapa7({ datos }: { datos: DatosEtapa }) {
+  const { t } = useI18n();
+  const r = resumenEtapa7(datos);
+  if (r.ganador === null) return null;
+  const n100 = (x: number | null) => (x === null ? "—" : cifra(por100(x)));
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen7"
+    >
+      <li>
+        {t("protocol.stage.7.summary.winner", {
+          ganador: t(`results.candidates.short.${r.ganador}`),
+          puntaje: r.seleccion === null ? "—" : cifra(r.seleccion),
+          metrica: r.metrica ? t(`results.metrics.${r.metrica}`) : "—",
+        })}
+      </li>
+      {r.k !== null && r.esquema !== null && (
+        <li>
+          {t("protocol.stage.7.summary.folds", {
+            k: r.k,
+            esquema: t(`protocol.stage.6.scheme.${r.esquema}`),
+          })}
+        </li>
+      )}
+      {(r.veredicto === "supera" || r.veredicto === "no-supera") && (
+        <li>
+          {t(`protocol.stage.7.summary.${r.veredicto}`, {
+            media: n100(r.media),
+            bajo: n100(r.icBajo),
+            alto: n100(r.icAlto),
+          })}
+        </li>
+      )}
+      {(r.senal === "senal" || r.senal === "sin-senal") && r.p !== null && (
+        <li>
+          {t(`protocol.stage.7.summary.${r.senal}`, {
+            p: proporcion(r.p),
+            n: r.n ?? "—",
+          })}
+        </li>
+      )}
+      <li className="text-ink-muted">{t("protocol.stage.7.summary.closed")}</li>
+    </ul>
+  );
+}
+
 function ResumenEtapa6({
   datos,
   sellos,
@@ -315,9 +371,11 @@ function Entrada({
           )}
         />
       )}
+      {evidencia.etapa === 7 && <ResumenEtapa7 datos={evidencia.datos} />}
       {evidencia.etapa !== 4 &&
         evidencia.etapa !== 5 &&
         evidencia.etapa !== 6 &&
+        evidencia.etapa !== 7 &&
         filas.length > 0 && (
           <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
             {filas.map(([clave, valor]) => (

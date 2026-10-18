@@ -47,6 +47,33 @@ const LAZY = [
   "src/engine/protocolo/etapa6.ts",
   "src/engine/protocolo/particion.ts",
   "src/engine/protocolo/sha256.ts",
+  // S12: la etapa 7 (pantalla, worker, envío, pliegues y comparación).
+  "src/components/protocolo/Etapa7Form.tsx",
+  "src/lib/protocolo/liga7.ts",
+  "src/lib/protocolo/useValidacion.ts",
+  "src/engine/protocolo/etapa7.ts",
+  "src/engine/protocolo/pliegues.ts",
+  "src/engine/protocolo/comparacion.ts",
+  "src/engine/protocolo/permutacion.ts",
+];
+
+/**
+ * S12: /protocolo tampoco carga la liga hasta abrir la etapa 7. La definición de la etapa (etapa7.ts,
+ * pliegues, comparación) sí va en la página —la compuerta la evalúa al cargar—, pero la pantalla, el
+ * worker y el armado del envío (con el encarrilador y el estimador de Probeta) llegan con `next/dynamic`:
+ * la página está a 12 KB de su presupuesto.
+ */
+const ENTRY_PROTOCOLO = resolve(ROOT, "src/app/protocolo/page.tsx");
+const LAZY_PROTOCOLO = [
+  "src/components/protocolo/Etapa4Form.tsx",
+  "src/components/protocolo/Etapa5Form.tsx",
+  "src/components/protocolo/Etapa6Form.tsx",
+  "src/components/protocolo/Etapa7Form.tsx",
+  "src/lib/protocolo/liga7.ts",
+  "src/lib/protocolo/useValidacion.ts",
+  "src/engine/encarrilador.ts",
+  "src/lib/experiment.ts",
+  // (src/workers/contract.ts ya llega desde el S10 por useProtocolo → quantity.ts: no se vigila aquí)
 ];
 
 function resolveSpec(from: string, spec: string): string | null {
@@ -81,9 +108,9 @@ function staticSpecs(file: string): string[] {
 }
 
 /** Recorrido en anchura: cada archivo alcanzado con el camino que lo trajo. */
-function reachable(): Map<string, string[]> {
-  const paths = new Map<string, string[]>([[ENTRY, [ENTRY]]]);
-  const queue = [ENTRY];
+function reachable(entry = ENTRY): Map<string, string[]> {
+  const paths = new Map<string, string[]>([[entry, [entry]]]);
+  const queue = [entry];
   while (queue.length > 0) {
     const file = queue.shift()!;
     for (const spec of staticSpecs(file)) {
@@ -116,6 +143,29 @@ describe("la portada no arrastra pantallas ni fichas por imports estáticos", ()
       path,
       path &&
         `la portada importa ${lazy} por: ${path.map((p) => relative(ROOT, p)).join(" → ")}`,
+    ).toBeUndefined();
+  });
+});
+
+describe("/protocolo no arrastra la pantalla ni el worker de la etapa 7 por imports estáticos", () => {
+  const paths = reachable(ENTRY_PROTOCOLO);
+
+  it("el recorrido alcanza lo que la página sí evalúa (el detector no está ciego)", () => {
+    for (const expected of [
+      "src/engine/protocolo/compuerta.ts",
+      "src/engine/protocolo/etapa7.ts",
+      "src/engine/protocolo/pliegues.ts",
+    ]) {
+      expect(paths.has(resolve(ROOT, expected)), expected).toBe(true);
+    }
+  });
+
+  it.each(LAZY_PROTOCOLO)("%s solo llega al abrir su etapa", (lazy) => {
+    const path = paths.get(resolve(ROOT, lazy));
+    expect(
+      path,
+      path &&
+        `/protocolo importa ${lazy} por: ${path.map((p) => relative(ROOT, p)).join(" → ")}`,
     ).toBeUndefined();
   });
 });

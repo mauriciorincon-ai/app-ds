@@ -72,7 +72,9 @@ function parametro(
   if (typeof valor === "string")
     return clave === "manda" ? t(`protocol.criterion.${valor}`) : valor;
   if (clave.endsWith("Pct")) return formatQuantity(valor * 100, 1);
-  if (clave === "umbral" || clave === "cuantil") return proporcion(valor);
+  // S12: el valor p de la permutación, con los decimales que su resolución pide (1/201 no es «0.00»)
+  if (clave === "umbral" || clave === "cuantil" || clave === "p")
+    return proporcion(valor);
   return cifra(valor);
 }
 
