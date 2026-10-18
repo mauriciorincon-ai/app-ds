@@ -12,6 +12,7 @@ import {
   NO_ACTUAR,
   TRAMPAS_5,
   datosEtapa5,
+  por100,
   referencias5,
   valoresDeColumna,
   vistaDe,
@@ -940,7 +941,7 @@ describe("las trampas, en los números del usuario", () => {
     const costo = trampas.find((t) => t.clave === "regla")!;
     cierra(
       costo.params.regla100 as number,
-      numero(d.chequeos, "regla_costo")! * 100,
+      por100(numero(d.chequeos, "regla_costo")!),
     );
     expect(costo.params.unidad).toBe("US$");
   });
@@ -977,7 +978,7 @@ describe("las trampas, en los números del usuario", () => {
     const base = referencias5(CREDITO.tabla, CREDITO.previas)!;
     cierra(
       t.params.mejor100 as number,
-      Math.min(...base.referencias.map((r) => r.costo)) * 100,
+      por100(Math.min(...base.referencias.map((r) => r.costo))),
     );
   });
 

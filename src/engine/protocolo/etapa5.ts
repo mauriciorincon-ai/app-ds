@@ -151,6 +151,10 @@ export type Medicion = {
 };
 export type Referencia5 = Medicion & { readonly id: ReferenciaId };
 
+/** El costo por decisión llevado a «por cada 100 decisiones», sin el ruido de la coma flotante (18.15 × 100). */
+export const por100 = (costo: number): number =>
+  Number((costo * 100).toPrecision(12));
+
 const promedio = (xs: readonly number[]) =>
   xs.reduce((a, b) => a + b, 0) / xs.length;
 
@@ -884,7 +888,7 @@ function trampas(datos: DatosEtapa, previas: Previas): readonly Trampa[] {
   const costos = Object.values(mapa(c, "base_costo") ?? {});
   const salida: Trampa[] = [];
   if (costos.length === 0) return salida;
-  const mejor100 = Math.min(...costos) * 100;
+  const mejor100 = por100(Math.min(...costos));
   const mayoritaria = texto(c, "base_mayoritaria");
   const aciertos = mapa(c, "base_aciertos") ?? {};
   matchTask(forma, {
@@ -905,7 +909,7 @@ function trampas(datos: DatosEtapa, previas: Previas): readonly Trampa[] {
   if (regla === "ninguna")
     salida.push({ clave: "sin-regla", params: { mejor100, unidad } });
   else if (regla === "hay" && reglaCosto !== null) {
-    const regla100 = reglaCosto * 100;
+    const regla100 = por100(reglaCosto);
     salida.push({ clave: "regla", params: { regla100, unidad } });
     const tolerancia = 1e-9 * Math.max(1, Math.abs(mejor100));
     salida.push({
@@ -933,6 +937,53 @@ function frecuente(
     });
 }
 
+export type ResumenEtapa5 = {
+  readonly regla: string;
+  readonly condiciones: readonly Condicion[];
+  /** `numero` o `texto` por condición (el operador se lee según el tipo). */
+  readonly tipos: readonly string[];
+  readonly union: string;
+  readonly si: string;
+  readonly no: string;
+  readonly filas: number;
+  readonly cumple: number | null;
+  readonly reglaCosto100: number | null;
+  /** Las referencias, en el orden registrado, con su costo por cada 100 decisiones. */
+  readonly referencias: readonly { id: string; costo100: number }[];
+  readonly mejor: { id: string; costo100: number } | null;
+  readonly claseMayoritaria: string | null;
+  readonly opcionBarata: string | null;
+};
+
+/** Lo esencial de una evidencia de la etapa 5, para el cuaderno (no las listas ni los mapas crudos). */
+export function resumenEtapa5(datos: DatosEtapa): ResumenEtapa5 {
+  const [r, c] = [datos.respuestas, datos.chequeos];
+  const costo = mapa(c, "base_costo") ?? {};
+  const referencias = (lista(c, "base_ids") ?? [])
+    .filter((id) => tienePropia(costo, id))
+    .map((id) => ({ id, costo100: por100(costo[id]!) }));
+  const mejor = referencias.reduce<{ id: string; costo100: number } | null>(
+    (m, x) => (m === null || x.costo100 < m.costo100 ? x : m),
+    null,
+  );
+  const reglaCosto = numero(c, "regla_costo");
+  return {
+    regla: texto(r, "regla") ?? "",
+    condiciones: condicionesDe(entradaDesdeRespuestas(r)) ?? [],
+    tipos: lista(c, "regla_tipos") ?? [],
+    union: texto(r, "regla_union") ?? "",
+    si: texto(r, "regla_si") ?? "",
+    no: texto(r, "regla_no") ?? "",
+    filas: numero(c, "filas") ?? 0,
+    cumple: numero(c, "regla_cumple"),
+    reglaCosto100: reglaCosto === null ? null : por100(reglaCosto),
+    referencias,
+    mejor,
+    claseMayoritaria: texto(c, "clase_mayoritaria"),
+    opcionBarata: texto(c, "opcion_barata"),
+  };
+}
+
 /** Vuelve a calcular lo que esta etapa registra sobre la tabla cargada, con esa misma regla. */
 function recalcular(
   datos: DatosEtapa,
@@ -946,7 +997,7 @@ export const ETAPA_5: EtapaConstruida = {
   id: 5,
   construida: true,
   dependeDeDatos: true,
-  terminos: ["linea-base"],
+  terminos: ["linea-base", "regla-de-hoy", "costo-esperado"],
   preguntas: ["regla", "condiciones", "salida"],
   chequeos: ["referencias", "costo", "metrica", "aciertos"],
   leer,

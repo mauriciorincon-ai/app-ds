@@ -9,7 +9,7 @@ export type EtapaId = (typeof ETAPA_IDS)[number];
 /** Las etapas que abren hoy, seguidas desde la 1 (la compuerta no deja huecos). La portada y el
  *  encabezado lo dicen con estas cifras; `tests/unit/protocolo-contenido.test.ts` fija que
  *  coincide con las etapas construidas de `PROTOCOLO_DS`. */
-export const ETAPAS_CONSTRUIDAS = [1, 2, 3, 4] as const;
+export const ETAPAS_CONSTRUIDAS = [1, 2, 3, 4, 5] as const;
 /** Los parámetros `{from}` y `{to}` de los textos que lo dicen. */
 export const ETAPAS_ABIERTAS = {
   from: ETAPAS_CONSTRUIDAS[0],
@@ -48,5 +48,8 @@ export const TERMINO_IDS = [
   "columna-identificador",
   "duplicado",
   "deriva",
+  // S10 (etapa 5)
+  "regla-de-hoy",
+  "costo-esperado",
 ] as const;
 export type TerminoId = (typeof TERMINO_IDS)[number];
