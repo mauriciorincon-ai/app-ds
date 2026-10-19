@@ -89,6 +89,31 @@ describe("cada página carga solo su idioma (el español; el inglés llega al el
     }
   });
 
+  it.each(ENTRADAS)(
+    "%s no alcanza los textos de las formas de las etapas (viajan con el chunk de su forma, S13)",
+    (entrada) => {
+      const intrusos = [...alcanzados(entrada).keys()]
+        .map((p) => relative(ROOT, p))
+        .filter(
+          (p) =>
+            p.startsWith("messages/etapas/") ||
+            p.startsWith("src/components/protocolo/textos/"),
+        );
+      expect(intrusos, `${entrada} importa los textos de una forma`).toEqual(
+        [],
+      );
+    },
+  );
+
+  it("el detector ve el camino que existe: la forma de la etapa 7 sí alcanza sus textos, en los dos idiomas", () => {
+    const caminos = alcanzados("src/components/protocolo/Etapa7Form.tsx");
+    for (const l of ["es", "en"])
+      expect(
+        caminos.has(resolve(ROOT, `messages/etapas/etapa7.${l}.json`)),
+        `messages/etapas/etapa7.${l}.json`,
+      ).toBe(true);
+  });
+
   it("el servidor de la narración sí registra el inglés (el detector ve el camino que existe)", () => {
     const caminos = alcanzados("src/app/api/narrate/route.ts");
     expect(caminos.has(resolve(ROOT, "src/i18n/servidor.ts"))).toBe(true);
