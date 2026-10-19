@@ -32,12 +32,13 @@ import {
 } from "@/engine/protocolo/etapa4";
 import type { DatosEtapa, Previas } from "@/engine/protocolo/etapas";
 import { lista, type Registro } from "@/engine/protocolo/valores";
-import { useI18n } from "@/i18n/provider";
+import { useTextosEtapa } from "@/i18n/textos-etapa";
 import type { ApuestaFija } from "@/lib/protocolo/apuesta";
 import type { CsvTable } from "@/lib/ds/csv";
 import { Badge, Button, Icon } from "@/components/ui";
 import { CampoArea, CampoOpciones, CampoSelect } from "./campos";
 import { Registrar, Trampas, type PropsFormulario } from "./formulario-base";
+import { TEXTOS_ETAPA_4 } from "./textos/etapa4";
 
 const k = (clave: string) => `protocol.stage.4.${clave}`;
 
@@ -176,7 +177,7 @@ const FilaColumna = memo(function FilaColumna({
   onMomento,
   onEstado,
 }: PropsFila) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_4);
   const obligatoria = alerta && estado === "usar" && procedencia.trim() === "";
   const ayudaEstado =
     momento === "antes"
@@ -276,7 +277,7 @@ function PanelBloque({
   onAplicar: () => void;
   onDeshacer: () => void;
 }) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_4);
   const id = useId();
   const [declarado, setDeclarado] = useState(false);
   // Marcar o deshacer cambia qué botones hay: el que tenía el foco desaparece, y el foco pasa al
@@ -384,7 +385,7 @@ export function Inventario({
   onAviso: (aviso: AvisoVivo | null) => void;
   onRegistrar: PropsFormulario["onRegistrar"];
 }) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_4);
   const id = useId();
   const columnas = h.columnas;
   const alertas = useMemo(

@@ -32,7 +32,8 @@ import {
   type UnidadHorizonte,
 } from "@/engine/protocolo/particion";
 import { mapa, numero, texto, textoLleno } from "@/engine/protocolo/valores";
-import { useI18n } from "@/i18n/provider";
+import { useTextosEtapa } from "@/i18n/textos-etapa";
+import { TEXTOS_ETAPA_6 } from "./textos/etapa6";
 import { huellaCorta } from "@/lib/protocolo/formato";
 import { formatQuantity, thousands } from "@/lib/quantity";
 import { Icon } from "@/components/ui";
@@ -72,7 +73,7 @@ export function Etapa6Form({
   historia = SIN_HISTORIA,
   onRegistrar,
 }: PropsFormulario) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_6);
   const tabla = datos?.tabla ?? null;
   const huella = datos?.carga.sha256 ?? null;
   const e1 = previas[1];

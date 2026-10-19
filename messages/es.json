@@ -1258,192 +1258,6 @@
         }
       },
       "4": {
-        "need-data": "Esta etapa usa tus datos y las etapas 1, 2 y 3: cárgalos y cúmplelas primero.",
-        "no-findings": "No se pudo leer el objetivo de la etapa 2 en este archivo. Vuelve a la etapa 2 y revisa tu elección.",
-        "computing": "Calculando sobre tus filas… con un archivo grande puede tardar unos segundos.",
-        "step": {
-          "bet": {
-            "title": "1 · Tu apuesta"
-          },
-          "reveal": {
-            "title": "2 · Lo que encontró la app"
-          },
-          "inventory": {
-            "title": "3 · Columna por columna"
-          }
-        },
-        "bet": {
-          "intro": "Antes de ver nada: ¿qué columnas crees que filtran el resultado, es decir, que traen información que no tendrías en el momento de decidir? Cuando veas lo que encontró la app, tu apuesta queda fija: así la comparación te enseña dónde se te escapa.",
-          "mode": {
-            "legend": "¿Qué apuestas?",
-            "some": "Sí, marco las que creo",
-            "none": "Ninguna"
-          },
-          "pick": {
-            "legend": "Columnas que crees que filtran el resultado",
-            "help": "{count} marcadas. Marca las que, a tu juicio, se llenan o se conocen después del resultado.",
-            "help_one": "{count} marcada. Marca las que, a tu juicio, se llenan o se conocen después del resultado."
-          },
-          "why-off": {
-            "mode": "Elige primero: marcar columnas, o «ninguna».",
-            "some": "Marca al menos una columna, o elige «ninguna»."
-          },
-          "reveal": "Ver lo que encontró la app",
-          "locked": "Tu apuesta quedó fija: {list}.",
-          "locked-none": "Tu apuesta quedó fija: ninguna columna filtra el resultado."
-        },
-        "reveal": {
-          "intro": "Esto es lo que la app encontró en tus datos. Mira una columna a la vez: lo que filtra solo en combinación con otras no lo ve."
-        },
-        "find": {
-          "leak": {
-            "title": "Columnas que casi adivinan el resultado",
-            "item": "{columna}: puntaje {score} de 1",
-            "why": "Una columna que por sí sola casi adivina el resultado suele ser un dato que se llena después de que ocurre, o una copia de él. Con ella el modelo se vería muy bien en tus datos y fallaría en la vida real."
-          },
-          "blank": {
-            "title": "Columnas que solo se llenan cuando ocurre el resultado",
-            "item": "{columna}: que esté vacía o llena separa el resultado (puntaje {score} de 1)",
-            "why": "Si una columna está vacía hasta que pasa lo que quieres predecir (una fecha de baja, un motivo de cierre), no existe en el momento de decidir."
-          },
-          "id": {
-            "title": "Columnas que parecen un identificador",
-            "item": "{columna}: {pct} % de sus filas tienen un valor distinto",
-            "why": "Un identificador (un folio, un correo) sirve para reconocer filas, no para predecir: el modelo lo memoriza y no aprende nada que sirva con casos nuevos."
-          },
-          "dup": {
-            "title": "Filas repetidas",
-            "rows": "Copias exactas de otra fila: {n} de {filas}.",
-            "unit": "Filas con la misma unidad en el mismo momento: {n}.",
-            "why": "Si una copia cae en entrenar y otra en probar, el puntaje se ve mejor de lo que es."
-          },
-          "drift": {
-            "title": "Cambio entre periodos (deriva)",
-            "measured": "Se comparó el periodo reciente (desde el {corte}, {reciente} filas) contra el anterior ({historico} filas).",
-            "item": {
-              "alert": "{columna}: PSI {psi} (alerta)",
-              "moderate": "{columna}: PSI {psi} (cambio moderado)"
-            },
-            "ks": "· D de KS {ks}",
-            "none": "Ninguna columna cambió de forma apreciable entre los dos periodos.",
-            "skipped": "No se pudo medir (muy pocos valores en un periodo): {list}.",
-            "why": "El PSI compara cómo se reparten los valores entre dos periodos: menos de 0.10 es estable, de 0.10 a 0.25 moderado y desde 0.25 alerta. Esos umbrales son una convención de la industria (Lewis, 1994), no una prueba estadística; el D de KS es solo informativo.",
-            "state": {
-              "sin-fecha": "No medible: en la etapa 2 no elegiste una columna de fecha, y sin ella no hay «antes» ni «después».",
-              "una-fecha": "No medible: todas las filas con fecha son del mismo día.",
-              "fecha-concentrada": "No medible: más de la mitad de las filas caen en el último día, y no queda un periodo anterior con qué compararlo.",
-              "pocas-filas": "No medible: con tan pocas filas por periodo, un cambio chico no se distingue del azar."
-            }
-          },
-          "none": "La app no encontró nada que marcar. Eso no prueba que no haya fuga: solo mira una columna a la vez."
-        },
-        "compare": {
-          "title": "Tu apuesta contra lo que encontró la app",
-          "note": "«La app no la marca» no significa «no filtra»: la app mira una columna a la vez. Y tu apuesta no cambia: es lo que pensabas antes de ver.",
-          "empty": "No apostaste ninguna columna y la app no marcó fugas: coinciden.",
-          "hits": "Acertaste: {list}.",
-          "surprises": "Te sorprendieron (filtran y no las apostaste): {list}.",
-          "false": "Apostaste y la app no las marca: {list}."
-        },
-        "inv": {
-          "intro": "Para cada columna: quién o qué la produce, si existe cuando se decide y si la usas. Lo que se llena después de decidir no puede entrenar el modelo, y lo que no sabes tampoco.",
-          "alerts": "{count} columnas con alerta: se responden una por una.",
-          "details": "Revisar una por una ({n})",
-          "progress": {
-            "missing": "Faltan {count} de {total} columnas por responder.",
-            "done": "Todas con estado: usar {usar} · excluir {excluir} · no sé {nose}.",
-            "missing_one": "Falta 1 de {total} columnas por responder."
-          },
-          "alerts_one": "1 columna con alerta: se responde una por una."
-        },
-        "alert": {
-          "fuga": "Filtra el resultado",
-          "fuga-vacios": "Vacía hasta el resultado",
-          "identificador": "Parece identificador",
-          "deriva-alta": "Cambió mucho entre periodos",
-          "deriva-moderada": "Cambio moderado",
-          "rol": "Unidad o fecha de la etapa 2",
-          "apuesta": "Tu apuesta"
-        },
-        "row": {
-          "alerts": "Alertas de esta columna",
-          "procedencia": {
-            "label": "¿Quién o qué la produce?",
-            "help": "Por ejemplo: «lo registra el vendedor al abrir la cuenta». Opcional.",
-            "required": "Obligatoria: tiene una alerta y la dejas en «usar».",
-            "help-alert": "Por ejemplo: «lo registra el vendedor al abrir la cuenta». Solo es obligatoria si la dejas en «usar»."
-          },
-          "momento": "¿Cuándo se llena, frente al momento de decidir?",
-          "estado": {
-            "label": "¿La usas?",
-            "help": {
-              "despues": "Se llena después de decidir: solo puede excluirse.",
-              "nose": "Si no sabes cuándo se llena, no puede entrenar: exclúyela o déjala en «no sé».",
-              "blank": "«Usar» aparece cuando dices que se llena antes de decidir."
-            }
-          }
-        },
-        "momento": {
-          "antes": "Antes de decidir",
-          "despues": "Después de decidir (o del resultado)",
-          "nose": "No sé"
-        },
-        "estado": {
-          "pick": "Elige…",
-          "usar": "Usar",
-          "excluir": "Excluir",
-          "nose": "No sé (no entrena)"
-        },
-        "auto": {
-          "despues": "{columna}: se llena después de decidir, así que se excluye.",
-          "nose": "{columna}: no sabes cuándo se llena, así que no entrena («no sé»)."
-        },
-        "bulk": {
-          "title": "Responder en bloque las columnas sin alerta",
-          "desc": "Estas {count} columnas no tienen ninguna alerta. Si todas se llenan antes del momento de decidir, puedes marcarlas en «usar» de una vez. Lo que declares queda en tu cuaderno.",
-          "names": "Ver las {count} columnas",
-          "declare": "Declaro que estas {count} columnas se llenan antes del momento de decidir.",
-          "apply": "Marcar las {count} en «usar»",
-          "undo": "Deshacer",
-          "done": "Marcaste {count} columnas en «usar» con tu declaración.",
-          "applied": "{count} columnas marcadas en «usar» con tu declaración.",
-          "undone": "Deshiciste la acción en bloque.",
-          "desc_one": "Esta columna no tiene ninguna alerta. Si se llena antes del momento de decidir, puedes marcarla en «usar» de una vez. Lo que declares queda en tu cuaderno.",
-          "names_one": "Ver la columna",
-          "declare_one": "Declaro que esta columna se llena antes del momento de decidir.",
-          "apply_one": "Marcar la columna en «usar»",
-          "done_one": "Marcaste 1 columna en «usar» con tu declaración.",
-          "applied_one": "1 columna marcada en «usar» con tu declaración."
-        },
-        "field": {
-          "apuesta": "Tu apuesta (columnas que crees que filtran)",
-          "apuesta_ninguna": "Apostaste que ninguna filtra",
-          "procedencia": "Procedencia, por columna",
-          "momento": "Cuándo se llena, por columna",
-          "estado": "Estado, por columna",
-          "en_bloque": "Columnas que declaraste en bloque (se llenan antes de decidir)"
-        },
-        "check": {
-          "columnas": "Columnas revisadas",
-          "roles": "Unidad y fecha de la etapa 2",
-          "filas": "Filas del archivo",
-          "fuga": "Fuga por valores (puntaje por columna)",
-          "fuga_vacios": "Fuga por vacíos (puntaje por columna)",
-          "identificador": "Parecen identificador (proporción de valores distintos)",
-          "duplicados_fila": "Filas copia exacta de otra",
-          "duplicados_unidad_momento": "Filas con la misma unidad en el mismo momento",
-          "deriva_estado": "Cambio entre periodos",
-          "deriva_corte": "Periodo reciente desde",
-          "deriva_historico": "Filas del periodo anterior",
-          "deriva_reciente": "Filas del periodo reciente",
-          "deriva_psi": "PSI por columna",
-          "deriva_ks": "D de KS por columna",
-          "deriva_sin_medir": "Sin poder medir el cambio",
-          "alertas": "Columnas con alerta",
-          "aciertos": "Aciertos de tu apuesta",
-          "sorpresas": "Sorpresas",
-          "falsas_alarmas": "Apostadas que la app no marca"
-        },
         "missing": {
           "etapas-previas": "las etapas 1, 2 y 3 cumplidas",
           "nombres-columnas": "nombres de columna distintos entre sí y distintos del objetivo",
@@ -1491,20 +1305,9 @@
         }
       },
       "5": {
-        "need-data": "Esta etapa usa tus datos y las etapas 1 a 4: cárgalos y cúmplelas primero.",
-        "no-base": "No se pudo calcular lo que se logra sin modelo con lo que registraste en las etapas 1 y 2. Corrígelas y vuelve.",
-        "today": "Lo que se hace hoy, según tu etapa 1",
-        "pick": "Elige…",
         "table": {
-          "caption": "Lo que ya se logra sin modelo",
-          "col-ref": "Forma de decidir",
-          "col-cost": "Costo por cada 100 decisiones ({unit})",
           "col-balanced": "Exactitud balanceada (0 a 1)",
-          "col-error": "Error medio",
-          "col-hits": "Aciertos de cada 100",
-          "majority": "La más frecuente en tus filas",
-          "rule": "Tu regla de hoy",
-          "note": "Es una referencia, no un resultado: se mide sobre todas tus {rows} filas. La etapa 8 la vuelve a medir sobre la prueba."
+          "col-error": "Error medio"
         },
         "ref": {
           "nunca-actuar": "Nunca actuar",
@@ -1516,35 +1319,9 @@
           "cuantil": "Estimar siempre el cuantil de tus costos",
           "ultimo-valor": "Repetir el último valor de la misma unidad"
         },
-        "no-previous": "{n} filas no tienen un valor anterior de su unidad (la primera de cada una, o sin unidad o sin fecha): ahí «el último valor» usa la mediana.",
         "rule": {
-          "legend": "¿Hay una regla que se aplica hoy?",
-          "help": "Lo que tu gente hace hoy, sin modelo. Si no hay ninguna, dilo: el modelo competirá contra la mejor referencia de arriba.",
-          "hay": "Sí, hay una regla que se aplica hoy",
-          "ninguna": "No, hoy no hay regla",
-          "only-use": "Solo ves las columnas que dejaste en «usar» en la etapa 4: una regla que mira lo que se llena después del resultado también «acertaría», y no sirve para decidir.",
-          "no-usable": "La etapa 4 no dejó ninguna columna en «usar»: no hay con qué escribir una regla. Di que no hay regla o corrige la etapa 4.",
-          "condition": "Condición {n}",
-          "column": "Columna",
-          "operator": "Operador",
-          "value": "Valor",
-          "many-values": "La columna tiene {n} valores distintos: escribe el valor exacto, tal como está en tu archivo.",
-          "add": "Añadir otra condición",
-          "remove": "Quitar la segunda condición",
-          "union": "Cómo se unen las dos condiciones",
-          "union-y": "Y: se cumplen las dos",
-          "union-o": "O: basta con que se cumpla una",
           "join-y": "y",
-          "join-o": "o",
-          "binary": "Si la regla se cumple, se actúa; si no, no se actúa.",
-          "then": "Si la regla se cumple, se elige",
-          "otherwise": "Si la regla no se cumple, se elige",
-          "then-num": "Si la regla se cumple, se estima",
-          "otherwise-num": "Si la regla no se cumple, se estima",
-          "measure": "La regla se cumple en {cumple} de {filas} filas.",
-          "empties": "En {vacios} filas alguna de estas columnas no tiene valor: ahí la condición no se cumple, tampoco «distinto de».",
-          "incomplete": "Completa la condición para medirla.",
-          "outputs-missing": "Elige qué se hace cuando se cumple y cuando no para ver cuánto cuesta."
+          "join-o": "o"
         },
         "op": {
           "lt": "menor que (<)",
@@ -1555,32 +1332,6 @@
           "ne": "distinto de (≠)",
           "eq-text": "es",
           "ne-text": "no es"
-        },
-        "field": {
-          "regla": "¿Hay una regla de hoy?",
-          "regla_columnas": "Columnas de la regla",
-          "regla_operadores": "Operadores de la regla",
-          "regla_valores": "Valores de la regla",
-          "regla_union": "Unión de las condiciones",
-          "regla_si": "Si se cumple la regla",
-          "regla_no": "Si no se cumple la regla"
-        },
-        "check": {
-          "filas": "Filas medidas",
-          "base_ids": "Referencias medidas",
-          "base_costo": "Costo por decisión de cada referencia",
-          "base_metrica": "Métrica estándar de cada referencia",
-          "base_aciertos": "Parte de aciertos de cada referencia",
-          "base_mayoritaria": "Referencia que es la más frecuente",
-          "clase_mayoritaria": "Clase más frecuente",
-          "opcion_barata": "Opción fija más barata",
-          "base_n_sin_anterior": "Filas sin valor anterior de su unidad",
-          "regla_tipos": "Tipo de cada columna de la regla",
-          "regla_cumple": "Filas donde se cumple la regla",
-          "regla_vacios": "Filas con alguna columna de la regla sin valor",
-          "regla_costo": "Costo por decisión de la regla",
-          "regla_metrica": "Métrica estándar de la regla",
-          "regla_aciertos": "Parte de aciertos de la regla"
         },
         "missing": {
           "etapas-previas": "las etapas 1 a 4 cumplidas",
@@ -1622,36 +1373,7 @@
         }
       },
       "6": {
-        "need-data": "Esta etapa usa tus datos y las etapas 1 a 5: cárgalos y cúmplelas primero.",
-        "no-design": "No se pudo leer en estos datos el objetivo que registraste en la etapa 2. Corrígela y vuelve.",
-        "pick": "Elige…",
-        "suggest": {
-          "title": "Lo que sugiere la app",
-          "pending": "Responde la pregunta de las unidades y la app te dirá qué esquema conviene.",
-          "estratificada": "Estratificada: al azar, guardando en los dos lados la proporción de cada clase (con una cantidad, de cada tramo de valores).",
-          "grupo": "Por grupo: cada unidad queda entera de un solo lado.",
-          "tiempo": "Por tiempo: la prueba son tus fechas más recientes, con un hueco del tamaño de tu horizonte antes de ellas.",
-          "tiempo-grupo": "Por tiempo y por grupo: la prueba son tus fechas más recientes, y el entrenamiento deja fuera toda la historia de las unidades que están en ella.",
-          "why-estratificada": "Tu etapa 2 no registró una fecha ni una unidad que se repita: no hay un orden ni grupos que respetar.",
-          "why-grupo": "En tu etapa 2, la unidad «{unidad}» se repite en varias filas: si una misma unidad queda en los dos lados, el modelo se evalúa con lo que ya vio.",
-          "why-tiempo": "En tu etapa 2 registraste la fecha «{fecha}»: el modelo se usará con el pasado para decidir lo que viene, y la prueba tiene que imitarlo.",
-          "why-tiempo-grupo": "Registraste una fecha y una unidad que se repite, y dijiste que el modelo se usará con unidades nuevas: la prueba tiene que ser futura y de unidades que el modelo no vio.",
-          "why-tiempo-conocidas": "Registraste una fecha y una unidad que se repite, y dijiste que el modelo se usará con las mismas unidades: basta con que la prueba sea futura."
-        },
         "form": {
-          "units": "¿Tu modelo se usará con unidades nuevas o con las que ya conoces?",
-          "units-help": "Con una fecha y una unidad que se repite, el esquema depende de esto, y la app no lo puede saber.",
-          "units-nuevas": "Con unidades nuevas, que el modelo no vio",
-          "units-conocidas": "Con las mismas unidades, más adelante en el tiempo",
-          "scheme": "Esquema de partición",
-          "suggested": "sugerido",
-          "reason": "¿Por qué eliges otro esquema que el sugerido?",
-          "reason-help": "Queda en tu cuaderno junto al sugerido.",
-          "size": "Tamaño de la prueba (de cada 100 filas)",
-          "size-help": "Un número entero entre {min} y {max}; se sugiere {sugerido}.",
-          "horizon": "Horizonte: cuánto tarda en conocerse el resultado",
-          "horizon-help": "Ese tiempo queda como hueco entre entrenamiento y prueba. Escribe 0 si el resultado se conoce en el momento de decidir.",
-          "horizon-unit": "Unidad del horizonte",
           "dias": "días",
           "dias-uno": "día",
           "meses": "meses",
@@ -1662,83 +1384,6 @@
           "grupo": "Por grupo",
           "tiempo": "Por tiempo",
           "tiempo-grupo": "Por tiempo y por grupo"
-        },
-        "table": {
-          "caption": "Cómo quedan tus filas",
-          "note": "Solo conteos y rangos: ninguna fila de la prueba se muestra.",
-          "col-side": "Lado",
-          "col-rows": "Filas",
-          "col-units": "Unidades",
-          "col-dates": "Fechas",
-          "col-classes": "Clases",
-          "entrenamiento": "Entrenamiento",
-          "hueco": "Hueco",
-          "prueba": "Prueba",
-          "fuera": "Fuera",
-          "range": "{desde} a {hasta}",
-          "real-size": "La prueba queda con {n} de {total} filas con objetivo ({pct} de cada 100).",
-          "cut": "La prueba empieza el {corte}.",
-          "out-sin-objetivo": "{n} sin objetivo",
-          "out-sin-fecha": "{n} sin fecha",
-          "out-sin-unidad": "{n} sin unidad",
-          "out-unidades-prueba": "{n} de unidades que están en la prueba"
-        },
-        "verify": {
-          "title": "Verificado en tu tabla",
-          "rows": "Ninguna fila está en dos lados.",
-          "units": "Ninguna unidad tiene filas en entrenamiento y en prueba.",
-          "time": "Ninguna fila de entrenamiento está a menos de un horizonte de la prueba.",
-          "rows-bad": "{n} filas están en más de un lado.",
-          "units-bad": "{n} unidades tienen filas en entrenamiento y en prueba.",
-          "time-bad": "{n} filas de entrenamiento son de tus fechas más recientes (desde el {corte}), las que una partición por tiempo dejaría para la prueba."
-        },
-        "seal": {
-          "title": "Sello de la prueba",
-          "value": "Sello: {sello}…",
-          "note": "Sale de tus datos, del esquema, de sus parámetros y de qué filas son la prueba. Si algo de eso cambia, el sello no cuadra y la etapa 7 no abre. Es higiene y trazabilidad, no una promesa: dice que la prueba es la misma, no que nadie la haya mirado.",
-          "none": "Sin sellos en este cuaderno.",
-          "count": "Pruebas distintas selladas en este cuaderno: {n}. Sellar otra distinta suma una: cada partición distinta es otra forma de mirar.",
-          "pending": "El sello aparece cuando el esquema y sus parámetros están completos."
-        },
-        "field": {
-          "unidades": "Unidades con que se usará el modelo",
-          "esquema": "Esquema elegido",
-          "razon": "Razón para no usar el sugerido",
-          "tamano": "Tamaño de la prueba (de cada 100 filas)",
-          "horizonte": "Horizonte",
-          "horizonte_unidad": "Unidad del horizonte"
-        },
-        "check": {
-          "filas": "Filas de la tabla",
-          "filas_objetivo": "Filas con objetivo",
-          "disponibles": "Esquemas que tus datos permiten",
-          "pregunta_unidades": "Hubo que preguntar por las unidades",
-          "sugerido": "Esquema sugerido",
-          "semilla": "Semilla",
-          "corte": "Primera fecha de la prueba",
-          "n_entrenamiento": "Filas de entrenamiento",
-          "n_prueba": "Filas de prueba",
-          "n_hueco": "Filas en el hueco",
-          "fuera_sin_objetivo": "Fuera: sin objetivo",
-          "fuera_sin_fecha": "Fuera: sin fecha",
-          "fuera_sin_unidad": "Fuera: sin unidad",
-          "fuera_unidades_prueba": "Fuera: historia de unidades de la prueba",
-          "unidades_entrenamiento": "Unidades en entrenamiento",
-          "unidades_prueba": "Unidades en prueba",
-          "fecha_min_entrenamiento": "Primera fecha de entrenamiento",
-          "fecha_max_entrenamiento": "Última fecha de entrenamiento",
-          "fecha_min_prueba": "Primera fecha de prueba",
-          "fecha_max_prueba": "Última fecha de prueba",
-          "clases_entrenamiento": "Clases en entrenamiento",
-          "clases_prueba": "Clases en prueba",
-          "solape_filas": "Filas en más de un lado",
-          "solape_unidades": "Unidades en los dos lados",
-          "solape_tiempo": "Filas de entrenamiento a menos de un horizonte de la prueba",
-          "corte_referencia": "Dónde cortaría una partición por tiempo",
-          "recientes_entrenamiento": "Filas de entrenamiento de tus fechas más recientes",
-          "azar_unidades": "Al azar: unidades en los dos lados",
-          "azar_recientes": "Al azar: filas de tus fechas más recientes en entrenamiento",
-          "sello": "Sello de la prueba"
         },
         "missing": {
           "etapas-previas": "las etapas 1 a 5 cumplidas",
@@ -1780,138 +1425,6 @@
         }
       },
       "7": {
-        "need-data": "Esta etapa usa tus datos y las etapas 1 a 6: cárgalos y cúmplelas primero.",
-        "inherit": {
-          "title": "Lo que hereda de tus etapas",
-          "columns": "Columnas en «usar» (etapa 4): {n}. {lista}.",
-          "no-columns": "La etapa 4 no dejó ninguna columna en «usar»: sin columnas no hay modelo.",
-          "scheme": "Partición sellada (etapa 6): {esquema}, con {n} filas de entrenamiento. La prueba no entra a esta etapa.",
-          "baseline": "Línea base (etapa 5): en cada pliegue, la que menos cuesta en su entrenamiento; tu regla de hoy compite si la escribiste."
-        },
-        "folds": {
-          "title": "Los pliegues, dentro del entrenamiento",
-          "k": "{k} pliegues con el esquema sellado.",
-          "reduced": "Se pidieron {pedido}; quedan {k} porque {razon}.",
-          "none": "No se pueden armar 2 pliegues porque {razon}.",
-          "reason": {
-            "pocos-periodos": "no alcanzan los periodos",
-            "pocas-unidades": "no alcanzan las unidades",
-            "pocos-casos": "alguna clase tiene muy pocos casos"
-          },
-          "col-fold": "Pliegue",
-          "col-train": "Entrena con",
-          "col-val": "Valida con",
-          "time-note": "Por tiempo, cada pliegue valida un periodo y entrena solo con lo anterior, menos el hueco de tu horizonte; el primer periodo solo enseña."
-        },
-        "verify": {
-          "title": "Verificado en tu tabla",
-          "rows": "Ninguna fila entrena y valida en el mismo pliegue.",
-          "units": "Ninguna unidad tiene filas en los dos lados de un pliegue.",
-          "time": "Ningún entrenamiento está a menos de un horizonte de su validación.",
-          "test": "Ninguna fila de la prueba entra a un pliegue.",
-          "rows-bad": "{n} filas entrenan y validan en el mismo pliegue.",
-          "units-bad": "{n} unidades tienen filas en los dos lados de un pliegue.",
-          "time-bad": "{n} filas de entrenamiento están a menos de un horizonte de su validación.",
-          "test-bad": "{n} filas que no son del entrenamiento entraron a un pliegue."
-        },
-        "run": {
-          "button": "Correr la liga",
-          "again": "Volver a correr la liga",
-          "loading": "Preparando Python en tu navegador…",
-          "cv": "Validación cruzada: modelo {i} de {n} ({modelo}).",
-          "perm": "Permutaciones: {i} de {n}.",
-          "cancel": "Cancelar",
-          "cancelled": "Cancelaste la corrida; nada se registró.",
-          "error": "La liga no pudo correr ({motivo}); nada se registró.",
-          "note": "Corre en tu navegador: tus datos no viajan a ningún servidor. Con muchas filas puede tardar unos minutos."
-        },
-        "league": {
-          "title": "La liga",
-          "caption": "{metrica} en validación cruzada: medida de selección",
-          "col-model": "Modelo",
-          "col-score": "Puntaje (± desvío)",
-          "winner": "ganador",
-          "best": "mejor puntaje",
-          "no-converge": "no convergió",
-          "error": "falló",
-          "note": "Medida de selección: es el puntaje con que se elige, y es optimista, porque el ganador ganó justo en estos pliegues. La medida sin sesgo es la prueba, que la etapa 8 abre una sola vez."
-        },
-        "why": {
-          "title": "Por qué ganó",
-          "same": "{ganador} tuvo el mejor puntaje ({puntaje}), y no hay uno más simple a menos de un error estándar ({ee}).",
-          "simpler": "El mejor puntaje fue de {mejor} ({puntaje}). {ganador} quedó a menos de un error estándar ({ee}) y es más simple: una diferencia más chica que el ruido entre pliegues no justifica algo más complicado."
-        },
-        "ref": {
-          "nunca-actuar": "Nunca actuar",
-          "siempre-actuar": "Siempre actuar",
-          "clase-mayoritaria": "La clase más frecuente",
-          "opcion-barata": "La opción fija más barata",
-          "mediana": "La mediana",
-          "media": "El promedio",
-          "cuantil": "El cuantil de tus costos",
-          "ultimo-valor": "El último valor de la unidad",
-          "regla": "Tu regla de hoy"
-        },
-        "compare": {
-          "title": "Contra lo que ya se logra sin modelo",
-          "caption": "Costo por cada 100 decisiones, en la validación de cada pliegue",
-          "col-fold": "Pliegue",
-          "col-base": "Línea base del pliegue",
-          "col-base-cost": "Su costo",
-          "col-winner-cost": "Costo del ganador",
-          "diff": "Línea base menos ganador, por cada 100 decisiones: {media} en promedio (intervalo del 95 %: de {bajo} a {alto}).",
-          "supera": "Supera a la línea base: el intervalo entero queda por encima de cero.",
-          "no-supera": "No supera a la línea base: el intervalo toca o cruza el cero. Queda escrito, y la etapa 8 medirá los dos en la prueba.",
-          "note": "Los pliegues comparten filas de entrenamiento: el intervalo es optimista y, con pocos pliegues, ancho."
-        },
-        "perm": {
-          "title": "¿Hay señal o solo azar?",
-          "result": "Con las etiquetas barajadas {n} veces, {m} lo hicieron igual o mejor que el ganador: p = {p}.",
-          "resolution": "Con {n} permutaciones, el p más chico posible es {res}.",
-          "senal": "Hay señal: casi ningún barajado lo hizo igual o mejor (p ≤ 0.05, una convención).",
-          "sin-senal": "Sin señal clara: con las etiquetas al azar se logra lo mismo a menudo; lo que encontró puede ser azar.",
-          "failed": "{n} permutaciones no se pudieron puntuar y no cuentan."
-        },
-        "check": {
-          "sello_6": "Sello de la prueba (etapa 6)",
-          "esquema": "Esquema",
-          "razon_k": "Por qué ese número de pliegues",
-          "huella_pliegues": "Huella de los pliegues",
-          "semilla": "Semilla de los pliegues",
-          "n_entrenamiento": "Filas de entrenamiento",
-          "k_pedido": "Pliegues pedidos",
-          "k": "Pliegues",
-          "solape_filas": "Filas en los dos lados de un pliegue",
-          "solape_unidades": "Unidades en los dos lados de un pliegue",
-          "validacion_antes": "Entrenamiento a menos de un horizonte de su validación",
-          "fuera_entrenamiento": "Filas fuera del entrenamiento en un pliegue",
-          "columnas_numericas": "Columnas numéricas",
-          "columnas_categoricas": "Columnas de categorías",
-          "base_ids": "Línea base de cada pliegue",
-          "pliegue_entrenamiento": "Filas que entrenan, por pliegue",
-          "pliegue_validacion": "Filas que validan, por pliegue",
-          "base_costo": "Costo de la línea base por decisión, por pliegue",
-          "metrica": "Métrica de la liga",
-          "roster": "Modelos de la liga",
-          "liga_estados": "Estado de cada modelo",
-          "liga_cv": "Puntaje de validación cruzada (medida de selección)",
-          "ganador": "Ganador",
-          "mejor": "Mejor puntaje",
-          "ee": "Error estándar del mejor",
-          "ganador_pliegues": "Puntaje del ganador, por pliegue",
-          "ganador_costo": "Costo del ganador por decisión, por pliegue",
-          "diferencia_media": "Línea base menos ganador, por decisión",
-          "diferencia_ee": "Error estándar de la diferencia",
-          "ic_bajo": "Intervalo del 95 %, desde",
-          "ic_alto": "Intervalo del 95 %, hasta",
-          "veredicto": "Contra la línea base",
-          "perm_n": "Permutaciones",
-          "perm_fallidas": "Permutaciones que no se pudieron puntuar",
-          "perm_mejores": "Permutaciones igual o mejor que el ganador",
-          "perm_observado": "Puntaje del ganador (observado)",
-          "perm_p": "Valor p",
-          "senal": "Señal"
-        },
         "missing": {
           "etapas-previas": "las etapas 1 a 6 cumplidas",
           "sello": "la prueba de la etapa 6 sellada con el mismo sello",

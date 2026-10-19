@@ -1,0 +1,140 @@
+{
+  "protocol": {
+    "stage": {
+      "7": {
+        "need-data": "Esta etapa usa tus datos y las etapas 1 a 6: cárgalos y cúmplelas primero.",
+        "inherit": {
+          "title": "Lo que hereda de tus etapas",
+          "columns": "Columnas en «usar» (etapa 4): {n}. {lista}.",
+          "no-columns": "La etapa 4 no dejó ninguna columna en «usar»: sin columnas no hay modelo.",
+          "scheme": "Partición sellada (etapa 6): {esquema}, con {n} filas de entrenamiento. La prueba no entra a esta etapa.",
+          "baseline": "Línea base (etapa 5): en cada pliegue, la que menos cuesta en su entrenamiento; tu regla de hoy compite si la escribiste."
+        },
+        "folds": {
+          "title": "Los pliegues, dentro del entrenamiento",
+          "k": "{k} pliegues con el esquema sellado.",
+          "reduced": "Se pidieron {pedido}; quedan {k} porque {razon}.",
+          "none": "No se pueden armar 2 pliegues porque {razon}.",
+          "reason": {
+            "pocos-periodos": "no alcanzan los periodos",
+            "pocas-unidades": "no alcanzan las unidades",
+            "pocos-casos": "alguna clase tiene muy pocos casos"
+          },
+          "col-fold": "Pliegue",
+          "col-train": "Entrena con",
+          "col-val": "Valida con",
+          "time-note": "Por tiempo, cada pliegue valida un periodo y entrena solo con lo anterior, menos el hueco de tu horizonte; el primer periodo solo enseña."
+        },
+        "verify": {
+          "title": "Verificado en tu tabla",
+          "rows": "Ninguna fila entrena y valida en el mismo pliegue.",
+          "units": "Ninguna unidad tiene filas en los dos lados de un pliegue.",
+          "time": "Ningún entrenamiento está a menos de un horizonte de su validación.",
+          "test": "Ninguna fila de la prueba entra a un pliegue.",
+          "rows-bad": "{n} filas entrenan y validan en el mismo pliegue.",
+          "units-bad": "{n} unidades tienen filas en los dos lados de un pliegue.",
+          "time-bad": "{n} filas de entrenamiento están a menos de un horizonte de su validación.",
+          "test-bad": "{n} filas que no son del entrenamiento entraron a un pliegue."
+        },
+        "run": {
+          "button": "Correr la liga",
+          "again": "Volver a correr la liga",
+          "loading": "Preparando Python en tu navegador…",
+          "cv": "Validación cruzada: modelo {i} de {n} ({modelo}).",
+          "perm": "Permutaciones: {i} de {n}.",
+          "cancel": "Cancelar",
+          "cancelled": "Cancelaste la corrida; nada se registró.",
+          "error": "La liga no pudo correr ({motivo}); nada se registró.",
+          "note": "Corre en tu navegador: tus datos no viajan a ningún servidor. Con muchas filas puede tardar unos minutos."
+        },
+        "league": {
+          "title": "La liga",
+          "caption": "{metrica} en validación cruzada: medida de selección",
+          "col-model": "Modelo",
+          "col-score": "Puntaje (± desvío)",
+          "winner": "ganador",
+          "best": "mejor puntaje",
+          "no-converge": "no convergió",
+          "error": "falló",
+          "note": "Medida de selección: es el puntaje con que se elige, y es optimista, porque el ganador ganó justo en estos pliegues. La medida sin sesgo es la prueba, que la etapa 8 abre una sola vez."
+        },
+        "why": {
+          "title": "Por qué ganó",
+          "same": "{ganador} tuvo el mejor puntaje ({puntaje}), y no hay uno más simple a menos de un error estándar ({ee}).",
+          "simpler": "El mejor puntaje fue de {mejor} ({puntaje}). {ganador} quedó a menos de un error estándar ({ee}) y es más simple: una diferencia más chica que el ruido entre pliegues no justifica algo más complicado."
+        },
+        "ref": {
+          "nunca-actuar": "Nunca actuar",
+          "siempre-actuar": "Siempre actuar",
+          "clase-mayoritaria": "La clase más frecuente",
+          "opcion-barata": "La opción fija más barata",
+          "mediana": "La mediana",
+          "media": "El promedio",
+          "cuantil": "El cuantil de tus costos",
+          "ultimo-valor": "El último valor de la unidad",
+          "regla": "Tu regla de hoy"
+        },
+        "compare": {
+          "title": "Contra lo que ya se logra sin modelo",
+          "caption": "Costo por cada 100 decisiones, en la validación de cada pliegue",
+          "col-fold": "Pliegue",
+          "col-base": "Línea base del pliegue",
+          "col-base-cost": "Su costo",
+          "col-winner-cost": "Costo del ganador",
+          "diff": "Línea base menos ganador, por cada 100 decisiones: {media} en promedio (intervalo del 95 %: de {bajo} a {alto}).",
+          "supera": "Supera a la línea base: el intervalo entero queda por encima de cero.",
+          "no-supera": "No supera a la línea base: el intervalo toca o cruza el cero. Queda escrito, y la etapa 8 medirá los dos en la prueba.",
+          "note": "Los pliegues comparten filas de entrenamiento: el intervalo es optimista y, con pocos pliegues, ancho."
+        },
+        "perm": {
+          "title": "¿Hay señal o solo azar?",
+          "result": "Con las etiquetas barajadas {n} veces, {m} lo hicieron igual o mejor que el ganador: p = {p}.",
+          "resolution": "Con {n} permutaciones, el p más chico posible es {res}.",
+          "senal": "Hay señal: casi ningún barajado lo hizo igual o mejor (p ≤ 0.05, una convención).",
+          "sin-senal": "Sin señal clara: con las etiquetas al azar se logra lo mismo a menudo; lo que encontró puede ser azar.",
+          "failed": "{n} permutaciones no se pudieron puntuar y no cuentan."
+        },
+        "check": {
+          "sello_6": "Sello de la prueba (etapa 6)",
+          "esquema": "Esquema",
+          "razon_k": "Por qué ese número de pliegues",
+          "huella_pliegues": "Huella de los pliegues",
+          "semilla": "Semilla de los pliegues",
+          "n_entrenamiento": "Filas de entrenamiento",
+          "k_pedido": "Pliegues pedidos",
+          "k": "Pliegues",
+          "solape_filas": "Filas en los dos lados de un pliegue",
+          "solape_unidades": "Unidades en los dos lados de un pliegue",
+          "validacion_antes": "Entrenamiento a menos de un horizonte de su validación",
+          "fuera_entrenamiento": "Filas fuera del entrenamiento en un pliegue",
+          "columnas_numericas": "Columnas numéricas",
+          "columnas_categoricas": "Columnas de categorías",
+          "base_ids": "Línea base de cada pliegue",
+          "pliegue_entrenamiento": "Filas que entrenan, por pliegue",
+          "pliegue_validacion": "Filas que validan, por pliegue",
+          "base_costo": "Costo de la línea base por decisión, por pliegue",
+          "metrica": "Métrica de la liga",
+          "roster": "Modelos de la liga",
+          "liga_estados": "Estado de cada modelo",
+          "liga_cv": "Puntaje de validación cruzada (medida de selección)",
+          "ganador": "Ganador",
+          "mejor": "Mejor puntaje",
+          "ee": "Error estándar del mejor",
+          "ganador_pliegues": "Puntaje del ganador, por pliegue",
+          "ganador_costo": "Costo del ganador por decisión, por pliegue",
+          "diferencia_media": "Línea base menos ganador, por decisión",
+          "diferencia_ee": "Error estándar de la diferencia",
+          "ic_bajo": "Intervalo del 95 %, desde",
+          "ic_alto": "Intervalo del 95 %, hasta",
+          "veredicto": "Contra la línea base",
+          "perm_n": "Permutaciones",
+          "perm_fallidas": "Permutaciones que no se pudieron puntuar",
+          "perm_mejores": "Permutaciones igual o mejor que el ganador",
+          "perm_observado": "Puntaje del ganador (observado)",
+          "perm_p": "Valor p",
+          "senal": "Señal"
+        }
+      }
+    }
+  }
+}

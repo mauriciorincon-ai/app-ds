@@ -25,7 +25,11 @@ import {
   TERMINO_IDS,
 } from "@/engine/protocolo/ids";
 import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
-import { translate } from "@/i18n/translate";
+import { TEXTOS_ETAPA_4 } from "@/components/protocolo/textos/etapa4";
+import { TEXTOS_ETAPA_5 } from "@/components/protocolo/textos/etapa5";
+import { TEXTOS_ETAPA_6 } from "@/components/protocolo/textos/etapa6";
+import { TEXTOS_ETAPA_7 } from "@/components/protocolo/textos/etapa7";
+import { resolve, translate } from "@/i18n/translate";
 import type { RechazoArchivo } from "@/lib/protocolo/archivo";
 import { avisoDeRechazoArchivo } from "@/lib/protocolo/useProtocolo";
 
@@ -147,20 +151,27 @@ describe("contenido del Protocolo {es, en}", () => {
       6: CLAVES_6,
       7: CLAVES_7,
     } as const;
+    // S13: desde la etapa 4 las etiquetas viajan con la forma (messages/etapas/), no con la página
+    const DE_LA_FORMA: Record<string, typeof TEXTOS_ETAPA_4> = {
+      4: TEXTOS_ETAPA_4,
+      5: TEXTOS_ETAPA_5,
+      6: TEXTOS_ETAPA_6,
+      7: TEXTOS_ETAPA_7,
+    };
+    const etiquetaFalta = (l: "es" | "en", n: string, clave: string) => {
+      const propio = DE_LA_FORMA[n];
+      return propio
+        ? resolve(propio[l], clave) === clave
+        : translate(l, clave) === clave;
+    };
     const faltan: string[] = [];
     for (const [n, claves] of Object.entries(etapas))
       for (const l of IDIOMAS) {
         for (const id of claves.respuestas)
-          if (
-            translate(l, `protocol.stage.${n}.field.${id}`) ===
-            `protocol.stage.${n}.field.${id}`
-          )
+          if (etiquetaFalta(l, n, `protocol.stage.${n}.field.${id}`))
             faltan.push(`${l} etapa ${n} respuesta ${id}`);
         for (const id of claves.chequeos)
-          if (
-            translate(l, `protocol.stage.${n}.check.${id}`) ===
-            `protocol.stage.${n}.check.${id}`
-          )
+          if (etiquetaFalta(l, n, `protocol.stage.${n}.check.${id}`))
             faltan.push(`${l} etapa ${n} chequeo ${id}`);
       }
     expect(faltan, "campos sin etiqueta").toEqual([]);
@@ -310,6 +321,12 @@ describe("contenido del Protocolo {es, en}", () => {
     const textos = [
       ...planos(CONTENIDO_ETAPAS),
       ...planos(GLOSARIO),
+      ...[
+        TEXTOS_ETAPA_4,
+        TEXTOS_ETAPA_5,
+        TEXTOS_ETAPA_6,
+        TEXTOS_ETAPA_7,
+      ].flatMap((t) => IDIOMAS.flatMap((l) => planos(t[l]))),
       ...IDIOMAS.flatMap((l) =>
         planos(
           (

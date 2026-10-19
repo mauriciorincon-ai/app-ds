@@ -1,0 +1,75 @@
+{
+  "protocol": {
+    "stage": {
+      "5": {
+        "need-data": "Esta etapa usa tus datos y las etapas 1 a 4: cárgalos y cúmplelas primero.",
+        "no-base": "No se pudo calcular lo que se logra sin modelo con lo que registraste en las etapas 1 y 2. Corrígelas y vuelve.",
+        "today": "Lo que se hace hoy, según tu etapa 1",
+        "pick": "Elige…",
+        "table": {
+          "caption": "Lo que ya se logra sin modelo",
+          "col-ref": "Forma de decidir",
+          "col-cost": "Costo por cada 100 decisiones ({unit})",
+          "col-hits": "Aciertos de cada 100",
+          "majority": "La más frecuente en tus filas",
+          "rule": "Tu regla de hoy",
+          "note": "Es una referencia, no un resultado: se mide sobre todas tus {rows} filas. La etapa 8 la vuelve a medir sobre la prueba."
+        },
+        "no-previous": "{n} filas no tienen un valor anterior de su unidad (la primera de cada una, o sin unidad o sin fecha): ahí «el último valor» usa la mediana.",
+        "rule": {
+          "legend": "¿Hay una regla que se aplica hoy?",
+          "help": "Lo que tu gente hace hoy, sin modelo. Si no hay ninguna, dilo: el modelo competirá contra la mejor referencia de arriba.",
+          "hay": "Sí, hay una regla que se aplica hoy",
+          "ninguna": "No, hoy no hay regla",
+          "only-use": "Solo ves las columnas que dejaste en «usar» en la etapa 4: una regla que mira lo que se llena después del resultado también «acertaría», y no sirve para decidir.",
+          "no-usable": "La etapa 4 no dejó ninguna columna en «usar»: no hay con qué escribir una regla. Di que no hay regla o corrige la etapa 4.",
+          "condition": "Condición {n}",
+          "column": "Columna",
+          "operator": "Operador",
+          "value": "Valor",
+          "many-values": "La columna tiene {n} valores distintos: escribe el valor exacto, tal como está en tu archivo.",
+          "add": "Añadir otra condición",
+          "remove": "Quitar la segunda condición",
+          "union": "Cómo se unen las dos condiciones",
+          "union-y": "Y: se cumplen las dos",
+          "union-o": "O: basta con que se cumpla una",
+          "binary": "Si la regla se cumple, se actúa; si no, no se actúa.",
+          "then": "Si la regla se cumple, se elige",
+          "otherwise": "Si la regla no se cumple, se elige",
+          "then-num": "Si la regla se cumple, se estima",
+          "otherwise-num": "Si la regla no se cumple, se estima",
+          "measure": "La regla se cumple en {cumple} de {filas} filas.",
+          "empties": "En {vacios} filas alguna de estas columnas no tiene valor: ahí la condición no se cumple, tampoco «distinto de».",
+          "incomplete": "Completa la condición para medirla.",
+          "outputs-missing": "Elige qué se hace cuando se cumple y cuando no para ver cuánto cuesta."
+        },
+        "field": {
+          "regla": "¿Hay una regla de hoy?",
+          "regla_columnas": "Columnas de la regla",
+          "regla_operadores": "Operadores de la regla",
+          "regla_valores": "Valores de la regla",
+          "regla_union": "Unión de las condiciones",
+          "regla_si": "Si se cumple la regla",
+          "regla_no": "Si no se cumple la regla"
+        },
+        "check": {
+          "filas": "Filas medidas",
+          "base_ids": "Referencias medidas",
+          "base_costo": "Costo por decisión de cada referencia",
+          "base_metrica": "Métrica estándar de cada referencia",
+          "base_aciertos": "Parte de aciertos de cada referencia",
+          "base_mayoritaria": "Referencia que es la más frecuente",
+          "clase_mayoritaria": "Clase más frecuente",
+          "opcion_barata": "Opción fija más barata",
+          "base_n_sin_anterior": "Filas sin valor anterior de su unidad",
+          "regla_tipos": "Tipo de cada columna de la regla",
+          "regla_cumple": "Filas donde se cumple la regla",
+          "regla_vacios": "Filas con alguna columna de la regla sin valor",
+          "regla_costo": "Costo por decisión de la regla",
+          "regla_metrica": "Métrica estándar de la regla",
+          "regla_aciertos": "Parte de aciertos de la regla"
+        }
+      }
+    }
+  }
+}

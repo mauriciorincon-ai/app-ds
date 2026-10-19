@@ -17,7 +17,7 @@ import {
 } from "@/engine/protocolo/etapa4";
 import type { DatosEtapa } from "@/engine/protocolo/etapas";
 import { booleano, lista, texto } from "@/engine/protocolo/valores";
-import { useI18n } from "@/i18n/provider";
+import { useTextosEtapa } from "@/i18n/textos-etapa";
 import {
   claveApuesta,
   fijarApuesta,
@@ -30,6 +30,7 @@ import { CampoCasillas, CampoOpciones } from "./campos";
 import { type PropsFormulario } from "./formulario-base";
 import { Inventario, type AvisoVivo } from "./Etapa4Inventario";
 import { Revelacion } from "./Etapa4Revelacion";
+import { TEXTOS_ETAPA_4 } from "./textos/etapa4";
 
 type Fase = "apuesta" | "calculando" | "revelada";
 type Modo = "algunas" | "ninguna";
@@ -71,7 +72,7 @@ function apuestaInicial(
 }
 
 export function Etapa4Form(props: PropsFormulario) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_4);
   const { datos, previas } = props;
   if (!datos || !previas[1] || !previas[2] || !previas[3]) {
     return <p className="text-sm text-ink-muted">{t(k("need-data"))}</p>;
@@ -88,7 +89,7 @@ function Etapa4Contenido({
   onRegistrar,
   clave,
 }: PropsFormulario & { datos: DatosCargados; clave: string }) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_4);
   const id = useId();
   const tabla = datos.tabla;
   const objetivo = texto(previas[2]?.respuestas ?? {}, "objetivo");

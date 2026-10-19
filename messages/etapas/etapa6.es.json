@@ -1,0 +1,116 @@
+{
+  "protocol": {
+    "stage": {
+      "6": {
+        "need-data": "Esta etapa usa tus datos y las etapas 1 a 5: cárgalos y cúmplelas primero.",
+        "no-design": "No se pudo leer en estos datos el objetivo que registraste en la etapa 2. Corrígela y vuelve.",
+        "pick": "Elige…",
+        "suggest": {
+          "title": "Lo que sugiere la app",
+          "pending": "Responde la pregunta de las unidades y la app te dirá qué esquema conviene.",
+          "estratificada": "Estratificada: al azar, guardando en los dos lados la proporción de cada clase (con una cantidad, de cada tramo de valores).",
+          "grupo": "Por grupo: cada unidad queda entera de un solo lado.",
+          "tiempo": "Por tiempo: la prueba son tus fechas más recientes, con un hueco del tamaño de tu horizonte antes de ellas.",
+          "tiempo-grupo": "Por tiempo y por grupo: la prueba son tus fechas más recientes, y el entrenamiento deja fuera toda la historia de las unidades que están en ella.",
+          "why-estratificada": "Tu etapa 2 no registró una fecha ni una unidad que se repita: no hay un orden ni grupos que respetar.",
+          "why-grupo": "En tu etapa 2, la unidad «{unidad}» se repite en varias filas: si una misma unidad queda en los dos lados, el modelo se evalúa con lo que ya vio.",
+          "why-tiempo": "En tu etapa 2 registraste la fecha «{fecha}»: el modelo se usará con el pasado para decidir lo que viene, y la prueba tiene que imitarlo.",
+          "why-tiempo-grupo": "Registraste una fecha y una unidad que se repite, y dijiste que el modelo se usará con unidades nuevas: la prueba tiene que ser futura y de unidades que el modelo no vio.",
+          "why-tiempo-conocidas": "Registraste una fecha y una unidad que se repite, y dijiste que el modelo se usará con las mismas unidades: basta con que la prueba sea futura."
+        },
+        "form": {
+          "units": "¿Tu modelo se usará con unidades nuevas o con las que ya conoces?",
+          "units-help": "Con una fecha y una unidad que se repite, el esquema depende de esto, y la app no lo puede saber.",
+          "units-nuevas": "Con unidades nuevas, que el modelo no vio",
+          "units-conocidas": "Con las mismas unidades, más adelante en el tiempo",
+          "scheme": "Esquema de partición",
+          "suggested": "sugerido",
+          "reason": "¿Por qué eliges otro esquema que el sugerido?",
+          "reason-help": "Queda en tu cuaderno junto al sugerido.",
+          "size": "Tamaño de la prueba (de cada 100 filas)",
+          "size-help": "Un número entero entre {min} y {max}; se sugiere {sugerido}.",
+          "horizon": "Horizonte: cuánto tarda en conocerse el resultado",
+          "horizon-help": "Ese tiempo queda como hueco entre entrenamiento y prueba. Escribe 0 si el resultado se conoce en el momento de decidir.",
+          "horizon-unit": "Unidad del horizonte"
+        },
+        "table": {
+          "caption": "Cómo quedan tus filas",
+          "note": "Solo conteos y rangos: ninguna fila de la prueba se muestra.",
+          "col-side": "Lado",
+          "col-rows": "Filas",
+          "col-units": "Unidades",
+          "col-dates": "Fechas",
+          "col-classes": "Clases",
+          "entrenamiento": "Entrenamiento",
+          "hueco": "Hueco",
+          "prueba": "Prueba",
+          "fuera": "Fuera",
+          "range": "{desde} a {hasta}",
+          "real-size": "La prueba queda con {n} de {total} filas con objetivo ({pct} de cada 100).",
+          "cut": "La prueba empieza el {corte}.",
+          "out-sin-objetivo": "{n} sin objetivo",
+          "out-sin-fecha": "{n} sin fecha",
+          "out-sin-unidad": "{n} sin unidad",
+          "out-unidades-prueba": "{n} de unidades que están en la prueba"
+        },
+        "verify": {
+          "title": "Verificado en tu tabla",
+          "rows": "Ninguna fila está en dos lados.",
+          "units": "Ninguna unidad tiene filas en entrenamiento y en prueba.",
+          "time": "Ninguna fila de entrenamiento está a menos de un horizonte de la prueba.",
+          "rows-bad": "{n} filas están en más de un lado.",
+          "units-bad": "{n} unidades tienen filas en entrenamiento y en prueba.",
+          "time-bad": "{n} filas de entrenamiento son de tus fechas más recientes (desde el {corte}), las que una partición por tiempo dejaría para la prueba."
+        },
+        "seal": {
+          "title": "Sello de la prueba",
+          "value": "Sello: {sello}…",
+          "note": "Sale de tus datos, del esquema, de sus parámetros y de qué filas son la prueba. Si algo de eso cambia, el sello no cuadra y la etapa 7 no abre. Es higiene y trazabilidad, no una promesa: dice que la prueba es la misma, no que nadie la haya mirado.",
+          "none": "Sin sellos en este cuaderno.",
+          "count": "Pruebas distintas selladas en este cuaderno: {n}. Sellar otra distinta suma una: cada partición distinta es otra forma de mirar.",
+          "pending": "El sello aparece cuando el esquema y sus parámetros están completos."
+        },
+        "field": {
+          "unidades": "Unidades con que se usará el modelo",
+          "esquema": "Esquema elegido",
+          "razon": "Razón para no usar el sugerido",
+          "tamano": "Tamaño de la prueba (de cada 100 filas)",
+          "horizonte": "Horizonte",
+          "horizonte_unidad": "Unidad del horizonte"
+        },
+        "check": {
+          "filas": "Filas de la tabla",
+          "filas_objetivo": "Filas con objetivo",
+          "disponibles": "Esquemas que tus datos permiten",
+          "pregunta_unidades": "Hubo que preguntar por las unidades",
+          "sugerido": "Esquema sugerido",
+          "semilla": "Semilla",
+          "corte": "Primera fecha de la prueba",
+          "n_entrenamiento": "Filas de entrenamiento",
+          "n_prueba": "Filas de prueba",
+          "n_hueco": "Filas en el hueco",
+          "fuera_sin_objetivo": "Fuera: sin objetivo",
+          "fuera_sin_fecha": "Fuera: sin fecha",
+          "fuera_sin_unidad": "Fuera: sin unidad",
+          "fuera_unidades_prueba": "Fuera: historia de unidades de la prueba",
+          "unidades_entrenamiento": "Unidades en entrenamiento",
+          "unidades_prueba": "Unidades en prueba",
+          "fecha_min_entrenamiento": "Primera fecha de entrenamiento",
+          "fecha_max_entrenamiento": "Última fecha de entrenamiento",
+          "fecha_min_prueba": "Primera fecha de prueba",
+          "fecha_max_prueba": "Última fecha de prueba",
+          "clases_entrenamiento": "Clases en entrenamiento",
+          "clases_prueba": "Clases en prueba",
+          "solape_filas": "Filas en más de un lado",
+          "solape_unidades": "Unidades en los dos lados",
+          "solape_tiempo": "Filas de entrenamiento a menos de un horizonte de la prueba",
+          "corte_referencia": "Dónde cortaría una partición por tiempo",
+          "recientes_entrenamiento": "Filas de entrenamiento de tus fechas más recientes",
+          "azar_unidades": "Al azar: unidades en los dos lados",
+          "azar_recientes": "Al azar: filas de tus fechas más recientes en entrenamiento",
+          "sello": "Sello de la prueba"
+        }
+      }
+    }
+  }
+}
