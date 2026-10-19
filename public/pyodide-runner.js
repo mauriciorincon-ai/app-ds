@@ -4,12 +4,14 @@
 // entrenar, puntuar, exportar e importar el modelo; la orquestación pura
 // (split/veredicto/fuga/esquema/manifiesto) vive en el hilo principal.
 //
-// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate", payload? }
+// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test", payload? }
 //            out { id, type: "progress"|"result"|"error", ... }  (result lleva command)
 // S5: durante "train" (la liga), pipeline.py llama a un callback JS antes de cada
 // paso y el runner lo reenvía como progress con `detail` {phase, member, index,
 // total}; el hilo principal lo valida con src/workers/contract.ts. S12: "validate" (la etapa 7 del
 // Protocolo DS: la liga SOLO con el entrenamiento sellado y pliegues explícitos) también lo recibe.
+// S13: "test" (la etapa 8: el ganador con todo el entrenamiento, predice la prueba sellada) es el único
+// comando que recibe filas de la prueba; no tiene progreso por pasos.
 //
 // El estado Python (_MODEL en pipeline.py) vive lo que viva este worker: tras
 // entrenar o importar, score/export operan sin re-entrenar.
@@ -26,6 +28,7 @@ const STAGE = {
   train: "training",
   "fit-member": "training",
   validate: "training",
+  test: "scoring",
   score: "scoring",
   // S7 (P13): las etiquetas por fila del agrupamiento, solo para el CSV local.
   "cluster-labels": "exporting",
@@ -63,6 +66,7 @@ function ensureRuntime(post, id) {
         "export-model": pyodide.globals.get("export_model"),
         "import-model": pyodide.globals.get("import_model"),
         validate: pyodide.globals.get("run_validation"),
+        test: pyodide.globals.get("run_test"),
       };
     })();
     // Si la carga falla (red), se limpia para que un reintento re-cargue.

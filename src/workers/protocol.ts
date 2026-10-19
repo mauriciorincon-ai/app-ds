@@ -159,6 +159,49 @@ export type ValidationResult = {
   elapsed_ms: number;
 };
 
+/**
+ * S13 (Protocolo DS, etapa 8): la prueba, abierta una vez. El ÚNICO payload con filas de la prueba: TS
+ * lo arma solo si el sello que da la tabla hoy es el sellado en la etapa 6 (src/lib/protocolo/prueba8.ts).
+ * `train` son TODAS las filas de entrenamiento y `test` las de la prueba, con solo las columnas en «usar»
+ * y el objetivo (`headers`). Python valida un conjunto cerrado de claves y devuelve el sello y la huella
+ * tal cual, para que TS compruebe el eco; no puede rehacer el sello (su receta vive en TS).
+ */
+export type TestPayload = {
+  task: SupervisedTask;
+  headers: string[];
+  train: string[][];
+  test: string[][];
+  target: string;
+  numeric: string[];
+  categorical: string[];
+  seed: number;
+  winner: MemberId;
+  primary_metric: PrimaryMetric;
+  /** La huella del archivo y el sello de la prueba (64 hex): su eco vuelve en el resultado. */
+  huella: string;
+  sello: string;
+  positive?: string;
+  classes?: string[];
+};
+
+export type TestResult = {
+  task: SupervisedTask;
+  classes?: string[];
+  positive_class?: string;
+  winner: MemberId;
+  n_train: number;
+  n_test: number;
+  /** Por fila de la prueba, en su orden. Binaria: 0/1 (1 = «hay que actuar»); varias: el nombre. */
+  pred: (number | string)[];
+  /** Binaria: P(«hay que actuar»); varias: la de la clase predicha; null si el modelo no la da. */
+  proba: number[] | null;
+  /** La métrica de la liga, medida en la prueba (para el optimismo de la selección). */
+  metric: { name: PrimaryMetric; value: number };
+  huella: string;
+  sello: string;
+  elapsed_ms: number;
+};
+
 /** S5 (U1): ajustar UN miembro elegido por el usuario (sin CV: ya eligió). */
 export type FitMemberPayload = Omit<PipelinePayload, "roster" | "cv_k"> & {
   member: MemberId;
@@ -814,6 +857,7 @@ export type ImportResult = { ok: true };
 export type RunnerRequest =
   | { id: number; type: "train"; payload: PipelinePayload | ClusterPayload }
   | { id: number; type: "validate"; payload: ValidationPayload }
+  | { id: number; type: "test"; payload: TestPayload }
   | {
       id: number;
       type: "fit-member";
@@ -847,6 +891,7 @@ export type RunnerResponse =
   // (el lado que LEE del contrato Python → TS, en producción).
   | { id: number; type: "result"; command: "train"; result: unknown }
   | { id: number; type: "result"; command: "validate"; result: unknown }
+  | { id: number; type: "result"; command: "test"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }
