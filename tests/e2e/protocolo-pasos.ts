@@ -202,3 +202,20 @@ export async function correrLiga(page: Page) {
     timeout: 240_000,
   });
 }
+
+/** Etapa 7: correr la liga y registrarla (la 8 abre). */
+export async function cumplirEtapa7(page: Page) {
+  await correrLiga(page);
+  const e7 = page.locator("#etapa-7");
+  await e7.getByRole("button", { name: "Registrar la etapa 7" }).click();
+  await expect(e7.getByText("Cumplida")).toBeVisible();
+}
+
+/** Etapa 8: abrir la prueba en el worker (Pyodide) y esperar la medida. */
+export async function abrirPrueba(page: Page) {
+  const e8 = page.locator("#etapa-8");
+  await e8.getByRole("button", { name: "Abrir la prueba" }).click();
+  await expect(e8.getByTestId("protocolo-medida8")).toBeVisible({
+    timeout: 240_000,
+  });
+}

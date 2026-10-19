@@ -102,6 +102,28 @@ describe("la calibración por tramos", () => {
     expect(c.tramos.every((t) => t.n === 0)).toBe(true);
   });
 
+  it("probabilidades corridas a propósito: la curva y el Brier lo muestran", () => {
+    // 300 casos calibrados: en cada nivel p, pasa una fracción p (a mano, sin azar)
+    const probas: number[] = [];
+    const pasa: (0 | 1)[] = [];
+    for (const p of [0.1, 0.3, 0.5, 0.7, 0.9])
+      for (let i = 0; i < 60; i++) {
+        probas.push(p);
+        pasa.push(i < p * 60 ? 1 : 0);
+      }
+    const bien = calibrar(probas, pasa);
+    const corridas = calibrar(
+      probas.map((p) => Math.min(1, p + 0.25)),
+      pasa,
+    );
+    expect(bien.brier).toBeLessThan(bien.brierBase);
+    expect(corridas.brier).toBeGreaterThan(bien.brier);
+    const brecha = (l: ReturnType<typeof lecturaDe>) =>
+      l ? Math.abs(l.predicho - l.observado) : 0;
+    expect(brecha(lecturaDe(bien.tramos))).toBeLessThan(0.01);
+    expect(brecha(lecturaDe(corridas.tramos))).toBeGreaterThanOrEqual(0.2);
+  });
+
   it("la lectura toma el tramo con soporte más desajustado; uno sin soporte no se lee", () => {
     const tramos = [
       { n: SOPORTE_TRAMO, predicho: 0.1, observado: 0.2 },

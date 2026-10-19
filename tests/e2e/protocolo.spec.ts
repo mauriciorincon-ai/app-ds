@@ -161,7 +161,10 @@ test("la compuerta: la etapa 2 no abre sin la 1, no hay botón de saltar, y 1–
     page.locator("#etapa-7").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator("#etapa-8").getByText("Sin construir"),
+    page.locator("#etapa-8").getByText("Cerrada", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#etapa-9").getByText("Sin construir"),
   ).toBeVisible();
 
   // El cuaderno se escribió solo: una evidencia por etapa.
