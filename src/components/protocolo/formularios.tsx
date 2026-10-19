@@ -28,6 +28,10 @@ const Etapa6Form = dynamic(() =>
 const Etapa7Form = dynamic(() =>
   import("./Etapa7Form").then((m) => m.Etapa7Form),
 );
+// S13: la etapa 8, con el worker que abre la prueba y el envío que la lleva.
+const Etapa8Form = dynamic(() =>
+  import("./Etapa8Form").then((m) => m.Etapa8Form),
+);
 
 export const FORMULARIOS: Readonly<
   Partial<Record<EtapaId, ComponentType<PropsFormulario>>>
@@ -39,4 +43,5 @@ export const FORMULARIOS: Readonly<
   5: Etapa5Form,
   6: Etapa6Form,
   7: Etapa7Form,
+  8: Etapa8Form,
 };

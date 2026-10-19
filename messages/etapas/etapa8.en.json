@@ -1,0 +1,147 @@
+{
+  "protocol": {
+    "stage": {
+      "8": {
+        "need-data": "This stage uses your data and stages 1 to 7: load your data and complete them first.",
+        "opens": {
+          "title": "What gets opened",
+          "test": "The test set stage 6 sealed: {n} rows, seal {sello}.",
+          "train": "Stage 7's winner, {ganador}, is fitted on the {n} training rows and predicts the test set.",
+          "columns": "Using the columns in «use» ({n}): {lista}.",
+          "once": "The test set opens once. What you see here can no longer be used to pick another model unnoticed: if you open it again with a different setup, the notebook labels it.",
+          "count": "You've already opened it with {count} different setups.",
+          "count_one": "You've already opened it once.",
+          "seal-bad": "The seal your table gives today isn't the one stage 6 recorded: the test set doesn't open. Check stage 6.",
+          "cannot": "Something is missing to open the test set: stage 7's winner, its metric, or columns in «use»."
+        },
+        "open": {
+          "button": "Open the test set",
+          "again": "Open the test set again",
+          "cancel": "Cancel",
+          "loading": "Getting Python ready in your browser…",
+          "measuring": "Fitting the winner on the training set and measuring the test set…",
+          "cancelled": "You cancelled: the test set wasn't opened and nothing was recorded.",
+          "error": "The test set couldn't be opened ({motivo}); nothing was recorded.",
+          "note": "It runs in your browser: neither the test set nor the rest of your data travels to any server."
+        },
+        "measure": {
+          "title": "The measurement on the test set",
+          "col-who": "Who decides",
+          "col-cost": "Cost per 100 decisions",
+          "col-interval": "95% interval",
+          "winner": "{ganador}, the winner",
+          "base": "No model: {base}",
+          "rule": "Your current rule",
+          "interval": "{bajo} to {alto}",
+          "no-rule": "In stage 5 you said there's no current rule: there's nothing to compare it with.",
+          "how": "With stage 1's costs and threshold. The interval resamples {conglomerado} {b} times with a fixed seed: the same file always gives the same interval.",
+          "cluster": {
+            "fila": "rows",
+            "unidad": "whole units (rows from the same unit aren't independent)",
+            "fecha": "whole dates (rows from the same date aren't independent)"
+          },
+          "optimism": "Selection score (stage 7): {seleccion} in {metrica}. On the test set, the same metric gives {prueba}.",
+          "optimism-gap": "Selection optimism: {optimismo}.",
+          "optimism-none": "No optimism: the winner did as well or better on the test set than at selection."
+        },
+        "segments": {
+          "title": "Error by segment",
+          "global": "Over the whole test set, the winner costs {costo} per 100 decisions.",
+          "col-segment": "Segment",
+          "col-rows": "Rows",
+          "col-cases": "«{clase}» cases",
+          "col-cost": "Cost per 100",
+          "col-read": "Reading",
+          "supported": "supported",
+          "unsupported": "not enough support",
+          "worst": "the worst",
+          "none": "No segment has enough support: the test set can't be read in parts.",
+          "empty": "There are no segments to read: no date, no categories with 2 to 8 values, and no numeric columns in «use».",
+          "rule-cases": "Minimum support: {filas} rows and {casos} cases of the less frequent class. A segment without support is shown, but it's never the worst. It's a convention of this program, not a statistical test.",
+          "rule": "Minimum support: {filas} rows. A segment without support is shown, but it's never the worst. It's a convention of this program, not a statistical test.",
+          "range-open-low": "up to {hasta}",
+          "range": "over {desde} and up to {hasta}",
+          "range-open-high": "over {desde}"
+        },
+        "calibration": {
+          "title": "Calibration",
+          "what-binaria": "What the model said about «action needed», against what happened, in equal-width bins.",
+          "what-multiclase": "How confident the model was in the class it chose, against whether it was right, in equal-width bins.",
+          "col-range": "It said",
+          "col-n": "Cases",
+          "col-said": "On average it said",
+          "col-happened": "It happened",
+          "range": "{desde} to {hasta}%",
+          "brier": "Brier: {brier}. Always saying the base rate would give {base}. Lower is better.",
+          "reading": "When it says between {desde} and {hasta}%, it happens in {observado}% of {n} cases.",
+          "reading-none": "No bin reaches {n} cases: the curve can't be put into words.",
+          "sin-probabilidades": "The winner doesn't give probabilities: its calibration can't be measured. The gate accepts that.",
+          "no-aplica": "When estimating a quantity there are no probabilities to calibrate: it doesn't apply.",
+          "measures": "This stage measures calibration; it doesn't fix the model.",
+          "pct": "{n}%"
+        },
+        "worst": {
+          "title": "The worst cases",
+          "note": "The {n} most expensive mistakes on the test set. They're shown only on your screen: they aren't saved in the notebook, aren't exported, and never leave your browser.",
+          "region": "The worst cases on the test set",
+          "col-row": "Row",
+          "col-truth": "What happened",
+          "col-said": "What the model said",
+          "col-proba": "Probability",
+          "col-cost": "Cost",
+          "empty": "The winner didn't get a single test row wrong."
+        },
+        "pattern": {
+          "label": "Your failure pattern",
+          "help": "In your own words: what do the worst cases have in common? For example, «it fails with new customers from the web channel». Up to {max} characters. It stays in the notebook for the model card in stage 10."
+        },
+        "field": {
+          "patron": "Your failure pattern"
+        },
+        "check": {
+          "sello_6": "Test set seal (stage 6)",
+          "esquema": "Scheme",
+          "conglomerado": "What the interval resamples",
+          "huella_pliegues": "Folds fingerprint (stage 7)",
+          "base_id": "No-model baseline",
+          "clase_rara": "Less frequent class on the test set",
+          "semilla": "Interval seed",
+          "remuestreos": "Interval resamples",
+          "n_entrenamiento": "Training rows",
+          "n_prueba": "Test rows",
+          "seleccion": "Selection score (stage 7)",
+          "base_costo": "Baseline cost per decision",
+          "base_bajo": "Baseline: low end of the interval",
+          "base_alto": "Baseline: high end of the interval",
+          "regla_costo": "Your current rule's cost per decision",
+          "regla_bajo": "Your rule: low end of the interval",
+          "regla_alto": "Your rule: high end of the interval",
+          "columnas_numericas": "Numeric columns",
+          "columnas_categoricas": "Category columns",
+          "seg_n": "Rows per segment",
+          "seg_casos": "Less frequent class cases, per segment",
+          "ganador": "Winner",
+          "metrica": "League metric",
+          "calibracion": "Calibration",
+          "peor_segmento": "Worst segment",
+          "prueba_metrica": "The league metric on the test set",
+          "ganador_costo": "Winner's cost per decision",
+          "ganador_bajo": "Winner: low end of the interval",
+          "ganador_alto": "Winner: high end of the interval",
+          "brier": "Brier",
+          "brier_base": "Base-rate Brier",
+          "peores_n": "Worst cases shown",
+          "aperturas": "Distinct openings of the test set",
+          "optimismo": "Selection optimism",
+          "peor_exceso": "Worst segment's extra cost per decision",
+          "seg_con_soporte": "Supported segments",
+          "cal_lectura": "Bin put into words",
+          "seg_costo": "Winner's cost per decision, per segment",
+          "cal_n": "Cases per calibration bin",
+          "cal_pred": "Average probability said, per bin",
+          "cal_obs": "Observed frequency, per bin"
+        }
+      }
+    }
+  }
+}
