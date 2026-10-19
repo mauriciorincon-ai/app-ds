@@ -6,16 +6,8 @@
 import { readFileSync } from "node:fs";
 import { registrar } from "@/engine/protocolo/compuerta";
 import { datosEtapa7, plan7, type Corrida7 } from "@/engine/protocolo/etapa7";
-import {
-  ETAPA_8,
-  plan8,
-  type Corrida8,
-  type Plan8,
-} from "@/engine/protocolo/etapa8";
-import type {
-  DatosEtapa,
-  DefinicionProtocolo,
-} from "@/engine/protocolo/etapas";
+import { plan8, type Corrida8, type Plan8 } from "@/engine/protocolo/etapa8";
+import type { DatosEtapa } from "@/engine/protocolo/etapas";
 import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
 import { envio7 } from "@/lib/protocolo/liga7";
 import { envio8 } from "@/lib/protocolo/prueba8";
@@ -32,11 +24,6 @@ import {
   armar6,
   type Armado,
 } from "./protocolo-etapa4-helpers";
-
-/** El Protocolo con la etapa 8 construida (en el S13 se registra en `PROTOCOLO_DS` al final de la F2). */
-export const PROTOCOLO8: DefinicionProtocolo = PROTOCOLO_DS.map((e) =>
-  e.id === 8 ? ETAPA_8 : e,
-);
 
 export const armarCredito6 = () =>
   armar6(

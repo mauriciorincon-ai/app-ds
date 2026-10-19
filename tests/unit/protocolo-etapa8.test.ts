@@ -30,6 +30,7 @@ import { SEMILLA_8 } from "@/engine/protocolo/bootstrap";
 import type { DatosEtapa, Previas } from "@/engine/protocolo/etapas";
 import { cuantilEmpirico } from "@/engine/protocolo/tabla";
 import { empaquetar, leerArchivo } from "@/lib/protocolo/archivo";
+import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
 import { envio8 } from "@/lib/protocolo/prueba8";
 import {
   AHORA,
@@ -41,7 +42,6 @@ import {
 } from "./protocolo-etapa4-helpers";
 import {
   HUELLA,
-  PROTOCOLO8,
   armarBajas6,
   armarCredito7,
   armarPlanes6,
@@ -67,7 +67,7 @@ const datosDe = (
 const DATOS = datosDe(CREDITO, CORRIDA);
 
 function registrado(): Cuaderno {
-  const r = registrar(PROTOCOLO8, CREDITO.cuaderno, 8, DATOS, {
+  const r = registrar(PROTOCOLO_DS, CREDITO.cuaderno, 8, DATOS, {
     huella: HUELLA,
     tabla: CREDITO.tabla,
     ahora: AHORA,
@@ -77,7 +77,7 @@ function registrado(): Cuaderno {
 }
 
 const estados = (cuaderno: Cuaderno) =>
-  evaluar(PROTOCOLO8, cuaderno, HUELLA, CREDITO.tabla).map((e) =>
+  evaluar(PROTOCOLO_DS, cuaderno, HUELLA, CREDITO.tabla).map((e) =>
     e.estado.tipo === "por-verificar"
       ? `por-verificar:${e.estado.motivo}`
       : e.estado.tipo,
@@ -206,6 +206,23 @@ describe("el plan de la etapa 8 sobre el kit", () => {
       positive: "1",
     });
   });
+  it("bajas: el envío lleva las filas selladas de cada lado, en su orden, y ninguna del hueco", () => {
+    const b = con7(armarBajas6(), "logistic", "auc", 0.7);
+    const plan = plan8(b.tabla, b.previas, HUELLA)!;
+    const e = envio8(b.tabla, plan, HUELLA)!;
+    const { entrenamiento, prueba, hueco } = plan.plan7.particion;
+    const columnas = e.payload.headers.map((h) => b.tabla.headers.indexOf(h));
+    const fila = (f: number) => columnas.map((j) => b.tabla.rows[f]![j]!);
+    expect(e.payload.train).toEqual(entrenamiento.map(fila));
+    expect(e.payload.test).toEqual(prueba.map(fila));
+    const enviadas = new Set([...entrenamiento, ...prueba]);
+    expect(hueco.length).toBeGreaterThan(0);
+    expect(hueco.filter((f) => enviadas.has(f))).toEqual([]);
+    // la unidad y la fecha no viajan: no están en «usar»
+    expect(e.payload.headers).not.toContain("cliente_id");
+    expect(e.payload.headers).not.toContain("mes_observado");
+  });
+
   it("varias clases mandan sus clases en orden y ninguna «hay que actuar»; un número, ni lo uno ni lo otro", () => {
     const planes = con7(armarPlanes6(), "logistic", "balanced_accuracy", 0.6);
     const e = envio8(
@@ -246,7 +263,7 @@ describe("la compuerta de la etapa 8", () => {
       tipo: "falta",
       faltan: ["patron"],
     });
-    const r = registrar(PROTOCOLO8, CREDITO.cuaderno, 8, sinPatron, {
+    const r = registrar(PROTOCOLO_DS, CREDITO.cuaderno, 8, sinPatron, {
       huella: HUELLA,
       tabla: CREDITO.tabla,
       ahora: AHORA,
@@ -351,7 +368,7 @@ describe("la compuerta de la etapa 8", () => {
       const archivo = JSON.parse(empaquetar(registrado(), AHORA)) as Archivo;
       const ev = archivo.cuaderno.evidencias.findLast((e) => e.etapa === 8)!;
       editar(ev.datos.chequeos as Libre);
-      return leerArchivo(JSON.stringify(archivo), PROTOCOLO8);
+      return leerArchivo(JSON.stringify(archivo), PROTOCOLO_DS);
     };
     expect(exportar(() => undefined).ok).toBe(true);
     const roto = exportar((c) => (c.brier = 3));

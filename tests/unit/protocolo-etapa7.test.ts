@@ -5,7 +5,7 @@
 //  · lo que la compuerta puede rehacer (pliegues, verificación, sello, columnas, línea base) se rehace, y lo
 //    del worker se copia pero el veredicto y el valor p se rehacen con esos números: un número cambiado no
 //    cuadra; uno cambiado con todo lo que depende de él, sí (límite declarado en el manual);
-//  · la 8 se ve sin construir; las trampas hablan de lo que pasó en tus datos.
+//  · con la 7 cumplida la 8 abre (S13); las trampas hablan de lo que pasó en tus datos.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { evaluar, registrar } from "@/engine/protocolo/compuerta";
@@ -152,7 +152,7 @@ describe("la compuerta de la etapa 7", () => {
     expect(estados(CREDITO.cuaderno).slice(5, 8)).toEqual([
       "cumplida",
       "abierta",
-      "no-construida",
+      "cerrada",
     ]);
     const sinLiga = datosEtapa7(CREDITO.tabla, CREDITO.previas, HUELLA, null);
     expect(ETAPA_7.leer(sinLiga)).toEqual({ ok: true });
@@ -168,15 +168,12 @@ describe("la compuerta de la etapa 7", () => {
     expect(r.ok).toBe(false);
   });
 
-  it("con la liga corrida, se registra: la 7 queda cumplida y la 8 se ve sin construir", () => {
+  it("con la liga corrida, se registra: la 7 queda cumplida y la 8 abre", () => {
     const { cuaderno, datos } = registrado();
     expect(ETAPA_7.criterio(datos, CREDITO.previas)).toEqual({
       tipo: "cumple",
     });
-    expect(estados(cuaderno).slice(6, 8)).toEqual([
-      "cumplida",
-      "no-construida",
-    ]);
+    expect(estados(cuaderno).slice(6, 8)).toEqual(["cumplida", "abierta"]);
     // el veredicto y el valor p se pueden rehacer con lo registrado
     const c = datos.chequeos as Record<string, unknown>;
     const k = c.k as number;
@@ -219,10 +216,7 @@ describe("la compuerta de la etapa 7", () => {
     });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(estados(r.cuaderno).slice(6, 8)).toEqual([
-      "cumplida",
-      "no-construida",
-    ]);
+    expect(estados(r.cuaderno).slice(6, 8)).toEqual(["cumplida", "abierta"]);
     expect(ETAPA_7.trampas!(datos, CREDITO.previas)).toContainEqual({
       clave: "no-supera",
       params: {},

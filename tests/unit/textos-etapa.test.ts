@@ -1,4 +1,4 @@
-// Protocolo DS (S13, G-Plan 1a): los textos que solo usa la forma de cada etapa 4–7 viajan con el chunk de esa
+// Protocolo DS (S13, G-Plan 1a): los textos que solo usa la forma de cada etapa 4–8 viajan con el chunk de esa
 // forma (messages/etapas/etapaN.{es,en}.json), no con el diccionario de la página. Lo que tiene que valer:
 //  · cada par es-en tiene las mismas claves y los mismos marcadores {…};
 //  · una clave vive en un solo sitio: la de la forma no está también en el diccionario global;
@@ -12,6 +12,7 @@ import { TEXTOS_ETAPA_4 } from "@/components/protocolo/textos/etapa4";
 import { TEXTOS_ETAPA_5 } from "@/components/protocolo/textos/etapa5";
 import { TEXTOS_ETAPA_6 } from "@/components/protocolo/textos/etapa6";
 import { TEXTOS_ETAPA_7 } from "@/components/protocolo/textos/etapa7";
+import { TEXTOS_ETAPA_8 } from "@/components/protocolo/textos/etapa8";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { textoPropio, type TextosEtapa } from "@/i18n/textos-etapa";
 import { resolve } from "@/i18n/translate";
@@ -29,6 +30,7 @@ const ETAPAS: Record<number, { textos: TextosEtapa; formas: string[] }> = {
   5: { textos: TEXTOS_ETAPA_5, formas: ["Etapa5Form"] },
   6: { textos: TEXTOS_ETAPA_6, formas: ["Etapa6Form"] },
   7: { textos: TEXTOS_ETAPA_7, formas: ["Etapa7Form"] },
+  8: { textos: TEXTOS_ETAPA_8, formas: ["Etapa8Form"] },
 };
 
 /** Lo que la página pinta sola (el cuaderno, el mapa de etapas, los avisos): tiene que seguir en el global. */
@@ -37,6 +39,7 @@ const DE_LA_PAGINA = [
   "Etapas",
   "formulario-base",
   "regla-texto",
+  "segmento-texto",
 ];
 
 function planas(d: Dictionary, prefijo = ""): [string, string][] {

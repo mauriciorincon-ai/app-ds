@@ -440,7 +440,7 @@ describe("las trampas, en los números del usuario", () => {
 });
 
 describe("la compuerta", () => {
-  it("con la 6 sellada, la 6 queda cumplida, la 7 abre y la 8 se ve sin construir", () => {
+  it("con la 6 sellada, la 6 queda cumplida, la 7 abre y la 8 espera a la 7", () => {
     const r = registrar(PROTOCOLO6, BAJAS.cuaderno, 6, datos(BAJAS, NUEVAS), {
       huella: HUELLA,
       tabla: BAJAS.tabla,
@@ -458,7 +458,7 @@ describe("la compuerta", () => {
       "cumplida",
       "cumplida",
       "abierta",
-      "no-construida",
+      "cerrada",
     ]);
   });
 

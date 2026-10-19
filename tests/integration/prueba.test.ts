@@ -26,6 +26,7 @@ import {
 } from "@/engine/protocolo/etapa8";
 import type { Previas } from "@/engine/protocolo/etapas";
 import { envio7 } from "@/lib/protocolo/liga7";
+import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
 import { envio8, type Envio8 } from "@/lib/protocolo/prueba8";
 import {
   pythonContractField,
@@ -37,7 +38,6 @@ import type { Armado } from "../unit/protocolo-etapa4-helpers";
 import {
   AHORA,
   HUELLA,
-  PROTOCOLO8,
   armarCredito7,
   armarPlanes6,
   armarPrecio6,
@@ -136,13 +136,13 @@ function registrar8(a: Armado, corrida: Corrida8) {
     { patron: "Falla más con los clientes nuevos" },
     1,
   );
-  const r = registrar(PROTOCOLO8, a.cuaderno, 8, datos, {
+  const r = registrar(PROTOCOLO_DS, a.cuaderno, 8, datos, {
     huella: HUELLA,
     tabla: a.tabla,
     ahora: AHORA,
   });
   if (!r.ok) throw new Error(JSON.stringify(r.rechazo));
-  const estados = evaluar(PROTOCOLO8, r.cuaderno, HUELLA, a.tabla)
+  const estados = evaluar(PROTOCOLO_DS, r.cuaderno, HUELLA, a.tabla)
     .map((x) => x.estado.tipo)
     .slice(6, 9);
   return { datos, estados };

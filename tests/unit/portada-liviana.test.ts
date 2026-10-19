@@ -49,8 +49,13 @@ const LAZY = [
   "src/engine/protocolo/sha256.ts",
   // S12: la etapa 7 (pantalla, worker, envío, pliegues y comparación).
   "src/components/protocolo/Etapa7Form.tsx",
+  "src/components/protocolo/Etapa8Form.tsx",
   "src/lib/protocolo/liga7.ts",
   "src/lib/protocolo/useValidacion.ts",
+  // S13: la etapa 8 abre la prueba con su propio hook, su envío y su lector (fuera de contract.ts)
+  "src/lib/protocolo/usePrueba.ts",
+  "src/lib/protocolo/prueba8.ts",
+  "src/workers/contrato-prueba.ts",
   "src/engine/protocolo/etapa7.ts",
   "src/engine/protocolo/pliegues.ts",
   "src/engine/protocolo/comparacion.ts",
