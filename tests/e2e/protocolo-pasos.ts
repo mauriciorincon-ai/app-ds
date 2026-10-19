@@ -173,3 +173,32 @@ export async function cumplirEtapa5SinRegla(page: Page) {
   await e5.getByRole("button", { name: "Registrar la etapa 5" }).click();
   await expect(e5.getByText("Cumplida")).toBeVisible();
 }
+
+/** Etapa 6 de crédito: estratificada (la sugerida), con el tamaño sugerido. */
+export async function cumplirEtapa6Credito(page: Page) {
+  const e6 = page.locator("#etapa-6");
+  await expect(e6.getByLabel("Estratificada · sugerido")).toBeChecked();
+  await e6.getByRole("button", { name: "Registrar la etapa 6" }).click();
+  await expect(e6.getByText("Cumplida")).toBeVisible();
+}
+
+/** Etapa 6 de bajas: unidades nuevas → por tiempo y por grupo, con un mes de hueco. */
+export async function cumplirEtapa6Bajas(page: Page) {
+  const e6 = page.locator("#etapa-6");
+  await e6.getByLabel("Con unidades nuevas, que el modelo no vio").check();
+  await e6
+    .getByLabel("Horizonte: cuánto tarda en conocerse el resultado")
+    .fill("1");
+  await e6.getByLabel("Unidad del horizonte").selectOption("meses");
+  await e6.getByRole("button", { name: "Registrar la etapa 6" }).click();
+  await expect(e6.getByText("Cumplida")).toBeVisible();
+}
+
+/** Etapa 7: correr la liga en el worker (Pyodide) y esperar el resultado. */
+export async function correrLiga(page: Page) {
+  const e7 = page.locator("#etapa-7");
+  await e7.getByRole("button", { name: "Correr la liga" }).click();
+  await expect(e7.getByTestId("protocolo-liga")).toBeVisible({
+    timeout: 240_000,
+  });
+}

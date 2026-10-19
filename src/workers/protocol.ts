@@ -106,6 +106,59 @@ export type PipelinePayload = {
   classes?: string[];
 };
 
+/**
+ * S12 (Protocolo DS, etapa 7): la liga SOLO con el entrenamiento sellado en la etapa 6. No hay
+ * `train_idx` ni `test_idx`: `rows` son las filas de entrenamiento y los pliegues son posiciones
+ * dentro de ellas (los arma src/engine/protocolo/pliegues.ts según el esquema). Python rechaza el
+ * payload nombrando `test_idx` o `train_idx` si llegan.
+ */
+export type ValidationPayload = {
+  task: SupervisedTask;
+  headers: string[];
+  rows: string[][];
+  target: string;
+  numeric: string[];
+  categorical: string[];
+  seed: number;
+  primary_metric: PrimaryMetric;
+  roster: MemberId[];
+  folds: { train: number[]; val: number[] }[];
+  /** Binaria: el valor que la etapa 2 dijo que significa «hay que actuar». */
+  positive?: string;
+  /** Varias clases: las clases en orden (el de la codificación 0..K−1). */
+  classes?: string[];
+  /** Cuántas permutaciones: el presupuesto de tiempo entre lo que tarda la CV del ganador. */
+  permutations: { budget_ms: number; min: number; max: number };
+};
+
+/** Las predicciones del ganador en la validación de un pliegue, alineadas con sus índices. */
+export type ValidationFold = {
+  /** Binaria: 0/1 (1 = «hay que actuar»). Varias clases: el nombre. Un número: el valor. */
+  pred: (number | string)[];
+  /** Binaria: la probabilidad de «hay que actuar»; null si el modelo no la da. */
+  proba: number[] | null;
+};
+
+export type ValidationResult = {
+  task: SupervisedTask;
+  classes?: string[];
+  positive_class?: string;
+  n_rows: number;
+  /** La liga sin prueba: `test` es siempre null. */
+  league: LeagueRow<never>[];
+  winner: MemberId;
+  cv: CvSummary;
+  oof: ValidationFold[];
+  /** Los puntajes de CV del ganador con las etiquetas barajadas, y el observado. */
+  permutation: {
+    n: number;
+    failed: number;
+    scores: number[];
+    observed: number;
+  };
+  elapsed_ms: number;
+};
+
 /** S5 (U1): ajustar UN miembro elegido por el usuario (sin CV: ya eligió). */
 export type FitMemberPayload = Omit<PipelinePayload, "roster" | "cv_k"> & {
   member: MemberId;
@@ -175,7 +228,8 @@ export type CvSummary = {
 /** Progreso modelo a modelo (worker → UI): primero la CV de todos, luego el test.
  *  S7: al agrupar, el barrido de cada agrupador y la lectura del ganador. */
 export type ProgressDetail = {
-  phase: "cv" | "test" | "cluster" | "stability";
+  /** S12: «perm» = una permutación de la etapa 7 (member = el ganador). */
+  phase: "cv" | "test" | "cluster" | "stability" | "perm";
   member: MemberId;
   /** Base 0. */
   index: number;
@@ -453,7 +507,8 @@ export type ClusterFitMemberPayload = Omit<ClusterPayload, "roster"> & {
 
 /** ok = vota · no-converge = visible, se puede elegir, no vota · no-structure =
  *  no encontró dos grupos (HDBSCAN todo ruido) · error = solo el TIPO viaja. */
-export type ClusterMemberStatus = "ok" | "no-converge" | "no-structure" | "error";
+export type ClusterMemberStatus =
+  "ok" | "no-converge" | "no-structure" | "error";
 
 /** Cómo eligió su k: la silueta, el BIC o la densidad (HDBSCAN no elige k). */
 export type ClusterKBy = "silhouette" | "bic" | "density";
@@ -521,9 +576,7 @@ export type ClusterProfiles = {
 };
 
 export type ClusterAssignMethod =
-  | "nearest-centroid"
-  | "gaussian"
-  | "centroid-radius";
+  "nearest-centroid" | "gaussian" | "centroid-radius";
 
 export type ClusterAssignment = {
   method: ClusterAssignMethod;
@@ -592,7 +645,8 @@ export type ClusterResult = {
 };
 
 /** Los resultados de una tarea CON objetivo (veredicto, prueba, liga con CV). */
-export type SupervisedResult = BinaryResult | MulticlassResult | RegressionResult;
+export type SupervisedResult =
+  BinaryResult | MulticlassResult | RegressionResult;
 
 export type ExperimentResult = SupervisedResult | ClusterResult;
 
@@ -650,9 +704,7 @@ export type ClusterModelSchema = {
 
 /** El esquema de un modelo con objetivo (sus columnas y su objetivo). */
 export type SupervisedSchema =
-  | BinaryModelSchema
-  | MulticlassModelSchema
-  | RegressionModelSchema;
+  BinaryModelSchema | MulticlassModelSchema | RegressionModelSchema;
 
 export type ModelSchema = SupervisedSchema | ClusterModelSchema;
 
@@ -761,6 +813,7 @@ export type ImportResult = { ok: true };
 
 export type RunnerRequest =
   | { id: number; type: "train"; payload: PipelinePayload | ClusterPayload }
+  | { id: number; type: "validate"; payload: ValidationPayload }
   | {
       id: number;
       type: "fit-member";
@@ -793,6 +846,7 @@ export type RunnerResponse =
   // Los resultados llegan como `unknown`: contract.ts los valida ANTES de usarlos
   // (el lado que LEE del contrato Python → TS, en producción).
   | { id: number; type: "result"; command: "train"; result: unknown }
+  | { id: number; type: "result"; command: "validate"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Probeta DS — Guía de prueba (v8, acumulativa S1–S11)</title>
+<title>Probeta DS — Guía de prueba (v9, acumulativa S1–S12)</title>
 <style>
   :root {
     --fondo: #fafaf9; --superficie: #ffffff; --tinta: #1c1917; --tinta-suave: #57534e;
@@ -92,6 +92,7 @@
   .o-s9 { color: var(--nuevo); }
   .o-s10 { color: var(--nuevo); }
   .o-s11 { color: var(--nuevo); }
+  .o-s12 { color: var(--nuevo); }
   /* ⭐⭐ corto: estrella doble + texto + borde doble (no depende del color). */
   .o-corto { color: var(--clave); font-weight: 800; border-style: double; border-width: 3px; }
   .corto { background: var(--superficie); border: 3px double var(--clave); border-radius: 14px; padding: 12px 16px; margin: 16px 0 0; }
@@ -107,8 +108,8 @@
 <body>
 <div class="wrap">
   <p class="eyebrow">Probeta DS · guía de prueba</p>
-  <h1>Cómo probar Probeta DS — v8 (acumulativa S1–S11)</h1>
-  <p class="chica suave">Esta guía reúne <strong>todas</strong> las pruebas vigentes de la app: las 27 del ciclo H1, las 11 del <strong>Sprint 005 «La liga honesta»</strong> y las 11 del <strong>Sprint 006 «Estimar»</strong> (heredadas, con su origen), y las del <strong>Sprint 007 «Agrupar y multiclase»</strong>, que cierra el ciclo H2: la app clasifica en varias categorías (bloque H) y agrupa filas parecidas sin objetivo (bloque I). El <strong>Sprint 008 «El esqueleto del Protocolo»</strong> abre el modo lento, <strong>Protocolo DS</strong> (bloque J): sus pruebas se marcan «Nuevo · S8» y son de <strong>FORMA y TEXTO sin ver</strong>: se corren en el ensayo general del ciclo H2, no en el recorrido corto. El <strong>Sprint 009 «¿Existe al decidir?»</strong> suma la etapa 4 (bloque K, «Nuevo · S9»). El <strong>Sprint 010 «Lo que ya se logra sin modelo»</strong> suma la etapa 5 (bloque L, «Nuevo · S10»). El <strong>Sprint 011 «La prueba sellada»</strong> suma la etapa 6 (bloque M, «Nuevo · S11»). Cada prueba dice <strong>qué</strong> hacer, <strong>cómo</strong> y <strong>qué esperar</strong>. Las casillas se guardan en tu navegador (localStorage, una lista nueva por versión).</p>
+  <h1>Cómo probar Probeta DS — v9 (acumulativa S1–S12)</h1>
+  <p class="chica suave">Esta guía reúne <strong>todas</strong> las pruebas vigentes de la app: las 27 del ciclo H1, las 11 del <strong>Sprint 005 «La liga honesta»</strong> y las 11 del <strong>Sprint 006 «Estimar»</strong> (heredadas, con su origen), y las del <strong>Sprint 007 «Agrupar y multiclase»</strong>, que cierra el ciclo H2: la app clasifica en varias categorías (bloque H) y agrupa filas parecidas sin objetivo (bloque I). El <strong>Sprint 008 «El esqueleto del Protocolo»</strong> abre el modo lento, <strong>Protocolo DS</strong> (bloque J): sus pruebas se marcan «Nuevo · S8» y son de <strong>FORMA y TEXTO sin ver</strong>: se corren en el ensayo general del ciclo H2, no en el recorrido corto. El <strong>Sprint 009 «¿Existe al decidir?»</strong> suma la etapa 4 (bloque K, «Nuevo · S9»). El <strong>Sprint 010 «Lo que ya se logra sin modelo»</strong> suma la etapa 5 (bloque L, «Nuevo · S10»). El <strong>Sprint 011 «La prueba sellada»</strong> suma la etapa 6 (bloque M, «Nuevo · S11»). El <strong>Sprint 012 «El ganador, con la prueba cerrada»</strong> suma la etapa 7 (bloque N, «Nuevo · S12»). Cada prueba dice <strong>qué</strong> hacer, <strong>cómo</strong> y <strong>qué esperar</strong>. Las casillas se guardan en tu navegador (localStorage, una lista nueva por versión).</p>
 
   <div class="progreso">
     <span class="num" id="contador">0/0</span>
@@ -153,6 +154,7 @@
     <button type="button" data-filtro="corto" aria-pressed="false">⭐⭐ corto</button>
     <button type="button" data-filtro="clave" aria-pressed="false">⭐ Solo el gate H2</button>
     <button type="button" data-filtro="h1" aria-pressed="false">⭐ H1</button>
+    <button type="button" data-filtro="s12" aria-pressed="false">Nuevo del S12</button>
     <button type="button" data-filtro="s11" aria-pressed="false">Nuevo del S11</button>
     <button type="button" data-filtro="s10" aria-pressed="false">Nuevo del S10</button>
     <button type="button" data-filtro="s9" aria-pressed="false">Nuevo del S9</button>
@@ -584,8 +586,8 @@
     <p class="chica suave">Dónde: la <strong>portada</strong> → «Abrir el Protocolo DS», o <code>/protocolo</code>. Datos: <a href="kit-de-prueba/renovaciones-mensuales.csv" download>renovaciones-mensuales.csv</a>. FORMA y TEXTO <strong>sin ver</strong> (S8): tu lectura de si las etapas se entienden va al ensayo general del ciclo H2.</p>
     <ul class="pasos">
       <li data-origen="s8"><input type="checkbox" id="j1"><div>
-        <label for="j1"><strong>La puerta, y la compuerta que no deja saltar.</strong> Inicio → baja a <strong>«¿Prefieres el camino lento?»</strong> → <strong>«Abrir el Protocolo DS»</strong>. Sin escribir nada, mira la etapa 2. <span class="origen o-s8">Nuevo · S8</span> <span class="origen o-s9">Mejorado en S9</span> <span class="origen o-s10">Mejorado en S10</span> <span class="origen o-s11">Mejorado en S11</span></label>
-        <p class="esperar"><span class="et">Esperado</span> La página <strong>Protocolo DS</strong> dice que tus datos no salen del navegador y que <strong>no hay botón para saltar</strong>. La <strong>Etapa 1</strong> está <strong>Abierta</strong>; las etapas 2 a 6, <strong>Cerradas</strong> («Se abre cuando cumplas la etapa 1»), sin formulario; la 7 y las demás, <strong>Sin construir</strong>, con su criterio a la vista. Cada estado lleva símbolo y texto, no solo color. <strong>Tu juicio:</strong> ¿se entiende que las etapas van en orden y por qué?</p>
+        <label for="j1"><strong>La puerta, y la compuerta que no deja saltar.</strong> Inicio → baja a <strong>«¿Prefieres el camino lento?»</strong> → <strong>«Abrir el Protocolo DS»</strong>. Sin escribir nada, mira la etapa 2. <span class="origen o-s8">Nuevo · S8</span> <span class="origen o-s9">Mejorado en S9</span> <span class="origen o-s10">Mejorado en S10</span> <span class="origen o-s11">Mejorado en S11</span><span class="origen o-s12">Mejorado en S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La página <strong>Protocolo DS</strong> dice que tus datos no salen del navegador y que <strong>no hay botón para saltar</strong>. La <strong>Etapa 1</strong> está <strong>Abierta</strong>; las etapas 2 a 7, <strong>Cerradas</strong> («Se abre cuando cumplas la etapa 1»), sin formulario; la 8, <strong>Sin construir</strong>, con su criterio a la vista. Cada estado lleva símbolo y texto, no solo color. <strong>Tu juicio:</strong> ¿se entiende que las etapas van en orden y por qué?</p>
         <p class="mal"><span class="et">Mal</span> Algún control deja abrir la etapa 2 sin la 1, o el estado de una etapa solo se distingue por el color.</p>
       </div></li>
 
@@ -699,8 +701,8 @@
       </div></li>
 
       <li data-origen="s10"><input type="checkbox" id="l6"><div>
-        <label for="l6"><strong>El cuaderno dice que la línea base es una referencia.</strong> Registra la etapa 5 con una regla de las anteriores y mira el <strong>Cuaderno</strong>. <span class="origen o-s10">Nuevo · S10</span> <span class="origen o-s11">Mejorado en S11</span></label>
-        <p class="esperar"><span class="et">Esperado</span> El foco pasa al título de la etapa 5 y la etapa queda <strong>Cumplida</strong>. El cuaderno resume <em>«Referencia sobre N filas, no un resultado: la etapa 8 la vuelve a medir sobre la prueba»</em>, la regla con sus condiciones y <em>«Si se cumple: actuar. Si no: no actuar.»</em>. La <strong>Etapa 6</strong> queda <strong>Abierta</strong>; la 7 y las demás, <strong>Sin construir</strong>.</p>
+        <label for="l6"><strong>El cuaderno dice que la línea base es una referencia.</strong> Registra la etapa 5 con una regla de las anteriores y mira el <strong>Cuaderno</strong>. <span class="origen o-s10">Nuevo · S10</span> <span class="origen o-s11">Mejorado en S11</span><span class="origen o-s12">Mejorado en S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> El foco pasa al título de la etapa 5 y la etapa queda <strong>Cumplida</strong>. El cuaderno resume <em>«Referencia sobre N filas, no un resultado: la etapa 8 la vuelve a medir sobre la prueba»</em>, la regla con sus condiciones y <em>«Si se cumple: actuar. Si no: no actuar.»</em>. La <strong>Etapa 6</strong> queda <strong>Abierta</strong>; la 7 queda <strong>Cerrada</strong> (espera a la 6) y la 8, <strong>Sin construir</strong>.</p>
         <p class="mal"><span class="et">Mal</span> El cuaderno muestra las listas crudas en vez del resumen, no dice que es una referencia, o la etapa 6 no queda abierta.</p>
       </div></li>
     </ul>
@@ -742,13 +744,50 @@
       </div></li>
 
       <li data-origen="s11"><input type="checkbox" id="m6"><div>
-        <label for="m6"><strong>El cuaderno editado a mano no pasa.</strong> Con la etapa 6 cumplida, pulsa <strong>«Exportar cuaderno»</strong> y abre el archivo con un editor de texto. Cambia el valor de <code>tamano</code> de la etapa 6 por otro (por ejemplo, 30). Vuelve a importarlo con <strong>«Importar cuaderno»</strong> y confirma «Sí, reemplazar». <span class="origen o-s11">Nuevo · S11</span></label>
-        <p class="esperar"><span class="et">Esperado</span> La <strong>Etapa 6</strong> queda <strong>Por verificar</strong>, con el motivo <em>«Lo registrado no coincide con lo que dan tus datos»</em>, y la <strong>Etapa 7</strong> sigue <strong>Sin construir</strong>. La <strong>Etapa 5</strong> sigue <strong>Cumplida</strong>. <strong>Tu juicio:</strong> ¿se entiende que la app avisa cuando un número cambió y el sello no?</p>
+        <label for="m6"><strong>El cuaderno editado a mano no pasa.</strong> Con la etapa 6 cumplida, pulsa <strong>«Exportar cuaderno»</strong> y abre el archivo con un editor de texto. Cambia el valor de <code>tamano</code> de la etapa 6 por otro (por ejemplo, 30). Vuelve a importarlo con <strong>«Importar cuaderno»</strong> y confirma «Sí, reemplazar». <span class="origen o-s11">Nuevo · S11</span><span class="origen o-s12">Mejorado en S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La <strong>Etapa 6</strong> queda <strong>Por verificar</strong>, con el motivo <em>«Lo registrado no coincide con lo que dan tus datos»</em>, y la <strong>Etapa 7</strong> queda <strong>Cerrada</strong>, porque espera a la 6. La <strong>Etapa 5</strong> sigue <strong>Cumplida</strong>. <strong>Tu juicio:</strong> ¿se entiende que la app avisa cuando un número cambió y el sello no?</p>
         <p class="mal"><span class="et">Mal</span> La etapa 6 queda Cumplida con el tamaño cambiado, o el archivo editado se acepta sin avisar.</p>
       </div></li>
     </ul>
   </section>
 
+
+  <section class="bloque">
+    <div class="bloque-cabeza"><span class="letra" aria-hidden="true">N</span><h2>Protocolo DS, etapa 7: el ganador, con la prueba cerrada</h2></div>
+    <p class="chica suave">Dónde: <code>/protocolo</code>, con las etapas 1 a 6 cumplidas. Para N1 a N4: el crédito, con la etapa 5 en «No, hoy no hay regla» y la etapa 6 con la sugerencia, como en M1. Para N5 y N6: bajas-con-fuga como en M2 y M3 (unidades nuevas, horizonte de 1 mes). Datos: <a href="kit-de-prueba/credito-fuga-plantada.csv" download>credito-fuga-plantada.csv</a> y <a href="kit-de-prueba/bajas-con-fuga.csv" download>bajas-con-fuga.csv</a>. Corre en tu navegador: con muchas filas, la liga puede tardar unos minutos. FORMA y TEXTO <strong>sin ver</strong> (S12): tu lectura va al ensayo general del ciclo H-2.</p>
+    <ul class="pasos">
+      <li data-origen="s12"><input type="checkbox" id="n1"><div>
+        <label for="n1"><strong>Lo que hereda, y los pliegues, antes de correr nada.</strong> Con el crédito, abre la <strong>Etapa 7</strong> y no pulses nada. <span class="origen o-s12">Nuevo · S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La etapa queda <strong>Abierta</strong>. «Lo que hereda» dice que la partición es <em>«Estratificada»</em> y no lista <strong>monto_recuperado</strong>, la columna que la etapa 4 dejó fuera. La tabla <strong>«Los pliegues, dentro del entrenamiento»</strong> tiene <strong>5</strong> filas, y la verificación dice <em>«Ninguna fila de la prueba entra a un pliegue.»</em>. <strong>Registrar la etapa 7</strong> aparece deshabilitado. <strong>Tu juicio:</strong> ¿se entiende que la prueba no entra a esta etapa?</p>
+        <p class="mal"><span class="et">Mal</span> La prueba aparece en un pliegue, la columna excluida se lista, o «Registrar la etapa 7» está activo antes de correr la liga.</p>
+      </div></li>
+      <li data-origen="s12"><input type="checkbox" id="n2"><div>
+        <label for="n2"><strong>La liga, con su medida de selección.</strong> Pulsa <strong>«Correr la liga»</strong> y espera. <span class="origen o-s12">Nuevo · S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Mientras corre, aparece <em>«Validación cruzada: modelo i de n»</em> y el aviso de que tus datos no viajan a ningún servidor. Al terminar, la tabla <strong>«La liga»</strong> dice <em>«… en validación cruzada: medida de selección»</em> y marca al <strong>ganador</strong>; en <strong>«Por qué ganó»</strong> explica el error estándar. La nota de la tabla dice que la medida es optimista. <strong>Tu juicio:</strong> ¿se entiende que el puntaje con que se eligió no es la medida honesta?</p>
+        <p class="mal"><span class="et">Mal</span> La tabla no dice «medida de selección», no hay ganador marcado, o el puntaje aparece sin su aviso.</p>
+      </div></li>
+      <li data-origen="s12"><input type="checkbox" id="n3"><div>
+        <label for="n3"><strong>Contra la línea base, pliegue por pliegue, con su intervalo.</strong> Con la liga corrida, lee la tabla <strong>«Contra lo que ya se logra sin modelo»</strong> y el veredicto. <span class="origen o-s12">Nuevo · S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La tabla tiene <strong>5</strong> filas, una por pliegue, con el costo por cada 100 decisiones de la línea base y el del ganador. Debajo dice <em>«… intervalo del 95 %: de … a …»</em>. El veredicto dice <strong>«Supera a la línea base…»</strong> o <strong>«No supera a la línea base…»</strong>: los dos son válidos, y el segundo queda escrito. La nota dice que los pliegues comparten filas de entrenamiento y que el intervalo es optimista. <strong>Tu juicio:</strong> ¿se entiende cuándo el intervalo cruza el cero?</p>
+        <p class="mal"><span class="et">Mal</span> El intervalo no aparece, el veredicto dice «supera» con un intervalo que cruza el cero, o la tabla no tiene una fila por pliegue.</p>
+      </div></li>
+      <li data-origen="s12"><input type="checkbox" id="n4"><div>
+        <label for="n4"><strong>¿Hay señal o solo azar?</strong> Lee la sección <strong>«¿Hay señal o solo azar?»</strong> con la liga corrida. <span class="origen o-s12">Nuevo · S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Dice <em>«Con las etiquetas barajadas N veces, M lo hicieron igual o mejor que el ganador: p = …»</em> y <em>«Con N permutaciones, el p más chico posible es …»</em>, que es la resolución (1 entre N+1). Con <strong>credito-fuga-plantada.csv</strong> dice <strong>«Hay señal»</strong>. Si dijera «Sin señal clara», el texto añade que lo encontrado puede ser azar. <strong>Tu juicio:</strong> ¿se entiende que p es una fracción y que tiene un piso?</p>
+        <p class="mal"><span class="et">Mal</span> No aparece el valor p ni la resolución, o el texto dice «hay señal» sin el número de permutaciones.</p>
+      </div></li>
+      <li data-origen="s12"><input type="checkbox" id="n5"><div>
+        <label for="n5"><strong>Registrar, recargar y volver a cargar el CSV.</strong> Con bajas-con-fuga.csv, corre la liga y pulsa <strong>«Registrar la etapa 7»</strong>. Recarga la página y vuelve a cargar <a href="kit-de-prueba/bajas-con-fuga.csv" download>bajas-con-fuga.csv</a>. <span class="origen o-s12">Nuevo · S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Al registrar, la <strong>Etapa 7</strong> queda <strong>Cumplida</strong>, el foco pasa a su título y la <strong>Etapa 8</strong> dice <strong>Sin construir</strong>. El cuaderno resume <em>«Ganador: …»</em>, <em>«medida de selección»</em> y <em>«La prueba sigue cerrada»</em>. Tras recargar, sin el CSV la 7 queda <strong>Cerrada</strong>; al volver a cargar el mismo archivo vuelve a <strong>Cumplida</strong> y los pliegues se vuelven a calcular y cuadran. <strong>Tu juicio:</strong> ¿se entiende que el CSV hace falta para volver a comprobar la liga?</p>
+        <p class="mal"><span class="et">Mal</span> La etapa 7 queda Cumplida sin el CSV tras recargar, o el resumen no dice que la prueba sigue cerrada.</p>
+      </div></li>
+      <li data-origen="s12"><input type="checkbox" id="n6"><div>
+        <label for="n6"><strong>El cuaderno editado a mano no pasa.</strong> Con la etapa 7 cumplida, pulsa <strong>«Exportar cuaderno»</strong> y abre el archivo con un editor de texto. En la etapa 7, cambia la clave <code>veredicto</code> por la otra palabra (<code>supera</code> o <code>no-supera</code>). Vuelve a importarlo con <strong>«Importar cuaderno»</strong> y confirma «Sí, reemplazar». <span class="origen o-s12">Nuevo · S12</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La <strong>Etapa 7</strong> queda <strong>Por verificar</strong>, con el motivo <em>«Lo registrado no coincide con lo que dan tus datos»</em>, y la <strong>Etapa 8</strong> sigue <strong>Sin construir</strong>. La <strong>Etapa 6</strong> sigue <strong>Cumplida</strong>. <strong>Tu juicio:</strong> ¿se entiende que la app rehace el veredicto con los números y no acepta lo que está escrito?</p>
+        <p class="mal"><span class="et">Mal</span> El veredicto cambiado queda como estaba, la etapa 7 sigue Cumplida, o el archivo editado se acepta sin avisar.</p>
+      </div></li>
+    </ul>
+  </section>
 
   <div class="promesa">
     <p style="margin:0"><strong>Repórtame sí o sí:</strong> cualquier <span class="et" style="color:var(--alerta)">Mal</span> que hayas visto; y en particular tu lectura de <strong>la liga</strong> (F3–F4: ¿se entiende por qué ganó quien ganó y para qué no sirve la prueba?), de <strong>las fichas</strong> (F6), de <strong>cancelar en tu móvil</strong> (F8) desde el S6, de <strong>estimar</strong>: el veredicto en unidades (G2), el gráfico sin color (G4), la pregunta de la columna ambigua (G5) y el Nivel 2 en tu móvil (G10); y, desde el S7, de <strong>varias categorías</strong> (H2: el veredicto y la matriz) y de <strong>agrupar</strong>: la lectura y los perfiles (I2), la columna que no sirve como objetivo (I7) y la nota de la muestra del jerárquico (I8); y del <strong>brochure</strong> re-armado, en los dos idiomas (E6). Ese juicio es el gate ⭐⭐ del cierre del ciclo H2.</p>
@@ -760,6 +799,7 @@
     <p class="chica suave"><strong>Regla de la bola de nieve:</strong> esta guía es acumulativa. Contiene <strong>todas</strong> las pruebas vigentes de la app, con el <strong>origen</strong> de cada una (de qué sprint nació y si un sprint posterior la cambió). Una prueba solo se elimina cuando la feature que probaba deja de existir — y se anota abajo.</p>
 
     <p class="eyebrow" style="margin-top:16px">Historial</p>
+    <p class="chica suave"><strong>Sprint 012 (2026-10-18) — «El ganador, con la prueba cerrada» · v9 de esta guía:</strong> quinto sprint del ciclo H-2. <strong>Nuevo · S12:</strong> bloque N (6 pruebas: lo que hereda y los pliegues, la liga con su medida de selección, la comparación contra la línea base con su intervalo, la permutación con su resolución, registrar y recargar, y el cuaderno editado a mano). <strong>Mejoradas en S12:</strong> J1 (la etapa 7 ya existe: las etapas 2 a 7 quedan Cerradas, y solo la 8 Sin construir), L6 y M6 (la 7 queda Cerrada, porque espera a la 6). Son de FORMA y TEXTO sin ver: se corren en el ensayo general del ciclo H-2. Las 90 pruebas anteriores no cambian salvo J1, L6 y M6. Total: 96. Casillas en una lista nueva (<code>guia-ds:s12:</code>).</p>
     <p class="chica suave"><strong>Sprint 011 (2026-10-18) — «La prueba sellada» · v8 de esta guía:</strong> cuarto sprint del ciclo H-2. <strong>Nuevo · S11:</strong> bloque M (6 pruebas: la sugerencia sin fecha ni unidad, la pregunta de unidades antes de sugerir, el horizonte y el hueco, otro esquema con su razón, sellar y recargar, y el cuaderno editado a mano). <strong>Mejoradas en S11:</strong> J1 (la etapa 6 ya existe: las etapas 2 a 6 quedan Cerradas, y solo la 7 en adelante Sin construir) y L6 (tras la etapa 5, la 6 queda Abierta). K5 no cambia: no nombra la etapa 6. Son de FORMA y TEXTO sin ver: se corren en el ensayo general del ciclo H-2. Las 84 pruebas anteriores no cambian salvo J1 y L6. Total: 90. Casillas en una lista nueva (<code>guia-ds:s11:</code>).</p>
     <p class="chica suave"><strong>Sprint 010 (2026-10-18) — «Lo que ya se logra sin modelo» · v7 de esta guía:</strong> tercer sprint del ciclo H-2. <strong>Nuevo · S10:</strong> bloque L (6 pruebas: la tabla de referencias rotulada, la regla de hoy medida en vivo, solo columnas en «usar», dos condiciones con «y» u «o», «no hay regla» con el teclado, y el resumen del cuaderno). <strong>Mejoradas en S10:</strong> J1 (la etapa 5 ya existe: queda Cerrada hasta cumplir la 4) y K5 (tras la etapa 4, la 5 queda Abierta). Son de FORMA y TEXTO sin ver: se corren en el ensayo general del ciclo H-2. Las 78 pruebas anteriores no cambian salvo J1 y K5. Total: 84. Casillas en una lista nueva (<code>guia-ds:s10:</code>).</p>
     <p class="chica suave"><strong>Sprint 009 (2026-10-18) — «¿Existe al decidir?» · v6 de esta guía:</strong> segundo sprint del ciclo H-2. <strong>Nuevo · S9:</strong> bloque K (6 pruebas: la apuesta antes de ver nada, la sorpresa que no apostaste, «después» y «no sé» en el inventario, la procedencia obligatoria con alerta, la acción en bloque con declaración y «Deshacer», y las señales de bajas-con-fuga.csv con la apuesta fija al recargar). <strong>Mejoradas en S9:</strong> J1 y J5 (la etapa 4 ya abre: «Cerrada», no «Sin construir»); J6 (el archivo exportado lleva también los puntajes y la procedencia de la etapa 4). Son de FORMA y TEXTO sin ver: se corren en el ensayo general del ciclo H-2. Las 72 pruebas anteriores no cambian salvo J1, J5 y J6. Total: 78. Casillas en una lista nueva (<code>guia-ds:s9:</code>).</p>
@@ -782,7 +822,7 @@
     var botones = Array.prototype.slice.call(document.querySelectorAll(".filtros button"));
     // Namespace VERSIONADO por sprint: una regresión sin correr jamás aparece
     // marcada por el sprint anterior (regla de la guía acumulativa).
-    var CLAVE = "guia-ds:s11:";
+    var CLAVE = "guia-ds:s12:";
 
     function visibles() {
       return casillas.filter(function (c) {

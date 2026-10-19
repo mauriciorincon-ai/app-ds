@@ -4,11 +4,12 @@
 // entrenar, puntuar, exportar e importar el modelo; la orquestación pura
 // (split/veredicto/fuga/esquema/manifiesto) vive en el hilo principal.
 //
-// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model", payload? }
+// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate", payload? }
 //            out { id, type: "progress"|"result"|"error", ... }  (result lleva command)
 // S5: durante "train" (la liga), pipeline.py llama a un callback JS antes de cada
 // paso y el runner lo reenvía como progress con `detail` {phase, member, index,
-// total}; el hilo principal lo valida con src/workers/contract.ts.
+// total}; el hilo principal lo valida con src/workers/contract.ts. S12: "validate" (la etapa 7 del
+// Protocolo DS: la liga SOLO con el entrenamiento sellado y pliegues explícitos) también lo recibe.
 //
 // El estado Python (_MODEL en pipeline.py) vive lo que viva este worker: tras
 // entrenar o importar, score/export operan sin re-entrenar.
@@ -24,6 +25,7 @@ const PACKAGES_WITHOUT_DEPS = ["xgboost"];
 const STAGE = {
   train: "training",
   "fit-member": "training",
+  validate: "training",
   score: "scoring",
   // S7 (P13): las etiquetas por fila del agrupamiento, solo para el CSV local.
   "cluster-labels": "exporting",
@@ -60,6 +62,7 @@ function ensureRuntime(post, id) {
         "cluster-labels": pyodide.globals.get("cluster_labels"),
         "export-model": pyodide.globals.get("export_model"),
         "import-model": pyodide.globals.get("import_model"),
+        validate: pyodide.globals.get("run_validation"),
       };
     })();
     // Si la carga falla (red), se limpia para que un reintento re-cargue.
@@ -81,9 +84,14 @@ self.onmessage = async (event) => {
     // Interop uniforme: toda función Python recibe y devuelve string JSON. La liga
     // recibe además el callback de progreso (Python → JS, string JSON por paso).
     const args = [JSON.stringify(payload ?? {})];
-    if (type === "train") {
+    if (type === "train" || type === "validate") {
       args.push((detailJson) =>
-        post({ id, type: "progress", stage: "training", detail: JSON.parse(detailJson) }),
+        post({
+          id,
+          type: "progress",
+          stage: "training",
+          detail: JSON.parse(detailJson),
+        }),
       );
     }
     const result = JSON.parse(run(...args));

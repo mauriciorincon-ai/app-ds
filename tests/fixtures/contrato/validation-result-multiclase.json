@@ -1,0 +1,126 @@
+{
+  "task": "multiclase",
+  "classes": ["a", "b", "c"],
+  "n_rows": 60,
+  "league": [
+    {
+      "name": "logistic",
+      "status": "ok",
+      "cv": {
+        "mean": 0,
+        "std": 0,
+        "folds": [0, 0, 0]
+      },
+      "test": null,
+      "error_type": null,
+      "elapsed_ms": 14
+    },
+    {
+      "name": "decision_tree",
+      "status": "ok",
+      "cv": {
+        "mean": 0,
+        "std": 0,
+        "folds": [0, 0, 0]
+      },
+      "test": null,
+      "error_type": null,
+      "elapsed_ms": 13
+    }
+  ],
+  "winner": "logistic",
+  "cv": {
+    "k": 3,
+    "scoring": "balanced_accuracy",
+    "rule": "one-se",
+    "best": "logistic",
+    "se": 0
+  },
+  "oof": [
+    {
+      "pred": [
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b"
+      ],
+      "proba": null
+    },
+    {
+      "pred": [
+        "a",
+        "a",
+        "c",
+        "c",
+        "c",
+        "c",
+        "c",
+        "c",
+        "a",
+        "a",
+        "a",
+        "a",
+        "a",
+        "c",
+        "c",
+        "c",
+        "c",
+        "c",
+        "c",
+        "a"
+      ],
+      "proba": null
+    },
+    {
+      "pred": [
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b",
+        "b"
+      ],
+      "proba": null
+    }
+  ],
+  "permutation": {
+    "n": 5,
+    "failed": 0,
+    "scores": [
+      0.44801587301587303, 0.23730158730158732, 0.34259259259259256,
+      0.35674603174603176, 0.30317460317460315
+    ],
+    "observed": 0
+  },
+  "elapsed_ms": 107
+}

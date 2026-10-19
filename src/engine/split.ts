@@ -12,7 +12,7 @@ export type SplitResult = {
 
 // mulberry32: PRNG determinista de 32 bits. Reproducible dado un seed → el
 // mismo split siempre, condición para experimentos reproducibles.
-function mulberry32(seed: number): () => number {
+export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) | 0;
@@ -23,7 +23,10 @@ function mulberry32(seed: number): () => number {
 }
 
 // Fisher-Yates con PRNG inyectado (no muta la entrada).
-function shuffle(indices: readonly number[], rng: () => number): number[] {
+export function shuffle(
+  indices: readonly number[],
+  rng: () => number,
+): number[] {
   const arr = indices.slice();
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));

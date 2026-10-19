@@ -27,6 +27,11 @@ import {
   type DefinicionProtocolo,
   type Previas,
 } from "@/engine/protocolo/etapas";
+import {
+  ENTRADA_6_VACIA,
+  datosEtapa6,
+  type EntradaEtapa6,
+} from "@/engine/protocolo/etapa6";
 import { ETAPA_IDS } from "@/engine/protocolo/ids";
 import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
@@ -285,5 +290,43 @@ export function armar5(
     tabla,
     cuaderno: r.cuaderno,
     previas: { ...hasta4.previas, 5: datos },
+  };
+}
+
+/** Etapa 6 de crédito (sin fecha ni unidad): estratificada, como la sugiere la app. */
+export const ENTRADA_6_CREDITO: EntradaEtapa6 = {
+  ...ENTRADA_6_VACIA,
+  esquema: "estratificada",
+};
+
+/** Etapa 6 de bajas: unidades nuevas → por tiempo y por grupo, con un mes de hueco. */
+export const ENTRADA_6_BAJAS: EntradaEtapa6 = {
+  ...ENTRADA_6_VACIA,
+  unidades: "nuevas",
+  esquema: "tiempo-grupo",
+  horizonte: 1,
+  horizonteUnidad: "meses",
+};
+
+/** Cumple las etapas 1–6 con la compuerta real (la 5 con «no hay regla»; la 6 sellada). */
+export function armar6(
+  archivo: string,
+  forma: "binaria" | "multiclase" | "numerica",
+  entrada: EntradaEtapa2,
+  e6: EntradaEtapa6,
+  tabla: CsvTable = tablaKit(archivo),
+): Armado {
+  const hasta5 = armar5(archivo, forma, entrada, tabla);
+  const datos = datosEtapa6(tabla, e6, hasta5.previas, HUELLA);
+  const r = registrar(PROTOCOLO_DS, hasta5.cuaderno, 6, datos, {
+    huella: HUELLA,
+    tabla,
+    ahora: AHORA,
+  });
+  if (!r.ok) throw new Error(`etapa 6: ${JSON.stringify(r.rechazo)}`);
+  return {
+    tabla,
+    cuaderno: r.cuaderno,
+    previas: { ...hasta5.previas, 6: datos },
   };
 }

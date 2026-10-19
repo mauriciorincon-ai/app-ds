@@ -50,14 +50,16 @@ export function perfilObjetivo(
   const llenos = valores.filter((v) => !isNullToken(v));
   const numeros = llenos.map(parseNumber);
   const numerica = llenos.length > 0 && numeros.every((n) => n !== null);
-  const clases: Record<string, number> = {};
+  // Un Map, no un objeto: una clase puede llamarse «constructor» o «__proto__» (S12).
+  const cuenta = new Map<string, number>();
   const nombres = new Set<string>();
   for (const v of llenos) nombres.add(nombreClase(v, numerica));
   if (nombres.size <= MULTICLASS_MAX_CLASSES)
     for (const v of llenos) {
       const nombre = nombreClase(v, numerica);
-      clases[nombre] = (clases[nombre] ?? 0) + 1;
+      cuenta.set(nombre, (cuenta.get(nombre) ?? 0) + 1);
     }
+  const clases: Record<string, number> = Object.fromEntries(cuenta);
   let media: number | null = null;
   let desviacion: number | null = null;
   if (numerica) {

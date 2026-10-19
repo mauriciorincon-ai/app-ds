@@ -6,6 +6,7 @@ import { ETAPA_3 } from "./etapa3";
 import { ETAPA_4 } from "./etapa4";
 import { ETAPA_5 } from "./etapa5";
 import { ETAPA_6 } from "./etapa6";
+import { ETAPA_7 } from "./etapa7";
 import {
   ETAPA_IDS,
   ETAPAS_BASE,
@@ -21,6 +22,7 @@ const CONSTRUIDAS: Readonly<Partial<Record<EtapaId, DefinicionEtapa>>> = {
   4: ETAPA_4,
   5: ETAPA_5,
   6: ETAPA_6,
+  7: ETAPA_7,
 };
 
 export const PROTOCOLO_DS: DefinicionProtocolo = ETAPA_IDS.map(

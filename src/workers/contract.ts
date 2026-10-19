@@ -73,6 +73,7 @@ import type {
   RegressionMemberFitResult,
   RegressionPipelineResult,
   RegressionScoreResult,
+  ValidationResult,
 } from "@/workers/protocol";
 
 const METRIC_KEYS = ["accuracy", "precision", "recall", "f1", "auc"] as const;
@@ -239,7 +240,10 @@ const multiclassResultV = obj({
   classes: arr(str, 3),
   n_train: nonNegInt,
   n_test: nonNegInt,
-  baselines: obj({ majority: multiclassMetricsV, logistic: multiclassMetricsV }),
+  baselines: obj({
+    majority: multiclassMetricsV,
+    logistic: multiclassMetricsV,
+  }),
   model: multiclassMetricsV,
   model_name: member,
   winner: member,
@@ -456,9 +460,7 @@ export type TrainSent = {
 } & MulticlassSent;
 
 type AnyTrainResult =
-  | PipelineResult
-  | MulticlassPipelineResult
-  | RegressionPipelineResult;
+  PipelineResult | MulticlassPipelineResult | RegressionPipelineResult;
 
 /**
  * Valida el resultado de la liga. Además de la forma, cruza lo que solo el lector
@@ -594,7 +596,11 @@ export function validateMemberFit(
 ): Checked<RegressionMemberFitResult>;
 export function validateMemberFit(
   raw: unknown,
-  sent: { member: MemberId; task: "multiclase"; nTest: number } & MulticlassSent,
+  sent: {
+    member: MemberId;
+    task: "multiclase";
+    nTest: number;
+  } & MulticlassSent,
 ): Checked<MulticlassMemberFitResult>;
 export function validateMemberFit(
   raw: unknown,
@@ -637,12 +643,153 @@ export function validateMemberFit(
 }
 
 const progressV = obj({
-  phase: oneOf(["cv", "test", "cluster", "stability"]),
+  phase: oneOf(["cv", "test", "cluster", "stability", "perm"]),
   member: (v, path) =>
     TRAIN_TASKS.some((task) => isMemberOf(task, v)) ? null : path,
   index: nonNegInt,
   total: refine(int, (v) => (v as number) >= 1),
 });
+
+// --- S12: la etapa 7 del Protocolo DS — la liga SOLO con el entrenamiento ------------------------
+
+/** Lo que el hilo principal envió y el lector tiene que cotejar. */
+export type ValidationSent = {
+  readonly task: SupervisedTask;
+  readonly roster: readonly MemberId[];
+  readonly primary_metric: PrimaryMetric;
+  /** Los pliegues enviados: las predicciones vuelven alineadas con su validación. */
+  readonly folds: readonly { readonly val: readonly number[] }[];
+  readonly classes?: readonly string[];
+  readonly positive?: string;
+  readonly permutations: { readonly min: number; readonly max: number };
+};
+
+/** En este modo no hay prueba: el `test` de cada fila de la liga es null, siempre. */
+const sinPrueba: Validator = (v, path) => (v === null ? null : path);
+
+/**
+ * Valida el resultado de `run_validation`. Además de la forma, cruza lo que solo el lector puede
+ * comprobar: la liga es el roster enviado (en su orden), k es el número de pliegues enviados, la
+ * selección es la regla de un error estándar recalculada en TS con la dirección de la métrica, las
+ * predicciones fuera de pliegue vienen alineadas con la validación de cada pliegue enviado, y la
+ * permutación está dentro de lo pedido, contada entera y sobre el puntaje del ganador.
+ */
+export function validateValidationResult(
+  raw: unknown,
+  sent: ValidationSent,
+): Checked<ValidationResult> {
+  if (!isRecord(raw) || raw.task !== sent.task)
+    return { ok: false, field: "task" };
+  const memberV: Validator = (v, path) =>
+    isMemberOf(sent.task, v) ? null : path;
+  const predV: Validator = byTask(sent.task, {
+    binaria: oneOf([0, 1]),
+    multiclase: oneOf(sent.classes ?? []),
+    numerica: num,
+  });
+  const camposDeTarea: Record<string, Validator> = byTask(sent.task, {
+    binaria: { classes: arr(str, 2), positive_class: str } as Record<
+      string,
+      Validator
+    >,
+    multiclase: { classes: arr(str, 2) } as Record<string, Validator>,
+    numerica: {} as Record<string, Validator>,
+  });
+  const shaped = check<ValidationResult>(
+    obj({
+      n_rows: nonNegInt,
+      league: arr(
+        leagueRowOf(
+          memberV,
+          sinPrueba,
+          sent.primary_metric === "mae" ? errorCvScoreV : cvScoreV,
+        ),
+        1,
+      ),
+      winner: memberV,
+      cv: cvSummaryOf(memberV),
+      oof: arr(
+        obj({ pred: arr(predV, 1), proba: nullable(arr(unit01, 1)) }),
+        2,
+      ),
+      permutation: obj({
+        n: nonNegInt,
+        failed: nonNegInt,
+        scores: arr(num),
+        observed: num,
+      }),
+      elapsed_ms: nonNegInt,
+      ...camposDeTarea,
+    }),
+    raw,
+  );
+  if (!shaped.ok) return shaped;
+  const r = shaped.value;
+  const k = sent.folds.length;
+  const names = r.league.map((row) => row.name);
+  if (
+    names.length !== sent.roster.length ||
+    names.some((n, i) => n !== sent.roster[i])
+  )
+    return { ok: false, field: "league" };
+  if (r.cv.k !== k) return { ok: false, field: "cv.k" };
+  if (r.cv.scoring !== SCORER[sent.primary_metric])
+    return { ok: false, field: "cv.scoring" };
+  for (const [i, row] of r.league.entries()) {
+    if ((row.status === "error") !== (row.cv === null))
+      return { ok: false, field: `league[${i}].cv` };
+    if ((row.status === "error") !== (row.error_type !== null))
+      return { ok: false, field: `league[${i}].error_type` };
+    if (row.cv && row.cv.folds.length !== k)
+      return { ok: false, field: `league[${i}].cv.folds` };
+  }
+  const selection = selectOneSe(
+    r.league,
+    k,
+    METRIC_RULES[sent.primary_metric].direction,
+  );
+  if (!selection || selection.best !== r.cv.best)
+    return { ok: false, field: "cv.best" };
+  if (Math.abs(selection.se - r.cv.se) > 1e-12)
+    return { ok: false, field: "cv.se" };
+  if (selection.winner !== r.winner) return { ok: false, field: "winner" };
+  if (r.oof.length !== k) return { ok: false, field: "oof" };
+  // solo dos clases traen la probabilidad de «hay que actuar»
+  const conProba = byTask(sent.task, {
+    binaria: true,
+    multiclase: false,
+    numerica: false,
+  });
+  for (const [j, fold] of r.oof.entries()) {
+    const n = sent.folds[j]!.val.length;
+    if (fold.pred.length !== n) return { ok: false, field: `oof[${j}].pred` };
+    if (fold.proba !== null && (!conProba || fold.proba.length !== n))
+      return { ok: false, field: `oof[${j}].proba` };
+  }
+  const clasesField = byTask(sent.task, {
+    binaria: () =>
+      r.positive_class !== sent.positive ||
+      !(r.classes ?? []).includes(r.positive_class ?? "")
+        ? "positive_class"
+        : null,
+    multiclase: () =>
+      (r.classes ?? []).length !== (sent.classes ?? []).length ||
+      (r.classes ?? []).some((c, i) => c !== sent.classes?.[i])
+        ? "classes"
+        : null,
+    numerica: () => null,
+  })();
+  if (clasesField) return { ok: false, field: clasesField };
+  const perm = r.permutation;
+  if (perm.n < sent.permutations.min || perm.n > sent.permutations.max)
+    return { ok: false, field: "permutation.n" };
+  if (perm.scores.length + perm.failed !== perm.n)
+    return { ok: false, field: "permutation.scores" };
+  const ganador = r.league.find((row) => row.name === r.winner)!.cv;
+  if (!ganador || ganador.mean !== perm.observed)
+    return { ok: false, field: "permutation.observed" };
+  return shaped;
+}
 
 export function validateProgressDetail(raw: unknown): Checked<ProgressDetail> {
   const shaped = check<ProgressDetail>(progressV, raw);
@@ -1009,7 +1156,9 @@ function clusterRowField(
     if (votes) {
       // S7 (AU-S7-06): un agrupador que vota sin ninguna silueta medida se nombra, no lanza.
       if (scored.length === 0) return at("silhouette_by_k");
-      const best = scored.reduce((a, b) => (b.silhouette > a.silhouette ? b : a));
+      const best = scored.reduce((a, b) =>
+        b.silhouette > a.silhouette ? b : a,
+      );
       if (row.k !== best.k) return at("k");
       if (row.silhouette !== best.silhouette) return at("silhouette");
     }
@@ -1018,7 +1167,9 @@ function clusterRowField(
     if (
       !byK ||
       byK.length === 0 ||
-      byK.some((x, j) => !range.includes(x.k) || (j > 0 && x.k <= byK[j - 1]!.k))
+      byK.some(
+        (x, j) => !range.includes(x.k) || (j > 0 && x.k <= byK[j - 1]!.k),
+      )
     )
       return at("bic_by_k");
     if (row.silhouette_by_k !== null) return at("silhouette_by_k");
@@ -1045,7 +1196,11 @@ function clusterRowField(
   const grouped = sizes.reduce((a, b) => a + b, 0);
   if (grouped > sent.n_rows) return at("sizes");
   const noise = (sent.n_rows - grouped) / sent.n_rows;
-  if (row.noise_share === null ? grouped !== sent.n_rows : !close(row.noise_share, noise))
+  if (
+    row.noise_share === null
+      ? grouped !== sent.n_rows
+      : !close(row.noise_share, noise)
+  )
     return row.noise_share === null ? at("sizes") : at("noise_share");
   // Con el ruido ya cotejado contra los tamaños, el puntaje: silueta × (1 − ruido).
   if (
@@ -1088,7 +1243,8 @@ function clusterDetailsField(
         g.group !== j ||
         g.size !== row.sizes![j] ||
         !close(g.share, g.size / n) ||
-        Object.keys(g.numeric).sort().join() !== [...sent.numeric].sort().join() ||
+        Object.keys(g.numeric).sort().join() !==
+          [...sent.numeric].sort().join() ||
         Object.keys(g.categorical).sort().join() !==
           [...sent.categorical].sort().join(),
     )
@@ -1099,7 +1255,8 @@ function clusterDetailsField(
   if (
     noise === 0
       ? profiles.noise !== null
-      : profiles.noise?.size !== noise || !close(profiles.noise.share, noise / n)
+      : profiles.noise?.size !== noise ||
+        !close(profiles.noise.share, noise / n)
   ) {
     return "profiles.noise";
   }
@@ -1111,9 +1268,10 @@ function clusterDetailsField(
         : null;
   if (
     profiles.separating.length > SEPARATING_TOP ||
-    profiles.separating.some((s, j) =>
-      kind(s.column) !== s.kind ||
-      (j > 0 && s.strength > profiles.separating[j - 1]!.strength),
+    profiles.separating.some(
+      (s, j) =>
+        kind(s.column) !== s.kind ||
+        (j > 0 && s.strength > profiles.separating[j - 1]!.strength),
     )
   ) {
     return "profiles.separating";
@@ -1264,7 +1422,8 @@ export function validateClusterScore(
   const shaped = check<ClusterScoreResult>(clusterScoreV, raw);
   if (!shaped.ok) return shaped;
   const { predictions, probabilities, novelty } = shaped.value;
-  if (predictions.length !== novelty.n_rows) return { ok: false, field: "predictions" };
+  if (predictions.length !== novelty.n_rows)
+    return { ok: false, field: "predictions" };
   if (
     predictions.some(
       (g) => g >= schema.groups || g < -1 || (g === -1 && !schema.noise),

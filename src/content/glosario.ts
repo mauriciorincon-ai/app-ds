@@ -234,6 +234,38 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
       en: "The part of your data set aside before training and marked with a seal: a code computed from which rows it holds. If the test set changes, the seal doesn't match. It's hygiene and traceability, not a promise: it says the test set is the same, not that nobody looked at it.",
     },
   },
+  // S12 (etapa 7)
+  pliegue: {
+    termino: { es: "Pliegue", en: "Fold" },
+    definicion: {
+      es: "Una de las k partes en que se reparte el entrenamiento para la validación cruzada: el modelo aprende con las demás y se mide en ella, una vez cada una. En el Protocolo, los pliegues siguen el mismo esquema que la prueba (por tiempo, por grupo o estratificado).",
+      en: "One of the k parts the training rows are split into for cross-validation: the model learns from the others and is measured on it, each in turn. In the Protocol, folds follow the same scheme as the test set (by time, by group or stratified).",
+    },
+  },
+  "regla-un-error-estandar": {
+    termino: {
+      es: "Regla de un error estándar",
+      en: "One-standard-error rule",
+    },
+    definicion: {
+      es: "Entre los modelos cuyo puntaje de validación cruzada queda a menos de un error estándar del mejor, gana el más simple. Una diferencia más chica que el ruido entre pliegues no es razón para elegir algo más complicado.",
+      en: "Among the models whose cross-validation score is within one standard error of the best, the simplest wins. A difference smaller than the noise across folds is no reason to pick something more complicated.",
+    },
+  },
+  "medida-de-seleccion": {
+    termino: { es: "Medida de selección", en: "Selection measure" },
+    definicion: {
+      es: "El puntaje con que se eligió al ganador. Es optimista: ganó justo porque ese número salió alto en estos pliegues. Sirve para elegir; la medida sin sesgo es la prueba, que se abre en la etapa 8.",
+      en: "The score the winner was picked with. It's optimistic: it won precisely because that number came out high on these folds. It's for choosing; the unbiased measure is the test set, opened at stage 8.",
+    },
+  },
+  "prueba-de-permutacion": {
+    termino: { es: "Prueba de permutación", en: "Permutation test" },
+    definicion: {
+      es: "Se barajan las etiquetas del entrenamiento y se vuelve a validar muchas veces: si el modelo lo hace igual de bien con etiquetas al azar, lo que encontró no es señal. El valor p es la fracción de esos barajados que lo hizo igual o mejor.",
+      en: "The training labels are shuffled and the model is validated again many times: if it does as well with random labels, what it found isn't signal. The p-value is the share of those shuffles that did as well or better.",
+    },
+  },
   // S9 (etapa 4)
   "existe-al-decidir": {
     termino: { es: "Existe al decidir", en: "Exists when you decide" },
