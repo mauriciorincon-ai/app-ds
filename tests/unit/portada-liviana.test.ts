@@ -49,17 +49,21 @@ const LAZY = [
   "src/engine/protocolo/sha256.ts",
   // S12: la etapa 7 (pantalla, worker, envío, pliegues y comparación).
   "src/components/protocolo/Etapa7Form.tsx",
-  "src/components/protocolo/Etapa8Form.tsx",
   "src/lib/protocolo/liga7.ts",
   "src/lib/protocolo/useValidacion.ts",
-  // S13: la etapa 8 abre la prueba con su propio hook, su envío y su lector (fuera de contract.ts)
-  "src/lib/protocolo/usePrueba.ts",
-  "src/lib/protocolo/prueba8.ts",
-  "src/workers/contrato-prueba.ts",
   "src/engine/protocolo/etapa7.ts",
   "src/engine/protocolo/pliegues.ts",
   "src/engine/protocolo/comparacion.ts",
   "src/engine/protocolo/permutacion.ts",
+  // S13: la etapa 8 (pantalla, worker, envío, lector y el motor de la medida en la prueba).
+  "src/components/protocolo/Etapa8Form.tsx",
+  "src/lib/protocolo/usePrueba.ts",
+  "src/lib/protocolo/prueba8.ts",
+  "src/workers/contrato-prueba.ts",
+  "src/engine/protocolo/etapa8.ts",
+  "src/engine/protocolo/segmentos.ts",
+  "src/engine/protocolo/calibracion.ts",
+  "src/engine/protocolo/bootstrap.ts",
 ];
 
 /**
@@ -78,6 +82,11 @@ const LAZY_PROTOCOLO = [
   "src/lib/protocolo/useValidacion.ts",
   "src/engine/encarrilador.ts",
   "src/lib/experiment.ts",
+  // S13: la pantalla de la etapa 8, su worker, su envío y su lector (fuera de contract.ts) tampoco
+  "src/components/protocolo/Etapa8Form.tsx",
+  "src/lib/protocolo/usePrueba.ts",
+  "src/lib/protocolo/prueba8.ts",
+  "src/workers/contrato-prueba.ts",
   // (src/workers/contract.ts ya llega desde el S10 por useProtocolo → quantity.ts: no se vigila aquí)
 ];
 
@@ -152,7 +161,7 @@ describe("la portada no arrastra pantallas ni fichas por imports estáticos", ()
   });
 });
 
-describe("/protocolo no arrastra la pantalla ni el worker de la etapa 7 por imports estáticos", () => {
+describe("/protocolo no arrastra la pantalla ni el worker de las etapas 7 y 8 por imports estáticos", () => {
   const paths = reachable(ENTRY_PROTOCOLO);
 
   it("el recorrido alcanza lo que la página sí evalúa (el detector no está ciego)", () => {
@@ -160,6 +169,7 @@ describe("/protocolo no arrastra la pantalla ni el worker de la etapa 7 por impo
       "src/engine/protocolo/compuerta.ts",
       "src/engine/protocolo/etapa7.ts",
       "src/engine/protocolo/pliegues.ts",
+      "src/engine/protocolo/etapa8.ts",
     ]) {
       expect(paths.has(resolve(ROOT, expected)), expected).toBe(true);
     }
