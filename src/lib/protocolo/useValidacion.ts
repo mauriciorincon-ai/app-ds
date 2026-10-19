@@ -30,13 +30,13 @@ export type EstadoValidacion =
   | { readonly tipo: "cancelada" }
   | { readonly tipo: "error"; readonly motivo: string };
 
-type Oyente = { current: ((m: RunnerResponse) => void) | null };
+export type Oyente = { current: ((m: RunnerResponse) => void) | null };
 
 /**
  * El worker se crea una vez y delega cada mensaje en el oyente de la corrida en curso (un ref): una corrida
- * nueva no toca el worker, y Pyodide no se vuelve a cargar.
+ * nueva no toca el worker, y Pyodide no se vuelve a cargar. S13: lo usa también la etapa 8 (usePrueba.ts).
  */
-function crearWorker(oyente: Oyente, alMorir: () => void): Worker {
+export function crearWorker(oyente: Oyente, alMorir: () => void): Worker {
   const worker = new Worker("/pyodide-runner.js", { type: "module" });
   worker.onmessage = (event: MessageEvent<RunnerResponse>) =>
     oyente.current?.(event.data);
@@ -44,7 +44,8 @@ function crearWorker(oyente: Oyente, alMorir: () => void): Worker {
   return worker;
 }
 
-function motivoDe(mensaje: string): string {
+/** Un error dice solo el campo del contrato o «worker»: nunca un mensaje que pueda traer valores. */
+export function motivoDe(mensaje: string): string {
   const campo = pythonContractField(mensaje);
   return campo ? `contrato: ${campo}` : "worker";
 }
