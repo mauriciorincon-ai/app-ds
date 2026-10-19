@@ -12,6 +12,7 @@ import {
   type RechazoRegistro,
 } from "@/engine/protocolo/compuerta";
 import {
+  agregarApertura,
   agregarCarga,
   compararCarga,
   cuadernoVacio,
@@ -116,6 +117,8 @@ export type AccionesProtocolo = {
   empezarOtro(): void;
   descartarPendiente(): void;
   registrarEtapa(etapa: EtapaId, datos: DatosEtapa): RechazoRegistro | null;
+  /** S13: la prueba sellada se abrió (etapa 8): se anota en el cuaderno, se registre o no la etapa. */
+  registrarApertura(clave: string): void;
   exportar(): { nombre: string; contenido: string };
   /** Lee el archivo; con un cuaderno con entradas, espera `confirmarImporte` antes de reemplazarlo. */
   importar(file: File): Promise<void>;
@@ -329,6 +332,22 @@ export function useProtocolo(
     [guardar, reloj],
   );
 
+  const registrarApertura = useCallback(
+    (clave: string) => {
+      const actual = estadoRef.current;
+      if (!actual.datos) return;
+      const cuaderno = agregarApertura(actual.cuaderno, {
+        fecha: reloj().toISOString(),
+        huella: actual.datos.carga.sha256,
+        clave,
+      });
+      guardar(cuaderno);
+      estadoRef.current = { ...actual, cuaderno };
+      setEstado((previo) => ({ ...previo, cuaderno }));
+    },
+    [guardar, reloj],
+  );
+
   const exportar = useCallback(() => {
     const ahora = reloj();
     return {
@@ -427,6 +446,7 @@ export function useProtocolo(
     empezarOtro,
     descartarPendiente,
     registrarEtapa,
+    registrarApertura,
     exportar,
     importar,
     confirmarImporte,

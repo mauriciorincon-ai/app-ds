@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CONTENIDO_ETAPAS } from "@/content/protocolo";
 import type { EstadoEtapa, EtapaEvaluada } from "@/engine/protocolo/compuerta";
-import type { Cuaderno } from "@/engine/protocolo/cuaderno";
+import { aperturasDistintas, type Cuaderno } from "@/engine/protocolo/cuaderno";
 import type { DatosEtapa, EtapaId, Previas } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import type { DatosCargados } from "@/lib/protocolo/useProtocolo";
@@ -77,6 +77,7 @@ function Tarjeta({
   datos,
   listo,
   onRegistrar,
+  onApertura,
 }: {
   evaluada: EtapaEvaluada;
   evaluadas: readonly EtapaEvaluada[];
@@ -84,6 +85,7 @@ function Tarjeta({
   datos: DatosCargados | null;
   listo: boolean;
   onRegistrar: (etapa: EtapaId, datos: DatosEtapa) => RechazoRegistro | null;
+  onApertura?: (clave: string) => void;
 }) {
   const { locale, t } = useI18n();
   const { etapa, estado } = evaluada;
@@ -244,6 +246,8 @@ function Tarjeta({
                 anterior={evidenciaDe(estado)}
                 previas={previasDe(evaluadas, etapa.id)}
                 historia={historiaDe(cuaderno, etapa.id)}
+                aperturas={cuaderno ? aperturasDistintas(cuaderno) : 0}
+                onApertura={onApertura}
                 onRegistrar={(d) => {
                   const rechazo = onRegistrar(etapa.id, d);
                   if (!rechazo) {
@@ -270,13 +274,15 @@ export function Etapas({
   datos,
   listo,
   onRegistrar,
+  onApertura,
 }: {
   evaluadas: readonly EtapaEvaluada[];
-  /** Para la historia de cada etapa (la 6 cuenta sus sellos). */
+  /** Para la historia de cada etapa (la 6 cuenta sus sellos) y las aperturas de la prueba (la 8). */
   cuaderno?: Cuaderno;
   datos: DatosCargados | null;
   listo: boolean;
   onRegistrar: (etapa: EtapaId, datos: DatosEtapa) => RechazoRegistro | null;
+  onApertura?: (clave: string) => void;
 }) {
   const { t } = useI18n();
   return (
@@ -294,6 +300,7 @@ export function Etapas({
             datos={datos}
             listo={listo}
             onRegistrar={onRegistrar}
+            onApertura={onApertura}
           />
         ))}
       </ol>

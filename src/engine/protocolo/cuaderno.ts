@@ -33,11 +33,27 @@ export type Evidencia = {
   readonly datos: DatosEtapa;
 };
 
+/**
+ * S13: una vez que la prueba sellada se abrió (etapa 8). Se anota cuando el worker devuelve una medida
+ * válida, se registre o no la etapa: abrir la prueba deja rastro aunque no se registre nada. Las
+ * aperturas se cuentan y se rotulan; no se bloquean (F0 #13).
+ */
+export type Apertura = {
+  /** ISO 8601. */
+  readonly fecha: string;
+  /** La huella de los datos con que se abrió. */
+  readonly huella: string;
+  /** Lo que se evaluó (sello, ganador, pliegues, columnas): reabrir lo mismo no suma. */
+  readonly clave: string;
+};
+
 export type Cuaderno = {
   readonly version: typeof CUADERNO_VERSION;
   readonly creado: string;
   readonly cargas: readonly Carga[];
   readonly evidencias: readonly Evidencia[];
+  /** S13, opcional: un cuaderno de antes no lo trae y se sigue leyendo (la versión no cambia). */
+  readonly aperturas?: readonly Apertura[];
 };
 
 export function cuadernoVacio(ahora: Date): Cuaderno {
@@ -87,4 +103,17 @@ export function agregarCarga(cuaderno: Cuaderno, carga: Carga): Cuaderno {
 /** ¿Alguna etapa ya registró algo con datos? (Cambiar de datos la afecta.) */
 export function tieneEvidenciasConDatos(cuaderno: Cuaderno): boolean {
   return cuaderno.evidencias.some((evidencia) => evidencia.huella !== null);
+}
+
+/** Anota una apertura de la prueba (la lista solo crece, como las evidencias). */
+export function agregarApertura(
+  cuaderno: Cuaderno,
+  apertura: Apertura,
+): Cuaderno {
+  return { ...cuaderno, aperturas: [...(cuaderno.aperturas ?? []), apertura] };
+}
+
+/** Cuántas veces se abrió la prueba con algo distinto: cada clave cuenta una vez. */
+export function aperturasDistintas(cuaderno: Cuaderno): number {
+  return new Set((cuaderno.aperturas ?? []).map((a) => a.clave)).size;
 }

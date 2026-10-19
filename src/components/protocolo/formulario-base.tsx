@@ -28,6 +28,10 @@ export type PropsFormulario = {
   readonly previas: Previas;
   /** Todo lo que esta etapa registró antes en el cuaderno (la etapa 6 cuenta sus sellos, S11). */
   readonly historia?: readonly DatosEtapa[];
+  /** S13: cuántas veces se abrió la prueba con algo distinto (la etapa 8 lo rotula). */
+  readonly aperturas?: number;
+  /** S13: la prueba se abrió (la etapa 8 lo anota en el cuaderno con lo que evaluó). */
+  readonly onApertura?: (clave: string) => void;
   readonly onRegistrar: (datos: DatosEtapa) => RechazoRegistro | null;
 };
 
