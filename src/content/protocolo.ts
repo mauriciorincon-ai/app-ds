@@ -146,8 +146,16 @@ export const CONTENIDO_ETAPAS: Readonly<Record<EtapaId, ContenidoEtapa>> = {
       en: "Error by segment and calibration",
     },
     criterio: {
-      es: "El peor segmento y la calibración, reportados.",
-      en: "The worst segment and the calibration, reported.",
+      es: "El peor segmento, la calibración y tu patrón de fallo, reportados.",
+      en: "The worst segment, the calibration and your failure pattern, reported.",
+    },
+    tarea: {
+      es: "Abre la prueba sellada, una sola vez. El ganador de la etapa 7 se ajusta con todo el entrenamiento y predice la prueba: lees cuánto cuesta en la moneda de tu decisión junto a la línea base y tu regla de hoy, cuánto exageró la medida de selección, en qué segmento le va peor, si sus probabilidades son probabilidades y cuáles son sus peores casos. Nombra con tus palabras un patrón de fallo y regístralo.",
+      en: "Open the sealed test set, once. The stage 7 winner is fitted on all the training rows and predicts the test set: you read what it costs in the currency of your decision next to the baseline and your rule of today, how much the selection measure exaggerated, which segment it does worst on, whether its probabilities are probabilities, and its worst cases. Name a failure pattern in your own words and record it.",
+    },
+    porque: {
+      es: "Hasta aquí todo se midió con lo que sirvió para elegir. La prueba, que nadie miró, es la única medida sin sesgo, y por eso se abre una sola vez: si vuelves atrás y la abres de nuevo con otra configuración, ya no lo es, y el cuaderno lo cuenta.\nUn promedio puede esconder al grupo al que peor le va: el error por segmento lo muestra, con un soporte mínimo para que un segmento chico no mienta. Y si tu decisión usa probabilidades, tienen que ser probabilidades: la curva de calibración y el Brier lo dicen.\nLa etapa 9 decide con estos números: con qué umbral actuar, cuántas falsas alarmas aceptar y cuánto cuesta.",
+      en: "Up to here everything was measured with what served to choose. The test set, which nobody looked at, is the only unbiased measure, and that's why it's opened once: if you go back and open it again with another setup, it no longer is, and the notebook counts it.\nAn average can hide the group it does worst on: the error by segment shows it, with a minimum support so a small segment doesn't lie. And if your decision uses probabilities, they have to be probabilities: the calibration curve and the Brier score say so.\nStage 9 decides with these numbers: at what threshold to act, how many false alarms to accept and what it costs.",
     },
   },
   9: {

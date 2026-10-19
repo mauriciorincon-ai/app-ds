@@ -1454,6 +1454,47 @@
           "sin-senal": "Permutación: p = {p} con {n}; sin señal clara.",
           "closed": "La prueba sigue cerrada: la etapa 8 la abre una sola vez."
         }
+      },
+      "8": {
+        "segment": {
+          "periodo": "el periodo {valor}",
+          "categoria": "{columna} = «{valor}»",
+          "tramo": "{columna}, tramo {tramo}"
+        },
+        "missing": {
+          "etapas-previas": "las etapas 1 a 7 cumplidas",
+          "sello": "la prueba de la etapa 6 con el mismo sello",
+          "prueba": "abrir la prueba",
+          "ganador": "abrirla con el ganador de la etapa 7",
+          "segmento": "el peor segmento, o que ninguno tiene soporte",
+          "calibracion": "la calibración, o por qué no se puede medir",
+          "patron": "tu patrón de fallo, escrito con tus palabras"
+        },
+        "trap": {
+          "reabierta": "Abriste la prueba con {n} configuraciones distintas: desde la segunda, la medida ya no es sin sesgo, porque elegiste después de verla.",
+          "prueba-chica": "La prueba tiene {n} filas: los intervalos son anchos, y es lo honesto con tan pocas.",
+          "optimismo": "La medida de selección decía {seleccion}; en la prueba, la misma métrica da {prueba}. La diferencia es el precio de elegir con los mismos pliegues.",
+          "peor-periodo": "Al modelo le va peor en el periodo {valor}: cuesta {exceso} más por cada 100 decisiones que en toda la prueba.",
+          "peor-categoria": "Al modelo le va peor cuando {columna} es «{valor}»: cuesta {exceso} más por cada 100 decisiones que en toda la prueba.",
+          "peor-tramo": "Al modelo le va peor en el tramo {tramo} de {columna}: cuesta {exceso} más por cada 100 decisiones que en toda la prueba.",
+          "ningun-segmento": "Ningún segmento tiene soporte: con tan pocas filas, la prueba no se puede leer por partes.",
+          "sin-soporte": "{n} de {total} segmentos no tienen soporte: se muestran, pero ninguno de ellos puede ser el peor.",
+          "sin-probabilidades": "El ganador no da probabilidades: su calibración no se puede medir."
+        },
+        "summary": {
+          "winner": "En la prueba, {ganador} cuesta {costo} por cada 100 decisiones (de {bajo} a {alto}).",
+          "base": "Sin modelo ({base}): {costo}. Tu regla de hoy: {regla}.",
+          "base-sin-regla": "Sin modelo ({base}): {costo}. Sin regla de hoy.",
+          "optimism": "Medida de selección: {seleccion}; en la prueba: {prueba}.",
+          "worst": "Peor segmento: {segmento}.",
+          "worst-none": "Ningún segmento con soporte.",
+          "brier": "Brier {brier} (decir siempre la tasa base: {base}).",
+          "calibration-none": "Calibración: el ganador no da probabilidades.",
+          "calibration-na": "Calibración: no aplica al estimar una cantidad.",
+          "openings": "La prueba se abrió con {count} configuraciones distintas.",
+          "openings_one": "La prueba se abrió una vez.",
+          "pattern": "Tu patrón de fallo: «{patron}»."
+        }
       }
     },
     "status": {

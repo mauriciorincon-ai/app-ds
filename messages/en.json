@@ -1454,6 +1454,47 @@
           "sin-senal": "Permutation: p = {p} with {n}; no clear signal.",
           "closed": "The test set stays closed: stage 8 opens it once."
         }
+      },
+      "8": {
+        "segment": {
+          "periodo": "the period {valor}",
+          "categoria": "{columna} = “{valor}”",
+          "tramo": "{columna}, band {tramo}"
+        },
+        "missing": {
+          "etapas-previas": "stages 1 to 7 met",
+          "sello": "the stage 6 test set with the same seal",
+          "prueba": "opening the test set",
+          "ganador": "opening it with the stage 7 winner",
+          "segmento": "the worst segment, or that none has support",
+          "calibracion": "the calibration, or why it can't be measured",
+          "patron": "your failure pattern, written in your own words"
+        },
+        "trap": {
+          "reabierta": "You opened the test set with {n} different setups: from the second one on, the measure is no longer unbiased, because you chose after seeing it.",
+          "prueba-chica": "The test set has {n} rows: the intervals are wide, and that's honest with so few.",
+          "optimismo": "The selection measure said {seleccion}; on the test set, the same metric gives {prueba}. The gap is the price of choosing with the same folds.",
+          "peor-periodo": "The model does worst in the period {valor}: it costs {exceso} more per 100 decisions than on the whole test set.",
+          "peor-categoria": "The model does worst when {columna} is “{valor}”: it costs {exceso} more per 100 decisions than on the whole test set.",
+          "peor-tramo": "The model does worst in band {tramo} of {columna}: it costs {exceso} more per 100 decisions than on the whole test set.",
+          "ningun-segmento": "No segment has support: with so few rows, the test set can't be read in parts.",
+          "sin-soporte": "{n} of {total} segments have no support: they're shown, but none of them can be the worst.",
+          "sin-probabilidades": "The winner gives no probabilities: its calibration can't be measured."
+        },
+        "summary": {
+          "winner": "On the test set, {ganador} costs {costo} per 100 decisions ({bajo} to {alto}).",
+          "base": "No model ({base}): {costo}. Your rule of today: {regla}.",
+          "base-sin-regla": "No model ({base}): {costo}. No rule of today.",
+          "optimism": "Selection measure: {seleccion}; on the test set: {prueba}.",
+          "worst": "Worst segment: {segmento}.",
+          "worst-none": "No segment with support.",
+          "brier": "Brier {brier} (always saying the base rate: {base}).",
+          "calibration-none": "Calibration: the winner gives no probabilities.",
+          "calibration-na": "Calibration: doesn't apply when estimating an amount.",
+          "openings": "The test set was opened with {count} different setups.",
+          "openings_one": "The test set was opened once.",
+          "pattern": "Your failure pattern: “{patron}”."
+        }
       }
     },
     "status": {

@@ -61,5 +61,10 @@ export const TERMINO_IDS = [
   "regla-un-error-estandar",
   "medida-de-seleccion",
   "prueba-de-permutacion",
+  // S13 (etapa 8)
+  "optimismo-de-la-seleccion",
+  "segmento-con-soporte",
+  "calibracion",
+  "brier",
 ] as const;
 export type TerminoId = (typeof TERMINO_IDS)[number];
