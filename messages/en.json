@@ -1452,7 +1452,9 @@
           "no-supera": "Doesn't beat the baseline ({media} per 100 decisions; {bajo} to {alto}). It's written down.",
           "senal": "Permutation: p = {p} with {n}; there's signal.",
           "sin-senal": "Permutation: p = {p} with {n}; no clear signal.",
-          "closed": "The test set stays closed: stage 8 opens it once."
+          "closed": "The test set stays closed: stage 8 opens it once.",
+          "opened-after": "Stage 8 opened the test set afterwards: this selection was made without seeing it.",
+          "opened-before": "This selection was made with the test set already opened in stage 8: it is no longer blind."
         }
       },
       "8": {

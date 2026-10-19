@@ -1452,7 +1452,9 @@
           "no-supera": "No supera a la línea base ({media} por cada 100 decisiones; de {bajo} a {alto}). Queda escrito.",
           "senal": "Permutación: p = {p} con {n}; hay señal.",
           "sin-senal": "Permutación: p = {p} con {n}; sin señal clara.",
-          "closed": "La prueba sigue cerrada: la etapa 8 la abre una sola vez."
+          "closed": "La prueba sigue cerrada: la etapa 8 la abre una sola vez.",
+          "opened-after": "La etapa 8 abrió la prueba después: esta selección se hizo sin verla.",
+          "opened-before": "Esta selección se hizo con la prueba ya abierta en la etapa 8: ya no es a ciegas."
         }
       },
       "8": {
