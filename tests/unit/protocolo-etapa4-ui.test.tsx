@@ -5,7 +5,14 @@
 //  · el inventario: «después» solo deja «excluir», «no sé» no ofrece «usar», la acción en bloque
 //    exige la declaración y se deshace, y registrar pasa por el criterio de verdad;
 //  · 80 columnas: las que no tienen alerta no se montan hasta que se abren.
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DatosEtapa } from "@/engine/protocolo/etapas";
 import type { CsvTable } from "@/lib/ds/csv";
@@ -170,8 +177,11 @@ describe("el paso 2: la revelación", () => {
     expect(screen.getByTestId("protocolo-apuesta-fija").textContent).toContain(
       "canal",
     );
-    expect(document.activeElement?.textContent).toBe(
-      "2 · Lo que encontró la app",
+    // el foco se mueve en un efecto después de pintar: bajo carga llega un turno después del hallazgo
+    await waitFor(() =>
+      expect(document.activeElement?.textContent).toBe(
+        "2 · Lo que encontró la app",
+      ),
     );
 
     expect(
