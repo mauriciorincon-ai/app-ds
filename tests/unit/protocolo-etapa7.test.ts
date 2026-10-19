@@ -24,6 +24,7 @@ import {
 import type { DatosEtapa } from "@/engine/protocolo/etapas";
 import { kPedidoPara, sinSolape } from "@/engine/protocolo/pliegues";
 import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
+import { empaquetar, leerArchivo } from "@/lib/protocolo/archivo";
 import { envio7 } from "@/lib/protocolo/liga7";
 import { validateValidationResult } from "@/workers/contract";
 import {
@@ -193,6 +194,41 @@ describe("la compuerta de la etapa 7", () => {
     );
   });
 
+  it("«no supera» se registra: la compuerta pasa, la 7 queda cumplida y la trampa lo dice (G-Plan 2a, M1 del S12)", () => {
+    // un ganador que nunca actúa: ni una predicción positiva, ni una probabilidad que cruce el umbral. Su costo
+    // por pliegue no baja del de la línea base (que incluye «nunca actuar»), así que el intervalo no queda sobre cero
+    const nunca: Corrida7 = {
+      ...CORRIDA,
+      resultado: {
+        ...CORRIDA.resultado,
+        oof: CORRIDA.resultado.oof.map((f) => ({
+          pred: f.pred.map(() => 0),
+          proba: f.proba ? f.proba.map(() => 0) : null,
+        })),
+      },
+    };
+    const datos = datosEtapa7(CREDITO.tabla, CREDITO.previas, HUELLA, nunca);
+    expect(datos.chequeos.veredicto).toBe("no-supera");
+    expect(ETAPA_7.criterio(datos, CREDITO.previas)).toEqual({
+      tipo: "cumple",
+    });
+    const r = registrar(PROTOCOLO_DS, CREDITO.cuaderno, 7, datos, {
+      huella: HUELLA,
+      tabla: CREDITO.tabla,
+      ahora: AHORA,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(estados(r.cuaderno).slice(6, 8)).toEqual([
+      "cumplida",
+      "no-construida",
+    ]);
+    expect(ETAPA_7.trampas!(datos, CREDITO.previas)).toContainEqual({
+      clave: "no-supera",
+      params: {},
+    });
+  });
+
   it("la 7 no abre sin la 6 sellada", () => {
     const { cuaderno } = registrado();
     const copia = JSON.parse(JSON.stringify(cuaderno)) as Cuaderno;
@@ -350,5 +386,110 @@ describe("las trampas y el resumen", () => {
     );
     expect(r.veredicto).toBe(datos.chequeos.veredicto);
     expect(r.n).toBe(CORRIDA.resultado.permutation.scores.length);
+  });
+});
+
+describe("leer acota los números del worker (B1 del S12)", () => {
+  type Libre = Record<string, unknown>;
+  const num = (c: Libre, k: string) => c[k] as number;
+  const base = () => {
+    const datos = datosEtapa7(CREDITO.tabla, CREDITO.previas, HUELLA, CORRIDA);
+    return JSON.parse(JSON.stringify(datos)) as DatosEtapa;
+  };
+  const conCambio = (editar: (c: Libre) => void) => {
+    const datos = base();
+    editar(datos.chequeos as Libre);
+    return datos;
+  };
+
+  it("lo que escribe la app pasa", () => {
+    expect(ETAPA_7.leer(base())).toEqual({ ok: true });
+  });
+
+  const casos: [string, (c: Libre) => void, string][] = [
+    ["k fraccionario", (c) => (c.k = 2.5), "k"],
+    ["k_pedido negativo", (c) => (c.k_pedido = -1), "k_pedido"],
+    ["semilla fraccionaria", (c) => (c.semilla = 1.5), "semilla"],
+    ["perm_n fraccionario", (c) => (c.perm_n = 20.5), "perm_n"],
+    ["perm_n negativo", (c) => (c.perm_n = -20), "perm_n"],
+    [
+      "más permutaciones fallidas que permutaciones",
+      (c) => (c.perm_fallidas = num(c, "perm_n") + 1),
+      "perm_fallidas",
+    ],
+    ["perm_mejores negativo", (c) => (c.perm_mejores = -10), "perm_mejores"],
+    [
+      "más permutaciones tan buenas como el ganador que permutaciones puntuadas",
+      (c) => (c.perm_mejores = num(c, "perm_n") - num(c, "perm_fallidas") + 1),
+      "perm_mejores",
+    ],
+    ["error estándar negativo", (c) => (c.ee = -0.1), "ee"],
+    [
+      "error estándar de la diferencia negativo",
+      (c) => (c.diferencia_ee = -1),
+      "diferencia_ee",
+    ],
+    [
+      "costo de la línea base negativo",
+      (c) => (c.base_costo = { ...(c.base_costo as object), "1": -1 }),
+      "base_costo",
+    ],
+    [
+      "costo del ganador negativo",
+      (c) => (c.ganador_costo = { ...(c.ganador_costo as object), "1": -1 }),
+      "ganador_costo",
+    ],
+    ["ganador fuera del roster", (c) => (c.ganador = "fantasma"), "ganador"],
+    ["mejor fuera del roster", (c) => (c.mejor = "fantasma"), "mejor"],
+    [
+      "un modelo ajeno en la liga",
+      (c) => (c.liga_cv = { ...(c.liga_cv as object), fantasma: 0.5 }),
+      "liga_cv",
+    ],
+    [
+      "una liga sin el puntaje del ganador",
+      (c) => {
+        const resto = { ...(c.liga_cv as Record<string, number>) };
+        delete resto[c.ganador as string];
+        c.liga_cv = resto;
+      },
+      "liga_cv",
+    ],
+    [
+      "un estado de un modelo ajeno",
+      (c) =>
+        (c.liga_estados = [...(c.liga_estados as string[]), "fantasma:ok"]),
+      "liga_estados",
+    ],
+    [
+      "un estado mal formado",
+      (c) =>
+        (c.liga_estados = [...(c.liga_estados as string[]), "sin-dos-puntos"]),
+      "liga_estados",
+    ],
+  ];
+
+  it.each(casos)("%s se rechaza nombrando el campo", (_n, editar, campo) => {
+    expect(ETAPA_7.leer(conCambio(editar))).toEqual({
+      ok: false,
+      campo: `chequeos.${campo}`,
+    });
+  });
+
+  it("por el camino del usuario: un archivo exportado y editado con una cota rota no se importa, y dice el campo", () => {
+    const { cuaderno } = registrado();
+    type Archivo = { cuaderno: Cuaderno };
+    const exportar = (editar: (c: Libre) => void) => {
+      const archivo = JSON.parse(empaquetar(cuaderno, AHORA)) as Archivo;
+      const ev = archivo.cuaderno.evidencias.findLast((e) => e.etapa === 7)!;
+      editar(ev.datos.chequeos as Libre);
+      return leerArchivo(JSON.stringify(archivo), PROTOCOLO_DS);
+    };
+    expect(exportar(() => undefined).ok).toBe(true);
+    const roto = exportar((c) => (c.perm_mejores = -10));
+    expect(roto.ok).toBe(false);
+    if (!roto.ok && roto.rechazo.tipo === "invalid-format")
+      expect(roto.rechazo.campo).toMatch(/datos\.chequeos\.perm_mejores$/);
+    else throw new Error(JSON.stringify(roto));
   });
 });
