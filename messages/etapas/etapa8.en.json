@@ -140,7 +140,11 @@
           "seg_costo": "Winner's cost per decision, per segment",
           "cal_n": "Cases per calibration bin",
           "cal_pred": "Average probability said, per bin",
-          "cal_obs": "Observed frequency, per bin"
+          "cal_obs": "Observed frequency, per bin",
+          "prueba_pos": "Positive rows in the test set",
+          "regla_vp": "Your rule: alerts that are right in the test set",
+          "regla_fp": "Your rule: false alarms in the test set",
+          "tabla_umbrales": "Right and false alerts, by threshold"
         }
       }
     }

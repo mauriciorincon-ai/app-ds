@@ -140,7 +140,11 @@
           "seg_costo": "Costo del ganador por decisión, por segmento",
           "cal_n": "Casos por tramo de calibración",
           "cal_pred": "Probabilidad media dicha, por tramo",
-          "cal_obs": "Frecuencia observada, por tramo"
+          "cal_obs": "Frecuencia observada, por tramo",
+          "prueba_pos": "Filas positivas en la prueba",
+          "regla_vp": "Tu regla: alertas que aciertan en la prueba",
+          "regla_fp": "Tu regla: falsas alarmas en la prueba",
+          "tabla_umbrales": "Alertas que aciertan y falsas, por umbral"
         }
       }
     }
