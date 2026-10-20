@@ -589,10 +589,37 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      todas tus filas, y la **etapa 8** la vuelve a medir sobre la prueba.
   8. **Etapa 6 · La prueba sellada.** Antes de entrenar, la app aparta una parte de tus datos como **prueba**: la etapa 7 entrena y compara solo dentro del entrenamiento, con pliegues, y la etapa 8 la abre una sola vez. La app **sugiere** el esquema con lo que registraste en la etapa 2: si tienes una **fecha** y una **unidad que se repite**, te pregunta si el modelo se usará con **unidades nuevas** o con las que ya conoces; si solo tienes fecha, reparte **por tiempo**; si solo tienes una unidad que se repite, **por grupo**; si no tienes ninguna, **estratificada** (al azar, guardando la proporción de cada clase). Puedes elegir otro esquema, pero escribes **por qué**: el cuaderno guarda el sugerido, el que elegiste y tu razón. Después eliges el **tamaño** de la prueba (de cada 100 filas, entre 10 y 40; se sugiere 20) y, en los esquemas por tiempo, el **horizonte**: cuánto tarda en conocerse el resultado, en días o en meses. No tiene valor por omisión: lo escribes tú, y 0 significa que el resultado se conoce al decidir. La tabla **«Cómo quedan tus filas»** cuenta por lado (entrenamiento, hueco, prueba y fuera): filas, unidades, fechas y clases. **No muestra ninguna fila de la prueba**, solo conteos y rangos. Las filas que no entran a ningún lado se cuentan por motivo: sin objetivo, sin fecha (en los esquemas por tiempo), sin unidad (en los de grupo), en el hueco o de unidades que están en la prueba. La **verificación** vuelve a contar sobre tu tabla que ninguna fila esté en los dos lados, que ninguna unidad esté en los dos lados y, por tiempo, que ninguna fila de entrenamiento caiga dentro del horizonte. **Registrar la etapa 6 la sella**: el sello son 64 caracteres que salen de tu huella, del esquema, de sus parámetros, de la semilla y de qué filas son la prueba; la pantalla muestra los primeros doce. Al recargar y volver a cargar tu CSV, el sello **se vuelve a calcular**: si cuadra, la etapa sigue cumplida; si no, queda por verificar y la 7 no abre. El contador cuenta **pruebas distintas** selladas: volver a registrar la misma no suma.
   9. **Etapa 7 · El ganador, con la prueba cerrada.** La app parte **solo tu entrenamiento** en pliegues, con el mismo esquema que sellaste en la etapa 6: cada pliegue entrena con unas filas y valida con otras que no vio, y ninguna fila cae en los dos lados. La tabla **«Lo que hereda»** dice qué columnas usa la liga, con qué partición y cuántas filas entrenan; tu prueba **no entra** a esta etapa. Después **«Correr la liga»** compite los modelos en esos pliegues y muestra cada puntaje con su **medida de selección**: el número con que se eligió al ganador, optimista porque ganó justo en esos pliegues. Si otro modelo más simple queda a menos de un error estándar del mejor, gana ese, y **«Por qué ganó»** lo explica. Luego el ganador se compara con la **línea base de cada pliegue** (la de la etapa 5), en costo por cada 100 decisiones, con un intervalo del 95 %: si el intervalo entero queda por encima de cero dice **«Supera»**; si toca o cruza el cero, **«No supera»**. Los dos son resultados válidos. Por último, la **prueba de permutación** baraja las etiquetas del entrenamiento y vuelve a validar al ganador muchas veces, para ver si encuentra algo que el azar también encuentra; te da su valor p y la **resolución** de ese valor. **Registrar la etapa 7** se activa al terminar la liga. Corre en tu navegador: con muchas filas puede tardar unos minutos, y tus datos no viajan a ningún servidor.
-  10. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
+  10. **Etapa 8 · La prueba, abierta una vez.** Ahora la app abre la prueba que sellaste en la etapa 6,
+     **una sola vez**, con el ganador de la etapa 7: lo entrena con todas tus filas de entrenamiento y
+     predice la prueba. Antes de abrirla lees qué se va a abrir (las columnas en «usar» y cuántas filas
+     de prueba hay). Si el sello que da tu tabla hoy no es el que registraste en la etapa 6, la prueba
+     **no se abre**. Al abrirla ves:
+     - **La medida en la prueba:** el ganador, la línea base sin modelo y tu regla de hoy, en costo por
+       cada 100 decisiones, con un intervalo del 95 %. El intervalo remuestrea **unidades o fechas
+       enteras** si tu esquema es por grupo o por tiempo (las filas de una misma unidad no son
+       independientes), y filas sueltas si es estratificada. Con la misma semilla, el mismo archivo da
+       siempre el mismo intervalo.
+     - **El optimismo de la selección:** la medida de la etapa 7 menos el mismo número en la prueba.
+     - **El error por segmento:** la prueba se corta en periodos (por mes, o por trimestre si pasa de
+       12 meses), en valores de cada categoría de 2 a 8 valores y en cuartiles de cada columna numérica.
+       Cada segmento dice sus filas y, con dos clases, sus casos de la clase menos frecuente. Un segmento
+       sin soporte se muestra, pero **nunca es el peor**. El peor se marca con símbolo, texto y color.
+     - **La calibración:** si el modelo da probabilidades, una tabla por tramos de igual ancho (5 tramos
+       con menos de 200 filas, 10 desde ahí) con lo que dijo y lo que pasó, el **Brier** junto al de decir
+       siempre la tasa base, y una frase con el tramo más desajustado. Con varias clases se calibra la
+       confianza de la clase que eligió. Si el modelo no da probabilidades, la pantalla dice que no se
+       puede medir; si estimas una cantidad, no aplica.
+     - **Los peores casos:** las 10 filas más caras de la prueba. Se ven **solo en tu pantalla**: no se
+       guardan en el cuaderno, no se exportan y no salen de tu navegador.
+     Luego escribes **tu patrón de fallo** (hasta 500 caracteres): con tus palabras, en qué se parecen los
+     peores casos. Sin él no se puede registrar la etapa. El cuaderno guarda tu texto y cuántos peores
+     casos se mostraron, nunca las filas. Si abres la prueba otra vez con otra configuración, el cuaderno lo
+     cuenta y lo rotula; la app no te lo impide. Abrir lo mismo otra vez no suma. Corre en tu navegador:
+     tus datos no viajan a ningún servidor.
+  11. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
      «tu unidad se repite: 361 filas para 100 unidades», «con tus costos actúas desde 0.17, no
      desde 0.5».
-  11. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
+  12. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
      queda como una entrada nueva; las etapas que se construyeron sobre la anterior vuelven a
      **«Por verificar»**.
 
@@ -609,7 +636,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Qué lleva el archivo:** no trae las filas de tu CSV, pero sí datos que salen de él: los nombres de
     tus columnas, los valores del objetivo con sus conteos, medias, la fecha mínima y la máxima, el
     nombre del archivo y su huella, además de tus respuestas. Desde la etapa 4 suma también los puntajes
-    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Desde la etapa 7 suma los puntajes de la liga por pliegue, el veredicto y la permutación, pero no tus filas. Trátalo con el cuidado que le darías a
+    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Desde la etapa 7 suma los puntajes de la liga por pliegue, el veredicto y la permutación, pero no tus filas. Desde la etapa 8 suma los agregados de la prueba (el costo y el número de filas de cada segmento, con el nombre de sus categorías, los tramos de la calibración, el Brier y cada apertura de la prueba con su fecha), tu patrón de fallo y el número de peores casos, pero no las filas de la prueba ni los peores casos. Trátalo con el cuidado que le darías a
     tus datos.
   - **Ventana privada:** el navegador no deja guardar. La página lo avisa («Exporta tu cuaderno antes de
     irte»): si cierras la pestaña, se pierde.
@@ -630,8 +657,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   navegador**: viven en el cuaderno de este navegador y en el archivo que tú bajas. A Sentry solo llega
   el número de la etapa y el resultado (registrada, cerrada…), nunca un valor.
 
-- **Limitaciones conocidas (Sprints 008 a 012):**
-  - Hoy están construidas las etapas 1 a 7; la 8 se ve con su criterio pero **no abre**.
+- **Limitaciones conocidas (Sprints 008 a 013):**
+  - Hoy están construidas las etapas 1 a 8; la 9 se ve con su criterio pero **no abre**.
   - El Protocolo cubre las tres tareas **con objetivo** (dos clases, varias o una cantidad); **sin
     objetivo** no aplica y se va a «agrupar» en Probeta.
   - El tamaño de muestra con **varias clases** es una **aproximación**: se calcula «una contra el
@@ -694,6 +721,17 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     - **El número de permutaciones depende de tu navegador:** se calcula con lo que tardó la liga en tu equipo, entre 20 y 200. Por eso puede cambiar de un equipo a otro.
     - **Los números de la liga, el veredicto y la permutación los calcula tu navegador y se guardan en el cuaderno.** La app comprueba que el veredicto y el valor p cuadren con esos números, pero no puede volver a correr la liga: un cuaderno con esos números editados de forma coherente no se detecta.
     - **Los pliegues son los de tu partición sellada.** Si cambias el esquema o la prueba en la etapa 6, la 7 no abre con los pliegues viejos.
+
+  - **Etapa 8, límites (Sprint 013):**
+    - **La prueba se abre una vez, y eso la vuelve honesta.** Abrirla con otra configuración queda rotulado en el cuaderno. Desde la segunda apertura, la medida ya no es sin sesgo: elegiste después de verla.
+    - **La etapa 8 mide, no recalibra.** Si las probabilidades están descalibradas, lo dice y lo cuantifica; no las corrige.
+    - **La medida no decide.** No eliges umbral ni revisas costos aquí: eso es de la etapa 9.
+    - **Los umbrales de soporte son una convención.** 10 filas por segmento y 3 casos de la clase menos frecuente no son una prueba estadística. Con una prueba chica, casi todo queda «sin soporte», y la trampa lo dice.
+    - **Con menos de 100 filas de prueba, los intervalos son anchos.** La trampa lo dice; es lo honesto con tan pocas.
+    - **El intervalo depende de tus conglomerados.** Con pocas unidades o fechas, el intervalo se vuelve ancho, aunque remuestree bien.
+    - **El cuaderno no guarda la prueba fila por fila.** Guarda solo agregados: el costo y el número de filas de cada segmento, los tramos de la calibración, el Brier, los intervalos, tu patrón y cuántos peores casos viste. La app comprueba que el resto cuadre (la partición, el sello, los segmentos, la línea base), pero no puede volver a abrir la prueba para comprobar esas cifras.
+    - **El peor segmento y el optimismo se recalculan** cada vez que se revisa el cuaderno, con lo que hay guardado.
+    - **Los peores casos no quedan guardados.** Si cierras la pantalla, para verlos otra vez tienes que volver a abrir la prueba, y eso se cuenta.
 
 ## Diccionario de términos
 
@@ -815,6 +853,10 @@ cuando una te frene.
 | **Regla de un error estándar** | Entre los modelos a menos de un error estándar del mejor, gana el más simple: una diferencia más chica que el ruido entre pliegues no justifica algo más complicado. |
 | **Medida de selección** | El puntaje con que se eligió al ganador. Es optimista: ganó justo porque ese número salió alto en esos pliegues. La medida sin sesgo es la prueba, que abre la etapa 8. |
 | **Prueba de permutación** | Se barajan las etiquetas del entrenamiento y se vuelve a validar muchas veces. Si lo logra igual con etiquetas al azar, lo que encontró no es señal. El valor p es la fracción de esos barajados que lo hizo igual o mejor. |
+| **Optimismo de la selección** | Cuánto exageró la medida de selección: el puntaje con que se eligió al ganador menos el mismo puntaje en la prueba. Que salga positivo es lo esperado. |
+| **Segmento con soporte** | Una parte de la prueba con filas suficientes para leerla sola: al menos 10 y, con dos clases, 3 casos de la clase menos frecuente. Lo que no llega se muestra, pero nunca es el peor. |
+| **Calibración** | Que las probabilidades signifiquen lo que dicen: de los casos en que el modelo dice 70 %, ocurre más o menos el 70 %. Se lee con una curva por tramos y con el Brier. |
+| **Brier** | El error cuadrático medio de las probabilidades: 0 es perfecto. Se compara con el de decir siempre la tasa base, que es lo que logra quien no sabe nada. |
 
 ## Preguntas frecuentes
 
@@ -899,3 +941,4 @@ cuando una te frene.
 | 010    | Protocolo DS, etapa 5 «La línea base sin modelo y la regla de hoy» (lo que ya se logra sin modelo, en la moneda de tu decisión y con la métrica estándar, rotulado como referencia; la regla de hoy escrita con hasta dos condiciones y medida en tus filas; el resumen del cuaderno). Además: los radios se leen en tema oscuro, y un identificador numérico se detecta en la etapa 4.)
 | 011    | Protocolo DS, etapa 6 «La prueba sellada» (la sugerencia del esquema con su porqué, cuatro esquemas, la pregunta de unidades nuevas o conocidas, el horizonte y el hueco en días o meses, la tabla por lado sin filas, la verificación de solape y el sello que se recalcula al recargar y cuenta pruebas distintas). Además: el inglés se descarga al elegirlo; la etapa 5 acepta «1,5» como número en una salida numérica y su resumen muestra vacíos, métricas y aciertos.
 | 012    | Protocolo DS, etapa 7 «El ganador, con la prueba cerrada» (la liga corre sobre los pliegues del entrenamiento, con el esquema sellado y sin la prueba; el puntaje del ganador se rotula «medida de selección»; la comparación contra la línea base pliegue por pliegue con su intervalo del 95 %, «Supera» o «No supera»; la permutación con su resolución; y el cuaderno que se vuelve a comprobar al recargar). Además: una clase llamada «constructor» o «__proto__» ya no se pierde al partir la tabla, y la etapa 6 precarga tu esquema elegido solo cuando difiere de la sugerencia de hoy. |
+| 013    | Protocolo DS, etapa 8 «La prueba, abierta una vez» (la prueba sellada se abre una sola vez y solo con el sello verificado; la medida en la prueba con su intervalo bootstrap por conglomerados, la línea base y tu regla, el optimismo de la selección, el error por segmento con soporte y su peor segmento, la calibración con su Brier, los peores casos solo en pantalla, y tu patrón de fallo. Las aperturas se cuentan y se rotulan, sin bloquear). Además: la etapa 7 dice si la prueba seguía cerrada o se abrió antes o después de su selección. |

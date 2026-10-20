@@ -2109,7 +2109,8 @@ def _validate_validation_payload(p):
     """Valida el payload de la etapa 7 antes de tocar los datos."""
     if not isinstance(p, dict):
         _contract("payload")
-    for key in ("test_idx", "train_idx"):
+    # S13: la prueba sale solo por el comando de la prueba (run_test): ni sus índices ni sus filas
+    for key in ("test_idx", "train_idx", "test", "train"):
         if key in p:
             _contract(key)
     for key in ("headers", "rows", "numeric", "categorical", "folds", "roster"):
@@ -2362,6 +2363,223 @@ def run_validation(payload_json, on_progress=None):
             },
             "oof": oof,
             "permutation": {**permutation, "observed": winner_row["cv"]["mean"]},
+            "elapsed_ms": _elapsed_ms(started),
+        }
+    )
+
+
+# --- S13 (Protocolo DS, etapa 8): la prueba, abierta una vez ----------------------------------
+#
+# La ÚNICA entrada que recibe filas de la prueba. TS la arma solo cuando el sello que da la tabla hoy es
+# el que se selló en la etapa 6 (src/lib/protocolo/prueba8.ts); aquí el sello no se puede rehacer (su
+# receta vive en TS), así que se valida su forma y se devuelve para que TS compruebe el eco. El ganador de
+# la etapa 7 se ajusta con TODO el entrenamiento y predice la prueba: por fila, la predicción y la
+# probabilidad cuando el modelo la da, más la métrica de la liga en la prueba (para el optimismo de la
+# selección). Nunca devuelve un valor de la tabla. Las claves del payload son un conjunto cerrado: una de
+# más rompe el contrato nombrándola. Errores: solo el tipo, nunca un valor.
+
+TEST_KEYS = frozenset(
+    (
+        "task",
+        "headers",
+        "train",
+        "test",
+        "target",
+        "numeric",
+        "categorical",
+        "seed",
+        "winner",
+        "primary_metric",
+        "huella",
+        "sello",
+        "positive",
+        "classes",
+    )
+)
+
+
+def _hex64(value):
+    return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+
+
+def _validate_test_payload(p):
+    """Valida el payload de la etapa 8 antes de tocar los datos."""
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in p:
+        if key not in TEST_KEYS:
+            _contract(key)
+    for key in ("headers", "train", "test", "numeric", "categorical"):
+        if not isinstance(p.get(key), list):
+            _contract(key)
+    headers = p["headers"]
+    if not all(isinstance(h, str) for h in headers) or len(set(headers)) != len(headers):
+        _contract("headers")
+    if not isinstance(p.get("target"), str) or p["target"] not in headers:
+        _contract("target")
+    features = list(p["numeric"]) + list(p["categorical"])
+    if (
+        not features
+        or len(set(features)) != len(features)
+        or any(not isinstance(c, str) or c not in headers or c == p["target"] for c in features)
+    ):
+        _contract("features")
+    for key, minimum in (("train", 2), ("test", 1)):
+        rows = p[key]
+        if len(rows) < minimum or any(not isinstance(r, list) or len(r) != len(headers) for r in rows):
+            _contract(key)
+    if not _is_int(p.get("seed")):
+        _contract("seed")
+    task = p.get("task")
+    if task not in VALIDATION_TASKS:
+        _contract("task")
+    if p.get("primary_metric") not in TASK_METRICS[task]:
+        _contract("primary_metric")
+    if p.get("winner") not in _FACTORIES_BY_TASK[task]:
+        _contract("winner")
+    for key in ("huella", "sello"):
+        if not _hex64(p.get(key)):
+            _contract(key)
+
+    def binary():
+        if "classes" in p:
+            _contract("classes")
+        if not isinstance(p.get("positive"), str):
+            _contract("positive")
+
+    def multiclass():
+        if "positive" in p:
+            _contract("positive")
+        _validate_classes(p.get("classes"))
+
+    def numeric():
+        for key in ("positive", "classes"):
+            if key in p:
+                _contract(key)
+
+    _by_task(task, {
+        "binaria": binary,
+        "multiclase": multiclass,
+        "numerica": numeric,
+        "agrupar": _supervised_only,
+    })()
+
+
+def _test_targets(train, test, p):
+    """El objetivo del entrenamiento y de la prueba, codificado igual que en la etapa 7."""
+    target = p["target"]
+
+    def binary():
+        y_train = train[target].astype("string")
+        y_test = test[target].astype("string")
+        classes = sorted(y_train.dropna().unique().tolist())
+        if y_train.isna().any() or len(classes) != 2 or p["positive"] not in classes:
+            _contract("positive")
+        if y_test.isna().any() or not set(y_test.unique().tolist()) <= set(classes):
+            _contract("test")
+        positive = p["positive"]
+        return (
+            (y_train == positive).astype(int).to_numpy(),
+            (y_test == positive).astype(int).to_numpy(),
+            classes,
+        )
+
+    def multiclass():
+        classes = list(p["classes"])
+        index = {c: i for i, c in enumerate(classes)}
+        y_train = train[target].astype("string")
+        if sorted(y_train.dropna().unique().tolist()) != classes:
+            _contract("classes")
+        y_test = test[target].astype("string")
+        if y_test.isna().any() or not set(y_test.unique().tolist()) <= set(classes):
+            _contract("test")
+        return (
+            y_train.map(index).astype(int).to_numpy(),
+            y_test.map(index).astype(int).to_numpy(),
+            classes,
+        )
+
+    def numeric_target():
+        y_train = pd.to_numeric(train[target], errors="coerce").to_numpy(dtype=float)
+        y_test = pd.to_numeric(test[target], errors="coerce").to_numpy(dtype=float)
+        if not np.all(np.isfinite(y_train)):
+            _contract("target")
+        if not np.all(np.isfinite(y_test)):
+            _contract("test")
+        return y_train, y_test, None
+
+    return _by_task(p["task"], {
+        "binaria": binary,
+        "multiclase": multiclass,
+        "numerica": numeric_target,
+        "agrupar": _supervised_only,
+    })()
+
+
+def run_test(payload_json):
+    """La entrada del comando «test» (S13, etapa 8 del Protocolo DS)."""
+    started = time.perf_counter()
+    p = json.loads(payload_json)
+    _validate_test_payload(p)
+    numeric = list(p["numeric"])
+    categorical = list(p["categorical"])
+    features = numeric + categorical
+    train = _build_frame(p["headers"], p["train"], numeric)
+    test = _build_frame(p["headers"], p["test"], numeric)
+    y_train, y_test, classes = _test_targets(train, test, p)
+    task = p["task"]
+    ctx = {
+        "factories": _FACTORIES_BY_TASK[task],
+        "seed": int(p["seed"]),
+        "preprocessor": _make_preprocessor(numeric, categorical),
+    }
+    X_train, X_test = train[features], test[features]
+    try:
+        pipe = _member_pipe(p["winner"], ctx).fit(X_train, y_train)
+        y_pred = pipe.predict(X_test)
+    except Exception:  # noqa: BLE001 — el mensaje podría traer valores; se dice solo qué falló
+        raise RuntimeError("winner-fit-failed") from None
+    metric = p["primary_metric"]
+
+    def binary():
+        proba = _positive_proba(pipe, X_test)
+        value = _metrics(y_test, y_pred, _scores(pipe, X_test))[metric]
+        return (
+            [int(v) for v in y_pred],
+            None if proba is None else _finite(proba),
+            value,
+            {"classes": classes, "positive_class": p["positive"]},
+        )
+
+    def multiclass():
+        proba = _proba(pipe, X_test)
+        value = _multiclass_metrics(y_test, y_pred, proba, len(classes))[metric]
+        # la confianza de la clase predicha: lo que se calibra cuando hay varias opciones
+        confidence = None if proba is None else _finite([float(v) for v in proba.max(axis=1)])
+        return [classes[int(v)] for v in y_pred], confidence, value, {"classes": classes}
+
+    def numeric_out():
+        pred = _finite([float(v) for v in y_pred])
+        return pred, None, _reg_metrics(y_test, y_pred)[metric], {}
+
+    pred, proba, value, task_fields = _by_task(task, {
+        "binaria": binary,
+        "multiclase": multiclass,
+        "numerica": numeric_out,
+        "agrupar": _supervised_only,
+    })()
+    return json.dumps(
+        {
+            "task": task,
+            **task_fields,
+            "winner": p["winner"],
+            "n_train": int(len(y_train)),
+            "n_test": int(len(y_test)),
+            "pred": pred,
+            "proba": proba,
+            "metric": {"name": metric, "value": float(value)},
+            "huella": p["huella"],
+            "sello": p["sello"],
             "elapsed_ms": _elapsed_ms(started),
         }
     )

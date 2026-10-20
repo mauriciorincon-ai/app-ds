@@ -20,7 +20,7 @@ import {
 // de Pyodide de verdad:
 //  · credito-fuga-plantada.csv (estratificada): lo que hereda, los pliegues verificados, la liga como medida
 //    de selección, por qué ganó, la comparación con la línea base con su intervalo y la permutación; registrar
-//    deja la 8 sin construir; axe en los dos temas, 360 px sin desborde, y regla dura 2 (nada a
+//    abre la 8 (S13); axe en los dos temas, 360 px sin desborde, y regla dura 2 (nada a
 //    /api/narrate, ninguna fila del CSV en la red ni en el archivo exportado);
 //  · bajas-con-fuga.csv (por tiempo y por grupo, un mes de hueco): pliegues con el hueco y sin unidades
 //    cruzadas; al recargar, la 7 pide los datos y con el mismo CSV vuelve a cuadrar.
@@ -85,12 +85,15 @@ test("etapa 7 con crédito: la liga en sus pliegues, contra la línea base, con 
   await axeBothThemes(page);
   await sinDesborde(page, 360);
 
-  // registrar: la compuerta acepta, la 8 se ve sin construir, y el cuaderno lo resume
+  // registrar: la compuerta acepta, la 8 abre, y el cuaderno lo resume
   await e7.getByRole("button", { name: "Registrar la etapa 7" }).click();
   await expect(e7.getByText("Cumplida")).toBeVisible();
   await expect(page.locator("#etapa-7-titulo")).toBeFocused();
   await expect(
-    page.locator("#etapa-8").getByText("Sin construir"),
+    page.locator("#etapa-8").getByText("Abierta", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#etapa-9").getByText("Sin construir"),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen7");
   await expect(resumen).toContainText("Ganador:");
@@ -155,6 +158,9 @@ test("etapa 7 con bajas: por tiempo y por grupo, con el hueco; al recargar vuelv
   await cargarCsv(page, "bajas-con-fuga.csv");
   await expect(e7.getByText("Cumplida")).toBeVisible();
   await expect(
-    page.locator("#etapa-8").getByText("Sin construir"),
+    page.locator("#etapa-8").getByText("Abierta", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#etapa-9").getByText("Sin construir"),
   ).toBeVisible();
 });

@@ -28,7 +28,8 @@ import {
   operadoresDe,
 } from "@/engine/protocolo/regla";
 import { lista, numero, textoLleno } from "@/engine/protocolo/valores";
-import { useI18n } from "@/i18n/provider";
+import { useTextosEtapa } from "@/i18n/textos-etapa";
+import { TEXTOS_ETAPA_5 } from "./textos/etapa5";
 import { cifra } from "@/lib/protocolo/formato";
 import { formatQuantity, thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
@@ -51,7 +52,7 @@ export function Etapa5Form({
   previas,
   onRegistrar,
 }: PropsFormulario) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_5);
   const tabla = datos?.tabla ?? null;
   const e1 = previas[1];
   const forma = e1 ? formaDe(e1.respuestas) : null;

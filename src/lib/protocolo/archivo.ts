@@ -66,11 +66,19 @@ const carga = z.strictObject({
   columnas: entero().check(z.nonnegative()),
 });
 
+// S13: las aperturas de la prueba sellada. Opcional: un cuaderno de antes no las trae y se sigue leyendo.
+const apertura = z.strictObject({
+  fecha: z.iso.datetime(),
+  huella: hex64(),
+  clave: hex64(),
+});
+
 const cuadernoSchema = z.strictObject({
   version: z.literal(CUADERNO_VERSION),
   creado: z.iso.datetime(),
   cargas: z.array(carga),
   evidencias: z.array(evidencia),
+  aperturas: z.optional(z.array(apertura)),
 });
 
 const archivoSchema = z.strictObject({

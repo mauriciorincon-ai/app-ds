@@ -83,6 +83,7 @@ export function ProtocoloApp() {
         datos={p.datos}
         listo={p.listo}
         onRegistrar={p.registrarEtapa}
+        onApertura={p.registrarApertura}
       />
       <CuadernoPanel
         cuaderno={p.cuaderno}

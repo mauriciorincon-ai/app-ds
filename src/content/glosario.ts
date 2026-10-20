@@ -266,6 +266,35 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
       en: "The training labels are shuffled and the model is validated again many times: if it does as well with random labels, what it found isn't signal. The p-value is the share of those shuffles that did as well or better.",
     },
   },
+  // S13 (etapa 8)
+  "optimismo-de-la-seleccion": {
+    termino: { es: "Optimismo de la selección", en: "Selection optimism" },
+    definicion: {
+      es: "Cuánto exageró la medida de selección: el puntaje con que se eligió al ganador menos el mismo puntaje en la prueba (al revés si menor es mejor). Que salga positivo es lo esperado: ganó en parte porque le fue bien en esos pliegues.",
+      en: "How much the selection measure exaggerated: the score the winner was picked with minus the same score on the test set (the other way round when lower is better). A positive value is what you'd expect: it won partly because it did well on those folds.",
+    },
+  },
+  "segmento-con-soporte": {
+    termino: { es: "Segmento con soporte", en: "Segment with support" },
+    definicion: {
+      es: "Una parte de la prueba (un periodo, un valor de una categoría, un cuartil de una columna) con filas suficientes para leerla sola: al menos 10 filas y, con dos clases, 3 casos de la clase menos frecuente. Es una convención del programa; un segmento sin soporte se muestra, pero nunca es el peor.",
+      en: "A part of the test set (a period, one value of a category, a quartile of a column) with enough rows to read on its own: at least 10 rows and, with two classes, 3 cases of the less frequent class. It's a convention of the program; a segment without support is shown, but it's never the worst.",
+    },
+  },
+  calibracion: {
+    termino: { es: "Calibración", en: "Calibration" },
+    definicion: {
+      es: "Que las probabilidades signifiquen lo que dicen: de los casos en que el modelo dice 70 %, ocurre más o menos el 70 %. Se lee con una curva por tramos y con el Brier. La etapa 8 la mide; no la corrige.",
+      en: "Probabilities meaning what they say: of the cases where the model says 70 %, about 70 % happen. It's read with a curve by bins and with the Brier score. Stage 8 measures it; it doesn't fix it.",
+    },
+  },
+  brier: {
+    termino: { es: "Brier", en: "Brier score" },
+    definicion: {
+      es: "El error cuadrático medio de las probabilidades: 0 es perfecto. Se compara con el de decir siempre la tasa base, que es lo que logra quien no sabe nada.",
+      en: "The mean squared error of the probabilities: 0 is perfect. It's compared with the score of always saying the base rate, which is what someone who knows nothing gets.",
+    },
+  },
   // S9 (etapa 4)
   "existe-al-decidir": {
     termino: { es: "Existe al decidir", en: "Exists when you decide" },

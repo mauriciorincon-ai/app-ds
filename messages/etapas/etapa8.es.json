@@ -1,0 +1,147 @@
+{
+  "protocol": {
+    "stage": {
+      "8": {
+        "need-data": "Esta etapa usa tus datos y las etapas 1 a 7: cárgalos y cúmplelas primero.",
+        "opens": {
+          "title": "Lo que se abre",
+          "test": "La prueba que selló la etapa 6: {n} filas, sello {sello}.",
+          "train": "El ganador de la etapa 7, {ganador}, se ajusta con las {n} filas de entrenamiento y predice la prueba.",
+          "columns": "Con las columnas en «usar» ({n}): {lista}.",
+          "once": "La prueba se abre una vez. Lo que veas aquí ya no sirve para elegir otro modelo sin que se note: si la vuelves a abrir con otra configuración, queda rotulado en el cuaderno.",
+          "count": "Ya la abriste con {count} configuraciones distintas.",
+          "count_one": "Ya la abriste una vez.",
+          "seal-bad": "El sello que da tu tabla hoy no es el que registró la etapa 6: la prueba no se abre. Revisa la etapa 6.",
+          "cannot": "Falta algo para abrir la prueba: el ganador de la etapa 7, su métrica o columnas en «usar»."
+        },
+        "open": {
+          "button": "Abrir la prueba",
+          "again": "Abrir la prueba otra vez",
+          "cancel": "Cancelar",
+          "loading": "Preparando Python en tu navegador…",
+          "measuring": "Ajustando al ganador con el entrenamiento y midiendo la prueba…",
+          "cancelled": "Cancelaste: la prueba no se abrió y nada se registró.",
+          "error": "La prueba no se pudo abrir ({motivo}); nada se registró.",
+          "note": "Corre en tu navegador: ni la prueba ni el resto de tus datos viajan a ningún servidor."
+        },
+        "measure": {
+          "title": "La medida en la prueba",
+          "col-who": "Quién decide",
+          "col-cost": "Costo por cada 100 decisiones",
+          "col-interval": "Intervalo del 95 %",
+          "winner": "{ganador}, el ganador",
+          "base": "Sin modelo: {base}",
+          "rule": "Tu regla de hoy",
+          "interval": "{bajo} a {alto}",
+          "no-rule": "En la etapa 5 dijiste que no hay regla de hoy: no hay con qué compararla.",
+          "how": "Con los costos y el umbral de la etapa 1. El intervalo remuestrea {conglomerado} {b} veces con semilla fija: el mismo archivo da el mismo intervalo.",
+          "cluster": {
+            "fila": "filas",
+            "unidad": "unidades enteras (las filas de una misma unidad no son independientes)",
+            "fecha": "fechas enteras (las filas de una misma fecha no son independientes)"
+          },
+          "optimism": "Medida de selección (etapa 7): {seleccion} en {metrica}. En la prueba, la misma métrica da {prueba}.",
+          "optimism-gap": "Optimismo de la selección: {optimismo}.",
+          "optimism-none": "Sin optimismo: en la prueba le fue igual o mejor que en la selección."
+        },
+        "segments": {
+          "title": "El error por segmento",
+          "global": "En toda la prueba, el ganador cuesta {costo} por cada 100 decisiones.",
+          "col-segment": "Segmento",
+          "col-rows": "Filas",
+          "col-cases": "Casos de «{clase}»",
+          "col-cost": "Costo por cada 100",
+          "col-read": "Lectura",
+          "supported": "con soporte",
+          "unsupported": "sin soporte",
+          "worst": "el peor",
+          "none": "Ningún segmento tiene soporte: la prueba no se puede leer por partes.",
+          "empty": "No hay segmentos que leer: ni fecha, ni categorías de 2 a 8 valores, ni columnas numéricas en «usar».",
+          "rule-cases": "Soporte mínimo: {filas} filas y {casos} casos de la clase menos frecuente. Un segmento sin soporte se muestra, pero nunca es el peor. Es una convención del programa, no una prueba estadística.",
+          "rule": "Soporte mínimo: {filas} filas. Un segmento sin soporte se muestra, pero nunca es el peor. Es una convención del programa, no una prueba estadística.",
+          "range-open-low": "hasta {hasta}",
+          "range": "más de {desde} y hasta {hasta}",
+          "range-open-high": "más de {desde}"
+        },
+        "calibration": {
+          "title": "La calibración",
+          "what-binaria": "Lo que el modelo dijo sobre «hay que actuar», contra lo que pasó, por tramos de igual ancho.",
+          "what-multiclase": "La confianza del modelo en la clase que eligió, contra si acertó, por tramos de igual ancho.",
+          "col-range": "Dijo",
+          "col-n": "Casos",
+          "col-said": "En promedio dijo",
+          "col-happened": "Pasó",
+          "range": "{desde} a {hasta} %",
+          "brier": "Brier: {brier}. Decir siempre la tasa base daría {base}. Menor es mejor.",
+          "reading": "Cuando dice entre {desde} y {hasta} %, pasa en {observado} % de {n} casos.",
+          "reading-none": "Ningún tramo llega a {n} casos: la curva no se lee en palabras.",
+          "sin-probabilidades": "El ganador no da probabilidades: su calibración no se puede medir. La compuerta lo acepta así.",
+          "no-aplica": "Al estimar una cantidad no hay probabilidades que calibrar: no aplica.",
+          "measures": "Esta etapa mide la calibración; no corrige al modelo.",
+          "pct": "{n} %"
+        },
+        "worst": {
+          "title": "Los peores casos",
+          "note": "Los {n} errores más caros de la prueba. Se ven solo en tu pantalla: no se guardan en el cuaderno, no se exportan y no salen de tu navegador.",
+          "region": "Los peores casos de la prueba",
+          "col-row": "Fila",
+          "col-truth": "Lo que pasó",
+          "col-said": "Lo que dijo el modelo",
+          "col-proba": "Probabilidad",
+          "col-cost": "Costo",
+          "empty": "El ganador no se equivocó en ninguna fila de la prueba."
+        },
+        "pattern": {
+          "label": "Tu patrón de fallo",
+          "help": "Con tus palabras: ¿en qué se parecen los peores casos? Por ejemplo, «falla con los clientes nuevos del canal web». Hasta {max} caracteres. Queda en el cuaderno para la ficha de la etapa 10."
+        },
+        "field": {
+          "patron": "Tu patrón de fallo"
+        },
+        "check": {
+          "sello_6": "Sello de la prueba (etapa 6)",
+          "esquema": "Esquema",
+          "conglomerado": "Qué remuestrea el intervalo",
+          "huella_pliegues": "Huella de los pliegues (etapa 7)",
+          "base_id": "Línea base sin modelo",
+          "clase_rara": "Clase menos frecuente en la prueba",
+          "semilla": "Semilla del intervalo",
+          "remuestreos": "Remuestreos del intervalo",
+          "n_entrenamiento": "Filas de entrenamiento",
+          "n_prueba": "Filas de prueba",
+          "seleccion": "Medida de selección (etapa 7)",
+          "base_costo": "Costo de la línea base por decisión",
+          "base_bajo": "Línea base: extremo bajo del intervalo",
+          "base_alto": "Línea base: extremo alto del intervalo",
+          "regla_costo": "Costo de tu regla de hoy por decisión",
+          "regla_bajo": "Tu regla: extremo bajo del intervalo",
+          "regla_alto": "Tu regla: extremo alto del intervalo",
+          "columnas_numericas": "Columnas numéricas",
+          "columnas_categoricas": "Columnas de categorías",
+          "seg_n": "Filas por segmento",
+          "seg_casos": "Casos de la clase menos frecuente, por segmento",
+          "ganador": "Ganador",
+          "metrica": "Métrica de la liga",
+          "calibracion": "Calibración",
+          "peor_segmento": "Peor segmento",
+          "prueba_metrica": "La métrica de la liga en la prueba",
+          "ganador_costo": "Costo del ganador por decisión",
+          "ganador_bajo": "Ganador: extremo bajo del intervalo",
+          "ganador_alto": "Ganador: extremo alto del intervalo",
+          "brier": "Brier",
+          "brier_base": "Brier de la tasa base",
+          "peores_n": "Peores casos mostrados",
+          "aperturas": "Aperturas distintas de la prueba",
+          "optimismo": "Optimismo de la selección",
+          "peor_exceso": "Exceso de costo del peor segmento por decisión",
+          "seg_con_soporte": "Segmentos con soporte",
+          "cal_lectura": "Tramo que se lee en palabras",
+          "seg_costo": "Costo del ganador por decisión, por segmento",
+          "cal_n": "Casos por tramo de calibración",
+          "cal_pred": "Probabilidad media dicha, por tramo",
+          "cal_obs": "Frecuencia observada, por tramo"
+        }
+      }
+    }
+  }
+}

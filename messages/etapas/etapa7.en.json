@@ -1,0 +1,140 @@
+{
+  "protocol": {
+    "stage": {
+      "7": {
+        "need-data": "This stage uses your data and stages 1 to 6: load it and complete them first.",
+        "inherit": {
+          "title": "What it inherits from your stages",
+          "columns": "Columns in use (stage 4): {n}. {lista}.",
+          "no-columns": "Stage 4 left no column in use: without columns there's no model.",
+          "scheme": "Sealed split (stage 6): {esquema}, with {n} training rows. The test set doesn't enter this stage.",
+          "baseline": "Baseline (stage 5): in each fold, whichever costs least on its training rows; your current rule competes if you wrote one."
+        },
+        "folds": {
+          "title": "The folds, inside the training rows",
+          "k": "{k} folds with the sealed scheme.",
+          "reduced": "{pedido} were requested; {k} remain because {razon}.",
+          "none": "Two folds can't be built because {razon}.",
+          "reason": {
+            "pocos-periodos": "there aren't enough periods",
+            "pocas-unidades": "there aren't enough units",
+            "pocos-casos": "a class has very few cases"
+          },
+          "col-fold": "Fold",
+          "col-train": "Trains on",
+          "col-val": "Validates on",
+          "time-note": "By time, each fold validates one period and trains only on what came before, minus the gap of your horizon; the first period only teaches."
+        },
+        "verify": {
+          "title": "Checked on your table",
+          "rows": "No row trains and validates in the same fold.",
+          "units": "No unit has rows on both sides of a fold.",
+          "time": "No training row is within a horizon of its validation.",
+          "test": "No test row enters a fold.",
+          "rows-bad": "{n} rows train and validate in the same fold.",
+          "units-bad": "{n} units have rows on both sides of a fold.",
+          "time-bad": "{n} training rows are within a horizon of their validation.",
+          "test-bad": "{n} rows that aren't training rows entered a fold."
+        },
+        "run": {
+          "button": "Run the league",
+          "again": "Run the league again",
+          "loading": "Getting Python ready in your browser…",
+          "cv": "Cross-validation: model {i} of {n} ({modelo}).",
+          "perm": "Permutations: {i} of {n}.",
+          "cancel": "Cancel",
+          "cancelled": "You cancelled the run; nothing was recorded.",
+          "error": "The league couldn't run ({motivo}); nothing was recorded.",
+          "note": "It runs in your browser: your data doesn't travel to any server. With many rows it can take a few minutes."
+        },
+        "league": {
+          "title": "The league",
+          "caption": "{metrica} in cross-validation: selection measure",
+          "col-model": "Model",
+          "col-score": "Score (± spread)",
+          "winner": "winner",
+          "best": "best score",
+          "no-converge": "didn't converge",
+          "error": "failed",
+          "note": "Selection measure: it's the score used to choose, and it's optimistic, because the winner won on exactly these folds. The unbiased measure is the test set, which stage 8 opens once."
+        },
+        "why": {
+          "title": "Why it won",
+          "same": "{ganador} had the best score ({puntaje}), and there's no simpler model within one standard error ({ee}).",
+          "simpler": "The best score was {mejor}'s ({puntaje}). {ganador} came within one standard error ({ee}) and is simpler: a difference smaller than the noise across folds doesn't justify something more complicated."
+        },
+        "ref": {
+          "nunca-actuar": "Never act",
+          "siempre-actuar": "Always act",
+          "clase-mayoritaria": "The most frequent class",
+          "opcion-barata": "The cheapest fixed option",
+          "mediana": "The median",
+          "media": "The average",
+          "cuantil": "The quantile of your costs",
+          "ultimo-valor": "The unit's last value",
+          "regla": "Your current rule"
+        },
+        "compare": {
+          "title": "Against what you already get without a model",
+          "caption": "Cost per 100 decisions, on each fold's validation rows",
+          "col-fold": "Fold",
+          "col-base": "The fold's baseline",
+          "col-base-cost": "Its cost",
+          "col-winner-cost": "Winner's cost",
+          "diff": "Baseline minus winner, per 100 decisions: {media} on average (95% interval: {bajo} to {alto}).",
+          "supera": "It beats the baseline: the whole interval is above zero.",
+          "no-supera": "It doesn't beat the baseline: the interval touches or crosses zero. That's written down, and stage 8 will measure both on the test set.",
+          "note": "The folds share training rows: the interval is optimistic and, with few folds, wide."
+        },
+        "perm": {
+          "title": "Signal or just chance?",
+          "result": "With the labels shuffled {n} times, {m} did as well as or better than the winner: p = {p}.",
+          "resolution": "With {n} permutations, the smallest possible p is {res}.",
+          "senal": "There's signal: almost no shuffle did as well or better (p ≤ 0.05, a convention).",
+          "sin-senal": "No clear signal: with random labels the same is reached often; what it found may be chance.",
+          "failed": "{n} permutations couldn't be scored and don't count."
+        },
+        "check": {
+          "sello_6": "Test set seal (stage 6)",
+          "esquema": "Scheme",
+          "razon_k": "Why that number of folds",
+          "huella_pliegues": "Folds fingerprint",
+          "semilla": "Folds seed",
+          "n_entrenamiento": "Training rows",
+          "k_pedido": "Folds requested",
+          "k": "Folds",
+          "solape_filas": "Rows on both sides of a fold",
+          "solape_unidades": "Units on both sides of a fold",
+          "validacion_antes": "Training within a horizon of its validation",
+          "fuera_entrenamiento": "Rows outside the training set in a fold",
+          "columnas_numericas": "Numeric columns",
+          "columnas_categoricas": "Category columns",
+          "base_ids": "Each fold's baseline",
+          "pliegue_entrenamiento": "Training rows, per fold",
+          "pliegue_validacion": "Validation rows, per fold",
+          "base_costo": "Baseline cost per decision, per fold",
+          "metrica": "League metric",
+          "roster": "League models",
+          "liga_estados": "Status of each model",
+          "liga_cv": "Cross-validation score (selection measure)",
+          "ganador": "Winner",
+          "mejor": "Best score",
+          "ee": "Standard error of the best",
+          "ganador_pliegues": "Winner's score, per fold",
+          "ganador_costo": "Winner's cost per decision, per fold",
+          "diferencia_media": "Baseline minus winner, per decision",
+          "diferencia_ee": "Standard error of the difference",
+          "ic_bajo": "95% interval, from",
+          "ic_alto": "95% interval, to",
+          "veredicto": "Against the baseline",
+          "perm_n": "Permutations",
+          "perm_fallidas": "Permutations that couldn't be scored",
+          "perm_mejores": "Permutations as good as or better than the winner",
+          "perm_observado": "Winner's score (observed)",
+          "perm_p": "p-value",
+          "senal": "Signal"
+        }
+      }
+    }
+  }
+}

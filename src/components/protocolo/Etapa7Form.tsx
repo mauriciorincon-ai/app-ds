@@ -12,7 +12,8 @@ import { ETAPA_7, datosEtapa7, plan7 } from "@/engine/protocolo/etapa7";
 import { esPorGrupo, esTemporal } from "@/engine/protocolo/particion";
 import { resolucion } from "@/engine/protocolo/permutacion";
 import { lista, mapa, numero, texto } from "@/engine/protocolo/valores";
-import { useI18n } from "@/i18n/provider";
+import { useTextosEtapa } from "@/i18n/textos-etapa";
+import { TEXTOS_ETAPA_7 } from "./textos/etapa7";
 import { cifra, proporcion } from "@/lib/protocolo/formato";
 import { envio7 } from "@/lib/protocolo/liga7";
 import { useValidacion } from "@/lib/protocolo/useValidacion";
@@ -56,7 +57,7 @@ const Seccion = ({
 );
 
 export function Etapa7Form({ datos, previas, onRegistrar }: PropsFormulario) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_7);
   const tabla = datos?.tabla ?? null;
   const huella = datos?.carga.sha256 ?? null;
   const plan = useMemo(

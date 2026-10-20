@@ -4,7 +4,12 @@
 // NOMBRÁNDOLO («detectó k de n», regla 19).
 import { describe, expect, it } from "vitest";
 import { registrar } from "@/engine/protocolo/compuerta";
-import { cuadernoVacio, type Cuaderno } from "@/engine/protocolo/cuaderno";
+import {
+  agregarApertura,
+  aperturasDistintas,
+  cuadernoVacio,
+  type Cuaderno,
+} from "@/engine/protocolo/cuaderno";
 import type {
   DatosEtapa,
   DefinicionProtocolo,
@@ -179,6 +184,47 @@ describe(".protocolo.json", () => {
       ok: false,
       rechazo: { tipo: "file-too-large", bytes: MAX_PROTOCOL_FILE_BYTES + 1 },
     });
+  });
+
+  it("S13: las aperturas de la prueba son opcionales; con ellas se leen, y una rota se nombra", () => {
+    const sin = cuadernoValido();
+    expect("aperturas" in sin).toBe(false);
+    expect(aperturasDistintas(sin)).toBe(0);
+    const apertura = (clave: string) => ({
+      fecha: AHORA.toISOString(),
+      huella: HUELLA,
+      clave,
+    });
+    // abrir lo mismo dos veces no suma; otra cosa, sí; la lista solo crece
+    const con = [
+      apertura("a".repeat(64)),
+      apertura("a".repeat(64)),
+      apertura("b".repeat(64)),
+    ].reduce(agregarApertura, sin);
+    expect(con.aperturas).toHaveLength(3);
+    expect(aperturasDistintas(con)).toBe(2);
+    expect(leerArchivo(empaquetar(con, AHORA), PROTOCOLO)).toEqual({
+      ok: true,
+      cuaderno: con,
+    });
+    const roto = (muta: (a: Mutable) => void) => {
+      const archivo = JSON.parse(empaquetar(con, AHORA)) as Mutable;
+      muta((cu(archivo).aperturas as Mutable[])[0]!);
+      return leerArchivo(JSON.stringify(archivo), PROTOCOLO);
+    };
+    for (const [campo, muta] of [
+      ["clave", (a: Mutable) => (a.clave = "x")],
+      ["huella", (a: Mutable) => (a.huella = null)],
+      ["fecha", (a: Mutable) => (a.fecha = "hoy")],
+      ["filas", (a: Mutable) => (a.filas = [1, 2])],
+    ] as const)
+      expect(roto(muta), campo).toEqual({
+        ok: false,
+        rechazo: {
+          tipo: "invalid-format",
+          campo: `cuaderno.aperturas[0].${campo}`,
+        },
+      });
   });
 
   it("lo que vuelve de IndexedDB pasa por el mismo lector", () => {

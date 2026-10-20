@@ -512,8 +512,85 @@ function leer(datos: DatosEtapa): Lectura {
     return malo("veredicto");
   if (c.senal !== null && !["senal", "sin-senal"].includes(c.senal as string))
     return malo("senal");
+  return acotados(c, malo);
+}
+
+/**
+ * Lo que el worker devuelve se acota aquí (B1 del S12): el lector del contrato lo hizo cuando llegó la
+ * corrida, pero un cuaderno importado no pasa por él. Enteros donde son cuentas, rangos donde el valor p los
+ * necesita, y los nombres de modelo dentro del roster. Lo coherente editado a mano sigue sin detectarse.
+ */
+function acotados(
+  c: Registro,
+  malo: (k: string) => { ok: false; campo: string },
+): Lectura {
+  for (const k of ENTEROS) {
+    const v = c[k];
+    if (v !== null && !(Number.isInteger(v) && (v as number) >= 0))
+      return malo(k);
+  }
+  const [n, fallidas, mejores] = [
+    numero(c, "perm_n"),
+    numero(c, "perm_fallidas"),
+    numero(c, "perm_mejores"),
+  ];
+  if (n !== null && fallidas !== null && fallidas > n)
+    return malo("perm_fallidas");
+  if (
+    n !== null &&
+    fallidas !== null &&
+    mejores !== null &&
+    mejores > n - fallidas
+  )
+    return malo("perm_mejores");
+  for (const k of ["ee", "diferencia_ee"] as const) {
+    const v = numero(c, k);
+    if (v !== null && v < 0) return malo(k);
+  }
+  for (const k of ["base_costo", "ganador_costo"] as const) {
+    const m = mapa(c, k);
+    if (m !== null && Object.values(m).some((x) => x < 0)) return malo(k);
+  }
+  const roster = lista(c, "roster");
+  const enRoster = (x: string) => roster?.includes(x) ?? false;
+  if (c.ganador !== null && !enRoster(c.ganador as string))
+    return malo("ganador");
+  if (c.mejor !== null && !enRoster(c.mejor as string)) return malo("mejor");
+  const cv = mapa(c, "liga_cv");
+  if (cv !== null && Object.keys(cv).some((m) => !enRoster(m)))
+    return malo("liga_cv");
+  if (
+    cv !== null &&
+    c.ganador !== null &&
+    !Object.hasOwn(cv, c.ganador as string)
+  )
+    return malo("liga_cv");
+  const estados = lista(c, "liga_estados");
+  if (
+    estados !== null &&
+    estados.some((e) => {
+      const i = e.indexOf(":");
+      return i <= 0 || !enRoster(e.slice(0, i));
+    })
+  )
+    return malo("liga_estados");
   return { ok: true };
 }
+
+/** Cuentas, posiciones y semillas: enteros no negativos. */
+const ENTEROS = [
+  "semilla",
+  "n_entrenamiento",
+  "k_pedido",
+  "k",
+  "solape_filas",
+  "solape_unidades",
+  "validacion_antes",
+  "fuera_entrenamiento",
+  "perm_n",
+  "perm_fallidas",
+  "perm_mejores",
+] as const;
 
 const SOLAPES = [
   "solape_filas",

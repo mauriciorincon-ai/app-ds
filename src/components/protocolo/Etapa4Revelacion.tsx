@@ -9,7 +9,8 @@ import { byCodePoint } from "@/engine/tarea";
 import { PSI_ALERTA, PSI_MODERADA } from "@/engine/protocolo/deriva";
 import type { Hallazgos4 } from "@/engine/protocolo/etapa4";
 import { lista, type Registro } from "@/engine/protocolo/valores";
-import { useI18n } from "@/i18n/provider";
+import { useTextosEtapa } from "@/i18n/textos-etapa";
+import { TEXTOS_ETAPA_4 } from "./textos/etapa4";
 import { cifra } from "@/lib/protocolo/formato";
 import { formatQuantity, thousands } from "@/lib/quantity";
 
@@ -61,7 +62,7 @@ export function Revelacion({
   tituloRef: RefObject<HTMLHeadingElement | null>;
   idTitulo: string;
 }) {
-  const { t } = useI18n();
+  const t = useTextosEtapa(TEXTOS_ETAPA_4);
   const fuga = porPuntaje(h.fuga);
   const vacios = porPuntaje(h.fugaVacios);
   const identificadores = porPuntaje(h.identificador);

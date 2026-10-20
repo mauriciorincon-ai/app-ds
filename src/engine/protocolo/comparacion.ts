@@ -306,17 +306,59 @@ export function costoGanadorPorPliegue(
   predicciones: readonly PrediccionGanador[],
 ): number[] {
   return pliegues.map((p, j) => {
-    const { pred, proba } = predicciones[j]!;
-    return costoMedio(c, d, p.validacion, (_, i) =>
-      matchByTask(c, {
-        // con probabilidad, se actúa desde el umbral de tus costos; sin ella, lo que el modelo dice
-        binaria: (b): Pred => (proba ? proba[i]! >= b.umbral : pred[i] === 1),
-        multiclase: (): Pred => pred[i]!,
-        numerica: (): Pred => pred[i]!,
-      }),
-    );
+    const decide = decisionGanador(c, predicciones[j]!);
+    return costoMedio(c, d, p.validacion, (_, i) => decide(i));
   });
 }
+
+/** Lo que el ganador decide en la posición i de sus predicciones. */
+export function decisionGanador(
+  c: Costos,
+  { pred, proba }: PrediccionGanador,
+): (i: number) => Pred {
+  return (i) =>
+    matchByTask(c, {
+      // con probabilidad, se actúa desde el umbral de tus costos; sin ella, lo que el modelo dice
+      binaria: (b): Pred => (proba ? proba[i]! >= b.umbral : pred[i] === 1),
+      multiclase: (): Pred => pred[i]!,
+      numerica: (): Pred => pred[i]!,
+    });
+}
+
+// --- S13, etapa 8: lo mismo, fila a fila, en la prueba --------------------------------------------
+
+/** Lo que cuesta, fila a fila, decidir con `predecir` en las filas dadas (el bootstrap y los segmentos). */
+export function costosPorFila(
+  c: Costos,
+  d: Diseno,
+  filas: readonly number[],
+  predecir: (f: number, i: number) => Pred,
+): number[] {
+  return filas.map((f, i) => costoDe(c, d, f, predecir(f, i)));
+}
+
+/**
+ * La línea base sin modelo para medir en la prueba: de las de la etapa 5 (sin la regla de hoy, que se
+ * mide aparte), la que menos cuesta en TODO el entrenamiento, como la etapa 7 la elige en cada pliegue.
+ */
+export function lineaBaseSinModelo(
+  c: Costos,
+  d: Diseno,
+  entrenamiento: readonly number[],
+): { readonly referencia: string; readonly predecir: (f: number) => Pred } {
+  let mejor: { c: Candidata; costo: number } | null = null;
+  for (const cand of candidatas(c, d, entrenamiento, null)) {
+    const costo = costoMedio(c, d, entrenamiento, cand.predecir);
+    if (!mejor || costo < mejor.costo) mejor = { c: cand, costo };
+  }
+  return { referencia: mejor!.c.id, predecir: mejor!.c.predecir };
+}
+
+/** La regla de hoy como predicción por fila (evaluada por `reglaDe` sobre esas filas). */
+export const prediccionRegla =
+  (regla: ReglaEvaluada) =>
+  (f: number): Pred =>
+    regla.cumple.get(f) ? regla.si : regla.no;
 
 /** Cuantil 0,975 de la t de Student con pocos grados (tabla); desde 11, Cornish-Fisher. */
 const T975 = [

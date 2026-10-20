@@ -6,7 +6,7 @@
 //    (validateValidationResult) se entienden; este test escribe los fixtures del contrato
 //    (CONTRATO_ACTUALIZAR=1 los regenera) y tests/unit/contract-validacion.test.ts corre sus carnadas;
 //  - el modo no tiene con qué abrir la prueba: un payload con test_idx o train_idx se rechaza nombrándolos;
-//  - lo que vuelve se registra con la compuerta real: la 7 queda cumplida y la 8 se ve sin construir;
+//  - lo que vuelve se registra con la compuerta real: la 7 queda cumplida y la 8 abre (S13);
 //  - con la fuga plantada del kit hay señal; con las etiquetas barajadas, no;
 //  - la misma semilla da la misma liga y las mismas permutaciones;
 //  - varias clases y un número también cruzan el contrato (sus ramas de Python).
@@ -143,11 +143,7 @@ describe("la etapa 7 con el kit de crédito (estratificada), en Pyodide", () => 
       HUELLA,
       CREDITO.tabla,
     ).map((x) => x.estado.tipo);
-    expect(estados.slice(5, 8)).toEqual([
-      "cumplida",
-      "cumplida",
-      "no-construida",
-    ]);
+    expect(estados.slice(5, 8)).toEqual(["cumplida", "cumplida", "abierta"]);
     // con la fuga plantada del kit, el ganador encuentra algo que el azar no encuentra
     expect(datos.chequeos.senal).toBe("senal");
     expect(datos.chequeos.veredicto).toMatch(/^(supera|no-supera)$/);

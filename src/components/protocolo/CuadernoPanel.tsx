@@ -14,6 +14,7 @@ import { resumenEtapa4 } from "@/engine/protocolo/etapa4";
 import { ACTUAR, NO_ACTUAR, resumenEtapa5 } from "@/engine/protocolo/etapa5";
 import { resumenEtapa6, sellosDistintos } from "@/engine/protocolo/etapa6";
 import { resumenEtapa7 } from "@/engine/protocolo/etapa7";
+import { resumenEtapa8 } from "@/engine/protocolo/etapa8";
 import { por100 } from "@/engine/protocolo/etapa5";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
@@ -28,6 +29,7 @@ import { formatQuantity, thousands } from "@/lib/quantity";
 import { Button } from "@/components/ui";
 import { Confirmacion } from "./Confirmacion";
 import { reglaTexto } from "./regla-texto";
+import { segmentoTexto } from "./segmento-texto";
 
 /**
  * La etapa 4 registra listas largas (una entrada por columna): el cuaderno muestra lo que
@@ -194,8 +196,17 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
 }
 
 /** La etapa 6: el esquema (y el sugerido con tu razón, si elegiste otro), los lados, el sello. */
-/** S12: la etapa 7 en una lectura: el ganador con su medida de selección, el veredicto y la señal. */
-function ResumenEtapa7({ datos }: { datos: DatosEtapa }) {
+/**
+ * S12: la etapa 7 en una lectura: el ganador con su medida de selección, el veredicto y la señal. S13: y si la
+ * prueba sigue cerrada, o si la etapa 8 la abrió antes o después de esta selección.
+ */
+function ResumenEtapa7({
+  datos,
+  prueba,
+}: {
+  datos: DatosEtapa;
+  prueba: "closed" | "opened-after" | "opened-before";
+}) {
   const { t } = useI18n();
   const r = resumenEtapa7(datos);
   if (r.ganador === null) return null;
@@ -237,9 +248,116 @@ function ResumenEtapa7({ datos }: { datos: DatosEtapa }) {
           })}
         </li>
       )}
-      <li className="text-ink-muted">{t("protocol.stage.7.summary.closed")}</li>
+      <li className="text-ink-muted">
+        {t(`protocol.stage.7.summary.${prueba}`)}
+      </li>
     </ul>
   );
+}
+
+/**
+ * S13: la etapa 8 en una lectura: el ganador en la prueba con su intervalo, contra la línea base y tu regla,
+ * el optimismo, el peor segmento, la calibración, las aperturas y tu patrón. Ninguna fila: no las hay.
+ */
+function ResumenEtapa8({
+  datos,
+  nombres,
+}: {
+  datos: DatosEtapa;
+  /** Lo que nombra a la línea base (la clase o la opción que registró la etapa 5). */
+  nombres: { readonly clase: string; readonly opcion: string };
+}) {
+  const { t } = useI18n();
+  const r = resumenEtapa8(datos);
+  if (r.ganador === null) return null;
+  const n100 = (x: number | null) => (x === null ? "—" : cifra(por100(x)));
+  const base = r.baseId ? t(`protocol.stage.5.ref.${r.baseId}`, nombres) : "—";
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen8"
+    >
+      <li>
+        {t("protocol.stage.8.summary.winner", {
+          ganador: t(`results.candidates.short.${r.ganador}`),
+          costo: n100(r.costo),
+          bajo: n100(r.bajo),
+          alto: n100(r.alto),
+        })}
+      </li>
+      <li>
+        {r.regla !== null
+          ? t("protocol.stage.8.summary.base", {
+              base,
+              costo: n100(r.base),
+              regla: n100(r.regla),
+            })
+          : t("protocol.stage.8.summary.base-sin-regla", {
+              base,
+              costo: n100(r.base),
+            })}
+      </li>
+      {r.seleccion !== null && r.enPrueba !== null && (
+        <li>
+          {t("protocol.stage.8.summary.optimism", {
+            seleccion: cifra(r.seleccion),
+            prueba: cifra(r.enPrueba),
+          })}
+        </li>
+      )}
+      {r.peor !== null && (
+        <li>
+          {r.peor === "ninguno"
+            ? t("protocol.stage.8.summary.worst-none")
+            : t("protocol.stage.8.summary.worst", {
+                segmento: segmentoTexto(t, r.peor),
+              })}
+        </li>
+      )}
+      {r.calibracion === "medida" && r.brier !== null && (
+        <li>
+          {t("protocol.stage.8.summary.brier", {
+            brier: proporcion(r.brier),
+            base: proporcion(r.brierBase ?? 0),
+          })}
+        </li>
+      )}
+      {r.calibracion === "sin-probabilidades" && (
+        <li>{t("protocol.stage.8.summary.calibration-none")}</li>
+      )}
+      {r.calibracion === "no-aplica" && (
+        <li>{t("protocol.stage.8.summary.calibration-na")}</li>
+      )}
+      {r.aperturas !== null && (
+        <li>
+          {t("protocol.stage.8.summary.openings", { count: r.aperturas })}
+        </li>
+      )}
+      {r.patron && (
+        <li>{t("protocol.stage.8.summary.pattern", { patron: r.patron })}</li>
+      )}
+    </ul>
+  );
+}
+
+/** Si la prueba sigue cerrada, o si se abrió antes o después de una evidencia (por fecha). */
+function pruebaRespecto(
+  cuaderno: Cuaderno,
+  evidencia: Evidencia,
+): "closed" | "opened-after" | "opened-before" {
+  const aperturas = cuaderno.aperturas ?? [];
+  if (aperturas.length === 0) return "closed";
+  return aperturas.some((a) => a.fecha < evidencia.fecha)
+    ? "opened-before"
+    : "opened-after";
+}
+
+/** Lo que nombra a la línea base de la 8: la clase o la opción de la evidencia de la 5 sobre la que se hizo. */
+function nombresBase(cuaderno: Cuaderno, evidencia: Evidencia) {
+  const seq = evidencia.base[5];
+  const cinco = cuaderno.evidencias.find((e) => e.seq === seq);
+  const r = cinco ? resumenEtapa5(cinco.datos) : null;
+  return { clase: r?.claseMayoritaria ?? "", opcion: r?.opcionBarata ?? "" };
 }
 
 function ResumenEtapa6({
@@ -371,11 +489,23 @@ function Entrada({
           )}
         />
       )}
-      {evidencia.etapa === 7 && <ResumenEtapa7 datos={evidencia.datos} />}
+      {evidencia.etapa === 7 && (
+        <ResumenEtapa7
+          datos={evidencia.datos}
+          prueba={pruebaRespecto(cuaderno, evidencia)}
+        />
+      )}
+      {evidencia.etapa === 8 && (
+        <ResumenEtapa8
+          datos={evidencia.datos}
+          nombres={nombresBase(cuaderno, evidencia)}
+        />
+      )}
       {evidencia.etapa !== 4 &&
         evidencia.etapa !== 5 &&
         evidencia.etapa !== 6 &&
         evidencia.etapa !== 7 &&
+        evidencia.etapa !== 8 &&
         filas.length > 0 && (
           <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
             {filas.map(([clave, valor]) => (

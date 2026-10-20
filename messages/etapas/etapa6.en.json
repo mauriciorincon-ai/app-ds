@@ -1,0 +1,116 @@
+{
+  "protocol": {
+    "stage": {
+      "6": {
+        "need-data": "This stage uses your data and stages 1 to 5: load it and complete them first.",
+        "no-design": "The target you recorded in stage 2 could not be read in this data. Correct it and come back.",
+        "pick": "Choose…",
+        "suggest": {
+          "title": "What the app suggests",
+          "pending": "Answer the question about units and the app will tell you which scheme fits.",
+          "estratificada": "Stratified: at random, keeping each class's share on both sides (for a quantity, each range of values).",
+          "grupo": "By group: each unit lands whole on a single side.",
+          "tiempo": "By time: the test set is your most recent dates, with a gap the size of your horizon before them.",
+          "tiempo-grupo": "By time and by group: the test set is your most recent dates, and training leaves out the whole history of the units in it.",
+          "why-estratificada": "Your stage 2 recorded neither a date nor a unit that repeats: there is no order or group to respect.",
+          "why-grupo": "In your stage 2, the unit «{unidad}» repeats across rows: if the same unit lands on both sides, the model is evaluated on what it has already seen.",
+          "why-tiempo": "In your stage 2 you recorded the date «{fecha}»: the model will use the past to decide what comes next, and the test set has to mimic that.",
+          "why-tiempo-grupo": "You recorded a date and a unit that repeats, and said the model will be used with new units: the test set has to be in the future and made of units the model hasn't seen.",
+          "why-tiempo-conocidas": "You recorded a date and a unit that repeats, and said the model will be used with the same units: it's enough for the test set to be in the future."
+        },
+        "form": {
+          "units": "Will your model be used with new units or with the ones you already know?",
+          "units-help": "With a date and a unit that repeats, the scheme depends on this, and the app can't know it.",
+          "units-nuevas": "With new units the model hasn't seen",
+          "units-conocidas": "With the same units, later in time",
+          "scheme": "Split scheme",
+          "suggested": "suggested",
+          "reason": "Why do you choose a scheme other than the suggested one?",
+          "reason-help": "It's kept in your notebook next to the suggested one.",
+          "size": "Test set size (out of 100 rows)",
+          "size-help": "A whole number between {min} and {max}; {sugerido} is suggested.",
+          "horizon": "Horizon: how long until the outcome is known",
+          "horizon-help": "That time is left as a gap between training and test. Write 0 if the outcome is known at the moment of deciding.",
+          "horizon-unit": "Horizon unit"
+        },
+        "table": {
+          "caption": "How your rows end up",
+          "note": "Only counts and ranges: no test row is shown.",
+          "col-side": "Side",
+          "col-rows": "Rows",
+          "col-units": "Units",
+          "col-dates": "Dates",
+          "col-classes": "Classes",
+          "entrenamiento": "Training",
+          "hueco": "Gap",
+          "prueba": "Test",
+          "fuera": "Left out",
+          "range": "{desde} to {hasta}",
+          "real-size": "The test set gets {n} of {total} rows with a target ({pct} out of 100).",
+          "cut": "The test set starts on {corte}.",
+          "out-sin-objetivo": "{n} without a target",
+          "out-sin-fecha": "{n} without a date",
+          "out-sin-unidad": "{n} without a unit",
+          "out-unidades-prueba": "{n} from units that are in the test set"
+        },
+        "verify": {
+          "title": "Checked on your table",
+          "rows": "No row is on two sides.",
+          "units": "No unit has rows in both training and test.",
+          "time": "No training row is less than a horizon away from the test set.",
+          "rows-bad": "{n} rows are on more than one side.",
+          "units-bad": "{n} units have rows in both training and test.",
+          "time-bad": "{n} training rows are from your most recent dates (from {corte} on), the ones a time-based split would keep for the test set."
+        },
+        "seal": {
+          "title": "Test set seal",
+          "value": "Seal: {sello}…",
+          "note": "It comes from your data, the scheme, its parameters and which rows are the test set. If any of that changes, the seal doesn't match and stage 7 doesn't open. It's hygiene and traceability, not a promise: it says the test set is the same, not that nobody looked at it.",
+          "none": "No seals in this notebook.",
+          "count": "Distinct test sets sealed in this notebook: {n}. Sealing a different one adds one: each different split is another way of looking.",
+          "pending": "The seal appears once the scheme and its parameters are complete."
+        },
+        "field": {
+          "unidades": "Units the model will be used with",
+          "esquema": "Chosen scheme",
+          "razon": "Reason for not using the suggested one",
+          "tamano": "Test set size (out of 100 rows)",
+          "horizonte": "Horizon",
+          "horizonte_unidad": "Horizon unit"
+        },
+        "check": {
+          "filas": "Rows in the table",
+          "filas_objetivo": "Rows with a target",
+          "disponibles": "Schemes your data allows",
+          "pregunta_unidades": "The units question had to be asked",
+          "sugerido": "Suggested scheme",
+          "semilla": "Seed",
+          "corte": "First test date",
+          "n_entrenamiento": "Training rows",
+          "n_prueba": "Test rows",
+          "n_hueco": "Rows in the gap",
+          "fuera_sin_objetivo": "Left out: no target",
+          "fuera_sin_fecha": "Left out: no date",
+          "fuera_sin_unidad": "Left out: no unit",
+          "fuera_unidades_prueba": "Left out: history of test units",
+          "unidades_entrenamiento": "Units in training",
+          "unidades_prueba": "Units in test",
+          "fecha_min_entrenamiento": "First training date",
+          "fecha_max_entrenamiento": "Last training date",
+          "fecha_min_prueba": "First test date",
+          "fecha_max_prueba": "Last test date",
+          "clases_entrenamiento": "Classes in training",
+          "clases_prueba": "Classes in test",
+          "solape_filas": "Rows on more than one side",
+          "solape_unidades": "Units on both sides",
+          "solape_tiempo": "Training rows less than a horizon from the test set",
+          "corte_referencia": "Where a time-based split would cut",
+          "recientes_entrenamiento": "Training rows from your most recent dates",
+          "azar_unidades": "At random: units on both sides",
+          "azar_recientes": "At random: rows from your most recent dates in training",
+          "sello": "Test set seal"
+        }
+      }
+    }
+  }
+}
