@@ -410,6 +410,38 @@ describe("lo que se mide en la prueba", () => {
     );
   });
 
+  // S14 (M1): al peor segmento se le exige exceso > 0. Con todos los segmentos con soporte en el total o por debajo,
+  // no hay peor: ni «▲ el peor» ni un «cuesta −N más»; y no es lo mismo que «ninguno tiene soporte».
+  it.each([
+    ["por debajo del total", -1],
+    ["justo en el total", 0],
+  ])(
+    "si ningún segmento con soporte está peor que el total (%s), no se marca ninguno",
+    (_nombre, delta) => {
+      const global = c.ganador_costo as number;
+      const parejo = Object.fromEntries(
+        Object.keys(segCosto).map((id) => [id, global + delta]),
+      );
+      const datos = ETAPA_8.recalcular!(
+        con(DATOS, { seg_costo: parejo }),
+        CREDITO.previas,
+        CREDITO.tabla,
+        HUELLA,
+      );
+      expect(datos.chequeos.peor_segmento).toBe("ninguno");
+      expect(datos.chequeos.peor_exceso).toBeNull();
+      expect(datos.chequeos.seg_con_soporte as number).toBeGreaterThan(0);
+      expect(ETAPA_8.criterio(datos, CREDITO.previas)).toEqual({
+        tipo: "cumple",
+      });
+      const trampas = ETAPA_8.trampas!(datos, CREDITO.previas);
+      expect(trampas).toContainEqual({ clave: "ninguno-peor", params: {} });
+      expect(trampas.map((x) => x.clave)).not.toContain("ningun-segmento");
+      for (const x of trampas) expect(x.clave).not.toMatch(/^peor-/);
+      expect(resumenEtapa8(datos).conSoporte).toBeGreaterThan(0);
+    },
+  );
+
   it("si ningún segmento tiene soporte, lo dice: «ningún segmento con soporte»", () => {
     const filas = Array.from(
       { length: 40 },
@@ -892,6 +924,7 @@ describe("el resumen para el cuaderno", () => {
       enPrueba: c.prueba_metrica,
       metrica: c.metrica,
       peor: c.peor_segmento,
+      conSoporte: c.seg_con_soporte,
       calibracion: "medida",
       brier: c.brier,
       brierBase: c.brier_base,

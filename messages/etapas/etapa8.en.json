@@ -56,6 +56,7 @@
           "unsupported": "not enough support",
           "worst": "the worst",
           "none": "No segment has enough support: the test set can't be read in parts.",
+          "none-worse": "No segment with support does worse than the whole test set: there is no worst segment to mark.",
           "empty": "There are no segments to read: no date, no categories with 2 to 8 values, and no numeric columns in «use».",
           "rule-cases": "Minimum support: {filas} rows and {casos} cases of the less frequent class. A segment without support is shown, but it's never the worst. It's a convention of this program, not a statistical test.",
           "rule": "Minimum support: {filas} rows. A segment without support is shown, but it's never the worst. It's a convention of this program, not a statistical test.",

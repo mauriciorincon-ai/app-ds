@@ -194,6 +194,7 @@ export function Etapa8Form({
   const segCasos = mapa(c, "seg_casos");
   const segCosto = mapa(c, "seg_costo") ?? {};
   const peor = texto(c, "peor_segmento");
+  const soportados = numero(c, "seg_con_soporte");
   const tramos = tramosDe(c);
   const lectura = numero(c, "cal_lectura");
   const filaLectura =
@@ -466,7 +467,11 @@ export function Etapa8Form({
             {peor === "ninguno" && plan.segmentos.length > 0 && (
               <p className="text-caution">
                 <span aria-hidden="true">⚠ </span>
-                {t("protocol.stage.8.segments.none")}
+                {t(
+                  soportados === 0
+                    ? "protocol.stage.8.segments.none"
+                    : "protocol.stage.8.segments.none-worse",
+                )}
               </p>
             )}
             <p className="text-xs text-ink-muted">

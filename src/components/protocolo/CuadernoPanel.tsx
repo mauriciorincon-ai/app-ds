@@ -308,7 +308,11 @@ function ResumenEtapa8({
       {r.peor !== null && (
         <li>
           {r.peor === "ninguno"
-            ? t("protocol.stage.8.summary.worst-none")
+            ? t(
+                r.conSoporte === 0
+                  ? "protocol.stage.8.summary.worst-none"
+                  : "protocol.stage.8.summary.worst-none-worse",
+              )
             : t("protocol.stage.8.summary.worst", {
                 segmento: segmentoTexto(t, r.peor),
               })}

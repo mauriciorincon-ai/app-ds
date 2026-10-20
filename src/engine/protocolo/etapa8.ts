@@ -185,6 +185,7 @@ export const TRAMPAS_8 = [
   "peor-categoria",
   "peor-tramo",
   "ningun-segmento",
+  "ninguno-peor",
   "sin-soporte",
   "sin-probabilidades",
 ] as const;
@@ -480,7 +481,8 @@ function derivados(
       : direccionDe(forma) === "higher"
         ? seleccion - enPrueba
         : enPrueba - seleccion;
-  // el peor segmento: el de mayor exceso de costo sobre el global, solo entre los que tienen soporte
+  // el peor segmento: el de mayor exceso de costo sobre el global, solo entre los que tienen soporte y a los que
+  // les va PEOR que a toda la prueba (exceso > 0): si ninguno lo está, no se marca ninguno (S14, M1)
   const [segN, segCasos, segCosto] = [
     mapa(c, "seg_n"),
     mapa(c, "seg_casos"),
@@ -497,7 +499,7 @@ function derivados(
       if (!Object.hasOwn(segCosto, id)) continue;
       soportados++;
       const exceso = segCosto[id]! - global;
-      if (!peor || exceso > peor.exceso) peor = { id, exceso };
+      if (exceso > 0 && (!peor || exceso > peor.exceso)) peor = { id, exceso };
     }
   }
   const tramos = tramosDe(c);
@@ -810,9 +812,14 @@ function trampas(datos: DatosEtapa): readonly Trampa[] {
         params: { columna: seg.columna, tramo: seg.tramo, exceso: e },
       });
   }
-  if (peor === "ninguno") salida.push({ clave: "ningun-segmento", params: {} });
   const segN = mapa(c, "seg_n");
   const soportados = numero(c, "seg_con_soporte");
+  // «ninguno» son dos cosas distintas: ninguno tiene soporte, o ninguno de los que lo tienen está peor que el total
+  if (peor === "ninguno")
+    salida.push({
+      clave: soportados === 0 ? "ningun-segmento" : "ninguno-peor",
+      params: {},
+    });
   if (segN && soportados !== null) {
     const total = Object.keys(segN).length;
     if (total > soportados)
@@ -840,6 +847,7 @@ export type ResumenEtapa8 = {
   readonly enPrueba: number | null;
   readonly metrica: string | null;
   readonly peor: string | null;
+  readonly conSoporte: number | null;
   readonly calibracion: string | null;
   readonly brier: number | null;
   readonly brierBase: number | null;
@@ -861,6 +869,7 @@ export function resumenEtapa8(datos: DatosEtapa): ResumenEtapa8 {
     enPrueba: numero(c, "prueba_metrica"),
     metrica: texto(c, "metrica"),
     peor: texto(c, "peor_segmento"),
+    conSoporte: numero(c, "seg_con_soporte"),
     calibracion: texto(c, "calibracion"),
     brier: numero(c, "brier"),
     brierBase: numero(c, "brier_base"),

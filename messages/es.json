@@ -1468,7 +1468,7 @@
           "sello": "la prueba de la etapa 6 con el mismo sello",
           "prueba": "abrir la prueba",
           "ganador": "abrirla con el ganador de la etapa 7",
-          "segmento": "el peor segmento, o que ninguno tiene soporte",
+          "segmento": "el peor segmento, o que ninguno tiene soporte o ninguno está peor que el total",
           "calibracion": "la calibración, o por qué no se puede medir",
           "patron": "tu patrón de fallo, escrito con tus palabras"
         },
@@ -1480,6 +1480,7 @@
           "peor-categoria": "Al modelo le va peor cuando {columna} es «{valor}»: cuesta {exceso} más por cada 100 decisiones que en toda la prueba.",
           "peor-tramo": "Al modelo le va peor en el tramo {tramo} de {columna}: cuesta {exceso} más por cada 100 decisiones que en toda la prueba.",
           "ningun-segmento": "Ningún segmento tiene soporte: con tan pocas filas, la prueba no se puede leer por partes.",
+          "ninguno-peor": "A ningún segmento con soporte le va peor que a toda la prueba: no hay un peor segmento que nombrar.",
           "sin-soporte": "{n} de {total} segmentos no tienen soporte: se muestran, pero ninguno de ellos puede ser el peor.",
           "sin-probabilidades": "El ganador no da probabilidades: su calibración no se puede medir."
         },
@@ -1490,6 +1491,7 @@
           "optimism": "Medida de selección: {seleccion}; en la prueba: {prueba}.",
           "worst": "Peor segmento: {segmento}.",
           "worst-none": "Ningún segmento con soporte.",
+          "worst-none-worse": "Ningún segmento con soporte está peor que el total.",
           "brier": "Brier {brier} (decir siempre la tasa base: {base}).",
           "calibration-none": "Calibración: el ganador no da probabilidades.",
           "calibration-na": "Calibración: no aplica al estimar una cantidad.",

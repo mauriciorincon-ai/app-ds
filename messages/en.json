@@ -1468,7 +1468,7 @@
           "sello": "the stage 6 test set with the same seal",
           "prueba": "opening the test set",
           "ganador": "opening it with the stage 7 winner",
-          "segmento": "the worst segment, or that none has support",
+          "segmento": "the worst segment, or that none has support or none is worse than the total",
           "calibracion": "the calibration, or why it can't be measured",
           "patron": "your failure pattern, written in your own words"
         },
@@ -1480,6 +1480,7 @@
           "peor-categoria": "The model does worst when {columna} is “{valor}”: it costs {exceso} more per 100 decisions than on the whole test set.",
           "peor-tramo": "The model does worst in band {tramo} of {columna}: it costs {exceso} more per 100 decisions than on the whole test set.",
           "ningun-segmento": "No segment has support: with so few rows, the test set can't be read in parts.",
+          "ninguno-peor": "No segment with support does worse than the whole test set: there is no worst segment to name.",
           "sin-soporte": "{n} of {total} segments have no support: they're shown, but none of them can be the worst.",
           "sin-probabilidades": "The winner gives no probabilities: its calibration can't be measured."
         },
@@ -1490,6 +1491,7 @@
           "optimism": "Selection measure: {seleccion}; on the test set: {prueba}.",
           "worst": "Worst segment: {segmento}.",
           "worst-none": "No segment with support.",
+          "worst-none-worse": "No segment with support is worse than the total.",
           "brier": "Brier {brier} (always saying the base rate: {base}).",
           "calibration-none": "Calibration: the winner gives no probabilities.",
           "calibration-na": "Calibration: doesn't apply when estimating an amount.",
