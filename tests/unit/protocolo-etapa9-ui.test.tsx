@@ -23,11 +23,11 @@ vi.mock("@sentry/nextjs", () => ({
 const { I18nProvider } = await import("@/i18n/provider");
 const { Etapa9Form } = await import("@/components/protocolo/Etapa9Form");
 const { registrar } = await import("@/engine/protocolo/compuerta");
-const { NUEVOS_S14, plan8 } = await import("@/engine/protocolo/etapa8");
+const { NUEVOS_S14, UMBRAL_CLASE, plan8 } = await import("@/engine/protocolo/etapa8");
 const { PROTOCOLO_DS } = await import("@/engine/protocolo/protocolo-ds");
 const { armarCredito7, armarPrecio6, con7, sintetico } =
   await import("./protocolo-etapa8-helpers");
-const { AHORA, HUELLA, armarCredito8, con8 } =
+const { AHORA, HUELLA, armarCredito8, con8, registrar8 } =
   await import("./protocolo-etapa9-helpers");
 
 const CREDITO = armarCredito8();
@@ -234,5 +234,29 @@ describe("cuando la 9 no tiene con qué, y con un número", () => {
     expect(screen.queryByLabelText("Umbral con que se actúa")).toBeNull();
     expect(screen.queryByTestId("protocolo-capacidad9")).toBeNull();
     expect(screen.queryByTestId("protocolo-curva9")).toBeNull();
+  });
+});
+
+describe("sin probabilidades: la tabla de la 8 trae solo la clase predicha", () => {
+  it("la pantalla no ofrece umbral y decide con la clase: «no usarlo» se registra con cifras, sin atascarse", () => {
+    const a = armarCredito7();
+    const plan = plan8(a.tabla, a.previas, HUELLA)!;
+    const d = plan.plan7.diseno;
+    const sinProba = registrar8(
+      a,
+      sintetico(plan, (f) => (d.clases![f] === d.positivo ? 1 : 0), null),
+    );
+    const { registrado } = montar(sinProba.previas, sinProba);
+    expect(screen.queryByLabelText("Umbral con que se actúa")).toBeNull();
+    expect(screen.getByTestId("protocolo-cifras9")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("No usarlo"));
+    escribir("De cada 100 casos, ¿cuántos alcanza a atender tu equipo?", "100");
+    escribir("Tu razón", "Sin probabilidades, decido con la clase que predice");
+    registrar9();
+    expect(registrado.rechazo).toBeNull();
+    expect(registrado.datos?.respuestas.umbral).toBe(UMBRAL_CLASE);
+    expect(registrado.datos?.chequeos.alertas100).not.toBeNull();
+    expect(registrado.datos?.chequeos.costo_modelo).not.toBeNull();
+    expect(Espia).not.toHaveBeenCalled();
   });
 });

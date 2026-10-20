@@ -420,7 +420,13 @@ export function datosEtapa9(
   entrada: EntradaEtapa9,
 ): DatosEtapa {
   const forma = costosDe(previas)?.task ?? null;
-  const respuestas = respuestasDe(entrada, forma);
+  // sin probabilidades la tabla de la 8 solo trae la clase predicha: no hay umbral que elegir
+  const sinProba =
+    opcionesUmbral(base9(previas)?.tabla ?? null)[0] === UMBRAL_CLASE;
+  const respuestas = respuestasDe(
+    sinProba ? { ...entrada, umbral: UMBRAL_CLASE } : entrada,
+    forma,
+  );
   return { respuestas, chequeos: calcular9(previas, respuestas) };
 }
 
