@@ -616,7 +616,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      casos se mostraron, nunca las filas. Si abres la prueba otra vez con otra configuración, el cuaderno lo
      cuenta y lo rotula; la app no te lo impide. Abrir lo mismo otra vez no suma. Corre en tu navegador:
      tus datos no viajan a ningún servidor.
-  11. **Etapa 9 · ¿Sirve para la decisión?** Ahora la app convierte lo medido en una decisión **sin volver a abrir la prueba**: lee lo que la etapa 8 guardó de ella (conteos por umbral, sin filas) y tus costos de la etapa 1. Si la etapa 8 se registró antes de guardar esa tabla, la pantalla lo dice y te pide volver a registrarla; abrir la prueba otra vez se cuenta como apertura y queda rotulado.
+  11. **Etapa 9 · ¿Sirve para la decisión?** Ahora la app convierte lo medido en una decisión **sin volver a abrir la prueba**: lee lo que la etapa 8 guardó de ella (conteos por umbral, sin filas) y tus costos de la etapa 1. Si la etapa 8 se registró antes de guardar esa tabla, la pantalla lo dice y te pide volver a registrarla; la prueba se vuelve a abrir, y solo cuenta como apertura nueva si cambió la configuración, con su rótulo.
      - **El umbral:** por defecto es el de tus costos. Si actuar sin que hiciera falta cuesta 10 y no actuar cuando sí hacía falta cuesta 50, el umbral es 0.17: conviene actuar desde esa probabilidad. Puedes moverlo para leer la curva, pero la pantalla lo rotula **«Elegido mirando la prueba: optimista»** y te pide una razón escrita; sin razón no se registra. Un modelo que no da probabilidades no tiene umbral que mover: decide con la clase que predice.
      - **Las cifras:** con el umbral que usas, por cada 100 casos, cuántas alertas salen, cuántas son falsas alarmas (por cada 100 alertas), cuánto cuesta decidir (por cada 100 decisiones) y el beneficio neto. Se comparan con **no hacer nada** (cero), con **actuar con todos** y con tu regla de hoy si la hay. La marca **«· lo de hoy»** señala lo que hoy se hace. El intervalo solo aparece con el umbral de tus costos: es el de la etapa 8.
      - **Lo que tu equipo alcanza:** escribes de cada 100 casos cuántos puede atender. Si el umbral da más alertas que eso, la pantalla dice cuántas sobran y muestra el umbral de tu capacidad con su costo.
@@ -737,6 +737,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     - **Con menos de 100 filas de prueba, los intervalos son anchos.** La trampa lo dice; es lo honesto con tan pocas.
     - **El intervalo depende de tus conglomerados.** Con pocas unidades o fechas, el intervalo se vuelve ancho, aunque remuestree bien.
     - **El cuaderno no guarda la prueba fila por fila.** Guarda solo agregados: el costo y el número de filas de cada segmento, los tramos de la calibración, el Brier, los intervalos, tu patrón y cuántos peores casos viste. La app comprueba que el resto cuadre (la partición, el sello, los segmentos, la línea base), pero no puede volver a abrir la prueba para comprobar esas cifras.
+    - **El peor segmento y el optimismo se recalculan** cada vez que se revisa el cuaderno, con lo que hay guardado.
+    - **Los peores casos no quedan guardados.** Si cierras la pantalla, para verlos otra vez tienes que volver a abrir la prueba, y eso cuenta como apertura solo si cambió la configuración.
   - **Etapa 9, límites (Sprint 014):**
     - **Las cifras salen de la prueba, y la prueba se abrió una vez.** El umbral de tus costos se fija sin mirarla. Moverlo leyendo la curva sí la mira: por eso sale optimista y queda rotulado.
     - **El intervalo es el de la etapa 8, y solo con tu umbral de costos.** Si lo mueves, la pantalla no muestra intervalo.
@@ -744,8 +746,6 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     - **Un umbral de costos con mala calibración no es fiable.** Si la etapa 8 vio probabilidades descalibradas, el umbral de tus costos se rotula «poco fiable» y la curva queda a la vista.
     - **La etapa 9 no recalibra ni reentrena.** Decide con lo que hay; si el modelo no sirve, la decisión lo dice con «no usarlo».
     - **Lo que guarda el cuaderno no tiene filas.** Guarda tu decisión, tus razones, el umbral, tu capacidad y los conteos y costos que los sostienen; ninguna fila de tu CSV.
-    - **El peor segmento y el optimismo se recalculan** cada vez que se revisa el cuaderno, con lo que hay guardado.
-    - **Los peores casos no quedan guardados.** Si cierras la pantalla, para verlos otra vez tienes que volver a abrir la prueba, y eso se cuenta.
 
 ## Diccionario de términos
 
