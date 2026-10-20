@@ -295,6 +295,31 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
       en: "The mean squared error of the probabilities: 0 is perfect. It's compared with the score of always saying the base rate, which is what someone who knows nothing gets.",
     },
   },
+  // S14 (etapa 9)
+  "beneficio-neto": {
+    termino: { es: "Beneficio neto", en: "Net benefit" },
+    definicion: {
+      es: "Lo que gana una forma de decidir, contado en casos: las alertas que aciertan, menos las falsas pesadas por lo que cuesta cada una frente a un caso que se escapa. «No hacer nada» vale 0; un modelo por debajo decide peor que no hacer nada. Es la medida del análisis de curva de decisión.",
+      en: "What a way of deciding gains, counted in cases: the alerts that are right, minus the false ones weighted by what each costs against a case that slips through. «Doing nothing» is worth 0; a model below it decides worse than doing nothing. It's the measure behind decision curve analysis.",
+    },
+  },
+  "falsas-alarmas": {
+    termino: {
+      es: "Falsas alarmas por cada 100 alertas",
+      en: "False alarms per 100 alerts",
+    },
+    definicion: {
+      es: "De cada 100 veces que el modelo dice «actúa», cuántas no hacía falta. Es lo que vive tu equipo: con 60, más de la mitad del trabajo que le llega no servía.",
+      en: "Out of every 100 times the model says «act», how many weren't needed. It's what your team lives with: at 60, more than half the work that reaches it was useless.",
+    },
+  },
+  "capacidad-de-atencion": {
+    termino: { es: "Capacidad de atención", en: "Attention capacity" },
+    definicion: {
+      es: "Cuántos casos de cada 100 alcanza a atender tu equipo. Un umbral que da más alertas que eso no se puede cumplir: o se sube el umbral, o crece el equipo, o las alertas que sobran se quedan sin atender.",
+      en: "How many cases out of every 100 your team can handle. A threshold that raises more alerts than that can't be met: either the threshold goes up, the team grows, or the extra alerts go unattended.",
+    },
+  },
   // S9 (etapa 4)
   "existe-al-decidir": {
     termino: { es: "Existe al decidir", en: "Exists when you decide" },

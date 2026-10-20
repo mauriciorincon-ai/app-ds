@@ -136,12 +136,18 @@ export function Etapa8Form({
   const { estado, abrir, cancelar } = usePrueba();
   const corrida = estado.tipo === "lista" ? estado.corrida : null;
   const contadas = aperturas > 0 ? aperturas : null;
-  const registro = useMemo(
+  // Lo medido (con su bootstrap) no depende de lo que escribes: el patrón entra después, sin volver a calcular
+  // nada con cada tecla (S14, M2).
+  const medido = useMemo(
     () =>
       tabla
-        ? datosEtapa8(tabla, previas, huella, corrida, { patron }, contadas)
+        ? datosEtapa8(tabla, previas, huella, corrida, { patron: "" }, contadas)
         : null,
-    [tabla, previas, huella, corrida, patron, contadas],
+    [tabla, previas, huella, corrida, contadas],
+  );
+  const registro = useMemo(
+    () => (medido ? { ...medido, respuestas: { patron } } : null),
+    [medido, patron],
   );
   const peores = useMemo(
     () => (plan && corrida ? peoresCasos(plan, corrida) : []),
@@ -194,6 +200,7 @@ export function Etapa8Form({
   const segCasos = mapa(c, "seg_casos");
   const segCosto = mapa(c, "seg_costo") ?? {};
   const peor = texto(c, "peor_segmento");
+  const soportados = numero(c, "seg_con_soporte");
   const tramos = tramosDe(c);
   const lectura = numero(c, "cal_lectura");
   const filaLectura =
@@ -466,7 +473,11 @@ export function Etapa8Form({
             {peor === "ninguno" && plan.segmentos.length > 0 && (
               <p className="text-caution">
                 <span aria-hidden="true">⚠ </span>
-                {t("protocol.stage.8.segments.none")}
+                {t(
+                  soportados === 0
+                    ? "protocol.stage.8.segments.none"
+                    : "protocol.stage.8.segments.none-worse",
+                )}
               </p>
             )}
             <p className="text-xs text-ink-muted">

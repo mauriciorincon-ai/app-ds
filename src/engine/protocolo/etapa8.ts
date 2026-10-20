@@ -8,14 +8,17 @@
 //  · el optimismo de la selección: la medida de la etapa 7 menos la misma métrica en la prueba;
 //  · el error por segmento, con soporte mínimo, y el peor segmento;
 //  · la calibración (curva y Brier) cuando el modelo da probabilidades;
-//  · los peores casos, que se ven SOLO en pantalla: al cuaderno va cuántos y tu patrón de fallo, nunca filas.
+//  · los peores casos, que se ven SOLO en pantalla: al cuaderno va cuántos y tu patrón de fallo, nunca filas;
+//  · S14, con dos clases: la tabla agregada de umbrales (cuántas alertas acertadas y cuántas falsas en cada
+//    umbral de 0,01 a 0,99 y en el de tus costos; ninguna fila), para que la etapa 9 decida sin volver a abrir
+//    la prueba.
 // Abrir otra vez la prueba con otra configuración se cuenta y se rotula; no se bloquea (F0 #13).
 //
 // Lo que la compuerta puede rehacer con la tabla, lo rehace (`recalcular`): la partición y su sello, los
 // segmentos y su soporte, la línea base y la regla con su intervalo. Lo que sale del worker (la predicción
 // del ganador, y con ella su costo, su costo por segmento, la calibración) se COPIA, rotulado; lo que se
 // deriva de los dos (el optimismo, el peor segmento, la lectura de la calibración) se vuelve a calcular.
-import { byTask } from "@/engine/despacho";
+import { byTask, matchByTask } from "@/engine/despacho";
 import type { SupervisedTask } from "@/engine/tarea";
 import type { CsvTable } from "@/lib/ds/csv";
 import type { TestResult } from "@/workers/protocol";
@@ -70,6 +73,15 @@ export const PRUEBA_CHICA = 100;
 /** El patrón de fallo que escribes (G-Plan 2a). */
 export const PATRON_MAX = 500;
 
+/** S14: los umbrales en que la etapa cuenta las alertas de la prueba, de 0,01 a 0,99. */
+export const REJILLA = Array.from({ length: 99 }, (_, i) => (i + 1) / 100);
+/** La clave de un umbral de la rejilla en la tabla («0.35»). */
+export const claveUmbral = (u: number) => u.toFixed(2);
+/** El umbral de tus costos (etapa 1), en la tabla: no tiene por qué caer en la rejilla. */
+export const UMBRAL_E1 = "e1";
+/** Sin probabilidades no hay umbral: la tabla trae lo que decide la clase que predice el modelo. */
+export const UMBRAL_CLASE = "clase";
+
 export type Conglomerado = "fila" | "unidad" | "fecha";
 const CONGLOMERADO: Readonly<Record<Esquema, Conglomerado>> = {
   estratificada: "fila",
@@ -99,6 +111,11 @@ const NUMEROS_TABLA = [
   "regla_costo",
   "regla_bajo",
   "regla_alto",
+  // S14, con dos clases: los positivos de la prueba y lo que decide la regla de hoy (cuántas alertas acierta y
+  // cuántas son falsas)
+  "prueba_pos",
+  "regla_vp",
+  "regla_fp",
 ] as const;
 const LISTAS_TABLA = ["columnas_numericas", "columnas_categoricas"] as const;
 const MAPAS_TABLA = ["seg_n", "seg_casos"] as const;
@@ -121,6 +138,19 @@ export const DEL_WORKER_8 = [
   "peores_n",
   // del cuaderno, no del worker: las aperturas distintas de la prueba cuando se registró
   "aperturas",
+  // S14: la tabla agregada de umbrales (con dos clases)
+  "tabla_umbrales",
+] as const;
+
+/**
+ * S14: lo que la etapa guarda desde el S14. Un cuaderno de antes no lo trae y se sigue leyendo (y cuadrando):
+ * la etapa 9 lo pide, y registrar la 8 otra vez lo calcula (la prueba se vuelve a abrir: cuenta como apertura solo si cambió la configuración).
+ */
+export const NUEVOS_S14 = [
+  "prueba_pos",
+  "regla_vp",
+  "regla_fp",
+  "tabla_umbrales",
 ] as const;
 
 // Lo que sale de los dos (el optimismo, el peor segmento, la lectura) se vuelve a calcular: `derivados`.
@@ -154,6 +184,7 @@ const MAPAS = [
   "cal_n",
   "cal_pred",
   "cal_obs",
+  "tabla_umbrales",
 ] as const;
 
 export const CHEQUEOS_8 = [...TEXTOS, ...NUMEROS, ...LISTAS, ...MAPAS] as const;
@@ -185,6 +216,7 @@ export const TRAMPAS_8 = [
   "peor-categoria",
   "peor-tramo",
   "ningun-segmento",
+  "ninguno-peor",
   "sin-soporte",
   "sin-probabilidades",
 ] as const;
@@ -216,7 +248,28 @@ export type Plan8 = {
   readonly regla: MedidaTabla | null;
   readonly segmentos: readonly Segmento[];
   readonly claseRara: string | null;
+  /** S14, con dos clases: cuántas filas de la prueba son positivas. */
+  readonly positivos: number | null;
+  /** S14, con dos clases: lo que decide la regla de hoy en la prueba. */
+  readonly reglaConteo: Conteo | null;
 };
+
+/** Con dos clases, en la prueba: alertas que aciertan (vp) y alertas falsas (fp). */
+export type Conteo = { readonly vp: number; readonly fp: number };
+
+function contar(
+  d: Plan7["diseno"],
+  prueba: readonly number[],
+  actua: (f: number, i: number) => boolean,
+): Conteo {
+  let [vp, fp] = [0, 0];
+  prueba.forEach((f, i) => {
+    if (!actua(f, i)) return;
+    if (d.clases![f] === d.positivo) vp++;
+    else fp++;
+  });
+  return { vp, fp };
+}
 
 function calcularPlan(
   tabla: CsvTable,
@@ -249,11 +302,21 @@ function calcularPlan(
   };
   let base: MedidaTabla | null = null;
   let regla: MedidaTabla | null = null;
+  let reglaConteo: Conteo | null = null;
+  const binaria = byTask(p7.forma, {
+    binaria: true,
+    multiclase: false,
+    numerica: false,
+  });
   if (p7.costos && prueba.length > 0 && entrenamiento.length > 0) {
     const b = lineaBaseSinModelo(p7.costos, d, entrenamiento);
     base = medir(b.referencia, b.predecir);
     const r = reglaDe(tabla, previas, p7.costos, prueba);
-    if (r) regla = medir("regla", prediccionRegla(r));
+    if (r) {
+      const predecir = prediccionRegla(r);
+      regla = medir("regla", predecir);
+      if (binaria) reglaConteo = contar(d, prueba, (f) => predecir(f) === true);
+    }
   }
   const ganador = e7 ? texto(e7.chequeos, "ganador") : null;
   const cv = e7 ? mapa(e7.chequeos, "liga_cv") : null;
@@ -278,6 +341,10 @@ function calcularPlan(
       p7.categoricas,
     ),
     claseRara: claseRaraDe(d, prueba),
+    positivos: binaria
+      ? prueba.filter((f) => d.clases![f] === d.positivo).length
+      : null,
+    reglaConteo,
   };
 }
 
@@ -378,7 +445,57 @@ function deLaTabla(plan: Plan8 | null): Record<string, Valor> {
       regla_bajo: plan.regla.intervalo.bajo,
       regla_alto: plan.regla.intervalo.alto,
     });
+  Object.assign(c, {
+    prueba_pos: plan.positivos,
+    regla_vp: plan.reglaConteo?.vp ?? null,
+    regla_fp: plan.reglaConteo?.fp ?? null,
+  });
   return c;
+}
+
+/**
+ * S14, con dos clases: la tabla agregada de umbrales. En cada umbral u de la rejilla, cuántas alertas
+ * (probabilidad ≥ u) aciertan y cuántas son falsas; lo mismo en el umbral de tus costos (`e1`), que es el que
+ * usa la etapa 8. Sin probabilidades, lo que decide la clase predicha (`clase`). Conteos, ninguna fila.
+ */
+export function tablaUmbrales(
+  plan: Plan8,
+  r: TestResult,
+): Record<string, number> | null {
+  const p7 = plan.plan7;
+  // el umbral de tus costos, solo con dos clases
+  const u1 = p7.costos
+    ? matchByTask(p7.costos, {
+        binaria: (b) => b.umbral,
+        multiclase: () => null,
+        numerica: () => null,
+      })
+    : null;
+  if (u1 === null) return null;
+  const { diseno: d, particion } = p7;
+  const tabla: Record<string, number> = {};
+  const anotar = (clave: string, c: Conteo) => {
+    tabla[`vp:${clave}`] = c.vp;
+    tabla[`fp:${clave}`] = c.fp;
+  };
+  const proba = r.proba;
+  if (!proba) {
+    anotar(
+      UMBRAL_CLASE,
+      contar(d, particion.prueba, (_, i) => r.pred[i] === 1),
+    );
+    return tabla;
+  }
+  anotar(
+    UMBRAL_E1,
+    contar(d, particion.prueba, (_, i) => proba[i]! >= u1),
+  );
+  for (const u of REJILLA)
+    anotar(
+      claveUmbral(u),
+      contar(d, particion.prueba, (_, i) => proba[i]! >= u),
+    );
+  return tabla;
 }
 
 /** Por fila de la prueba, lo que cuesta lo que decidió el ganador (para el intervalo y los segmentos). */
@@ -462,6 +579,7 @@ function delWorker(
     brier_base: cal?.brierBase ?? null,
     peores_n: Math.min(PEORES, plan.plan7.particion.prueba.length),
     aperturas,
+    tabla_umbrales: tablaUmbrales(plan, r),
   };
 }
 
@@ -480,7 +598,8 @@ function derivados(
       : direccionDe(forma) === "higher"
         ? seleccion - enPrueba
         : enPrueba - seleccion;
-  // el peor segmento: el de mayor exceso de costo sobre el global, solo entre los que tienen soporte
+  // el peor segmento: el de mayor exceso de costo sobre el global, solo entre los que tienen soporte y a los que
+  // les va PEOR que a toda la prueba (exceso > 0): si ninguno lo está, no se marca ninguno (S14, M1)
   const [segN, segCasos, segCosto] = [
     mapa(c, "seg_n"),
     mapa(c, "seg_casos"),
@@ -497,7 +616,7 @@ function derivados(
       if (!Object.hasOwn(segCosto, id)) continue;
       soportados++;
       const exceso = segCosto[id]! - global;
-      if (!peor || exceso > peor.exceso) peor = { id, exceso };
+      if (exceso > 0 && (!peor || exceso > peor.exceso)) peor = { id, exceso };
     }
   }
   const tramos = tramosDe(c);
@@ -560,6 +679,9 @@ function recalcular(
   // dato del worker (y del cuaderno): no se puede rehacer sin volver a abrir la prueba
   for (const k of DEL_WORKER_8) c[k] = datos.chequeos[k] ?? null;
   Object.assign(c, derivados(c, plan?.plan7.forma ?? null));
+  // un registro de antes del S14 no trae la tabla de umbrales: se compara con lo que tenía
+  for (const k of NUEVOS_S14)
+    if (!Object.hasOwn(datos.chequeos, k)) delete c[k];
   return { respuestas: datos.respuestas, chequeos: c };
 }
 
@@ -618,7 +740,17 @@ const ENTEROS = [
   "n_prueba",
   "peores_n",
   "seg_con_soporte",
+  "prueba_pos",
+  "regla_vp",
+  "regla_fp",
 ] as const;
+
+const CLAVES_TABLA = new Set(
+  [UMBRAL_E1, UMBRAL_CLASE, ...REJILLA.map(claveUmbral)].flatMap((u) => [
+    `vp:${u}`,
+    `fp:${u}`,
+  ]),
+);
 const NO_NEGATIVOS = [
   "base_costo",
   "base_bajo",
@@ -645,11 +777,14 @@ function leer(datos: DatosEtapa): Lectura {
     r.patron.length > PATRON_MAX
   )
     return { ok: false, campo: "respuestas.patron" };
-  const c = datos.chequeos;
+  // un registro de antes del S14 no trae lo nuevo: se lee como vacío
+  const c: Registro = { ...nulos(NUEVOS_S14), ...datos.chequeos };
   const extra = claveExtra(c, CHEQUEOS_8);
   if (extra !== null) return { ok: false, campo: `chequeos.${extra}` };
   const malo = (k: string) => ({ ok: false as const, campo: `chequeos.${k}` });
-  for (const k of CHEQUEOS_8) if (!Object.hasOwn(c, k)) return malo(k);
+  for (const k of CHEQUEOS_8)
+    if (!Object.hasOwn(c, k) && !(NUEVOS_S14 as readonly string[]).includes(k))
+      return malo(k);
   for (const k of TEXTOS)
     if (c[k] !== null && typeof c[k] !== "string") return malo(k);
   for (const k of NUMEROS)
@@ -709,6 +844,27 @@ function leer(datos: DatosEtapa): Lectura {
   }
   if ((tramosN || mapa(c, "cal_pred") || mapa(c, "cal_obs")) && !tramosDe(c))
     return malo("cal_n");
+  // S14, la tabla de umbrales: claves de la rejilla, conteos enteros que caben en la prueba
+  const pos = numero(c, "prueba_pos");
+  const n = numero(c, "n_prueba");
+  if (pos !== null && n !== null && pos > n) return malo("prueba_pos");
+  const cabe = (vp: number, fp: number) =>
+    pos === null || n === null || (vp <= pos && fp <= n - pos);
+  const [rvp, rfp] = [numero(c, "regla_vp"), numero(c, "regla_fp")];
+  if ((rvp === null) !== (rfp === null)) return malo("regla_vp");
+  if (rvp !== null && rfp !== null && !cabe(rvp, rfp)) return malo("regla_vp");
+  const tabla = mapa(c, "tabla_umbrales");
+  if (tabla) {
+    for (const [k, v] of Object.entries(tabla))
+      if (!CLAVES_TABLA.has(k) || !esEntero(v)) return malo("tabla_umbrales");
+    for (const k of Object.keys(tabla)) {
+      const u = k.slice(3);
+      if (!Object.hasOwn(tabla, `vp:${u}`) || !Object.hasOwn(tabla, `fp:${u}`))
+        return malo("tabla_umbrales");
+      if (!cabe(tabla[`vp:${u}`]!, tabla[`fp:${u}`]!))
+        return malo("tabla_umbrales");
+    }
+  }
   return { ok: true };
 }
 
@@ -810,9 +966,14 @@ function trampas(datos: DatosEtapa): readonly Trampa[] {
         params: { columna: seg.columna, tramo: seg.tramo, exceso: e },
       });
   }
-  if (peor === "ninguno") salida.push({ clave: "ningun-segmento", params: {} });
   const segN = mapa(c, "seg_n");
   const soportados = numero(c, "seg_con_soporte");
+  // «ninguno» son dos cosas distintas: ninguno tiene soporte, o ninguno de los que lo tienen está peor que el total
+  if (peor === "ninguno")
+    salida.push({
+      clave: soportados === 0 ? "ningun-segmento" : "ninguno-peor",
+      params: {},
+    });
   if (segN && soportados !== null) {
     const total = Object.keys(segN).length;
     if (total > soportados)
@@ -840,6 +1001,7 @@ export type ResumenEtapa8 = {
   readonly enPrueba: number | null;
   readonly metrica: string | null;
   readonly peor: string | null;
+  readonly conSoporte: number | null;
   readonly calibracion: string | null;
   readonly brier: number | null;
   readonly brierBase: number | null;
@@ -861,6 +1023,7 @@ export function resumenEtapa8(datos: DatosEtapa): ResumenEtapa8 {
     enPrueba: numero(c, "prueba_metrica"),
     metrica: texto(c, "metrica"),
     peor: texto(c, "peor_segmento"),
+    conSoporte: numero(c, "seg_con_soporte"),
     calibracion: texto(c, "calibracion"),
     brier: numero(c, "brier"),
     brierBase: numero(c, "brier_base"),

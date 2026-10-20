@@ -56,6 +56,7 @@
           "unsupported": "sin soporte",
           "worst": "el peor",
           "none": "Ningún segmento tiene soporte: la prueba no se puede leer por partes.",
+          "none-worse": "A ningún segmento con soporte le va peor que a toda la prueba: no hay un peor segmento que marcar.",
           "empty": "No hay segmentos que leer: ni fecha, ni categorías de 2 a 8 valores, ni columnas numéricas en «usar».",
           "rule-cases": "Soporte mínimo: {filas} filas y {casos} casos de la clase menos frecuente. Un segmento sin soporte se muestra, pero nunca es el peor. Es una convención del programa, no una prueba estadística.",
           "rule": "Soporte mínimo: {filas} filas. Un segmento sin soporte se muestra, pero nunca es el peor. Es una convención del programa, no una prueba estadística.",
@@ -139,7 +140,11 @@
           "seg_costo": "Costo del ganador por decisión, por segmento",
           "cal_n": "Casos por tramo de calibración",
           "cal_pred": "Probabilidad media dicha, por tramo",
-          "cal_obs": "Frecuencia observada, por tramo"
+          "cal_obs": "Frecuencia observada, por tramo",
+          "prueba_pos": "Filas positivas en la prueba",
+          "regla_vp": "Tu regla: alertas que aciertan en la prueba",
+          "regla_fp": "Tu regla: falsas alarmas en la prueba",
+          "tabla_umbrales": "Alertas que aciertan y falsas, por umbral"
         }
       }
     }

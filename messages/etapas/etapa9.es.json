@@ -1,0 +1,122 @@
+{
+  "protocol": {
+    "stage": {
+      "9": {
+        "need-data": "Esta etapa usa tus datos y las etapas 1 a 8: cárgalos y cúmplelas primero.",
+        "reads": {
+          "title": "Lo que se lee",
+          "body": "La prueba no se vuelve a abrir: esta etapa lee lo que la etapa 8 midió en ella y tus costos de la etapa 1. Ninguna fila de tus datos interviene.",
+          "no-table": "La etapa 8 se registró antes de que guardara su tabla de umbrales, y sin ella no hay números para decidir. Vuelve a la etapa 8 y regístrala otra vez: la prueba se vuelve a abrir, y solo cuenta como apertura nueva si cambió la configuración, con su rótulo."
+        },
+        "threshold": {
+          "title": "El umbral",
+          "costs": "Tus costos de la etapa 1 dan un umbral de {umbral}: conviene actuar desde esa probabilidad (una falsa alarma cuesta {fp} y un caso que se escapa {fn}).",
+          "label": "Umbral con que se actúa",
+          "help": "El de tus costos se fija sin mirar la prueba. Si lo mueves leyendo la curva, el número que sale es optimista y queda rotulado.",
+          "option-e1": "El de tus costos ({umbral})",
+          "moved": "Elegido mirando la prueba: optimista.",
+          "reason-label": "Tu razón para moverlo",
+          "reason-help": "Por qué este umbral y no el de tus costos. Hasta {max} caracteres.",
+          "class": "El ganador no da probabilidades: decide con la clase que predice. No hay umbral que mover."
+        },
+        "numbers": {
+          "title": "Con este umbral",
+          "title-cost": "El costo de decidir",
+          "region": "Las cifras de la decisión",
+          "who": "Cómo se decide",
+          "alerts": "Alertas por cada 100 casos",
+          "false": "Falsas alarmas por cada 100 alertas",
+          "cost": "Costo por cada 100 decisiones",
+          "benefit": "Beneficio neto por cada 100 casos",
+          "model": "Con el modelo",
+          "nothing": "No hacer nada",
+          "all": "Actuar con todos",
+          "rule": "Tu regla de hoy",
+          "base": "Sin modelo ({base})",
+          "today": "lo de hoy",
+          "interval": "de {bajo} a {alto}",
+          "interval-note": "El intervalo es el de la etapa 8: se midió con el umbral de tus costos.",
+          "saves": "Frente a lo de hoy ({hoy}), el modelo ahorra {ahorro} por cada 100 decisiones.",
+          "costs-more": "Frente a lo de hoy ({hoy}), el modelo cuesta {ahorro} más por cada 100 decisiones.",
+          "same": "Frente a lo de hoy ({hoy}), el modelo cuesta lo mismo.",
+          "quantile": "Con tus costos, quedarse corto cuesta {sub} por unidad y pasarse {sobre}: lo que conviene apuntar es el cuantil {cuantil}, no el promedio."
+        },
+        "capacity": {
+          "title": "Lo que tu equipo alcanza",
+          "label": "De cada 100 casos, ¿cuántos alcanza a atender tu equipo?",
+          "help": "Un entero de 0 a 100. Si el umbral da más alertas, las que sobran se quedan sin atender.",
+          "fits": "Este umbral da {alertas} alertas por cada 100 casos: tu equipo alcanza.",
+          "exceeds": "Este umbral da {alertas} alertas por cada 100 casos y tu equipo atiende {capacidad}.",
+          "threshold": "El umbral de tu capacidad es {umbral}: da {capAlertas} alertas por cada 100 casos y cuesta {costo} por cada 100 decisiones.",
+          "none": "Ningún umbral baja a tanto."
+        },
+        "curve": {
+          "title": "La curva de decisión",
+          "intro": "El beneficio neto en cada umbral, por cada 100 casos: las alertas que aciertan menos las falsas, pesadas por lo que cuesta cada una con ese umbral. «No hacer nada» vale 0; donde el modelo queda por debajo de «actuar con todos» o de 0, no aporta.",
+          "image": "La curva de decisión en una gráfica; la tabla de abajo trae las mismas cifras.",
+          "legend-model": "Modelo (línea continua)",
+          "legend-all": "Actuar con todos (línea de rayas)",
+          "legend-rule": "Tu regla de hoy (línea de puntos)",
+          "legend-nothing": "No hacer nada (0)",
+          "region": "La curva de decisión, en cifras",
+          "u": "Umbral",
+          "model": "Modelo",
+          "all": "Actuar con todos",
+          "rule": "Tu regla",
+          "costs-mark": "◆ tus costos",
+          "chosen-mark": "● elegido"
+        },
+        "decision": {
+          "title": "Tu decisión",
+          "legend": "¿Qué haces con el modelo?",
+          "help": "No usarlo es un resultado válido: queda escrito con sus números.",
+          "usar": "Usarlo",
+          "iterar": "Iterar: mejorarlo antes de decidir",
+          "no-usar": "No usarlo",
+          "reason-label": "Tu razón",
+          "reason-help": "Con tus palabras: por qué esta decisión, con estos números. Hasta {max} caracteres."
+        },
+        "field": {
+          "umbral": "Umbral con que se actúa",
+          "razon_umbral": "Tu razón para mover el umbral",
+          "capacidad": "Casos de cada 100 que atiende tu equipo",
+          "decision": "Tu decisión",
+          "razon": "Tu razón"
+        },
+        "check": {
+          "forma": "Forma de la decisión",
+          "ganador": "Ganador",
+          "modo": "Cómo se decide",
+          "hoy_id": "Lo de hoy",
+          "base_id": "Línea base sin modelo",
+          "aperturas": "Aperturas distintas de la prueba",
+          "n": "Filas de prueba",
+          "pos": "Filas positivas en la prueba",
+          "vp": "Alertas que aciertan",
+          "fp": "Falsas alarmas",
+          "costo_modelo": "Costo del modelo por decisión",
+          "modelo_bajo": "Modelo: extremo bajo del intervalo",
+          "modelo_alto": "Modelo: extremo alto del intervalo",
+          "costo_base": "Costo sin modelo por decisión",
+          "costo_regla": "Costo de tu regla de hoy por decisión",
+          "costo_hoy": "Costo de lo de hoy por decisión",
+          "costo_nada": "Costo de no hacer nada por decisión",
+          "costo_todos": "Costo de actuar con todos por decisión",
+          "cap_costo": "Costo con el umbral de tu capacidad por decisión",
+          "umbral_e1": "Umbral de tus costos (etapa 1)",
+          "umbral_usado": "Umbral usado",
+          "cap_umbral": "Umbral de tu capacidad",
+          "cuantil": "Cuantil de tus costos",
+          "alertas100": "Alertas por cada 100 casos",
+          "falsas100": "Falsas alarmas por cada 100 alertas",
+          "cap_alertas100": "Alertas por cada 100 casos con el umbral de tu capacidad",
+          "ahorro": "Ahorro frente a lo de hoy por decisión",
+          "beneficio": "Beneficio neto del modelo por caso",
+          "beneficio_todos": "Beneficio neto de actuar con todos por caso",
+          "beneficio_regla": "Beneficio neto de tu regla por caso",
+          "brecha": "Desajuste de la calibración (etapa 8)"
+        }
+      }
+    }
+  }
+}

@@ -20,7 +20,7 @@ import {
 //  · credito-fuga-plantada.csv (estratificada): lo que se abre y el aviso, abrir la prueba, la medida con su
 //    intervalo y el optimismo, el peor segmento marcado, la calibración con su Brier y los peores casos en
 //    pantalla; abrir otra vez lo mismo no suma; sin patrón no se registra; con él, la 8 queda cumplida y la 9
-//    se ve sin construir; axe en los dos temas, 360 px sin desborde, y regla dura 2 (nada a /api/narrate,
+//    abre (S14; la 10 se ve sin construir); axe en los dos temas, 360 px sin desborde, y regla dura 2 (nada a /api/narrate,
 //    ninguna fila del CSV en la red ni en el archivo exportado, ni los peores casos);
 //  · bajas-con-fuga.csv (por tiempo y por grupo): el intervalo remuestrea clientes enteros y los segmentos
 //    incluyen el periodo.
@@ -116,7 +116,10 @@ test("etapa 8 con crédito: la prueba se abre una vez, se lee por segmento y cal
   await expect(e8.getByText("Cumplida")).toBeVisible();
   await expect(page.locator("#etapa-8-titulo")).toBeFocused();
   await expect(
-    page.locator("#etapa-9").getByText("Sin construir"),
+    page.locator("#etapa-9").getByText("Abierta", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator("#etapa-10").getByText("Sin construir"),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen8");
   await expect(resumen).toContainText("Peor segmento:");

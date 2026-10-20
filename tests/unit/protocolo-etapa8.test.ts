@@ -2,7 +2,7 @@
 // las etapas 1–7 cumplidas con la compuerta, y la prueba abierta es la que escribió el emisor real en Pyodide
 // (tests/fixtures/contrato/test-result.json, validada con el lector del contrato). Lo que tiene que valer:
 //  · la 8 abre con la 7 cumplida y el sello de la 6 igual; sin abrir la prueba o sin tu patrón, la compuerta
-//    nombra lo que falta; con las dos cosas se registra y la 9 se ve sin construir;
+//    nombra lo que falta; con las dos cosas se registra y la 9 abre (S14; la 10 se ve sin construir);
 //  · lo que se puede rehacer con la tabla se rehace: un cuaderno editado a mano no cuadra; lo del worker se
 //    copia (límite declarado en el manual);
 //  · un segmento sin soporte nunca es el peor; misma semilla, mismo intervalo; la calibración se mide con
@@ -271,18 +271,21 @@ describe("la compuerta de la etapa 8", () => {
     expect(r.ok).toBe(false);
   });
 
-  it("con la prueba abierta y tu patrón se registra: la 8 queda cumplida y la 9 se ve sin construir", () => {
-    expect(estados(CREDITO.cuaderno).slice(6, 9)).toEqual([
+  // S14: la 9 ya está construida; abre con la 8 cumplida y la 10 se ve sin construir
+  it("con la prueba abierta y tu patrón se registra: la 8 queda cumplida y la 9 abre", () => {
+    expect(estados(CREDITO.cuaderno).slice(6, 10)).toEqual([
       "cumplida",
       "abierta",
+      "cerrada",
       "no-construida",
     ]);
     expect(ETAPA_8.criterio(DATOS, CREDITO.previas)).toEqual({
       tipo: "cumple",
     });
-    expect(estados(registrado()).slice(6, 9)).toEqual([
+    expect(estados(registrado()).slice(6, 10)).toEqual([
       "cumplida",
       "cumplida",
+      "abierta",
       "no-construida",
     ]);
   });
@@ -409,6 +412,38 @@ describe("lo que se mide en la prueba", () => {
       Object.keys(segN).filter((id) => soporta(id)).length,
     );
   });
+
+  // S14 (M1): al peor segmento se le exige exceso > 0. Con todos los segmentos con soporte en el total o por debajo,
+  // no hay peor: ni «▲ el peor» ni un «cuesta −N más»; y no es lo mismo que «ninguno tiene soporte».
+  it.each([
+    ["por debajo del total", -1],
+    ["justo en el total", 0],
+  ])(
+    "si ningún segmento con soporte está peor que el total (%s), no se marca ninguno",
+    (_nombre, delta) => {
+      const global = c.ganador_costo as number;
+      const parejo = Object.fromEntries(
+        Object.keys(segCosto).map((id) => [id, global + delta]),
+      );
+      const datos = ETAPA_8.recalcular!(
+        con(DATOS, { seg_costo: parejo }),
+        CREDITO.previas,
+        CREDITO.tabla,
+        HUELLA,
+      );
+      expect(datos.chequeos.peor_segmento).toBe("ninguno");
+      expect(datos.chequeos.peor_exceso).toBeNull();
+      expect(datos.chequeos.seg_con_soporte as number).toBeGreaterThan(0);
+      expect(ETAPA_8.criterio(datos, CREDITO.previas)).toEqual({
+        tipo: "cumple",
+      });
+      const trampas = ETAPA_8.trampas!(datos, CREDITO.previas);
+      expect(trampas).toContainEqual({ clave: "ninguno-peor", params: {} });
+      expect(trampas.map((x) => x.clave)).not.toContain("ningun-segmento");
+      for (const x of trampas) expect(x.clave).not.toMatch(/^peor-/);
+      expect(resumenEtapa8(datos).conSoporte).toBeGreaterThan(0);
+    },
+  );
 
   it("si ningún segmento tiene soporte, lo dice: «ningún segmento con soporte»", () => {
     const filas = Array.from(
@@ -892,6 +927,7 @@ describe("el resumen para el cuaderno", () => {
       enPrueba: c.prueba_metrica,
       metrica: c.metrica,
       peor: c.peor_segmento,
+      conSoporte: c.seg_con_soporte,
       calibracion: "medida",
       brier: c.brier,
       brierBase: c.brier_base,

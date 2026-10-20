@@ -616,10 +616,17 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      casos se mostraron, nunca las filas. Si abres la prueba otra vez con otra configuración, el cuaderno lo
      cuenta y lo rotula; la app no te lo impide. Abrir lo mismo otra vez no suma. Corre en tu navegador:
      tus datos no viajan a ningún servidor.
-  11. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
+  11. **Etapa 9 · ¿Sirve para la decisión?** Ahora la app convierte lo medido en una decisión **sin volver a abrir la prueba**: lee lo que la etapa 8 guardó de ella (conteos por umbral, sin filas) y tus costos de la etapa 1. Si la etapa 8 se registró antes de guardar esa tabla, la pantalla lo dice y te pide volver a registrarla; la prueba se vuelve a abrir, y solo cuenta como apertura nueva si cambió la configuración, con su rótulo.
+     - **El umbral:** por defecto es el de tus costos. Si actuar sin que hiciera falta cuesta 10 y no actuar cuando sí hacía falta cuesta 50, el umbral es 0.17: conviene actuar desde esa probabilidad. Puedes moverlo para leer la curva, pero la pantalla lo rotula **«Elegido mirando la prueba: optimista»** y te pide una razón escrita; sin razón no se registra. Un modelo que no da probabilidades no tiene umbral que mover: decide con la clase que predice.
+     - **Las cifras:** con el umbral que usas, por cada 100 casos, cuántas alertas salen, cuántas son falsas alarmas (por cada 100 alertas), cuánto cuesta decidir (por cada 100 decisiones) y el beneficio neto. Se comparan con **no hacer nada** (cero), con **actuar con todos** y con tu regla de hoy si la hay. La marca **«· lo de hoy»** señala lo que hoy se hace. El intervalo solo aparece con el umbral de tus costos: es el de la etapa 8.
+     - **Lo que tu equipo alcanza:** escribes de cada 100 casos cuántos puede atender. Si el umbral da más alertas que eso, la pantalla dice cuántas sobran y muestra el umbral de tu capacidad con su costo.
+     - **La curva de decisión:** el beneficio neto en cada umbral, con una gráfica y una tabla con las mismas cifras cada 0.05. El umbral de tus costos sale marcado con ◆ y el que elegiste con ●. Donde el modelo queda por debajo de actuar con todos o de cero, no aporta.
+     - **Con una cantidad** (estimar un número): no hay umbral, capacidad ni curva. Ves el costo del modelo por cada 100 decisiones frente a lo de hoy y el **cuantil** que conviene apuntar con tus costos: quedarse corto y pasarse no cuestan lo mismo.
+     - **Tu decisión:** **Usarlo**, **Iterar** (mejorarlo antes de decidir) o **No usarlo**, con una razón escrita. **No usarlo es un resultado válido**: queda en el cuaderno con sus números.
+  12. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
      «tu unidad se repite: 361 filas para 100 unidades», «con tus costos actúas desde 0.17, no
      desde 0.5».
-  12. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
+  13. **Corrige cuando quieras.** En una etapa cumplida, **«Corregir»** abre su formulario. Lo corregido
      queda como una entrada nueva; las etapas que se construyeron sobre la anterior vuelven a
      **«Por verificar»**.
 
@@ -636,7 +643,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Qué lleva el archivo:** no trae las filas de tu CSV, pero sí datos que salen de él: los nombres de
     tus columnas, los valores del objetivo con sus conteos, medias, la fecha mínima y la máxima, el
     nombre del archivo y su huella, además de tus respuestas. Desde la etapa 4 suma también los puntajes
-    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Desde la etapa 7 suma los puntajes de la liga por pliegue, el veredicto y la permutación, pero no tus filas. Desde la etapa 8 suma los agregados de la prueba (el costo y el número de filas de cada segmento, con el nombre de sus categorías, los tramos de la calibración, el Brier y cada apertura de la prueba con su fecha), tu patrón de fallo y el número de peores casos, pero no las filas de la prueba ni los peores casos. Trátalo con el cuidado que le darías a
+    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Desde la etapa 7 suma los puntajes de la liga por pliegue, el veredicto y la permutación, pero no tus filas. Desde la etapa 8 suma los agregados de la prueba (el costo y el número de filas de cada segmento, con el nombre de sus categorías, los tramos de la calibración, el Brier y cada apertura de la prueba con su fecha), tu patrón de fallo y el número de peores casos, pero no las filas de la prueba ni los peores casos. Desde la etapa 9 suma tu decisión y tus razones, el umbral que usaste y tu capacidad, con los conteos y costos que los sostienen, pero no filas. Trátalo con el cuidado que le darías a
     tus datos.
   - **Ventana privada:** el navegador no deja guardar. La página lo avisa («Exporta tu cuaderno antes de
     irte»): si cierras la pestaña, se pierde.
@@ -657,8 +664,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   navegador**: viven en el cuaderno de este navegador y en el archivo que tú bajas. A Sentry solo llega
   el número de la etapa y el resultado (registrada, cerrada…), nunca un valor.
 
-- **Limitaciones conocidas (Sprints 008 a 013):**
-  - Hoy están construidas las etapas 1 a 8; la 9 se ve con su criterio pero **no abre**.
+- **Limitaciones conocidas (Sprints 008 a 014):**
+  - Hoy están construidas las etapas 1 a 9; la 10 se ve con su criterio pero **no abre**.
   - El Protocolo cubre las tres tareas **con objetivo** (dos clases, varias o una cantidad); **sin
     objetivo** no aplica y se va a «agrupar» en Probeta.
   - El tamaño de muestra con **varias clases** es una **aproximación**: se calcula «una contra el
@@ -731,7 +738,14 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     - **El intervalo depende de tus conglomerados.** Con pocas unidades o fechas, el intervalo se vuelve ancho, aunque remuestree bien.
     - **El cuaderno no guarda la prueba fila por fila.** Guarda solo agregados: el costo y el número de filas de cada segmento, los tramos de la calibración, el Brier, los intervalos, tu patrón y cuántos peores casos viste. La app comprueba que el resto cuadre (la partición, el sello, los segmentos, la línea base), pero no puede volver a abrir la prueba para comprobar esas cifras.
     - **El peor segmento y el optimismo se recalculan** cada vez que se revisa el cuaderno, con lo que hay guardado.
-    - **Los peores casos no quedan guardados.** Si cierras la pantalla, para verlos otra vez tienes que volver a abrir la prueba, y eso se cuenta.
+    - **Los peores casos no quedan guardados.** Si cierras la pantalla, para verlos otra vez tienes que volver a abrir la prueba, y eso cuenta como apertura solo si cambió la configuración.
+  - **Etapa 9, límites (Sprint 014):**
+    - **Las cifras salen de la prueba, y la prueba se abrió una vez.** El umbral de tus costos se fija sin mirarla. Moverlo leyendo la curva sí la mira: por eso sale optimista y queda rotulado.
+    - **El intervalo es el de la etapa 8, y solo con tu umbral de costos.** Si lo mueves, la pantalla no muestra intervalo.
+    - **Una prueba chica decide con poca base.** Con menos de 100 filas de prueba, la pantalla lo rotula: con pocos casos, un solo caso cambia mucho el beneficio.
+    - **Un umbral de costos con mala calibración no es fiable.** Si la etapa 8 vio probabilidades descalibradas, el umbral de tus costos se rotula «poco fiable» y la curva queda a la vista.
+    - **La etapa 9 no recalibra ni reentrena.** Decide con lo que hay; si el modelo no sirve, la decisión lo dice con «no usarlo».
+    - **Lo que guarda el cuaderno no tiene filas.** Guarda tu decisión, tus razones, el umbral, tu capacidad y los conteos y costos que los sostienen; ninguna fila de tu CSV.
 
 ## Diccionario de términos
 
@@ -857,6 +871,9 @@ cuando una te frene.
 | **Segmento con soporte** | Una parte de la prueba con filas suficientes para leerla sola: al menos 10 y, con dos clases, 3 casos de la clase menos frecuente. Lo que no llega se muestra, pero nunca es el peor. |
 | **Calibración** | Que las probabilidades signifiquen lo que dicen: de los casos en que el modelo dice 70 %, ocurre más o menos el 70 %. Se lee con una curva por tramos y con el Brier. |
 | **Brier** | El error cuadrático medio de las probabilidades: 0 es perfecto. Se compara con el de decir siempre la tasa base, que es lo que logra quien no sabe nada. |
+| **Beneficio neto** | Lo que gana una forma de decidir, contado en casos: las alertas que aciertan, menos las falsas pesadas por lo que cuesta cada una frente a un caso que se escapa. «No hacer nada» vale 0. |
+| **Falsas alarmas por cada 100 alertas** | De cada 100 veces que el modelo dice «actúa», cuántas no hacía falta. Es lo que vive tu equipo: con 60, más de la mitad del trabajo que le llega no servía. |
+| **Capacidad de atención** | Cuántos casos de cada 100 alcanza a atender tu equipo. Un umbral que da más alertas que eso no se puede cumplir: sube el umbral, crece el equipo, o las alertas que sobran se quedan sin atender. |
 
 ## Preguntas frecuentes
 
@@ -942,3 +959,4 @@ cuando una te frene.
 | 011    | Protocolo DS, etapa 6 «La prueba sellada» (la sugerencia del esquema con su porqué, cuatro esquemas, la pregunta de unidades nuevas o conocidas, el horizonte y el hueco en días o meses, la tabla por lado sin filas, la verificación de solape y el sello que se recalcula al recargar y cuenta pruebas distintas). Además: el inglés se descarga al elegirlo; la etapa 5 acepta «1,5» como número en una salida numérica y su resumen muestra vacíos, métricas y aciertos.
 | 012    | Protocolo DS, etapa 7 «El ganador, con la prueba cerrada» (la liga corre sobre los pliegues del entrenamiento, con el esquema sellado y sin la prueba; el puntaje del ganador se rotula «medida de selección»; la comparación contra la línea base pliegue por pliegue con su intervalo del 95 %, «Supera» o «No supera»; la permutación con su resolución; y el cuaderno que se vuelve a comprobar al recargar). Además: una clase llamada «constructor» o «__proto__» ya no se pierde al partir la tabla, y la etapa 6 precarga tu esquema elegido solo cuando difiere de la sugerencia de hoy. |
 | 013    | Protocolo DS, etapa 8 «La prueba, abierta una vez» (la prueba sellada se abre una sola vez y solo con el sello verificado; la medida en la prueba con su intervalo bootstrap por conglomerados, la línea base y tu regla, el optimismo de la selección, el error por segmento con soporte y su peor segmento, la calibración con su Brier, los peores casos solo en pantalla, y tu patrón de fallo. Las aperturas se cuentan y se rotulan, sin bloquear). Además: la etapa 7 dice si la prueba seguía cerrada o se abrió antes o después de su selección. |
+| 014    | Protocolo DS, etapa 9 «¿Sirve para la decisión?» (la decisión con números, sin volver a abrir la prueba: el umbral de tus costos con sus falsas alarmas por cada 100 alertas, el costo y el beneficio neto frente a no hacer nada, actuar con todos y tu regla de hoy; la capacidad de tu equipo; la curva de decisión; y tu decisión, usar, iterar o no usar, con razón. «No usarlo» pasa la compuerta. Con un número, el costo y el cuantil de tus costos). Además: el peor segmento exige que el error supere al total, y la etapa 8 deja de recalcularse a cada tecla de tu patrón. |

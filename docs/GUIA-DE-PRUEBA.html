@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Probeta DS — Guía de prueba (v9, acumulativa S1–S12)</title>
+<title>Probeta DS — Guía de prueba (v11, acumulativa S1–S14)</title>
 <style>
   :root {
     --fondo: #fafaf9; --superficie: #ffffff; --tinta: #1c1917; --tinta-suave: #57534e;
@@ -94,6 +94,7 @@
   .o-s11 { color: var(--nuevo); }
   .o-s12 { color: var(--nuevo); }
   .o-s13 { color: var(--nuevo); }
+  .o-s14 { color: var(--nuevo); }
   /* ⭐⭐ corto: estrella doble + texto + borde doble (no depende del color). */
   .o-corto { color: var(--clave); font-weight: 800; border-style: double; border-width: 3px; }
   .corto { background: var(--superficie); border: 3px double var(--clave); border-radius: 14px; padding: 12px 16px; margin: 16px 0 0; }
@@ -109,8 +110,8 @@
 <body>
 <div class="wrap">
   <p class="eyebrow">Probeta DS · guía de prueba</p>
-  <h1>Cómo probar Probeta DS — v9 (acumulativa S1–S12)</h1>
-  <p class="chica suave">Esta guía reúne <strong>todas</strong> las pruebas vigentes de la app: las 27 del ciclo H1, las 11 del <strong>Sprint 005 «La liga honesta»</strong> y las 11 del <strong>Sprint 006 «Estimar»</strong> (heredadas, con su origen), y las del <strong>Sprint 007 «Agrupar y multiclase»</strong>, que cierra el ciclo H2: la app clasifica en varias categorías (bloque H) y agrupa filas parecidas sin objetivo (bloque I). El <strong>Sprint 008 «El esqueleto del Protocolo»</strong> abre el modo lento, <strong>Protocolo DS</strong> (bloque J): sus pruebas se marcan «Nuevo · S8» y son de <strong>FORMA y TEXTO sin ver</strong>: se corren en el ensayo general del ciclo H2, no en el recorrido corto. El <strong>Sprint 009 «¿Existe al decidir?»</strong> suma la etapa 4 (bloque K, «Nuevo · S9»). El <strong>Sprint 010 «Lo que ya se logra sin modelo»</strong> suma la etapa 5 (bloque L, «Nuevo · S10»). El <strong>Sprint 011 «La prueba sellada»</strong> suma la etapa 6 (bloque M, «Nuevo · S11»). El <strong>Sprint 012 «El ganador, con la prueba cerrada»</strong> suma la etapa 7 (bloque N, «Nuevo · S12»). El <strong>Sprint 013 «La prueba, abierta una vez»</strong> suma la etapa 8 (bloque O, «Nuevo · S13»). Cada prueba dice <strong>qué</strong> hacer, <strong>cómo</strong> y <strong>qué esperar</strong>. Las casillas se guardan en tu navegador (localStorage, una lista nueva por versión).</p>
+  <h1>Cómo probar Probeta DS — v11 (acumulativa S1–S14)</h1>
+  <p class="chica suave">Esta guía reúne <strong>todas</strong> las pruebas vigentes de la app: las 27 del ciclo H1, las 11 del <strong>Sprint 005 «La liga honesta»</strong> y las 11 del <strong>Sprint 006 «Estimar»</strong> (heredadas, con su origen), y las del <strong>Sprint 007 «Agrupar y multiclase»</strong>, que cierra el ciclo H2: la app clasifica en varias categorías (bloque H) y agrupa filas parecidas sin objetivo (bloque I). El <strong>Sprint 008 «El esqueleto del Protocolo»</strong> abre el modo lento, <strong>Protocolo DS</strong> (bloque J): sus pruebas se marcan «Nuevo · S8» y son de <strong>FORMA y TEXTO sin ver</strong>: se corren en el ensayo general del ciclo H2, no en el recorrido corto. El <strong>Sprint 009 «¿Existe al decidir?»</strong> suma la etapa 4 (bloque K, «Nuevo · S9»). El <strong>Sprint 010 «Lo que ya se logra sin modelo»</strong> suma la etapa 5 (bloque L, «Nuevo · S10»). El <strong>Sprint 011 «La prueba sellada»</strong> suma la etapa 6 (bloque M, «Nuevo · S11»). El <strong>Sprint 012 «El ganador, con la prueba cerrada»</strong> suma la etapa 7 (bloque N, «Nuevo · S12»). El <strong>Sprint 013 «La prueba, abierta una vez»</strong> suma la etapa 8 (bloque O, «Nuevo · S13»). El <strong>Sprint 014 «¿Sirve para la decisión?»</strong> suma la etapa 9 (bloque P, «Nuevo · S14»). Cada prueba dice <strong>qué</strong> hacer, <strong>cómo</strong> y <strong>qué esperar</strong>. Las casillas se guardan en tu navegador (localStorage, una lista nueva por versión).</p>
 
   <div class="progreso">
     <span class="num" id="contador">0/0</span>
@@ -155,6 +156,8 @@
     <button type="button" data-filtro="corto" aria-pressed="false">⭐⭐ corto</button>
     <button type="button" data-filtro="clave" aria-pressed="false">⭐ Solo el gate H2</button>
     <button type="button" data-filtro="h1" aria-pressed="false">⭐ H1</button>
+    <button type="button" data-filtro="s14" aria-pressed="false">Nuevo del S14</button>
+    <button type="button" data-filtro="s13" aria-pressed="false">Nuevo del S13</button>
     <button type="button" data-filtro="s12" aria-pressed="false">Nuevo del S12</button>
     <button type="button" data-filtro="s11" aria-pressed="false">Nuevo del S11</button>
     <button type="button" data-filtro="s10" aria-pressed="false">Nuevo del S10</button>
@@ -587,8 +590,8 @@
     <p class="chica suave">Dónde: la <strong>portada</strong> → «Abrir el Protocolo DS», o <code>/protocolo</code>. Datos: <a href="kit-de-prueba/renovaciones-mensuales.csv" download>renovaciones-mensuales.csv</a>. FORMA y TEXTO <strong>sin ver</strong> (S8): tu lectura de si las etapas se entienden va al ensayo general del ciclo H2.</p>
     <ul class="pasos">
       <li data-origen="s8"><input type="checkbox" id="j1"><div>
-        <label for="j1"><strong>La puerta, y la compuerta que no deja saltar.</strong> Inicio → baja a <strong>«¿Prefieres el camino lento?»</strong> → <strong>«Abrir el Protocolo DS»</strong>. Sin escribir nada, mira la etapa 2. <span class="origen o-s8">Nuevo · S8</span> <span class="origen o-s9">Mejorado en S9</span> <span class="origen o-s10">Mejorado en S10</span> <span class="origen o-s11">Mejorado en S11</span><span class="origen o-s12">Mejorado en S12</span><span class="origen o-s13">Mejorado en S13</span></label>
-        <p class="esperar"><span class="et">Esperado</span> La página <strong>Protocolo DS</strong> dice que tus datos no salen del navegador y que <strong>no hay botón para saltar</strong>. La <strong>Etapa 1</strong> está <strong>Abierta</strong>; las etapas 2 a 8, <strong>Cerradas</strong> («Se abre cuando cumplas la etapa 1»), sin formulario; la 9, <strong>Sin construir</strong>, con su criterio a la vista. Cada estado lleva símbolo y texto, no solo color. <strong>Tu juicio:</strong> ¿se entiende que las etapas van en orden y por qué?</p>
+        <label for="j1"><strong>La puerta, y la compuerta que no deja saltar.</strong> Inicio → baja a <strong>«¿Prefieres el camino lento?»</strong> → <strong>«Abrir el Protocolo DS»</strong>. Sin escribir nada, mira la etapa 2. <span class="origen o-s8">Nuevo · S8</span> <span class="origen o-s9">Mejorado en S9</span> <span class="origen o-s10">Mejorado en S10</span> <span class="origen o-s11">Mejorado en S11</span><span class="origen o-s12">Mejorado en S12</span><span class="origen o-s13">Mejorado en S13</span> <span class="origen o-s14">Mejorado en S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La página <strong>Protocolo DS</strong> dice que tus datos no salen del navegador y que <strong>no hay botón para saltar</strong>. La <strong>Etapa 1</strong> está <strong>Abierta</strong>; las etapas 2 a 9, <strong>Cerradas</strong> («Se abre cuando cumplas la etapa 1»), sin formulario; la 10, <strong>Sin construir</strong>, con su criterio a la vista. Cada estado lleva símbolo y texto, no solo color. <strong>Tu juicio:</strong> ¿se entiende que las etapas van en orden y por qué?</p>
         <p class="mal"><span class="et">Mal</span> Algún control deja abrir la etapa 2 sin la 1, o el estado de una etapa solo se distingue por el color.</p>
       </div></li>
 
@@ -702,8 +705,8 @@
       </div></li>
 
       <li data-origen="s10"><input type="checkbox" id="l6"><div>
-        <label for="l6"><strong>El cuaderno dice que la línea base es una referencia.</strong> Registra la etapa 5 con una regla de las anteriores y mira el <strong>Cuaderno</strong>. <span class="origen o-s10">Nuevo · S10</span> <span class="origen o-s11">Mejorado en S11</span><span class="origen o-s12">Mejorado en S12</span><span class="origen o-s13">Mejorado en S13</span></label>
-        <p class="esperar"><span class="et">Esperado</span> El foco pasa al título de la etapa 5 y la etapa queda <strong>Cumplida</strong>. El cuaderno resume <em>«Referencia sobre N filas, no un resultado: la etapa 8 la vuelve a medir sobre la prueba»</em>, la regla con sus condiciones y <em>«Si se cumple: actuar. Si no: no actuar.»</em>. La <strong>Etapa 6</strong> queda <strong>Abierta</strong>; la 7 y la 8 quedan <strong>Cerradas</strong> (esperan a la 6 y a la 7) y la 9, <strong>Sin construir</strong>.</p>
+        <label for="l6"><strong>El cuaderno dice que la línea base es una referencia.</strong> Registra la etapa 5 con una regla de las anteriores y mira el <strong>Cuaderno</strong>. <span class="origen o-s10">Nuevo · S10</span> <span class="origen o-s11">Mejorado en S11</span><span class="origen o-s12">Mejorado en S12</span><span class="origen o-s13">Mejorado en S13</span> <span class="origen o-s14">Mejorado en S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> El foco pasa al título de la etapa 5 y la etapa queda <strong>Cumplida</strong>. El cuaderno resume <em>«Referencia sobre N filas, no un resultado: la etapa 8 la vuelve a medir sobre la prueba»</em>, la regla con sus condiciones y <em>«Si se cumple: actuar. Si no: no actuar.»</em>. La <strong>Etapa 6</strong> queda <strong>Abierta</strong>; la 7, la 8 y la 9 quedan <strong>Cerradas</strong> (esperan a la 6, a la 7 y a la 8) y la 10, <strong>Sin construir</strong>.</p>
         <p class="mal"><span class="et">Mal</span> El cuaderno muestra las listas crudas en vez del resumen, no dice que es una referencia, o la etapa 6 no queda abierta.</p>
       </div></li>
     </ul>
@@ -778,8 +781,8 @@
         <p class="mal"><span class="et">Mal</span> No aparece el valor p ni la resolución, o el texto dice «hay señal» sin el número de permutaciones.</p>
       </div></li>
       <li data-origen="s12"><input type="checkbox" id="n5"><div>
-        <label for="n5"><strong>Registrar, recargar y volver a cargar el CSV.</strong> Con bajas-con-fuga.csv, corre la liga y pulsa <strong>«Registrar la etapa 7»</strong>. Recarga la página y vuelve a cargar <a href="kit-de-prueba/bajas-con-fuga.csv" download>bajas-con-fuga.csv</a>. <span class="origen o-s12">Nuevo · S12</span><span class="origen o-s13">Mejorado en S13</span></label>
-        <p class="esperar"><span class="et">Esperado</span> Al registrar, la <strong>Etapa 7</strong> queda <strong>Cumplida</strong>, el foco pasa a su título y la <strong>Etapa 8</strong> queda <strong>Abierta</strong>, con su formulario, y la <strong>Etapa 9</strong> dice <strong>Sin construir</strong>. El cuaderno resume <em>«Ganador: …»</em>, <em>«medida de selección»</em> y <em>«La prueba sigue cerrada»</em>. Tras recargar, sin el CSV la 7 queda <strong>Cerrada</strong>; al volver a cargar el mismo archivo vuelve a <strong>Cumplida</strong> y los pliegues se vuelven a calcular y cuadran. <strong>Tu juicio:</strong> ¿se entiende que el CSV hace falta para volver a comprobar la liga?</p>
+        <label for="n5"><strong>Registrar, recargar y volver a cargar el CSV.</strong> Con bajas-con-fuga.csv, corre la liga y pulsa <strong>«Registrar la etapa 7»</strong>. Recarga la página y vuelve a cargar <a href="kit-de-prueba/bajas-con-fuga.csv" download>bajas-con-fuga.csv</a>. <span class="origen o-s12">Nuevo · S12</span><span class="origen o-s13">Mejorado en S13</span> <span class="origen o-s14">Mejorado en S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Al registrar, la <strong>Etapa 7</strong> queda <strong>Cumplida</strong>, el foco pasa a su título y la <strong>Etapa 8</strong> queda <strong>Abierta</strong>, con su formulario, y la <strong>Etapa 9</strong> queda <strong>Cerrada</strong>, porque espera a la 8. El cuaderno resume <em>«Ganador: …»</em>, <em>«medida de selección»</em> y <em>«La prueba sigue cerrada»</em>. Tras recargar, sin el CSV la 7 queda <strong>Cerrada</strong>; al volver a cargar el mismo archivo vuelve a <strong>Cumplida</strong> y los pliegues se vuelven a calcular y cuadran. <strong>Tu juicio:</strong> ¿se entiende que el CSV hace falta para volver a comprobar la liga?</p>
         <p class="mal"><span class="et">Mal</span> La etapa 7 queda Cumplida sin el CSV tras recargar, o el resumen no dice que la prueba sigue cerrada.</p>
       </div></li>
       <li data-origen="s12"><input type="checkbox" id="n6"><div>
@@ -815,8 +818,8 @@
         <p class="mal"><span class="et">Mal</span> Un tramo sin casos muestra una cifra, o el Brier aparece sin la tasa base para compararlo.</p>
       </div></li>
       <li data-origen="s13"><input type="checkbox" id="o5"><div>
-        <label for="o5"><strong>Los peores casos, solo en tu pantalla.</strong> Lee <strong>«Los peores casos»</strong>. Pulsa <strong>«Registrar la etapa 8»</strong> sin patrón, y después con uno escrito en el cuadro. <span class="origen o-s13">Nuevo · S13</span></label>
-        <p class="esperar"><span class="et">Esperado</span> Diez filas de tus datos, con lo que pasó y lo que dijo el modelo. Sin patrón, la compuerta lo nombra («tu patrón de fallo»). Con él, la <strong>Etapa 8</strong> queda <strong>Cumplida</strong>, el foco pasa a su título y la <strong>Etapa 9</strong> dice <strong>Sin construir</strong>. Al <strong>Exportar cuaderno</strong>, el archivo lleva tu patrón y el número de peores casos, y ni una fila de tu CSV. <strong>Tu juicio:</strong> ¿se entiende que las filas se ven pero no se guardan?</p>
+        <label for="o5"><strong>Los peores casos, solo en tu pantalla.</strong> Lee <strong>«Los peores casos»</strong>. Pulsa <strong>«Registrar la etapa 8»</strong> sin patrón, y después con uno escrito en el cuadro. <span class="origen o-s13">Nuevo · S13</span> <span class="origen o-s14">Mejorado en S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Diez filas de tus datos, con lo que pasó y lo que dijo el modelo. Sin patrón, la compuerta lo nombra («tu patrón de fallo»). Con él, la <strong>Etapa 8</strong> queda <strong>Cumplida</strong>, el foco pasa a su título y la <strong>Etapa 9</strong> queda <strong>Abierta</strong>, con su formulario. Al <strong>Exportar cuaderno</strong>, el archivo lleva tu patrón y el número de peores casos, y ni una fila de tu CSV. <strong>Tu juicio:</strong> ¿se entiende que las filas se ven pero no se guardan?</p>
         <p class="mal"><span class="et">Mal</span> Un peor caso aparece en el archivo exportado, o la etapa 8 se registra sin patrón.</p>
       </div></li>
       <li data-origen="s13"><input type="checkbox" id="o6"><div>
@@ -825,9 +828,51 @@
         <p class="mal"><span class="et">Mal</span> El contador sube a dos con la misma configuración, o el botón queda apagado.</p>
       </div></li>
       <li data-origen="s13"><input type="checkbox" id="o7"><div>
-        <label for="o7"><strong>El cuaderno editado a mano no pasa.</strong> Con la etapa 8 cumplida, pulsa <strong>«Exportar cuaderno»</strong> y abre el archivo con un editor de texto. En la etapa 8, cambia la clave <code>peor_segmento</code> por otro segmento de la lista (por ejemplo, <code>c:empleo=formal</code>). Vuelve a importarlo con <strong>«Importar cuaderno»</strong> y confirma «Sí, reemplazar». <span class="origen o-s13">Nuevo · S13</span></label>
-        <p class="esperar"><span class="et">Esperado</span> La <strong>Etapa 8</strong> queda <strong>Por verificar</strong>, con el motivo <em>«Lo registrado no coincide con lo que dan tus datos»</em>. La <strong>Etapa 9</strong> sigue <strong>Sin construir</strong> y la <strong>Etapa 7</strong> sigue <strong>Cumplida</strong>. <strong>Tu juicio:</strong> ¿se entiende que el peor segmento se vuelve a calcular con tus datos y no se acepta lo escrito?</p>
+        <label for="o7"><strong>El cuaderno editado a mano no pasa.</strong> Con la etapa 8 cumplida, pulsa <strong>«Exportar cuaderno»</strong> y abre el archivo con un editor de texto. En la etapa 8, cambia la clave <code>peor_segmento</code> por otro segmento de la lista (por ejemplo, <code>c:empleo=formal</code>). Vuelve a importarlo con <strong>«Importar cuaderno»</strong> y confirma «Sí, reemplazar». <span class="origen o-s13">Nuevo · S13</span> <span class="origen o-s14">Mejorado en S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La <strong>Etapa 8</strong> queda <strong>Por verificar</strong>, con el motivo <em>«Lo registrado no coincide con lo que dan tus datos»</em>. La <strong>Etapa 9</strong> queda <strong>Cerrada</strong>, porque espera a la 8, y la <strong>Etapa 7</strong> sigue <strong>Cumplida</strong>. <strong>Tu juicio:</strong> ¿se entiende que el peor segmento se vuelve a calcular con tus datos y no se acepta lo escrito?</p>
         <p class="mal"><span class="et">Mal</span> La etapa 8 queda Cumplida con el peor segmento cambiado, o el archivo editado se acepta sin avisar.</p>
+      </div></li>
+    </ul>
+  </section>
+
+  <section class="bloque">
+    <div class="bloque-cabeza"><span class="letra" aria-hidden="true">P</span><h2>Protocolo DS, etapa 9: ¿sirve para la decisión?</h2></div>
+    <p class="chica suave">Dónde: <code>/protocolo</code>, con las etapas 1 a 8 cumplidas. Todas: el crédito, con la etapa 5 en «No, hoy no hay regla», la etapa 6 con la sugerencia, la etapa 7 corrida y registrada, y la etapa 8 registrada, como en O5. Datos: <a href="kit-de-prueba/credito-fuga-plantada.csv" download>credito-fuga-plantada.csv</a>. La etapa 9 solo abre con la 8 cumplida. Corre en tu navegador: la prueba no sale de tu equipo y la etapa 9 no la vuelve a abrir. FORMA y TEXTO <strong>sin ver</strong> (S14): tu lectura va al ensayo general del ciclo H-2.</p>
+    <ul class="pasos">
+      <li data-origen="s14"><input type="checkbox" id="p1"><div>
+        <label for="p1"><strong>Lo que se lee, y que la prueba no se vuelve a abrir.</strong> Con la etapa 8 registrada, abre la <strong>Etapa 9</strong> y lee el bloque de lo que se lee y el umbral. Sin tocar nada. <span class="origen o-s14">Nuevo · S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La <strong>Etapa 9</strong> dice que <strong>la prueba no se vuelve a abrir</strong> y que lee lo que la etapa 8 midió en ella y tus costos de la etapa 1. El umbral por defecto es <strong>«El de tus costos (0.17)»</strong>: con el costo de actuar sin que hiciera falta en 10 y el de no actuar cuando sí hacía falta en 50. <strong>Tu juicio:</strong> ¿se entiende que la decisión sale de lo ya medido y no de otra apertura?</p>
+        <p class="mal"><span class="et">Mal</span> La etapa 9 pide volver a medir la prueba, o el umbral por defecto no es el de tus costos.</p>
+      </div></li>
+      <li data-origen="s14"><input type="checkbox" id="p2"><div>
+        <label for="p2"><strong>Las cifras de la decisión, frente a no hacer nada y actuar con todos.</strong> En la <strong>Etapa 9</strong>, lee la tabla de <strong>«Con este umbral»</strong>. <span class="origen o-s14">Nuevo · S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La tabla tiene la fila del modelo, <strong>No hacer nada</strong> y <strong>Actuar con todos</strong>, con sus alertas por cada 100 casos, sus falsas alarmas por cada 100 alertas y su costo por cada 100 decisiones. La marca <strong>«· lo de hoy»</strong> cae en la fila de lo que se hace hoy. Debajo, <strong>«Frente a lo de hoy»</strong> dice cuánto ahorra o cuesta el modelo por cada 100 decisiones. <strong>Tu juicio:</strong> ¿se entiende que el modelo se compara con no hacer nada y no solo consigo mismo?</p>
+        <p class="mal"><span class="et">Mal</span> Falta una de las tres filas, no aparece la marca de lo de hoy, o el modelo se muestra sin su comparación.</p>
+      </div></li>
+      <li data-origen="s14"><input type="checkbox" id="p3"><div>
+        <label for="p3"><strong>La capacidad que no alcanza, y el umbral que sí.</strong> En <strong>«De cada 100 casos, ¿cuántos alcanza a atender tu equipo?»</strong> escribe 5. Después escribe 100. <span class="origen o-s14">Nuevo · S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Con 5, la lectura dice <strong>«El umbral de tu capacidad es»</strong> un número, con sus alertas por cada 100 casos y su costo por cada 100 decisiones: es el umbral que tu equipo sí atiende. Con 100, dice que <strong>tu equipo alcanza</strong>. <strong>Tu juicio:</strong> ¿se entiende que el umbral también lo decide tu capacidad y no solo el costo?</p>
+        <p class="mal"><span class="et">Mal</span> Con 5 la pantalla dice que el equipo alcanza, o no nombra ningún umbral de capacidad.</p>
+      </div></li>
+      <li data-origen="s14"><input type="checkbox" id="p4"><div>
+        <label for="p4"><strong>Mover el umbral lo rotula y pide tu razón.</strong> En <strong>«Umbral con que se actúa»</strong> elige 0.30 y registra la etapa sin escribir razón. Después escribe tu razón y registra otra vez. <span class="origen o-s14">Nuevo · S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> Al elegir 0.30 aparece <strong>«Elegido mirando la prueba: optimista»</strong> y el campo <strong>«Tu razón para moverlo»</strong>. Sin razón, la alerta dice que falta tu razón para mover el umbral y la etapa no se registra. Con razón, se registra y el cuaderno lleva el umbral movido con su razón. <strong>Tu juicio:</strong> ¿se entiende por qué mover el umbral sale más optimista?</p>
+        <p class="mal"><span class="et">Mal</span> El umbral movido se registra sin razón, o se queda sin el rótulo «optimista».</p>
+      </div></li>
+      <li data-origen="s14"><input type="checkbox" id="p5"><div>
+        <label for="p5"><strong>«No usarlo» queda cumplido y escrito.</strong> Marca <strong>«No usarlo»</strong>, escribe tu razón en <strong>«Tu razón»</strong> y pulsa <strong>«Registrar la etapa 9»</strong>. <span class="origen o-s14">Nuevo · S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La <strong>Etapa 9</strong> queda <strong>Cumplida</strong> y el foco pasa a su título. La <strong>Etapa 10</strong> queda <strong>Sin construir</strong>. El cuaderno dice <em>«Decisión: no usarlo.»</em> y <em>«por cada 100 decisiones»</em>. <strong>Tu juicio:</strong> ¿se entiende que decir «no lo uses» también es terminar el Protocolo bien?</p>
+        <p class="mal"><span class="et">Mal</span> «No usarlo» no pasa la compuerta, o la etapa 10 aparece abierta.</p>
+      </div></li>
+      <li data-origen="s14"><input type="checkbox" id="p6"><div>
+        <label for="p6"><strong>Con un número: el costo y el cuantil, sin umbral ni capacidad.</strong> Con <a href="kit-de-prueba/precio-fuga-plantada.csv" download>precio-fuga-plantada.csv</a> y la etapa 8 registrada, abre la <strong>Etapa 9</strong>. Marca <strong>«Iterar»</strong>, escribe tu razón y registra. <span class="origen o-s14">Nuevo · S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La tabla dice <strong>«Costo por cada 100 decisiones»</strong> con el modelo frente a lo de hoy, y el texto dice <em>«lo que conviene apuntar es el cuantil»</em> con el cuantil de tus costos. No hay campo de umbral, ni de capacidad, ni curva. Registrada, la etapa queda <strong>Cumplida</strong> y el cuaderno dice <em>«Decisión: iterar.»</em>. <strong>Tu juicio:</strong> ¿se entiende que con un número lo que se decide es cuánto apuntar?</p>
+        <p class="mal"><span class="et">Mal</span> Aparece un umbral o una curva para una cantidad, o «iterar» no se registra.</p>
+      </div></li>
+      <li data-origen="s14"><input type="checkbox" id="p7"><div>
+        <label for="p7"><strong>Una etapa 8 de antes del S14 no da cifras, y lo dice.</strong> Si tienes un cuaderno exportado antes de este sprint con la etapa 8 registrada, impórtalo con <strong>«Importar cuaderno»</strong> y confirma «Sí, reemplazar». Abre la <strong>Etapa 9</strong>. <span class="origen o-s14">Nuevo · S14</span></label>
+        <p class="esperar"><span class="et">Esperado</span> La <strong>Etapa 9</strong> dice que la etapa 8 se registró antes de guardar su tabla de umbrales y te pide <strong>volver a registrarla</strong>; no muestra cifras ni decisión. Al registrar la 8 otra vez, la prueba se vuelve a abrir: cuenta como apertura solo si cambió la configuración, y el cuaderno lo rotula. <strong>Tu juicio:</strong> ¿se entiende que el número de la prueba vuelve a contar y que la app no lo oculta?</p>
+        <p class="mal"><span class="et">Mal</span> La etapa 9 muestra cifras con una 8 sin tabla, o la misma configuración suma como apertura nueva.</p>
       </div></li>
     </ul>
   </section>
@@ -842,6 +887,7 @@
     <p class="chica suave"><strong>Regla de la bola de nieve:</strong> esta guía es acumulativa. Contiene <strong>todas</strong> las pruebas vigentes de la app, con el <strong>origen</strong> de cada una (de qué sprint nació y si un sprint posterior la cambió). Una prueba solo se elimina cuando la feature que probaba deja de existir — y se anota abajo.</p>
 
     <p class="eyebrow" style="margin-top:16px">Historial</p>
+    <p class="chica suave"><strong>Sprint 014 (2026-10-19) — «¿Sirve para la decisión?» · v11 de esta guía:</strong> séptimo sprint del ciclo H-2. <strong>Nuevo · S14:</strong> bloque P (7 pruebas: lo que se lee sin abrir la prueba y el umbral por defecto, las cifras frente a no hacer nada y actuar con todos, la capacidad y el umbral que sí cabe, mover el umbral con su rótulo y su razón, «no usarlo» como resultado cumplido, la decisión con un número, y una 8 de antes del S14 que pide volver a registrarse). <strong>Mejoradas en S14:</strong> J1 (las etapas 2 a 9 quedan Cerradas, y solo la 10 Sin construir), L6 (la 9 queda Cerrada y la 10 Sin construir), N5 (la 9 queda Cerrada, porque espera a la 8), O5 (tras registrar la 8, la 9 queda Abierta) y O7 (la 9 queda Cerrada, porque espera a la 8). <strong>Corregido en S14:</strong> el título y el encabezado decían «v9, S1–S12» desde el S13, y no había filtro «Nuevo del S13»; ahora sí. Son de FORMA y TEXTO sin ver: se corren en el ensayo general del ciclo H-2. Las 103 pruebas anteriores no cambian salvo J1, L6, N5, O5 y O7. Total: 110. Casillas en una lista nueva (<code>guia-ds:s14:</code>).</p>
     <p class="chica suave"><strong>Sprint 013 (2026-10-19) — «La prueba, abierta una vez» · v10 de esta guía:</strong> sexto sprint del ciclo H-2. <strong>Nuevo · S13:</strong> bloque O (7 pruebas: lo que se abre antes de abrir nada, la medida en la prueba con su intervalo y el optimismo, el peor segmento con soporte, la calibración con el Brier, los peores casos solo en pantalla y el registro con tu patrón, abrir otra vez sin sumar, y el cuaderno editado a mano). <strong>Mejoradas en S13:</strong> J1 (la etapa 8 ya existe: las etapas 2 a 8 quedan Cerradas, y solo la 9 Sin construir), L6 y M6 (la 8 queda Cerrada, porque espera a la 7), N5 (tras registrar la 7, la 8 queda Abierta) y N6 (la 8 queda Cerrada mientras la 7 está por verificar). Son de FORMA y TEXTO sin ver: se corren en el ensayo general del ciclo H-2. Las 96 pruebas anteriores no cambian salvo J1, L6, M6, N5 y N6. Total: 103. Casillas en una lista nueva (<code>guia-ds:s13:</code>).</p>
     <p class="chica suave"><strong>Sprint 012 (2026-10-18) — «El ganador, con la prueba cerrada» · v9 de esta guía:</strong> quinto sprint del ciclo H-2. <strong>Nuevo · S12:</strong> bloque N (6 pruebas: lo que hereda y los pliegues, la liga con su medida de selección, la comparación contra la línea base con su intervalo, la permutación con su resolución, registrar y recargar, y el cuaderno editado a mano). <strong>Mejoradas en S12:</strong> J1 (la etapa 7 ya existe: las etapas 2 a 7 quedan Cerradas, y solo la 8 Sin construir), L6 y M6 (la 7 queda Cerrada, porque espera a la 6). Son de FORMA y TEXTO sin ver: se corren en el ensayo general del ciclo H-2. Las 90 pruebas anteriores no cambian salvo J1, L6 y M6. Total: 96. Casillas en una lista nueva (<code>guia-ds:s12:</code>).</p>
     <p class="chica suave"><strong>Sprint 011 (2026-10-18) — «La prueba sellada» · v8 de esta guía:</strong> cuarto sprint del ciclo H-2. <strong>Nuevo · S11:</strong> bloque M (6 pruebas: la sugerencia sin fecha ni unidad, la pregunta de unidades antes de sugerir, el horizonte y el hueco, otro esquema con su razón, sellar y recargar, y el cuaderno editado a mano). <strong>Mejoradas en S11:</strong> J1 (la etapa 6 ya existe: las etapas 2 a 6 quedan Cerradas, y solo la 7 en adelante Sin construir) y L6 (tras la etapa 5, la 6 queda Abierta). K5 no cambia: no nombra la etapa 6. Son de FORMA y TEXTO sin ver: se corren en el ensayo general del ciclo H-2. Las 84 pruebas anteriores no cambian salvo J1 y L6. Total: 90. Casillas en una lista nueva (<code>guia-ds:s11:</code>).</p>
@@ -866,7 +912,7 @@
     var botones = Array.prototype.slice.call(document.querySelectorAll(".filtros button"));
     // Namespace VERSIONADO por sprint: una regresión sin correr jamás aparece
     // marcada por el sprint anterior (regla de la guía acumulativa).
-    var CLAVE = "guia-ds:s13:";
+    var CLAVE = "guia-ds:s14:";
 
     function visibles() {
       return casillas.filter(function (c) {

@@ -167,6 +167,14 @@ export const CONTENIDO_ETAPAS: Readonly<Record<EtapaId, ContenidoEtapa>> = {
       es: "Una decisión con números: usarlo, iterar o no usarlo.",
       en: "A decision with numbers: use it, iterate, or don't use it.",
     },
+    tarea: {
+      es: "Con lo que midió la etapa 8, sin volver a abrir la prueba, traduce el modelo a tu decisión. Con dos clases, el umbral sale de tus costos de la etapa 1: lees cuántas alertas da por cada 100 casos, cuántas son falsas alarmas por cada 100 alertas y cuánto cuesta frente a no hacer nada, actuar con todos y tu regla de hoy, y dices cuántos casos de cada 100 alcanza a atender tu equipo. Con varias clases o un número, lees el costo del modelo frente a lo de hoy. Al final eliges: usarlo, iterar o no usarlo, con tu razón.",
+      en: "With what stage 8 measured, without opening the test set again, translate the model into your decision. With two classes, the threshold comes from your stage 1 costs: you read how many alerts it raises per 100 cases, how many are false alarms per 100 alerts and what it costs against doing nothing, acting on everyone and your rule of today, and you say how many cases out of 100 your team can handle. With several classes or a number, you read the model's cost against what you do today. Then you choose: use it, iterate, or don't use it, with your reason.",
+    },
+    porque: {
+      es: "Un modelo que mide bien no por eso sirve: sirve si, con tus costos y con lo que tu equipo alcanza, cuesta menos que lo que ya haces.\nEl umbral se fija con tus costos antes de mirar la curva. Moverlo mirando la prueba es elegir con ella, y el número que sale es optimista: se puede, con tu razón, y queda rotulado. El beneficio neto lo cuenta en casos: «no hacer nada» vale 0 y «actuar con todos» tiene su propio valor; un modelo por debajo de los dos no aporta.\n«No usarlo» es un resultado: queda escrito en tu cuaderno con sus números.",
+      en: "A model that measures well doesn't serve just because of that: it serves if, with your costs and with what your team can handle, it costs less than what you already do.\nThe threshold is set by your costs before looking at the curve. Moving it while looking at the test set is choosing with it, and the number you get is optimistic: you can, with your reason, and it's labeled. Net benefit counts it in cases: «doing nothing» is worth 0 and «acting on everyone» has its own value; a model below both adds nothing.\n«Don't use it» is a result: it's written in your notebook with its numbers.",
+    },
   },
   10: {
     titulo: {
