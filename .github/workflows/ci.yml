@@ -136,6 +136,8 @@ jobs:
         # HTML pre-renderizado (verificado en .next/server/app/index.html). Todo lo
         # OBSERVABLE está sano: respuesta del servidor 2 ms, TBT 2-6 ms, font-display OK,
         # CSS con 0 ms de ahorro, y los budgets de PESO (script 300 KB / total 1 MB) pasan.
+        # S14: el peso va por RUTA en perf-budget.json (`/$` 300 KB, `/protocolo` 320 KB desde el S13). LHCI aplica TODOS
+        # los path que casan con una URL y `/*` casa con todo, así que lighthouse-margen.mjs exige un solo path por URL.
         # El budget sube a 3500 ms como margen documentado: sigue atrapando lo que este gate
         # existe para atrapar (que Pyodide entre al camino del LCP sería un salto de varios
         # segundos, no de un 15%). Deuda H2: medir el LCP OBSERVADO con PerformanceObserver
