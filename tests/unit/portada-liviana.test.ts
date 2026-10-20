@@ -64,6 +64,10 @@ const LAZY = [
   "src/engine/protocolo/segmentos.ts",
   "src/engine/protocolo/calibracion.ts",
   "src/engine/protocolo/bootstrap.ts",
+  // S14: la etapa 9 (pantalla, textos y el motor de la decisión).
+  "src/components/protocolo/Etapa9Form.tsx",
+  "src/components/protocolo/textos/etapa9.ts",
+  "src/engine/protocolo/etapa9.ts",
 ];
 
 /**
@@ -87,6 +91,9 @@ const LAZY_PROTOCOLO = [
   "src/lib/protocolo/usePrueba.ts",
   "src/lib/protocolo/prueba8.ts",
   "src/workers/contrato-prueba.ts",
+  // S14: la pantalla de la etapa 9 y sus textos (con su curva)
+  "src/components/protocolo/Etapa9Form.tsx",
+  "src/components/protocolo/textos/etapa9.ts",
   // (src/workers/contract.ts ya llega desde el S10 por useProtocolo → quantity.ts: no se vigila aquí)
 ];
 
@@ -170,6 +177,7 @@ describe("/protocolo no arrastra la pantalla ni el worker de las etapas 7 y 8 po
       "src/engine/protocolo/etapa7.ts",
       "src/engine/protocolo/pliegues.ts",
       "src/engine/protocolo/etapa8.ts",
+      "src/engine/protocolo/etapa9.ts",
     ]) {
       expect(paths.has(resolve(ROOT, expected)), expected).toBe(true);
     }

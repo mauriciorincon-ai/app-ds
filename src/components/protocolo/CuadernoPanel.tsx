@@ -15,6 +15,7 @@ import { ACTUAR, NO_ACTUAR, resumenEtapa5 } from "@/engine/protocolo/etapa5";
 import { resumenEtapa6, sellosDistintos } from "@/engine/protocolo/etapa6";
 import { resumenEtapa7 } from "@/engine/protocolo/etapa7";
 import { resumenEtapa8 } from "@/engine/protocolo/etapa8";
+import { resumenEtapa9 } from "@/engine/protocolo/etapa9";
 import { por100 } from "@/engine/protocolo/etapa5";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
@@ -251,6 +252,75 @@ function ResumenEtapa7({
       <li className="text-ink-muted">
         {t(`protocol.stage.7.summary.${prueba}`)}
       </li>
+    </ul>
+  );
+}
+
+/**
+ * S14: la etapa 9 en una lectura: tu decisión y tu razón, el costo del modelo frente a lo de hoy y, con dos
+ * clases, el umbral (rotulado si se movió mirando la prueba), sus alertas y falsas alarmas, y tu capacidad.
+ */
+function ResumenEtapa9({
+  datos,
+  nombres,
+}: {
+  datos: DatosEtapa;
+  nombres: { readonly clase: string; readonly opcion: string };
+}) {
+  const { t } = useI18n();
+  const r = resumenEtapa9(datos);
+  if (r.decision === null) return null;
+  const n100 = (x: number) => cifra(por100(x));
+  const hoy =
+    r.hoyId === "regla"
+      ? t("protocol.stage.9.summary.today-rule")
+      : r.hoyId
+        ? t(`protocol.stage.5.ref.${r.hoyId}`, nombres)
+        : "—";
+  const cifras = {
+    alertas: r.alertas === null ? "—" : cifra(r.alertas),
+    falsas: r.falsas === null ? "—" : cifra(r.falsas),
+  };
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen9"
+    >
+      <li className="font-medium">
+        {t(`protocol.stage.9.summary.decision.${r.decision}`)}
+      </li>
+      {r.razon && (
+        <li>{t("protocol.stage.9.summary.reason", { razon: r.razon })}</li>
+      )}
+      {r.costoModelo !== null && r.costoHoy !== null && (
+        <li>
+          {t("protocol.stage.9.summary.cost", {
+            modelo: n100(r.costoModelo),
+            hoy,
+            costoHoy: n100(r.costoHoy),
+          })}
+        </li>
+      )}
+      {r.modo === "curva" && r.umbral !== null && (
+        <li>
+          {t(
+            r.movido
+              ? "protocol.stage.9.summary.threshold-moved"
+              : "protocol.stage.9.summary.threshold",
+            { umbral: proporcion(r.umbral), ...cifras },
+          )}
+        </li>
+      )}
+      {r.modo === "clase" && (
+        <li>{t("protocol.stage.9.summary.class", cifras)}</li>
+      )}
+      {r.capacidad !== null && (
+        <li>
+          {t("protocol.stage.9.summary.capacity", {
+            capacidad: r.capacidad,
+          })}
+        </li>
+      )}
     </ul>
   );
 }
@@ -505,11 +575,18 @@ function Entrada({
           nombres={nombresBase(cuaderno, evidencia)}
         />
       )}
+      {evidencia.etapa === 9 && (
+        <ResumenEtapa9
+          datos={evidencia.datos}
+          nombres={nombresBase(cuaderno, evidencia)}
+        />
+      )}
       {evidencia.etapa !== 4 &&
         evidencia.etapa !== 5 &&
         evidencia.etapa !== 6 &&
         evidencia.etapa !== 7 &&
         evidencia.etapa !== 8 &&
+        evidencia.etapa !== 9 &&
         filas.length > 0 && (
           <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
             {filas.map(([clave, valor]) => (

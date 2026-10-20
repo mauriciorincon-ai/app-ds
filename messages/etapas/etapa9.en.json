@@ -1,0 +1,122 @@
+{
+  "protocol": {
+    "stage": {
+      "9": {
+        "need-data": "This stage uses your data and stages 1 to 8: load it and meet them first.",
+        "reads": {
+          "title": "What is read",
+          "body": "The test set isn't opened again: this stage reads what stage 8 measured on it and your costs from stage 1. No row of your data takes part.",
+          "no-table": "Stage 8 was recorded before it kept its threshold table, and without it there are no numbers to decide with. Go back to stage 8 and record it again: opening the test set again counts as an opening and is labeled."
+        },
+        "threshold": {
+          "title": "The threshold",
+          "costs": "Your costs from stage 1 give a threshold of {umbral}: acting pays from that probability on (a false alarm costs {fp} and a case that slips through {fn}).",
+          "label": "Threshold at which you act",
+          "help": "Your costs' threshold is set without looking at the test set. If you move it reading the curve, the number you get is optimistic and it's labeled.",
+          "option-e1": "Your costs' threshold ({umbral})",
+          "moved": "Chosen while looking at the test set: optimistic.",
+          "reason-label": "Your reason to move it",
+          "reason-help": "Why this threshold and not your costs' one. Up to {max} characters.",
+          "class": "The winner gives no probabilities: it decides with the class it predicts. There's no threshold to move."
+        },
+        "numbers": {
+          "title": "At this threshold",
+          "title-cost": "The cost of deciding",
+          "region": "The figures of the decision",
+          "who": "How it's decided",
+          "alerts": "Alerts per 100 cases",
+          "false": "False alarms per 100 alerts",
+          "cost": "Cost per 100 decisions",
+          "benefit": "Net benefit per 100 cases",
+          "model": "With the model",
+          "nothing": "Do nothing",
+          "all": "Act on everyone",
+          "rule": "Your rule of today",
+          "base": "No model ({base})",
+          "today": "what you do today",
+          "interval": "from {bajo} to {alto}",
+          "interval-note": "The interval is stage 8's: it was measured at your costs' threshold.",
+          "saves": "Against what you do today ({hoy}), the model saves {ahorro} per 100 decisions.",
+          "costs-more": "Against what you do today ({hoy}), the model costs {ahorro} more per 100 decisions.",
+          "same": "Against what you do today ({hoy}), the model costs the same.",
+          "quantile": "With your costs, falling short costs {sub} per unit and overshooting {sobre}: what pays to aim at is the {cuantil} quantile, not the average."
+        },
+        "capacity": {
+          "title": "What your team can handle",
+          "label": "Out of 100 cases, how many can your team handle?",
+          "help": "A whole number from 0 to 100. If the threshold raises more alerts, the extra ones go unattended.",
+          "fits": "This threshold raises {alertas} alerts per 100 cases: your team can handle them.",
+          "exceeds": "This threshold raises {alertas} alerts per 100 cases and your team handles {capacidad}.",
+          "threshold": "Your capacity's threshold is {umbral}: it raises {capAlertas} alerts per 100 cases and costs {costo} per 100 decisions.",
+          "none": "No threshold goes that low."
+        },
+        "curve": {
+          "title": "The decision curve",
+          "intro": "Net benefit at each threshold, per 100 cases: the alerts that are right minus the false ones, weighted by what each costs at that threshold. «Doing nothing» is worth 0; where the model falls below «act on everyone» or below 0, it adds nothing.",
+          "image": "The decision curve as a chart; the table below has the same figures.",
+          "legend-model": "Model (solid line)",
+          "legend-all": "Act on everyone (dashed line)",
+          "legend-rule": "Your rule of today (dotted line)",
+          "legend-nothing": "Do nothing (0)",
+          "region": "The decision curve, in figures",
+          "u": "Threshold",
+          "model": "Model",
+          "all": "Act on everyone",
+          "rule": "Your rule",
+          "costs-mark": "◆ your costs",
+          "chosen-mark": "● chosen"
+        },
+        "decision": {
+          "title": "Your decision",
+          "legend": "What do you do with the model?",
+          "help": "Not using it is a valid result: it's written down with its numbers.",
+          "usar": "Use it",
+          "iterar": "Iterate: improve it before deciding",
+          "no-usar": "Don't use it",
+          "reason-label": "Your reason",
+          "reason-help": "In your own words: why this decision, with these numbers. Up to {max} characters."
+        },
+        "field": {
+          "umbral": "Threshold at which you act",
+          "razon_umbral": "Your reason to move the threshold",
+          "capacidad": "Cases out of 100 your team handles",
+          "decision": "Your decision",
+          "razon": "Your reason"
+        },
+        "check": {
+          "forma": "Shape of the decision",
+          "ganador": "Winner",
+          "modo": "How it's decided",
+          "hoy_id": "What you do today",
+          "base_id": "Baseline without a model",
+          "aperturas": "Distinct openings of the test set",
+          "n": "Test rows",
+          "pos": "Positive rows in the test set",
+          "vp": "Alerts that are right",
+          "fp": "False alarms",
+          "costo_modelo": "Model cost per decision",
+          "modelo_bajo": "Model: low end of the interval",
+          "modelo_alto": "Model: high end of the interval",
+          "costo_base": "Cost without a model per decision",
+          "costo_regla": "Cost of your rule of today per decision",
+          "costo_hoy": "Cost of what you do today per decision",
+          "costo_nada": "Cost of doing nothing per decision",
+          "costo_todos": "Cost of acting on everyone per decision",
+          "cap_costo": "Cost at your capacity's threshold per decision",
+          "umbral_e1": "Your costs' threshold (stage 1)",
+          "umbral_usado": "Threshold used",
+          "cap_umbral": "Your capacity's threshold",
+          "cuantil": "Your costs' quantile",
+          "alertas100": "Alerts per 100 cases",
+          "falsas100": "False alarms per 100 alerts",
+          "cap_alertas100": "Alerts per 100 cases at your capacity's threshold",
+          "ahorro": "Savings against what you do today per decision",
+          "beneficio": "Model net benefit per case",
+          "beneficio_todos": "Net benefit of acting on everyone per case",
+          "beneficio_regla": "Net benefit of your rule per case",
+          "brecha": "Calibration gap (stage 8)"
+        }
+      }
+    }
+  }
+}

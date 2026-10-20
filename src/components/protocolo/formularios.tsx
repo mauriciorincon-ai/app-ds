@@ -32,6 +32,10 @@ const Etapa7Form = dynamic(() =>
 const Etapa8Form = dynamic(() =>
   import("./Etapa8Form").then((m) => m.Etapa8Form),
 );
+// S14: la etapa 9 (lee lo que dejó la 8: no trae worker), con su curva y sus textos.
+const Etapa9Form = dynamic(() =>
+  import("./Etapa9Form").then((m) => m.Etapa9Form),
+);
 
 export const FORMULARIOS: Readonly<
   Partial<Record<EtapaId, ComponentType<PropsFormulario>>>
@@ -44,4 +48,5 @@ export const FORMULARIOS: Readonly<
   6: Etapa6Form,
   7: Etapa7Form,
   8: Etapa8Form,
+  9: Etapa9Form,
 };
