@@ -140,8 +140,8 @@ jobs:
         # los path que casan con una URL y `/*` casa con todo, así que lighthouse-margen.mjs exige un solo path por URL.
         # El budget sube a 3500 ms como margen documentado: sigue atrapando lo que este gate
         # existe para atrapar (que Pyodide entre al camino del LCP sería un salto de varios
-        # segundos, no de un 15%). Deuda H2: medir el LCP OBSERVADO con PerformanceObserver
-        # en un e2e, que es lo que de verdad experimenta el usuario.
+        # segundos, no de un 15%). S14 pagó la deuda H2: el LCP OBSERVADO con PerformanceObserver
+        # lo mide tests/e2e/protocolo-lcp.spec.ts (mediana de tres cargas), que es lo que de verdad experimenta el usuario.
         #
         # S5 (kit v1.26.0): UNA corrida NO es una medición — tres corridas por URL y se asevera
         # sobre la MEDIANA (median-run), nunca sobre la optimista.
