@@ -1499,6 +1499,42 @@
           "openings_one": "La prueba se abrió una vez.",
           "pattern": "Tu patrón de fallo: «{patron}»."
         }
+      },
+      "9": {
+        "missing": {
+          "etapas-previas": "las etapas 1 a 8 cumplidas",
+          "tabla-8": "la tabla de umbrales de la etapa 8: se registró antes de que la guardara; vuelve a la etapa 8 y regístrala otra vez (abrir la prueba de nuevo se cuenta como apertura)",
+          "umbral": "el umbral con que se actúa",
+          "razon-umbral": "tu razón para mover el umbral que dan tus costos",
+          "capacidad": "cuántos casos de cada 100 alcanza a atender tu equipo (un entero de 0 a 100)",
+          "decision": "tu decisión: usarlo, iterar o no usarlo",
+          "razon": "tu razón, escrita con tus palabras"
+        },
+        "trap": {
+          "reabierta": "La prueba se abrió con {n} configuraciones distintas: estas cifras ya no son sin sesgo.",
+          "prueba-chica": "La prueba tiene {n} filas: con tan pocas, unos cuantos casos mueven estas cifras.",
+          "sin-probabilidades": "El ganador no da probabilidades: decide con la clase que predice y no hay umbral que mover.",
+          "umbral-movido": "Elegido mirando la prueba: optimista. Tus costos dan un umbral de {e1Pct} % y elegiste {umbralPct} % leyendo la curva: las cifras de ese umbral salen de la misma prueba con que se eligió.",
+          "poco-fiable": "El umbral de tus costos supone que las probabilidades son probabilidades, y en la etapa 8 lo dicho y lo que pasó se separaron {brechaPct} puntos en un tramo: ese umbral es poco fiable; mira la curva.",
+          "capacidad": "Con este umbral salen {alertas} alertas por cada 100 casos y tu equipo atiende {capacidad}. El umbral de tu capacidad es {umbral}: da {capAlertas} alertas por cada 100 casos y cuesta {costo} por cada 100 decisiones.",
+          "capacidad-sin-umbral": "Con este umbral salen {alertas} alertas por cada 100 casos y tu equipo atiende {capacidad}: ningún umbral baja a tanto.",
+          "no-mejora": "Con tus costos, el modelo cuesta {modelo} por cada 100 decisiones y lo de hoy {hoy}: no mejora lo de hoy. No usarlo es un resultado válido.",
+          "usar-sin-mejora": "Elegiste usarlo aunque no cuesta menos que lo de hoy: queda escrito con tu razón."
+        },
+        "summary": {
+          "decision": {
+            "usar": "Decisión: usarlo.",
+            "iterar": "Decisión: iterar.",
+            "no-usar": "Decisión: no usarlo."
+          },
+          "reason": "Tu razón: «{razon}».",
+          "cost": "El modelo cuesta {modelo} por cada 100 decisiones; lo de hoy ({hoy}), {costoHoy}.",
+          "threshold": "Umbral {umbral}: {alertas} alertas por cada 100 casos y {falsas} falsas alarmas por cada 100 alertas.",
+          "threshold-moved": "Umbral {umbral}, elegido mirando la prueba: {alertas} alertas por cada 100 casos y {falsas} falsas alarmas por cada 100 alertas.",
+          "class": "Sin probabilidades, decide la clase predicha: {alertas} alertas por cada 100 casos y {falsas} falsas alarmas por cada 100 alertas.",
+          "capacity": "Tu equipo atiende {capacidad} de cada 100 casos.",
+          "today-rule": "tu regla de hoy"
+        }
       }
     },
     "status": {

@@ -2,7 +2,7 @@
 // las etapas 1–7 cumplidas con la compuerta, y la prueba abierta es la que escribió el emisor real en Pyodide
 // (tests/fixtures/contrato/test-result.json, validada con el lector del contrato). Lo que tiene que valer:
 //  · la 8 abre con la 7 cumplida y el sello de la 6 igual; sin abrir la prueba o sin tu patrón, la compuerta
-//    nombra lo que falta; con las dos cosas se registra y la 9 se ve sin construir;
+//    nombra lo que falta; con las dos cosas se registra y la 9 abre (S14; la 10 se ve sin construir);
 //  · lo que se puede rehacer con la tabla se rehace: un cuaderno editado a mano no cuadra; lo del worker se
 //    copia (límite declarado en el manual);
 //  · un segmento sin soporte nunca es el peor; misma semilla, mismo intervalo; la calibración se mide con
@@ -271,18 +271,21 @@ describe("la compuerta de la etapa 8", () => {
     expect(r.ok).toBe(false);
   });
 
-  it("con la prueba abierta y tu patrón se registra: la 8 queda cumplida y la 9 se ve sin construir", () => {
-    expect(estados(CREDITO.cuaderno).slice(6, 9)).toEqual([
+  // S14: la 9 ya está construida; abre con la 8 cumplida y la 10 se ve sin construir
+  it("con la prueba abierta y tu patrón se registra: la 8 queda cumplida y la 9 abre", () => {
+    expect(estados(CREDITO.cuaderno).slice(6, 10)).toEqual([
       "cumplida",
       "abierta",
+      "cerrada",
       "no-construida",
     ]);
     expect(ETAPA_8.criterio(DATOS, CREDITO.previas)).toEqual({
       tipo: "cumple",
     });
-    expect(estados(registrado()).slice(6, 9)).toEqual([
+    expect(estados(registrado()).slice(6, 10)).toEqual([
       "cumplida",
       "cumplida",
+      "abierta",
       "no-construida",
     ]);
   });
