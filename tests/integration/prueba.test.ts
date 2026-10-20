@@ -24,6 +24,12 @@ import {
   plan8,
   type Corrida8,
 } from "@/engine/protocolo/etapa8";
+import {
+  ETAPA_9,
+  base9,
+  datosEtapa9,
+  opcionesUmbral,
+} from "@/engine/protocolo/etapa9";
 import type { Previas } from "@/engine/protocolo/etapas";
 import { envio7 } from "@/lib/protocolo/liga7";
 import { PROTOCOLO_DS } from "@/engine/protocolo/protocolo-ds";
@@ -144,8 +150,23 @@ function registrar8(a: Armado, corrida: Corrida8) {
   if (!r.ok) throw new Error(JSON.stringify(r.rechazo));
   const estados = evaluar(PROTOCOLO_DS, r.cuaderno, HUELLA, a.tabla)
     .map((x) => x.estado.tipo)
-    .slice(6, 9);
-  return { datos, estados };
+    .slice(6, 10);
+  // S14: con la prueba que abrió el worker de verdad, la 9 llega a una decisión con números (y no lo abre otra vez)
+  const previas = { ...a.previas, 8: datos };
+  const b = base9(previas)!;
+  const nueve = datosEtapa9(previas, {
+    umbral: opcionesUmbral(b.tabla)[0] ?? "",
+    razonUmbral: "",
+    capacidad: "100",
+    decision: "no-usar",
+    razon: "Prueba de integración",
+  });
+  return {
+    datos,
+    estados,
+    decision9: ETAPA_9.criterio(nueve, previas),
+    costo9: nueve.chequeos.costo_modelo,
+  };
 }
 
 describe("la etapa 8 con el kit de crédito (estratificada), en Pyodide", () => {
@@ -171,8 +192,17 @@ describe("la etapa 8 con el kit de crédito (estratificada), en Pyodide", () => 
     emit("payload-prueba", e.payload);
     emit("test-result", raw);
 
-    const { datos, estados } = registrar8(CREDITO, { resultado: r });
-    expect(estados).toEqual(["cumplida", "cumplida", "no-construida"]);
+    const { datos, estados, decision9, costo9 } = registrar8(CREDITO, {
+      resultado: r,
+    });
+    expect(estados).toEqual([
+      "cumplida",
+      "cumplida",
+      "abierta",
+      "no-construida",
+    ]);
+    expect(decision9).toEqual({ tipo: "cumple" });
+    expect(costo9).toBeTypeOf("number");
     expect(datos.chequeos.calibracion).toBe(
       r.proba ? "medida" : "sin-probabilidades",
     );
@@ -253,8 +283,17 @@ describe("varias clases y un número también cruzan el contrato", () => {
       r.pred.every((p) => (e.sent.classes ?? []).includes(p as string)),
     ).toBe(true);
     emit("test-result-multiclase", raw);
-    const { datos, estados } = registrar8(a, { resultado: r });
-    expect(estados).toEqual(["cumplida", "cumplida", "no-construida"]);
+    const { datos, estados, decision9, costo9 } = registrar8(a, {
+      resultado: r,
+    });
+    expect(estados).toEqual([
+      "cumplida",
+      "cumplida",
+      "abierta",
+      "no-construida",
+    ]);
+    expect(decision9).toEqual({ tipo: "cumple" });
+    expect(costo9).toBeTypeOf("number");
     expect(datos.chequeos.calibracion).toBe(
       r.proba ? "medida" : "sin-probabilidades",
     );
@@ -268,8 +307,17 @@ describe("varias clases y un número también cruzan el contrato", () => {
     expect(r.proba).toBeNull();
     expect(r.metric.value).toBeGreaterThanOrEqual(0);
     emit("test-result-regresion", raw);
-    const { datos, estados } = registrar8(a, { resultado: r });
-    expect(estados).toEqual(["cumplida", "cumplida", "no-construida"]);
+    const { datos, estados, decision9, costo9 } = registrar8(a, {
+      resultado: r,
+    });
+    expect(estados).toEqual([
+      "cumplida",
+      "cumplida",
+      "abierta",
+      "no-construida",
+    ]);
+    expect(decision9).toEqual({ tipo: "cumple" });
+    expect(costo9).toBeTypeOf("number");
     expect(datos.chequeos.calibracion).toBe("no-aplica");
   });
 });
