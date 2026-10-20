@@ -6,7 +6,7 @@
         "reads": {
           "title": "What is read",
           "body": "The test set isn't opened again: this stage reads what stage 8 measured on it and your costs from stage 1. No row of your data takes part.",
-          "no-table": "Stage 8 was recorded before it kept its threshold table, and without it there are no numbers to decide with. Go back to stage 8 and record it again: opening the test set again counts as an opening and is labeled."
+          "no-table": "Stage 8 was recorded before it kept its threshold table, and without it there are no numbers to decide with. Go back to stage 8 and record it again: the test set is opened again, and it counts as a new opening only if the setup changed, labeled as such."
         },
         "threshold": {
           "title": "The threshold",

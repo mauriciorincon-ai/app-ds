@@ -6,7 +6,7 @@
         "reads": {
           "title": "Lo que se lee",
           "body": "La prueba no se vuelve a abrir: esta etapa lee lo que la etapa 8 midió en ella y tus costos de la etapa 1. Ninguna fila de tus datos interviene.",
-          "no-table": "La etapa 8 se registró antes de que guardara su tabla de umbrales, y sin ella no hay números para decidir. Vuelve a la etapa 8 y regístrala otra vez: abrir la prueba de nuevo se cuenta como apertura y queda rotulado."
+          "no-table": "La etapa 8 se registró antes de que guardara su tabla de umbrales, y sin ella no hay números para decidir. Vuelve a la etapa 8 y regístrala otra vez: la prueba se vuelve a abrir, y solo cuenta como apertura nueva si cambió la configuración, con su rótulo."
         },
         "threshold": {
           "title": "El umbral",

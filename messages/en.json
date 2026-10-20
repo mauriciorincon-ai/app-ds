@@ -1503,7 +1503,7 @@
       "9": {
         "missing": {
           "etapas-previas": "stages 1 to 8 met",
-          "tabla-8": "stage 8's threshold table: it was recorded before it kept one; go back to stage 8 and record it again (opening the test set again counts as an opening)",
+          "tabla-8": "stage 8's threshold table: it was recorded before it kept one; go back to stage 8 and record it again (the test set is opened again; it counts as an opening only if the setup changed)",
           "umbral": "the threshold at which you act",
           "razon-umbral": "your reason to move the threshold your costs give",
           "capacidad": "how many cases out of 100 your team can handle (a whole number from 0 to 100)",

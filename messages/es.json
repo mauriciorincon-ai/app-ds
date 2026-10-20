@@ -1503,7 +1503,7 @@
       "9": {
         "missing": {
           "etapas-previas": "las etapas 1 a 8 cumplidas",
-          "tabla-8": "la tabla de umbrales de la etapa 8: se registró antes de que la guardara; vuelve a la etapa 8 y regístrala otra vez (abrir la prueba de nuevo se cuenta como apertura)",
+          "tabla-8": "la tabla de umbrales de la etapa 8: se registró antes de que la guardara; vuelve a la etapa 8 y regístrala otra vez (la prueba se vuelve a abrir; cuenta como apertura solo si cambió la configuración)",
           "umbral": "el umbral con que se actúa",
           "razon-umbral": "tu razón para mover el umbral que dan tus costos",
           "capacidad": "cuántos casos de cada 100 alcanza a atender tu equipo (un entero de 0 a 100)",

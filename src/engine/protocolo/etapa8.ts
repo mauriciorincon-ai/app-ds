@@ -144,7 +144,7 @@ export const DEL_WORKER_8 = [
 
 /**
  * S14: lo que la etapa guarda desde el S14. Un cuaderno de antes no lo trae y se sigue leyendo (y cuadrando):
- * la etapa 9 lo pide, y registrar la 8 otra vez lo calcula (con una apertura más, contada).
+ * la etapa 9 lo pide, y registrar la 8 otra vez lo calcula (la prueba se vuelve a abrir: cuenta como apertura solo si cambió la configuración).
  */
 export const NUEVOS_S14 = [
   "prueba_pos",
