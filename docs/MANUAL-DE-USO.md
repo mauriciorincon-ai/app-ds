@@ -636,7 +636,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Qué lleva el archivo:** no trae las filas de tu CSV, pero sí datos que salen de él: los nombres de
     tus columnas, los valores del objetivo con sus conteos, medias, la fecha mínima y la máxima, el
     nombre del archivo y su huella, además de tus respuestas. Desde la etapa 4 suma también los puntajes
-    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Desde la etapa 7 suma los puntajes de la liga por pliegue, el veredicto y la permutación, pero no tus filas. Trátalo con el cuidado que le darías a
+    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Desde la etapa 7 suma los puntajes de la liga por pliegue, el veredicto y la permutación, pero no tus filas. Desde la etapa 8 suma los agregados de la prueba (el costo y el número de filas de cada segmento, con el nombre de sus categorías, los tramos de la calibración, el Brier y cada apertura de la prueba con su fecha), tu patrón de fallo y el número de peores casos, pero no las filas de la prueba ni los peores casos. Trátalo con el cuidado que le darías a
     tus datos.
   - **Ventana privada:** el navegador no deja guardar. La página lo avisa («Exporta tu cuaderno antes de
     irte»): si cierras la pestaña, se pierde.
@@ -729,7 +729,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     - **Los umbrales de soporte son una convención.** 10 filas por segmento y 3 casos de la clase menos frecuente no son una prueba estadística. Con una prueba chica, casi todo queda «sin soporte», y la trampa lo dice.
     - **Con menos de 100 filas de prueba, los intervalos son anchos.** La trampa lo dice; es lo honesto con tan pocas.
     - **El intervalo depende de tus conglomerados.** Con pocas unidades o fechas, el intervalo se vuelve ancho, aunque remuestree bien.
-    - **Las predicciones de la prueba vienen del navegador y se guardan en el cuaderno.** La app comprueba que el resto cuadre (la partición, el sello, los segmentos, la línea base), pero no puede volver a abrir la prueba para comprobar esas cifras.
+    - **El cuaderno no guarda la prueba fila por fila.** Guarda solo agregados: el costo y el número de filas de cada segmento, los tramos de la calibración, el Brier, los intervalos, tu patrón y cuántos peores casos viste. La app comprueba que el resto cuadre (la partición, el sello, los segmentos, la línea base), pero no puede volver a abrir la prueba para comprobar esas cifras.
     - **El peor segmento y el optimismo se recalculan** cada vez que se revisa el cuaderno, con lo que hay guardado.
     - **Los peores casos no quedan guardados.** Si cierras la pantalla, para verlos otra vez tienes que volver a abrir la prueba, y eso se cuenta.
 
