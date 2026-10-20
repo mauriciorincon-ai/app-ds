@@ -21,6 +21,20 @@ vi.mock("@sentry/nextjs", () => ({
   captureMessage: vi.fn(),
 }));
 
+const bootstrap = vi.hoisted(() => ({ llamadas: 0 }));
+vi.mock("@/engine/protocolo/bootstrap", async (original) => {
+  const real = await original<typeof import("@/engine/protocolo/bootstrap")>();
+  return {
+    ...real,
+    intervaloBootstrap: (
+      ...args: Parameters<typeof real.intervaloBootstrap>
+    ) => {
+      bootstrap.llamadas += 1;
+      return real.intervaloBootstrap(...args);
+    },
+  };
+});
+
 const hook = vi.hoisted(() => ({
   estado: { tipo: "inactiva" } as EstadoPrueba,
   abrir: vi.fn(),
@@ -176,6 +190,25 @@ describe("mientras abre", () => {
 describe("con la prueba abierta", () => {
   beforeEach(() => {
     hook.estado = { tipo: "lista", corrida: CORRIDA };
+  });
+
+  // S14 (M2): escribir el patrón no vuelve a correr el bootstrap (1.000 re-muestreos por intervalo)
+  it("escribir el patrón no recalcula la medida", () => {
+    montar(CREDITO.previas, 1);
+    const antes = bootstrap.llamadas;
+    expect(antes).toBeGreaterThan(0);
+    patron("F");
+    patron("Falla con quienes");
+    patron("Falla con quienes trabajan en la informalidad");
+    expect(bootstrap.llamadas).toBe(antes);
+    // y lo escrito sí llega: con el patrón, registrar se habilita
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Registrar la etapa 8",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
   });
 
   it("la medida con su intervalo, el optimismo, los segmentos, la calibración y los peores casos", () => {

@@ -136,12 +136,18 @@ export function Etapa8Form({
   const { estado, abrir, cancelar } = usePrueba();
   const corrida = estado.tipo === "lista" ? estado.corrida : null;
   const contadas = aperturas > 0 ? aperturas : null;
-  const registro = useMemo(
+  // Lo medido (con su bootstrap) no depende de lo que escribes: el patrón entra después, sin volver a calcular
+  // nada con cada tecla (S14, M2).
+  const medido = useMemo(
     () =>
       tabla
-        ? datosEtapa8(tabla, previas, huella, corrida, { patron }, contadas)
+        ? datosEtapa8(tabla, previas, huella, corrida, { patron: "" }, contadas)
         : null,
-    [tabla, previas, huella, corrida, patron, contadas],
+    [tabla, previas, huella, corrida, contadas],
+  );
+  const registro = useMemo(
+    () => (medido ? { ...medido, respuestas: { patron } } : null),
+    [medido, patron],
   );
   const peores = useMemo(
     () => (plan && corrida ? peoresCasos(plan, corrida) : []),
