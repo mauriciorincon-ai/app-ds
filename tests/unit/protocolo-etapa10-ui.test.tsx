@@ -544,3 +544,89 @@ describe("el chequeo de deriva con un CSV nuevo", () => {
     ).toBeNull();
   });
 });
+
+describe("en el cuaderno y en la página: «Protocolo completo»", () => {
+  const cuadernoCon = (
+    decision: "usar" | "no-usar",
+    entrada: Parameters<typeof datos10>[1],
+  ) => {
+    const a = armarCredito9(decision);
+    const r = registrar10(a, datos10(a, entrada));
+    if (!r.ok) throw new Error(JSON.stringify(r.rechazo));
+    return { a, cuaderno: { ...r.cuaderno, cargas: [cargaDe(a)] } };
+  };
+  const panel = async (
+    cuaderno: ReturnType<typeof cuadernoCon>["cuaderno"],
+    completo: boolean,
+  ) => {
+    const { CuadernoPanel } =
+      await import("@/components/protocolo/CuadernoPanel");
+    render(
+      <I18nProvider>
+        <CuadernoPanel
+          cuaderno={cuaderno}
+          completo={completo}
+          guardado={null}
+          importePendiente={null}
+          onExportar={() => ({ nombre: "x.json", contenido: "{}" })}
+          onImportar={() => undefined}
+          onConfirmarImporte={() => undefined}
+          onDescartarImporte={() => undefined}
+          onNuevo={() => undefined}
+        />
+      </I18nProvider>,
+    );
+  };
+
+  it("la 10 en una lectura: la ficha, quién responde, la cadencia y las columnas vigiladas", async () => {
+    const { cuaderno } = cuadernoCon("usar", ENTRADA_USAR);
+    await panel(cuaderno, true);
+    const r10 = screen.getByTestId("cuaderno-resumen10").textContent!;
+    expect(r10).toMatch(/Ficha de un modelo para usar\./);
+    expect(r10).toMatch(/Responde: Jefa de retención\./);
+    expect(r10).toMatch(/Cadencia de reentreno \(en meses\): 6\./);
+    expect(r10).toMatch(/Se vigila la deriva de \d+ columnas\./);
+    expect(screen.getByTestId("cuaderno-completo").textContent).toMatch(
+      /Protocolo completo\./,
+    );
+    // la lista genérica no pinta aquí las referencias: el cuaderno no vuelca la referencia de deriva
+    expect(screen.queryByText("Referencia de deriva (agregados)")).toBeNull();
+  });
+
+  it("«no usar»: sin cadencia ni columnas; y sin las diez etapas cumplidas no dice «completo»", async () => {
+    const { cuaderno } = cuadernoCon("no-usar", ENTRADA_NO_USAR);
+    await panel(cuaderno, false);
+    const r10 = screen.getByTestId("cuaderno-resumen10").textContent!;
+    expect(r10).toMatch(/Ficha de un modelo que no se usa\./);
+    expect(r10).not.toMatch(/Cadencia|Se vigila/);
+    expect(screen.queryByTestId("cuaderno-completo")).toBeNull();
+  });
+
+  it("la página dice «Protocolo completo» solo con las diez etapas cumplidas", async () => {
+    const { Etapas } = await import("@/components/protocolo/Etapas");
+    const { a, cuaderno } = cuadernoCon("usar", ENTRADA_USAR);
+    const montar = (c: typeof cuaderno) =>
+      render(
+        <I18nProvider>
+          <Etapas
+            evaluadas={evaluar(PROTOCOLO_DS, c, HUELLA, a.tabla)}
+            cuaderno={c}
+            datos={{ tabla: a.tabla, carga: cargaDe(a) }}
+            listo
+            onRegistrar={() => null}
+          />
+        </I18nProvider>,
+      );
+    montar(cuaderno);
+    expect(screen.getByTestId("protocolo-completo").textContent).toMatch(
+      /Protocolo completo.*Las 10 etapas están cumplidas/,
+    );
+    cleanup();
+    // sin la evidencia de la 10 (la 9 sí), no
+    montar({
+      ...cuaderno,
+      evidencias: cuaderno.evidencias.filter((e) => e.etapa !== 10),
+    });
+    expect(screen.queryByTestId("protocolo-completo")).toBeNull();
+  });
+});
