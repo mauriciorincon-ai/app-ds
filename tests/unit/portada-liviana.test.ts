@@ -68,6 +68,18 @@ const LAZY = [
   "src/components/protocolo/Etapa9Form.tsx",
   "src/components/protocolo/textos/etapa9.ts",
   "src/engine/protocolo/etapa9.ts",
+  // S15: la etapa 10 (pantalla, constancia, chequeo, ficha, generador de Markdown, referencia y textos).
+  "src/components/protocolo/Etapa10Form.tsx",
+  "src/components/protocolo/Etapa10Constancia.tsx",
+  "src/components/protocolo/Etapa10Deriva.tsx",
+  "src/components/protocolo/FichaVista.tsx",
+  "src/components/protocolo/textos/etapa10.ts",
+  "src/engine/protocolo/etapa10.ts",
+  "src/engine/protocolo/ficha.ts",
+  "src/engine/protocolo/referencia-deriva.ts",
+  "src/engine/protocolo/chequeo-deriva.ts",
+  "src/lib/protocolo/ficha-texto.ts",
+  "src/lib/protocolo/ficha-markdown.ts",
 ];
 
 /**
@@ -94,6 +106,17 @@ const LAZY_PROTOCOLO = [
   // S14: la pantalla de la etapa 9 y sus textos (con su curva)
   "src/components/protocolo/Etapa9Form.tsx",
   "src/components/protocolo/textos/etapa9.ts",
+  // S15: la pantalla de la etapa 10, su constancia, el chequeo de deriva, la ficha y su generador de Markdown.
+  // (etapa10.ts y referencia-deriva.ts SÍ van en la página: la compuerta de la 10 se evalúa al cargar.)
+  "src/components/protocolo/Etapa10Form.tsx",
+  "src/components/protocolo/Etapa10Constancia.tsx",
+  "src/components/protocolo/Etapa10Deriva.tsx",
+  "src/components/protocolo/FichaVista.tsx",
+  "src/components/protocolo/textos/etapa10.ts",
+  "src/engine/protocolo/ficha.ts",
+  "src/engine/protocolo/chequeo-deriva.ts",
+  "src/lib/protocolo/ficha-texto.ts",
+  "src/lib/protocolo/ficha-markdown.ts",
   // (src/workers/contract.ts ya llega desde el S10 por useProtocolo → quantity.ts: no se vigila aquí)
 ];
 
@@ -178,6 +201,8 @@ describe("/protocolo no arrastra la pantalla ni el worker de las etapas 7 y 8 po
       "src/engine/protocolo/pliegues.ts",
       "src/engine/protocolo/etapa8.ts",
       "src/engine/protocolo/etapa9.ts",
+      "src/engine/protocolo/etapa10.ts",
+      "src/engine/protocolo/referencia-deriva.ts",
     ]) {
       expect(paths.has(resolve(ROOT, expected)), expected).toBe(true);
     }
@@ -191,4 +216,33 @@ describe("/protocolo no arrastra la pantalla ni el worker de las etapas 7 y 8 po
         `/protocolo importa ${lazy} por: ${path.map((p) => relative(ROOT, p)).join(" → ")}`,
     ).toBeUndefined();
   });
+});
+
+/**
+ * S15: la ficha en Markdown se genera al tocar «Descargar», no al abrir la etapa: ni la pantalla de la 10 ni su
+ * constancia importan el generador por imports estáticos (patrón de modelcard.ts, pero con `import()`).
+ */
+describe("la constancia de la etapa 10 no trae el generador de Markdown por imports estáticos", () => {
+  for (const entrada of [
+    "src/components/protocolo/Etapa10Constancia.tsx",
+    "src/components/protocolo/Etapa10Form.tsx",
+  ]) {
+    const paths = reachable(resolve(ROOT, entrada));
+    it(`${entrada}: el recorrido alcanza lo que sí dibuja (el detector no está ciego)`, () => {
+      expect(
+        paths.has(resolve(ROOT, "src/lib/protocolo/ficha-texto.ts")),
+        entrada,
+      ).toBe(true);
+    });
+    it(`${entrada}: el generador solo llega bajo demanda`, () => {
+      const path = paths.get(
+        resolve(ROOT, "src/lib/protocolo/ficha-markdown.ts"),
+      );
+      expect(
+        path,
+        path &&
+          `${entrada} importa el generador por: ${path.map((p) => relative(ROOT, p)).join(" → ")}`,
+      ).toBeUndefined();
+    });
+  }
 });

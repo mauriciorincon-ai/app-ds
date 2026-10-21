@@ -1,0 +1,546 @@
+// Protocolo DS (S15), etapa 10 — la pantalla en jsdom, con la compuerta real detrás. Lo que tiene que valer:
+//  · ESPÍA: la etapa 10 no habla con el worker ni abre la prueba; recorrerla entera no crea ningún Worker;
+//  · el dueño se escribe (o se pone al decisor de la 1 con un clic): sin él la compuerta no pasa y lo nombra;
+//  · «usar» pide la cadencia (la sugerida si la prueba fue por tiempo; si no, la escribes) y, si la alargas,
+//    tu razón; «no usar» e «iterar» piden qué cambiar, sin plan de vigilancia;
+//  · la vista previa de la ficha sale del cuaderno más lo que escribes, con su etapa, fecha y huella;
+//  · la constancia de la etapa cumplida: la ficha, su descarga en Markdown en el idioma activo (sin una sola
+//    fila de tus datos), y el chequeo de deriva con un CSV nuevo (que no se guarda ni sale por la red).
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DatosEtapa, Previas } from "@/engine/protocolo/etapas";
+
+vi.mock("@sentry/nextjs", () => ({
+  addBreadcrumb: vi.fn(),
+  captureMessage: vi.fn(),
+}));
+const descargas: { nombre: string; contenido: string; tipo: string }[] = [];
+vi.mock("@/lib/files", async (original) => ({
+  ...(await original<typeof import("@/lib/files")>()),
+  downloadTextFile: (nombre: string, contenido: string, tipo: string) =>
+    descargas.push({ nombre, contenido, tipo }),
+}));
+
+const { I18nProvider } = await import("@/i18n/provider");
+const { LOCALE_STORAGE_KEY } = await import("@/i18n/config");
+const { Etapa10Form } = await import("@/components/protocolo/Etapa10Form");
+const { Etapa10Constancia } =
+  await import("@/components/protocolo/Etapa10Constancia");
+const { evaluar, registrar } = await import("@/engine/protocolo/compuerta");
+const { PROTOCOLO_DS } = await import("@/engine/protocolo/protocolo-ds");
+const { textoLleno } = await import("@/engine/protocolo/valores");
+const {
+  ENTRADA_NO_USAR,
+  ENTRADA_USAR,
+  AHORA,
+  HUELLA,
+  armarCredito9,
+  datos10,
+  registrar10,
+} = await import("./protocolo-etapa10-helpers");
+
+type Armado = ReturnType<typeof armarCredito9>;
+const CSV_KIT = readFileSync(
+  "docs/kit-de-prueba/credito-fuga-plantada.csv",
+  "utf8",
+);
+
+const cargaDe = (a: Armado) => ({
+  fecha: AHORA.toISOString(),
+  sha256: HUELLA,
+  nombre: "credito-fuga-plantada.csv",
+  filas: a.tabla.rows.length,
+  columnas: a.tabla.headers.length,
+});
+
+function montar(
+  a: Armado,
+  previas: Previas = a.previas,
+  anterior: DatosEtapa | null = null,
+) {
+  const cuaderno = { ...a.cuaderno, cargas: [cargaDe(a)] };
+  const evaluadas = evaluar(PROTOCOLO_DS, cuaderno, HUELLA, a.tabla);
+  const registrado: { datos: DatosEtapa | null; rechazo: unknown } = {
+    datos: null,
+    rechazo: null,
+  };
+  const onRegistrar = vi.fn((datos: DatosEtapa) => {
+    const r = registrar(PROTOCOLO_DS, a.cuaderno, 10, datos, {
+      huella: HUELLA,
+      tabla: a.tabla,
+      ahora: AHORA,
+    });
+    registrado.datos = r.ok ? datos : null;
+    registrado.rechazo = r.ok ? null : r.rechazo;
+    return r.ok ? null : r.rechazo;
+  });
+  const vista = render(
+    <I18nProvider>
+      <Etapa10Form
+        datos={{ tabla: a.tabla, carga: cargaDe(a) }}
+        anterior={anterior}
+        previas={previas}
+        evaluadas={evaluadas}
+        cuaderno={cuaderno}
+        onRegistrar={onRegistrar}
+      />
+    </I18nProvider>,
+  );
+  return { ...vista, registrado, onRegistrar };
+}
+
+/** La constancia de una etapa 10 ya registrada con esa entrada. */
+function montarConstancia(a: Armado, entrada: Parameters<typeof datos10>[1]) {
+  const r = registrar10(a, datos10(a, entrada));
+  if (!r.ok) throw new Error(JSON.stringify(r.rechazo));
+  const cuaderno = { ...r.cuaderno, cargas: [cargaDe(a)] };
+  const evaluadas = evaluar(PROTOCOLO_DS, cuaderno, HUELLA, a.tabla);
+  return render(
+    <I18nProvider>
+      <Etapa10Constancia evaluadas={evaluadas} cuaderno={cuaderno} />
+    </I18nProvider>,
+  );
+}
+
+const escribir = (etiqueta: string, valor: string) =>
+  fireEvent.change(screen.getByLabelText(etiqueta), {
+    target: { value: valor },
+  });
+const registrar10Click = () =>
+  fireEvent.click(
+    screen.getByRole("button", { name: "Registrar la etapa 10" }),
+  );
+
+let Espia: ReturnType<typeof vi.fn>;
+beforeEach(() => {
+  window.localStorage.clear();
+  descargas.length = 0;
+  Espia = vi.fn();
+  vi.stubGlobal("Worker", Espia);
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
+
+describe("la etapa 10 con «usar»", () => {
+  const A = armarCredito9("usar");
+
+  it("ESPÍA: recorrerla entera, hasta registrar, no crea ningún worker", () => {
+    const { registrado } = montar(A);
+    expect(screen.getByTestId("protocolo-lee10").textContent).toMatch(
+      /no recalcula nada ni vuelve a abrir la prueba/,
+    );
+    escribir("Persona o rol que responde por este modelo", "Jefa de retención");
+    escribir("Reentrenar cada (meses)", "6");
+    registrar10Click();
+    expect(registrado.rechazo).toBeNull();
+    expect(registrado.datos?.respuestas).toMatchObject({
+      dueno: "Jefa de retención",
+      cadencia: 6,
+    });
+    expect(Espia).not.toHaveBeenCalled();
+  });
+
+  it("sin dueño nombrado la compuerta no pasa, y lo nombra", () => {
+    montar(A);
+    escribir("Reentrenar cada (meses)", "6");
+    registrar10Click();
+    expect(screen.getByRole("alert").textContent).toMatch(
+      /el nombre de quien responde por el modelo/,
+    );
+  });
+
+  it("un clic pone al decisor de la etapa 1; el campo empieza vacío (el dueño no se da por nombrado)", () => {
+    montar(A);
+    const campo = screen.getByLabelText(
+      "Persona o rol que responde por este modelo",
+    ) as HTMLInputElement;
+    expect(campo.value).toBe("");
+    const decisor = textoLleno(A.previas[1]!.respuestas, "decisor")!;
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `Poner al decisor de la etapa 1: «${decisor}»`,
+      }),
+    );
+    expect(campo.value).toBe(decisor);
+    expect(
+      screen.queryByRole("button", { name: /Poner al decisor/ }),
+    ).toBeNull();
+  });
+
+  it("una prueba sin tiempo no dice cuánto vale el modelo: la cadencia la escribes tú", () => {
+    const { registrado } = montar(A);
+    expect(
+      (screen.getByLabelText("Reentrenar cada (meses)") as HTMLInputElement)
+        .value,
+    ).toBe("");
+    expect(screen.getByTestId("protocolo-cadencia10").textContent).toMatch(
+      /no fue por tiempo/,
+    );
+    escribir("Persona o rol que responde por este modelo", "Jefa de retención");
+    registrar10Click();
+    expect(screen.getByRole("alert").textContent).toMatch(
+      /cada cuántos meses se reentrena/,
+    );
+    expect(registrado.datos).toBeNull();
+    // la trampa que lo dice
+    expect(
+      screen.getByText(
+        "Tu prueba no fue por tiempo, así que no dice por cuánto tiempo vale el modelo: la cadencia es solo tuya.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("con una prueba por tiempo la cadencia sugerida va puesta, y alargarla pide tu razón", () => {
+    const previas: Previas = {
+      ...A.previas,
+      2: {
+        ...A.previas[2]!,
+        chequeos: { ...A.previas[2]!.chequeos, fecha_max: "2025-07-15" },
+      },
+      6: {
+        ...A.previas[6]!,
+        chequeos: { ...A.previas[6]!.chequeos, corte: "2025-01-01" },
+      },
+    };
+    montar(A, previas);
+    const cadencia = screen.getByLabelText(
+      "Reentrenar cada (meses)",
+    ) as HTMLInputElement;
+    expect(cadencia.value).toBe("6");
+    expect(screen.getByTestId("protocolo-cadencia10").textContent).toMatch(
+      /La prueba respalda 6 meses: van del corte de la etapa 6 \(2025-01-01\) a la última fecha de tus datos \(2025-07-15\)/,
+    );
+    expect(
+      screen.queryByLabelText("Tu razón para reentrenar con menos frecuencia"),
+    ).toBeNull();
+    escribir("Reentrenar cada (meses)", "9");
+    expect(
+      screen.getByLabelText("Tu razón para reentrenar con menos frecuencia"),
+    ).toBeTruthy();
+    escribir("Reentrenar cada (meses)", "3");
+    expect(
+      screen.queryByLabelText("Tu razón para reentrenar con menos frecuencia"),
+    ).toBeNull();
+  });
+
+  it("el plan de vigilancia dice cuántas columnas y cuántas filas de referencia, y que mide entradas", () => {
+    montar(A);
+    const plan = screen.getByTestId("protocolo-plan10").textContent ?? "";
+    expect(plan).toMatch(
+      /Se vigila la deriva de \d+ columnas del modelo contra [\d,]+ filas del entrenamiento sellado/,
+    );
+    expect(plan).toMatch(
+      /solo agregados \(cortes y frecuencias\), nunca filas/,
+    );
+    expect(plan).toMatch(/mide las entradas, no el desempeño/);
+  });
+
+  it("la vista previa arma la ficha con lo del cuaderno y lo que escribes, cada línea con su fuente", () => {
+    montar(A);
+    const previa = screen.getByTestId("protocolo-preview10");
+    fireEvent.click(within(previa).getByText("Vista previa de la ficha"));
+    const secciones = screen.getByTestId("protocolo-preview10-secciones");
+    // lo derivado cita su etapa, fecha y huella; la 10 todavía no está registrada
+    expect(
+      within(secciones).getAllByText(/Etapa 4 · .* · huella [0-9a-f]{12}/)
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(secciones).getAllByText(/Etapa 10 · se registra con esta etapa/)
+        .length,
+    ).toBeGreaterThan(0);
+    escribir("Persona o rol que responde por este modelo", "Jefa de retención");
+    expect(
+      within(secciones).getByText("Responde por el modelo: Jefa de retención."),
+    ).toBeTruthy();
+    expect(
+      within(secciones).getAllByText(
+        /Escrito por el dueño · se registra con esta etapa/,
+      ).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("al corregir, vuelve lo que se registró la última vez", () => {
+    const anterior = datos10(A, {
+      ...ENTRADA_USAR,
+      noUsarPara: "Clientes nuevos",
+    });
+    montar(A, A.previas, anterior);
+    expect(
+      (
+        screen.getByLabelText(
+          "Persona o rol que responde por este modelo",
+        ) as HTMLInputElement
+      ).value,
+    ).toBe("Jefa de retención");
+    expect(
+      (
+        screen.getByLabelText(
+          "Para qué NO usarlo (opcional)",
+        ) as HTMLTextAreaElement
+      ).value,
+    ).toBe("Clientes nuevos");
+    expect(
+      (screen.getByLabelText("Reentrenar cada (meses)") as HTMLInputElement)
+        .value,
+    ).toBe("6");
+  });
+});
+
+describe("la etapa 10 con «no usar» y con «iterar»", () => {
+  it("«no usar» pide qué tendría que cambiar y no trae cadencia ni plan", () => {
+    const A = armarCredito9("no-usar");
+    const { registrado } = montar(A);
+    expect(screen.getByTestId("protocolo-decision10").textContent).toMatch(
+      /No usarlo/,
+    );
+    expect(screen.queryByTestId("protocolo-cadencia10")).toBeNull();
+    expect(screen.queryByTestId("protocolo-plan10")).toBeNull();
+    escribir("Persona o rol que responde por este modelo", "Jefa de retención");
+    registrar10Click();
+    expect(screen.getByRole("alert").textContent).toMatch(
+      /qué tendría que cambiar para que sirva/,
+    );
+    escribir("Qué tendría que cambiar para que sirva", ENTRADA_NO_USAR.cambiar);
+    registrar10Click();
+    expect(registrado.rechazo).toBeNull();
+    expect(registrado.datos?.respuestas.cambiar).toBe(ENTRADA_NO_USAR.cambiar);
+    expect(Espia).not.toHaveBeenCalled();
+  });
+
+  it("«iterar» dice que la prueba ya se abrió y pide qué cambiar antes de volver", () => {
+    const A = armarCredito9("iterar");
+    montar(A);
+    expect(screen.getByTestId("protocolo-cambiar10").textContent).toMatch(
+      /necesitas una partición distinta/,
+    );
+    expect(
+      screen.getByLabelText("Qué vas a cambiar antes de volver a probar"),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/Esta prueba ya se abrió y no se reutiliza/, {
+        exact: false,
+      }),
+    ).toBeTruthy();
+  });
+});
+
+describe("la forma sin datos o sin decisión", () => {
+  it("sin los datos cargados lo dice y no pinta formulario", () => {
+    const A = armarCredito9("usar");
+    render(
+      <I18nProvider>
+        <Etapa10Form
+          datos={null}
+          anterior={null}
+          previas={A.previas}
+          onRegistrar={() => null}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByText(/Carga tus datos arriba/)).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Registrar la etapa 10" }),
+    ).toBeNull();
+  });
+});
+
+describe("la constancia de la etapa 10 cumplida", () => {
+  const A = armarCredito9("usar");
+
+  it("pinta la ficha por secciones, con el plan de vigilancia y el chequeo, y cada línea con su fuente", () => {
+    montarConstancia(A, ENTRADA_USAR);
+    expect(screen.getByTestId("ficha-titular").textContent).toBe(
+      "Un modelo para usar",
+    );
+    for (const id of [
+      "datos",
+      "poblacion",
+      "metricas",
+      "decision",
+      "limites",
+      "cumplio",
+      "vigilancia",
+      "responde",
+    ])
+      expect(screen.getByTestId(`ficha-seccion-${id}`), id).toBeTruthy();
+    expect(screen.queryByTestId("ficha-seccion-variante")).toBeNull();
+    const cumplio = screen.getByTestId("ficha-seccion-cumplio");
+    expect(
+      within(cumplio).getAllByText(/Etapa \d+ · .* · huella [0-9a-f]{12}/)
+        .length,
+    ).toBeGreaterThanOrEqual(5);
+    expect(screen.getByTestId("protocolo-deriva10")).toBeTruthy();
+  });
+
+  it("con «no usar» no trae plan ni chequeo, sino qué cambiar en palabras del dueño", () => {
+    montarConstancia(armarCredito9("no-usar"), ENTRADA_NO_USAR);
+    expect(screen.getByTestId("ficha-titular").textContent).toBe(
+      "Un modelo que no se usa",
+    );
+    expect(screen.queryByTestId("ficha-seccion-vigilancia")).toBeNull();
+    expect(screen.queryByTestId("protocolo-deriva10")).toBeNull();
+    expect(
+      within(screen.getByTestId("ficha-seccion-variante")).getByText(
+        /Escrito por el dueño/,
+        { exact: false },
+      ),
+    ).toBeTruthy();
+  });
+
+  it("«Descargar» baja la ficha en Markdown, en español, sin una sola fila de tus datos", async () => {
+    montarConstancia(A, {
+      ...ENTRADA_USAR,
+      noUsarPara: "Clientes con menos de seis meses",
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Descargar la ficha (Markdown)" }),
+    );
+    await waitFor(() => expect(descargas).toHaveLength(1));
+    const [{ nombre, contenido, tipo }] = descargas;
+    expect(nombre).toBe("ficha-del-modelo-credito-fuga-plantada.md");
+    expect(tipo).toMatch(/^text\/markdown/);
+    expect(contenido).toMatch(/^# Ficha del modelo\n/);
+    expect(contenido).toContain("## Lo que este modelo cumplió");
+    expect(contenido).toContain("## Plan de vigilancia");
+    expect(contenido).toContain("Responde por el modelo: Jefa de retención.");
+    expect(contenido).toMatch(/_Escrito por el dueño · /);
+    expect(contenido).toMatch(/_Etapa 6 · .* · huella [0-9a-f]{12}_/);
+    for (const fila of CSV_KIT.split("\n").slice(1).filter(Boolean))
+      expect(contenido, `una fila del CSV en la ficha: ${fila}`).not.toContain(
+        fila,
+      );
+    expect(
+      screen.getByText(
+        "Descargada: ficha-del-modelo-credito-fuga-plantada.md.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("en inglés baja la ficha en inglés", async () => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, "en");
+    montarConstancia(A, ENTRADA_USAR);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Download the card (Markdown)" }),
+    );
+    await waitFor(() => expect(descargas).toHaveLength(1));
+    expect(descargas[0]!.contenido).toMatch(/^# Model card\n/);
+    expect(descargas[0]!.contenido).toContain("## What this model met");
+    expect(descargas[0]!.contenido).toContain(
+      "Answers for the model: Jefa de retención.",
+    );
+    expect(descargas[0]!.contenido).not.toMatch(/protocol\.stage\./);
+  });
+});
+
+describe("el chequeo de deriva con un CSV nuevo", () => {
+  const A = armarCredito9("usar");
+  const subir = (csv: string, nombre = "nuevo.csv") =>
+    fireEvent.change(screen.getByTestId("protocolo-deriva10-csv"), {
+      target: { files: [new File([csv], nombre, { type: "text/csv" })] },
+    });
+  /** El CSV del kit con una columna cambiada. */
+  const conColumna = (columna: string, cambio: (v: string) => string) => {
+    const [cabecera, ...filas] = CSV_KIT.trimEnd().split("\n");
+    const j = cabecera!.split(",").indexOf(columna);
+    return [
+      cabecera,
+      ...filas.map((f) =>
+        f
+          .split(",")
+          .map((v, k) => (k === j ? cambio(v) : v))
+          .join(","),
+      ),
+    ].join("\n");
+  };
+
+  it("el mismo archivo da estable en cada columna, y el plan sigue; no se guarda ni sale por la red", async () => {
+    const fetchEspia = vi.fn();
+    vi.stubGlobal("fetch", fetchEspia);
+    montarConstancia(A, ENTRADA_USAR);
+    const antes = JSON.stringify(Object.entries(window.localStorage));
+    subir(CSV_KIT);
+    await waitFor(() =>
+      expect(screen.getByTestId("protocolo-deriva10-veredicto")).toBeTruthy(),
+    );
+    expect(
+      screen.getByTestId("protocolo-deriva10-veredicto").textContent,
+    ).toMatch(/Sigue: ninguna columna cambió/);
+    const filas = within(screen.getByTestId("protocolo-deriva10-tabla"))
+      .getAllByRole("row")
+      .slice(1);
+    expect(filas.length).toBeGreaterThan(0);
+    for (const fila of filas)
+      expect(fila.getAttribute("data-estado")).toBe("estable");
+    expect(
+      screen.getByText(/esto mide las entradas, no el desempeño del modelo/i),
+    ).toBeTruthy();
+    expect(JSON.stringify(Object.entries(window.localStorage))).toBe(antes);
+    expect(fetchEspia).not.toHaveBeenCalled();
+  });
+
+  it("con una columna desplazada esa columna da alerta, con su símbolo y su texto, y el plan dice reentrenar", async () => {
+    montarConstancia(A, ENTRADA_USAR);
+    subir(conColumna("ingreso_mensual", (v) => String(Number(v) * 3)));
+    await waitFor(() =>
+      expect(screen.getByTestId("protocolo-deriva10-veredicto")).toBeTruthy(),
+    );
+    expect(
+      screen.getByTestId("protocolo-deriva10-veredicto").textContent,
+    ).toMatch(/✕ Reentrena/);
+    const alerta = screen
+      .getAllByRole("row")
+      .find((r) => r.getAttribute("data-estado") === "alerta")!;
+    expect(alerta.textContent).toMatch(/ingreso_mensual/);
+    expect(alerta.textContent).toMatch(/✕ Alerta/);
+  });
+
+  it("sin una columna del modelo no mide y la nombra", async () => {
+    montarConstancia(A, ENTRADA_USAR);
+    const [cabecera, ...filas] = CSV_KIT.trimEnd().split("\n");
+    const j = cabecera!.split(",").indexOf("ingreso_mensual");
+    const sin = [cabecera, ...filas]
+      .map((f) =>
+        f
+          .split(",")
+          .filter((_, k) => k !== j)
+          .join(","),
+      )
+      .join("\n");
+    subir(sin);
+    await waitFor(() =>
+      expect(screen.getByTestId("protocolo-deriva10-faltan")).toBeTruthy(),
+    );
+    expect(screen.getByTestId("protocolo-deriva10-faltan").textContent).toMatch(
+      /faltan columnas del modelo: ingreso_mensual/,
+    );
+    expect(screen.queryByTestId("protocolo-deriva10-tabla")).toBeNull();
+  });
+
+  it("un archivo que no se lee lo dice, y «Quitar el resultado» lo limpia", async () => {
+    montarConstancia(A, ENTRADA_USAR);
+    subir("");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Quitar el resultado" }),
+      ).toBeTruthy(),
+    );
+    expect(screen.getByText(/⚠/, { exact: false })).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Quitar el resultado" }),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Quitar el resultado" }),
+    ).toBeNull();
+  });
+});
