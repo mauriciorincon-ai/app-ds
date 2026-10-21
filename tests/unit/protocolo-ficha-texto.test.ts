@@ -343,11 +343,38 @@ describe("la ficha dicha en pantalla y en Markdown", () => {
       nombresDe(USAR.evidencias),
     );
     expect(md).not.toMatch(/(^|[^\\])<img/);
-    expect(md).toContain("\\<img src=x onerror=alert(1)>");
+    expect(md).toContain("\\<img src=x onerror=alert(1)\\>");
     expect(md).toContain("segunda línea ## titular falso");
     expect(md.split("\n").filter((l) => l.startsWith("## ")).length).toBe(
       ficha.secciones.length,
     );
+  });
+
+  it("el Markdown escapa lo que leería como formato o como HTML, también una barra escrita por el usuario (auditoría M1)", () => {
+    const barra = fichaCon(USAR, {
+      etapa: 3,
+      r: { exclusiones: "\\<img src=x>" },
+    });
+    const md = fichaMarkdown(
+      barra,
+      tDe("es"),
+      "es",
+      nombresDe(USAR.evidencias),
+    );
+    // la barra se escapa a sí misma y el `<` queda escapado: no sale HTML crudo
+    expect(md).toContain("\\\\\\<img src=x\\>");
+    expect(md).not.toMatch(/(^|[^\\])<img/);
+    const enlace = fichaCon(USAR, {
+      etapa: 3,
+      r: { exclusiones: "[a](http://x) ![](http://x)" },
+    });
+    const md2 = fichaMarkdown(
+      enlace,
+      tDe("es"),
+      "es",
+      nombresDe(USAR.evidencias),
+    );
+    expect(md2).toContain("\\[a\\](http://x) \\!\\[\\](http://x)");
   });
 
   it("el nombre del archivo sale del cuaderno, o es genérico", () => {

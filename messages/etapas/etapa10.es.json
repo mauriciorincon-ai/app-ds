@@ -107,7 +107,7 @@
             "no-usar": "Un modelo que no se usa"
           },
           "intro": "Ficha armada por Probeta DS con lo que el cuaderno registró: nada se recalculó ni la prueba se abrió de nuevo. Cada línea dice de qué etapa, fecha y huella viene; lo derivado no se edita y lo que escribió el dueño va rotulado.",
-          "privacy": "No lleva filas ni valores de tus datos: solo conteos, costos, nombres de columna y lo que escribió el dueño.",
+          "privacy": "No lleva filas: lleva conteos, costos, nombres de columna y de categorías con soporte, cortes de cuantiles y lo que escribió el dueño.",
           "section": {
             "datos": "Los datos",
             "poblacion": "Población, periodo y exclusiones",
@@ -168,6 +168,7 @@
             "sin-soporte": "Segmentos sin filas suficientes para medirse (no se sabe cómo le va ahí): {segmentos}.",
             "prueba-chica": "La prueba tuvo solo {filas} filas: unos cuantos casos mueven las cifras.",
             "reabierta": "La prueba se abrió con {aperturas} configuraciones distintas: sus cifras ya no son sin sesgo.",
+            "patron": "Dónde falla, en tus palabras (etapa 8): {texto}",
             "poco-fiable": "Lo que dijo el modelo y lo que pasó se separaron {brechaPct} puntos porcentuales en un tramo: el umbral de tus costos es poco fiable.",
             "umbral-optimista": "El umbral {umbral} se eligió mirando la prueba: sus cifras son optimistas.",
             "dueno": "Para qué NO usarlo (escrito por el dueño): {texto}"

@@ -10,9 +10,14 @@ import { fichaVista, type Nombres, type Traduce } from "./ficha-texto";
 
 const BASE = "protocol.stage.10.sheet";
 
-/** Una línea de lista: sin saltos (los rompería) y sin `<` (una columna llamada `<img…>` no debe pintarse). */
+/**
+ * Una línea de lista: sin saltos (los rompería) y con lo que el Markdown leería como formato o como HTML escapado con
+ * barra (auditoría M1). La barra se escapa primero, en la misma clase: un `\<img` escrito por el usuario no queda
+ * como barra + `<` crudo.
+ */
+const ESCAPAR = /[\\`*_[\]<>!&~]/g;
 const limpio = (s: string) =>
-  s.replace(/\s*\r?\n\s*/g, " ").replace(/</g, "\\<");
+  s.replace(/\s*\r?\n\s*/g, " ").replace(ESCAPAR, "\\$&");
 
 /** `ficha-del-modelo-<archivo>.md`, o `ficha-del-modelo.md` si el cuaderno no guarda la carga. */
 export function nombreFichaMarkdown(carga: Carga | null): string {

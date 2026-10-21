@@ -107,7 +107,7 @@
             "no-usar": "A model that isn't used"
           },
           "intro": "Card built by Probeta DS from what the notebook recorded: nothing was recomputed and the test set wasn't opened again. Each line says which stage, date and fingerprint it comes from; what's derived isn't edited and what the owner wrote is labeled.",
-          "privacy": "It carries no rows or values from your data: only counts, costs, column names and what the owner wrote.",
+          "privacy": "It carries no rows: it carries counts, costs, column names and names of categories with support, quantile cuts and what the owner wrote.",
           "section": {
             "datos": "The data",
             "poblacion": "Population, period and exclusions",
@@ -168,6 +168,7 @@
             "sin-soporte": "Segments without enough rows to be measured (how it does there is unknown): {segmentos}.",
             "prueba-chica": "The test set had only {filas} rows: a handful of cases moves the figures.",
             "reabierta": "The test set was opened with {aperturas} different setups: its figures are no longer unbiased.",
+            "patron": "Where it fails, in your own words (stage 8): {texto}",
             "poco-fiable": "What the model said and what happened drifted {brechaPct} percentage points apart in one bin: the threshold from your costs is unreliable.",
             "umbral-optimista": "Threshold {umbral} was chosen while looking at the test set: its figures are optimistic.",
             "dueno": "What NOT to use it for (written by the owner): {texto}"

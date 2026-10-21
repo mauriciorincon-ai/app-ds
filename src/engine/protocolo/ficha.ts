@@ -102,6 +102,7 @@ export const LINEAS_FICHA = {
     "sin-soporte",
     "prueba-chica",
     "reabierta",
+    "patron",
     "poco-fiable",
     "umbral-optimista",
     "dueno",
@@ -310,6 +311,9 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
     linea(lim, 8, "prueba-chica", { filas: nPrueba });
   if (r8.aperturas !== null && r8.aperturas > 1)
     linea(lim, 8, "reabierta", { aperturas: r8.aperturas });
+  // S15 (auditoría A1): el patrón de fallo que escribiste en la etapa 8, «Queda en el cuaderno para la ficha de la etapa 10»
+  const patron = textoLleno(datosDe(8).respuestas, "patron");
+  if (patron) linea(lim, 8, "patron", { texto: patron });
   const brecha = numero(c9, "brecha");
   if (r9.modo === "curva" && brecha !== null && brecha >= BRECHA_POCO_FIABLE)
     linea(lim, 9, "poco-fiable", { brechaPct: brecha });
