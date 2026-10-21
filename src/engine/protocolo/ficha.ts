@@ -59,6 +59,81 @@ export const SECCIONES_FICHA = [
 ] as const;
 export type IdSeccion = (typeof SECCIONES_FICHA)[number];
 
+/**
+ * Todas las líneas que la ficha puede escribir, por sección: el contrato con sus textos
+ * (`messages/etapas/etapa10.{es,en}.json`, `protocol.stage.10.sheet.<sección>.<línea>`). Un test lo cruza con lo que
+ * arma `armarFicha` y con los textos, para que ninguna línea llegue a pantalla como clave cruda.
+ */
+export const LINEAS_FICHA = {
+  datos: ["archivo", "objetivo", "modelo", "columnas"],
+  poblacion: [
+    "poblacion",
+    "exclusiones",
+    "sin-exclusiones",
+    "periodo",
+    "sin-periodo",
+    "fuera",
+  ],
+  metricas: [
+    "costo",
+    "base",
+    "regla",
+    "metrica",
+    "segmentos",
+    "peor",
+    "peor-sin-soporte",
+    "peor-ninguno",
+  ],
+  decision: [
+    "decision-usar",
+    "decision-iterar",
+    "decision-no-usar",
+    "costo",
+    "umbral",
+    "umbral-movido",
+    "clase",
+    "capacidad",
+  ],
+  limites: [
+    "predice",
+    "poblacion",
+    "periodo",
+    "peor-segmento",
+    "sin-soporte",
+    "prueba-chica",
+    "reabierta",
+    "poco-fiable",
+    "umbral-optimista",
+    "dueno",
+  ],
+  cumplio: [
+    "fuga",
+    "particion",
+    "linea-base",
+    "supera",
+    "no-supera",
+    "senal",
+    "sin-senal",
+    "incertidumbre",
+    "calibracion",
+    "calibracion-sin-probabilidades",
+    "calibracion-no-aplica",
+  ],
+  vigilancia: [
+    "columnas",
+    "umbrales",
+    "solo-entradas",
+    "piso",
+    "piso-beneficio",
+    "cadencia-sin-tiempo",
+    "cadencia-alargada",
+    "cadencia-acortada",
+    "cadencia",
+  ],
+  variante: ["que-cambiaria", "que-cambiar", "prueba-gastada"],
+  responde: ["dueno", "decisor"],
+} as const satisfies Record<IdSeccion, readonly string[]>;
+
 export type SeccionFicha = {
   readonly id: IdSeccion;
   readonly lineas: readonly LineaFicha[];
@@ -100,7 +175,10 @@ export function evidenciasCumplidas(
 }
 
 /** La última carga del cuaderno con esa huella (la de los datos con que se verificó la ficha). */
-export function cargaDe(cuaderno: Cuaderno, huella: string | null): Carga | null {
+export function cargaDe(
+  cuaderno: Cuaderno,
+  huella: string | null,
+): Carga | null {
   if (!huella) return null;
   return cuaderno.cargas.findLast((c) => c.sha256 === huella) ?? null;
 }
@@ -119,7 +197,9 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
   const ev = entrada.evidencias;
   if (TODAS.some((n) => !ev[n])) return null;
   const datosDe = (n: EtapaId) => ev[n]!.datos;
-  const previas: Previas = Object.fromEntries(TODAS.map((n) => [n, datosDe(n)]));
+  const previas: Previas = Object.fromEntries(
+    TODAS.map((n) => [n, datosDe(n)]),
+  );
   const decision = decisionDe(previas);
   if (!decision) return null;
 
@@ -167,6 +247,7 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
       columnas: carga.columnas,
     });
   linea(datos, 2, "objetivo", { objetivo: textoLleno(r2, "objetivo") });
+  linea(datos, 7, "modelo", { ganador: r7.ganador });
   linea(datos, 4, "columnas", { usar: r4.usar, excluir: r4.excluir });
 
   const pob: LineaFicha[] = [];
@@ -193,7 +274,11 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
     seleccion: r8.seleccion,
   });
   linea(met, 8, "segmentos", { conSoporte: r8.conSoporte, total: segmentos });
-  if (r8.peor) linea(met, 8, "peor", { segmento: r8.peor });
+  // «ninguno» no es un segmento: o ninguno tiene soporte, o ninguno de los que lo tienen está peor que el total
+  const peor = r8.peor !== null && r8.peor !== "ninguno" ? r8.peor : null;
+  if (peor) linea(met, 8, "peor", { segmento: peor });
+  else if (r8.peor === "ninguno")
+    linea(met, 8, r8.conSoporte === 0 ? "peor-sin-soporte" : "peor-ninguno");
 
   const dec: LineaFicha[] = [];
   linea(dec, 9, `decision-${decision}`, { razon: r9.razon });
@@ -217,7 +302,7 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
   linea(lim, 3, "predice");
   linea(lim, 3, "poblacion", { poblacion });
   if (desde && hasta) linea(lim, 2, "periodo", { desde, hasta });
-  if (r8.peor) linea(lim, 8, "peor-segmento", { segmento: r8.peor });
+  if (peor) linea(lim, 8, "peor-segmento", { segmento: peor });
   if (r8.conSoporte !== null && segmentos > r8.conSoporte)
     linea(lim, 8, "sin-soporte", { segmentos: segmentos - r8.conSoporte });
   const nPrueba = numero(c8, "n_prueba");
@@ -233,7 +318,11 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
   if (noUsarPara) linea(lim, "dueno", "dueno", { texto: noUsarPara });
 
   const cum: LineaFicha[] = [];
-  linea(cum, 4, "fuga", { alertas: r4.alertas, excluir: r4.excluir, usar: r4.usar });
+  linea(cum, 4, "fuga", {
+    alertas: r4.alertas,
+    excluir: r4.excluir,
+    usar: r4.usar,
+  });
   linea(cum, 6, "particion", {
     esquema: r6.esquema,
     sello: r6.sello?.slice(0, 12) ?? null,
@@ -241,7 +330,10 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
     prueba: r6.prueba,
   });
   if (r5.mejor)
-    linea(cum, 5, "linea-base", { baseId: r5.mejor.id, base100: r5.mejor.costo100 });
+    linea(cum, 5, "linea-base", {
+      baseId: r5.mejor.id,
+      base100: r5.mejor.costo100,
+    });
   if (r7.veredicto)
     linea(cum, 7, r7.veredicto === "supera" ? "supera" : "no-supera", {
       media100: c100(r7.media),
@@ -249,19 +341,27 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
       alto100: c100(r7.icAlto),
     });
   if (r7.senal)
-    linea(cum, 7, r7.senal === "senal" ? "senal" : "sin-senal", { p: r7.p, n: r7.n });
-  linea(cum, 8, "incertidumbre", { bajo100: c100(r8.bajo), alto100: c100(r8.alto) });
+    linea(cum, 7, r7.senal === "senal" ? "senal" : "sin-senal", {
+      p: r7.p,
+      n: r7.n,
+    });
+  linea(cum, 8, "incertidumbre", {
+    bajo100: c100(r8.bajo),
+    alto100: c100(r8.alto),
+  });
   if (r8.calibracion === "medida")
     linea(cum, 8, "calibracion", { brier: r8.brier, brierBase: r8.brierBase });
-  else if (r8.calibracion)
-    linea(cum, 8, `calibracion-${r8.calibracion}`);
+  else if (r8.calibracion) linea(cum, 8, `calibracion-${r8.calibracion}`);
 
   const vig: LineaFicha[] = [];
   const vari: LineaFicha[] = [];
   if (decision === "usar") {
     const columnas = lista(c10, "vig_columnas");
     if (columnas)
-      linea(vig, 10, "columnas", { columnas: columnas.length, lista: columnas.join(", ") });
+      linea(vig, 10, "columnas", {
+        columnas: columnas.length,
+        lista: columnas.join(", "),
+      });
     linea(vig, 10, "umbrales", { moderada: PSI_MODERADA, alerta: PSI_ALERTA });
     linea(vig, 10, "solo-entradas");
     linea(vig, 9, "piso", {
@@ -287,7 +387,8 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
       });
     const cadencia = numero(r10, "cadencia");
     const sugerida = numero(c10, "cadencia_sugerida");
-    if (sugerida === null) linea(vig, "dueno", "cadencia-sin-tiempo", { cadencia });
+    if (sugerida === null)
+      linea(vig, "dueno", "cadencia-sin-tiempo", { cadencia });
     else if (cadencia !== null && cadencia > sugerida)
       linea(vig, "dueno", "cadencia-alargada", {
         cadencia,
@@ -298,9 +399,14 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
       linea(vig, "dueno", "cadencia-acortada", { cadencia, sugerida });
     else linea(vig, 10, "cadencia", { cadencia });
   } else {
-    linea(vari, "dueno", decision === "no-usar" ? "que-cambiaria" : "que-cambiar", {
-      texto: textoLleno(r10, "cambiar"),
-    });
+    linea(
+      vari,
+      "dueno",
+      decision === "no-usar" ? "que-cambiaria" : "que-cambiar",
+      {
+        texto: textoLleno(r10, "cambiar"),
+      },
+    );
     if (decision === "iterar")
       linea(vari, 8, "prueba-gastada", { aperturas: r8.aperturas ?? 1 });
   }

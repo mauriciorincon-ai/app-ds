@@ -241,6 +241,9 @@ describe("lo que cambia en la ficha según lo registrado (cada línea sale de su
     ["la calibración que no aplica (un número)", [{ etapa: 8, c: { calibracion: "no-aplica" } }], "cumplio", "calibracion-no-aplica"],
     ["la prueba abierta con dos configuraciones", [{ etapa: 8, c: { aperturas: 2 } }], "limites", "reabierta"],
     ["el peor segmento", [{ etapa: 8, c: { peor_segmento: "c:empleo=informal" } }], "limites", "peor-segmento"],
+    ["ningún segmento con soporte", [{ etapa: 8, c: { peor_segmento: "ninguno", seg_con_soporte: 0 } }], "metricas", "peor-sin-soporte"],
+    ["ninguno peor que el total", [{ etapa: 8, c: { peor_segmento: "ninguno", seg_con_soporte: 3 } }], "metricas", "peor-ninguno"],
+    ["el modelo que ganó la selección", [{ etapa: 7, c: { ganador: "random_forest" } }], "datos", "modelo"],
     ["tu regla medida en la prueba", [{ etapa: 8, c: { regla_costo: 0.5 } }], "metricas", "regla"],
     ["la clase predicha (sin probabilidades)", [{ etapa: 9, c: { modo: "clase" } }], "decision", "clase"],
     ["el umbral movido mirando la curva", [{ etapa: 9, r: { umbral: "0.30" }, c: { umbral_usado: 0.3 } }], "limites", "umbral-optimista"],
@@ -250,6 +253,13 @@ describe("lo que cambia en la ficha según lo registrado (cada línea sale de su
     ["el modelo que no supera ni muestra señal", [{ etapa: 7, c: { veredicto: "no-supera", senal: "sin-senal" } }], "cumplio", "sin-senal"],
   ] as const)("%s", (_, cambios, seccion, clave) => {
     expect(claves(fichaCon(...(cambios as readonly Cambio[])), seccion)).toContain(clave);
+  });
+
+  it("«ninguno» no es un segmento: ni «peor» ni «peor-segmento» lo nombran como tal", () => {
+    const f = fichaCon({ etapa: 8, c: { peor_segmento: "ninguno", seg_con_soporte: 3 } });
+    expect(claves(f, "metricas")).not.toContain("peor");
+    expect(claves(f, "limites")).not.toContain("peor-segmento");
+    expect(lineas(f).some((l) => Object.values(l.params).includes("ninguno"))).toBe(false);
   });
 
   it("el umbral movido se rotula en la decisión y en los límites", () => {

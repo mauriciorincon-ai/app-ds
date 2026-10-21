@@ -55,6 +55,11 @@ const ENTEROS = ["cadencia_sugerida", "n_referencia"] as const;
 const LISTAS = ["vig_columnas", "vig_referencia"] as const;
 export const CHEQUEOS_10 = [...TEXTOS, ...ENTEROS, ...LISTAS] as const;
 
+export const CLAVES_10 = {
+  respuestas: RESPUESTAS_10,
+  chequeos: CHEQUEOS_10,
+} as const;
+
 export const FALTAS_10 = [
   "etapas-previas",
   "dueno",
