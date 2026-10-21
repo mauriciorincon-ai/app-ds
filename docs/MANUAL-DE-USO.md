@@ -664,7 +664,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Qué lleva el archivo:** no trae las filas de tu CSV, pero sí datos que salen de él: los nombres de
     tus columnas, los valores del objetivo con sus conteos, medias, la fecha mínima y la máxima, el
     nombre del archivo y su huella, además de tus respuestas. Desde la etapa 4 suma también los puntajes
-    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Desde la etapa 7 suma los puntajes de la liga por pliegue, el veredicto y la permutación, pero no tus filas. Desde la etapa 8 suma los agregados de la prueba (el costo y el número de filas de cada segmento, con el nombre de sus categorías, los tramos de la calibración, el Brier y cada apertura de la prueba con su fecha), tu patrón de fallo y el número de peores casos, pero no las filas de la prueba ni los peores casos. Desde la etapa 9 suma tu decisión y tus razones, el umbral que usaste y tu capacidad, con los conteos y costos que los sostienen, pero no filas. Desde la etapa 10 suma quién responde, tu cadencia y tu razón, y la referencia de deriva de las columnas del modelo: solo cortes y conteos, nunca filas. Trátalo con el cuidado que le darías a
+    por columna que encontró la app y tu procedencia y tus estados por columna. Desde la etapa 6 suma el sello de la prueba y sus conteos, pero no qué filas son la prueba. Desde la etapa 7 suma los puntajes de la liga por pliegue, el veredicto y la permutación, pero no tus filas. Desde la etapa 8 suma los agregados de la prueba (el costo y el número de filas de cada segmento, con el nombre de sus categorías, los tramos de la calibración, el Brier y cada apertura de la prueba con su fecha), tu patrón de fallo y el número de peores casos, pero no las filas de la prueba ni los peores casos. Desde la etapa 9 suma tu decisión y tus razones, el umbral que usaste y tu capacidad, con los conteos y costos que los sostienen, pero no filas. Desde la etapa 10 suma quién responde, tu cadencia y tu razón, y la referencia de deriva de las columnas del modelo: los cortes de cuantiles, los conteos y los nombres de las categorías con al menos 5 filas. Nunca filas. Trátalo con el cuidado que le darías a
     tus datos.
   - **Ventana privada:** el navegador no deja guardar. La página lo avisa («Exporta tu cuaderno antes de
     irte»): si cierras la pestaña, se pierde.
@@ -674,8 +674,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Los estados de cada etapa:** **Cerrada** (falta cumplir la anterior), **Abierta** (puedes
   trabajarla), **Cumplida**, **Por verificar** (tus datos cambiaron o corregiste una etapa anterior),
-  **Detenida** (el criterio paró el Protocolo, p. ej. buscas una causa) y **Sin construir** (se ve su
-  criterio, pero no abre).
+  **Detenida** (el criterio paró el Protocolo, p. ej. buscas una causa) y **Sin construir** (se ve su criterio, pero no abre; hoy ninguna etapa está en ese estado).
 
 - **Glosario:** al final de la página hay un glosario con definiciones breves de los términos de las
   compuertas; cada término de una etapa enlaza a su entrada. Donde existe, **«Leer más en el glosario
@@ -770,7 +769,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Etapa 10, límites (Sprint 015):**
     - **La ficha sale del cuaderno, y no lo corrige.** Si una etapa anterior cambia, la ficha se rehace con lo nuevo. Lo que escribe el dueño no lo revisa la app.
     - **El chequeo mide las entradas, no el desempeño.** Un CSV nuevo puede parecerse al de entrenamiento y el modelo fallar igual. Para vigilar el desempeño hacen falta los resultados nuevos y el modelo guardado, y eso no está en esta versión.
-    - **La referencia de deriva guarda solo cortes y conteos.** Con pocas filas en el CSV nuevo, la app dice «pocas filas para medir» en vez de dar un número.
+    - **La referencia de deriva guarda solo agregados.** Cortes de cuantiles, conteos y las categorías con al menos 5 filas: nunca filas. Con pocas filas en el CSV nuevo, la app dice «pocas filas para medir» en vez de dar un número.
     - **Las convenciones de deriva no son una prueba.** Un cambio moderado desde un PSI de 0,10 y una alerta desde 0,25 vienen de la etapa 4.
     - **La cadencia es tuya, salvo con partición por tiempo.** Con una prueba por tiempo, la app propone los meses que respalda; sin ella, la cadencia la escribes tú y la ficha lo dice.
     - **La app no supone quién responde.** El campo empieza vacío. Puedes poner al decisor de la etapa 1 con un clic, y la compuerta exige que haya un nombre.
