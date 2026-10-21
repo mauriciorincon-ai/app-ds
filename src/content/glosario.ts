@@ -320,6 +320,21 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
       en: "How many cases out of every 100 your team can handle. A threshold that raises more alerts than that can't be met: either the threshold goes up, the team grows, or the extra alerts go unattended.",
     },
   },
+  // S15 (etapa 10)
+  "ficha-del-modelo": {
+    termino: { es: "Ficha del modelo", en: "Model card" },
+    definicion: {
+      es: "El documento que resume el modelo para quien lo hereda: con qué datos, para qué sirve, para qué no, qué compuertas pasó y quién responde. Aquí sale del cuaderno: cada línea cita la etapa, la fecha y la huella de donde viene, y lo que escribes tú va rotulado como tuyo.",
+      en: "The document that sums up the model for whoever inherits it: what data, what it's for, what it isn't for, which gates it passed and who answers for it. Here it comes out of the notebook: each line cites the stage, the date and the fingerprint it comes from, and what you write is labeled as yours.",
+    },
+  },
+  "plan-de-vigilancia": {
+    termino: { es: "Plan de vigilancia", en: "Monitoring plan" },
+    definicion: {
+      es: "Lo que se mira después de usar el modelo y cuándo se deja de usar: qué columnas se revisan por deriva y con qué umbrales, el piso de la decisión (si deja de ganarle a lo de hoy), cada cuánto se reentrena y quién responde. Este plan mide las entradas; vigilar el desempeño pide los resultados nuevos y el modelo guardado, y no está aquí.",
+      en: "What gets watched after the model is in use and when it stops being used: which columns are checked for drift and with which thresholds, the floor of the decision (if it stops beating today's way), how often it's retrained and who answers for it. This plan measures inputs; watching performance needs the new outcomes and the saved model, and isn't here.",
+    },
+  },
   // S9 (etapa 4)
   "existe-al-decidir": {
     termino: { es: "Existe al decidir", en: "Exists when you decide" },

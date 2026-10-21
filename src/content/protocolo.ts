@@ -185,5 +185,13 @@ export const CONTENIDO_ETAPAS: Readonly<Record<EtapaId, ContenidoEtapa>> = {
       es: "La ficha completa y una persona responsable con nombre.",
       en: "The complete card and a named person in charge.",
     },
+    tarea: {
+      es: "Deja constancia. La ficha del modelo sale sola del cuaderno: tus datos, el periodo, la población y sus exclusiones, lo que midió la prueba por segmento y en calibración, la decisión con sus números, los límites y para qué NO usarlo, y qué compuertas pasó. Tú nombras a quien responde. Si decidiste usarlo, fijas cada cuánto se reentrena y llevas contigo un plan de vigilancia, con una referencia para revisar la deriva de las entradas con un archivo nuevo. Si decidiste no usarlo o iterar, escribes qué tendría que cambiar.",
+      en: "Leave a record. The model card writes itself from the notebook: your data, the period, the population and its exclusions, what the test measured by segment and in calibration, the decision with its numbers, the limits and what NOT to use it for, and which gates it passed. You name who answers for it. If you decided to use it, you set how often it's retrained and take a monitoring plan with you, with a reference to check the drift of the inputs against a new file. If you decided not to use it or to iterate, you write what would have to change.",
+    },
+    porque: {
+      es: "Un modelo sin constancia se vuelve una caja que nadie sabe cuándo dejar de usar.\nLa ficha no la redacta nadie: cada línea sale de lo que el cuaderno ya registró y dice de qué etapa, fecha y huella viene; lo que se deriva no se edita, y lo que escribes tú va rotulado.\nEl chequeo con un archivo nuevo mide si las entradas de hoy se parecen a las del entrenamiento. No mide el desempeño: para eso harían falta los resultados nuevos y el modelo guardado. «No usarlo» y «iterar» también quedan con su ficha y su responsable.",
+      en: "A model with no record becomes a box nobody knows when to stop using.\nNobody writes the card: each line comes from what the notebook already recorded and says which stage, date and fingerprint it comes from; what's derived isn't edited, and what you write is labeled.\nThe check with a new file measures whether today's inputs look like the training ones. It doesn't measure performance: that would need the new outcomes and the saved model. «Don't use it» and «iterate» also end with their card and their owner.",
+    },
   },
 };

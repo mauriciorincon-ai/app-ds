@@ -325,7 +325,7 @@ export const ETAPA_10: EtapaConstruida = {
   id: 10,
   construida: true,
   dependeDeDatos: true,
-  terminos: ["cuaderno", "deriva"],
+  terminos: ["cuaderno", "ficha-del-modelo", "plan-de-vigilancia", "deriva"],
   preguntas: ["dueno", "cadencia", "cambiar"],
   chequeos: ["referencia", "cadencia"],
   leer,

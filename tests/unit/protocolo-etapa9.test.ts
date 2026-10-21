@@ -145,7 +145,7 @@ describe("la tabla de umbrales que guarda la etapa 8", () => {
     expect(estados(cuaderno).slice(7, 10)).toEqual([
       "cumplida",
       "abierta",
-      "no-construida",
+      "cerrada",
     ]);
     const previas = { ...a.previas, 8: viejo };
     expect(ETAPA_9.criterio(datosEtapa9(previas, ENTRADA), previas)).toEqual({
@@ -262,7 +262,7 @@ describe("las cuentas de la decisión", () => {
 });
 
 describe("la compuerta de la etapa 9", () => {
-  it("«no usarlo» pasa la compuerta: es un resultado, y la 10 se ve sin construir", () => {
+  it("«no usarlo» pasa la compuerta: es un resultado, y la 10 abre", () => {
     const datos = datosDe({ decision: "no-usar" });
     expect(ETAPA_9.criterio(datos, CREDITO.previas)).toEqual({
       tipo: "cumple",
@@ -270,7 +270,7 @@ describe("la compuerta de la etapa 9", () => {
     expect(estados(registrado(datos)).slice(7, 10)).toEqual([
       "cumplida",
       "cumplida",
-      "no-construida",
+      "abierta",
     ]);
     expect(resumenEtapa9(datos)).toMatchObject({
       decision: "no-usar",
