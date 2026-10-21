@@ -1,0 +1,212 @@
+{
+  "protocol": {
+    "stage": {
+      "10": {
+        "need-data": "Carga tus datos arriba: la ficha y la referencia de deriva se verifican contra ellos.",
+        "reads": {
+          "title": "Qué hace esta etapa",
+          "body": "Arma la ficha del modelo con lo que el cuaderno ya registró en las etapas 1 a 9: no recalcula nada ni vuelve a abrir la prueba. Aquí pones a quien responde y, según tu decisión, el plan de vigilancia o lo que habría que cambiar."
+        },
+        "decision": {
+          "title": "Tu decisión de la etapa 9",
+          "usar": "Usarlo: la ficha lleva un plan de vigilancia.",
+          "iterar": "Iterar: la ficha deja escrito qué cambiar. Esta prueba ya se abrió y no se reutiliza como nueva.",
+          "no-usar": "No usarlo: la ficha deja escrito por qué y qué tendría que cambiar. Es un resultado válido."
+        },
+        "owner": {
+          "title": "Quién responde",
+          "label": "Persona o rol que responde por este modelo",
+          "help": "Con nombre: una persona o un rol (por ejemplo, «Jefa de retención»). La ficha lo rotula como escrito por ti. Hasta {max} caracteres.",
+          "suggest": "Poner al decisor de la etapa 1: «{decisor}»"
+        },
+        "not-use": {
+          "label": "Para qué NO usarlo (opcional)",
+          "help": "Con tus palabras: usos que esta ficha no respalda, además de los que salen del cuaderno. Hasta {max} caracteres."
+        },
+        "cadence": {
+          "title": "Cada cuánto se reentrena",
+          "label": "Reentrenar cada (meses)",
+          "help-time": "La prueba respalda {sugerida} meses: van del corte de la etapa 6 ({corte}) a la última fecha de tus datos ({fin}). Puedes acortarla; alargarla pide tu razón.",
+          "help-no-time": "Tu prueba no fue por tiempo, así que no dice cuánto vale el modelo: la cadencia la escribes tú, en meses enteros de 1 a {max}.",
+          "reason-label": "Tu razón para reentrenar con menos frecuencia",
+          "reason-help": "Obligatoria: la prueba respalda {sugerida} meses y escribiste más. Hasta {max} caracteres."
+        },
+        "change": {
+          "title": "Qué tendría que cambiar",
+          "label-no-usar": "Qué tendría que cambiar para que sirva",
+          "help-no-usar": "Con tus palabras: más datos, otra decisión, otra columna… Queda en la ficha como escrito por ti. Hasta {max} caracteres.",
+          "label-iterar": "Qué vas a cambiar antes de volver a probar",
+          "help-iterar": "Con tus palabras. Esta prueba ya se abrió: al volver necesitas una partición distinta para que cuente como nueva. Hasta {max} caracteres."
+        },
+        "plan": {
+          "title": "Plan de vigilancia",
+          "body": "Se vigila la deriva de {columnas} columnas del modelo contra {n} filas del entrenamiento sellado. La referencia guarda solo agregados (cortes y frecuencias), nunca filas.",
+          "thresholds": "Un cambio moderado desde un PSI de {moderada} y una alerta desde {alerta}: convenciones de la etapa 4, no una prueba.",
+          "inputs": "Esto mide las entradas, no el desempeño: para vigilar el desempeño harían falta los resultados nuevos y el modelo guardado.",
+          "none": "No se pudo armar la referencia de deriva con estos datos: sin ella, la ficha no se completa."
+        },
+        "preview": {
+          "summary": "Vista previa de la ficha",
+          "note": "Se arma con lo que el cuaderno ya registró y con lo que escribes aquí; queda registrada al guardar la etapa."
+        },
+        "constancia": {
+          "title": "Tu ficha del modelo",
+          "body": "Sale del cuaderno: si corriges una etapa, la ficha se rehace. Descárgala para compartirla; el archivo nace y se queda en tu equipo.",
+          "download": "Descargar la ficha (Markdown)",
+          "downloaded": "Descargada: {nombre}.",
+          "fail": "No se pudo armar la ficha: falta alguna evidencia del cuaderno."
+        },
+        "drift": {
+          "title": "Revisa si tus datos cambiaron",
+          "intro": "Carga un CSV nuevo con las columnas del modelo y compáralo con la referencia de esta ficha. Mide si las entradas de hoy se parecen a las del entrenamiento; no mide si el modelo sigue acertando. El archivo no se guarda ni sale de tu navegador.",
+          "button": "Cargar un CSV nuevo",
+          "clear": "Quitar el resultado",
+          "no-reference": "Esta ficha no trae una referencia que se pueda leer: vuelve a registrar la etapa.",
+          "missing": "Al archivo le faltan columnas del modelo: {columnas}. Sin ellas no se puede comparar.",
+          "rows": "Archivo nuevo: {filas} filas.",
+          "verdict": {
+            "sigue": "Sigue: ninguna columna cambió de forma apreciable.",
+            "revisar": "Revisa: alguna columna cambió algo, no se pudo medir o cambió de tipo. Mira cuál antes de confiar en las predicciones.",
+            "reentrenar": "Reentrena: alguna columna se alejó mucho de lo que vio el modelo."
+          },
+          "state": {
+            "estable": "Estable",
+            "moderada": "Cambio moderado",
+            "alerta": "Alerta",
+            "pocas-filas": "Pocas filas para medir",
+            "otro-tipo": "Cambió de tipo"
+          },
+          "region": "Deriva por columna",
+          "col": "Columna",
+          "estado": "Estado",
+          "psi": "PSI",
+          "filled": "Filas con valor",
+          "reminder": "Recuerda: esto mide las entradas, no el desempeño del modelo."
+        },
+        "field": {
+          "dueno": "Quién responde",
+          "no_usar_para": "Para qué no usarlo (escrito por ti)",
+          "cadencia": "Cadencia de reentreno (meses)",
+          "razon_cadencia": "Tu razón para alargar la cadencia",
+          "cambiar": "Qué cambiar (escrito por ti)"
+        },
+        "check": {
+          "decision": "Decisión de la etapa 9",
+          "forma": "Forma de la tarea",
+          "base_cadencia": "En qué se apoya la cadencia",
+          "cadencia_sugerida": "Cadencia que respalda la prueba (meses)",
+          "n_referencia": "Filas de la referencia de deriva",
+          "vig_columnas": "Columnas vigiladas",
+          "vig_referencia": "Referencia de deriva (agregados)"
+        },
+        "sheet": {
+          "title": "Ficha del modelo",
+          "headline": {
+            "usar": "Un modelo para usar",
+            "iterar": "Un modelo para iterar",
+            "no-usar": "Un modelo que no se usa"
+          },
+          "intro": "Ficha armada por Probeta DS con lo que el cuaderno registró: nada se recalculó ni la prueba se abrió de nuevo. Cada línea dice de qué etapa, fecha y huella viene; lo derivado no se edita y lo que escribió el dueño va rotulado.",
+          "privacy": "No lleva filas ni valores de tus datos: solo conteos, costos, nombres de columna y lo que escribió el dueño.",
+          "section": {
+            "datos": "Los datos",
+            "poblacion": "Población, periodo y exclusiones",
+            "metricas": "Lo que midió la prueba",
+            "decision": "La decisión, con números",
+            "limites": "Límites y para qué NO usarlo",
+            "cumplio": "Lo que este modelo cumplió",
+            "vigilancia": "Plan de vigilancia",
+            "variante": "Qué cambiar",
+            "responde": "Quién responde"
+          },
+          "source": {
+            "stage": "Etapa {n} · {fecha} · huella {huella}",
+            "stage-pending": "Etapa {n} · se registra con esta etapa",
+            "owner": "Escrito por el dueño · {fecha}",
+            "owner-pending": "Escrito por el dueño · se registra con esta etapa",
+            "stage-no-hash": "Etapa {n} · {fecha}"
+          },
+          "datos": {
+            "archivo": "Archivo: «{nombre}», {filas} filas y {columnas} columnas.",
+            "objetivo": "Lo que predice: «{objetivo}».",
+            "modelo": "Modelo elegido: {ganador}, por validación cruzada dentro del entrenamiento.",
+            "columnas": "Columnas que entran al modelo: {usar}. Quedaron fuera: {excluir}."
+          },
+          "poblacion": {
+            "poblacion": "Población: {poblacion}",
+            "exclusiones": "Exclusiones: {exclusiones}",
+            "sin-exclusiones": "No se excluyó a nadie de esa población.",
+            "periodo": "Periodo de los datos: de {desde} a {hasta}.",
+            "sin-periodo": "Los datos no traen una fecha: no se puede decir de qué periodo son.",
+            "fuera": "Filas fuera de la partición (sin objetivo, sin fecha, sin unidad o de unidades de la prueba): {fuera}."
+          },
+          "metricas": {
+            "costo": "Costo del modelo en la prueba: {costo100} por cada 100 decisiones (de {bajo100} a {alto100}).",
+            "base": "Sin modelo ({base}): {base100} por cada 100 decisiones.",
+            "regla": "Tu regla de hoy: {regla100} por cada 100 decisiones.",
+            "metrica": "{metrica}: {seleccion} al elegir el modelo y {enPrueba} en la prueba.",
+            "segmentos": "Segmentos con soporte suficiente para medirse: {conSoporte} de {total}.",
+            "peor": "Donde más falla: {segmento}.",
+            "peor-sin-soporte": "Ningún segmento tiene soporte suficiente para señalar el peor.",
+            "peor-ninguno": "Ningún segmento con soporte cuesta más que la prueba entera."
+          },
+          "decision": {
+            "decision-usar": "Decisión: usarlo. Tu razón: «{razon}».",
+            "decision-iterar": "Decisión: iterar antes de decidir. Tu razón: «{razon}».",
+            "decision-no-usar": "Decisión: no usarlo. Tu razón: «{razon}».",
+            "costo": "El modelo cuesta {modelo100} por cada 100 decisiones; lo de hoy ({hoy}), {hoy100}.",
+            "umbral": "Se actúa con el umbral {umbral}, el de tus costos: {alertas100} alertas por cada 100 casos y {falsas100} falsas alarmas por cada 100 alertas.",
+            "umbral-movido": "Se actúa con el umbral {umbral}, elegido mirando la prueba (optimista): {alertas100} alertas por cada 100 casos y {falsas100} falsas alarmas por cada 100 alertas.",
+            "clase": "Sin probabilidades, decide la clase que predice: {alertas100} alertas por cada 100 casos y {falsas100} falsas alarmas por cada 100 alertas.",
+            "capacidad": "Tu equipo atiende {capacidad} de cada 100 casos."
+          },
+          "limites": {
+            "predice": "Sirve para predecir, no para explicar: lo que el modelo asocia no es lo que causa.",
+            "poblacion": "Solo para esta población: {poblacion}. Con otra no hay prueba que lo respalde.",
+            "periodo": "Se probó con datos de {desde} a {hasta}: fuera de ese periodo no hay prueba que lo respalde.",
+            "peor-segmento": "Falla más en: {segmento}.",
+            "sin-soporte": "Segmentos sin filas suficientes para medirse (no se sabe cómo le va ahí): {segmentos}.",
+            "prueba-chica": "La prueba tuvo solo {filas} filas: unos cuantos casos mueven las cifras.",
+            "reabierta": "La prueba se abrió con {aperturas} configuraciones distintas: sus cifras ya no son sin sesgo.",
+            "poco-fiable": "Lo que dijo el modelo y lo que pasó se separaron {brechaPct} puntos porcentuales en un tramo: el umbral de tus costos es poco fiable.",
+            "umbral-optimista": "El umbral {umbral} se eligió mirando la prueba: sus cifras son optimistas.",
+            "dueno": "Para qué NO usarlo (escrito por el dueño): {texto}"
+          },
+          "cumplio": {
+            "fuga": "Fuga de datos revisada: {alertas} columnas con alerta; entran {usar} columnas y se excluyeron {excluir}.",
+            "particion": "Partición {esquema} con prueba sellada (sello {sello}): {entrenamiento} filas para entrenar y {prueba} para probar, sin solape.",
+            "linea-base": "Línea base: la mejor candidata ({base}) cuesta {base100} por cada 100 decisiones.",
+            "supera": "Supera a la línea base: {media100} menos por cada 100 decisiones (de {bajo100} a {alto100}).",
+            "no-supera": "No supera a la línea base ({media100} por cada 100 decisiones; de {bajo100} a {alto100}). Queda escrito.",
+            "senal": "Tiene señal: la prueba de permutación da p = {p} con {n} permutaciones.",
+            "sin-senal": "Sin señal clara: la prueba de permutación da p = {p} con {n} permutaciones.",
+            "incertidumbre": "Incertidumbre medida: en la prueba el costo va de {bajo100} a {alto100} por cada 100 decisiones.",
+            "calibracion": "Calibración medida: Brier {brier} frente a {brierBase} de decir siempre la tasa base.",
+            "calibracion-sin-probabilidades": "Calibración: no se pudo medir, el ganador no da probabilidades.",
+            "calibracion-no-aplica": "Calibración: no aplica al estimar una cantidad."
+          },
+          "vigilancia": {
+            "columnas": "Columnas vigiladas por deriva ({columnas}): {lista}.",
+            "umbrales": "Umbrales de deriva (PSI): moderada desde {moderada}, alerta desde {alerta}. Son convenciones, no una prueba.",
+            "solo-entradas": "Este plan mide si las entradas de hoy se parecen a las del entrenamiento. No mide el desempeño: para eso hacen falta los resultados nuevos y el modelo guardado.",
+            "piso": "Piso de la decisión: se deja de usar si el modelo deja de costar menos que lo de hoy ({hoy}): hoy {modelo100} frente a {hoy100} por cada 100 decisiones.",
+            "piso-beneficio": "En beneficio neto por cada 100 decisiones el modelo da {beneficio100} y lo de hoy {hoy100}: si baja al de hoy, se deja de usar.",
+            "cadencia-sin-tiempo": "Cadencia de reentreno (en meses): {cadencia}. La escribió el dueño: la prueba no fue por tiempo y no dice cuánto vale el modelo.",
+            "cadencia-alargada": "Cadencia de reentreno (en meses): {cadencia}, más larga que los {sugerida} que respalda la prueba. Razón del dueño: «{razon}».",
+            "cadencia-acortada": "Cadencia de reentreno (en meses): {cadencia}, más corta que los {sugerida} que respalda la prueba (decisión del dueño).",
+            "cadencia": "Cadencia de reentreno (en meses): {cadencia}, la que respalda la prueba."
+          },
+          "variante": {
+            "que-cambiaria": "Qué tendría que cambiar para que sirva (escrito por el dueño): {texto}",
+            "que-cambiar": "Qué cambiar antes de volver a probar (escrito por el dueño): {texto}",
+            "prueba-gastada": "La prueba ya se abrió ({aperturas}): si se mejora el modelo, esa prueba no se reutiliza como nueva; hace falta una partición distinta."
+          },
+          "responde": {
+            "dueno": "Responde por el modelo: {dueno}.",
+            "decisor": "Decide con él: {decisor}, sobre «{decision}»."
+          }
+        }
+      }
+    }
+  }
+}

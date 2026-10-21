@@ -41,12 +41,15 @@ export function CampoTexto({
   valor,
   onCambio,
   numerico = false,
+  maximo,
 }: {
   etiqueta: string;
   ayuda?: string;
   valor: string;
   onCambio: (valor: string) => void;
   numerico?: boolean;
+  /** Largo máximo (el mismo que acepta la etapa al leer lo registrado). */
+  maximo?: number;
 }) {
   const { t } = useI18n();
   // Un número que no se lee (p. ej. «1,500», que no se sabe si es uno y medio o mil quinientos)
@@ -61,6 +64,7 @@ export function CampoTexto({
             id={id}
             type="text"
             inputMode={numerico ? "decimal" : undefined}
+            maxLength={maximo}
             autoComplete="off"
             aria-describedby={
               [describedBy, ilegible ? `${id}-ilegible` : undefined]

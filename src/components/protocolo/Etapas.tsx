@@ -14,7 +14,7 @@ import type { DatosCargados } from "@/lib/protocolo/useProtocolo";
 import type { RechazoRegistro } from "@/engine/protocolo/compuerta";
 import { Badge, Button, Icon, type IconName } from "@/components/ui";
 import Link from "next/link";
-import { FORMULARIOS } from "./formularios";
+import { CONSTANCIAS, FORMULARIOS } from "./formularios";
 import { Trampas } from "./formulario-base";
 import { TerminoLink } from "./Glosario";
 
@@ -102,6 +102,7 @@ function Tarjeta({
     }
   });
   const Formulario = FORMULARIOS[etapa.id];
+  const Constancia = CONSTANCIAS[etapa.id];
   const trabajable =
     estado.tipo === "abierta" ||
     estado.tipo === "por-verificar" ||
@@ -238,6 +239,13 @@ function Tarjeta({
             </div>
           )}
 
+          {estado.tipo === "cumplida" &&
+            !corrigiendo &&
+            listo &&
+            Constancia && (
+              <Constancia evaluadas={evaluadas} cuaderno={cuaderno} />
+            )}
+
           {trabajable &&
             listo &&
             (Formulario ? (
@@ -248,6 +256,8 @@ function Tarjeta({
                 historia={historiaDe(cuaderno, etapa.id)}
                 aperturas={cuaderno ? aperturasDistintas(cuaderno) : 0}
                 onApertura={onApertura}
+                evaluadas={evaluadas}
+                cuaderno={cuaderno}
                 onRegistrar={(d) => {
                   const rechazo = onRegistrar(etapa.id, d);
                   if (!rechazo) {
@@ -285,11 +295,28 @@ export function Etapas({
   onApertura?: (clave: string) => void;
 }) {
   const { t } = useI18n();
+  // S15: las diez etapas cumplidas, con la compuerta de cada una vigente (si algo se vuelve a verificar, deja de estarlo)
+  const completo = evaluadas.every(({ estado }) => estado.tipo === "cumplida");
   return (
     <section aria-labelledby="etapas-titulo" className="flex flex-col gap-3">
       <h2 id="etapas-titulo" className="text-xl font-semibold tracking-tight">
         {t("protocol.stages.title")}
       </h2>
+      {completo && (
+        <div
+          role="status"
+          data-testid="protocolo-completo"
+          className="rounded-md border border-hairline bg-sunken p-3 text-sm"
+        >
+          <p className="font-medium">
+            <span aria-hidden="true">✓ </span>
+            {t("protocol.stages.complete.title")}
+          </p>
+          <p className="mt-1 text-ink-muted">
+            {t("protocol.stages.complete.body", { count: evaluadas.length })}
+          </p>
+        </div>
+      )}
       <ol className="flex flex-col gap-3">
         {evaluadas.map((evaluada) => (
           <Tarjeta

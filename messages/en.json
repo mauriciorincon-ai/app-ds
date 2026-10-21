@@ -996,7 +996,11 @@
       }
     },
     "stages": {
-      "title": "The stages"
+      "title": "The stages",
+      "complete": {
+        "title": "Protocol complete",
+        "body": "All {count} stages are met. Your model card is in the last stage: download it to share it."
+      }
     },
     "stage": {
       "label": "Stage {n}",
@@ -1561,7 +1565,7 @@
           },
           "dueno": "Answers for it: {dueno}.",
           "cadence": "Retraining cadence (in months): {cadencia}.",
-          "cadence-lower": "Retraining cadence (in months): {cadencia}; the test supports {sugerida}.",
+          "cadence-vs": "Retraining cadence (in months): {cadencia}; the test supports {sugerida}.",
           "columns": "Drift is watched on {columnas} columns.",
           "complete": "Protocol complete."
         }

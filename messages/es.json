@@ -996,7 +996,11 @@
       }
     },
     "stages": {
-      "title": "Las etapas"
+      "title": "Las etapas",
+      "complete": {
+        "title": "Protocolo completo",
+        "body": "Las {count} etapas están cumplidas. Tu ficha del modelo está en la última etapa: descárgala para compartirla."
+      }
     },
     "stage": {
       "label": "Etapa {n}",
@@ -1561,7 +1565,7 @@
           },
           "dueno": "Responde: {dueno}.",
           "cadence": "Cadencia de reentreno (en meses): {cadencia}.",
-          "cadence-lower": "Cadencia de reentreno (en meses): {cadencia}; la prueba respalda {sugerida}.",
+          "cadence-vs": "Cadencia de reentreno (en meses): {cadencia}; la prueba respalda {sugerida}.",
           "columns": "Se vigila la deriva de {columnas} columnas.",
           "complete": "Protocolo completo."
         }

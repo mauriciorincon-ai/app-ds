@@ -1,0 +1,212 @@
+{
+  "protocol": {
+    "stage": {
+      "10": {
+        "need-data": "Load your data above: the card and the drift reference are verified against it.",
+        "reads": {
+          "title": "What this stage does",
+          "body": "It builds the model card from what the notebook already recorded in stages 1 to 9: nothing is recomputed and the test set isn't opened again. Here you name who answers for it and, depending on your decision, the monitoring plan or what would have to change."
+        },
+        "decision": {
+          "title": "Your stage 9 decision",
+          "usar": "Use it: the card carries a monitoring plan.",
+          "iterar": "Iterate: the card spells out what to change. This test set was already opened and doesn't count as new.",
+          "no-usar": "Don't use it: the card spells out why and what would have to change. It's a valid result."
+        },
+        "owner": {
+          "title": "Who answers for it",
+          "label": "Person or role that answers for this model",
+          "help": "With a name: a person or a role (for example, «Head of retention»). The card labels it as written by you. Up to {max} characters.",
+          "suggest": "Put the stage 1 decision-maker: «{decisor}»"
+        },
+        "not-use": {
+          "label": "What NOT to use it for (optional)",
+          "help": "In your own words: uses this card doesn't back, besides the ones that come from the notebook. Up to {max} characters."
+        },
+        "cadence": {
+          "title": "How often it's retrained",
+          "label": "Retrain every (months)",
+          "help-time": "Your test backs {sugerida} months: from the stage 6 cut ({corte}) to the last date in your data ({fin}). You can shorten it; lengthening it asks for your reason.",
+          "help-no-time": "Your test wasn't split by time, so it doesn't say how long the model holds: you write the cadence, in whole months from 1 to {max}.",
+          "reason-label": "Your reason to retrain less often",
+          "reason-help": "Required: your test backs {sugerida} months and you wrote more. Up to {max} characters."
+        },
+        "change": {
+          "title": "What would have to change",
+          "label-no-usar": "What would have to change for it to serve",
+          "help-no-usar": "In your own words: more data, another decision, another column… It stays on the card as written by you. Up to {max} characters.",
+          "label-iterar": "What you'll change before testing again",
+          "help-iterar": "In your own words. This test set was already opened: to come back you need a different split for it to count as new. Up to {max} characters."
+        },
+        "plan": {
+          "title": "Monitoring plan",
+          "body": "Drift is watched on {columnas} model columns against {n} rows of the sealed training set. The reference keeps only aggregates (cuts and frequencies), never rows.",
+          "thresholds": "A moderate change from a PSI of {moderada} and an alert from {alerta}: stage 4 conventions, not a test.",
+          "inputs": "This measures inputs, not performance: watching performance would need the new outcomes and the saved model.",
+          "none": "The drift reference couldn't be built with this data: without it, the card isn't complete."
+        },
+        "preview": {
+          "summary": "Card preview",
+          "note": "It's built from what the notebook already recorded and what you write here; it's recorded when you save the stage."
+        },
+        "constancia": {
+          "title": "Your model card",
+          "body": "It comes out of the notebook: if you correct a stage, the card is rebuilt. Download it to share it; the file is born and stays on your machine.",
+          "download": "Download the card (Markdown)",
+          "downloaded": "Downloaded: {nombre}.",
+          "fail": "The card couldn't be built: some evidence is missing from the notebook."
+        },
+        "drift": {
+          "title": "Check whether your data changed",
+          "intro": "Load a new CSV with the model's columns and compare it with this card's reference. It measures whether today's inputs look like the training ones; it doesn't measure whether the model is still right. The file isn't saved and doesn't leave your browser.",
+          "button": "Load a new CSV",
+          "clear": "Clear the result",
+          "no-reference": "This card has no readable reference: record the stage again.",
+          "missing": "The file lacks model columns: {columnas}. Without them it can't be compared.",
+          "rows": "New file: {filas} rows.",
+          "verdict": {
+            "sigue": "Keep going: no column changed appreciably.",
+            "revisar": "Review: some column changed a little, couldn't be measured or changed type. Look at which one before trusting the predictions.",
+            "reentrenar": "Retrain: some column moved far from what the model saw."
+          },
+          "state": {
+            "estable": "Stable",
+            "moderada": "Moderate change",
+            "alerta": "Alert",
+            "pocas-filas": "Too few rows to measure",
+            "otro-tipo": "Changed type"
+          },
+          "region": "Drift per column",
+          "col": "Column",
+          "estado": "State",
+          "psi": "PSI",
+          "filled": "Rows with a value",
+          "reminder": "Remember: this measures inputs, not the model's performance."
+        },
+        "field": {
+          "dueno": "Who answers for it",
+          "no_usar_para": "What not to use it for (written by you)",
+          "cadencia": "Retraining cadence (months)",
+          "razon_cadencia": "Your reason to lengthen the cadence",
+          "cambiar": "What to change (written by you)"
+        },
+        "check": {
+          "decision": "Stage 9 decision",
+          "forma": "Task shape",
+          "base_cadencia": "What the cadence rests on",
+          "cadencia_sugerida": "Cadence the test backs (months)",
+          "n_referencia": "Rows in the drift reference",
+          "vig_columnas": "Columns watched",
+          "vig_referencia": "Drift reference (aggregates)"
+        },
+        "sheet": {
+          "title": "Model card",
+          "headline": {
+            "usar": "A model to use",
+            "iterar": "A model to iterate",
+            "no-usar": "A model that isn't used"
+          },
+          "intro": "Card built by Probeta DS from what the notebook recorded: nothing was recomputed and the test set wasn't opened again. Each line says which stage, date and fingerprint it comes from; what's derived isn't edited and what the owner wrote is labeled.",
+          "privacy": "It carries no rows or values from your data: only counts, costs, column names and what the owner wrote.",
+          "section": {
+            "datos": "The data",
+            "poblacion": "Population, period and exclusions",
+            "metricas": "What the test measured",
+            "decision": "The decision, with numbers",
+            "limites": "Limits and what NOT to use it for",
+            "cumplio": "What this model met",
+            "vigilancia": "Monitoring plan",
+            "variante": "What to change",
+            "responde": "Who answers for it"
+          },
+          "source": {
+            "stage": "Stage {n} · {fecha} · fingerprint {huella}",
+            "stage-pending": "Stage {n} · recorded with this stage",
+            "owner": "Written by the owner · {fecha}",
+            "owner-pending": "Written by the owner · recorded with this stage",
+            "stage-no-hash": "Stage {n} · {fecha}"
+          },
+          "datos": {
+            "archivo": "File: «{nombre}», {filas} rows and {columnas} columns.",
+            "objetivo": "What it predicts: «{objetivo}».",
+            "modelo": "Model chosen: {ganador}, by cross-validation inside the training set.",
+            "columnas": "Columns that go into the model: {usar}. Left out: {excluir}."
+          },
+          "poblacion": {
+            "poblacion": "Population: {poblacion}",
+            "exclusiones": "Exclusions: {exclusiones}",
+            "sin-exclusiones": "Nobody was excluded from that population.",
+            "periodo": "Period of the data: from {desde} to {hasta}.",
+            "sin-periodo": "The data carries no date: the period it covers can't be stated.",
+            "fuera": "Rows outside the split (no target, no date, no unit or from units in the test set): {fuera}."
+          },
+          "metricas": {
+            "costo": "Model cost on the test set: {costo100} per 100 decisions (from {bajo100} to {alto100}).",
+            "base": "With no model ({base}): {base100} per 100 decisions.",
+            "regla": "Your rule of today: {regla100} per 100 decisions.",
+            "metrica": "{metrica}: {seleccion} when choosing the model and {enPrueba} on the test set.",
+            "segmentos": "Segments with enough support to be measured: {conSoporte} of {total}.",
+            "peor": "Where it fails most: {segmento}.",
+            "peor-sin-soporte": "No segment has enough support to point out the worst.",
+            "peor-ninguno": "No segment with support costs more than the whole test set."
+          },
+          "decision": {
+            "decision-usar": "Decision: use it. Your reason: «{razon}».",
+            "decision-iterar": "Decision: iterate before deciding. Your reason: «{razon}».",
+            "decision-no-usar": "Decision: don't use it. Your reason: «{razon}».",
+            "costo": "The model costs {modelo100} per 100 decisions; today's way ({hoy}), {hoy100}.",
+            "umbral": "It acts at threshold {umbral}, the one from your costs: {alertas100} alerts per 100 cases and {falsas100} false alarms per 100 alerts.",
+            "umbral-movido": "It acts at threshold {umbral}, chosen while looking at the test set (optimistic): {alertas100} alerts per 100 cases and {falsas100} false alarms per 100 alerts.",
+            "clase": "With no probabilities, it decides with the class it predicts: {alertas100} alerts per 100 cases and {falsas100} false alarms per 100 alerts.",
+            "capacidad": "Your team handles {capacidad} out of every 100 cases."
+          },
+          "limites": {
+            "predice": "It's for predicting, not explaining: what the model associates isn't what causes.",
+            "poblacion": "Only for this population: {poblacion}. For any other there's no test that backs it.",
+            "periodo": "It was tested with data from {desde} to {hasta}: outside that period there's no test that backs it.",
+            "peor-segmento": "It fails most in: {segmento}.",
+            "sin-soporte": "Segments without enough rows to be measured (how it does there is unknown): {segmentos}.",
+            "prueba-chica": "The test set had only {filas} rows: a handful of cases moves the figures.",
+            "reabierta": "The test set was opened with {aperturas} different setups: its figures are no longer unbiased.",
+            "poco-fiable": "What the model said and what happened drifted {brechaPct} percentage points apart in one bin: the threshold from your costs is unreliable.",
+            "umbral-optimista": "Threshold {umbral} was chosen while looking at the test set: its figures are optimistic.",
+            "dueno": "What NOT to use it for (written by the owner): {texto}"
+          },
+          "cumplio": {
+            "fuga": "Data leakage checked: {alertas} columns with an alert; {usar} columns go in and {excluir} were excluded.",
+            "particion": "{esquema} split with a sealed test set (seal {sello}): {entrenamiento} rows to train and {prueba} to test, with no overlap.",
+            "linea-base": "Baseline: the best candidate ({base}) costs {base100} per 100 decisions.",
+            "supera": "Beats the baseline: {media100} less per 100 decisions (from {bajo100} to {alto100}).",
+            "no-supera": "Doesn't beat the baseline ({media100} per 100 decisions; from {bajo100} to {alto100}). It's written down.",
+            "senal": "Has signal: the permutation test gives p = {p} with {n} permutations.",
+            "sin-senal": "No clear signal: the permutation test gives p = {p} with {n} permutations.",
+            "incertidumbre": "Uncertainty measured: on the test set the cost runs from {bajo100} to {alto100} per 100 decisions.",
+            "calibracion": "Calibration measured: Brier {brier} against {brierBase} for always saying the base rate.",
+            "calibracion-sin-probabilidades": "Calibration: couldn't be measured, the winner gives no probabilities.",
+            "calibracion-no-aplica": "Calibration: doesn't apply when estimating a quantity."
+          },
+          "vigilancia": {
+            "columnas": "Columns watched for drift ({columnas}): {lista}.",
+            "umbrales": "Drift thresholds (PSI): moderate from {moderada}, alert from {alerta}. They're conventions, not a test.",
+            "solo-entradas": "This plan measures whether today's inputs look like the training ones. It doesn't measure performance: that needs the new outcomes and the saved model.",
+            "piso": "Floor of the decision: stop using it if the model stops costing less than today's way ({hoy}): now {modelo100} against {hoy100} per 100 decisions.",
+            "piso-beneficio": "In net benefit per 100 decisions the model gives {beneficio100} and today's way {hoy100}: if it drops to today's, stop using it.",
+            "cadencia-sin-tiempo": "Retraining cadence (in months): {cadencia}. The owner wrote it: the test wasn't split by time and doesn't say how long the model holds.",
+            "cadencia-alargada": "Retraining cadence (in months): {cadencia}, longer than the {sugerida} the test supports. Owner's reason: «{razon}».",
+            "cadencia-acortada": "Retraining cadence (in months): {cadencia}, shorter than the {sugerida} the test supports (the owner's decision).",
+            "cadencia": "Retraining cadence (in months): {cadencia}, the one the test supports."
+          },
+          "variante": {
+            "que-cambiaria": "What would have to change for it to serve (written by the owner): {texto}",
+            "que-cambiar": "What to change before testing again (written by the owner): {texto}",
+            "prueba-gastada": "The test set was already opened ({aperturas}): if the model is improved, that test set doesn't count as new; a different split is needed."
+          },
+          "responde": {
+            "dueno": "Answers for the model: {dueno}.",
+            "decisor": "Decides with it: {decisor}, about «{decision}»."
+          }
+        }
+      }
+    }
+  }
+}

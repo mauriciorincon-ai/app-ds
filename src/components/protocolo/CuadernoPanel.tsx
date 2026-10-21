@@ -16,6 +16,7 @@ import { resumenEtapa6, sellosDistintos } from "@/engine/protocolo/etapa6";
 import { resumenEtapa7 } from "@/engine/protocolo/etapa7";
 import { resumenEtapa8 } from "@/engine/protocolo/etapa8";
 import { resumenEtapa9 } from "@/engine/protocolo/etapa9";
+import { resumenEtapa10 } from "@/engine/protocolo/etapa10";
 import { por100 } from "@/engine/protocolo/etapa5";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
@@ -326,6 +327,51 @@ function ResumenEtapa9({
 }
 
 /**
+ * S15: la etapa 10 en una lectura: de qué modelo es la ficha (usarlo, iterar, no usarlo), quién responde y, con
+ * «usar», la cadencia de reentreno frente a la que respalda la prueba y cuántas columnas se vigilan. Sin filas.
+ */
+function ResumenEtapa10({ datos }: { datos: DatosEtapa }) {
+  const { t } = useI18n();
+  const r = resumenEtapa10(datos);
+  if (
+    r.decision !== "usar" &&
+    r.decision !== "iterar" &&
+    r.decision !== "no-usar"
+  )
+    return null;
+  return (
+    <ul
+      className="mt-2 flex flex-col gap-1 text-sm [overflow-wrap:anywhere]"
+      data-testid="cuaderno-resumen10"
+    >
+      <li className="font-medium">
+        {t(`protocol.stage.10.summary.decision.${r.decision}`)}
+      </li>
+      {r.dueno && (
+        <li>{t("protocol.stage.10.summary.dueno", { dueno: r.dueno })}</li>
+      )}
+      {r.decision === "usar" && r.cadencia !== null && (
+        <li>
+          {r.sugerida !== null && r.sugerida !== r.cadencia
+            ? t("protocol.stage.10.summary.cadence-vs", {
+                cadencia: r.cadencia,
+                sugerida: r.sugerida,
+              })
+            : t("protocol.stage.10.summary.cadence", { cadencia: r.cadencia })}
+        </li>
+      )}
+      {r.columnas !== null && (
+        <li>
+          {t("protocol.stage.10.summary.columns", {
+            columnas: cifra(r.columnas),
+          })}
+        </li>
+      )}
+    </ul>
+  );
+}
+
+/**
  * S13: la etapa 8 en una lectura: el ganador en la prueba con su intervalo, contra la línea base y tu regla,
  * el optimismo, el peor segmento, la calibración, las aperturas y tu patrón. Ninguna fila: no las hay.
  */
@@ -581,12 +627,14 @@ function Entrada({
           nombres={nombresBase(cuaderno, evidencia)}
         />
       )}
+      {evidencia.etapa === 10 && <ResumenEtapa10 datos={evidencia.datos} />}
       {evidencia.etapa !== 4 &&
         evidencia.etapa !== 5 &&
         evidencia.etapa !== 6 &&
         evidencia.etapa !== 7 &&
         evidencia.etapa !== 8 &&
         evidencia.etapa !== 9 &&
+        evidencia.etapa !== 10 &&
         filas.length > 0 && (
           <dl className="mt-2 grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
             {filas.map(([clave, valor]) => (
@@ -607,6 +655,7 @@ function Entrada({
 
 export function CuadernoPanel({
   cuaderno,
+  completo = false,
   guardado,
   importePendiente,
   onExportar,
@@ -616,6 +665,8 @@ export function CuadernoPanel({
   onNuevo,
 }: {
   cuaderno: Cuaderno;
+  /** S15: las diez etapas están cumplidas con los datos de ahora. */
+  completo?: boolean;
   /** `null`: este navegador no guarda (memoria); `false`: escribiendo; `true`: guardado. */
   guardado: boolean | null;
   /** Un cuaderno válido importado que espera confirmación para reemplazar el actual. */
@@ -651,6 +702,12 @@ export function CuadernoPanel({
         {t("protocol.notebook.title")}
       </h2>
       <p className="text-sm text-ink-muted">{t("protocol.notebook.desc")}</p>
+      {completo && (
+        <p className="text-sm font-medium" data-testid="cuaderno-completo">
+          <span aria-hidden="true">✓ </span>
+          {t("protocol.stage.10.summary.complete")}
+        </p>
+      )}
       {guardado !== null && (
         <p
           role="status"
