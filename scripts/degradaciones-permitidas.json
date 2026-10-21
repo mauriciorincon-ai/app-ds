@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "nombre": "@emnapi/core",
+    "de": "1.11.1",
+    "a": "1.10.0",
+    "razon": "S15: vite 8.3.4 (corrige GHSA-587h-7wmj-h5pm) trae rolldown 1.2.14, que ya no lleva @rolldown/binding-wasm32-wasi; ese binding de la vite 8.1.3 era el único que pedía esta copia. Queda la de unrs-resolver, la misma de main. Borrar la entrada en el sprint siguiente: con esta base queda sin uso."
+  },
+  {
+    "nombre": "@emnapi/wasi-threads",
+    "de": "1.2.2",
+    "a": "1.2.1",
+    "razon": "S15: igual que @emnapi/core; lo pedía solo @rolldown/binding-wasm32-wasi@1.1.4 (vite 8.1.3). Borrar la entrada en el sprint siguiente."
+  }
+]
