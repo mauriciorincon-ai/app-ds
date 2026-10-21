@@ -199,7 +199,7 @@ describe("la etapa 8 con el kit de crédito (estratificada), en Pyodide", () => 
       "cumplida",
       "cumplida",
       "abierta",
-      "no-construida",
+      "cerrada",
     ]);
     expect(decision9).toEqual({ tipo: "cumple" });
     expect(costo9).toBeTypeOf("number");
@@ -290,7 +290,7 @@ describe("varias clases y un número también cruzan el contrato", () => {
       "cumplida",
       "cumplida",
       "abierta",
-      "no-construida",
+      "cerrada",
     ]);
     expect(decision9).toEqual({ tipo: "cumple" });
     expect(costo9).toBeTypeOf("number");
@@ -314,7 +314,7 @@ describe("varias clases y un número también cruzan el contrato", () => {
       "cumplida",
       "cumplida",
       "abierta",
-      "no-construida",
+      "cerrada",
     ]);
     expect(decision9).toEqual({ tipo: "cumple" });
     expect(costo9).toBeTypeOf("number");
