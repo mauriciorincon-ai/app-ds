@@ -102,7 +102,7 @@ test("etapa 5 con crédito: referencias, regla de hoy medida en vivo y registro"
     page.locator("#etapa-9").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator("#etapa-10").getByText("Sin construir"),
+    page.locator("#etapa-10").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen5");
   await expect(resumen).toContainText("no un resultado");

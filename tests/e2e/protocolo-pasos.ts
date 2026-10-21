@@ -281,3 +281,23 @@ export async function cumplirEtapa6Sugerida(page: Page) {
   await e6.getByRole("button", { name: "Registrar la etapa 6" }).click();
   await expect(e6.getByText("Cumplida")).toBeVisible();
 }
+
+/**
+ * S15 — Etapa 9: la decisión con su razón. Con dos clases va con el umbral de tus costos (el que viene puesto) y
+ * un equipo que alcanza (100 de cada 100); con varias clases o un número no hay ni umbral ni capacidad.
+ */
+export async function cumplirEtapa9(
+  page: Page,
+  decision: "Usarlo" | "Iterar: mejorarlo antes de decidir" | "No usarlo",
+  razon: string,
+) {
+  const e9 = page.locator("#etapa-9");
+  const capacidad = e9.getByLabel(
+    "De cada 100 casos, ¿cuántos alcanza a atender tu equipo?",
+  );
+  if ((await capacidad.count()) > 0) await capacidad.fill("100");
+  await e9.getByLabel(decision, { exact: true }).check();
+  await e9.getByLabel("Tu razón", { exact: true }).fill(razon);
+  await e9.getByRole("button", { name: "Registrar la etapa 9" }).click();
+  await expect(e9.getByText("Cumplida")).toBeVisible();
+}

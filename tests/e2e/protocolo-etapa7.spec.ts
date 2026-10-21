@@ -96,7 +96,7 @@ test("etapa 7 con crédito: la liga en sus pliegues, contra la línea base, con 
     page.locator("#etapa-9").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator("#etapa-10").getByText("Sin construir"),
+    page.locator("#etapa-10").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen7");
   await expect(resumen).toContainText("Ganador:");
@@ -167,6 +167,6 @@ test("etapa 7 con bajas: por tiempo y por grupo, con el hueco; al recargar vuelv
     page.locator("#etapa-9").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator("#etapa-10").getByText("Sin construir"),
+    page.locator("#etapa-10").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
 });
