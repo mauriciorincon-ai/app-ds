@@ -12,26 +12,75 @@
     "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
   },
   "schema_version": "1.0.0",
-  "actualizado": "2026-10-10",
+  "actualizado": "2026-10-21",
   "app": {
     "slug": "ds",
     "nombre": "Probeta DS",
     "ciclo": "H2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 7,
+    "sprints_cerrados": 16,
     "version_repo": "0.1.0"
   },
   "promesa": {
     "tagline": "Construye un modelo que puedas defender.",
-    "intro": "Traes una tabla, eliges qué quieres predecir, y la app entrena un modelo de verdad dentro de tu navegador — y te dice con franqueza si sirve o no. Sin ser científico de datos, sin escribir código y sin una sola tarjeta gráfica.",
+    "intro": "Traes una tabla propia y la app entrena un modelo de verdad dentro de tu navegador —y te dice con franqueza si sirve o no—, en el laboratorio rápido de Probeta o en el camino lento de Protocolo DS: diez etapas con compuertas que no se saltan y una ficha que se escribe sola. Sin ser científico de datos, sin escribir código y sin una sola tarjeta gráfica.",
     "para_quien": "Para el profesional que no es científico de datos —analistas, financieros, investigadores aplicados— y que tiene que defender un modelo ante su jefe o su comité, no ganar un leaderboard.",
-    "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad."
+    "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad. En Protocolo DS la honestidad además detiene: ninguna etapa se abre sin el criterio de salida de la anterior, la prueba se sella antes de tocar el modelo y se abre una sola vez, y «no usarlo» es un resultado válido que queda escrito."
   },
   "funcionalidades": {
-    "total": 41,
+    "total": 58,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
-    "descartadas": [],
+    "descartadas": [
+      {
+        "id": "prueba-de-estres",
+        "nombre": "Prueba de estrés de robustez",
+        "fecha": "2026-10-21",
+        "razon": "No se construyó: el Protocolo lee el error por segmento y la calibración (etapa 8), pero ningún botón perturba columnas, permuta o simula cambios en el tiempo para medir cuánto aguanta el modelo."
+      },
+      {
+        "id": "publicalo-en-un-clic",
+        "nombre": "Publícalo en un clic",
+        "fecha": "2026-10-21",
+        "razon": "No se construyó: el modelo se exporta como archivo `.probeta.json` y se vuelve a puntuar en el navegador, pero no se despliega como servicio ni a ONNX (skl2onnx no carga en Pyodide, ADR 007) y el producto no tiene un backend de servicio."
+      },
+      {
+        "id": "receta-reproducible",
+        "nombre": "Receta reproducible (pipeline exportable)",
+        "fecha": "2026-10-21",
+        "razon": "No se construyó: la model card y la ficha del Protocolo se descargan, pero no hay un pipeline que se reejecute fuera de la app."
+      },
+      {
+        "id": "conversa-con-tus-datos",
+        "nombre": "Conversa con tus datos",
+        "fecha": "2026-10-21",
+        "razon": "Del roadmap y fuera del producto completo: pide un modelo de lenguaje que escriba consultas, y la regla dura 4 deja al LLM solo narrar, jamás ejecutar."
+      },
+      {
+        "id": "simulador-que-pasaria-si",
+        "nombre": "Simulador «¿qué pasaría si?» con impacto en dinero",
+        "fecha": "2026-10-21",
+        "razon": "Del roadmap, no se construyó."
+      },
+      {
+        "id": "datos-sinteticos",
+        "nombre": "Datos sintéticos que protegen la privacidad",
+        "fecha": "2026-10-21",
+        "razon": "Del roadmap, no se construyó."
+      },
+      {
+        "id": "series-de-tiempo",
+        "nombre": "Pronóstico de series de tiempo",
+        "fecha": "2026-10-21",
+        "razon": "Del roadmap, no se construyó: las fechas se usan para partir por tiempo y vigilar la deriva, no para pronosticar."
+      },
+      {
+        "id": "traduccion-a-reglas",
+        "nombre": "Traducción a reglas para sistemas antiguos",
+        "fecha": "2026-10-21",
+        "razon": "Del roadmap, no se construyó."
+      }
+    ],
     "grupos": [
       {
         "orden": 1,
@@ -310,6 +359,116 @@
       {
         "orden": 6,
         "estrella": false,
+        "nombre": "Protocolo DS, el camino lento",
+        "linea": "Diez etapas con compuertas que no se saltan, con tus datos; al final, una ficha que se escribe sola.",
+        "features": [
+          {
+            "id": "L1",
+            "nombre": "Una compuerta que no se salta",
+            "que_hace": "Ninguna etapa se abre sin el criterio de salida de la anterior, verificado por código o por tu respuesta escrita; no existe un botón «saltar».",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L2",
+            "nombre": "Un cuaderno que se escribe solo",
+            "que_hace": "Cada compuerta deja su evidencia en tu navegador, atada a la huella de tu archivo; se exporta y se importa, sin una sola fila de tus datos.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L3",
+            "nombre": "El porqué de cada etapa, con tu trampa",
+            "que_hace": "Cada etapa dice por qué existe y te muestra, en tus propios datos, lo que acaba de evitar.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L4",
+            "nombre": "Un glosario a un clic",
+            "que_hace": "Cada término de una compuerta enlaza a una definición breve y propia, con una vía al glosario de Google donde existe.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L5",
+            "nombre": "La decisión y lo que cuesta equivocarse",
+            "que_hace": "Nombras la decisión, quién la toma y cuánto cuesta cada error; de ahí salen el umbral o el cuantil, no de la costumbre.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L6",
+            "nombre": "El objetivo y la unidad, con su momento",
+            "que_hace": "Defines qué es una fila y qué predices, con el momento en que se conoce; la app lo verifica en tus datos y no adivina tus fechas.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L7",
+            "nombre": "¿Predecir o explicar?",
+            "que_hace": "Si buscas una causa, el Protocolo se detiene: eso pide un experimento, no un modelo.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L8",
+            "nombre": "Diseño y tamaño de muestra, con sus supuestos",
+            "que_hace": "Población, periodo y exclusiones; la app calcula cuántas filas hacen falta, dice qué supone y, si no alcanzan, te pide un aviso firmado.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L9",
+            "nombre": "¿Existe al decidir? Columna por columna",
+            "que_hace": "Declaras quién produce cada columna y cuándo se llena; las que no sabes no entran al modelo.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L10",
+            "nombre": "Apuesta dónde está la fuga",
+            "que_hace": "Antes de ver lo que encontró la app, marcas qué columnas crees que filtran el resultado; después se comparan.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L11",
+            "nombre": "La línea base sin modelo y la regla de hoy",
+            "que_hace": "Mides lo que ya se logra sin modelo, en la moneda de tu decisión, antes de abrir ninguno.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L12",
+            "nombre": "Partición según tu caso, con prueba sellada",
+            "que_hace": "Por tiempo, por grupo o estratificada, con su porqué; verifica que no haya solape y sella la prueba con una huella.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L13",
+            "nombre": "La liga, con la prueba cerrada",
+            "que_hace": "Los modelos compiten con validación cruzada sobre el entrenamiento y heredan todas tus decisiones; la prueba sigue cerrada.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L14",
+            "nombre": "¿Hay señal real?",
+            "que_hace": "Una prueba de permutación de etiquetas te dice si el modelo encontró estructura o solo azar.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L15",
+            "nombre": "El error por segmento y la calibración",
+            "que_hace": "La prueba se abre una sola vez: lees el peor segmento, la calibración y los peores casos para nombrar el patrón de fallo.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L16",
+            "nombre": "¿Sirve para la decisión?",
+            "que_hace": "El modelo traducido a tu decisión: falsas alarmas por cada cien, costo y beneficio frente a lo de hoy. «No usarlo» es un resultado válido y queda escrito.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L17",
+            "nombre": "La ficha del modelo y su vigilancia",
+            "que_hace": "La ficha sale del cuaderno con la fuente de cada línea; con «usarlo» trae el plan de vigilancia, la cadencia de reentreno, quién responde y un chequeo de deriva de las entradas.",
+            "seccion_manual": "Protocolo DS, el camino lento"
+          }
+        ]
+      },
+      {
+        "orden": 7,
+        "estrella": false,
         "nombre": "Transversales",
         "linea": "Lo que acompaña a toda la app, no a una pantalla.",
         "features": [
@@ -333,10 +492,10 @@
     {
       "clave": "funcionalidades",
       "etiqueta": "Funcionalidades",
-      "valor": 41,
+      "valor": 58,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md; el pie de docs/BROCHURE.html declara el mismo número. El Sprint 006 suma dos (estimar una cantidad y la pregunta «¿categorías o una cantidad?») y el Sprint 007 seis (clasificar en varias categorías y las cinco de agrupar sin objetivo)."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (41 de Probeta y 17 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Las ocho de la VISION que no existen van en `descartadas`, con su razón."
     },
     {
       "clave": "pantallas",
@@ -344,15 +503,23 @@
       "valor": 5,
       "unidad": "pantallas",
       "fuente": "medido",
-      "detalle": "StartScreen, ConfigScreen, TrainingScreen, ResultsScreen y ScoreScreen en src/components/. ErrorScreen no cuenta: es un estado de error, no un paso. La app es un solo espacio de trabajo — hay un único page.tsx. La ruta /conoce sirve el brochure y no es una pantalla del producto."
+      "detalle": "StartScreen, ConfigScreen, TrainingScreen, ResultsScreen y ScoreScreen en src/components/. ErrorScreen no cuenta: es un estado de error, no un paso. Probeta es un solo espacio de trabajo (un page.tsx); Protocolo DS vive aparte en /protocolo. La ruta /conoce sirve el brochure y no es una pantalla del producto."
+    },
+    {
+      "clave": "etapas_protocolo",
+      "etiqueta": "Etapas del Protocolo",
+      "valor": 10,
+      "unidad": "etapas",
+      "fuente": "medido",
+      "detalle": "Las diez etapas con compuerta de Protocolo DS, construidas (src/engine/protocolo/etapa1.ts a etapa10.ts); cada una con su criterio de salida verificado por código. Lo recuenta tests/unit/brochure-export.test.ts."
     },
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 862,
+      "valor": 2098,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-10-10 sobre el árbol final: `pnpm test` 761 pruebas en 62 archivos + `pnpm test:integration` 101 pruebas en 10 archivos (estas últimas ejecutan Pyodide real; una más se salta: el emisor del fixture del S6, que solo escribe con su variable de entorno)."
+      "detalle": "Salida del 2026-10-21 sobre el árbol final: `pnpm test` 1981 pruebas en 124 archivos + `pnpm test:integration` 117 pruebas en 13 archivos (estas últimas ejecutan Pyodide real; una más se salta: el emisor del fixture del S6, que solo escribe con su variable de entorno)."
     },
     {
       "clave": "pruebas_e2e",
@@ -365,10 +532,10 @@
     {
       "clave": "cobertura_lineas",
       "etiqueta": "Cobertura de líneas",
-      "valor": 94.49,
+      "valor": 95.96,
       "unidad": "%",
       "fuente": "medido",
-      "detalle": "v8 sobre engine, lib, components y workers; 3053 de 3231 líneas (salida de `pnpm test` del 2026-10-10). Los motores puros de engine/ llevan umbral propio más alto."
+      "detalle": "v8 sobre engine, lib, components y workers; 8113 de 8454 líneas (salida de `pnpm test` del 2026-10-21, sobre el árbol final). Los motores puros de engine/ llevan umbral propio más alto."
     },
     {
       "clave": "dependencias_runtime",
@@ -384,7 +551,7 @@
       "valor": 0,
       "unidad": "filas",
       "fuente": "medido",
-      "detalle": "Siete pruebas e2e (score-download, export-import-rescore, saneamiento-sucio, why-modelcard, regresion-score, multiclase-score y agrupar-score) inspeccionan la red y fallan si una petición lleva valores del dataset. Lo único que sale con contenido del usuario es la narración con IA, a petición y solo con agregados: 652 B medidos. Sentry recibe solo metadatos (filas, columnas, tarea), nunca valores."
+      "detalle": "Ocho pruebas e2e (las siete de Probeta y la de la etapa 10 del Protocolo) inspeccionan la red y fallan si una petición lleva valores del dataset; el cuaderno exportado tampoco lleva filas. Lo único que sale con contenido del usuario es la narración con IA de Probeta, a petición y solo con agregados: 652 B medidos. Sentry recibe solo metadatos, nunca valores."
     },
     {
       "clave": "gpu_requerida",
@@ -405,7 +572,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 106236,
+      "valor": 119867,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
@@ -413,10 +580,10 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 20,
+      "valor": 22,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/ (001–020). Lo recuenta tests/unit/brochure-export.test.ts."
+      "detalle": "Archivos de decisions/ (001–022): el 020 abre el Protocolo como segundo modo, el 021 fija qué guarda el cuaderno de una columna de texto y el 022 el formato del cuaderno y la ficha y la prueba sellada. Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [
@@ -431,6 +598,10 @@
     {
       "nombre": "scikit-learn",
       "papel": "el pipeline anti-fuga, la liga de modelos candidatos y los baselines contra los que se juzga"
+    },
+    {
+      "nombre": "IndexedDB",
+      "papel": "el cuaderno del Protocolo vive en el navegador de quien lo usa, nunca en un servidor"
     },
     {
       "nombre": "Vitest y Playwright",
@@ -450,7 +621,7 @@
     "red_saliente": true,
     "escribe_en_las_fuentes": false,
     "usa_ia": true,
-    "detalle": "La app se sirve desde la web y tiene UNA ruta de servidor, así que no es una app local — pero los datos sí lo son: el perfilado, el saneamiento, el entrenamiento y el scoring corren en el navegador con Pyodide, y el dataset nunca se sube a ningún servidor porque no existe uno al que subirlo. Lo único que sale con contenido del usuario es la narración con IA, y solo cuando el usuario pulsa su botón: viajan nombres de columnas y cifras agregadas —652 B en una medición real—, jamás filas. Los errores mandan a Sentry solo metadatos (número de filas y columnas, tarea), nunca valores."
+    "detalle": "La app se sirve desde la web y tiene UNA ruta de servidor, así que no es una app local — pero los datos sí lo son: el perfilado, el saneamiento, el entrenamiento y el scoring corren en el navegador con Pyodide, y el dataset nunca se sube a ningún servidor porque no existe uno al que subirlo. Lo único que sale con contenido del usuario es la narración con IA, y solo cuando el usuario pulsa su botón: viajan nombres de columnas y cifras agregadas —652 B en una medición real—, jamás filas. Los errores mandan a Sentry solo metadatos (número de filas y columnas, tarea), nunca valores. El cuaderno de Protocolo DS (decisiones, costos, nombres de columnas y huellas de archivos, nunca filas) se guarda solo en el almacenamiento del propio navegador y se exporta únicamente si la persona lo pide; el modo entero es código determinista, sin IA generativa."
   },
   "enlaces": {
     "produccion": null,
