@@ -693,7 +693,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   cerrarla. A Sentry solo llega el número de la etapa y el resultado (registrada, cerrada…), nunca un
   valor.
 
-- **Limitaciones conocidas (Sprints 008 a 015):**
+- **Limitaciones conocidas (Sprints 008 a 016):**
   - Hoy están construidas las diez etapas. Ninguna etapa aparece «Sin construir»: la 10 abre con la 9 cumplida.
   - El Protocolo cubre las tres tareas **con objetivo** (dos clases, varias o una cantidad); **sin
     objetivo** no aplica y se va a «agrupar» en Probeta.
@@ -735,10 +735,12 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
       en el inventario («excluir»).
 
   - **Etapa 5, límites (Sprint 010):**
-    - Es una **referencia**, no un resultado. Se mide sobre todas tus filas, no sobre la prueba: que tu
+    - Es una **referencia**, no un resultado. Se mide sobre tus filas con objetivo, no sobre la prueba: que tu
       regla gane aquí no prueba nada sobre datos nuevos.
     - Una celda vacía **no cumple** la condición, tampoco «distinto de» ni «no es»; la pantalla dice en
-      cuántas filas pasa.
+      cuántas filas pasa. En una columna numérica, una celda que no se lee como número tampoco la cumple.
+    - El texto se compara **exacto**: las mayúsculas y los espacios dentro del valor cuentan («Informal» no es
+      «informal»); los espacios de los extremos, no.
     - La app **no sabe** qué hace tu gente: que escribas una regla y la midas no prueba que la usen.
     - Con una cantidad, el último valor por unidad usa la **mediana** para la primera fila de cada unidad y
       para las filas sin unidad o sin fecha; la pantalla dice cuántas son.
