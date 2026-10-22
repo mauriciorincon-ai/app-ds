@@ -3,7 +3,9 @@ import { expect, test } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
 import {
   KIT,
+  aparece,
   cargarCsv,
+  celdasNumericas,
   cumplirEtapa4Bajas,
   cumplirEtapa4Credito,
   esperarGuardado,
@@ -128,10 +130,27 @@ test("etapa 5 con crédito: referencias, regla de hoy medida en vivo y registro"
     expect(exportado, `una fila del CSV en el archivo: ${fila}`).not.toContain(
       fila,
     );
+  // S16 (auditoría H-10): tampoco un valor suelto de ninguna de las 200 filas (un monto o un ingreso), salvo el que
+  // tú escribiste en la regla (3000)
+  const sueltas = celdasNumericas("credito-fuga-plantada.csv", ["3000"]);
+  expect(sueltas.length, "hay celdas que vigilar").toBeGreaterThan(100);
+  for (const c of sueltas)
+    expect(
+      aparece(exportado, c.valor),
+      `el valor ${c.valor} (fila ${c.fila}, ${c.columna}) en el archivo`,
+    ).toBe(false);
   const red = peticiones.join("\n");
   expect(red).not.toContain("/api/narrate");
   for (const fila of csv.slice(1, 40).filter(Boolean))
     expect(red, `una fila del CSV en la red: ${fila}`).not.toContain(fila);
+  const sinEstaticos = peticiones
+    .filter((p) => !p.includes("/_next/"))
+    .join("\n");
+  for (const c of sueltas)
+    expect(
+      aparece(sinEstaticos, c.valor),
+      `el valor ${c.valor} (fila ${c.fila}, ${c.columna}) en la red`,
+    ).toBe(false);
 });
 
 test("etapa 5 con bajas: la compuerta dice qué falta; «no hay regla» con el teclado, y se verifica de nuevo al recargar", async ({

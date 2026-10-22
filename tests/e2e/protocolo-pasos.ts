@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, type Page } from "@playwright/test";
 
@@ -305,4 +306,30 @@ export async function cumplirEtapa9(
   await e9.getByLabel("Tu razón", { exact: true }).fill(razon);
   await e9.getByRole("button", { name: "Registrar la etapa 9" }).click();
   await expect(e9.getByText("Cumplida")).toBeVisible();
+}
+
+/** Las celdas numéricas de 4 o más cifras de un CSV del kit (lo que una fuga de un valor suelto dejaría en un archivo o en la red). */
+export function celdasNumericas(
+  archivo: string,
+  permitidos: readonly string[] = [],
+) {
+  const [cabecera, ...filas] = readFileSync(KIT(archivo), "utf8")
+    .trimEnd()
+    .split("\n");
+  const columnas = cabecera!.split(",");
+  const celdas: { fila: number; columna: string; valor: string }[] = [];
+  filas.forEach((fila, i) =>
+    fila.split(",").forEach((valor, j) => {
+      if (/^\d{4,}(\.\d+)?$/.test(valor) && !permitidos.includes(valor))
+        celdas.push({ fila: i + 1, columna: columnas[j]!, valor });
+    }),
+  );
+  return celdas;
+}
+
+/** ¿El texto contiene el número como número entero (sin pegarse a otras cifras)? */
+export function aparece(texto: string, valor: string) {
+  return new RegExp(`(?<![\\d.])${valor.replace(".", "\\.")}(?![\\d.])`).test(
+    texto,
+  );
 }

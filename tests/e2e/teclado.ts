@@ -66,21 +66,27 @@ async function fotografiar(page: Page, ambito: string): Promise<Foto> {
           const t = [...labels].map((l) => texto(l)).join(" ");
           if (t.trim()) return t.trim();
         }
-        const t = texto(nodo);
-        if (t) return t;
+        // Un campo sin etiqueta no se nombra con su contenido (las opciones de un selector, el texto escrito, un marcador):
+        // solo un botón, un enlace o un resumen se nombran con lo que dicen (auditoría S16, H-12).
+        const esCampo =
+          nodo instanceof HTMLSelectElement ||
+          nodo instanceof HTMLTextAreaElement ||
+          (nodo instanceof HTMLInputElement &&
+            !["button", "submit", "reset"].includes(nodo.type));
+        if (!esCampo) {
+          const t = texto(nodo);
+          if (t) return t;
+        }
         return (
           nodo.getAttribute("title") ??
-          nodo.getAttribute("placeholder") ??
-          (nodo as HTMLInputElement).value ??
-          ""
+          (nodo instanceof HTMLInputElement && !esCampo ? nodo.value : "")
         );
       };
       const caja = el.getBoundingClientRect();
       const estilo = getComputedStyle(el);
+      // El foco visible de la app es un contorno (`:focus-visible` de globals.css): una sombra fija no lo sustituye (H-29)
       const contorno =
-        (estilo.outlineStyle !== "none" &&
-          parseFloat(estilo.outlineWidth) > 0) ||
-        estilo.boxShadow !== "none";
+        estilo.outlineStyle !== "none" && parseFloat(estilo.outlineWidth) > 0;
       const todos = [...document.querySelectorAll("*")];
       return {
         dentro,
@@ -118,7 +124,9 @@ async function controlesDelAmbito(page: Page, ambito: string) {
           const cerrado = el.closest("details:not([open])");
           const enResumen = el.tagName === "SUMMARY";
           return (
-            el.tabIndex >= 0 &&
+            // lo oculto a los lectores a propósito (el selector de archivos del botón «Cargar») no cuenta; un control usable
+            // con tabindex="-1" sí: es justo el defecto que esta guarda debe cazar (H-08)
+            !el.closest('[aria-hidden="true"]') &&
             caja.width > 0 &&
             caja.height > 0 &&
             estilo.visibility !== "hidden" &&

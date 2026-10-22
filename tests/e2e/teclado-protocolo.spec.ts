@@ -59,6 +59,18 @@ test("el recorrido por teclado detecta un control sin nombre, un foco invisible 
   );
   await page.evaluate(() => document.getElementById("malo")?.remove());
 
+  // un control usable que Tab no alcanza (tabindex="-1") queda sin alcanzar
+  await inyectar('<button id="malo" tabindex="-1">Inalcanzable</button>');
+  await expect(recorrerConTeclado(page, "main")).rejects.toThrow(
+    /no se alcanzan/,
+  );
+  await page.evaluate(() => document.getElementById("malo")?.remove());
+
+  // un selector sin etiqueta no se nombra con el texto de sus opciones
+  await inyectar('<select id="malo"><option>una opción</option></select>');
+  await expect(recorrerConTeclado(page, "main")).rejects.toThrow(/nombre/);
+  await page.evaluate(() => document.getElementById("malo")?.remove());
+
   // sin el control malo, el mismo recorrido pasa
   await recorrerConTeclado(page, "main", { minimo: 10 });
 });
