@@ -113,11 +113,11 @@ Tiempo propio de la F2: 20 min (21:39 a 21:59 del 2026-10-21). Todos los medios 
 | H-32 | B | sin gate para 37 = 22 + 8 + 7, 18 chips y r1–r11 | pagado: `tests/unit/documentos-s16.test.ts` |
 | H-33 | B | «iterar» corre en móvil y escritorio (+40 s por proyecto) | anotado: es el único e2e de «iterar»; se queda en los dos |
 
-## Peso (réplica de la CI, sin `.env.local`, build limpio, LHCI ×3 mediana; `main@5091937` contra la rama `ed31732`)
+## Peso (réplica de la CI, sin `.env.local`, build limpio, LHCI ×3 mediana; `main@5091937` contra la rama `d38a1aa`)
 
 | Ruta | script `main` | script rama | LCP `main` (corridas · mediana) | LCP rama |
 |---|---|---|---|---|
-| `/protocolo` | 321 322 B | 321 035 B (−287) | 2749/3529/2727 · 2749 ms | 2861/3371/3371 · 3371 ms |
-| `/` | 248 332 B | 248 733 B (+401) | 2269/2923/2950 · 2923 ms | 2926/2926/2929 · 2926 ms |
+| `/protocolo` | 321 322 B | 321 128 B (−194) | 2749/3529/2727 · 2749 ms | 2862/3370/2857 · 2862 ms |
+| `/` | 248 332 B | 248 806 B (+474) | 2269/2923/2950 · 2923 ms | 2930/2930/2927 · 2930 ms |
 
-`/` sube 401 B porque el diccionario base `messages/es.json` pesa 439 B más (gzip) por los textos nuevos de las etapas 1–3 y del cuaderno; el tope es 307 200 B. Diferir esas tres etapas como las 4–10 es H-3. El LCP de `/protocolo` es bimodal (2,7 o 3,4 s) en `main` y en la rama: no hay regresión que atribuir al lote.
+`/` sube 474 B (0,19 %) porque el diccionario base `messages/es.json` pesa unos 440 B más (gzip) por los textos nuevos de las etapas 1–3 y del cuaderno; el tope es 307 200 B. Diferir esas tres etapas como las 4–10 es H-3. El LCP de `/protocolo` es bimodal (≈ 2,7 o ≈ 3,4 s con el mismo código; techo 3,5 s) en `main` y en la rama, y el presupuesto de la CI (`assert`) pasa: no hay regresión que atribuir al lote.
