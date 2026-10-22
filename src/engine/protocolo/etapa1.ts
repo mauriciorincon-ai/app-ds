@@ -25,6 +25,7 @@ import {
   mapa,
   mismoRegistro,
   numero,
+  costoValido,
   positivo,
   texto,
   textoLleno,
@@ -107,7 +108,7 @@ export function chequeos1(r: Registro): Readonly<Record<string, Valor>> | null {
       const [opciones, costos] = [lista(r, "opciones"), mapa(r, "costos")];
       if (!opciones || !costos) return null;
       const valores = opciones.map((o) => costos[o]);
-      if (valores.some((v) => v === undefined || !(v > 0))) return null;
+      if (valores.some((v) => !costoValido(v))) return null;
       return {
         n_opciones: opciones.length,
         costo_menor: Math.min(...(valores as number[])),
@@ -184,7 +185,7 @@ function criterio(datos: DatosEtapa): Veredicto {
         opciones.length <= MULTICLASS_MAX_CLASSES &&
         unicas.size === opciones.length &&
         opciones.every(
-          (o) => o.trim() !== "" && costos[o] !== undefined && costos[o] > 0,
+          (o) => o.trim() !== "" && costoValido(costos[o]),
         ) &&
         Object.keys(costos).length === opciones.length
       );

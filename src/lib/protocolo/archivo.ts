@@ -11,7 +11,11 @@
 // `zod/mini`, no `zod`: la API funcional se desarma por módulos y la ruta /protocolo pesa ~85 KB
 // menos (presupuesto de script de perf-budget.json; el zod completo traía todos los esquemas).
 import * as z from "zod/mini";
-import { CUADERNO_VERSION, type Cuaderno } from "@/engine/protocolo/cuaderno";
+import {
+  APERTURAS_MAX,
+  CUADERNO_VERSION,
+  type Cuaderno,
+} from "@/engine/protocolo/cuaderno";
 import {
   ETAPA_IDS,
   type DefinicionProtocolo,
@@ -25,7 +29,9 @@ export const PROTOCOL_FILE_EXTENSION = ".protocolo.json";
 export const MAX_PROTOCOL_FILE_BYTES = 2 * 1024 * 1024;
 
 const HEX64 = /^[0-9a-f]{64}$/;
-const ETAPA_CLAVE = /^(10|[1-9])$/;
+/** La clave de una etapa en `base`: el id de una etapa que existe, escrito sin ceros ni signos (S16, S8 B6: antes un regex cableado a 10). */
+export const claveDeEtapa = (s: string) =>
+  (ETAPA_IDS as readonly number[]).includes(Number(s)) && String(Number(s)) === s;
 
 const hex64 = () => z.string().check(z.regex(HEX64));
 const entero = () => z.int();
@@ -52,7 +58,7 @@ const evidencia = z.strictObject({
   fecha: z.iso.datetime(),
   huella: z.nullable(hex64()),
   base: z.record(
-    z.string().check(z.regex(ETAPA_CLAVE)),
+    z.string().check(z.refine(claveDeEtapa)),
     entero().check(z.positive()),
   ),
   datos: datosEtapa,
@@ -78,7 +84,7 @@ const cuadernoSchema = z.strictObject({
   creado: z.iso.datetime(),
   cargas: z.array(carga),
   evidencias: z.array(evidencia),
-  aperturas: z.optional(z.array(apertura)),
+  aperturas: z.optional(z.array(apertura).check(z.maxLength(APERTURAS_MAX))),
 });
 
 const archivoSchema = z.strictObject({
@@ -100,9 +106,14 @@ export type LecturaArchivo =
 
 /** `["cuaderno","evidencias",2,"fecha"]` → `cuaderno.evidencias[2].fecha`. */
 function ruta(partes: readonly PropertyKey[]): string {
+  // S16 (S8 B3): una clave inventada no se repite entera en el mensaje (un archivo editado puede traerla de megas)
+  const nombre = (p: PropertyKey) => {
+    const s = String(p);
+    return s.length > 60 ? `${s.slice(0, 60)}…` : s;
+  };
   return partes.reduce<string>((acc, parte) => {
     if (typeof parte === "number") return `${acc}[${parte}]`;
-    return acc ? `${acc}.${String(parte)}` : String(parte);
+    return acc ? `${acc}.${nombre(parte)}` : nombre(parte);
   }, "");
 }
 

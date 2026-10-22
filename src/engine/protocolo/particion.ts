@@ -643,6 +643,8 @@ export type Resultado = {
 };
 
 const RESULTADOS = new WeakMap<CsvTable, Map<string, Resultado | null>>();
+/** S16 (S11): cuántas particiones guarda a la vez cada tabla; al pasar de aquí se descarta la más vieja. */
+export const RESULTADOS_MAX = 24;
 
 /**
  * Parte, verifica, cuenta y sella. Guardado por tabla, diseño, parámetros y huella: la compuerta,
@@ -666,6 +668,8 @@ export function partir(
   let porClave = RESULTADOS.get(tabla);
   if (!porClave) RESULTADOS.set(tabla, (porClave = new Map()));
   if (!porClave.has(clave)) {
+    // sin tope, una sesión que prueba muchos tamaños guarda cada partición (índices de hasta 50 000 filas) para siempre
+    if (porClave.size >= RESULTADOS_MAX) porClave.delete(porClave.keys().next().value!);
     const particion = calcularParticion(d, p);
     porClave.set(
       clave,

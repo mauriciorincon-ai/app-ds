@@ -58,6 +58,7 @@ import {
 import { sha256TextoSync } from "./sha256";
 import {
   claveExtra,
+  esIdGuardado,
   lista,
   mapa,
   numero,
@@ -789,6 +790,14 @@ function leer(datos: DatosEtapa): Lectura {
     if (c[k] !== null && typeof c[k] !== "string") return malo(k);
   for (const k of NUMEROS)
     if (c[k] !== null && numero(c, k) === null) return malo(k);
+  // S16 (S13 B1): el modelo y la métrica son identificadores, no texto libre, y un intervalo no se da vuelta
+  if (c.ganador !== null && !esIdGuardado(c.ganador)) return malo("ganador");
+  if (c.metrica !== null && !esIdGuardado(c.metrica)) return malo("metrica");
+  if (c.base_id !== null && !esIdGuardado(c.base_id)) return malo("base_id");
+  for (const p of ["base", "regla", "ganador"] as const) {
+    const [bajo, alto] = [numero(c, `${p}_bajo`), numero(c, `${p}_alto`)];
+    if (bajo !== null && alto !== null && bajo > alto) return malo(`${p}_bajo`);
+  }
   for (const k of LISTAS)
     if (c[k] !== null && lista(c, k) === null) return malo(k);
   for (const k of MAPAS)
@@ -863,6 +872,15 @@ function leer(datos: DatosEtapa): Lectura {
         return malo("tabla_umbrales");
       if (!cabe(tabla[`vp:${u}`]!, tabla[`fp:${u}`]!))
         return malo("tabla_umbrales");
+    }
+    // S16 (S14): al subir el umbral nunca hay más aciertos ni más falsas alarmas (la rejilla va de menor a mayor)
+    let anterior: readonly [number, number] | null = null;
+    for (const u of REJILLA.map(claveUmbral)) {
+      if (!Object.hasOwn(tabla, `vp:${u}`)) continue;
+      const par = [tabla[`vp:${u}`]!, tabla[`fp:${u}`]!] as const;
+      if (anterior && (par[0] > anterior[0] || par[1] > anterior[1]))
+        return malo("tabla_umbrales");
+      anterior = par;
     }
   }
   return { ok: true };

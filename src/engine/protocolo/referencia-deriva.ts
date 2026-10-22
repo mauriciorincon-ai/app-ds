@@ -83,9 +83,11 @@ export function referenciaColumna(
   const vista = vistaColumna(columna, crudos);
   if (vista.tipo === "numero") {
     const valores = filas.map((i) => vista.valores[i] ?? null);
-    const cortes = cortesRedondeados(
-      valores.filter((v): v is number => v !== null).sort((a, b) => a - b),
-    );
+    const llenos = valores.filter((v): v is number => v !== null).sort((a, b) => a - b);
+    // S16 (S15 B1): con pocas filas un corte es un valor individual. Los cortes se guardan solo si cada casilla
+    // puede juntar REF_SOPORTE_MIN filas; si no, no hay cortes y el chequeo dice «sin referencia».
+    const cortes =
+      llenos.length >= REF_SOPORTE_MIN * DERIVA_CUANTILES ? cortesRedondeados(llenos) : [];
     return { columna, tipo: "numero", cortes, cuentas: contarNumeros(cortes, valores) };
   }
   const valores = filas.map((i) => vista.valores[i] ?? null);

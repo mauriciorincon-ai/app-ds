@@ -22,6 +22,7 @@ export const ESTADOS_CHEQUEO = [
   "moderada",
   "alerta",
   "pocas-filas",
+  "sin-referencia",
   "otro-tipo",
 ] as const;
 export type EstadoChequeo = (typeof ESTADOS_CHEQUEO)[number];
@@ -62,6 +63,13 @@ export function chequearColumna(
   const filas = vista.valores.filter((v) => v !== null).length;
   if (vista.tipo !== ref.tipo)
     return { columna: ref.columna, estado: "otro-tipo", psi: null, filas };
+  // S16 (S15 M2, B1): un texto sin categorías con soporte, o una numérica sin cortes, no tiene con qué comparar:
+  // mediría «estable» pase lo que pase. Se dice, y el veredicto pasa a «revisa».
+  if (
+    (ref.tipo === "texto" && ref.categorias.length === 0) ||
+    (ref.tipo === "numero" && ref.cortes.length === 0)
+  )
+    return { columna: ref.columna, estado: "sin-referencia", psi: null, filas };
   const nRef = llenas(ref);
   if (nRef === 0 || filas === 0 || ruidoEsperado(nRef, filas) >= PSI_ALERTA)
     return { columna: ref.columna, estado: "pocas-filas", psi: null, filas };

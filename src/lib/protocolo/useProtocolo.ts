@@ -44,6 +44,7 @@ import {
 import { olvidarApuesta } from "@/lib/protocolo/apuesta";
 import { csvLimitParams } from "@/lib/quantity";
 import { sha256Hex } from "@/lib/sha256";
+import { CSV_ERROR } from "./csv-error";
 
 export type DatosCargados = { readonly tabla: CsvTable; readonly carga: Carga };
 
@@ -70,15 +71,6 @@ export type EstadoProtocolo = {
 };
 
 /** La clave del texto de cada motivo por el que un CSV no se lee (también la usa el chequeo de la etapa 10). */
-export const CSV_ERROR: Record<string, string> = {
-  empty: "errors.csv-empty",
-  "too-large": "errors.csv-too-large",
-  "too-many-rows": "errors.csv-too-many-rows",
-  ragged: "errors.csv-ragged",
-  "semicolon-delimiter": "errors.csv-semicolon",
-  "tab-delimiter": "errors.csv-tab",
-};
-
 const OUTCOME: Record<RechazoRegistro["tipo"], ProtocolOutcome> = {
   "etapa-desconocida": "unknown-stage",
   "no-construida": "not-built",
