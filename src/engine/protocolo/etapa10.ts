@@ -6,6 +6,9 @@
 //    Lo derivado no se edita; lo que escribe el dueño va rotulado.
 //  · Lo único que esta etapa calcula sobre la tabla es la REFERENCIA DE DERIVA (referencia-deriva.ts): con
 //    «usar», cómo se reparten en el entrenamiento sellado las columnas que usa el modelo, en agregados.
+//    Las numéricas siempre (cortes redondeados y conteos). De una columna de TEXTO, que nombra categorías,
+//    la referencia solo se guarda si el dueño la marca (`vigilar_texto`): lo que no marca no deja ningún
+//    nombre en el cuaderno y el plan lo dice (`vig_omitidas`). Decisión del usuario, 2026-10-20.
 //  · Plan de vigilancia (con «usar»): la deriva por columna con los umbrales de la etapa 4, el piso de la
 //    decisión (lo de hoy, etapa 9), cada cuánto reentrenar y quién responde. La cadencia SUGERIDA es lo que
 //    respalda la prueba: con una partición por tiempo, los meses entre el corte (etapa 6) y la última fecha
@@ -29,10 +32,11 @@ import type {
 } from "./etapas";
 import {
   codificarReferencia,
+  columnasConNombres,
   leerReferencia,
   referenciasDeriva,
 } from "./referencia-deriva";
-import { claveExtra, numero, texto } from "./valores";
+import { claveExtra, lista, numero, texto } from "./valores";
 
 export const RESPUESTAS_10 = [
   "dueno",
@@ -40,6 +44,7 @@ export const RESPUESTAS_10 = [
   "cadencia",
   "razon_cadencia",
   "cambiar",
+  "vigilar_texto",
 ] as const;
 /** El nombre del dueño (una persona o un rol). */
 export const DUENO_MAX = 120;
@@ -52,7 +57,7 @@ const FORMAS = ["binaria", "multiclase", "numerica"] as const;
 
 const TEXTOS = ["decision", "forma", "base_cadencia"] as const;
 const ENTEROS = ["cadencia_sugerida", "n_referencia"] as const;
-const LISTAS = ["vig_columnas", "vig_referencia"] as const;
+const LISTAS = ["vig_columnas", "vig_referencia", "vig_omitidas"] as const;
 export const CHEQUEOS_10 = [...TEXTOS, ...ENTEROS, ...LISTAS] as const;
 
 export const CLAVES_10 = {
@@ -66,6 +71,7 @@ export const FALTAS_10 = [
   "cadencia",
   "razon-cadencia",
   "referencia",
+  "vigilar",
   "cambiar",
 ] as const;
 
@@ -74,6 +80,7 @@ export const TRAMPAS_10 = [
   "solo-entradas",
   "sin-tiempo",
   "cadencia-alargada",
+  "sin-vigilar",
   "reabierta",
   "prueba-gastada",
 ] as const;
@@ -85,6 +92,8 @@ export type EntradaEtapa10 = {
   readonly cadencia: string;
   readonly razonCadencia: string;
   readonly cambiar: string;
+  /** Columnas de texto del modelo cuyos nombres de categoría el dueño deja guardar en la referencia. */
+  readonly vigilarTexto: readonly string[];
 };
 
 export const ENTRADA_10_VACIA: EntradaEtapa10 = {
@@ -93,6 +102,7 @@ export const ENTRADA_10_VACIA: EntradaEtapa10 = {
   cadencia: "",
   razonCadencia: "",
   cambiar: "",
+  vigilarTexto: [],
 };
 
 /** Meses enteros entre dos fechas `AAAA-MM-DD` (`null` si alguna no lo es). */
@@ -132,11 +142,36 @@ export function decisionDe(previas: Previas): Decision9 | null {
 const nulos = (claves: readonly string[]): Record<string, Valor> =>
   Object.fromEntries(claves.map((k) => [k, null]));
 
-/** Lo que la etapa registra de la tabla y de las etapas previas (con «usar», la referencia de deriva). */
+/** Las columnas que usa el modelo (la liga de la etapa 7) y las filas de su entrenamiento sellado. */
+function modeloDe(previas: Previas, tabla: CsvTable | null, huella: string | null) {
+  const plan = tabla ? plan7(tabla, previas, huella) : null;
+  if (!tabla || !plan) return null;
+  return {
+    tabla,
+    columnas: [...plan.numericas, ...plan.categoricas],
+    entrenamiento: plan.particion.entrenamiento,
+  };
+}
+
+/** Las columnas del modelo cuya referencia nombraría categorías: las que el dueño decide vigilar o no. */
+export function columnasDeTexto(
+  previas: Previas,
+  tabla: CsvTable | null,
+  huella: string | null,
+): string[] {
+  const modelo = modeloDe(previas, tabla, huella);
+  return modelo ? columnasConNombres(modelo.tabla, modelo.columnas) : [];
+}
+
+/**
+ * Lo que la etapa registra de la tabla y de las etapas previas (con «usar», la referencia de deriva). De las
+ * columnas de texto solo entran las que el dueño marcó (`vigilarTexto`); sin marcas no se guarda ningún nombre.
+ */
 export function calcular10(
   previas: Previas,
   tabla: CsvTable | null,
   huella: string | null,
+  vigilarTexto: readonly string[] = [],
 ): Record<string, Valor> {
   const c = nulos(CHEQUEOS_10);
   const decision = decisionDe(previas);
@@ -145,16 +180,23 @@ export function calcular10(
   if (decision !== "usar") return c;
   const { sugerida, base } = cadenciaSugerida(previas);
   Object.assign(c, { cadencia_sugerida: sugerida, base_cadencia: base });
-  const plan = tabla ? plan7(tabla, previas, huella) : null;
-  if (!tabla || !plan) return c;
-  const columnas = [...plan.numericas, ...plan.categoricas];
-  const entrenamiento = plan.particion.entrenamiento;
+  const modelo = modeloDe(previas, tabla, huella);
+  if (!modelo) return c;
+  const conNombres = new Set(columnasConNombres(modelo.tabla, modelo.columnas));
+  const marcadas = new Set(vigilarTexto);
+  const omitidas = modelo.columnas.filter(
+    (k) => conNombres.has(k) && !marcadas.has(k),
+  );
+  const columnas = modelo.columnas.filter((k) => !omitidas.includes(k));
   Object.assign(c, {
     vig_columnas: columnas,
-    vig_referencia: referenciasDeriva(tabla, columnas, entrenamiento).map(
-      codificarReferencia,
-    ),
-    n_referencia: entrenamiento.length,
+    vig_omitidas: omitidas,
+    vig_referencia: referenciasDeriva(
+      modelo.tabla,
+      columnas,
+      modelo.entrenamiento,
+    ).map(codificarReferencia),
+    n_referencia: modelo.entrenamiento.length,
   });
   return c;
 }
@@ -178,6 +220,7 @@ export function respuestasDe(
     cadencia: usar ? cadenciaDe(entrada.cadencia) : null,
     razon_cadencia: usar ? entrada.razonCadencia : "",
     cambiar: usar ? "" : entrada.cambiar,
+    vigilar_texto: usar ? [...entrada.vigilarTexto] : [],
   };
 }
 
@@ -190,7 +233,7 @@ export function datosEtapa10(
 ): DatosEtapa {
   return {
     respuestas: respuestasDe(entrada, decisionDe(previas)),
-    chequeos: calcular10(previas, tabla, huella),
+    chequeos: calcular10(previas, tabla, huella, entrada.vigilarTexto),
   };
 }
 
@@ -202,7 +245,12 @@ function recalcular(
 ): DatosEtapa {
   return {
     respuestas: datos.respuestas,
-    chequeos: calcular10(previas, tabla, huella ?? null),
+    chequeos: calcular10(
+      previas,
+      tabla,
+      huella ?? null,
+      lista(datos.respuestas, "vigilar_texto") ?? [],
+    ),
   };
 }
 
@@ -230,6 +278,8 @@ function leer(datos: DatosEtapa): Lectura {
     if (!textoHasta(r[k], RAZON_MAX)) return malo(`respuestas.${k}`);
   if (r.cadencia !== null && !enteroEn(r.cadencia, 1, CADENCIA_MAX))
     return malo("respuestas.cadencia");
+  if (!textos(r.vigilar_texto)) return malo("respuestas.vigilar_texto");
+  const marcadas = r.vigilar_texto;
 
   if (!unoDe(c.decision, DECISIONES_9)) return malo("chequeos.decision");
   if (!unoDe(c.forma, FORMAS)) return malo("chequeos.forma");
@@ -246,16 +296,42 @@ function leer(datos: DatosEtapa): Lectura {
   )
     return malo("chequeos.n_referencia");
 
-  const [columnas, referencias] = [c.vig_columnas, c.vig_referencia];
-  if (columnas === null && referencias === null && c.n_referencia === null)
-    return { ok: true };
+  const [columnas, referencias, omitidas] = [
+    c.vig_columnas,
+    c.vig_referencia,
+    c.vig_omitidas,
+  ];
+  // sin referencia no hay columnas marcadas: un nombre que el dueño marcó tiene que estar vigilado
+  if (
+    columnas === null &&
+    referencias === null &&
+    omitidas === null &&
+    c.n_referencia === null
+  )
+    return marcadas.length === 0
+      ? { ok: true }
+      : malo("respuestas.vigilar_texto");
   if (!textos(columnas)) return malo("chequeos.vig_columnas");
   if (!textos(referencias) || referencias.length !== columnas.length)
     return malo("chequeos.vig_referencia");
+  if (
+    !textos(omitidas) ||
+    new Set(omitidas).size !== omitidas.length ||
+    omitidas.some((o) => columnas.includes(o))
+  )
+    return malo("chequeos.vig_omitidas");
+  if (
+    new Set(marcadas).size !== marcadas.length ||
+    marcadas.some((m) => !columnas.includes(m))
+  )
+    return malo("respuestas.vigilar_texto");
   for (const [i, guardada] of referencias.entries()) {
     const ref = leerReferencia(guardada);
     const total = ref ? ref.cuentas.reduce((s, n) => s + n, 0) : -1;
     if (!ref || ref.columna !== columnas[i] || total !== c.n_referencia)
+      return malo("chequeos.vig_referencia");
+    // los nombres de categoría solo se guardan de lo que el dueño marcó
+    if (ref.tipo === "texto" && !marcadas.includes(ref.columna))
       return malo("chequeos.vig_referencia");
   }
   return { ok: true };
@@ -277,6 +353,7 @@ function criterio(datos: DatosEtapa, previas: Previas): Veredicto {
     else if (sugerida !== null && cadencia > sugerida && !lleno("razon_cadencia"))
       faltan.push("razon-cadencia");
     if (!Array.isArray(c.vig_columnas)) faltan.push("referencia");
+    else if (c.vig_columnas.length === 0) faltan.push("vigilar");
   } else if (!lleno("cambiar")) faltan.push("cambiar");
   return faltan.length > 0 ? { tipo: "falta", faltan } : { tipo: "cumple" };
 }
@@ -299,6 +376,12 @@ function trampas(datos: DatosEtapa, previas: Previas): readonly Trampa[] {
     if (sugerida === null) salida.push({ clave: "sin-tiempo", params: {} });
     else if (cadencia !== null && cadencia > sugerida)
       salida.push({ clave: "cadencia-alargada", params: { cadencia, sugerida } });
+    const omitidas = lista(datos.chequeos, "vig_omitidas");
+    if (omitidas && omitidas.length > 0)
+      salida.push({
+        clave: "sin-vigilar",
+        params: { columnas: omitidas.length, lista: omitidas.join(", ") },
+      });
   }
   if (decision === "iterar")
     salida.push({ clave: "prueba-gastada", params: { aperturas: aperturas ?? 1 } });

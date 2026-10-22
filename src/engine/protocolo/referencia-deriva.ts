@@ -109,6 +109,20 @@ export function referenciasDeriva(
   return columnas.map((c) => referenciaColumna(c, valoresDe(tabla, c), entrenamiento));
 }
 
+/**
+ * Las columnas del modelo cuya referencia NOMBRARÍA categorías (las que no son números). Son las únicas cuyo
+ * nombre de categoría podría guardarse, así que son las que el dueño decide vigilar o no (S15, decisión del
+ * usuario: nada se guarda en silencio).
+ */
+export function columnasConNombres(
+  tabla: CsvTable,
+  columnas: readonly string[],
+): string[] {
+  return columnas.filter(
+    (c) => vistaColumna(c, valoresDe(tabla, c)).tipo !== "numero",
+  );
+}
+
 /** Las filas con valor que cuenta una referencia (sin el vacío): con eso se mide el ruido. */
 export const llenas = (r: RefColumna) =>
   r.cuentas.slice(0, -1).reduce((s, n) => s + n, 0);

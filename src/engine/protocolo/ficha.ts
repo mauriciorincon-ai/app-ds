@@ -122,6 +122,7 @@ export const LINEAS_FICHA = {
   ],
   vigilancia: [
     "columnas",
+    "sin-vigilar",
     "umbrales",
     "solo-entradas",
     "piso",
@@ -365,6 +366,12 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
       linea(vig, 10, "columnas", {
         columnas: columnas.length,
         lista: columnas.join(", "),
+      });
+    const sinVigilar = lista(c10, "vig_omitidas");
+    if (sinVigilar && sinVigilar.length > 0)
+      linea(vig, 10, "sin-vigilar", {
+        columnas: sinVigilar.length,
+        lista: sinVigilar.join(", "),
       });
     linea(vig, 10, "umbrales", { moderada: PSI_MODERADA, alerta: PSI_ALERTA });
     linea(vig, 10, "solo-entradas");

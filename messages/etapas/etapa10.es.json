@@ -38,9 +38,15 @@
           "label-iterar": "Qué vas a cambiar antes de volver a probar",
           "help-iterar": "Con tus palabras. Esta prueba ya se abrió: al volver necesitas una partición distinta para que cuente como nueva. Hasta {max} caracteres."
         },
+        "text": {
+          "title": "Columnas de texto: cuáles se vigilan",
+          "legend": "Columnas de texto que vigilas",
+          "help": "Para comparar un CSV nuevo con el de hoy, la referencia guarda, de cada columna que marques, el nombre de sus categorías con {min} filas o más (hasta {max}) y cuántas filas tiene cada una. Se queda en tu navegador, y viaja en el archivo del cuaderno solo si lo exportas. De las que no marques no se guarda ningún nombre y el chequeo no las vigila. Los números no se tocan: se guardan como rangos redondeados, nunca filas.",
+          "status": "Marcadas: {n} de {total}. Las demás no se guardan ni se vigilan."
+        },
         "plan": {
           "title": "Plan de vigilancia",
-          "body": "Se vigila la deriva de {columnas} columnas del modelo contra {n} filas del entrenamiento sellado. La referencia guarda solo agregados (cortes y frecuencias), nunca filas.",
+          "body": "Se vigila la deriva de {columnas} columnas del modelo contra {n} filas del entrenamiento sellado. La referencia guarda solo agregados (cortes y frecuencias; de las columnas de texto, solo las que marcaste, con los nombres de sus categorías), nunca filas.",
           "thresholds": "Un cambio moderado desde un PSI de {moderada} y una alerta desde {alerta}: convenciones de la etapa 4, no una prueba.",
           "inputs": "Esto mide las entradas, no el desempeño: para vigilar el desempeño harían falta los resultados nuevos y el modelo guardado.",
           "none": "No se pudo armar la referencia de deriva con estos datos: sin ella, la ficha no se completa."
@@ -81,14 +87,16 @@
           "estado": "Estado",
           "psi": "PSI",
           "filled": "Filas con valor",
-          "reminder": "Recuerda: esto mide las entradas, no el desempeño del modelo."
+          "reminder": "Recuerda: esto mide las entradas, no el desempeño del modelo.",
+          "unwatched": "Sin vigilar por decisión tuya ({columnas}): {lista}. El veredicto de arriba no habla de esas columnas."
         },
         "field": {
           "dueno": "Quién responde",
           "no_usar_para": "Para qué no usarlo (escrito por ti)",
           "cadencia": "Cadencia de reentreno (meses)",
           "razon_cadencia": "Tu razón para alargar la cadencia",
-          "cambiar": "Qué cambiar (escrito por ti)"
+          "cambiar": "Qué cambiar (escrito por ti)",
+          "vigilar_texto": "Columnas de texto que vigilas (elegidas por ti)"
         },
         "check": {
           "decision": "Decisión de la etapa 9",
@@ -97,7 +105,8 @@
           "cadencia_sugerida": "Cadencia que respalda la prueba (meses)",
           "n_referencia": "Filas de la referencia de deriva",
           "vig_columnas": "Columnas vigiladas",
-          "vig_referencia": "Referencia de deriva (agregados)"
+          "vig_referencia": "Referencia de deriva (agregados)",
+          "vig_omitidas": "Columnas de texto sin vigilar"
         },
         "sheet": {
           "title": "Ficha del modelo",
@@ -188,6 +197,7 @@
           },
           "vigilancia": {
             "columnas": "Columnas vigiladas por deriva ({columnas}): {lista}.",
+            "sin-vigilar": "Sin vigilar por decisión del dueño ({columnas}): {lista}. Si cambian, este plan no lo notará.",
             "umbrales": "Umbrales de deriva (PSI): moderada desde {moderada}, alerta desde {alerta}. Son convenciones, no una prueba.",
             "solo-entradas": "Este plan mide si las entradas de hoy se parecen a las del entrenamiento. No mide el desempeño: para eso hacen falta los resultados nuevos y el modelo guardado.",
             "piso": "Piso de la decisión: se deja de usar si el modelo deja de costar menos que lo de hoy ({hoy}): hoy {modelo100} frente a {hoy100} por cada 100 decisiones.",

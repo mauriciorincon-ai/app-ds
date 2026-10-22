@@ -38,9 +38,15 @@
           "label-iterar": "What you'll change before testing again",
           "help-iterar": "In your own words. This test set was already opened: to come back you need a different split for it to count as new. Up to {max} characters."
         },
+        "text": {
+          "title": "Text columns: which ones to watch",
+          "legend": "Text columns you watch",
+          "help": "To compare a new CSV with today's, the reference keeps, for each column you tick, the name of its categories with {min} rows or more (up to {max}) and how many rows each has. It stays in your browser, and travels in the notebook file only if you export it. For the ones you don't tick, no name is kept and the check doesn't watch them. Numbers aren't touched: they're kept as rounded ranges, never rows.",
+          "status": "Ticked: {n} of {total}. The rest are neither kept nor watched."
+        },
         "plan": {
           "title": "Monitoring plan",
-          "body": "Drift is watched on {columnas} model columns against {n} rows of the sealed training set. The reference keeps only aggregates (cuts and frequencies), never rows.",
+          "body": "Drift is watched on {columnas} model columns against {n} rows of the sealed training set. The reference keeps only aggregates (cuts and frequencies; for text columns, only the ones you ticked, with their category names), never rows.",
           "thresholds": "A moderate change from a PSI of {moderada} and an alert from {alerta}: stage 4 conventions, not a test.",
           "inputs": "This measures inputs, not performance: watching performance would need the new outcomes and the saved model.",
           "none": "The drift reference couldn't be built with this data: without it, the card isn't complete."
@@ -81,14 +87,16 @@
           "estado": "State",
           "psi": "PSI",
           "filled": "Rows with a value",
-          "reminder": "Remember: this measures inputs, not the model's performance."
+          "reminder": "Remember: this measures inputs, not the model's performance.",
+          "unwatched": "Not watched by your choice ({columnas}): {lista}. The verdict above says nothing about those columns."
         },
         "field": {
           "dueno": "Who answers for it",
           "no_usar_para": "What not to use it for (written by you)",
           "cadencia": "Retraining cadence (months)",
           "razon_cadencia": "Your reason to lengthen the cadence",
-          "cambiar": "What to change (written by you)"
+          "cambiar": "What to change (written by you)",
+          "vigilar_texto": "Text columns you watch (chosen by you)"
         },
         "check": {
           "decision": "Stage 9 decision",
@@ -97,7 +105,8 @@
           "cadencia_sugerida": "Cadence the test backs (months)",
           "n_referencia": "Rows in the drift reference",
           "vig_columnas": "Columns watched",
-          "vig_referencia": "Drift reference (aggregates)"
+          "vig_referencia": "Drift reference (aggregates)",
+          "vig_omitidas": "Text columns not watched"
         },
         "sheet": {
           "title": "Model card",
@@ -188,6 +197,7 @@
           },
           "vigilancia": {
             "columnas": "Columns watched for drift ({columnas}): {lista}.",
+            "sin-vigilar": "Not watched by the owner's choice ({columnas}): {lista}. If they change, this plan won't notice.",
             "umbrales": "Drift thresholds (PSI): moderate from {moderada}, alert from {alerta}. They're conventions, not a test.",
             "solo-entradas": "This plan measures whether today's inputs look like the training ones. It doesn't measure performance: that needs the new outcomes and the saved model.",
             "piso": "Floor of the decision: stop using it if the model stops costing less than today's way ({hoy}): now {modelo100} against {hoy100} per 100 decisions.",
