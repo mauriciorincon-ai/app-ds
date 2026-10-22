@@ -1,4 +1,3 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
 
@@ -66,6 +65,5 @@ test("del inicio al veredicto con un dataset de ejemplo", async ({ page }) => {
   ).toBeVisible();
 
   // A11y: sin violaciones en la pantalla de resultados.
-  const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations).toEqual([]);
+  await axeBothThemes(page);
 });

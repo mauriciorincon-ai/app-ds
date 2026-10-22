@@ -128,10 +128,17 @@ test.describe("brochure vivo — /conoce", () => {
       document.getAnimations().every((a) => a.playState !== "running"),
     );
 
-    const resultado = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-      .analyze();
-    expect(resultado.violations).toEqual([]);
+    // S16: también en el tema oscuro (la página sigue el tema del sistema, y hasta aquí solo se medía el claro).
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await page.waitForFunction(() =>
+        document.getAnimations().every((a) => a.playState !== "running"),
+      );
+      const resultado = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      expect(resultado.violations, `axe (${colorScheme})`).toEqual([]);
+    }
   });
 });
 
@@ -164,10 +171,17 @@ test.describe("brochure vivo — los dos idiomas", () => {
     await page.waitForFunction(() =>
       document.getAnimations().every((a) => a.playState !== "running"),
     );
-    const enIngles = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-      .analyze();
-    expect(enIngles.violations).toEqual([]);
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await page.waitForFunction(() =>
+        document.getAnimations().every((a) => a.playState !== "running"),
+      );
+      const enIngles = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      expect(enIngles.violations, `axe en inglés (${colorScheme})`).toEqual([]);
+    }
+    await page.emulateMedia({ colorScheme: "light" });
     await page.getByRole("button", { name: "Español" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "es-CO");
     await expect(

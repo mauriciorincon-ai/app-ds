@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { axeBothThemes } from "./axe-temas";
 import { MEMBER_IDS } from "../../src/engine/roster";
 
 // S4 — "sobrevive datos reales": cargar el CSV sucio del kit → informe de
@@ -34,6 +34,9 @@ test("cargar sucio → informe → alerta → entrenar → veredicto → exporta
   await expect(page.getByText(/Excluimos «pais»/)).toBeVisible();
   // edad coaccionada: celdas "error" a vacío.
   await expect(page.getByText(/En «edad»/)).toBeVisible();
+
+  // S16: el informe de saneamiento (la pantalla de configurar con sus bloques) pasa axe en los dos temas.
+  await axeBothThemes(page);
 
   // Al elegir el objetivo, la EDA avisa del desbalance (role=status).
   await page.selectOption("#target", "contrato");
@@ -77,6 +80,5 @@ test("cargar sucio → informe → alerta → entrenar → veredicto → exporta
   expect(traffic).not.toContain('"fax"'); // categoría rara (valor de celda)
 
   // A11y de la pantalla de resultados con los bloques nuevos.
-  const axe = await new AxeBuilder({ page }).analyze();
-  expect(axe.violations).toEqual([]);
+  await axeBothThemes(page);
 });

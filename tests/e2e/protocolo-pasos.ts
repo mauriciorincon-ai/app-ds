@@ -54,6 +54,12 @@ export async function prepararCredito(page: Page) {
   await abrir(page);
   await cumplirEtapa1(page);
   await cargarCsv(page, "credito-fuga-plantada.csv");
+  await cumplirEtapa2Credito(page);
+  await cumplirEtapa3(page, false);
+}
+
+/** Etapa 2 de crédito (con el CSV ya cargado): el objetivo, el valor que importa y el momento escrito. */
+export async function cumplirEtapa2Credito(page: Page) {
   const e2 = page.locator("#etapa-2");
   await e2
     .getByLabel("Columna objetivo", { exact: true })
@@ -65,7 +71,6 @@ export async function prepararCredito(page: Page) {
     .fill("El día que se pide el crédito");
   await e2.getByRole("button", { name: "Registrar la etapa 2" }).click();
   await expect(e2.getByText("Cumplida")).toBeVisible();
-  await cumplirEtapa3(page, false);
 }
 
 export async function prepararBajas(page: Page) {
