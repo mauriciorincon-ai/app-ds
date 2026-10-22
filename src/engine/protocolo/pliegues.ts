@@ -262,20 +262,32 @@ function porTiempo(
 }
 
 /**
- * ¿Sirven estos pliegues para entrenar y medir? Cada pliegue necesita casos de las dos partes; con clases, la
- * validación trae todas las clases del entrenamiento (como la CV de Probeta, que acota k por la clase más
- * chica) y el entrenamiento trae al menos dos.
+ * ¿Sirven estos pliegues para entrenar y medir? (`null` = sirven; si no, el primer obstáculo.) Cada pliegue necesita casos de
+ * las dos partes; con clases, la validación trae todas las clases del entrenamiento (como la CV de Probeta, que acota k por
+ * la clase más chica) y el entrenamiento trae al menos dos.
+ *
+ * Si a un pliegue le falta validación o entrenamiento es lo propio
+ * del esquema (pocas unidades, periodos o casos); si el reparto existe pero a un pliegue le falta una clase, faltan casos
+ * (S16, S12: antes la razón era una sola por esquema).
  */
-function sirven(d: Diseno, filas: readonly number[], pliegues: Bruto): boolean {
+function porqueNoSirven(
+  d: Diseno,
+  filas: readonly number[],
+  pliegues: Bruto,
+  esquema: Esquema,
+): FaltaPliegues | null {
   const clases = d.clases;
   const todas = clases ? new Set(filas.map((f) => clases[f]!)) : null;
-  return pliegues.every((p) => {
-    if (p.validacion.length < 1 || p.entrenamiento.length < K_MIN) return false;
-    if (!clases || !todas) return true;
+  let faltaClase = false;
+  for (const p of pliegues) {
+    if (p.validacion.length < 1 || p.entrenamiento.length < K_MIN)
+      return FALTA_POR_ESQUEMA[esquema];
+    if (!clases || !todas) continue;
     const enVal = new Set(p.validacion.map((f) => clases[f]!));
     const enEnt = new Set(p.entrenamiento.map((f) => clases[f]!));
-    return enVal.size === todas.size && enEnt.size >= K_MIN;
-  });
+    if (!(enVal.size === todas.size && enEnt.size >= K_MIN)) faltaClase = true;
+  }
+  return faltaClase ? "pocos-casos" : null;
 }
 
 function construir(
@@ -283,14 +295,16 @@ function construir(
   filas: readonly number[],
   p: ParametrosPliegues,
   k: number,
-): Bruto | null {
+): { readonly bruto: Bruto } | { readonly falta: FaltaPliegues } {
   const bruto =
     p.esquema === "estratificada"
       ? estratificados(d, filas, k)
       : p.esquema === "grupo"
         ? porUnidad(d, filas, k)
         : porTiempo(d, filas, p, k, esPorGrupo(p.esquema));
-  return bruto !== null && sirven(d, filas, bruto) ? bruto : null;
+  if (bruto === null) return { falta: FALTA_POR_ESQUEMA[p.esquema] };
+  const falta = porqueNoSirven(d, filas, bruto, p.esquema);
+  return falta === null ? { bruto } : { falta };
 }
 
 /**
@@ -305,18 +319,20 @@ export function repartirPliegues(
 ): ResultadoPliegues {
   const filas = [...entrenamiento].sort((a, b) => a - b);
   const pedido = Math.max(K_MIN, Math.floor(p.k));
-  const falta = FALTA_POR_ESQUEMA[p.esquema];
+  // la razón de bajar k es el primer obstáculo (el del k pedido); si ninguno sirve, el del último intento
+  let falta: FaltaPliegues = FALTA_POR_ESQUEMA[p.esquema];
   for (let k = pedido; k >= K_MIN; k--) {
-    const bruto = construir(d, filas, p, k);
-    if (bruto)
+    const intento = construir(d, filas, p, k);
+    if ("bruto" in intento)
       return {
         ok: true,
         esquema: p.esquema,
         kPedido: pedido,
         k,
         razon: k === pedido ? "pedido" : falta,
-        pliegues: bruto,
+        pliegues: intento.bruto,
       };
+    if (k === pedido || k === K_MIN) falta = intento.falta;
   }
   return { ok: false, razon: falta };
 }

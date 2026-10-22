@@ -778,6 +778,12 @@ describe("leer: la forma de lo registrado, también al importar", () => {
     ],
     ["un chequeo de más", { fila_peor: 3 }, undefined, "chequeos.fila_peor"],
     ["un texto que es número", { ganador: 3 }, undefined, "chequeos.ganador"],
+    // S16 (S13 B1): el modelo y la métrica son identificadores, y un intervalo no se da vuelta
+    ["un modelo que es texto libre", { ganador: "<b>x</b>" }, undefined, "chequeos.ganador"],
+    ["una métrica que es texto libre", { metrica: "Mi métrica" }, undefined, "chequeos.metrica"],
+    ["una línea base que es texto libre", { base_id: "la de siempre" }, undefined, "chequeos.base_id"],
+    ["un intervalo del modelo dado vuelta", { ganador_bajo: 5, ganador_alto: 1 }, undefined, "chequeos.ganador_bajo"],
+    ["un intervalo de la línea base dado vuelta", { base_bajo: 5, base_alto: 1 }, undefined, "chequeos.base_bajo"],
     [
       "un número que es texto",
       { n_prueba: "40" },

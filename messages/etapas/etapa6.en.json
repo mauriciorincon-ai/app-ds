@@ -60,7 +60,7 @@
           "time": "No training row is less than a horizon away from the test set.",
           "rows-bad": "{n} rows are on more than one side.",
           "units-bad": "{n} units have rows in both training and test.",
-          "time-bad": "{n} training rows are from your most recent dates (from {corte} on), the ones a time-based split would keep for the test set."
+          "time-bad": "{n} training rows are within a horizon of the test set."
         },
         "seal": {
           "title": "Test set seal",

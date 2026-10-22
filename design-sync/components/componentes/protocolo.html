@@ -1,0 +1,138 @@
+<!-- @dsCard group="Componentes · S8–S16" name="Protocolo DS: etapas, compuerta, ficha" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Protocolo DS — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 64ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 26px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; }
+  .muted { color: #586172; }
+  .etapa {
+    background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 16px;
+    max-width: 620px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); margin-bottom: 10px;
+  }
+  .etapa.cerrada { background: #f2f2ec; box-shadow: none; }
+  .fila { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .etapa h3 { font-size: 15px; font-weight: 600; margin: 0; }
+  .crit { font-size: 14px; margin: 8px 0 0; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px;
+    font-size: 12px; font-weight: 600; border: 1px solid #e4e4dc; background: #f2f2ec; color: #14181f;
+  }
+  .badge.pos { background: #e6f2ec; color: #1c7c4a; border-color: #c4e0d1; }
+  .badge.cau { background: #f6eddc; color: #8a5a0c; border-color: #e8d3a8; }
+  .nota { font-size: 14px; margin: 8px 0 0; }
+  .nota.cau { color: #8a5a0c; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+    border-radius: 8px; border: 1px solid #e4e4dc; background: #fff; color: #14181f; font-size: 14px;
+  }
+  .btn.pri { background: #0e6e6b; border-color: #0e6e6b; color: #fff; }
+  .rechazo { margin: 10px 0 0; padding: 10px 12px; border-left: 4px solid #8a5a0c; background: #f6eddc; border-radius: 6px; font-size: 14px; }
+  .termino {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 999px;
+    border: 1px solid #e4e4dc; font-size: 12px; color: #14181f; background: #fff;
+  }
+  .dialogo { max-width: 420px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 20px; box-shadow: 0 8px 24px rgb(20 24 31 / .18); }
+  .dialogo h3 { font-size: 18px; margin: 0 0 8px; }
+  .dialogo p { font-size: 14px; margin: 0 0 12px; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+  .foco { outline: 2px solid #0e6e6b; outline-offset: 2px; }
+  .casilla { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid #e4e4dc; border-radius: 8px; background: #fff; font-size: 14px; max-width: 320px; margin-bottom: 4px; }
+  .ficha { max-width: 620px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 18px; }
+  .ficha h3 { margin: 0 0 4px; font-size: 18px; }
+  .ficha h4 { margin: 14px 0 4px; font-size: 14px; }
+  .ficha p { margin: 0; font-size: 14px; }
+  .fuente { font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; color: #586172; margin-top: 2px; }
+  table { border-collapse: collapse; font-size: 14px; max-width: 620px; width: 100%; background: #fff; }
+  th, td { text-align: left; padding: 6px 10px; border: 1px solid #e4e4dc; }
+  th { background: #f2f2ec; font-size: 12px; }
+  td.cau { color: #8a5a0c; }
+  .completo { max-width: 620px; padding: 10px 14px; border-radius: 8px; background: #e6f2ec; color: #1c7c4a; font-weight: 600; font-size: 14px; }
+  .why { max-width: 620px; font-size: 13px; color: #586172; line-height: 1.6; background: #f2f2ec; border-radius: 8px; padding: 14px 16px; }
+  .why b { color: #14181f; }
+</style>
+</head>
+<body>
+  <h1>Protocolo DS</h1>
+  <p class="sub">
+    El camino lento: diez etapas con compuerta, con los datos del usuario. Los mismos tokens que
+    Probeta; lo que se suma son <b>patrones</b>. Nada comunica solo con color: cada estado lleva
+    símbolo, texto y tono.
+  </p>
+
+  <h2>Tarjeta de etapa y sus estados</h2>
+  <div class="etapa">
+    <div class="fila"><h3><span class="mono muted">Etapa 4</span> · ¿Existe al decidir?</h3><span class="badge">→ Abierta</span></div>
+    <p class="crit"><b>Criterio de salida:</b> <span class="muted">toda columna en «usar», «excluir» o «no sé»; las «no sé» no entrenan.</span></p>
+    <div class="rechazo" role="alert">El criterio no se cumple: falta la procedencia de «monto_recuperado».</div>
+    <p style="margin:12px 0 0"><span class="btn pri">✓ Registrar la etapa 4</span></p>
+  </div>
+  <div class="etapa">
+    <div class="fila"><h3><span class="mono muted">Etapa 3</span> · ¿Predecir o explicar?</h3><span class="badge pos">✓ Cumplida</span></div>
+    <p class="crit"><b>Criterio de salida:</b> <span class="muted">«predictivo» confirmado y muestra suficiente, o tu aviso escrito.</span></p>
+  </div>
+  <div class="etapa">
+    <div class="fila"><h3><span class="mono muted">Etapa 2</span> · El objetivo y la unidad</h3><span class="badge cau">↻ Por verificar</span></div>
+    <p class="nota cau" role="status">Tus datos cambiaron: esta etapa se verificó con otro archivo.</p>
+  </div>
+  <div class="etapa">
+    <div class="fila"><h3><span class="mono muted">Etapa 3</span> · ¿Predecir o explicar?</h3><span class="badge cau">■ Detenida</span></div>
+    <p class="nota cau" role="status">Estás buscando una causa. Un modelo predictivo no responde eso: hace falta un experimento.</p>
+  </div>
+  <div class="etapa cerrada">
+    <div class="fila"><h3><span class="mono muted">Etapa 5</span> · La línea base sin modelo</h3><span class="badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Cerrada</span></div>
+    <p class="nota muted">Se abre cuando cumplas la etapa 4. Sin formulario ni botones.</p>
+  </div>
+
+  <h2>Confirmación (dos síes si reemplaza el cuaderno)</h2>
+  <div class="dialogo" role="alertdialog" aria-label="Empezar otro cuaderno">
+    <h3>Empezar otro cuaderno</h3>
+    <p>El cuaderno actual, con 3 entradas, se borra de este navegador. Exporta antes si quieres conservarlo.</p>
+    <div class="acciones">
+      <span class="btn">✓ Sí, empezar otro</span>
+      <span class="btn foco">✕ No</span>
+    </div>
+  </div>
+  <p class="why" style="margin-top:10px"><b>Anatomía:</b> el foco entra en el botón menos destructivo (anillo de acento), queda
+    atrapado dentro, Escape y el fondo <b>cancelan</b>, y el foco vuelve al botón que lo abrió.</p>
+
+  <h2>Glosario y casillas</h2>
+  <p><span class="termino">falso positivo</span> <span class="termino">umbral</span> <span class="termino">huella</span></p>
+  <div class="casilla"><span aria-hidden="true">☐</span> empleo</div>
+  <div class="casilla"><span aria-hidden="true">☐</span> barrio</div>
+  <p class="muted" style="font-size:13px;margin:6px 0 0">Marcadas: 0 de 2. Las columnas de texto llegan sin marcar: lo que se guarda lo decide su dueño.</p>
+
+  <h2>La ficha: cada línea con su fuente</h2>
+  <div class="ficha">
+    <h3>Un modelo para usar</h3>
+    <h4>Lo que este modelo cumplió</h4>
+    <p>Fuga de datos revisada: «monto_recuperado» salió del modelo.</p>
+    <p class="fuente">Etapa 4 · 2026-10-20 · huella 9f2c41a07b3e</p>
+    <h4>Quién responde</h4>
+    <p>Jefa de retención.</p>
+    <p class="fuente">Escrito por el dueño · 2026-10-20</p>
+  </div>
+
+  <h2>Chequeo de deriva: siempre símbolo y texto</h2>
+  <table>
+    <tr><th>Columna</th><th>Estado</th></tr>
+    <tr><td>edad</td><td>✓ Estable</td></tr>
+    <tr><td>ingreso_mensual</td><td class="cau">✕ Alerta</td></tr>
+    <tr><td>empleo</td><td class="cau">⚠ Sin referencia</td></tr>
+  </table>
+  <p class="muted" style="font-size:13px;margin:6px 0 16px">Esto mide las entradas, no el desempeño del modelo.</p>
+  <div class="completo">✓ Protocolo completo</div>
+</body>
+</html>

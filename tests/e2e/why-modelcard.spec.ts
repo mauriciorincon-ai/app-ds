@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { axeBothThemes } from "./axe-temas";
 
 // Happy path del S2: entrenar → "¿Por qué predice así?" (gráfico + plantilla)
 // → pulsar "Narrar con IA" → narración VERIFICADA (route real, proveedor mock) → descargar
@@ -68,6 +68,5 @@ test("del porqué a la model card, con narración verificada y sin filas en la r
   expect(content).toContain("importancia por permutación");
 
   // A11y de la pantalla completa (incluye las secciones nuevas).
-  const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations).toEqual([]);
+  await axeBothThemes(page);
 });

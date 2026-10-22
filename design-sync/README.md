@@ -64,7 +64,9 @@ encarriladores y la ficha de cada modelo; desde S6, **estimar una cantidad** —
 unidades, la liga «menor es mejor», el gráfico estimado frente a real — y la pregunta de la columna
 ambigua; desde S7, **varias categorías** — la exactitud balanceada, la matriz K×K con ✓ y la fuga
 por categoría — y **agrupar sin objetivo**: la lectura ● / ⚠ / ○, qué distingue a cada grupo y la
-tabla de agrupadores).
+tabla de agrupadores; desde S8 hasta S16, **Protocolo DS** — la tarjeta de etapa con sus seis estados,
+la compuerta que rechaza, la confirmación de dos síes, el término del glosario, las casillas, la ficha con
+la fuente de cada línea y el chequeo de deriva).
 
 ## Snippet idiomático
 

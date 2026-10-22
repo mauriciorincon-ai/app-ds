@@ -4,6 +4,7 @@
 // marcadores). La métrica y el roster salen igual que en Probeta (verdict.ts, encarrilador.ts) con lo que
 // de verdad entrena. Vive fuera del motor del Protocolo porque usa el encarrilador y el estimador de ancho
 // de Probeta, y la página inicial de /protocolo no los carga: solo la pantalla de la etapa 7, al abrirla.
+import { byCodePoint } from "@/engine/tarea";
 import { matchTask } from "@/engine/despacho";
 import {
   LEVEL1_CEILING_S,
@@ -77,13 +78,16 @@ export function envio7(tabla: CsvTable, plan: Plan7): Envio7 | null {
     k: plan.pliegues.k,
   };
   const roster = rosterFor(routeModels(profile, LEVEL1_CEILING_S, []), 1);
+  // S16 (S12): una liga vacía no se manda; el botón queda apagado en vez de caer en «worker» al correr (defensa: hoy el
+  // enrutador siempre deja a los modelos simples)
+  if (roster.length === 0) return null;
   const folds = plan.pliegues.pliegues.map((p) => ({
     train: p.entrenamiento.map((f) => posicion.get(f)!),
     val: p.validacion.map((f) => posicion.get(f)!),
   }));
   const classes = matchTask(plan.forma, {
     binaria: () => undefined,
-    multiclase: () => [...cuenta.keys()].sort(),
+    multiclase: () => [...cuenta.keys()].sort(byCodePoint),
     numerica: () => undefined,
   });
   const positive = matchTask(plan.forma, {

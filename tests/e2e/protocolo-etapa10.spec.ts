@@ -430,3 +430,59 @@ test("etapa 10 con crédito y «no usar»: su ficha dice qué tendría que cambi
   await axeBothThemes(page);
   await sinDesborde(page, 360);
 });
+
+test("etapa 10 con crédito e «iterar» (S16, S15 B6): su ficha dice qué cambiar antes de volver a probar y que la prueba ya se abrió, sin plan de vigilancia ni chequeo", async ({
+  page,
+}) => {
+  await prepararCredito(page);
+  await cumplirEtapa4Credito(page);
+  await cumplirEtapa5SinRegla(page);
+  await cumplirEtapa6Credito(page);
+  await cumplirEtapa7(page);
+  await cumplirEtapa8(page, "Falla con quienes trabajan en la informalidad");
+  await cumplirEtapa9(
+    page,
+    "Iterar: mejorarlo antes de decidir",
+    "Falla con quienes trabajan en la informalidad: sumo esa señal",
+  );
+  const e10 = page.locator("#etapa-10");
+  await expect(e10.getByTestId("protocolo-decision10")).toContainText(
+    "Iterar: la ficha deja escrito qué cambiar",
+  );
+  await expect(e10.getByTestId("protocolo-cadencia10")).toHaveCount(0);
+  await expect(e10.getByTestId("protocolo-plan10")).toHaveCount(0);
+  await e10
+    .getByLabel("Persona o rol que responde por este modelo")
+    .fill("Jefa de retención");
+  const registrar = e10.getByRole("button", { name: "Registrar la etapa 10" });
+  await registrar.click();
+  await expect(e10.getByRole("alert")).toContainText(
+    "qué tendría que cambiar para que sirva",
+  );
+  await e10
+    .getByLabel("Qué vas a cambiar antes de volver a probar")
+    .fill("Sumar la señal de informalidad y volver con una partición nueva");
+  await registrar.click();
+  await expect(e10.getByText("Cumplida")).toBeVisible();
+  await expect(page.getByTestId("protocolo-completo")).toBeVisible();
+
+  const constancia = e10.getByTestId("protocolo-constancia10");
+  await expect(constancia.getByTestId("ficha-titular")).toHaveText(
+    "Un modelo para iterar",
+  );
+  await expect(constancia.getByTestId("ficha-seccion-vigilancia")).toHaveCount(
+    0,
+  );
+  await expect(constancia.getByTestId("protocolo-deriva10")).toHaveCount(0);
+  const variante = constancia.getByTestId("ficha-seccion-variante");
+  await expect(variante).toContainText("Sumar la señal de informalidad");
+  await expect(variante).toContainText("La prueba ya se abrió");
+  const { contenido } = await descargarFicha(page);
+  expect(contenido).toContain("## Qué cambiar");
+  expect(contenido).not.toContain("## Plan de vigilancia");
+  expect(contenido).toContain(
+    "Qué cambiar antes de volver a probar (escrito por el dueño): Sumar la señal de informalidad",
+  );
+  await axeBothThemes(page);
+  await sinDesborde(page, 360);
+});

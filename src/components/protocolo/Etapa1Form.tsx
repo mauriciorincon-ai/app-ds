@@ -8,6 +8,7 @@ import { matchTask } from "@/engine/despacho";
 import {
   FORMAS,
   ETAPA_1,
+  TEXTO_MAX,
   chequeos1,
   formaDe,
   opcionesDeTexto,
@@ -105,17 +106,20 @@ export function Etapa1Form({ anterior, onRegistrar }: PropsFormulario) {
         ayuda={t("protocol.stage.1.help.decision")}
         valor={decision}
         onCambio={setDecision}
+        maximo={TEXTO_MAX}
       />
       <CampoTexto
         etiqueta={t("protocol.stage.1.field.decisor")}
         valor={decisor}
         onCambio={setDecisor}
+        maximo={TEXTO_MAX}
       />
       <CampoTexto
         etiqueta={t("protocol.stage.1.field.cuando")}
         ayuda={t("protocol.stage.1.help.cuando")}
         valor={cuando}
         onCambio={setCuando}
+        maximo={TEXTO_MAX}
       />
       <CampoArea
         etiqueta={t("protocol.stage.1.field.hoy")}
@@ -123,6 +127,7 @@ export function Etapa1Form({ anterior, onRegistrar }: PropsFormulario) {
         valor={hoy}
         onCambio={setHoy}
         filas={2}
+        maximo={TEXTO_MAX}
       />
       <CampoOpciones
         leyenda={t("protocol.stage.1.field.forma")}
@@ -139,6 +144,7 @@ export function Etapa1Form({ anterior, onRegistrar }: PropsFormulario) {
         ayuda={t("protocol.stage.1.help.unidad")}
         valor={unidad}
         onCambio={setUnidad}
+        maximo={TEXTO_MAX}
       />
 
       {forma &&

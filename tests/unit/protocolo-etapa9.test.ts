@@ -168,6 +168,9 @@ describe("la tabla de umbrales que guarda la etapa 8", () => {
     ["un conteo que no es entero", { "vp:0.50": 1.5 }],
     ["más alertas acertadas que positivos", { "vp:0.50": 10_000 }],
     ["una clave sin su pareja", { "vp:clase": 1 }],
+    // S16 (S14): al subir el umbral nunca hay más aciertos ni más falsas alarmas
+    ["más aciertos con un umbral mayor", { "vp:0.40": 0, "fp:0.40": 0, "vp:0.41": 1, "fp:0.41": 0 }],
+    ["más falsas alarmas con un umbral mayor", { "vp:0.40": 0, "fp:0.40": 0, "vp:0.41": 0, "fp:0.41": 1 }],
   ])("la 8 rechaza %s en la tabla, nombrando el campo", (_n, cambio) => {
     const datos = con(CREDITO.previas[8]!, {
       tabla_umbrales: { ...TABLA, ...cambio },
@@ -535,6 +538,22 @@ describe("la forma de lo registrado", () => {
       "un modo que no existe",
       (d) => (d.chequeos.modo = "intuicion"),
       "chequeos.modo",
+    ],
+    // S16 (S14): el cuaderno pinta estas claves; tienen que ser identificadores conocidos, no texto libre
+    [
+      "un modelo con texto libre",
+      (d) => (d.chequeos.ganador = "<img src=x>"),
+      "chequeos.ganador",
+    ],
+    [
+      "una línea base que no existe",
+      (d) => (d.chequeos.base_id = "inventada"),
+      "chequeos.base_id",
+    ],
+    [
+      "un «lo de hoy» que no existe",
+      (d) => (d.chequeos.hoy_id = "lo-de-ayer"),
+      "chequeos.hoy_id",
     ],
     [
       "un umbral de 1",

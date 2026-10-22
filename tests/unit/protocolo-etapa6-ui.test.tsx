@@ -281,7 +281,7 @@ describe("los sellos y el cuaderno", () => {
     nuevas();
     horizonte("1", "meses");
     expect(
-      screen.getByText(/Sellaste 2 pruebas distintas en este cuaderno/),
+      screen.getByText(/Este cuaderno lleva 2 pruebas distintas selladas/),
     ).toBeTruthy();
   });
 
@@ -299,7 +299,7 @@ describe("los sellos y el cuaderno", () => {
     ).toHaveValue("1");
     expect(screen.getByLabelText("Unidad del horizonte")).toHaveValue("meses");
     // volver a sellar la misma partición no suma una mirada
-    expect(screen.queryByText(/Sellaste 2 pruebas distintas/)).toBeNull();
+    expect(screen.queryByText(/Este cuaderno lleva 2 pruebas distintas selladas/)).toBeNull();
   });
 
   it("el cuaderno dice el horizonte en singular cuando es uno («1 mes», no «1 meses»)", async () => {

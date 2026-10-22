@@ -182,7 +182,10 @@ export function cargaDe(
   huella: string | null,
 ): Carga | null {
   if (!huella) return null;
-  return cuaderno.cargas.findLast((c) => c.sha256 === huella) ?? null;
+  // sin `findLast` (ES2023): el target del proyecto es ES2017 (S16, S15 B4)
+  for (let i = cuaderno.cargas.length - 1; i >= 0; i--)
+    if (cuaderno.cargas[i]!.sha256 === huella) return cuaderno.cargas[i]!;
+  return null;
 }
 
 /** Por decisión → por cada 100 (decisiones o casos), para los textos. */
@@ -404,7 +407,9 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
       linea(vig, "dueno", "cadencia-alargada", {
         cadencia,
         sugerida,
-        razon: textoLleno(r10, "razon_cadencia"),
+        // S16 (S15 B5): sin razón escrita la línea sigue (con la razón vacía) en vez de desaparecer: `linea` descarta
+        // cualquier parámetro nulo y la vista previa callaba que la cadencia alargada aún no tiene su razón
+        razon: textoLleno(r10, "razon_cadencia") ?? "",
       });
     else if (cadencia !== null && cadencia < sugerida)
       linea(vig, "dueno", "cadencia-acortada", { cadencia, sugerida });

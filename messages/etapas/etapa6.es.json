@@ -60,7 +60,7 @@
           "time": "Ninguna fila de entrenamiento está a menos de un horizonte de la prueba.",
           "rows-bad": "{n} filas están en más de un lado.",
           "units-bad": "{n} unidades tienen filas en entrenamiento y en prueba.",
-          "time-bad": "{n} filas de entrenamiento son de tus fechas más recientes (desde el {corte}), las que una partición por tiempo dejaría para la prueba."
+          "time-bad": "{n} filas de entrenamiento están a menos de un horizonte de la prueba."
         },
         "seal": {
           "title": "Sello de la prueba",

@@ -34,7 +34,15 @@ import type {
   Valor,
   Veredicto,
 } from "./etapas";
-import { claveExtra, mapa, numero, texto, type Registro } from "./valores";
+import { REFERENCIA_IDS } from "./etapa5";
+import {
+  claveExtra,
+  esIdGuardado,
+  mapa,
+  numero,
+  texto,
+  type Registro,
+} from "./valores";
 
 export const DECISIONES_9 = ["usar", "iterar", "no-usar"] as const;
 export type Decision9 = (typeof DECISIONES_9)[number];
@@ -442,8 +450,10 @@ function recalcular(datos: DatosEtapa, previas: Previas): DatosEtapa {
 const esEntero = (v: Valor, minimo = 0) =>
   Number.isInteger(v) && (v as number) >= minimo;
 
+/** Las claves de la rejilla, armadas una vez (S16, S14: antes `umbralValido` rearmaba el arreglo en cada llamada). */
+const CLAVES_REJILLA: ReadonlySet<string> = new Set(REJILLA.map(claveUmbral));
 const umbralValido = (u: string) =>
-  u === UMBRAL_E1 || u === UMBRAL_CLASE || REJILLA.map(claveUmbral).includes(u);
+  u === UMBRAL_E1 || u === UMBRAL_CLASE || CLAVES_REJILLA.has(u);
 
 /** ¿El umbral elegido es uno de la rejilla, es decir, uno que se movió mirando la curva? */
 const movido = (u: Valor) =>
@@ -485,6 +495,12 @@ function leer(datos: DatosEtapa): Lectura {
     if (c[k] !== null && typeof c[k] !== "string") return malo(k);
   for (const k of NUMEROS)
     if (c[k] !== null && numero(c, k) === null) return malo(k);
+  // S16 (S14): el modelo y las referencias son identificadores conocidos, no texto libre (el cuaderno los pinta)
+  if (c.ganador !== null && !esIdGuardado(c.ganador)) return malo("ganador");
+  const ids: readonly unknown[] = REFERENCIA_IDS;
+  if (c.base_id !== null && !ids.includes(c.base_id)) return malo("base_id");
+  if (c.hoy_id !== null && c.hoy_id !== "regla" && !ids.includes(c.hoy_id))
+    return malo("hoy_id");
   if (c.forma !== null && !(FORMAS as readonly unknown[]).includes(c.forma))
     return malo("forma");
   if (c.modo !== null && !(MODOS as readonly unknown[]).includes(c.modo))

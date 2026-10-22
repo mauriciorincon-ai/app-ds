@@ -231,9 +231,10 @@ export function CampoCasillas({
         </p>
       )}
       <div className="grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2">
-        {opciones.map((opcion) => (
+        {opciones.map((opcion, i) => (
           <label
-            key={opcion}
+            // S16 (S9 B5): dos columnas con el mismo encabezado no repiten la clave de React
+            key={`${i}:${opcion}`}
             className="flex min-h-11 items-center gap-2 rounded-md border border-hairline bg-surface px-3 text-sm [overflow-wrap:anywhere]"
           >
             <input

@@ -15,7 +15,7 @@ vez, cada resultado se compara con un baseline y una posible fuga de datos se no
 
 Tiene dos modos con el mismo motor y promesas distintas: **Probeta**, el laboratorio rápido, y
 **Protocolo DS**, el camino lento de diez etapas con compuertas que no se saltan, con tus propios
-datos y un cuaderno que guarda lo que cada etapa verificó. El manual dice qué etapas están construidas.
+datos y un cuaderno que guarda lo que cada etapa verificó. Las diez etapas están construidas.
 
 **Tus datos no salen de tu navegador.** El cómputo de Probeta (pandas y scikit-learn en WebAssembly,
 con Pyodide) corre en un Web Worker de tu equipo; el Protocolo calcula en tu navegador y guarda su
@@ -62,7 +62,7 @@ compared against a baseline, and a possible data leak is named.
 
 It has two modes on the same engine with different promises: **Probeta**, the quick lab, and
 **Protocolo DS**, the slow path of ten stages with gates that can't be skipped, on your own data and
-with a notebook that keeps what each stage verified. The manual says which stages are built.
+with a notebook that keeps what each stage verified. All ten stages are built.
 
 **Your data never leaves your browser.** Probeta's computation (pandas and scikit-learn in
 WebAssembly, through Pyodide) runs in a Web Worker on your machine; the Protocol computes in your

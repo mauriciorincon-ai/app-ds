@@ -251,6 +251,11 @@ function trampas(datos: DatosEtapa, previas: Previas): readonly Trampa[] {
       },
     },
   ];
+  // S16 (S8 M6): declarar menos parámetros que los contados achica la muestra que se pide; se dice, no se bloquea
+  const declarado = numero(c, "parametros");
+  const contado = numero(c, "parametros_contados");
+  if (declarado !== null && contado !== null && declarado < contado)
+    salida.push({ clave: "parametros-menos", params: { declarado, contado } });
   if (etapa2 && etapa2.respuestas.momento === "columna")
     salida.push({
       clave: "periodo",

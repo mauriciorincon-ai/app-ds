@@ -359,6 +359,48 @@ corto y declarada en la guía (la orden fija el corto en unos 20 minutos; plan d
   probabilidad de esa categoría) y su nota. Al agrupar, la columna `grupo` desde 1 o «fuera de todo
   grupo», y `grupo_probabilidad` solo con la mezcla gaussiana.
 
+### Añadidos Sprint 008–016 — Protocolo DS, el camino lento (mismos tokens, cero valores nuevos; ADR 020, 021 y 022)
+
+Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma paleta. Lo que se suma son patrones, no colores.
+
+- **Tarjeta de etapa** (`Etapas.tsx`) — `<li>` con título «Etapa N · nombre» (mono para «Etapa N»), el **criterio de salida** en
+  una línea y el **EstadoBadge**. Abierta o cumplida: `surface` + sombra `sm`. **Cerrada**: `sunken` sin sombra y con una línea
+  que dice qué la abre («Se abre cuando cumplas la etapa 3»); una etapa cerrada **no tiene formulario ni botones**. Al registrar,
+  el foco pasa al título de la etapa (`tabIndex={-1}`), que es donde sigue quien usa teclado o lector.
+- **EstadoBadge** — seis estados, cada uno con **símbolo + texto + tono** (jamás solo color): **Cumplida** `positive` ✓ ·
+  **Abierta** neutro, icono de ruta · **Por verificar** `caution` ↻ (los datos cambiaron o se corrigió una etapa anterior) · **Detenida**
+  `caution` ■ (p. ej. «explicar una causa», o sin columna objetivo) · **Cerrada** neutro, con candado · **Sin construir** neutro, con candado (un
+  estado del contrato; hoy ninguna etapa lo muestra).
+- **Compuerta que rechaza** — `role="alert"` bajo el botón «Registrar la etapa N», que dice qué falta, nombrado («el nombre de
+  quien responde por el modelo»). No hay botón de saltar, ni de «continuar sin cumplir».
+- **Trampa que acabas de evitar** — bloque con título «En tus datos», un párrafo por trampa y la cifra **de los datos del
+  usuario**; `caution` con ⚠ si la trampa está viva. Nunca una advertencia genérica.
+- **Confirmación** (`Confirmacion.tsx`) — `<dialog>` nativo modal con `role="alertdialog"`, nombre y descripción; el foco entra
+  en el botón **menos destructivo** (`data-autofocus`), queda atrapado dentro, Escape y el clic en el fondo **cancelan** (nunca
+  confirman) y el foco vuelve al botón que lo abrió. Lo que **reemplaza el cuaderno** pide **dos síes** (el segundo diálogo
+  lleva «Volver»). Los plurales se dicen bien («1 entrada», «2 entradas»).
+- **Término del glosario** — píldora de 44 px (`min-h-11`, a cualquier ancho) con borde hairline que salta a su entrada; la
+  entrada lleva «Leer más en el glosario de Google» donde existe y su atribución (CC BY 4.0).
+- **Casillas y opciones** (`campos.tsx`) — `CampoOpciones` (radios) y `CampoCasillas` (varias a la vez) llevan **leyenda**,
+  ayuda enlazada con `aria-describedby` y filas de 44 px; con muchas opciones la lista se desplaza en una caja de 18 rem (las
+  casillas son enfocables: el teclado la recorre entera). Las columnas de texto de la etapa 10 llegan **sin marcar**.
+- **Texto largo** — todo campo de texto libre del Protocolo muestra su tope (`maximo`) y no deja escribir de más; los números
+  se escriben sin separador de miles y el campo dice por qué rechaza «1,500».
+- **Ficha del modelo** (`FichaVista.tsx`) — título «Un modelo para usar» o «Un modelo que no se usa» y una sección por tema
+  (los datos · población y periodo · lo que midió la prueba · la decisión · límites y para qué NO usarlo · lo que este modelo
+  cumplió · el plan de vigilancia o qué cambiar · quién responde). **Cada línea lleva su fuente**: «Etapa N · fecha · huella
+  abc123…» en mono pequeño, o «Escrito por el dueño». Una línea sin dato no se escribe. Descarga en Markdown.
+- **Chequeo de deriva** — tabla por columna con estado **Estable** ✓ · **Moderada** ⚠ · **Alerta** ✕ · **Pocas filas** … ·
+  **Sin referencia** ⚠ · **Otro tipo** ⚠, siempre con símbolo y texto (lo que no es estable va en `caution`), y debajo la frase fija «esto mide las entradas, no el
+  desempeño del modelo». Las columnas que el dueño no marcó aparecen en un aviso, no en la tabla.
+- **Banner «Protocolo completo»** — `positive` ✓ en la cabecera de la página y en el cuaderno cuando la etapa 10 está cumplida.
+- **Cuaderno** — lista de entradas en el orden en que se registraron, con el resumen de cada etapa, «Guardado en este navegador.» /
+  «Guardando en este navegador…» como estado visible,
+  y debajo exportar, importar y empezar otro, con una nota junto a «Exportar» que dice qué lleva el archivo (y que no lleva filas).
+- **Foco y tema** — `:focus-visible` es un contorno de 2 px en `accent` a 2 px de distancia, para todo lo enfocable; la página
+  declara `color-scheme` claro y oscuro para que los controles nativos (radios, casillas, selectores) sigan el tema; el alias
+  `--sunken` equivale a `--surface-sunken`.
+
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).
@@ -374,6 +416,9 @@ corto y declarada en la guía (la orden fija el corto en unos 20 minutos; plan d
 5. **Error** → el mensaje llano + la acción de recuperación.
 6. **Usar el modelo (S3)** → el **NoveltyPanel** antes de descargar; la descarga lo sostiene.
    Encabezado estático (candidato LCP, patrón lcp-nace-estatico).
+7. **Protocolo DS (S8–S16)** → la **etapa abierta**: la lista de diez etapas deja una sola con formulario; la cerrada dice qué
+   la abre. «Tus datos» y el **cuaderno** viven arriba y abajo de la lista, y el glosario al final. Cuando la 10 se cumple, lo
+   importante es la **ficha** y su descarga.
 
 ## Modo claro/oscuro
 

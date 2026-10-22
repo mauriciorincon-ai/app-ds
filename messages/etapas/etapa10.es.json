@@ -80,6 +80,7 @@
             "moderada": "Cambio moderado",
             "alerta": "Alerta",
             "pocas-filas": "Pocas filas para medir",
+            "sin-referencia": "Sin referencia para comparar",
             "otro-tipo": "Cambió de tipo"
           },
           "region": "Deriva por columna",

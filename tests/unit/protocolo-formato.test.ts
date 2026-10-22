@@ -6,8 +6,24 @@ import {
   fecha,
   huellaCorta,
   proporcion,
+  psiTexto,
   valorTexto,
 } from "@/lib/protocolo/formato";
+
+describe("psiTexto (S16, S9 B4)", () => {
+  const UMBRALES = [0.1, 0.25];
+  it.each([
+    [0.2496, "0.2496"], // moderado: a dos decimales se leería 0.25, que ya es alerta
+    [0.0996, "0.0996"], // estable: a dos decimales se leería 0.10
+    [0.1, "0.10"],
+    [0.25, "0.25"],
+    [0.2501, "0.25"],
+    [0.0312, "0.03"],
+    [0, "0.00"],
+  ])("%s → %s", (psi, esperado) => {
+    expect(psiTexto(psi, UMBRALES)).toBe(esperado);
+  });
+});
 
 describe("proporcion", () => {
   it.each([

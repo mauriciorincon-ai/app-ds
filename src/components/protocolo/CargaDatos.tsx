@@ -110,6 +110,7 @@ export function CargaDatos({
               <p>
                 {t("protocol.data.different.replace-body", {
                   n: cuaderno.evidencias.length,
+                  count: cuaderno.evidencias.length,
                 })}
               </p>
             ) : (

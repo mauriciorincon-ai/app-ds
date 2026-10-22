@@ -11,6 +11,7 @@ import {
   type EstadoChequeo,
   type ResultadoChequeo,
 } from "@/engine/protocolo/chequeo-deriva";
+import { PSI_ALERTA, PSI_MODERADA } from "@/engine/protocolo/deriva";
 import type { DatosEtapa } from "@/engine/protocolo/etapas";
 import {
   leerReferencia,
@@ -19,8 +20,8 @@ import {
 import { lista } from "@/engine/protocolo/valores";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { MAX_BYTES, parseCsvWithLimits } from "@/lib/ds/csv";
-import { cifra, proporcion } from "@/lib/protocolo/formato";
-import { CSV_ERROR } from "@/lib/protocolo/useProtocolo";
+import { cifra, psiTexto } from "@/lib/protocolo/formato";
+import { CSV_ERROR } from "@/lib/protocolo/csv-error";
 import { csvLimitParams } from "@/lib/quantity";
 import { Button } from "@/components/ui";
 import { TEXTOS_ETAPA_10 } from "./textos/etapa10";
@@ -31,6 +32,7 @@ const SIMBOLO: Record<EstadoChequeo, string> = {
   moderada: "⚠",
   alerta: "✕",
   "pocas-filas": "…",
+  "sin-referencia": "⚠",
   "otro-tipo": "⚠",
 };
 const VEREDICTO_SIMBOLO = {
@@ -207,7 +209,9 @@ export function Etapa10Deriva({ evidencia }: { evidencia: DatosEtapa }) {
                           {t(`protocol.stage.10.drift.state.${c.estado}`)}
                         </td>
                         <td className="py-1 pr-3 text-right tabular-nums">
-                          {c.psi === null ? "—" : proporcion(c.psi)}
+                          {c.psi === null
+                            ? "—"
+                            : psiTexto(c.psi, [PSI_MODERADA, PSI_ALERTA])}
                         </td>
                         <td className="py-1 pr-3 text-right tabular-nums">
                           {cifra(c.filas)}

@@ -80,6 +80,7 @@
             "moderada": "Moderate change",
             "alerta": "Alert",
             "pocas-filas": "Too few rows to measure",
+            "sin-referencia": "Nothing to compare against",
             "otro-tipo": "Changed type"
           },
           "region": "Drift per column",

@@ -5,7 +5,7 @@
 // selección, por qué ganó, la comparación con la línea base pliegue a pliegue y la permutación. Ningún
 // valor de una fila llega a la pantalla: solo conteos, nombres de columna, de modelo y de clase, y cifras
 // agregadas. Se carga diferida (formularios.tsx): ni ella ni el worker pesan en la página inicial.
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button, Icon } from "@/components/ui";
 import { por100 } from "@/engine/protocolo/etapa5";
 import { ETAPA_7, datosEtapa7, plan7 } from "@/engine/protocolo/etapa7";
@@ -69,7 +69,13 @@ export function Etapa7Form({ datos, previas, onRegistrar }: PropsFormulario) {
     [tabla, plan],
   );
   const { estado, correr, cancelar } = useValidacion();
-  const corrida = estado.tipo === "lista" ? estado.corrida : null;
+  // S16 (S12): la corrida se ata al plan con que se corrió (tabla, huella y etapas previas). Si el plan cambia
+  // —otro CSV, otra partición— el resultado de antes ya no es de estos datos y no se usa ni se registra.
+  const [planDeLaCorrida, setPlanDeLaCorrida] = useState(plan);
+  const corrida =
+    estado.tipo === "lista" && planDeLaCorrida === plan
+      ? estado.corrida
+      : null;
   const registro = useMemo(
     () => (tabla ? datosEtapa7(tabla, previas, huella, corrida) : null),
     [tabla, previas, huella, corrida],
@@ -267,7 +273,11 @@ export function Etapa7Form({ datos, previas, onRegistrar }: PropsFormulario) {
           <Button
             icon={corrida ? "retry" : "play"}
             disabled={envio === null || ocupado}
-            onClick={() => envio && correr(envio)}
+            onClick={() => {
+              if (!envio) return;
+              setPlanDeLaCorrida(plan);
+              correr(envio);
+            }}
           >
             {corrida
               ? t("protocol.stage.7.run.again")

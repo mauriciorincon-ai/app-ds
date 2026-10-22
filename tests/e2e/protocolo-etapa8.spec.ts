@@ -139,11 +139,11 @@ test("etapa 8 con crédito: la prueba se abre una vez, se lee por segmento y cal
   ]);
   const exportado = readFileSync((await descarga.path())!, "utf8");
   expect(exportado).toMatch(/"peores_n": ?10/);
-  // las dos aperturas quedaron anotadas, con la misma clave: cuentan una
+  // S16 (S13 B5): abrirla dos veces con lo mismo anota UNA apertura (la misma clave no se repite en el cuaderno)
   const aperturas = (
     JSON.parse(exportado) as { cuaderno: { aperturas: { clave: string }[] } }
   ).cuaderno.aperturas;
-  expect(aperturas).toHaveLength(2);
+  expect(aperturas).toHaveLength(1);
   expect(new Set(aperturas.map((a) => a.clave)).size).toBe(1);
   const csv = readFileSync(KIT("credito-fuga-plantada.csv"), "utf8").split(
     "\n",

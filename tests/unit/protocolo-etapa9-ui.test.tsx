@@ -25,7 +25,7 @@ const { Etapa9Form } = await import("@/components/protocolo/Etapa9Form");
 const { registrar } = await import("@/engine/protocolo/compuerta");
 const { NUEVOS_S14, UMBRAL_CLASE, plan8 } = await import("@/engine/protocolo/etapa8");
 const { PROTOCOLO_DS } = await import("@/engine/protocolo/protocolo-ds");
-const { armarCredito7, armarPrecio6, con7, sintetico } =
+const { armarCredito7, armarPlanes6, armarPrecio6, con7, sintetico } =
   await import("./protocolo-etapa8-helpers");
 const { AHORA, HUELLA, armarCredito8, con8, registrar8 } =
   await import("./protocolo-etapa9-helpers");
@@ -213,6 +213,24 @@ describe("cuando la 9 no tiene con qué, y con un número", () => {
     expect(screen.getByRole("alert").textContent).toMatch(
       /la tabla de umbrales de la etapa 8/,
     );
+    expect(Espia).not.toHaveBeenCalled();
+  });
+
+  it("S16 (S14): varias clases: el costo del ganador frente a lo de hoy; sin umbral, capacidad ni curva", () => {
+    const planes = con7(armarPlanes6(), "logistic", "balanced_accuracy", 0.6);
+    const plan = plan8(planes.tabla, planes.previas, HUELLA)!;
+    const d = plan.plan7.diseno;
+    const a = con8(planes, sintetico(plan, (f) => d.clases![f]!, null));
+    montar(a.previas, a);
+    expect(screen.getByTestId("protocolo-cifras9").textContent).toMatch(
+      /Costo por cada 100 decisiones/,
+    );
+    expect(screen.queryByLabelText("Umbral con que se actúa")).toBeNull();
+    expect(screen.queryByTestId("protocolo-capacidad9")).toBeNull();
+    expect(screen.queryByTestId("protocolo-curva9")).toBeNull();
+    // las tres decisiones siguen ahí, y la pantalla no habló con el worker
+    for (const decision of ["Usarlo", "Iterar: mejorarlo antes de decidir", "No usarlo"])
+      expect(screen.getByLabelText(decision)).toBeTruthy();
     expect(Espia).not.toHaveBeenCalled();
   });
 

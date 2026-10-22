@@ -19,6 +19,7 @@ import {
   type LineaFicha,
 } from "@/engine/protocolo/ficha";
 import type { EntradaEtapa10 } from "@/engine/protocolo/etapa10";
+import { REF_SOPORTE_MIN } from "@/engine/protocolo/referencia-deriva";
 import type { Armado } from "./protocolo-etapa4-helpers";
 import {
   AHORA,
@@ -219,6 +220,31 @@ describe("PRUEBA NEGATIVA: la ficha no lleva filas ni valores individuales", () 
   });
 });
 
+describe("S16 (S15 B3) · la referencia guardada tampoco es una fila ni un valor", () => {
+  const MARCADA = fichaDe(armarCredito9("usar"), { ...ENTRADA_USAR, vigilarTexto: ["empleo"] });
+  const refs = (
+    MARCADA.cuaderno.evidencias.at(-1)!.datos.chequeos.vig_referencia as string[]
+  ).map((r) => JSON.parse(r) as { columna: string; tipo: string; cortes?: number[]; categorias?: string[]; cuentas: number[] });
+
+  it("los cortes numéricos son de tres cifras y las categorías nombradas juntan al menos REF_SOPORTE_MIN filas", () => {
+    expect(refs.some((r) => r.tipo === "numero")).toBe(true);
+    expect(refs.some((r) => r.tipo === "texto")).toBe(true);
+    for (const r of refs) {
+      for (const c of r.cortes ?? []) expect(Number(c.toPrecision(3))).toBe(c);
+      for (const [k] of (r.categorias ?? []).entries())
+        expect(r.cuentas[k]).toBeGreaterThanOrEqual(REF_SOPORTE_MIN);
+    }
+  });
+
+  it("la ficha no lleva la referencia: ni sus cortes ni su JSON", () => {
+    const ficha = JSON.stringify(MARCADA.ficha);
+    expect(ficha).not.toContain('"cortes"');
+    for (const guardada of MARCADA.cuaderno.evidencias.at(-1)!.datos.chequeos
+      .vig_referencia as string[])
+      expect(ficha).not.toContain(guardada);
+  });
+});
+
 it("sin alguna de las diez evidencias no hay ficha", () => {
   const sin7 = Object.fromEntries(
     Object.entries(
@@ -295,6 +321,18 @@ describe("lo que cambia en la ficha según lo registrado (cada línea sale de su
     expect(con(8, "El mercado cambia lento")).toMatchObject({
       clave: "cadencia-alargada",
       params: { cadencia: 8, sugerida: 5, razon: "El mercado cambia lento" },
+      fuente: { tipo: "dueno" },
+    });
+  });
+
+  it("S16 (S15 B5): una cadencia alargada sin razón escrita no desaparece de la ficha (la razón sale vacía)", () => {
+    const linea = lineas(
+      fichaCon({ etapa: 10, r: { cadencia: 8, razon_cadencia: "" }, c: { cadencia_sugerida: 5 } }),
+      "vigilancia",
+    ).at(-1)!;
+    expect(linea).toMatchObject({
+      clave: "cadencia-alargada",
+      params: { cadencia: 8, sugerida: 5, razon: "" },
       fuente: { tipo: "dueno" },
     });
   });

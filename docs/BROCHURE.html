@@ -35,8 +35,9 @@
   sitio): 1) grid-template-rows en la apertura de tarjeta · 2) stroke-dashoffset para calibrar
   los iconos · 3) filter:blur en la apertura del titular, con opacidad SIEMPRE 1 (LCP honesto).
 
-  CONTEO: 41 funcionalidades (13 + 7 + 5 + 9 + 5 en las cinco tarjetas + 2 en "lo fino"),
-  cuadrado contra docs/MANUAL-DE-USO.md. S6 suma dos en la tarjeta del veredicto (estimar una
+  CONTEO: 58 funcionalidades (13 + 7 + 5 + 9 + 5 + 17 en las seis tarjetas + 2 en "lo fino"),
+  cuadrado contra docs/MANUAL-DE-USO.md. S16 (cierre de H-2) suma la sexta puerta, «Protocolo DS»,
+  con las 17 funcionalidades de la VISION (compuerta, cuaderno, porqué, glosario y las diez etapas). S6 suma dos en la tarjeta del veredicto (estimar una
   cantidad y la pregunta «¿categorías o una cantidad?»); S7 suma seis (clasificar en varias
   categorías en la tarjeta del veredicto y las cinco de la quinta puerta, «Agrupar sin
   objetivo»). Las tablas de mapeo de S6 y S7 van en sus summaries; la primera vive en
@@ -328,7 +329,7 @@
     max-width: 54ch;
   }
 
-  /* ── E03/E04 · Las cuatro puertas ────────────────────────────────────────────────────── */
+  /* ── E03/E04 · Las puertas (seis desde el S16) ────────────────────────────────────────────────────── */
   .tarjeta {
     background: var(--surface);
     border: 1px solid var(--hairline);
@@ -891,7 +892,7 @@
   <section class="puertas" id="que-hace">
     <div class="env">
       <p class="es rotulo-seccion" lang="es">Qué hace</p><p class="en rotulo-seccion" lang="en">What it does</p>
-      <h2><span class="es" lang="es">Cinco cosas, y las cinco de frente</span><span class="en" lang="en">Five things, all of them head-on</span></h2>
+      <h2><span class="es" lang="es">Seis cosas, y las seis de frente</span><span class="en" lang="en">Six things, all of them head-on</span></h2>
       <p class="es entradilla" lang="es">Toca la que te interese. Nada se abre solo: nadie tiene por qué leer lo que no pidió.</p><p class="en entradilla" lang="en">Tap the one you care about. Nothing opens by itself: no one should have to read what they didn't ask for.</p>
 
       <!-- Tarjeta 1 — LA ESTRELLA. Entra sola, un beat antes que las demás. -->
@@ -1072,6 +1073,49 @@
               <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Qué distingue a cada grupo.</b> <em>Su tamaño y las columnas que más lo separan, en tus unidades; las filas que no caen en ningún grupo, aparte.</em></span><span class="en" lang="en"><b>What sets each group apart.</b> <em>Its size and the columns that separate it most, in your units; the rows that fall in no group, on their own.</em></span></li>
               <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Tus filas con su grupo.</b> <em>Tu tabla entera con una columna más, armada en tu navegador.</em></span><span class="en" lang="en"><b>Your rows with their group.</b> <em>Your whole table with one more column, built in your browser.</em></span></li>
               <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Asigna filas nuevas a un grupo.</b> <em>Con la regla dicha y un archivo de modelo sin ninguna de tus filas.</em></span><span class="en" lang="en"><b>Assigns new rows to a group.</b> <em>With the rule spelled out, and a model file that holds none of your rows.</em></span></li>
+            </ul>
+          </div>
+        </div>
+      </article>
+      <!-- Tarjeta 6 (S16, cierre de H-2): la sexta puerta, Protocolo DS. Entra la última. -->
+      <article class="tarjeta" data-sube style="--i:6">
+        <h3>
+          <button type="button" aria-expanded="false" aria-controls="d-protocolo">
+            <span class="tarjeta-icono">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path pathLength="1" d="M4 20h4v-4h4v-4h4V8h4V4"/>
+              </svg>
+            </span>
+            <span class="tarjeta-titulo"><span class="es" lang="es">Protocolo DS, el camino lento</span><span class="en" lang="en">Protocolo DS, the slow path</span></span>
+            <span class="tarjeta-n">17</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </button>
+        </h3>
+        <p class="es tarjeta-resumen" lang="es">Cuando prefieres ir despacio: diez etapas con compuertas, tus propios datos y una ficha que se escribe sola.</p><p class="en tarjeta-resumen" lang="en">When you'd rather go slow: ten gated stages, your own data and a model card that writes itself.</p>
+        <div class="detalle" id="d-protocolo">
+          <div class="detalle-caja">
+            <ul class="features">
+              <li style="--i:0"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Una compuerta que no se salta.</b> <em>Ninguna etapa se abre sin el criterio de salida de la anterior, verificado por código o por tu respuesta escrita; no existe un botón «saltar».</em></span><span class="en" lang="en"><b>A gate that can't be skipped.</b> <em>No stage opens without the previous one's exit criterion, checked by code or by your written answer; there's no «skip» button.</em></span></li>
+              <li style="--i:1"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Un cuaderno que se escribe solo.</b> <em>Cada compuerta deja su evidencia en tu navegador, atada a la huella de tu archivo; se exporta y se importa, sin una sola fila de tus datos.</em></span><span class="en" lang="en"><b>A notebook that writes itself.</b> <em>Every gate leaves its evidence in your browser, tied to your file's fingerprint; it exports and imports, without a single row of your data.</em></span></li>
+              <li style="--i:2"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>El porqué de cada etapa, con tu trampa.</b> <em>Cada etapa dice por qué existe y te muestra, en tus propios datos, lo que acaba de evitar.</em></span><span class="en" lang="en"><b>Why each stage exists, with your own trap.</b> <em>Each stage says why it exists and shows, in your own data, what it just helped you avoid.</em></span></li>
+              <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Un glosario a un clic.</b> <em>Cada término de una compuerta enlaza a una definición breve y propia, con una vía al glosario de Google donde existe.</em></span><span class="en" lang="en"><b>A glossary one click away.</b> <em>Every term in a gate links to a short definition of its own, with a pointer to Google's glossary where there is one.</em></span></li>
+              <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>La decisión y lo que cuesta equivocarse.</b> <em>Nombras la decisión, quién la toma y cuánto cuesta cada error; de ahí salen el umbral o el cuantil, no de la costumbre.</em></span><span class="en" lang="en"><b>The decision and what a mistake costs.</b> <em>You name the decision, who takes it and what each error costs; the threshold or the quantile comes from there, not from habit.</em></span></li>
+              <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>El objetivo y la unidad, con su momento.</b> <em>Defines qué es una fila y qué predices, con el momento en que se conoce; la app lo verifica en tus datos y no adivina tus fechas.</em></span><span class="en" lang="en"><b>The target and the unit, with their moment.</b> <em>You define what a row is and what you predict, with the moment it becomes known; the app checks it in your data and doesn't guess your dates.</em></span></li>
+              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>¿Predecir o explicar?.</b> <em>Si buscas una causa, el Protocolo se detiene: eso pide un experimento, no un modelo.</em></span><span class="en" lang="en"><b>Predict or explain?.</b> <em>If what you want is a cause, Protocolo DS stops: that takes an experiment, not a model.</em></span></li>
+              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Diseño y tamaño de muestra, con sus supuestos.</b> <em>Población, periodo y exclusiones; la app calcula cuántas filas hacen falta, dice qué supone y, si no alcanzan, te pide un aviso firmado.</em></span><span class="en" lang="en"><b>Design and sample size, with their assumptions.</b> <em>Population, period and exclusions; the app works out how many rows you need, says what it assumes and, if they fall short, asks for a signed warning.</em></span></li>
+              <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>¿Existe al decidir? Columna por columna.</b> <em>Declaras quién produce cada columna y cuándo se llena; las que no sabes no entran al modelo.</em></span><span class="en" lang="en"><b>Does it exist at decision time? Column by column.</b> <em>You declare who produces each column and when it is filled in; the ones you don't know stay out of the model.</em></span></li>
+              <li style="--i:9"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Apuesta dónde está la fuga.</b> <em>Antes de ver lo que encontró la app, marcas qué columnas crees que filtran el resultado; después se comparan.</em></span><span class="en" lang="en"><b>Bet on where the leak is.</b> <em>Before seeing what the app found, you mark which columns you think leak the answer; then the two are compared.</em></span></li>
+              <li style="--i:10"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>La línea base sin modelo y la regla de hoy.</b> <em>Mides lo que ya se logra sin modelo, en la moneda de tu decisión, antes de abrir ninguno.</em></span><span class="en" lang="en"><b>The no-model baseline and today's rule.</b> <em>You measure what is already achieved without a model, in your decision's currency, before opening any.</em></span></li>
+              <li style="--i:11"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Partición según tu caso, con prueba sellada.</b> <em>Por tiempo, por grupo o estratificada, con su porqué; verifica que no haya solape y sella la prueba con una huella.</em></span><span class="en" lang="en"><b>A split for your case, with a sealed test.</b> <em>By time, by group or stratified, with its reason; it checks there's no overlap and seals the test with a fingerprint.</em></span></li>
+              <li style="--i:12"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>La liga, con la prueba cerrada.</b> <em>Los modelos compiten con validación cruzada sobre el entrenamiento y heredan todas tus decisiones; la prueba sigue cerrada.</em></span><span class="en" lang="en"><b>The league, with the test still closed.</b> <em>Models compete by cross-validation on the training part and inherit all your decisions; the test stays closed.</em></span></li>
+              <li style="--i:13"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>¿Hay señal real?.</b> <em>Una prueba de permutación de etiquetas te dice si el modelo encontró estructura o solo azar.</em></span><span class="en" lang="en"><b>Is there a real signal?.</b> <em>A label-permutation test tells you whether the model found structure or just chance.</em></span></li>
+              <li style="--i:14"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>El error por segmento y la calibración.</b> <em>La prueba se abre una vez, y cada apertura distinta queda contada: lees el peor segmento, la calibración y los peores casos para nombrar el patrón de fallo.</em></span><span class="en" lang="en"><b>Error by segment, and calibration.</b> <em>The test opens once, and every distinct opening is counted: you read the worst segment, the calibration and the worst cases to name the failure pattern.</em></span></li>
+              <li style="--i:15"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>¿Sirve para la decisión?.</b> <em>El modelo traducido a tu decisión: falsas alarmas por cada cien, costo y beneficio frente a lo de hoy. «No usarlo» es un resultado válido y queda escrito.</em></span><span class="en" lang="en"><b>Does it serve the decision?.</b> <em>The model translated into your decision: false alarms per hundred, cost and benefit against today's rule. «Don't use it» is a valid result and it's written down.</em></span></li>
+              <li style="--i:16"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>La ficha del modelo y su vigilancia.</b> <em>La ficha sale del cuaderno con la fuente de cada línea; con «usarlo» trae el plan de vigilancia, la cadencia de reentreno, quién responde y un chequeo de deriva de las entradas.</em></span><span class="en" lang="en"><b>The model card and its watch plan.</b> <em>The card comes out of the notebook with each line's source; with «use it» it carries the watch plan, the retraining cadence, who answers for it and a drift check on the inputs.</em></span></li>
             </ul>
           </div>
         </div>
@@ -1315,9 +1359,9 @@
 <footer>
   <div class="env">
     <p class="conteo">
-      <span class="conteo-cifra" data-contador="41" aria-hidden="true">41</span>
+      <span class="conteo-cifra" data-contador="58" aria-hidden="true">58</span>
       <span class="conteo-glosa">
-        <span class="es" lang="es"><b><span class="oculto-visual">41 </span>funcionalidades</b>, todas en esta página; la liga honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin mirar la prueba”, estimar una cantidad, del Sprint 006, suma dos, y el Sprint 007 suma seis: clasificar en varias categorías y las cinco de agrupar.</span><span class="en" lang="en"><b><span class="oculto-visual">41 </span>features</b>, all on this page. Sprint 005's honest league is summed up as “A league of models, picked without looking at the test”; Sprint 006 adds two for estimating a quantity, and Sprint 007 adds six: classifying into several categories and five for grouping rows.</span>
+        <span class="es" lang="es"><b><span class="oculto-visual">58 </span>funcionalidades</b>, todas en esta página; la liga honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin mirar la prueba”, estimar una cantidad, del Sprint 006, suma dos, el Sprint 007 suma seis: clasificar en varias categorías y las cinco de agrupar; y el Protocolo DS, de los Sprints 008 a 015, suma las 17 de su puerta.</span><span class="en" lang="en"><b><span class="oculto-visual">58 </span>features</b>, all on this page. Sprint 005's honest league is summed up as “A league of models, picked without looking at the test”; Sprint 006 adds two for estimating a quantity, Sprint 007 adds six: classifying into several categories and five for grouping rows; and Protocolo DS, from Sprints 008 to 015, adds the 17 behind its door.</span>
       </span>
     </p>
 
@@ -1332,6 +1376,7 @@
           <tr><th scope="row"><span class="es" lang="es">Etapa 5</span><span class="en" lang="en">Stage 5</span></th><td><span class="es" lang="es">La liga honesta: todos los modelos que el navegador puede entrenar, elegidos con validación cruzada sin mirar la prueba.</span><span class="en" lang="en">The honest league: every model the browser can train, picked with cross-validation without looking at the test.</span></td></tr>
           <tr><th scope="row"><span class="es" lang="es">Etapa 6</span><span class="en" lang="en">Stage 6</span></th><td><span class="es" lang="es">Estimar una cantidad: el veredicto en las unidades de la columna y el gráfico estimado frente a real.</span><span class="en" lang="en">Estimating a quantity: the verdict in the column's units and the estimated-versus-actual chart.</span></td></tr>
           <tr><th scope="row"><span class="es" lang="es">Etapa 7</span><span class="en" lang="en">Stage 7</span></th><td><span class="es" lang="es">El catálogo: clasificar en varias categorías y agrupar filas parecidas sin objetivo, con su lectura.</span><span class="en" lang="en">The catalogue: classifying into several categories and grouping similar rows without a target, with its reading.</span></td></tr>
+          <tr><th scope="row"><span class="es" lang="es">Etapa 8</span><span class="en" lang="en">Stage 8</span></th><td><span class="es" lang="es">El camino lento: Protocolo DS, diez etapas con compuertas que no se saltan, tus propios datos, un cuaderno que se escribe solo y una ficha con su plan de vigilancia.</span><span class="en" lang="en">The slow path: Protocolo DS, ten stages with gates that can't be skipped, your own data, a notebook that writes itself and a model card with its watch plan.</span></td></tr>
         </tbody>
       </table>
       <p class="es pie-nota" lang="es">Probeta DS · <i>ciencia de datos honesta, de principio a fin</i>. Esta página se actualiza con la app: cuando una funcionalidad cambia, cambia aquí en el mismo paso.</p><p class="en pie-nota" lang="en">Probeta DS · <i>honest data science, end to end</i>. This page is updated with the app: when a feature changes, it changes here in the same step.</p>
@@ -1423,7 +1468,7 @@
     window.addEventListener("resize", () => { medir(); despertar(); }, { passive: true });
   }
 
-  // ── E08 · el contador. El texto accesible ya dice 41 desde el primer byte; esto solo
+  // ── E08 · el contador. El texto accesible ya dice 58 desde el primer byte; esto solo
   // dramatiza la cifra decorativa (aria-hidden), así que ningún e2e depende de él.
   const cifra = document.querySelector(".conteo-cifra");
   if (cifra && !menosMovimiento.matches) {

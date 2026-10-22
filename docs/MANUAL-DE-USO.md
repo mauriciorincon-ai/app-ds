@@ -687,22 +687,33 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   de Google»** lleva a la entrada del glosario de aprendizaje automático de Google (CC BY 4.0).
 
 - **Privacidad:** tus respuestas, tus costos, los nombres de tus columnas y tus fechas **no salen de tu
-  navegador**: viven en el cuaderno de este navegador y en el archivo que tú bajas. A Sentry solo llega
-  el número de la etapa y el resultado (registrada, cerrada…), nunca un valor.
+  navegador**: viven en el cuaderno de este navegador (el almacenamiento del propio navegador, que sigue ahí
+  al cerrar la pestaña) y en el archivo que tú bajas. Tu **apuesta de la etapa 4** (los nombres de las
+  columnas que marcaste) vive aparte, en la memoria de la pestaña (`sessionStorage`), y se borra al
+  cerrarla. A Sentry solo llega el número de la etapa y el resultado (registrada, cerrada…), nunca un
+  valor.
 
-- **Limitaciones conocidas (Sprints 008 a 015):**
+- **Limitaciones conocidas (Sprints 008 a 016):**
   - Hoy están construidas las diez etapas. Ninguna etapa aparece «Sin construir»: la 10 abre con la 9 cumplida.
   - El Protocolo cubre las tres tareas **con objetivo** (dos clases, varias o una cantidad); **sin
     objetivo** no aplica y se va a «agrupar» en Probeta.
-  - El tamaño de muestra con **varias clases** es una **aproximación**: se calcula «una contra el
+  - El tamaño de muestra **dice sus supuestos** junto al cálculo: con dos clases, el R² de Nagelkerke que
+    supone (0.15, el valor de Riley cuando no hay otra información: un supuesto, no algo medido en tus
+    datos), y con varias clases, que toma una categoría contra todas las demás y manda la que más filas
+    pide. Si declaras menos parámetros de los que la app cuenta en tus columnas, una advertencia te muestra
+    los dos números. Con varias clases el cálculo es una **aproximación**: se calcula «una contra el
     resto» y se toma la que pide más filas. Con una cantidad, el **R² anticipado** lo pones tú
     (0.2 es una apuesta prudente si no tienes uno mejor).
   - Las fechas se leen en ISO (2026-01-31) y como día/mes/año o mes/día/año con cuatro cifras de año;
     una fecha imposible (30 de febrero) queda como «sin leer», no se corrige.
   - Hay **un cuaderno por navegador**: para trabajar en paralelo, exporta uno y empieza otro.
-  - Un cuaderno modificado a mano **no gana nada**: con tus datos cargados, lo que la etapa 2 calculó
-    sobre ellos se vuelve a calcular, y si no coincide la etapa pasa a «por verificar» y la siguiente
-    no abre. Los criterios de las etapas 1 y 3 se calculan de tus respuestas y se recalculan siempre.
+  - Un cuaderno modificado a mano **no gana nada**: con tus datos cargados, lo que las etapas 2 y 4 a 10
+    calcularon sobre ellos (los hallazgos de la 4, las cifras de la línea base, el sello de la prueba, los
+    pliegues, la medida de la prueba, las cifras de la decisión) se vuelve a calcular, y si no coincide la
+    etapa pasa a «por verificar» y la siguiente no abre. Los criterios de las etapas 1 y 3 se calculan de
+    tus respuestas y se recalculan siempre.
+  - Un costo puede llegar hasta **un billón** (1 000 000 000 000) por unidad: más allá, la cuenta deja de
+    ser un número que se pueda comparar y la etapa 1 lo rechaza diciendo el tope.
   - Los números se escriben **sin separador de miles**, con punto o coma decimal (`1500` o `1500.5`).
     `1,500` o `1.500` no se leen, porque no se sabe si son uno y medio o mil quinientos; el campo te
     lo dice.
@@ -724,10 +735,12 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
       en el inventario («excluir»).
 
   - **Etapa 5, límites (Sprint 010):**
-    - Es una **referencia**, no un resultado. Se mide sobre todas tus filas, no sobre la prueba: que tu
+    - Es una **referencia**, no un resultado. Se mide sobre tus filas con objetivo, no sobre la prueba: que tu
       regla gane aquí no prueba nada sobre datos nuevos.
     - Una celda vacía **no cumple** la condición, tampoco «distinto de» ni «no es»; la pantalla dice en
-      cuántas filas pasa.
+      cuántas filas pasa. En una columna numérica, una celda que no se lee como número tampoco la cumple.
+    - El texto se compara **exacto**: las mayúsculas y los espacios dentro del valor cuentan («Informal» no es
+      «informal»); los espacios de los extremos, no.
     - La app **no sabe** qué hace tu gente: que escribas una regla y la midas no prueba que la usen.
     - Con una cantidad, el último valor por unidad usa la **mediana** para la primera fila de cada unidad y
       para las filas sin unidad o sin fecha; la pantalla dice cuántas son.
@@ -775,6 +788,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - **Etapa 10, límites (Sprint 015):**
     - **La ficha sale del cuaderno, y no lo corrige.** Si una etapa anterior cambia, la ficha se rehace con lo nuevo. Lo que escribe el dueño no lo revisa la app.
     - **El chequeo mide las entradas, no el desempeño.** Un CSV nuevo puede parecerse al de entrenamiento y el modelo fallar igual. Para vigilar el desempeño hacen falta los resultados nuevos y el modelo guardado, y eso no está en esta versión.
+    - **Sin con qué comparar, el chequeo lo dice.** Una columna de texto marcada cuyas categorías no
+      juntan 5 filas, o una numérica con menos de 25 filas con valor, no tiene referencia: el chequeo la
+      marca **«sin referencia»**, no «estable». Un «sigue» solo habla de las columnas que sí se pudieron medir.
     - **La referencia de deriva guarda solo agregados.** Para las columnas numéricas, cortes de cuantiles redondeados y conteos; para las de texto que **tú marcas**, los nombres de las categorías con al menos 5 filas y cuántas filas tiene cada una: nunca filas. De una columna de texto que no marcas no se guarda nada y el chequeo no la vigila: el «sigue» solo habla de las columnas vigiladas. Con pocas filas en el CSV nuevo, la app dice «pocas filas para medir» en vez de dar un número. Todo queda en tu navegador; viaja en el archivo del cuaderno solo si lo exportas.
     - **Las convenciones de deriva no son una prueba.** Un cambio moderado desde un PSI de 0,10 y una alerta desde 0,25 vienen de la etapa 4.
     - **La cadencia es tuya, salvo con partición por tiempo.** Con una prueba por tiempo, la app propone los meses que respalda; sin ella, la cadencia la escribes tú y la ficha lo dice.
@@ -976,6 +992,31 @@ cuando una te frene.
   necesita al menos dos filas de cada categoría en el entrenamiento para comparar modelos con
   honestidad. Consigue más filas de esa categoría o júntala con otra parecida en tu CSV.
 
+**Protocolo DS**
+
+- **¿Por qué el Protocolo no me deja saltar una etapa?** Porque cada etapa se apoya en la anterior: el
+  umbral de la 9 sale de los costos de la 1, la prueba de la 8 solo es creíble si la 6 la selló antes de
+  tocar el modelo. Lo que no se pueda cumplir se corrige o se detiene; no hay botón de «saltar» ni una
+  excepción con justificación.
+- **¿Dónde se guarda mi cuaderno y qué pasa si borro los datos del navegador?** En el almacenamiento de
+  este navegador, solo ahí. Si lo borras, el cuaderno se va con él: **exporta** el cuaderno cuando termines
+  una etapa importante, y vuelve a **importarlo** (te pide un sí si ya hay entradas). El archivo no lleva
+  ni una fila de tu CSV.
+- **Cargué otro CSV y la app me preguntó si es otra versión o otro proyecto, ¿qué elijo?** Si es el mismo
+  trabajo con datos nuevos, **«Otra versión de los mismos datos»**: lo que dependía de los datos viejos vuelve
+  a «por verificar». Si es otro trabajo, **«Otro proyecto: cuaderno nuevo»**, que pide un segundo sí porque
+  reemplaza el cuaderno.
+- **¿Por qué la prueba solo se abre una vez?** Porque cada vez que miras la prueba y cambias algo, el
+  número deja de ser el que puedes esperar con datos nuevos. El cuaderno cuenta cada apertura **distinta**
+  y la ficha lo dice; abrir lo mismo dos veces cuenta una.
+- **Mi decisión fue «no usarlo», ¿fracasé?** No: es un resultado válido. Queda en el cuaderno con sus
+  números y la ficha dice qué tendría que cambiar para volver a intentarlo.
+- **¿Qué hago con la ficha?** Descárgala en Markdown y compártela con quien responda por el modelo. Cada
+  línea trae su etapa, su fecha y la huella del archivo; lo que escribió el dueño va rotulado así.
+- **¿El chequeo de deriva me dice si el modelo sigue funcionando?** No: mide si las **entradas** de hoy se
+  parecen a las del entrenamiento. Un modelo puede fallar con entradas parecidas; para vigilar el desempeño
+  hacen falta los resultados nuevos, y eso no está en esta versión.
+
 ## Historial
 
 | Sprint | Features añadidas a este manual                                                                                                                                                                                                                                                                                      |
@@ -996,3 +1037,4 @@ cuando una te frene.
 | 013    | Protocolo DS, etapa 8 «La prueba, abierta una vez» (la prueba sellada se abre una sola vez y solo con el sello verificado; la medida en la prueba con su intervalo bootstrap por conglomerados, la línea base y tu regla, el optimismo de la selección, el error por segmento con soporte y su peor segmento, la calibración con su Brier, los peores casos solo en pantalla, y tu patrón de fallo. Las aperturas se cuentan y se rotulan, sin bloquear). Además: la etapa 7 dice si la prueba seguía cerrada o se abrió antes o después de su selección. |
 | 014    | Protocolo DS, etapa 9 «¿Sirve para la decisión?» (la decisión con números, sin volver a abrir la prueba: el umbral de tus costos con sus falsas alarmas por cada 100 alertas, el costo y el beneficio neto frente a no hacer nada, actuar con todos y tu regla de hoy; la capacidad de tu equipo; la curva de decisión; y tu decisión, usar, iterar o no usar, con razón. «No usarlo» pasa la compuerta. Con un número, el costo y el cuantil de tus costos). Además: el peor segmento exige que el error supere al total, y la etapa 8 deja de recalcularse a cada tecla de tu patrón. |
 | 015    | Protocolo DS, etapa 10 «La ficha del modelo y su vigilancia» (la ficha sale solo del cuaderno, cada línea con su etapa, fecha y huella; quién responde; con «usar», la cadencia de reentreno que respalda la prueba y el plan de vigilancia con un chequeo de deriva de un CSV nuevo que mide las entradas, y las columnas de texto que vigilas las eliges tú; con «no usar» o «iterar», qué cambiar; la ficha se descarga en Markdown; «Protocolo completo» cuando las diez etapas están cumplidas).
+| 016    | El producto completo (cierre de H-2: las diez etapas, la ficha y Probeta se recorren enteras con el teclado; el tamaño de muestra dice sus supuestos; el chequeo de deriva dice «sin referencia» en vez de «estable» cuando no hay con qué comparar; nota junto a «Exportar cuaderno»; costos con tope; la prueba no cuenta dos veces la misma apertura; preguntas frecuentes del Protocolo).                                                                                                        |

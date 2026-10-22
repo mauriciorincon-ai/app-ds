@@ -13,9 +13,10 @@
           "col-hits": "Hits out of 100",
           "majority": "The most frequent in your rows",
           "rule": "Your rule of today",
-          "note": "This is a reference, not a result: it is measured on all {rows} of your rows. Stage 8 measures it again on the test set."
+          "note": "This is a reference, not a result: it is measured on your {rows} rows with a target. Stage 8 measures it again on the test set."
         },
         "no-previous": "{n} rows have no earlier value for their unit (the first of each, or with no unit or no date): there «the last value» uses the median.",
+        "no-previous_one": "1 row has no earlier value for its unit (the first of each, or with no unit or no date): there «the last value» uses the median.",
         "rule": {
           "legend": "Is there a rule applied today?",
           "help": "What your people do today, with no model. If there is none, say so: the model will compete against the best reference above.",
@@ -39,7 +40,9 @@
           "then-num": "If the rule holds, estimate",
           "otherwise-num": "If the rule doesn't hold, estimate",
           "measure": "The rule holds in {cumple} of {filas} rows.",
+          "measure_one": "The rule holds in {cumple} of 1 row.",
           "empties": "In {vacios} rows one of these columns has no value: there the condition doesn't hold, not even «not equal to».",
+          "empties_one": "In 1 row one of these columns has no value: there the condition doesn't hold, not even «not equal to».",
           "incomplete": "Complete the condition to measure it.",
           "outputs-missing": "Pick what is done when it holds and when it doesn't to see what it costs."
         },

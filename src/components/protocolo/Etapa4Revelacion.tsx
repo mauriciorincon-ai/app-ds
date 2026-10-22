@@ -11,7 +11,7 @@ import type { Hallazgos4 } from "@/engine/protocolo/etapa4";
 import { lista, type Registro } from "@/engine/protocolo/valores";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { TEXTOS_ETAPA_4 } from "./textos/etapa4";
-import { cifra } from "@/lib/protocolo/formato";
+import { cifra, psiTexto } from "@/lib/protocolo/formato";
 import { formatQuantity, thousands } from "@/lib/quantity";
 
 const k = (clave: string) => `protocol.stage.4.${clave}`;
@@ -188,7 +188,7 @@ export function Revelacion({
                   const nivel = psi >= PSI_ALERTA ? "alert" : "moderate";
                   const frase = t(k(`find.drift.item.${nivel}`), {
                     columna,
-                    psi: cifra(psi),
+                    psi: psiTexto(psi, [PSI_MODERADA, PSI_ALERTA]),
                   });
                   const completa =
                     ks === null

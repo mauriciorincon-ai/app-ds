@@ -9,6 +9,7 @@ import { matchTask } from "@/engine/despacho";
 import { formaDe } from "@/engine/protocolo/etapa1";
 import {
   ETAPA_3,
+  FICHA_MAX,
   PROPOSITOS,
   chequeos3,
   type Proposito,
@@ -17,6 +18,7 @@ import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { contarParametros } from "@/engine/protocolo/tabla";
 import { texto } from "@/engine/protocolo/valores";
 import { useI18n } from "@/i18n/provider";
+import { NAGELKERKE_SUPUESTO } from "@/engine/protocolo/muestra";
 import { formatQuantity, thousands } from "@/lib/quantity";
 import {
   CampoArea,
@@ -69,13 +71,14 @@ export function Etapa3Form({
   const [aviso, setAviso] = useState(texto(previa ?? {}, "aviso") ?? "");
 
   const conFecha = etapa2?.respuestas.momento === "columna";
-  const pideR2 = forma
+  // por tarea: si pide el R² (estimar) o lo da por supuesto el cálculo de la muestra (S16, S8 M1: se dice en pantalla)
+  const { pideR2, supuesto } = forma
     ? matchTask(forma, {
-        binaria: () => false,
-        multiclase: () => false,
-        numerica: () => true,
+        binaria: () => ({ pideR2: false, supuesto: "assume-binary" }),
+        multiclase: () => ({ pideR2: false, supuesto: "assume-multiclass" }),
+        numerica: () => ({ pideR2: true, supuesto: null }),
       })
-    : false;
+    : { pideR2: false, supuesto: null };
 
   const respuestas = useMemo((): Record<string, Valor> | null => {
     if (!proposito) return null;
@@ -142,6 +145,7 @@ export function Etapa3Form({
             valor={poblacion}
             onCambio={setPoblacion}
             filas={2}
+            maximo={FICHA_MAX}
           />
           {conFecha ? (
             <p className="text-sm" data-testid="protocolo-periodo">
@@ -156,6 +160,7 @@ export function Etapa3Form({
               ayuda={t("protocol.stage.3.help.periodo_texto")}
               valor={periodoTexto}
               onCambio={setPeriodoTexto}
+              maximo={FICHA_MAX}
             />
           )}
           <CampoArea
@@ -164,6 +169,7 @@ export function Etapa3Form({
             valor={exclusiones}
             onCambio={setExclusiones}
             filas={2}
+            maximo={FICHA_MAX}
           />
           <CampoTexto
             numerico
@@ -195,6 +201,14 @@ export function Etapa3Form({
                   available: thousands(Number(calculo.n_disponible)),
                 })}
               </p>
+              {supuesto && (
+                <p className="text-xs text-ink-muted" data-testid="protocolo-supuesto">
+                  {t(`protocol.stage.3.size.${supuesto}`, {
+                    r2: formatQuantity(NAGELKERKE_SUPUESTO, 2),
+                    clase: String(calculo.clase_que_manda ?? ""),
+                  })}
+                </p>
+              )}
               <p className={suficiente ? "text-ink-muted" : "text-caution"}>
                 <span aria-hidden="true">{suficiente ? "✓" : "⚠"} </span>
                 {t(
@@ -237,6 +251,7 @@ export function Etapa3Form({
               valor={aviso}
               onCambio={setAviso}
               filas={2}
+              maximo={FICHA_MAX}
             />
           )}
           <Trampas etapa={3} trampas={trampas} />
@@ -250,7 +265,7 @@ export function Etapa3Form({
         onClick={() =>
           respuestas
             ? onRegistrar({
-                respuestas,
+                respuestas: suficiente ? { ...respuestas, aviso: "" } : respuestas,
                 chequeos:
                   proposito === "explicar"
                     ? {}

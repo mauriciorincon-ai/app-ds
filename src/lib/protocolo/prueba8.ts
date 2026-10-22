@@ -5,6 +5,7 @@
 // verificada. Viajan solo las columnas en «usar» y el objetivo: las filas del entrenamiento sellado (sin el
 // hueco del horizonte ni lo que quedó fuera) y las de la prueba, en su orden. El ganador y la métrica son
 // los que registró la etapa 7. Vive fuera del motor y lo importa solo el hook diferido de la etapa 8.
+import { byCodePoint } from "@/engine/tarea";
 import { matchTask } from "@/engine/despacho";
 import type { Plan8 } from "@/engine/protocolo/etapa8";
 import { SEMILLA_7 } from "@/engine/protocolo/pliegues";
@@ -56,7 +57,8 @@ export function envio8(
   const classes = matchTask(p7.forma, {
     binaria: () => undefined,
     multiclase: () =>
-      [...new Set(entrenamiento.map((f) => clases![f]!))].sort(),
+      // S16 (S13 B4): el orden de las clases no depende del idioma del navegador
+      [...new Set(entrenamiento.map((f) => clases![f]!))].sort(byCodePoint),
     numerica: () => undefined,
   });
   const positive = matchTask(p7.forma, {
