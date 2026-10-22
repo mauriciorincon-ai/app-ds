@@ -22,9 +22,10 @@ import {
 //    cadencia la escribes porque la prueba no fue por tiempo; la ficha sale del cuaderno con sus secciones, sus
 //    fuentes y «Lo que este modelo cumplió»; «Protocolo completo»; se descarga en Markdown sin una sola fila; el
 //    chequeo de deriva da «sigue» con el mismo archivo y «reentrenar» con el ingreso desplazado; la etapa 10 no
-//    manda nada al worker ni a la red; axe en los dos temas y 360 px;
+//    manda nada al worker ni a la red; axe en los dos temas y 360 px; la columna de texto («empleo») se ofrece
+//    SIN marcar: nada de ella se guarda (ni en el cuaderno exportado) y la ficha y el chequeo lo dicen;
 //  · precio-fuga-plantada.csv (estimar un número), «usar»: llega a «Protocolo completo» con su ficha descargada
-//    (la calibración «no aplica» y sin piso en beneficio neto);
+//    (la calibración «no aplica» y sin piso en beneficio neto); aquí SÍ se marca la columna de texto «barrio»;
 //  · crédito, «no usar»: su ficha dice qué tendría que cambiar, sin plan de vigilancia ni chequeo.
 
 test.setTimeout(480_000);
@@ -150,6 +151,12 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   await e10
     .getByLabel("Para qué NO usarlo (opcional)")
     .fill("Clientes con menos de seis meses en el banco");
+  // la columna de texto del modelo se ofrece sin marcar: tú decides si se guardan los nombres de sus categorías
+  const texto = e10.getByTestId("protocolo-texto10");
+  await expect(texto.getByRole("checkbox", { name: "empleo" })).not.toBeChecked();
+  await expect(texto.getByTestId("protocolo-texto10-estado")).toContainText(
+    "Marcadas: 0 de 1",
+  );
 
   // la vista previa sale del cuaderno más lo que escribiste, con la 10 por registrar
   await e10.getByText("Vista previa de la ficha").click();
@@ -208,6 +215,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   await expect(constancia.getByTestId("ficha-seccion-responde")).toContainText(
     "Escrito por el dueño",
   );
+  await expect(constancia.getByTestId("ficha-seccion-vigilancia")).toContainText(
+    "Sin vigilar por decisión del dueño (1): empleo.",
+  );
   await expect(constancia).not.toContainText(/protocol\.stage\./);
   await axeBothThemes(page);
   await sinDesborde(page, 360);
@@ -228,6 +238,7 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   ])
     expect(contenido).toContain(encabezado);
   expect(contenido).toContain("Responde por el modelo: Jefa de retención.");
+  expect(contenido).toContain("Sin vigilar por decisión del dueño (1): empleo.");
   expect(contenido).toContain(
     "Para qué NO usarlo (escrito por el dueño): Clientes con menos de seis meses en el banco",
   );
@@ -265,6 +276,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   await expect(alerta).toContainText("ingreso_mensual");
   await expect(alerta).toContainText("Alerta");
   await expect(deriva).toContainText("esto mide las entradas, no el desempeño");
+  await expect(deriva.getByTestId("protocolo-deriva10-sin-vigilar")).toContainText(
+    "empleo",
+  );
   await axeBothThemes(page);
   await sinDesborde(page, 360);
 
@@ -276,6 +290,23 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   const exportado = readFileSync((await exporta.path())!, "utf8");
   expect(exportado).toContain('"decision": "usar"');
   expect(exportado).toContain('"dueno": "Jefa de retención"');
+  // lo que no marcaste no deja ningún nombre de categoría: solo la referencia numérica y la lista de lo no vigilado
+  const archivo = JSON.parse(exportado) as {
+    cuaderno: {
+      evidencias: {
+        etapa: number;
+        datos: {
+          respuestas: Record<string, unknown>;
+          chequeos: Record<string, unknown>;
+        };
+      }[];
+    };
+  };
+  const e10Guardada = archivo.cuaderno.evidencias.find((e) => e.etapa === 10)!;
+  expect(e10Guardada.datos.respuestas.vigilar_texto).toEqual([]);
+  expect(e10Guardada.datos.chequeos.vig_omitidas).toEqual(["empleo"]);
+  for (const ref of e10Guardada.datos.chequeos.vig_referencia as string[])
+    expect((JSON.parse(ref) as { tipo: string }).tipo).toBe("numero");
   const red = peticiones.join("\n");
   expect(red).not.toContain("/api/narrate");
   for (const fila of csv.slice(1).filter(Boolean)) {
@@ -306,6 +337,9 @@ test("etapa 10 con precio y «usar»: llega a «Protocolo completo» con su fich
     .getByLabel("Persona o rol que responde por este modelo")
     .fill("Corredora principal");
   await e10.getByLabel("Reentrenar cada (meses)").fill("12");
+  // aquí sí se marca la columna de texto: sus categorías con soporte entran a lo que se vigila
+  await e10.getByRole("checkbox", { name: "barrio" }).check();
+  await expect(e10.getByTestId("protocolo-texto10-estado")).toContainText("Marcadas: 1 de");
   await sinDesborde(page, 360);
   await e10.getByRole("button", { name: "Registrar la etapa 10" }).click();
   await expect(e10.getByText("Cumplida")).toBeVisible();
@@ -321,6 +355,9 @@ test("etapa 10 con precio y «usar»: llega a «Protocolo completo» con su fich
   await expect(
     constancia.getByTestId("ficha-seccion-vigilancia"),
   ).not.toContainText("beneficio neto");
+  await expect(
+    constancia.getByTestId("ficha-seccion-vigilancia"),
+  ).toContainText(/Columnas vigiladas por deriva \(\d+\): .*barrio/);
   const { nombre, contenido } = await descargarFicha(page);
   expect(nombre).toBe("ficha-del-modelo-precio-fuga-plantada.md");
   expect(contenido).toContain("## Lo que este modelo cumplió");
