@@ -92,7 +92,12 @@ function montar(armado: Armado) {
     registrado.rechazo = r.ok ? null : r.rechazo;
     return r.ok ? null : r.rechazo;
   });
-  const vista = render(
+  const vista = render(formulario(armado, onRegistrar));
+  return { ...vista, registrado };
+}
+
+function formulario(armado: Armado, onRegistrar: (d: DatosEtapa) => null | unknown) {
+  return (
     <I18nProvider>
       <Etapa7Form
         datos={{
@@ -107,11 +112,10 @@ function montar(armado: Armado) {
         }}
         anterior={null}
         previas={armado.previas}
-        onRegistrar={onRegistrar}
+        onRegistrar={onRegistrar as never}
       />
-    </I18nProvider>,
+    </I18nProvider>
   );
-  return { ...vista, registrado };
 }
 
 beforeEach(() => {
@@ -160,6 +164,20 @@ describe("antes de correr", () => {
     expect(envio.payload.rows).toHaveLength(
       plan.particion.entrenamiento.length,
     );
+  });
+
+  it("S16 (S12): la corrida se ata al plan: con otro CSV el resultado de antes no se usa", () => {
+    const { rerender } = montar(CREDITO);
+    fireEvent.click(screen.getByRole("button", { name: "Correr la liga" }));
+    hook.estado = { tipo: "lista", corrida: corrida() };
+    rerender(formulario(CREDITO, vi.fn()));
+    // con los mismos datos, la corrida está: el botón ofrece volver a correr
+    expect(screen.getByRole("button", { name: "Volver a correr la liga" })).toBeTruthy();
+    // otro CSV (otro plan): la corrida de antes no es de estos datos; el estado de la liga sigue «lista» en el hook,
+    // pero el formulario ya no la usa
+    rerender(formulario(BAJAS, vi.fn()));
+    expect(screen.queryByRole("button", { name: "Volver a correr la liga" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Correr la liga" })).toBeTruthy();
   });
 
   it("nunca filas: ningún valor de la unidad aparece en pantalla", () => {

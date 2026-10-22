@@ -6,11 +6,12 @@
 //  · las bandas son las de la etapa 4 (0,10 y 0,25).
 import { describe, expect, it } from "vitest";
 import {
+  chequearColumna,
   chequearDeriva,
   estadoDePsi,
   veredictoDe,
 } from "@/engine/protocolo/chequeo-deriva";
-import { referenciasDeriva } from "@/engine/protocolo/referencia-deriva";
+import { referenciasDeriva, type RefColumna } from "@/engine/protocolo/referencia-deriva";
 import type { CsvTable } from "@/lib/ds/csv";
 import { tablaKit } from "./protocolo-etapa4-helpers";
 
@@ -34,6 +35,24 @@ const conColumna = (
     rows: tabla.rows.map((fila) => fila.map((v, k) => (k === j ? cambio(v) : v))),
   };
 };
+
+describe("una referencia sin con qué comparar se dice, no se mide «estable» (S16, S15 M2 y B1)", () => {
+  const nuevo = Array.from({ length: 30 }, (_, i) => String(i));
+
+  it("un texto sin categorías con soporte (un código casi único) da «sin referencia» y el veredicto es «revisa»", () => {
+    const sinCategorias: RefColumna = { columna: "codigo", tipo: "texto", categorias: [], cuentas: [40, 0] };
+    const r = chequearColumna(sinCategorias, nuevo.map((i) => `c${i}`));
+    expect(r).toMatchObject({ columna: "codigo", estado: "sin-referencia", psi: null });
+    expect(veredictoDe([r])).toBe("revisar");
+  });
+
+  it("una numérica sin cortes (pocas filas de entrenamiento) tampoco se mide «estable»", () => {
+    const sinCortes: RefColumna = { columna: "edad", tipo: "numero", cortes: [], cuentas: [12, 0] };
+    const r = chequearColumna(sinCortes, nuevo);
+    expect(r).toMatchObject({ columna: "edad", estado: "sin-referencia", psi: null });
+    expect(veredictoDe([r])).toBe("revisar");
+  });
+});
 
 describe("el chequeo de deriva con un CSV nuevo", () => {
   it("el mismo CSV del kit da «estable» en todas sus columnas: el plan sigue", () => {

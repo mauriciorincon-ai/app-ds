@@ -285,9 +285,10 @@ describe("k baja con su razón, y con menos de 2 no hay pliegues", () => {
       clase: (i) => (i % 3 === 0 ? "si" : "no"),
       unidad: (i) => `U${i % 3}`,
     });
-    expect(repartirPliegues(confundida, confundida.filas, P("grupo")).ok).toBe(
-      false,
-    );
+    const sinPliegues = repartirPliegues(confundida, confundida.filas, P("grupo"));
+    expect(sinPliegues.ok).toBe(false);
+    // S16 (S12): el reparto por unidad existe, pero a cada pliegue le falta una clase: faltan casos, no unidades
+    expect(sinPliegues).toEqual({ ok: false, razon: "pocos-casos" });
   });
 
   it("por grupo con una sola unidad: no hay pliegues", () => {
