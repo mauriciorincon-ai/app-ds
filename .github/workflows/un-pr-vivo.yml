@@ -23,6 +23,12 @@ jobs:
           n=$(echo "$abiertos" | jq 'length')
           echo "PRs abiertos: $abiertos"
           if [ "$n" -le 1 ]; then echo "✓ un solo PR vivo"; exit 0; fi
+          # S16 (S8 B10): el PR vivo es el más antiguo; no falla cuando se abre un complementario después de él.
+          # Los demás tienen que declararse con «complementa #N: <razón>».
+          primero=$(echo "$abiertos" | jq 'min')
+          if [ "$ESTE" = "$primero" ]; then
+            echo "✓ este es el PR vivo (el más antiguo, #$primero); los demás deben declararse complementarios"; exit 0
+          fi
           if printf '%s' "$CUERPO" | head -n 1 | grep -qE '^complementa #[0-9]+:'; then
             echo "✓ segundo PR declarado como complementario: $(printf '%s' "$CUERPO" | head -n 1)"; exit 0
           fi
