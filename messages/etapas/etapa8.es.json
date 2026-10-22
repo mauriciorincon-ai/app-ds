@@ -90,7 +90,7 @@
           "col-said": "Lo que dijo el modelo",
           "col-proba": "Probabilidad",
           "col-cost": "Costo",
-          "empty": "El ganador no se equivocó en ninguna fila de la prueba."
+          "empty": "Ninguna fila de la prueba tuvo un costo mayor que cero."
         },
         "pattern": {
           "label": "Tu patrón de fallo",

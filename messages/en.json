@@ -991,6 +991,7 @@
         "cancel": "Don't load it",
         "replace-title": "Start a new notebook with this file?",
         "replace-body": "This replaces your current notebook ({n} entries) in this browser. Export it first if you want to keep it.",
+        "replace-body_one": "This replaces your current notebook (1 entry) in this browser. Export it first if you want to keep it.",
         "replace-yes": "Yes, start another",
         "back": "Back"
       }
@@ -1075,7 +1076,7 @@
           "decisor": "who makes it",
           "forma": "what shape the decision has",
           "unidad": "the cost unit",
-          "costos": "the costs, all above zero (with several options, from {min} to {max} options)",
+          "costos": "the costs, all above zero and no more than a trillion (10^12) (with several options, from {min} to {max} options)",
           "chequeos": "the calculated figures don't match your answers"
         },
         "trap": {
@@ -1222,7 +1223,9 @@
           "title": "You need {required} rows; you have {available}.",
           "enough": "The sample is enough.",
           "short": "The sample isn't enough: write your warning or reduce the candidate variables.",
-          "events": "That is {events} cases of the event and {epp} per parameter."
+          "events": "That is {events} cases of the event and {epp} per parameter.",
+          "assume-binary": "The calculation assumes a Nagelkerke R² of {r2} (Riley's value when nothing else is known): it's an assumption, not something measured in your data.",
+          "assume-multiclass": "With several categories the calculation takes one category against all the others; «{clase}» drives it, the one that asks for the most rows."
         },
         "check": {
           "n_disponible": "Rows with a target",
@@ -1258,6 +1261,7 @@
           "causal": "Predicting isn't explaining: even if the model is right, it doesn't tell you what would happen if you changed something. Knowing what causes what takes an experiment.",
           "muestra-alcanza": "With {parametros} candidate parameters you need at least {requerido} rows (decided by: {manda}). You have {disponible}: enough.",
           "muestra-corta": "With {parametros} candidate parameters you need at least {requerido} rows (decided by: {manda}). You have {disponible}: not enough, and the model may learn noise and fail on new data.",
+          "parametros-menos": "You declared {declarado} candidate parameters and your data counts {contado}: fewer parameters mean a smaller required sample. If you will drop columns on purpose, that's fine; if not, raise the number.",
           "periodo": "Your data covers {minimo} to {maximo}: the model only speaks for that period."
         }
       },
@@ -1412,10 +1416,10 @@
           "hueco-dias-uno": "The 1-day gap leaves out {n} rows: their outcome would already be known inside the test period.",
           "hueco-meses": "The {h}-month gap leaves out {n} rows: their outcome would already be known inside the test period.",
           "hueco-meses-uno": "The 1-month gap leaves out {n} rows: their outcome would already be known inside the test period.",
-          "clase-rara": "The test set keeps {n} cases of «{clase}», the class with the fewest: that's what stage 8 will have to measure it.",
+          "clase-rara": "The test set keeps {n} cases of «{clase}», the class with the fewest: that's what stage 8 will have to read how it does with it (stage 8 doesn't measure by class, but by segment and overall).",
           "clase-escasa": "The test set keeps only {n} cases of «{clase}»: with so few, what stage 8 measures for that class will be unstable.",
           "clase-ausente": "The test set has no case of «{clase}»: stage 8 won't be able to measure that class.",
-          "sellos": "You sealed {n} distinct test sets in this notebook: each different split is another way of looking, and it's counted."
+          "sellos": "This notebook carries {n} distinct sealed test sets (counting this one): each different split is another way of looking, and it's counted."
         },
         "summary": {
           "scheme": "Scheme: {esquema}.",
@@ -1591,6 +1595,7 @@
       "loads": "Data it worked with",
       "load": "{date} · {name} · {rows} rows · fingerprint {hash}",
       "export": "Export notebook",
+      "export-note": "The file carries what was derived from your data (counts, means, dates, column names and, for the text columns you ticked in stage 10, their category names) and what you wrote, but no row of your CSV. Store it the way you would store your data.",
       "import": "Import notebook",
       "new": "Start another notebook",
       "new-confirm": "Start a new notebook? The current one is replaced in this browser; export it first if you want to keep it.",
@@ -1600,6 +1605,7 @@
       "import-confirm": {
         "title": "Replace your notebook with the one in the file?",
         "body": "Your current notebook has {now} entries and the file's has {incoming}. Replacing it removes the current one from this browser: export it first if you want to keep it.",
+        "body_one": "Your current notebook has 1 entry and the file's has {incoming}. Replacing it removes the current one from this browser: export it first if you want to keep it.",
         "export-first": "Export the current one first",
         "yes": "Yes, replace",
         "cancel": "Cancel"

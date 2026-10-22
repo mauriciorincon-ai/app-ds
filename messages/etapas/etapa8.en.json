@@ -90,7 +90,7 @@
           "col-said": "What the model said",
           "col-proba": "Probability",
           "col-cost": "Cost",
-          "empty": "The winner didn't get a single test row wrong."
+          "empty": "No row of the test set had a cost above zero."
         },
         "pattern": {
           "label": "Your failure pattern",

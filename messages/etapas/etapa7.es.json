@@ -60,8 +60,8 @@
         },
         "why": {
           "title": "Por qué ganó",
-          "same": "{ganador} tuvo el mejor puntaje ({puntaje}), y no hay uno más simple a menos de un error estándar ({ee}).",
-          "simpler": "El mejor puntaje fue de {mejor} ({puntaje}). {ganador} quedó a menos de un error estándar ({ee}) y es más simple: una diferencia más chica que el ruido entre pliegues no justifica algo más complicado."
+          "same": "{ganador} tuvo el mejor puntaje de selección ({puntaje}, en validación cruzada: sirve para elegir, no para creer), y no hay uno más simple a menos de un error estándar ({ee}).",
+          "simpler": "El mejor puntaje de selección fue de {mejor} ({puntaje}, en validación cruzada: sirve para elegir, no para creer). {ganador} quedó a menos de un error estándar ({ee}) y es más simple: una diferencia más chica que el ruido entre pliegues no justifica algo más complicado."
         },
         "ref": {
           "nunca-actuar": "Nunca actuar",
