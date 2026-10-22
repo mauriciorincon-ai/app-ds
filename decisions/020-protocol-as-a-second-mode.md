@@ -68,3 +68,11 @@ no-construida`) from the notebook alone: stage N+1 is closed until N is met. `re
 - Without IndexedDB the user can lose the notebook by closing the tab; the page says so and the export
   is the remedy.
 - One notebook per browser. Several projects in parallel means exporting one and starting another.
+
+## Status note (2026-10-21, Sprint 016)
+
+All ten stages are built (S8–S15). What this ADR set as the skeleton held: the gate (`compuerta.ts`), the notebook that only
+grows, the IndexedDB persistence and the `.protocolo.json` file did not change shape. Two decisions that stages 4–10 added are
+recorded apart: the drift reference and what the notebook keeps from a column (**ADR 021**), and the notebook and card
+format with the sealed test that is opened once (**ADR 022**). §2's «text lives in `src/content/protocolo.ts`» is now
+partial: the texts of stages 4–10 live in `messages/etapas/etapaN.{es,en}.json`, loaded with their screen (S14).
