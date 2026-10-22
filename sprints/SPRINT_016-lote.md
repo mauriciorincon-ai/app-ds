@@ -8,7 +8,7 @@ anexo: lote de medios y bajos del S8 al S15 (cada punto confirmado en `main` ant
 
 Estados: **pagado** (commit del área) · **ya estaba** (lo pagó un sprint anterior; se cita la línea o la prueba) · **cerrado** (con razón y sitio).
 Commits `[F1]`: `f2c6729` motor y datos · `7625768` pantallas · `b9b911f` textos · `5892f2d` CI · `63b0648`, `da06884`, `ed31732` pruebas.
-Cada pago tiene una prueba que **falla sobre el código del S15** (`5091937`, copia con las pruebas nuevas encima: 41 + 17 pruebas en rojo; las tres de abajo marcadas «solo prueba» son huecos de prueba, no de código).
+Cada pago tiene una prueba que **falla sobre el código del S15** (`5091937`, copia con las pruebas nuevas encima: de 376 pruebas de 18 archivos, 56 fallan; en `protocolo-lote-motor` se sustituyeron `COSTO_MAX`, `esIdGuardado` y `CSV_ERROR`, que no existían). Las filas marcadas «solo prueba» son huecos de prueba, no de código.
 
 ## Pagados
 
