@@ -55,6 +55,8 @@ function referenciasDe(datos: DatosEtapa): RefColumna[] | null {
 export function Etapa10Deriva({ evidencia }: { evidencia: DatosEtapa }) {
   const t = useTextosEtapa(TEXTOS_ETAPA_10);
   const referencias = useMemo(() => referenciasDe(evidencia), [evidencia]);
+  // las columnas de texto que el dueño dejó sin vigilar: el veredicto no habla de ellas y la pantalla lo dice
+  const sinVigilar = lista(evidencia.chequeos, "vig_omitidas") ?? [];
   const [estado, setEstado] = useState<Estado>({ tipo: "nada" });
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -215,6 +217,18 @@ export function Etapa10Deriva({ evidencia }: { evidencia: DatosEtapa }) {
                   </tbody>
                 </table>
               </div>
+              {sinVigilar.length > 0 && (
+                <p
+                  className="text-caution"
+                  data-testid="protocolo-deriva10-sin-vigilar"
+                >
+                  <span aria-hidden="true">⚠ </span>
+                  {t("protocol.stage.10.drift.unwatched", {
+                    columnas: sinVigilar.length,
+                    lista: sinVigilar.join(", "),
+                  })}
+                </p>
+              )}
               <p className="text-ink-muted">
                 {t("protocol.stage.10.drift.reminder")}
               </p>

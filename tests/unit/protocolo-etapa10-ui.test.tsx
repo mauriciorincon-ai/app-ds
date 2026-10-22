@@ -3,6 +3,8 @@
 //  · el dueño se escribe (o se pone al decisor de la 1 con un clic): sin él la compuerta no pasa y lo nombra;
 //  · «usar» pide la cadencia (la sugerida si la prueba fue por tiempo; si no, la escribes) y, si la alargas,
 //    tu razón; «no usar» e «iterar» piden qué cambiar, sin plan de vigilancia;
+//  · las columnas de TEXTO del modelo las eliges tú (decisión del usuario, 2026-10-20): sin marcar no se guarda
+//    ni un nombre de categoría, y lo que dejas sin vigilar lo dicen la trampa, la ficha y el chequeo;
 //  · la vista previa de la ficha sale del cuaderno más lo que escribes, con su etapa, fecha y huella;
 //  · la constancia de la etapa cumplida: la ficha, su descarga en Markdown en el idioma activo (sin una sola
 //    fila de tus datos), y el chequeo de deriva con un CSV nuevo (que no se guarda ni sale por la red).
@@ -240,9 +242,71 @@ describe("la etapa 10 con «usar»", () => {
       /Se vigila la deriva de \d+ columnas del modelo contra [\d,]+ filas del entrenamiento sellado/,
     );
     expect(plan).toMatch(
-      /solo agregados \(cortes y frecuencias\), nunca filas/,
+      /solo agregados \(cortes y frecuencias; de las columnas de texto, solo las que marcaste, con los nombres de sus categorías\), nunca filas/,
     );
     expect(plan).toMatch(/mide las entradas, no el desempeño/);
+  });
+
+  it("las columnas de texto del modelo se ofrecen sin marcar: hasta que las marques no se guarda ni un nombre de categoría", () => {
+    const { registrado } = montar(A);
+    const casilla = screen.getByRole("checkbox", { name: "empleo" }) as HTMLInputElement;
+    expect(casilla.checked).toBe(false);
+    expect(screen.getByTestId("protocolo-texto10").textContent).toMatch(
+      /nombre de sus categorías con 5 filas o más \(hasta 4\)/,
+    );
+    expect(screen.getByTestId("protocolo-texto10-estado").textContent).toMatch(
+      /Marcadas: 0 de 1\. Las demás no se guardan ni se vigilan/,
+    );
+    // lo que queda sin vigilar lo dice la trampa
+    expect(
+      screen.getByText(
+        "Dejaste sin vigilar columnas de texto (empleo): si cambian, el chequeo no lo notará.",
+      ),
+    ).toBeTruthy();
+    escribir("Persona o rol que responde por este modelo", "Jefa de retención");
+    escribir("Reentrenar cada (meses)", "6");
+    registrar10Click();
+    expect(registrado.rechazo).toBeNull();
+    expect(registrado.datos?.respuestas.vigilar_texto).toEqual([]);
+    expect(registrado.datos?.chequeos.vig_omitidas).toEqual(["empleo"]);
+    for (const nombre of ["informal", "independiente"])
+      expect(JSON.stringify(registrado.datos)).not.toContain(nombre);
+  });
+
+  it("marcar la columna la vigila y guarda sus categorías; la trampa de lo no vigilado se va", () => {
+    const { registrado } = montar(A);
+    fireEvent.click(screen.getByRole("checkbox", { name: "empleo" }));
+    expect(screen.getByTestId("protocolo-texto10-estado").textContent).toMatch(
+      /Marcadas: 1 de 1/,
+    );
+    expect(screen.queryByText(/Dejaste sin vigilar columnas de texto/)).toBeNull();
+    expect(screen.getByTestId("protocolo-plan10").textContent).toMatch(
+      /Se vigila la deriva de 4 columnas del modelo/,
+    );
+    escribir("Persona o rol que responde por este modelo", "Jefa de retención");
+    escribir("Reentrenar cada (meses)", "6");
+    registrar10Click();
+    expect(registrado.rechazo).toBeNull();
+    expect(registrado.datos?.respuestas.vigilar_texto).toEqual(["empleo"]);
+    expect(registrado.datos?.chequeos.vig_omitidas).toEqual([]);
+    expect(JSON.stringify(registrado.datos?.chequeos.vig_referencia)).toContain("informal");
+    // y se puede desmarcar antes de registrar
+    fireEvent.click(screen.getByRole("checkbox", { name: "empleo" }));
+    expect(screen.getByTestId("protocolo-texto10-estado").textContent).toMatch(/Marcadas: 0 de 1/);
+  });
+
+  it("la vista previa de la ficha dice lo que quedó sin vigilar", () => {
+    montar(A);
+    const previa = screen.getByTestId("protocolo-preview10");
+    fireEvent.click(within(previa).getByText("Vista previa de la ficha"));
+    const secciones = screen.getByTestId("protocolo-preview10-secciones");
+    expect(
+      within(secciones).getByText(
+        "Sin vigilar por decisión del dueño (1): empleo. Si cambian, este plan no lo notará.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("checkbox", { name: "empleo" }));
+    expect(within(secciones).queryByText(/Sin vigilar por decisión del dueño/)).toBeNull();
   });
 
   it("la vista previa arma la ficha con lo del cuaderno y lo que escribes, cada línea con su fuente", () => {
@@ -294,6 +358,12 @@ describe("la etapa 10 con «usar»", () => {
       (screen.getByLabelText("Reentrenar cada (meses)") as HTMLInputElement)
         .value,
     ).toBe("6");
+  });
+
+  it("al corregir, vuelven también las columnas de texto que marcaste", () => {
+    const anterior = datos10(A, { ...ENTRADA_USAR, vigilarTexto: ["empleo"] });
+    montar(A, A.previas, anterior);
+    expect((screen.getByRole("checkbox", { name: "empleo" }) as HTMLInputElement).checked).toBe(true);
   });
 });
 
@@ -487,6 +557,39 @@ describe("el chequeo de deriva con un CSV nuevo", () => {
     ).toBeTruthy();
     expect(JSON.stringify(Object.entries(window.localStorage))).toBe(antes);
     expect(fetchEspia).not.toHaveBeenCalled();
+  });
+
+  it("la columna de texto sin marcar se nombra como sin vigilar, y el veredicto no habla de ella", async () => {
+    montarConstancia(A, ENTRADA_USAR);
+    subir(CSV_KIT);
+    await waitFor(() =>
+      expect(screen.getByTestId("protocolo-deriva10-sin-vigilar")).toBeTruthy(),
+    );
+    expect(screen.getByTestId("protocolo-deriva10-sin-vigilar").textContent).toMatch(
+      /Sin vigilar por decisión tuya \(1\): empleo/,
+    );
+    const columnas = within(screen.getByTestId("protocolo-deriva10-tabla"))
+      .getAllByRole("row")
+      .slice(1)
+      .map((f) => f.textContent ?? "");
+    expect(columnas.some((c) => c.includes("empleo"))).toBe(false);
+  });
+
+  it("marcada, la columna de texto se mide: igual da estable y con otras categorías da alerta", async () => {
+    montarConstancia(A, { ...ENTRADA_USAR, vigilarTexto: ["empleo"] });
+    subir(CSV_KIT);
+    await waitFor(() =>
+      expect(screen.getByTestId("protocolo-deriva10-veredicto")).toBeTruthy(),
+    );
+    expect(screen.queryByTestId("protocolo-deriva10-sin-vigilar")).toBeNull();
+    const fila = (n: string) =>
+      screen.getAllByRole("row").find((r) => r.textContent?.includes(n))!;
+    expect(fila("empleo").getAttribute("data-estado")).toBe("estable");
+    subir(conColumna("empleo", () => "formal"));
+    await waitFor(() =>
+      expect(fila("empleo").getAttribute("data-estado")).toBe("alerta"),
+    );
+    expect(screen.getByTestId("protocolo-deriva10-veredicto").textContent).toMatch(/✕ Reentrena/);
   });
 
   it("con una columna desplazada esa columna da alerta, con su símbolo y su texto, y el plan dice reentrenar", async () => {

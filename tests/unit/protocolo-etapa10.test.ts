@@ -1,9 +1,10 @@
 // Protocolo DS (S15), etapa 10 — la compuerta de la ficha y del plan de vigilancia, con el crédito registrado
 // por la compuerta real hasta la 9. Lo que tiene que valer:
 //  · DEMO EN ROJO: sin dueño nombrado la compuerta no pasa, y lo nombra; con él, el Protocolo queda completo;
-//  · «usar»: la referencia de deriva sale del entrenamiento sellado (una por columna del modelo, que cuenta
-//    exactamente sus filas), solo agregados; la cadencia es obligatoria, acortarla es libre y alargarla
-//    más allá de lo que respalda la prueba exige razón;
+//  · «usar»: la referencia de deriva sale del entrenamiento sellado (una por columna vigilada, que cuenta
+//    exactamente sus filas), solo agregados; de una columna de TEXTO solo se guardan los nombres de categoría
+//    si el dueño la marca (decisión del usuario, 2026-10-20); la cadencia es obligatoria, acortarla es libre
+//    y alargarla más allá de lo que respalda la prueba exige razón;
 //  · «no usar» e «iterar» cierran con el dueño y qué cambiar, sin plan de vigilancia ni referencia;
 //  · el cuaderno editado a mano no pasa: `leer` nombra el campo, y una referencia cambiada con la misma forma
 //    queda por verificar (no cuadra con la tabla).
@@ -17,10 +18,13 @@ import {
   ETAPA_10,
   cadenciaDe,
   cadenciaSugerida,
+  calcular10,
+  columnasDeTexto,
   mesesEntre,
 } from "@/engine/protocolo/etapa10";
 import type { DatosEtapa, Previas } from "@/engine/protocolo/etapas";
-import { leerReferencia } from "@/engine/protocolo/referencia-deriva";
+import { REF_SOPORTE_MIN, leerReferencia } from "@/engine/protocolo/referencia-deriva";
+import { valoresDe } from "@/engine/protocolo/tabla";
 import {
   ENTRADA_NO_USAR,
   ENTRADA_USAR,
@@ -92,6 +96,7 @@ describe("la compuerta de la etapa 10", () => {
       "sin-memoria",
       "solo-entradas",
       "sin-tiempo",
+      "sin-vigilar",
     ]);
   });
 
@@ -125,9 +130,11 @@ describe("la compuerta de la etapa 10", () => {
       decision: "no-usar",
       vig_columnas: null,
       vig_referencia: null,
+      vig_omitidas: null,
       n_referencia: null,
       cadencia_sugerida: null,
     });
+    expect(d.respuestas.vigilar_texto).toEqual([]);
     const r = registrar10(NO_USAR, d);
     expect(r.ok).toBe(true);
   });
@@ -143,36 +150,97 @@ describe("la compuerta de la etapa 10", () => {
 });
 
 describe("la referencia de deriva de la etapa 10", () => {
-  const d = datos10(USAR, ENTRADA_USAR);
+  const d = datos10(USAR, ENTRADA_USAR); // sin marcar ninguna columna de texto
+  const marcado = datos10(USAR, { ...ENTRADA_USAR, vigilarTexto: ["empleo"] });
   const plan = plan7(USAR.tabla, USAR.previas, HUELLA)!;
+  const modelo = [...plan.numericas, ...plan.categoricas];
+  const refsDe = (x: DatosEtapa) =>
+    (x.chequeos.vig_referencia as string[]).map(leerReferencia);
+  const categoriasDe = (columna: string) =>
+    [...new Set(valoresDe(USAR.tabla, columna).filter((v) => v !== null))] as string[];
 
-  it("una referencia por columna del modelo, y cada una cuenta exactamente el entrenamiento sellado", () => {
-    expect(d.chequeos.vig_columnas).toEqual([...plan.numericas, ...plan.categoricas]);
-    expect(d.chequeos.n_referencia).toBe(plan.particion.entrenamiento.length);
-    const refs = (d.chequeos.vig_referencia as string[]).map(leerReferencia);
-    for (const [i, ref] of refs.entries()) {
-      expect(ref?.columna).toBe((d.chequeos.vig_columnas as string[])[i]);
-      expect(ref!.cuentas.reduce((s, n) => s + n, 0)).toBe(d.chequeos.n_referencia);
+  it("las columnas de texto del modelo son las que el dueño decide vigilar", () => {
+    expect(columnasDeTexto(USAR.previas, USAR.tabla, HUELLA)).toEqual(["empleo"]);
+    expect(columnasDeTexto(USAR.previas, null, HUELLA)).toEqual([]);
+  });
+
+  it("sin marcar nada, de una columna de texto no queda ni un nombre de categoría en lo registrado", () => {
+    expect(d.chequeos.vig_columnas).toEqual(modelo.filter((c) => c !== "empleo"));
+    expect(d.chequeos.vig_omitidas).toEqual(["empleo"]);
+    expect(d.respuestas.vigilar_texto).toEqual([]);
+    expect(refsDe(d).every((r) => r?.tipo === "numero")).toBe(true);
+    expect(categoriasDe("empleo").length).toBeGreaterThan(1);
+    for (const nombre of categoriasDe("empleo"))
+      expect(JSON.stringify(d)).not.toContain(nombre);
+  });
+
+  it("sin pasar marcas, calcular10 tampoco guarda nombres (lo seguro es el valor por omisión)", () => {
+    expect(calcular10(USAR.previas, USAR.tabla, HUELLA)).toEqual(d.chequeos);
+  });
+
+  it("marcando la columna, se guarda su referencia con los nombres de categoría con soporte", () => {
+    expect(marcado.respuestas.vigilar_texto).toEqual(["empleo"]);
+    expect(marcado.chequeos.vig_columnas).toEqual(modelo);
+    expect(marcado.chequeos.vig_omitidas).toEqual([]);
+    const empleo = refsDe(marcado).find((r) => r?.columna === "empleo");
+    expect(empleo?.tipo).toBe("texto");
+    if (empleo?.tipo !== "texto") return;
+    expect(empleo.categorias.length).toBeGreaterThan(0);
+    for (const [k, nombre] of empleo.categorias.entries()) {
+      expect(categoriasDe("empleo")).toContain(nombre);
+      expect(empleo.cuentas[k]).toBeGreaterThanOrEqual(REF_SOPORTE_MIN);
+    }
+    expect(registrar10(USAR, marcado).ok).toBe(true);
+  });
+
+  it("una marca que no es una columna de texto del modelo no cambia nada", () => {
+    const rara = calcular10(USAR.previas, USAR.tabla, HUELLA, ["ingreso_mensual", "no-existe"]);
+    expect(rara).toEqual(d.chequeos);
+  });
+
+  it("una referencia por columna vigilada, y cada una cuenta exactamente el entrenamiento sellado", () => {
+    for (const x of [d, marcado]) {
+      expect(x.chequeos.n_referencia).toBe(plan.particion.entrenamiento.length);
+      for (const [i, ref] of refsDe(x).entries()) {
+        expect(ref?.columna).toBe((x.chequeos.vig_columnas as string[])[i]);
+        expect(ref!.cuentas.reduce((s, n) => s + n, 0)).toBe(x.chequeos.n_referencia);
+      }
     }
   });
 
   it("solo agregados: cortes de 3 cifras y ninguna fila del CSV", () => {
-    for (const guardada of d.chequeos.vig_referencia as string[]) {
-      const ref = leerReferencia(guardada)!;
-      if (ref.tipo === "numero")
-        for (const c of ref.cortes) expect(Number(c.toPrecision(3))).toBe(c);
-    }
-    const guardado = JSON.stringify(d);
+    for (const x of [d, marcado])
+      for (const guardada of x.chequeos.vig_referencia as string[]) {
+        const ref = leerReferencia(guardada)!;
+        if (ref.tipo === "numero")
+          for (const c of ref.cortes) expect(Number(c.toPrecision(3))).toBe(c);
+      }
     const filas = readFileSync("docs/kit-de-prueba/credito-fuga-plantada.csv", "utf8")
       .split("\n")
       .slice(1)
       .filter(Boolean);
-    for (const fila of filas) expect(guardado).not.toContain(fila);
+    for (const x of [d, marcado])
+      for (const fila of filas) expect(JSON.stringify(x)).not.toContain(fila);
+  });
+
+  it("todo el modelo en texto y nada marcado: no hay qué vigilar y la compuerta lo pide", () => {
+    const solo = con(d, {}, { vig_columnas: [], vig_referencia: [], vig_omitidas: ["empleo"] });
+    expect(ETAPA_10.leer(solo)).toEqual({ ok: true });
+    expect(ETAPA_10.criterio(solo, USAR.previas)).toEqual({ tipo: "falta", faltan: ["vigilar"] });
+  });
+
+  it("la trampa y el chequeo dicen qué quedó sin vigilar", () => {
+    expect(ETAPA_10.trampas(d, USAR.previas)).toContainEqual({
+      clave: "sin-vigilar",
+      params: { columnas: 1, lista: "empleo" },
+    });
+    expect(ETAPA_10.trampas(marcado, USAR.previas).map((t) => t.clave)).not.toContain("sin-vigilar");
   });
 });
 
 describe("el cuaderno editado a mano no pasa", () => {
   const d = datos10(USAR, ENTRADA_USAR);
+  const marcado = datos10(USAR, { ...ENTRADA_USAR, vigilarTexto: ["empleo"] });
   const refs = d.chequeos.vig_referencia as string[];
   const otraColumna = JSON.stringify({ ...JSON.parse(refs[0]!), columna: "otra" });
 
@@ -188,13 +256,35 @@ describe("el cuaderno editado a mano no pasa", () => {
     ["una referencia de otra columna", con(d, {}, { vig_referencia: [otraColumna, ...refs.slice(1)] }), "chequeos.vig_referencia"],
     ["un total que no es el del entrenamiento", con(d, {}, { n_referencia: 1 }), "chequeos.vig_referencia"],
     ["columnas sin referencias", con(d, {}, { vig_referencia: null }), "chequeos.vig_referencia"],
+    ["nombres de categoría de una columna que no marcaste", con(marcado, { vigilar_texto: [] }), "chequeos.vig_referencia"],
+    ["una marca sobre una columna que no se vigila", con(d, { vigilar_texto: ["empleo"] }), "respuestas.vigilar_texto"],
+    ["una marca repetida", con(marcado, { vigilar_texto: ["empleo", "empleo"] }), "respuestas.vigilar_texto"],
+    ["las marcas que no son una lista", con(d, { vigilar_texto: "empleo" }), "respuestas.vigilar_texto"],
+    ["sin la lista de marcas", con(d, { vigilar_texto: undefined }), "respuestas.vigilar_texto"],
+    ["una columna a la vez vigilada y sin vigilar", con(marcado, {}, { vig_omitidas: ["empleo"] }), "chequeos.vig_omitidas"],
+    ["una columna sin vigilar repetida", con(d, {}, { vig_omitidas: ["empleo", "empleo"] }), "chequeos.vig_omitidas"],
+    ["las sin vigilar que no son una lista", con(d, {}, { vig_omitidas: null }), "chequeos.vig_omitidas"],
   ])("%s se rechaza nombrando el campo", (_, forjado, campo) => {
     expect(ETAPA_10.leer(forjado)).toEqual({ ok: false, campo });
   });
 
   it("lo registrado se lee", () => {
     expect(ETAPA_10.leer(d)).toEqual({ ok: true });
+    expect(ETAPA_10.leer(marcado)).toEqual({ ok: true });
     expect(ETAPA_10.leer(datos10(NO_USAR, ENTRADA_NO_USAR))).toEqual({ ok: true });
+  });
+
+  it("marcas sin plan de vigilancia (con «no usar») se rechazan", () => {
+    const sinPlan = datos10(NO_USAR, ENTRADA_NO_USAR);
+    expect(ETAPA_10.leer(con(sinPlan, { vigilar_texto: ["empleo"] }))).toEqual({
+      ok: false,
+      campo: "respuestas.vigilar_texto",
+    });
+  });
+
+  it("la compuerta no deja pasar una marca que la tabla no respalda", () => {
+    const r = registrar10(USAR, con(d, { vigilar_texto: ["empleo"] }));
+    expect(r.ok).toBe(false);
   });
 
   it("una referencia cambiada con la misma forma queda por verificar: no cuadra con la tabla", () => {

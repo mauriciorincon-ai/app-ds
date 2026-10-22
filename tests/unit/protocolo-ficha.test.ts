@@ -136,13 +136,14 @@ describe("la ficha con «usar»", () => {
   it("el plan de vigilancia: columnas con los umbrales de la etapa 4, el piso, la cadencia y quién responde", () => {
     expect(claves(ficha, "vigilancia")).toEqual([
       "columnas",
+      "sin-vigilar",
       "umbrales",
       "solo-entradas",
       "piso",
       "piso-beneficio",
       "cadencia-sin-tiempo",
     ]);
-    expect(lineas(ficha, "vigilancia")[1]!.params).toEqual({ moderada: 0.1, alerta: 0.25 });
+    expect(lineas(ficha, "vigilancia")[2]!.params).toEqual({ moderada: 0.1, alerta: 0.25 });
     expect(lineas(ficha, "responde").map((l) => l.params)).toEqual([
       { dueno: "Jefa de retención" },
       {
@@ -150,6 +151,21 @@ describe("la ficha con «usar»", () => {
         decision: "Llamar o no al cliente",
       },
     ]);
+  });
+
+  it("sin marcar la columna de texto, la ficha nombra lo que quedó sin vigilar; marcada, entra a las vigiladas", () => {
+    expect(lineas(ficha, "vigilancia")[1]).toMatchObject({
+      clave: "sin-vigilar",
+      params: { columnas: 1, lista: "empleo" },
+      fuente: { tipo: "etapa", etapa: 10 },
+    });
+    const { ficha: marcada } = fichaDe(armarCredito9("usar"), {
+      ...ENTRADA_USAR,
+      vigilarTexto: ["empleo"],
+    });
+    expect(claves(marcada, "vigilancia")).not.toContain("sin-vigilar");
+    expect(String(lineas(marcada, "vigilancia")[0]!.params.lista)).toContain("empleo");
+    expect(lineas(marcada, "vigilancia")[0]!.params.columnas).toBe(4);
   });
 
   it("los límites dicen que predice, la población, la prueba chica y lo que escribió el dueño", () => {

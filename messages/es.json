@@ -1547,6 +1547,7 @@
           "cadencia": "cada cuántos meses se reentrena (un entero de 1 a 60)",
           "razon-cadencia": "por qué reentrenas con menos frecuencia que la que respalda tu prueba",
           "referencia": "la referencia de deriva de las columnas del modelo: carga los mismos datos del cuaderno y vuelve a registrar",
+          "vigilar": "al menos una columna para vigilar: el modelo solo usa columnas de texto y no marcaste ninguna",
           "cambiar": "qué tendría que cambiar para que sirva, con tus palabras"
         },
         "trap": {
@@ -1554,6 +1555,7 @@
           "solo-entradas": "El plan vigila las entradas de {columnas} columnas del modelo. No dice si el modelo sigue acertando: para eso harían falta los resultados nuevos y el modelo guardado, y no están aquí.",
           "sin-tiempo": "Tu prueba no fue por tiempo, así que no dice por cuánto tiempo vale el modelo: la cadencia es solo tuya.",
           "cadencia-alargada": "Elegiste una cadencia de reentreno (en meses) de {cadencia} y la prueba respalda {sugerida}: queda escrito con tu razón.",
+          "sin-vigilar": "Dejaste sin vigilar columnas de texto ({lista}): si cambian, el chequeo no lo notará.",
           "reabierta": "La prueba se abrió con {aperturas} configuraciones distintas: las cifras de esta ficha ya no son sin sesgo.",
           "prueba-gastada": "La prueba ya se abrió ({aperturas}): si mejoras el modelo y vuelves, esa prueba no vale como nueva; hace falta una partición distinta."
         },

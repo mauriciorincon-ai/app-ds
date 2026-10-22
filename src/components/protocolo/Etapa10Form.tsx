@@ -7,7 +7,11 @@
 // agregados) se calcula una vez sobre las filas del entrenamiento sellado, no en cada tecla. Se carga diferida
 // (formularios.tsx), con sus textos y la vista de la ficha.
 import { useMemo, useState } from "react";
-import { PSI_ALERTA, PSI_MODERADA } from "@/engine/protocolo/deriva";
+import {
+  DERIVA_CATEGORIAS,
+  PSI_ALERTA,
+  PSI_MODERADA,
+} from "@/engine/protocolo/deriva";
 import {
   CADENCIA_MAX,
   DUENO_MAX,
@@ -16,6 +20,7 @@ import {
   cadenciaDe,
   cadenciaSugerida,
   calcular10,
+  columnasDeTexto,
   decisionDe,
   respuestasDe,
   type EntradaEtapa10,
@@ -27,13 +32,14 @@ import {
   cargaDe,
   evidenciasCumplidas,
 } from "@/engine/protocolo/ficha";
+import { REF_SOPORTE_MIN } from "@/engine/protocolo/referencia-deriva";
 import { lista, numero, texto, textoLleno } from "@/engine/protocolo/valores";
 import { useI18n } from "@/i18n/provider";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { fichaVista, nombresDe } from "@/lib/protocolo/ficha-texto";
 import { cifra, proporcion } from "@/lib/protocolo/formato";
 import { Button } from "@/components/ui";
-import { CampoArea, CampoTexto } from "./campos";
+import { CampoArea, CampoCasillas, CampoTexto } from "./campos";
 import { FichaVista } from "./FichaVista";
 import { Registrar, Trampas, type PropsFormulario } from "./formulario-base";
 import { TEXTOS_ETAPA_10 } from "./textos/etapa10";
@@ -74,6 +80,7 @@ function desdeAnterior(
     cadencia: cadencia === null ? "" : String(cadencia),
     razonCadencia: texto(r, "razon_cadencia") ?? "",
     cambiar: texto(r, "cambiar") ?? "",
+    vigilarTexto: lista(r, "vigilar_texto") ?? [],
   };
 }
 
@@ -95,19 +102,28 @@ export function Etapa10Form({
   const poner = (cambio: Partial<EntradaEtapa10>) =>
     setEntrada((e) => ({ ...e, ...cambio }));
 
-  // lo que sale de la tabla (la referencia de deriva) se calcula una vez, no en cada tecla
+  // lo que sale de la tabla (la referencia de deriva) se calcula al cambiar las marcas, no en cada tecla
   const tabla = datos?.tabla ?? null;
   const huella = datos?.carga.sha256 ?? null;
-  const calculado = useMemo(
-    () => calcular10(previas, tabla, huella),
+  // las columnas de texto del modelo: sus nombres de categoría solo se guardan si las marcas (en el orden de la tabla)
+  const candidatas = useMemo(
+    () => columnasDeTexto(previas, tabla, huella),
     [previas, tabla, huella],
+  );
+  const marcadas = useMemo(
+    () => candidatas.filter((c) => entrada.vigilarTexto.includes(c)),
+    [candidatas, entrada.vigilarTexto],
+  );
+  const calculado = useMemo(
+    () => calcular10(previas, tabla, huella, marcadas),
+    [previas, tabla, huella, marcadas],
   );
   const registro = useMemo<DatosEtapa>(
     () => ({
-      respuestas: respuestasDe(entrada, decision),
+      respuestas: respuestasDe({ ...entrada, vigilarTexto: marcadas }, decision),
       chequeos: calculado,
     }),
-    [entrada, decision, calculado],
+    [entrada, marcadas, decision, calculado],
   );
   const ficha = useMemo(
     () =>
@@ -237,6 +253,39 @@ export function Etapa10Form({
               />
             )}
           </Seccion>
+          {candidatas.length > 0 && (
+            <Seccion
+              titulo={t("protocol.stage.10.text.title")}
+              testid="protocolo-texto10"
+            >
+              <CampoCasillas
+                leyenda={t("protocol.stage.10.text.legend")}
+                ayuda={t("protocol.stage.10.text.help", {
+                  min: REF_SOPORTE_MIN,
+                  max: DERIVA_CATEGORIAS,
+                })}
+                opciones={candidatas}
+                marcadas={marcadas}
+                onCambio={(columna, marcada) =>
+                  poner({
+                    vigilarTexto: marcada
+                      ? [...entrada.vigilarTexto, columna]
+                      : entrada.vigilarTexto.filter((c) => c !== columna),
+                  })
+                }
+              />
+              <p
+                role="status"
+                className="text-ink-muted"
+                data-testid="protocolo-texto10-estado"
+              >
+                {t("protocol.stage.10.text.status", {
+                  n: marcadas.length,
+                  total: candidatas.length,
+                })}
+              </p>
+            </Seccion>
+          )}
           <Seccion
             titulo={t("protocol.stage.10.plan.title")}
             testid="protocolo-plan10"
