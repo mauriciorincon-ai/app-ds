@@ -87,6 +87,7 @@ export function ProtocoloApp() {
       />
       <CuadernoPanel
         cuaderno={p.cuaderno}
+        completo={p.evaluadas.every(({ estado }) => estado.tipo === "cumplida")}
         guardado={p.almacen === "indexeddb" ? p.guardando === 0 : null}
         importePendiente={p.importePendiente}
         onExportar={p.exportar}

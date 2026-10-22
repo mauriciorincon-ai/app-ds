@@ -6,7 +6,11 @@
 // devuelve el rechazo nombrado, que el formulario muestra con `MensajeRechazo`. Un formulario no
 // escribe el cuaderno: solo propone.
 import { useState } from "react";
-import type { RechazoRegistro } from "@/engine/protocolo/compuerta";
+import type {
+  EtapaEvaluada,
+  RechazoRegistro,
+} from "@/engine/protocolo/compuerta";
+import type { Cuaderno } from "@/engine/protocolo/cuaderno";
 import type {
   DatosEtapa,
   EtapaId,
@@ -32,7 +36,16 @@ export type PropsFormulario = {
   readonly aperturas?: number;
   /** S13: la prueba se abrió (la etapa 8 lo anota en el cuaderno con lo que evaluó). */
   readonly onApertura?: (clave: string) => void;
+  /** S15: las etapas evaluadas y el cuaderno (la ficha de la etapa 10 se arma con lo que registraron). */
+  readonly evaluadas?: readonly EtapaEvaluada[];
+  readonly cuaderno?: Cuaderno;
   readonly onRegistrar: (datos: DatosEtapa) => RechazoRegistro | null;
+};
+
+/** S15: lo que una etapa cumplida muestra en su tarjeta (la etapa 10: su ficha, su descarga y su chequeo). */
+export type PropsConstancia = {
+  readonly evaluadas: readonly EtapaEvaluada[];
+  readonly cuaderno?: Cuaderno;
 };
 
 export function MensajeRechazo({

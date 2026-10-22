@@ -271,13 +271,13 @@ describe("la compuerta de la etapa 8", () => {
     expect(r.ok).toBe(false);
   });
 
-  // S14: la 9 ya está construida; abre con la 8 cumplida y la 10 se ve sin construir
+  // S14: la 9 abre con la 8 cumplida; S15: la 10 está construida y espera a la 9
   it("con la prueba abierta y tu patrón se registra: la 8 queda cumplida y la 9 abre", () => {
     expect(estados(CREDITO.cuaderno).slice(6, 10)).toEqual([
       "cumplida",
       "abierta",
       "cerrada",
-      "no-construida",
+      "cerrada",
     ]);
     expect(ETAPA_8.criterio(DATOS, CREDITO.previas)).toEqual({
       tipo: "cumple",
@@ -286,7 +286,7 @@ describe("la compuerta de la etapa 8", () => {
       "cumplida",
       "cumplida",
       "abierta",
-      "no-construida",
+      "cerrada",
     ]);
   });
 

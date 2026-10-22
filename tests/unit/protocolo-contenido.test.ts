@@ -20,6 +20,7 @@ import { CLAVES_6, TRAMPAS_6 } from "@/engine/protocolo/etapa6";
 import { CLAVES_7, FALTAS_7, TRAMPAS_7 } from "@/engine/protocolo/etapa7";
 import { CLAVES_8, FALTAS_8, TRAMPAS_8 } from "@/engine/protocolo/etapa8";
 import { CLAVES_9, FALTAS_9, TRAMPAS_9 } from "@/engine/protocolo/etapa9";
+import { CLAVES_10, FALTAS_10, TRAMPAS_10 } from "@/engine/protocolo/etapa10";
 import {
   ETAPA_IDS,
   ETAPAS_ABIERTAS,
@@ -33,6 +34,7 @@ import { TEXTOS_ETAPA_6 } from "@/components/protocolo/textos/etapa6";
 import { TEXTOS_ETAPA_7 } from "@/components/protocolo/textos/etapa7";
 import { TEXTOS_ETAPA_8 } from "@/components/protocolo/textos/etapa8";
 import { TEXTOS_ETAPA_9 } from "@/components/protocolo/textos/etapa9";
+import { TEXTOS_ETAPA_10 } from "@/components/protocolo/textos/etapa10";
 import { resolve, translate } from "@/i18n/translate";
 import type { RechazoArchivo } from "@/lib/protocolo/archivo";
 import { avisoDeRechazoArchivo } from "@/lib/protocolo/useProtocolo";
@@ -156,6 +158,7 @@ describe("contenido del Protocolo {es, en}", () => {
       7: CLAVES_7,
       8: CLAVES_8,
       9: CLAVES_9,
+      10: CLAVES_10,
     } as const;
     // S13: desde la etapa 4 las etiquetas viajan con la forma (messages/etapas/), no con la página
     const DE_LA_FORMA: Record<string, typeof TEXTOS_ETAPA_4> = {
@@ -165,6 +168,7 @@ describe("contenido del Protocolo {es, en}", () => {
       7: TEXTOS_ETAPA_7,
       8: TEXTOS_ETAPA_8,
       9: TEXTOS_ETAPA_9,
+      10: TEXTOS_ETAPA_10,
     };
     const etiquetaFalta = (l: "es" | "en", n: string, clave: string) => {
       const propio = DE_LA_FORMA[n];
@@ -247,6 +251,7 @@ describe("contenido del Protocolo {es, en}", () => {
       7: FALTAS_7,
       8: FALTAS_8,
       9: FALTAS_9,
+      10: FALTAS_10,
     } as const;
     const paradas = { 2: ["sin-objetivo"], 3: ["causal"] } as const;
     const sin: string[] = [];
@@ -298,6 +303,7 @@ describe("contenido del Protocolo {es, en}", () => {
       7: TRAMPAS_7,
       8: TRAMPAS_8,
       9: TRAMPAS_9,
+      10: TRAMPAS_10,
     } as const;
     const sin: string[] = [];
     for (const l of IDIOMAS)
@@ -340,6 +346,7 @@ describe("contenido del Protocolo {es, en}", () => {
         TEXTOS_ETAPA_7,
         TEXTOS_ETAPA_8,
         TEXTOS_ETAPA_9,
+        TEXTOS_ETAPA_10,
       ].flatMap((t) => IDIOMAS.flatMap((l) => planos(t[l]))),
       ...IDIOMAS.flatMap((l) =>
         planos(

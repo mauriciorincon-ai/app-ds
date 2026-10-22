@@ -14,6 +14,7 @@ import { TEXTOS_ETAPA_6 } from "@/components/protocolo/textos/etapa6";
 import { TEXTOS_ETAPA_7 } from "@/components/protocolo/textos/etapa7";
 import { TEXTOS_ETAPA_8 } from "@/components/protocolo/textos/etapa8";
 import { TEXTOS_ETAPA_9 } from "@/components/protocolo/textos/etapa9";
+import { TEXTOS_ETAPA_10 } from "@/components/protocolo/textos/etapa10";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { textoPropio, type TextosEtapa } from "@/i18n/textos-etapa";
 import { resolve } from "@/i18n/translate";
@@ -33,6 +34,11 @@ const ETAPAS: Record<number, { textos: TextosEtapa; formas: string[] }> = {
   7: { textos: TEXTOS_ETAPA_7, formas: ["Etapa7Form"] },
   8: { textos: TEXTOS_ETAPA_8, formas: ["Etapa8Form"] },
   9: { textos: TEXTOS_ETAPA_9, formas: ["Etapa9Form"] },
+  // S15: la forma, la constancia de la etapa cumplida y el chequeo de deriva (la ficha se dice desde lib/)
+  10: {
+    textos: TEXTOS_ETAPA_10,
+    formas: ["Etapa10Form", "Etapa10Constancia", "Etapa10Deriva"],
+  },
 };
 
 /** Lo que la página pinta sola (el cuaderno, el mapa de etapas, los avisos): tiene que seguir en el global. */

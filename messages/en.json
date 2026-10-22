@@ -102,7 +102,7 @@
     },
     "protocol": {
       "title": "Prefer the slow path?",
-      "desc": "Protocolo DS is the path of {count} gated stages with your own data: you don't move on to the next one until the previous one is met. Today, stages {from} to {to} open.",
+      "desc": "Protocolo DS is the path of {count} gated stages ({from} to {to}) with your own data: you don't move on to the next one until the previous one is met, and you end with a model card that writes itself.",
       "link": "Open Protocolo DS"
     }
   },
@@ -967,7 +967,7 @@
   },
   "protocol": {
     "title": "Protocolo DS",
-    "subtitle": "The slow path: {count} gated stages, of which stages {from} to {to} open today. Each one asks you for a task with your data and opens the next only once you meet its criterion. There is no skip button.",
+    "subtitle": "The slow path: {count} gated stages, {from} to {to}. Each one asks you for a task with your data and opens the next only once you meet its criterion. There is no skip button.",
     "privacy": "Your data never leaves your browser. The notebook is kept in this browser; the CSV isn't: when you come back you load it again and its fingerprint tells whether it's the same one.",
     "back": "Back to Probeta",
     "loading": "Opening your notebook…",
@@ -996,7 +996,11 @@
       }
     },
     "stages": {
-      "title": "The stages"
+      "title": "The stages",
+      "complete": {
+        "title": "Protocol complete",
+        "body": "All {count} stages are met. Your model card is in the last stage: download it to share it."
+      }
     },
     "stage": {
       "label": "Stage {n}",
@@ -1534,6 +1538,36 @@
           "class": "No probabilities, the predicted class decides: {alertas} alerts per 100 cases and {falsas} false alarms per 100 alerts.",
           "capacity": "Your team handles {capacidad} out of 100 cases.",
           "today-rule": "your rule of today"
+        }
+      },
+      "10": {
+        "missing": {
+          "etapas-previas": "stages 1 to 9 met",
+          "dueno": "the name of who answers for the model (a person or a role)",
+          "cadencia": "how often it's retrained, in months (a whole number from 1 to 60)",
+          "razon-cadencia": "why you retrain less often than your test supports",
+          "referencia": "the drift reference for the model's columns: load the same data as the notebook and record again",
+          "cambiar": "what would have to change for it to serve, in your own words"
+        },
+        "trap": {
+          "sin-memoria": "This card comes only from what the notebook recorded in stages 1 to {etapas}: nothing was recomputed and the test set wasn't opened again.",
+          "solo-entradas": "The plan watches the inputs of {columnas} model columns. It doesn't say whether the model is still right: that would need the new outcomes and the saved model, and they're not here.",
+          "sin-tiempo": "Your test wasn't split by time, so it doesn't say how long the model holds: the cadence is yours alone.",
+          "cadencia-alargada": "You chose a retraining cadence (in months) of {cadencia} and the test supports {sugerida}: it's written with your reason.",
+          "reabierta": "The test set was opened with {aperturas} different setups: the figures on this card are no longer unbiased.",
+          "prueba-gastada": "The test set has already been opened ({aperturas}): if you improve the model and come back, that test set doesn't count as new; a different split is needed."
+        },
+        "summary": {
+          "decision": {
+            "usar": "Card for a model to use.",
+            "iterar": "Card for a model to iterate.",
+            "no-usar": "Card for a model that isn't used."
+          },
+          "dueno": "Answers for it: {dueno}.",
+          "cadence": "Retraining cadence (in months): {cadencia}.",
+          "cadence-vs": "Retraining cadence (in months): {cadencia}; the test supports {sugerida}.",
+          "columns": "Drift is watched on {columnas} columns.",
+          "complete": "Protocol complete."
         }
       }
     },

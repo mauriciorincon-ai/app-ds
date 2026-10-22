@@ -102,7 +102,7 @@
     },
     "protocol": {
       "title": "¿Prefieres el camino lento?",
-      "desc": "Protocolo DS es el camino de {count} etapas con compuertas, con tus propios datos: no avanzas a la siguiente sin cumplir la anterior. Hoy abren de la etapa {from} a la {to}.",
+      "desc": "Protocolo DS es el camino de {count} etapas con compuertas (de la {from} a la {to}), con tus propios datos: no avanzas a la siguiente sin cumplir la anterior, y terminas con una ficha del modelo que se escribe sola.",
       "link": "Abrir el Protocolo DS"
     }
   },
@@ -967,7 +967,7 @@
   },
   "protocol": {
     "title": "Protocolo DS",
-    "subtitle": "El camino lento: {count} etapas con compuertas, de las que hoy abren de la {from} a la {to}. Cada una te pide una tarea con tus datos y abre la siguiente solo cuando cumples su criterio. No hay botón para saltar.",
+    "subtitle": "El camino lento: {count} etapas con compuertas, de la {from} a la {to}. Cada una te pide una tarea con tus datos y abre la siguiente solo cuando cumples su criterio. No hay botón para saltar.",
     "privacy": "Tus datos no salen de tu navegador. El cuaderno se guarda en este navegador; el CSV no: al volver, lo cargas de nuevo y su huella dice si es el mismo.",
     "back": "Volver a Probeta",
     "loading": "Abriendo tu cuaderno…",
@@ -996,7 +996,11 @@
       }
     },
     "stages": {
-      "title": "Las etapas"
+      "title": "Las etapas",
+      "complete": {
+        "title": "Protocolo completo",
+        "body": "Las {count} etapas están cumplidas. Tu ficha del modelo está en la última etapa: descárgala para compartirla."
+      }
     },
     "stage": {
       "label": "Etapa {n}",
@@ -1534,6 +1538,36 @@
           "class": "Sin probabilidades, decide la clase predicha: {alertas} alertas por cada 100 casos y {falsas} falsas alarmas por cada 100 alertas.",
           "capacity": "Tu equipo atiende {capacidad} de cada 100 casos.",
           "today-rule": "tu regla de hoy"
+        }
+      },
+      "10": {
+        "missing": {
+          "etapas-previas": "las etapas 1 a 9 cumplidas",
+          "dueno": "el nombre de quien responde por el modelo (una persona o un rol)",
+          "cadencia": "cada cuántos meses se reentrena (un entero de 1 a 60)",
+          "razon-cadencia": "por qué reentrenas con menos frecuencia que la que respalda tu prueba",
+          "referencia": "la referencia de deriva de las columnas del modelo: carga los mismos datos del cuaderno y vuelve a registrar",
+          "cambiar": "qué tendría que cambiar para que sirva, con tus palabras"
+        },
+        "trap": {
+          "sin-memoria": "Esta ficha sale solo de lo que el cuaderno registró en las etapas 1 a {etapas}: nada se recalculó ni la prueba se abrió de nuevo.",
+          "solo-entradas": "El plan vigila las entradas de {columnas} columnas del modelo. No dice si el modelo sigue acertando: para eso harían falta los resultados nuevos y el modelo guardado, y no están aquí.",
+          "sin-tiempo": "Tu prueba no fue por tiempo, así que no dice por cuánto tiempo vale el modelo: la cadencia es solo tuya.",
+          "cadencia-alargada": "Elegiste una cadencia de reentreno (en meses) de {cadencia} y la prueba respalda {sugerida}: queda escrito con tu razón.",
+          "reabierta": "La prueba se abrió con {aperturas} configuraciones distintas: las cifras de esta ficha ya no son sin sesgo.",
+          "prueba-gastada": "La prueba ya se abrió ({aperturas}): si mejoras el modelo y vuelves, esa prueba no vale como nueva; hace falta una partición distinta."
+        },
+        "summary": {
+          "decision": {
+            "usar": "Ficha de un modelo para usar.",
+            "iterar": "Ficha de un modelo para iterar.",
+            "no-usar": "Ficha de un modelo que no se usa."
+          },
+          "dueno": "Responde: {dueno}.",
+          "cadence": "Cadencia de reentreno (en meses): {cadencia}.",
+          "cadence-vs": "Cadencia de reentreno (en meses): {cadencia}; la prueba respalda {sugerida}.",
+          "columns": "Se vigila la deriva de {columnas} columnas.",
+          "complete": "Protocolo completo."
         }
       }
     },

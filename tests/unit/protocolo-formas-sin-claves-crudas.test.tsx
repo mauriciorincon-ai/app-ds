@@ -1,4 +1,4 @@
-// Protocolo DS (S13, G-Plan 1a; la 9 desde el S14): las formas de las etapas 4 a 9 traen sus textos en su chunk. Montadas con la
+// Protocolo DS (S13, G-Plan 1a; la 9 desde el S14, la 10 desde el S15): las formas de las etapas 4 a 10 traen sus textos en su chunk. Montadas con la
 // compuerta real detrás, en los dos idiomas, ninguna pinta una clave cruda (`protocol.stage.…`), y en inglés
 // pintan el texto del archivo inglés de su forma, no un español de relleno. El gate de textos-etapa.test.ts
 // mira las claves en el código; esta mira lo que sale en pantalla.
@@ -20,14 +20,18 @@ const { Etapa6Form } = await import("@/components/protocolo/Etapa6Form");
 const { Etapa7Form } = await import("@/components/protocolo/Etapa7Form");
 const { Etapa8Form } = await import("@/components/protocolo/Etapa8Form");
 const { Etapa9Form } = await import("@/components/protocolo/Etapa9Form");
+const { Etapa10Form } = await import("@/components/protocolo/Etapa10Form");
 const { TEXTOS_ETAPA_4 } = await import("@/components/protocolo/textos/etapa4");
 const { TEXTOS_ETAPA_5 } = await import("@/components/protocolo/textos/etapa5");
 const { TEXTOS_ETAPA_6 } = await import("@/components/protocolo/textos/etapa6");
 const { TEXTOS_ETAPA_7 } = await import("@/components/protocolo/textos/etapa7");
 const { TEXTOS_ETAPA_8 } = await import("@/components/protocolo/textos/etapa8");
 const { TEXTOS_ETAPA_9 } = await import("@/components/protocolo/textos/etapa9");
+const { TEXTOS_ETAPA_10 } =
+  await import("@/components/protocolo/textos/etapa10");
 const h8 = await import("./protocolo-etapa8-helpers");
 const h9 = await import("./protocolo-etapa9-helpers");
+const h10 = await import("./protocolo-etapa10-helpers");
 const h = await import("./protocolo-etapa4-helpers");
 
 const CREDITO = {
@@ -42,6 +46,7 @@ const CREDITO = {
   ),
   siete: h8.armarCredito7(),
   ocho: h9.armarCredito8(),
+  nueve: h10.armarCredito9("usar"),
 };
 
 type Previas = Parameters<typeof Etapa4Form>[0]["previas"];
@@ -52,6 +57,12 @@ const FORMAS: [number, typeof Etapa4Form, Previas, TextosEtapa][] = [
   [7, Etapa7Form, CREDITO.seis.previas, TEXTOS_ETAPA_7],
   [8, Etapa8Form, CREDITO.siete.previas, TEXTOS_ETAPA_8],
   [9, Etapa9Form, CREDITO.ocho.previas, TEXTOS_ETAPA_9],
+  [
+    10,
+    Etapa10Form as typeof Etapa4Form,
+    CREDITO.nueve.previas,
+    TEXTOS_ETAPA_10,
+  ],
 ];
 
 /** Los textos de la forma que no llevan marcadores: los que salen tal cual en pantalla. */
@@ -61,7 +72,7 @@ function textosLlanos(d: TextosEtapa["es"]): string[] {
   );
 }
 
-describe.each(["es", "en"] as const)("las formas 4 a 9 en %s", (idioma) => {
+describe.each(["es", "en"] as const)("las formas 4 a 10 en %s", (idioma) => {
   beforeEach(() => localStorage.setItem(LOCALE_STORAGE_KEY, idioma));
   afterEach(() => {
     cleanup();
@@ -72,13 +83,15 @@ describe.each(["es", "en"] as const)("las formas 4 a 9 en %s", (idioma) => {
     "etapa %i: ninguna clave cruda, y el texto es el de su idioma",
     (n, Forma, previas, textos) => {
       const armado =
-        n === 9
-          ? CREDITO.ocho
-          : n === 8
-            ? CREDITO.siete
-            : n === 7
-              ? CREDITO.seis
-              : CREDITO.cinco;
+        n === 10
+          ? CREDITO.nueve
+          : n === 9
+            ? CREDITO.ocho
+            : n === 8
+              ? CREDITO.siete
+              : n === 7
+                ? CREDITO.seis
+                : CREDITO.cinco;
       const { container } = render(
         <I18nProvider>
           <Forma

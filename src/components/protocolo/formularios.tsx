@@ -9,7 +9,7 @@ import type { EtapaId } from "@/engine/protocolo/ids";
 import { Etapa1Form } from "./Etapa1Form";
 import { Etapa2Form } from "./Etapa2Form";
 import { Etapa3Form } from "./Etapa3Form";
-import type { PropsFormulario } from "./formulario-base";
+import type { PropsConstancia, PropsFormulario } from "./formulario-base";
 
 // S10 (la CI mide el peso de /protocolo sin .env.local: 311.009 B frente a 307.200 de presupuesto):
 // los formularios de las etapas 4 y 5 son grandes y no se ven hasta abrir su etapa. Se cargan al
@@ -37,6 +37,15 @@ const Etapa9Form = dynamic(() =>
   import("./Etapa9Form").then((m) => m.Etapa9Form),
 );
 
+// S15: la etapa 10 (la ficha sale del cuaderno, no trae worker). La forma y la constancia (la ficha de la etapa
+// cumplida, su descarga y el chequeo de deriva) cargan diferidas; el generador de Markdown, al descargar.
+const Etapa10Form = dynamic(() =>
+  import("./Etapa10Form").then((m) => m.Etapa10Form),
+);
+const Etapa10Constancia = dynamic(() =>
+  import("./Etapa10Constancia").then((m) => m.Etapa10Constancia),
+);
+
 export const FORMULARIOS: Readonly<
   Partial<Record<EtapaId, ComponentType<PropsFormulario>>>
 > = {
@@ -49,4 +58,12 @@ export const FORMULARIOS: Readonly<
   7: Etapa7Form,
   8: Etapa8Form,
   9: Etapa9Form,
+  10: Etapa10Form,
+};
+
+/** Lo que muestra la tarjeta de una etapa cumplida (hoy, la ficha de la etapa 10). */
+export const CONSTANCIAS: Readonly<
+  Partial<Record<EtapaId, ComponentType<PropsConstancia>>>
+> = {
+  10: Etapa10Constancia,
 };

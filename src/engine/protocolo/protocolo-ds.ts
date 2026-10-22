@@ -1,5 +1,5 @@
 // Protocolo DS (S8, ADR 020): las diez etapas del modo, en orden. Las construidas (1–3 en el S8, 4 en el S9, 5 en el S10, 6 en el S11,
-// 7 en el S12, 8 en el S13, 9 en el S14) reemplazan a su entrada de ETAPAS_BASE; las demás se ven con su criterio y no abren.
+// 7 en el S12, 8 en el S13, 9 en el S14, 10 en el S15) reemplazan a su entrada de ETAPAS_BASE; las demás se ven con su criterio y no abren.
 import { ETAPA_1 } from "./etapa1";
 import { ETAPA_2 } from "./etapa2";
 import { ETAPA_3 } from "./etapa3";
@@ -9,6 +9,7 @@ import { ETAPA_6 } from "./etapa6";
 import { ETAPA_7 } from "./etapa7";
 import { ETAPA_8 } from "./etapa8";
 import { ETAPA_9 } from "./etapa9";
+import { ETAPA_10 } from "./etapa10";
 import {
   ETAPA_IDS,
   ETAPAS_BASE,
@@ -27,6 +28,7 @@ const CONSTRUIDAS: Readonly<Partial<Record<EtapaId, DefinicionEtapa>>> = {
   7: ETAPA_7,
   8: ETAPA_8,
   9: ETAPA_9,
+  10: ETAPA_10,
 };
 
 export const PROTOCOLO_DS: DefinicionProtocolo = ETAPA_IDS.map(

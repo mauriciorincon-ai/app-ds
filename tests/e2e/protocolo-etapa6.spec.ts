@@ -79,7 +79,7 @@ test("etapa 6 con crédito: estratificada sugerida, conteos por lado, sello, y n
     page.locator("#etapa-9").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator("#etapa-10").getByText("Sin construir"),
+    page.locator("#etapa-10").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen6");
   await expect(resumen).toContainText("Esquema: Estratificada.");

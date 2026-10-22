@@ -128,7 +128,7 @@ test("etapa 4 con fuga plantada: apuesta equivocada, sorpresa, bloque con declar
     page.locator("#etapa-9").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator("#etapa-10").getByText("Sin construir"),
+    page.locator("#etapa-10").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen4");
   await expect(resumen).toContainText("Tu apuesta: ingreso_mensual");

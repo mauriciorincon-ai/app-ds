@@ -119,7 +119,7 @@ test("etapa 8 con crédito: la prueba se abre una vez, se lee por segmento y cal
     page.locator("#etapa-9").getByText("Abierta", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.locator("#etapa-10").getByText("Sin construir"),
+    page.locator("#etapa-10").getByText("Cerrada", { exact: true }),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen8");
   await expect(resumen).toContainText("Peor segmento:");

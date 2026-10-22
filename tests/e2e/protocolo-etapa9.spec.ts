@@ -120,7 +120,7 @@ test("etapa 9 con crédito: la decisión con números, sin volver a abrir la pru
   await expect(e9.getByText("Cumplida")).toBeVisible();
   await expect(page.locator("#etapa-9-titulo")).toBeFocused();
   await expect(
-    page.locator("#etapa-10").getByText("Sin construir"),
+    page.locator("#etapa-10").getByText("Abierta", { exact: true }),
   ).toBeVisible();
   const resumen = page.getByTestId("cuaderno-resumen9");
   await expect(resumen).toContainText("Decisión: no usarlo.");
