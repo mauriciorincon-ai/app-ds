@@ -44,7 +44,12 @@ describe("S8 B4 · los textos de las etapas 1 y 3 tienen su largo máximo", () =
     );
     const decision = await screen.findByLabelText("La decisión");
     expect(decision.getAttribute("maxlength")).toBe("1000");
-    for (const etiqueta of [/Quién la toma/]) {
+    for (const etiqueta of [
+      /Quién la toma/,
+      /Cuándo se toma/,
+      /Qué se hace hoy sin modelo/,
+      /Unidad de costo/,
+    ]) {
       const campo = screen.getByLabelText(etiqueta);
       expect(campo.getAttribute("maxlength")).toBe("1000");
     }
@@ -162,6 +167,11 @@ describe("S9 B9 · junto a «Exportar cuaderno» se dice qué lleva el archivo",
     expect(nota).toMatch(/derivado de tus datos/);
     expect(nota).toMatch(/columnas de texto que marcaste en la etapa 10/);
     expect(nota).toMatch(/ninguna fila de tu CSV/);
+    // los otros orígenes de nombres de categorías (auditoría S16, H-07): el objetivo, los segmentos de la 8 y la regla de la 5
+    expect(nota).toMatch(
+      /categorías del objetivo y de los segmentos de la etapa 8/,
+    );
+    expect(nota).toMatch(/valores que elegiste en la regla de la etapa 5/);
   });
 });
 
@@ -306,5 +316,108 @@ describe("S12 · el puntaje de la liga se rotula «de selección»", () => {
     const textos = dic.protocol.stage["7"].why;
     expect(textos.same).toMatch(patron);
     expect(textos.simpler).toMatch(patron);
+  });
+});
+
+// Auditoría del S16: los pagos de texto y de plural que no tenían prueba que fallara antes (H-01, H-02, H-11, H-15, H-16).
+type Dic = { [clave: string]: string | Dic };
+const leerDic = (ruta: string): Dic =>
+  JSON.parse(readFileSync(ruta, "utf8")) as Dic;
+const enRuta = (dic: Dic, ruta: string): string => {
+  let actual: string | Dic | undefined = dic;
+  for (const parte of ruta.split("."))
+    actual = typeof actual === "object" ? actual[parte] : undefined;
+  return typeof actual === "string" ? actual : "";
+};
+
+describe("S13 B2 · «ninguna fila» deja de ser falso", () => {
+  it.each([
+    ["es", /^Ninguna fila de la prueba tuvo un costo mayor que cero\.$/],
+    ["en", /^No row of the test set had a cost above zero\.$/],
+  ] as const)(
+    "el peor segmento sin costos lo dice así en %s",
+    (idioma, patron) => {
+      const dic = leerDic(`messages/etapas/etapa8.${idioma}.json`);
+      expect(enRuta(dic, "protocol.stage.8.worst.empty")).toMatch(patron);
+    },
+  );
+});
+
+describe("S12 · lo que la etapa 8 mide y no mide, dicho igual en toda la etapa 6", () => {
+  it.each(["es", "en"] as const)(
+    "ningún texto de la etapa 6 dice que la 8 «mide» una clase (%s)",
+    (idioma) => {
+      const dic = leerDic(`messages/${idioma}.json`);
+      for (const clave of ["clase-rara", "clase-escasa", "clase-ausente"]) {
+        const texto = enRuta(dic, `protocol.stage.6.trap.${clave}`);
+        expect(texto, clave).not.toBe("");
+        expect(texto, clave).not.toMatch(
+          /(lo que mida la etapa 8 para esa clase|no podrá medir esa clase|what stage 8 measures for that class|able to measure that class)/,
+        );
+      }
+    },
+  );
+
+  it("las trampas de la regla de hoy comparan con «la mejor forma de decidir sin modelo», no con «decidir siempre igual»", () => {
+    for (const idioma of ["es", "en"] as const) {
+      const dic = leerDic(`messages/${idioma}.json`);
+      for (const clave of ["regla-peor", "regla-igual"])
+        expect(
+          enRuta(dic, `protocol.stage.5.trap.${clave}`),
+          `${idioma} ${clave}`,
+        ).not.toMatch(/siempre igual|always deciding the same/);
+    }
+  });
+});
+
+describe("S9 B1 · los plurales de la etapa 5", () => {
+  it.each([
+    ["es", "no-previous_one", /^1 fila no tiene/],
+    ["es", "rule.measure_one", /de 1 fila\.$/],
+    ["es", "rule.empties_one", /^En 1 fila alguna/],
+    ["en", "no-previous_one", /^1 row has no/],
+    ["en", "rule.measure_one", /of 1 row\.$/],
+    ["en", "rule.empties_one", /^In 1 row one/],
+  ] as const)("%s · %s", (idioma, clave, patron) => {
+    const dic = leerDic(`messages/etapas/etapa5.${idioma}.json`);
+    expect(enRuta(dic, `protocol.stage.5.${clave}`)).toMatch(patron);
+  });
+
+  it("el resumen del cuaderno también tiene su forma singular, y los sitios que llaman pasan `count`", () => {
+    expect(
+      translate("es", "protocol.stage.5.summary.no-previous", {
+        n: 1,
+        count: 1,
+      }),
+    ).toContain("en 1 fila ");
+    expect(
+      translate("en", "protocol.stage.5.summary.no-previous", {
+        n: 1,
+        count: 1,
+      }),
+    ).toContain("in 1 row ");
+    const form = readFileSync(
+      "src/components/protocolo/Etapa5Form.tsx",
+      "utf8",
+    );
+    expect(form.match(/count: /g)?.length).toBeGreaterThanOrEqual(3);
+    expect(
+      readFileSync("src/components/protocolo/CuadernoPanel.tsx", "utf8"),
+    ).toMatch(/count: r\.sinAnterior/);
+  });
+
+  it("la referencia se mide sobre las filas con objetivo, no sobre «todas» (H-16)", () => {
+    expect(
+      enRuta(
+        leerDic("messages/etapas/etapa5.es.json"),
+        "protocol.stage.5.table.note",
+      ),
+    ).toMatch(/filas con objetivo/);
+    expect(
+      enRuta(
+        leerDic("messages/etapas/etapa5.en.json"),
+        "protocol.stage.5.table.note",
+      ),
+    ).toMatch(/rows with a target/);
   });
 });

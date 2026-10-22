@@ -2,7 +2,7 @@
 /**
  * Regla 18 (kit v2.1.0) y S16 (S8 B10): el job `un-pr-vivo` pasa para el PR más antiguo y exige «complementa #N:»
  * a los demás. La demo en rojo vive aquí: el bloque `run:` del workflow se ejecuta de verdad, con un `gh` falso
- * que devuelve los PRs abiertos, en cinco escenarios (tres de ellos son los que el cambio del S16 toca).
+ * que devuelve los PRs abiertos, en seis escenarios (más la lectura del bloque; tres de ellos son los que el cambio del S16 toca).
  */
 import { spawnSync } from "node:child_process";
 import {

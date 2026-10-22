@@ -669,7 +669,8 @@ export function partir(
   if (!porClave) RESULTADOS.set(tabla, (porClave = new Map()));
   if (!porClave.has(clave)) {
     // sin tope, una sesión que prueba muchos tamaños guarda cada partición (índices de hasta 50 000 filas) para siempre
-    if (porClave.size >= RESULTADOS_MAX) porClave.delete(porClave.keys().next().value!);
+    if (porClave.size >= RESULTADOS_MAX)
+      porClave.delete(porClave.keys().next().value!);
     const particion = calcularParticion(d, p);
     porClave.set(
       clave,

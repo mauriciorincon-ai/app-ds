@@ -1358,9 +1358,9 @@
           "mayoritaria": "Knowing nothing, the most frequent class already gets {aciertosPct} out of every 100 rows right: a model with a similar hit rate adds nothing.",
           "mediana": "Knowing nothing, always estimating the median is off by {error} on average: a model has to get below that.",
           "regla": "Your rule of today costs {regla100} {unidad} per 100 decisions.",
-          "regla-peor": "Your rule of today costs more ({regla100} {unidad} per 100 decisions) than the best way to decide without a model ({mejor100}): with your costs, today you lose more than by always deciding the same.",
-          "regla-mejor": "Your rule of today costs less ({regla100} {unidad} per 100 decisions) than the best way to decide without a model ({mejor100}): the model will have to beat your rule, not just doing nothing.",
-          "regla-igual": "Your rule of today costs the same as the best way to decide without a model ({mejor100} {unidad} per 100 decisions): today it adds nothing over always deciding the same.",
+          "regla-peor": "Your rule of today costs more ({regla100} {unidad} per 100 decisions) than the best way to decide without a model ({mejor100}): with your costs, today you lose more than with the best way to decide without a model.",
+          "regla-mejor": "Your rule of today costs less ({regla100} {unidad} per 100 decisions) than the best way to decide without a model ({mejor100}): the model will have to beat your rule, not just do nothing.",
+          "regla-igual": "Your rule of today costs the same as the best way to decide without a model ({mejor100} {unidad} per 100 decisions): today it adds nothing over the best way to decide without a model.",
           "sin-regla": "With no rule of today, the model will compete against the best way to decide without a model: {mejor100} {unidad} per 100 decisions.",
           "sin-anterior": "{n} rows have no earlier value for their unit: there «the last value» used the median."
         },
@@ -1375,6 +1375,7 @@
           "metrics": "{metrica}, without a model: {list}",
           "hits": "Hits out of 100, without a model: {list}",
           "no-previous": "The last value per unit used the median in {n} rows (no earlier value, no unit or no date).",
+          "no-previous_one": "The last value per unit used the median in 1 row (no earlier value, no unit or no date).",
           "rule-metric": "Your rule of today, {metrica}: {valor}.",
           "rule-hits": "Hits out of 100 with your rule: {valor}.",
           "rule-empty": "In {vacios} of {filas} rows a column of the rule is empty, so the condition does not hold there."
@@ -1417,8 +1418,8 @@
           "hueco-meses": "The {h}-month gap leaves out {n} rows: their outcome would already be known inside the test period.",
           "hueco-meses-uno": "The 1-month gap leaves out {n} rows: their outcome would already be known inside the test period.",
           "clase-rara": "The test set keeps {n} cases of «{clase}», the class with the fewest: that's what stage 8 will have to read how it does with it (stage 8 doesn't measure by class, but by segment and overall).",
-          "clase-escasa": "The test set keeps only {n} cases of «{clase}»: with so few, what stage 8 measures for that class will be unstable.",
-          "clase-ausente": "The test set has no case of «{clase}»: stage 8 won't be able to measure that class.",
+          "clase-escasa": "The test set keeps only {n} cases of «{clase}»: with so few, what the calibration and the error by segment show about that class will be unstable.",
+          "clase-ausente": "The test set has no case of «{clase}»: nothing stage 8 measures will include that class.",
           "sellos": "This notebook carries {n} distinct sealed test sets (counting this one): each different split is another way of looking, and it's counted."
         },
         "summary": {
@@ -1595,7 +1596,7 @@
       "loads": "Data it worked with",
       "load": "{date} · {name} · {rows} rows · fingerprint {hash}",
       "export": "Export notebook",
-      "export-note": "The file carries what was derived from your data (counts, means, dates, column names and, for the text columns you ticked in stage 10, their category names) and what you wrote, but no row of your CSV. Store it the way you would store your data.",
+      "export-note": "The file carries what was derived from your data (counts, means, dates and column names; the categories of the target and of the stage 8 segments; the values you chose in the stage 5 rule; and, for the text columns you ticked in stage 10, their category names) and what you wrote, but no row of your CSV. Store it the way you would store your data.",
       "import": "Import notebook",
       "new": "Start another notebook",
       "new-confirm": "Start a new notebook? The current one is replaced in this browser; export it first if you want to keep it.",

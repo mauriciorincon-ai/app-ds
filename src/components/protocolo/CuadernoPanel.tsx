@@ -153,6 +153,7 @@ function ResumenEtapa5({ datos }: { datos: DatosEtapa }) {
         <li>
           {t("protocol.stage.5.summary.no-previous", {
             n: thousands(r.sinAnterior),
+            count: r.sinAnterior,
           })}
         </li>
       )}

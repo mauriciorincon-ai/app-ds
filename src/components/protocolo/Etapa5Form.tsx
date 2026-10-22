@@ -11,6 +11,7 @@ import { formaDe } from "@/engine/protocolo/etapa1";
 import { columnasParaEntrenar } from "@/engine/protocolo/etapa4";
 import {
   ACTUAR,
+  NO_ACTUAR,
   ENTRADA_5_VACIA,
   ETAPA_5,
   datosEtapa5,
@@ -91,7 +92,7 @@ export function Etapa5Form({
     previo.union === "o" ? "o" : "y",
   );
   const [si, setSi] = useState(previo.si === ACTUAR ? "" : previo.si);
-  const [no, setNo] = useState(previo.no === "no-actuar" ? "" : previo.no);
+  const [no, setNo] = useState(previo.no === NO_ACTUAR ? "" : previo.no);
 
   // Las condiciones que apuntan a una columna que ya no se puede usar vuelven a «Elige…».
   const conCol = conds.map((c) =>
@@ -367,6 +368,7 @@ export function Etapa5Form({
           <p className="text-xs text-ink-muted">
             {t("protocol.stage.5.no-previous", {
               n: thousands(base.nSinAnterior),
+              count: base.nSinAnterior,
             })}
           </p>
         )}
@@ -522,12 +524,14 @@ export function Etapa5Form({
               : t("protocol.stage.5.rule.measure", {
                   cumple: thousands(numero(c, "regla_cumple")!),
                   filas: thousands(base.filas.length),
+                  count: base.filas.length,
                 })}{" "}
             {numero(c, "regla_cumple") !== null &&
               (numero(c, "regla_vacios") ?? 0) > 0 && (
                 <span className="text-ink-muted">
                   {t("protocol.stage.5.rule.empties", {
                     vacios: thousands(numero(c, "regla_vacios")!),
+                    count: numero(c, "regla_vacios")!,
                   })}
                 </span>
               )}

@@ -262,12 +262,11 @@ function porTiempo(
 }
 
 /**
- * ¿Sirven estos pliegues para entrenar y medir? Cada pliegue necesita casos de las dos partes; con clases, la
- * validación trae todas las clases del entrenamiento (como la CV de Probeta, que acota k por la clase más
- * chica) y el entrenamiento trae al menos dos.
- */
-/**
- * Qué impide que estos pliegues sirvan (`null` = sirven). Si a un pliegue le falta validación o entrenamiento es lo propio
+ * ¿Sirven estos pliegues para entrenar y medir? (`null` = sirven; si no, el primer obstáculo.) Cada pliegue necesita casos de
+ * las dos partes; con clases, la validación trae todas las clases del entrenamiento (como la CV de Probeta, que acota k por
+ * la clase más chica) y el entrenamiento trae al menos dos.
+ *
+ * Si a un pliegue le falta validación o entrenamiento es lo propio
  * del esquema (pocas unidades, periodos o casos); si el reparto existe pero a un pliegue le falta una clase, faltan casos
  * (S16, S12: antes la razón era una sola por esquema).
  */

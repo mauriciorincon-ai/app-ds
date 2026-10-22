@@ -236,10 +236,9 @@ describe(".protocolo.json", () => {
       huella: HUELLA,
       clave: i.toString(16).padStart(64, "0"),
     });
-    const lleno = Array.from({ length: APERTURAS_MAX }, (_, i) => apertura(i)).reduce(
-      agregarApertura,
-      cuadernoValido(),
-    );
+    const lleno = Array.from({ length: APERTURAS_MAX }, (_, i) =>
+      apertura(i),
+    ).reduce(agregarApertura, cuadernoValido());
     expect(lleno.aperturas).toHaveLength(APERTURAS_MAX);
     // una más ya no entra; el cuaderno queda como estaba
     expect(agregarApertura(lleno, apertura(APERTURAS_MAX))).toBe(lleno);
@@ -264,11 +263,32 @@ describe(".protocolo.json", () => {
     expect(r.rechazo.campo.startsWith("cuaderno.xxxx")).toBe(true);
   });
 
+  it("S16 (S8 B3): el campo que nombra un lector de etapa también sale corto (clave de megas dentro de una evidencia)", () => {
+    const larga = `respuestas.${"y".repeat(5000)}`;
+    const protocolo: DefinicionProtocolo = [
+      { ...etapa(1, false), leer: () => ({ ok: false, campo: larga }) },
+      etapa(2, true),
+      { id: 3, construida: false, dependeDeDatos: true, terminos: [] },
+    ];
+    const r = leerArchivo(empaquetar(cuadernoValido(), AHORA), protocolo);
+    expect(r.ok).toBe(false);
+    if (r.ok || r.rechazo.tipo !== "invalid-format") return;
+    expect(
+      r.rechazo.campo.startsWith(
+        "cuaderno.evidencias[0].datos.respuestas.yyyy",
+      ),
+    ).toBe(true);
+    expect(r.rechazo.campo.length).toBeLessThan(200);
+  });
+
   it("S16 (S8 B6): las claves de `base` salen de los ids de las etapas, no de un regex cableado a diez", () => {
-    for (const ok of ["1", "2", "9", "10"]) expect(claveDeEtapa(ok), ok).toBe(true);
+    for (const ok of ["1", "2", "9", "10"])
+      expect(claveDeEtapa(ok), ok).toBe(true);
     for (const mal of ["0", "11", "010", "1.0", "", "-1", "+1", " 1"])
       expect(claveDeEtapa(mal), JSON.stringify(mal)).toBe(false);
-    expect(readFileSync("src/lib/protocolo/archivo.ts", "utf8")).not.toMatch(/\(10\|\[1-9\]\)/);
+    expect(readFileSync("src/lib/protocolo/archivo.ts", "utf8")).not.toMatch(
+      /\(10\|\[1-9\]\)/,
+    );
   });
 
   it("lo que vuelve de IndexedDB pasa por el mismo lector", () => {

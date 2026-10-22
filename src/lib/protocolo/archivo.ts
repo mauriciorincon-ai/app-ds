@@ -104,6 +104,12 @@ export type LecturaArchivo =
   | { readonly ok: true; readonly cuaderno: Cuaderno }
   | { readonly ok: false; readonly rechazo: RechazoArchivo };
 
+/** Un nombre de campo se muestra corto: un archivo editado puede traer una clave de megas (S16, S8 B3). */
+const CAMPO_MAX = 120;
+function acortar(campo: string): string {
+  return campo.length > CAMPO_MAX ? `${campo.slice(0, CAMPO_MAX)}…` : campo;
+}
+
 /** `["cuaderno","evidencias",2,"fecha"]` → `cuaderno.evidencias[2].fecha`. */
 function ruta(partes: readonly PropertyKey[]): string {
   // S16 (S8 B3): una clave inventada no se repite entera en el mensaje (un archivo editado puede traerla de megas)
@@ -145,7 +151,7 @@ function coherencia(
         return campo("base");
     }
     const lectura = etapa.leer(ev.datos);
-    if (!lectura.ok) return campo(`datos.${lectura.campo}`);
+    if (!lectura.ok) return campo(`datos.${acortar(lectura.campo)}`);
     vistas.set(ev.seq, ev.etapa);
   }
   return null;

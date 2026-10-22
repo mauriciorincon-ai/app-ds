@@ -1358,9 +1358,9 @@
           "mayoritaria": "Sin saber nada, la clase más frecuente ya acierta {aciertosPct} de cada 100 filas: un modelo con un acierto parecido no aporta nada.",
           "mediana": "Sin saber nada, estimar siempre la mediana se equivoca en promedio por {error}: un modelo tiene que bajar de ahí.",
           "regla": "Tu regla de hoy cuesta {regla100} {unidad} por cada 100 decisiones.",
-          "regla-peor": "Tu regla de hoy cuesta más ({regla100} {unidad} por cada 100 decisiones) que la mejor forma de decidir sin modelo ({mejor100}): con tus costos, hoy se pierde más que decidiendo siempre igual.",
+          "regla-peor": "Tu regla de hoy cuesta más ({regla100} {unidad} por cada 100 decisiones) que la mejor forma de decidir sin modelo ({mejor100}): con tus costos, hoy se pierde más que con la mejor forma de decidir sin modelo.",
           "regla-mejor": "Tu regla de hoy cuesta menos ({regla100} {unidad} por cada 100 decisiones) que la mejor forma de decidir sin modelo ({mejor100}): el modelo tendrá que ganarle a tu regla, no solo a no hacer nada.",
-          "regla-igual": "Tu regla de hoy cuesta lo mismo que la mejor forma de decidir sin modelo ({mejor100} {unidad} por cada 100 decisiones): hoy no aporta nada sobre decidir siempre igual.",
+          "regla-igual": "Tu regla de hoy cuesta lo mismo que la mejor forma de decidir sin modelo ({mejor100} {unidad} por cada 100 decisiones): hoy no aporta nada sobre la mejor forma de decidir sin modelo.",
           "sin-regla": "Sin regla de hoy, el modelo competirá contra la mejor forma de decidir sin modelo: {mejor100} {unidad} por cada 100 decisiones.",
           "sin-anterior": "{n} filas no tienen un valor anterior de su unidad: ahí «el último valor» usó la mediana."
         },
@@ -1375,6 +1375,7 @@
           "metrics": "{metrica}, sin modelo: {list}",
           "hits": "Aciertos de cada 100, sin modelo: {list}",
           "no-previous": "El último valor por unidad usó la mediana en {n} filas (sin valor anterior, sin unidad o sin fecha).",
+          "no-previous_one": "El último valor por unidad usó la mediana en 1 fila (sin valor anterior, sin unidad o sin fecha).",
           "rule-metric": "Tu regla de hoy, {metrica}: {valor}.",
           "rule-hits": "Aciertos de cada 100 con tu regla: {valor}.",
           "rule-empty": "En {vacios} de {filas} filas una columna de la regla está vacía y ahí la condición no se cumple."
@@ -1417,8 +1418,8 @@
           "hueco-meses": "El hueco de {h} meses deja fuera {n} filas: su resultado se conocería ya dentro de la prueba.",
           "hueco-meses-uno": "El hueco de 1 mes deja fuera {n} filas: su resultado se conocería ya dentro de la prueba.",
           "clase-rara": "La prueba deja {n} casos de «{clase}», la clase con menos casos: son los que tendrá la etapa 8 para leer cómo le va con ella (en la etapa 8 no se mide por clase, sino por segmento y en conjunto).",
-          "clase-escasa": "La prueba deja solo {n} casos de «{clase}»: con tan pocos, lo que mida la etapa 8 para esa clase será inestable.",
-          "clase-ausente": "La prueba no tiene ningún caso de «{clase}»: la etapa 8 no podrá medir esa clase.",
+          "clase-escasa": "La prueba deja solo {n} casos de «{clase}»: con tan pocos, lo que muestren la calibración y el error por segmento sobre esa clase será inestable.",
+          "clase-ausente": "La prueba no tiene ningún caso de «{clase}»: nada de lo que mida la etapa 8 incluirá esa clase.",
           "sellos": "Este cuaderno lleva {n} pruebas distintas selladas (contando esta): cada partición distinta es otra forma de mirar, y queda contada."
         },
         "summary": {
@@ -1595,7 +1596,7 @@
       "loads": "Datos con que se trabajó",
       "load": "{date} · {name} · {rows} filas · huella {hash}",
       "export": "Exportar cuaderno",
-      "export-note": "El archivo lleva lo derivado de tus datos (conteos, medias, fechas, nombres de columna y, de las columnas de texto que marcaste en la etapa 10, los nombres de sus categorías) y lo que escribiste, pero ninguna fila de tu CSV. Guárdalo como guardarías tus datos.",
+      "export-note": "El archivo lleva lo derivado de tus datos (conteos, medias, fechas y nombres de columna; las categorías del objetivo y de los segmentos de la etapa 8; los valores que elegiste en la regla de la etapa 5; y, de las columnas de texto que marcaste en la etapa 10, los nombres de sus categorías) y lo que escribiste, pero ninguna fila de tu CSV. Guárdalo como guardarías tus datos.",
       "import": "Importar cuaderno",
       "new": "Empezar otro cuaderno",
       "new-confirm": "¿Empezar un cuaderno nuevo? El actual se reemplaza en este navegador; expórtalo antes si lo quieres conservar.",

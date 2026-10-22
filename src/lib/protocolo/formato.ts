@@ -49,11 +49,6 @@ export function valorTexto(
 }
 
 /**
- * Una probabilidad o un cuantil entre 0 y 1 con los decimales que hacen falta para no escribir
- * «0.00» (un umbral de 0.0016 no es cero) ni «1.00» (0.9995 no es uno): dos decimales cuando
- * ninguno de los dos extremos está a menos de 0.01, y más si lo está.
- */
-/**
  * Un PSI para mostrar: dos decimales, salvo que redondear lo pase al otro lado de un umbral (S16, S9 B4: un PSI
  * de 0.2496 es «moderado» y a dos decimales se leería «0.25», que ya es alerta). Agrega decimales hasta que no.
  */
@@ -66,6 +61,11 @@ export function psiTexto(psi: number, umbrales: readonly number[]): string {
   return formatQuantity(psi, 6);
 }
 
+/**
+ * Una probabilidad o un cuantil entre 0 y 1 con los decimales que hacen falta para no escribir
+ * «0.00» (un umbral de 0.0016 no es cero) ni «1.00» (0.9995 no es uno): dos decimales cuando
+ * ninguno de los dos extremos está a menos de 0.01, y más si lo está.
+ */
 export function proporcion(valor: number): string {
   if (!(valor > 0 && valor < 1)) return formatQuantity(valor, 2);
   const margen = Math.min(valor, 1 - valor);
