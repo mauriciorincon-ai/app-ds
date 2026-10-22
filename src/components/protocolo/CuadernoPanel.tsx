@@ -11,13 +11,17 @@ import {
   type Evidencia,
 } from "@/engine/protocolo/cuaderno";
 import { resumenEtapa4 } from "@/engine/protocolo/etapa4";
-import { ACTUAR, NO_ACTUAR, resumenEtapa5 } from "@/engine/protocolo/etapa5";
+import {
+  ACTUAR,
+  NO_ACTUAR,
+  por100,
+  resumenEtapa5,
+} from "@/engine/protocolo/etapa5";
 import { resumenEtapa6, sellosDistintos } from "@/engine/protocolo/etapa6";
 import { resumenEtapa7 } from "@/engine/protocolo/etapa7";
 import { resumenEtapa8 } from "@/engine/protocolo/etapa8";
 import { resumenEtapa9 } from "@/engine/protocolo/etapa9";
 import { resumenEtapa10 } from "@/engine/protocolo/etapa10";
-import { por100 } from "@/engine/protocolo/etapa5";
 import type { DatosEtapa, Valor } from "@/engine/protocolo/etapas";
 import { useI18n } from "@/i18n/provider";
 import {
@@ -490,7 +494,9 @@ function ResumenEtapa6({
 }) {
   const { t } = useI18n();
   const r = resumenEtapa6(datos);
-  const nombre = (e: string) => t(`protocol.stage.6.scheme.${e}`);
+  // S16 (S11): un esquema vacío (evidencia a mano) no pide la clave `scheme.` — se ve «—», no una clave cruda
+  const nombre = (e: string) =>
+    e === "" ? "—" : t(`protocol.stage.6.scheme.${e}`);
   const n = (x: number | null) => thousands(x ?? 0);
   return (
     <ul
@@ -786,6 +792,9 @@ export function CuadernoPanel({
           }}
         />
       </div>
+      <p className="text-xs text-ink-muted" data-testid="protocolo-exportar-nota">
+        {t("protocol.notebook.export-note")}
+      </p>
 
       {confirmando && (
         <Confirmacion
@@ -826,6 +835,7 @@ export function CuadernoPanel({
             <p>
               {t("protocol.notebook.import-confirm.body", {
                 now: cuaderno.evidencias.length,
+                count: cuaderno.evidencias.length,
                 incoming: importePendiente.evidencias.length,
               })}
             </p>

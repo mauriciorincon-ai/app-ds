@@ -16,7 +16,7 @@ export function TerminoLink({ id }: { id: TerminoId }) {
   return (
     <a
       href={`#${anclaTermino(id)}`}
-      className="inline-flex min-h-11 items-center rounded-full border border-hairline px-3 text-xs text-ink underline-offset-2 hover:underline sm:min-h-8"
+      className="inline-flex min-h-11 items-center rounded-full border border-hairline px-3 text-xs text-ink underline-offset-2 hover:underline"
     >
       {GLOSARIO[id].termino[locale]}
     </a>
