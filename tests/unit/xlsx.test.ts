@@ -295,6 +295,70 @@ describe("lo que no se puede leer se dice con su nombre", () => {
   });
 });
 
+describe("un libro hostil no agota la memoria ni congela la pestaña (auditoría H-03, S18)", () => {
+  const danado = { ok: false, error: { kind: "xlsx-danado" } };
+
+  it.each(["XFE1", "ZZZZ1", "ZZZZZZZZZZZZZ1", "A".repeat(2000) + "1"])(
+    "una referencia de columna fuera de Excel (%s) es «dañado», enseguida",
+    async (referencia) => {
+      const t0 = performance.now();
+      const lectura = await leerXlsx(
+        libroMinimo(
+          `<row r="1"><c r="A1" t="inlineStr"><is><t>a</t></is></c><c r="${referencia}"><v>1</v></c></row>`,
+        ),
+      );
+      expect(lectura).toEqual(danado);
+      expect(performance.now() - t0).toBeLessThan(1000);
+    },
+  );
+
+  it("la última columna de Excel (XFD) todavía es una columna", async () => {
+    const lectura = await leerXlsx(
+      libroMinimo(
+        '<row r="1"><c r="A1" t="inlineStr"><is><t>a</t></is></c><c r="XFD1"><v>1</v></c></row>',
+      ),
+    );
+    if (!lectura.ok) throw new Error(lectura.error.kind);
+    expect(lectura.filas[0]).toHaveLength(16_384);
+  });
+
+  it("un valor por fila en la última columna, muchas filas, se corta por el tope de celdas y no por la memoria", async () => {
+    const filas = Array.from(
+      { length: 800 },
+      (_, i) =>
+        `<row r="${i + 1}"><c r="A${i + 1}"><v>1</v></c><c r="XFD${i + 1}"><v>2</v></c></row>`,
+    ).join("");
+    const t0 = performance.now();
+    // 800 × 16 384 = 13 M celdas: pasa el tope de 10 M
+    expect(await leerXlsx(libroMinimo(filas))).toEqual(danado);
+    expect(performance.now() - t0).toBeLessThan(5000);
+  });
+
+  it("100 000 filas y 100 000 celdas SIN CERRAR se recorren en tiempo lineal (con expresiones perezosas eran cuadráticas)", async () => {
+    const sinCerrar = '<row r="1">'.repeat(100_000);
+    const t0 = performance.now();
+    const lectura = await leerXlsx(libroMinimo(sinCerrar));
+    expect(performance.now() - t0).toBeLessThan(1000);
+    // no hay una sola fila completa: nada que leer
+    expect(lectura.ok ? lectura.filas : "dañado").toEqual([]);
+    const celdasSinCerrar = `<row r="1">${'<c r="A1"><v>'.repeat(100_000)}</row>`;
+    const t1 = performance.now();
+    await leerXlsx(libroMinimo(celdasSinCerrar));
+    expect(performance.now() - t1).toBeLessThan(1000);
+  });
+
+  it("cadenas compartidas, estilos y relaciones sin cerrar también son lineales", async () => {
+    const t0 = performance.now();
+    await leerXlsx(
+      libroMinimo('<row r="1"><c r="A1" t="s"><v>0</v></c></row>', {
+        "xl/sharedStrings.xml": `<sst>${"<si><t>x".repeat(60_000)}</sst>`,
+        "xl/styles.xml": `<styleSheet><numFmts>${'<numFmt a="'.repeat(60_000)}</numFmts></styleSheet>`,
+      }),
+    );
+    expect(performance.now() - t0).toBeLessThan(1500);
+  });
+});
+
 describe("serieAIso", () => {
   it.each([
     [1, false, "1900-01-01"],

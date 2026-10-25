@@ -13,6 +13,10 @@ import { MAX_ROWS } from "./csv";
 /** Tope de bytes que se aceptan DESCOMPRIMIDOS entre todas las partes que se leen (anti-bomba de compresión). */
 export const MAX_DESCOMPRIMIDO = 128 * 1024 * 1024;
 const MAX_ENTRADAS = 10_000;
+/** Excel no pasa de 16 384 columnas (XFD): una referencia que lo supera no es de un libro de verdad. */
+const MAX_COLUMNAS = 16_384;
+/** Celdas que se aceptan en una hoja (filas × ancho): acota la memoria de un libro que dispersa un valor por fila en la columna XFD. */
+const MAX_CELDAS = 10_000_000;
 
 export type XlsxFalla =
   | { kind: "xlsx-protegido" }
@@ -171,29 +175,90 @@ function entidades(texto: string): string {
   );
 }
 
+/** Los atributos de una etiqueta (las de un libro son cortas: lo que pase de 4 096 caracteres no se lee). */
 function atributos(etiqueta: string): Record<string, string> {
   const salida: Record<string, string> = {};
-  for (const m of etiqueta.matchAll(
+  for (const m of etiqueta.slice(0, 4096).matchAll(
     /([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g,
   ))
     salida[m[1]!] = entidades(m[2] ?? m[3] ?? "");
   return salida;
 }
 
+type Elemento = {
+  /** Lo que va entre el nombre de la etiqueta y su `>`, sin la `/` de las que se cierran solas. */
+  atributos: string;
+  /** El texto entre la apertura y el cierre; `null` si la etiqueta se cierra sola o no se pidió. */
+  cuerpo: string | null;
+  desde: number;
+  hasta: number;
+};
+
+/** Recorre las etiquetas `<nombre …>…</nombre>` y `<nombre …/>` de un XML sin retroceder jamás: cada búsqueda avanza, así que un
+ *  archivo con etiquetas sin cerrar cuesta lo mismo que uno bien formado (con expresiones perezosas costaba el cuadrado del
+ *  tamaño). Una etiqueta que no se cierra termina el recorrido. Con `conCuerpo: false` solo se leen las aperturas. */
+function* elementos(
+  xml: string,
+  nombre: string,
+  { conCuerpo = true }: { conCuerpo?: boolean } = {},
+): Generator<Elemento> {
+  const apertura = `<${nombre}`;
+  const cierre = `</${nombre}>`;
+  let i = xml.indexOf(apertura);
+  while (i >= 0) {
+    const siguiente = xml.charCodeAt(i + apertura.length);
+    // «<c» no es «<cols» ni «<cellXfs»: el nombre acaba en un espacio, en «>» o en «/»
+    if (
+      siguiente !== 32 &&
+      siguiente !== 9 &&
+      siguiente !== 10 &&
+      siguiente !== 13 &&
+      siguiente !== 62 &&
+      siguiente !== 47
+    ) {
+      i = xml.indexOf(apertura, i + 1);
+      continue;
+    }
+    const finApertura = xml.indexOf(">", i + apertura.length);
+    if (finApertura < 0) return;
+    const sola = xml.charCodeAt(finApertura - 1) === 47;
+    const atributos = xml.slice(
+      i + apertura.length,
+      sola ? finApertura - 1 : finApertura,
+    );
+    if (sola || !conCuerpo) {
+      yield { atributos, cuerpo: null, desde: i, hasta: finApertura + 1 };
+      i = xml.indexOf(apertura, finApertura + 1);
+      continue;
+    }
+    const fin = xml.indexOf(cierre, finApertura + 1);
+    if (fin < 0) return;
+    yield {
+      atributos,
+      cuerpo: xml.slice(finApertura + 1, fin),
+      desde: i,
+      hasta: fin + cierre.length,
+    };
+    i = xml.indexOf(apertura, fin + cierre.length);
+  }
+}
+
 /** El texto de un bloque `<si>` o `<is>`: todas sus `<t>`, sin la lectura fonética (`<rPh>`). */
 function textoDe(bloque: string): string {
-  const sinFonetica = bloque.replace(/<rPh\b[\s\S]*?<\/rPh>/g, "");
+  const fonetica = [...elementos(bloque, "rPh")];
   let salida = "";
-  for (const m of sinFonetica.matchAll(/<t\b[^>]*?(?:\/>|>([\s\S]*?)<\/t>)/g))
-    salida += m[1] ?? "";
+  let j = 0;
+  for (const t of elementos(bloque, "t")) {
+    while (j < fonetica.length && fonetica[j]!.hasta <= t.desde) j++;
+    if (j < fonetica.length && t.desde >= fonetica[j]!.desde) continue;
+    salida += t.cuerpo ?? "";
+  }
   return entidades(salida);
 }
 
 function cadenasCompartidas(xml: string | null): string[] {
   if (!xml) return [];
-  return [...xml.matchAll(/<si\b[^>]*?(?:\/>|>([\s\S]*?)<\/si>)/g)].map((m) =>
-    textoDe(m[1] ?? ""),
-  );
+  return [...elementos(xml, "si")].map((e) => textoDe(e.cuerpo ?? ""));
 }
 
 // ---------- fechas ----------
@@ -217,21 +282,19 @@ function esFormatoFecha(codigo: string): boolean {
 function estilosDeFecha(xml: string | null): boolean[] {
   if (!xml) return [];
   const personalizados = new Map<number, string>();
-  for (const m of xml.matchAll(/<numFmt\b([^>]*?)\/?>/g)) {
-    const a = atributos(m[1]!);
+  for (const e of elementos(xml, "numFmt", { conCuerpo: false })) {
+    const a = atributos(e.atributos);
     if (a.numFmtId !== undefined && a.formatCode !== undefined)
       personalizados.set(Number(a.numFmtId), a.formatCode);
   }
-  const bloque = /<cellXfs\b[^>]*?>([\s\S]*?)<\/cellXfs>/.exec(xml)?.[1] ?? "";
-  return [...bloque.matchAll(/<xf\b([^>]*?)(?:\/>|>[\s\S]*?<\/xf>)/g)].map(
-    (m) => {
-      const id = Number(atributos(m[1]!).numFmtId ?? 0);
-      const propio = personalizados.get(id);
-      return propio !== undefined
-        ? esFormatoFecha(propio)
-        : FORMATOS_FECHA.has(id);
-    },
-  );
+  const bloque = elementos(xml, "cellXfs").next().value?.cuerpo ?? "";
+  return [...elementos(bloque, "xf", { conCuerpo: false })].map((e) => {
+    const id = Number(atributos(e.atributos).numFmtId ?? 0);
+    const propio = personalizados.get(id);
+    return propio !== undefined
+      ? esFormatoFecha(propio)
+      : FORMATOS_FECHA.has(id);
+  });
 }
 
 const dos = (n: number) => String(n).padStart(2, "0");
@@ -265,6 +328,8 @@ export function serieAIso(serie: number, sistema1904: boolean): string | null {
 function columnaDe(referencia: string | undefined): number | null {
   const letras = /^([A-Za-z]+)/.exec(referencia ?? "")?.[1];
   if (!letras) return null;
+  // más de tres letras ya pasa de XFD: no hace falta calcular el número (ni dejar que se vaya a infinito)
+  if (letras.length > 3) return MAX_COLUMNAS;
   let n = 0;
   for (const c of letras.toUpperCase()) n = n * 26 + (c.charCodeAt(0) - 64);
   return n - 1;
@@ -279,8 +344,8 @@ function valorDeCelda(
 ): string {
   const tipo = atrib.t ?? "n";
   if (tipo === "inlineStr")
-    return textoDe(/<is\b[^>]*?>([\s\S]*?)<\/is>/.exec(cuerpo)?.[1] ?? "");
-  const v = /<v\b[^>]*?>([\s\S]*?)<\/v>/.exec(cuerpo)?.[1];
+    return textoDe(elementos(cuerpo, "is").next().value?.cuerpo ?? "");
+  const v = elementos(cuerpo, "v").next().value?.cuerpo ?? undefined;
   if (v === undefined) return "";
   if (tipo === "s") return compartidas[Number(v)] ?? "";
   if (tipo === "str") return entidades(v);
@@ -304,23 +369,22 @@ function leerHoja(
 ): { ok: true; filas: string[][] } | { ok: false; error: XlsxFalla } {
   const filas: string[][] = [];
   let ancho = 0;
-  for (const fila of xml.matchAll(
-    /<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g,
-  )) {
-    const contenido = fila[2];
+  let celdasTotales = 0;
+  const danado = { ok: false, error: { kind: "xlsx-danado" } } as const;
+  for (const fila of elementos(xml, "row")) {
+    const contenido = fila.cuerpo;
     if (!contenido) continue;
     const celdas: string[] = [];
     let posicion = 0;
     let ultimaConDato = -1;
-    for (const c of contenido.matchAll(
-      /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,
-    )) {
-      const atrib = atributos(c[1]!);
+    for (const c of elementos(contenido, "c")) {
+      const atrib = atributos(c.atributos);
       const columna = columnaDe(atrib.r) ?? posicion;
+      if (columna >= MAX_COLUMNAS) return danado;
       posicion = columna + 1;
       const valor = valorDeCelda(
         atrib,
-        c[2] ?? "",
+        c.cuerpo ?? "",
         compartidas,
         fechas,
         sistema1904,
@@ -332,6 +396,8 @@ function leerHoja(
     }
     if (ultimaConDato < 0) continue; // fila sin un solo valor: no cuenta
     ancho = Math.max(ancho, ultimaConDato + 1);
+    celdasTotales += celdas.length;
+    if (celdasTotales > MAX_CELDAS) return danado;
     filas.push(celdas);
     // la cabecera no cuenta como fila de datos
     if (filas.length - 1 > maxFilas) {
@@ -410,13 +476,15 @@ export async function leerXlsx(
         presupuesto,
       )) ?? "";
     const destinos = new Map<string, { target: string; type: string }>();
-    for (const m of relaciones.matchAll(/<Relationship\b([^>]*?)\/?>/g)) {
-      const a = atributos(m[1]!);
+    for (const e of elementos(relaciones, "Relationship", {
+      conCuerpo: false,
+    })) {
+      const a = atributos(e.atributos);
       if (a.Id && a.Target)
         destinos.set(a.Id, { target: a.Target, type: a.Type ?? "" });
     }
-    const hojas = [...libro.matchAll(/<sheet\b([^>]*?)\/?>/g)]
-      .map((m) => atributos(m[1]!))
+    const hojas = [...elementos(libro, "sheet", { conCuerpo: false })]
+      .map((e) => atributos(e.atributos))
       .filter((a) =>
         destinos.get(a["r:id"] ?? "")?.type.endsWith("/worksheet"),
       );
