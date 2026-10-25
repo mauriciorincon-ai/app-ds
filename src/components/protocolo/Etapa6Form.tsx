@@ -534,7 +534,12 @@ export function Etapa6Form({
               )}
               {temporal && (
                 <Verificado ok={numero(c, "solape_tiempo") === 0}>
-                  {t("protocol.stage.6.verify.time")}
+                  {numero(c, "solape_tiempo") === 0
+                    ? t("protocol.stage.6.verify.time")
+                    : // S16 (S11): el camino malo existía en los textos y nunca se pintaba
+                      t("protocol.stage.6.verify.time-bad", {
+                        n: thousands(numero(c, "solape_tiempo") ?? 0),
+                      })}
                 </Verificado>
               )}
             </ul>

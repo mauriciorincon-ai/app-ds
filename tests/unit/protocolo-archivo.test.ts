@@ -2,9 +2,11 @@
 // emite (`empaquetar`) escribe el fixture; el que lee (`leerArchivo` / `leerCuaderno`) lo
 // valida, y cada campo trae su carnada: una mutación de ese solo campo que el lector rechaza
 // NOMBRÁNDOLO («detectó k de n», regla 19).
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { registrar } from "@/engine/protocolo/compuerta";
 import {
+  APERTURAS_MAX,
   agregarApertura,
   aperturasDistintas,
   cuadernoVacio,
@@ -19,6 +21,7 @@ import type {
 import { almacenEnMemoria, abrirAlmacen } from "@/lib/protocolo/almacen";
 import {
   MAX_PROTOCOL_FILE_BYTES,
+  claveDeEtapa,
   empaquetar,
   leerArchivo,
   leerCuaderno,
@@ -195,13 +198,13 @@ describe(".protocolo.json", () => {
       huella: HUELLA,
       clave,
     });
-    // abrir lo mismo dos veces no suma; otra cosa, sí; la lista solo crece
+    // abrir lo mismo dos veces no suma ni agranda la lista (S16, S13 B5); otra cosa, sí; la lista solo crece
     const con = [
       apertura("a".repeat(64)),
       apertura("a".repeat(64)),
       apertura("b".repeat(64)),
     ].reduce(agregarApertura, sin);
-    expect(con.aperturas).toHaveLength(3);
+    expect(con.aperturas).toHaveLength(2);
     expect(aperturasDistintas(con)).toBe(2);
     expect(leerArchivo(empaquetar(con, AHORA), PROTOCOLO)).toEqual({
       ok: true,
@@ -225,6 +228,67 @@ describe(".protocolo.json", () => {
           campo: `cuaderno.aperturas[0].${campo}`,
         },
       });
+  });
+
+  it("S16 (S13 B5): las aperturas tienen tope: la app no pasa de APERTURAS_MAX y el archivo con más se rechaza nombrándolas", () => {
+    const apertura = (i: number) => ({
+      fecha: AHORA.toISOString(),
+      huella: HUELLA,
+      clave: i.toString(16).padStart(64, "0"),
+    });
+    const lleno = Array.from({ length: APERTURAS_MAX }, (_, i) =>
+      apertura(i),
+    ).reduce(agregarApertura, cuadernoValido());
+    expect(lleno.aperturas).toHaveLength(APERTURAS_MAX);
+    // una más ya no entra; el cuaderno queda como estaba
+    expect(agregarApertura(lleno, apertura(APERTURAS_MAX))).toBe(lleno);
+    expect(leerArchivo(empaquetar(lleno, AHORA), PROTOCOLO).ok).toBe(true);
+    const demasiadas = {
+      ...lleno,
+      aperturas: [...lleno.aperturas!, apertura(APERTURAS_MAX)],
+    };
+    expect(leerArchivo(empaquetar(demasiadas, AHORA), PROTOCOLO)).toEqual({
+      ok: false,
+      rechazo: { tipo: "invalid-format", campo: "cuaderno.aperturas" },
+    });
+  });
+
+  it("S16 (S8 B3): una clave inventada no se repite entera en el mensaje", () => {
+    const archivo = JSON.parse(empaquetar(cuadernoValido(), AHORA)) as Mutable;
+    cu(archivo)["x".repeat(5000)] = 1;
+    const r = leerArchivo(JSON.stringify(archivo), PROTOCOLO);
+    expect(r.ok).toBe(false);
+    if (r.ok || r.rechazo.tipo !== "invalid-format") return;
+    expect(r.rechazo.campo.length).toBeLessThanOrEqual("cuaderno.".length + 61);
+    expect(r.rechazo.campo.startsWith("cuaderno.xxxx")).toBe(true);
+  });
+
+  it("S16 (S8 B3): el campo que nombra un lector de etapa también sale corto (clave de megas dentro de una evidencia)", () => {
+    const larga = `respuestas.${"y".repeat(5000)}`;
+    const protocolo: DefinicionProtocolo = [
+      { ...etapa(1, false), leer: () => ({ ok: false, campo: larga }) },
+      etapa(2, true),
+      { id: 3, construida: false, dependeDeDatos: true, terminos: [] },
+    ];
+    const r = leerArchivo(empaquetar(cuadernoValido(), AHORA), protocolo);
+    expect(r.ok).toBe(false);
+    if (r.ok || r.rechazo.tipo !== "invalid-format") return;
+    expect(
+      r.rechazo.campo.startsWith(
+        "cuaderno.evidencias[0].datos.respuestas.yyyy",
+      ),
+    ).toBe(true);
+    expect(r.rechazo.campo.length).toBeLessThan(200);
+  });
+
+  it("S16 (S8 B6): las claves de `base` salen de los ids de las etapas, no de un regex cableado a diez", () => {
+    for (const ok of ["1", "2", "9", "10"])
+      expect(claveDeEtapa(ok), ok).toBe(true);
+    for (const mal of ["0", "11", "010", "1.0", "", "-1", "+1", " 1"])
+      expect(claveDeEtapa(mal), JSON.stringify(mal)).toBe(false);
+    expect(readFileSync("src/lib/protocolo/archivo.ts", "utf8")).not.toMatch(
+      /\(10\|\[1-9\]\)/,
+    );
   });
 
   it("lo que vuelve de IndexedDB pasa por el mismo lector", () => {

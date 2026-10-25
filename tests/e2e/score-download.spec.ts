@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { axeBothThemes } from "./axe-temas";
 
 // S3 — Outcome 1: entrenar → "Usar el modelo" → CSV nuevo (con novedad
 // plantada) → panel de novedad con conteos por columna → descarga del CSV
@@ -118,6 +118,5 @@ test("entrenar → puntuar con novedad plantada → descargar, sin datos en la r
   expect(traffic).not.toContain("clientes-nuevos");
 
   // A11y de la pantalla completa de scoring con resultados.
-  const axe = await new AxeBuilder({ page }).analyze();
-  expect(axe.violations).toEqual([]);
+  await axeBothThemes(page);
 });

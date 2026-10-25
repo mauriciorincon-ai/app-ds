@@ -106,3 +106,10 @@ authenticity" covered:
 
 Unchanged and still accepted for H1: the manifest's informative fields (metrics, verdict) are not
 covered by the hash — an exported-file **signature remains the H2 item** for authenticity.
+
+## Status note (2026-10-21, Sprint 016)
+
+The two items this ADR left for «H2» did not get built in the H-2 and have a place now: **ONNX** is discarded with the feature that needed it
+(«Publícalo en un clic» is in `funcionalidades.descartadas` of the export; `skl2onnx` still does not load in Pyodide), and the **signature of
+the exported file** moves to H-4 (it matters when a third party receives a model; today the hash covers the payload and the manifest's
+informative fields are not covered, as stated above).

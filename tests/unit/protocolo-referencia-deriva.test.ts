@@ -17,6 +17,26 @@ import {
 
 const todas = (n: number) => Array.from({ length: n }, (_, i) => i);
 
+describe("los cortes numéricos solo se guardan con soporte (S16, S15 B1)", () => {
+  const enteros = (n: number) => todas(n).map((i) => String(10 + i));
+
+  it("con menos de REF_SOPORTE_MIN × 5 filas con valor, un corte sería un valor individual: no se guarda ninguno", () => {
+    const pocas = REF_SOPORTE_MIN * 5 - 1;
+    const r = referenciaColumna("edad", enteros(pocas), todas(pocas));
+    expect(r).toMatchObject({ tipo: "numero", cortes: [], cuentas: [pocas, 0] });
+    // y lo guardado no trae ningún valor del CSV
+    expect(codificarReferencia(r)).not.toMatch(/"cortes":\[[0-9]/);
+  });
+
+  it("con las filas justas, entran los cortes (enteros cortos incluidos) y cada casilla junta al menos REF_SOPORTE_MIN", () => {
+    const justas = REF_SOPORTE_MIN * 5;
+    const r = referenciaColumna("edad", enteros(justas), todas(justas));
+    if (r.tipo !== "numero") throw new Error("debía ser numérica");
+    expect(r.cortes.length).toBeGreaterThan(0);
+    for (const n of r.cuentas.slice(0, -1)) expect(n).toBeGreaterThanOrEqual(REF_SOPORTE_MIN);
+  });
+});
+
 describe("la referencia de una numérica", () => {
   it("cortes de quintil con 3 cifras, crecientes, y cuentas que suman las filas (el vacío al final)", () => {
     const crudos = [...todas(99).map((i) => String(1000 + i * 1.2345)), ""];

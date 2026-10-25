@@ -21,9 +21,28 @@ export function numero(r: Registro, clave: string): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
+/**
+ * El costo más alto que acepta el Protocolo (S16, S8 B2): con 1e308 las sumas de dos costos dan Infinity y
+ * el umbral NaN. Un billón (10^12) está muy por encima de cualquier costo de una decisión.
+ */
+export const COSTO_MAX = 1e12;
+
+/**
+ * La forma de un identificador guardado (un modelo, una métrica): minúsculas, cifras, guion y guion bajo, hasta 40.
+ * S16 (S13 B1, S14): `leer` no valida contra una lista (el motor no importa el catálogo de modelos) pero sí que
+ * no sea texto libre, porque el cuaderno lo pinta.
+ */
+export const ID_GUARDADO = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+export const esIdGuardado = (v: unknown): v is string =>
+  typeof v === "string" && ID_GUARDADO.test(v);
+
+/** Un costo válido: mayor que cero y no mayor que `COSTO_MAX`. */
+export const costoValido = (v: unknown): v is number =>
+  typeof v === "number" && v > 0 && v <= COSTO_MAX;
+
 export function positivo(r: Registro, clave: string): number | null {
   const v = numero(r, clave);
-  return v !== null && v > 0 ? v : null;
+  return costoValido(v) ? v : null;
 }
 
 export function lista(r: Registro, clave: string): readonly string[] | null {

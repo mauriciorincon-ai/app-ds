@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { axeBothThemes } from "./axe-temas";
 
 // S3 — Outcome 2: el modelo sobrevive a la pestaña. Entrenar → exportar
 // (.probeta.json con manifiesto) → RECARGAR la página (sesión nueva) →
@@ -93,6 +93,5 @@ test("exportar → recargar → importar → puntuar sin re-entrenar, sin payloa
   expect(traffic).not.toContain('"payload"');
 
   // A11y de la pantalla de scoring alcanzada vía import.
-  const axe = await new AxeBuilder({ page }).analyze();
-  expect(axe.violations).toEqual([]);
+  await axeBothThemes(page);
 });

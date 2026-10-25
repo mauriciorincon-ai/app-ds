@@ -60,8 +60,8 @@
         },
         "why": {
           "title": "Why it won",
-          "same": "{ganador} had the best score ({puntaje}), and there's no simpler model within one standard error ({ee}).",
-          "simpler": "The best score was {mejor}'s ({puntaje}). {ganador} came within one standard error ({ee}) and is simpler: a difference smaller than the noise across folds doesn't justify something more complicated."
+          "same": "{ganador} had the best selection score ({puntaje}, in cross-validation: good for choosing, not for believing), and there's no simpler model within one standard error ({ee}).",
+          "simpler": "The best selection score was {mejor}'s ({puntaje}, in cross-validation: good for choosing, not for believing). {ganador} came within one standard error ({ee}) and is simpler: a difference smaller than the noise across folds doesn't justify something more complicated."
         },
         "ref": {
           "nunca-actuar": "Never act",

@@ -1,6 +1,6 @@
 // Protocolo DS (S8, VISION v2.0.0 § 8): el texto de cada etapa como DATO `{es, en}`,
-// redactado en cada idioma. Las diez llevan título y criterio de salida (las que no están
-// construidas se ven con él); las construidas suman su tarea y su porqué de tres líneas.
+// redactado en cada idioma. Las diez llevan título y criterio de salida y, por estar
+// todas construidas, suman su tarea y su porqué de tres líneas.
 // Los huecos `{…}` del porqué se llenan con la trampa calculada en los datos del usuario.
 // Paridad: tests/unit/protocolo-contenido.test.ts.
 import type { Bilingual } from "@/content/modelos";

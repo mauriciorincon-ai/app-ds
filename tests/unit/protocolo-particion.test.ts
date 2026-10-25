@@ -17,6 +17,7 @@ import {
   verificar,
   type Diseno,
   type Parametros,
+  RESULTADOS_MAX,
 } from "@/engine/protocolo/particion";
 import { sha256TextoSync } from "@/engine/protocolo/sha256";
 import type { CsvTable } from "@/lib/ds/csv";
@@ -77,6 +78,20 @@ function lados(d: Diseno, p: Parametros, tabla: CsvTable) {
   if (!r) throw new Error("sin partición");
   return r;
 }
+
+describe("la caché de particiones tiene tope (S16, S11)", () => {
+  it("guarda a lo más RESULTADOS_MAX por tabla: la más vieja se descarta y vuelve a dar lo mismo", () => {
+    const t = panel(12, 4);
+    const d = diseno(t);
+    const primera = lados(d, P({ tamano: 10 }), t);
+    expect(lados(d, P({ tamano: 10 }), t)).toBe(primera); // guardada
+    for (let tamano = 11; tamano < 11 + RESULTADOS_MAX; tamano++)
+      partir(t, d, P({ tamano }), HUELLA);
+    const otra = lados(d, P({ tamano: 10 }), t);
+    expect(otra).not.toBe(primera); // descartada y recalculada
+    expect(otra.sello).toBe(primera.sello); // pero determinista
+  });
+});
 
 describe("las fechas, sin reloj ni zona horaria", () => {
   it("días y fechas van y vuelven, también en bisiestos", () => {

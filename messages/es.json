@@ -991,6 +991,7 @@
         "cancel": "No cargarlo",
         "replace-title": "¿Empezar un cuaderno nuevo con este archivo?",
         "replace-body": "Esto reemplaza tu cuaderno actual ({n} entradas) en este navegador. Expórtalo antes si lo quieres conservar.",
+        "replace-body_one": "Esto reemplaza tu cuaderno actual (1 entrada) en este navegador. Expórtalo antes si lo quieres conservar.",
         "replace-yes": "Sí, empezar otro",
         "back": "Volver"
       }
@@ -1075,7 +1076,7 @@
           "decisor": "quién la toma",
           "forma": "cómo es la decisión",
           "unidad": "la unidad de costo",
-          "costos": "los costos, todos mayores que cero (con varias opciones, de {min} a {max} opciones)",
+          "costos": "los costos, todos mayores que cero y no mayores que un billón (10^12) (con varias opciones, de {min} a {max} opciones)",
           "chequeos": "las cifras calculadas no cuadran con tus respuestas"
         },
         "trap": {
@@ -1222,7 +1223,9 @@
           "title": "Hacen falta {required} filas; tienes {available}.",
           "enough": "La muestra alcanza.",
           "short": "La muestra no alcanza: escribe tu aviso o reduce las variables candidatas.",
-          "events": "Eso son {events} casos del evento y {epp} por parámetro."
+          "events": "Eso son {events} casos del evento y {epp} por parámetro.",
+          "assume-binary": "El cálculo supone un R² de Nagelkerke de {r2} (el valor de Riley cuando no hay otra información): es un supuesto, no algo medido en tus datos.",
+          "assume-multiclass": "Con varias categorías el cálculo toma una categoría contra todas las demás; manda «{clase}», la que más filas pide."
         },
         "check": {
           "n_disponible": "Filas con objetivo",
@@ -1258,6 +1261,7 @@
           "causal": "Predecir no es explicar: aunque el modelo acierte, no te dice qué pasaría si cambias algo. Para saber qué causa qué hace falta un experimento.",
           "muestra-alcanza": "Con {parametros} parámetros candidatos hacen falta al menos {requerido} filas (manda: {manda}). Tienes {disponible}: alcanzan.",
           "muestra-corta": "Con {parametros} parámetros candidatos hacen falta al menos {requerido} filas (manda: {manda}). Tienes {disponible}: no alcanzan, y el modelo puede aprender ruido y fallar en datos nuevos.",
+          "parametros-menos": "Declaraste {declarado} parámetros candidatos y tus datos cuentan {contado}: con menos parámetros la muestra que se pide sale más chica. Si descartarás columnas a propósito, está bien; si no, sube el número.",
           "periodo": "Tus datos cubren del {minimo} al {maximo}: el modelo solo habla de ese periodo."
         }
       },
@@ -1354,9 +1358,9 @@
           "mayoritaria": "Sin saber nada, la clase más frecuente ya acierta {aciertosPct} de cada 100 filas: un modelo con un acierto parecido no aporta nada.",
           "mediana": "Sin saber nada, estimar siempre la mediana se equivoca en promedio por {error}: un modelo tiene que bajar de ahí.",
           "regla": "Tu regla de hoy cuesta {regla100} {unidad} por cada 100 decisiones.",
-          "regla-peor": "Tu regla de hoy cuesta más ({regla100} {unidad} por cada 100 decisiones) que la mejor forma de decidir sin modelo ({mejor100}): con tus costos, hoy se pierde más que decidiendo siempre igual.",
+          "regla-peor": "Tu regla de hoy cuesta más ({regla100} {unidad} por cada 100 decisiones) que la mejor forma de decidir sin modelo ({mejor100}): con tus costos, hoy se pierde más que con la mejor forma de decidir sin modelo.",
           "regla-mejor": "Tu regla de hoy cuesta menos ({regla100} {unidad} por cada 100 decisiones) que la mejor forma de decidir sin modelo ({mejor100}): el modelo tendrá que ganarle a tu regla, no solo a no hacer nada.",
-          "regla-igual": "Tu regla de hoy cuesta lo mismo que la mejor forma de decidir sin modelo ({mejor100} {unidad} por cada 100 decisiones): hoy no aporta nada sobre decidir siempre igual.",
+          "regla-igual": "Tu regla de hoy cuesta lo mismo que la mejor forma de decidir sin modelo ({mejor100} {unidad} por cada 100 decisiones): hoy no aporta nada sobre la mejor forma de decidir sin modelo.",
           "sin-regla": "Sin regla de hoy, el modelo competirá contra la mejor forma de decidir sin modelo: {mejor100} {unidad} por cada 100 decisiones.",
           "sin-anterior": "{n} filas no tienen un valor anterior de su unidad: ahí «el último valor» usó la mediana."
         },
@@ -1371,6 +1375,7 @@
           "metrics": "{metrica}, sin modelo: {list}",
           "hits": "Aciertos de cada 100, sin modelo: {list}",
           "no-previous": "El último valor por unidad usó la mediana en {n} filas (sin valor anterior, sin unidad o sin fecha).",
+          "no-previous_one": "El último valor por unidad usó la mediana en 1 fila (sin valor anterior, sin unidad o sin fecha).",
           "rule-metric": "Tu regla de hoy, {metrica}: {valor}.",
           "rule-hits": "Aciertos de cada 100 con tu regla: {valor}.",
           "rule-empty": "En {vacios} de {filas} filas una columna de la regla está vacía y ahí la condición no se cumple."
@@ -1412,10 +1417,10 @@
           "hueco-dias-uno": "El hueco de 1 día deja fuera {n} filas: su resultado se conocería ya dentro de la prueba.",
           "hueco-meses": "El hueco de {h} meses deja fuera {n} filas: su resultado se conocería ya dentro de la prueba.",
           "hueco-meses-uno": "El hueco de 1 mes deja fuera {n} filas: su resultado se conocería ya dentro de la prueba.",
-          "clase-rara": "La prueba deja {n} casos de «{clase}», la clase con menos casos: son los que tendrá la etapa 8 para medirla.",
-          "clase-escasa": "La prueba deja solo {n} casos de «{clase}»: con tan pocos, lo que mida la etapa 8 para esa clase será inestable.",
-          "clase-ausente": "La prueba no tiene ningún caso de «{clase}»: la etapa 8 no podrá medir esa clase.",
-          "sellos": "Sellaste {n} pruebas distintas en este cuaderno: cada partición distinta es otra forma de mirar, y queda contada."
+          "clase-rara": "La prueba deja {n} casos de «{clase}», la clase con menos casos: son los que tendrá la etapa 8 para leer cómo le va con ella (en la etapa 8 no se mide por clase, sino por segmento y en conjunto).",
+          "clase-escasa": "La prueba deja solo {n} casos de «{clase}»: con tan pocos, lo que muestren la calibración y el error por segmento sobre esa clase será inestable.",
+          "clase-ausente": "La prueba no tiene ningún caso de «{clase}»: nada de lo que mida la etapa 8 incluirá esa clase.",
+          "sellos": "Este cuaderno lleva {n} pruebas distintas selladas (contando esta): cada partición distinta es otra forma de mirar, y queda contada."
         },
         "summary": {
           "scheme": "Esquema: {esquema}.",
@@ -1591,6 +1596,7 @@
       "loads": "Datos con que se trabajó",
       "load": "{date} · {name} · {rows} filas · huella {hash}",
       "export": "Exportar cuaderno",
+      "export-note": "El archivo lleva lo derivado de tus datos (conteos, medias, fechas y nombres de columna; las categorías del objetivo y de los segmentos de la etapa 8; los valores que elegiste en la regla de la etapa 5; y, de las columnas de texto que marcaste en la etapa 10, los nombres de sus categorías) y lo que escribiste, pero ninguna fila de tu CSV. Guárdalo como guardarías tus datos.",
       "import": "Importar cuaderno",
       "new": "Empezar otro cuaderno",
       "new-confirm": "¿Empezar un cuaderno nuevo? El actual se reemplaza en este navegador; expórtalo antes si lo quieres conservar.",
@@ -1600,6 +1606,7 @@
       "import-confirm": {
         "title": "¿Reemplazar tu cuaderno por el del archivo?",
         "body": "Tu cuaderno actual tiene {now} entradas y el del archivo, {incoming}. Al reemplazarlo, el actual deja de estar en este navegador: expórtalo antes si lo quieres conservar.",
+        "body_one": "Tu cuaderno actual tiene 1 entrada y el del archivo, {incoming}. Al reemplazarlo, el actual deja de estar en este navegador: expórtalo antes si lo quieres conservar.",
         "export-first": "Exportar el actual primero",
         "yes": "Sí, reemplazar",
         "cancel": "Cancelar"

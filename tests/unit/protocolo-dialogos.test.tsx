@@ -183,7 +183,8 @@ describe("importar un cuaderno (M3)", () => {
       name: "¿Reemplazar tu cuaderno por el del archivo?",
     });
     expect(dialogo.getAttribute("aria-describedby")).toBeTruthy();
-    expect(dialogo.textContent).toContain("tiene 1 entradas");
+    // S16 (S9 B1): singular
+    expect(dialogo.textContent).toContain("tiene 1 entrada y");
     expect(dialogo.textContent).toContain("el del archivo, 2");
     // el foco entra en lo menos destructivo
     expect(document.activeElement).toBe(

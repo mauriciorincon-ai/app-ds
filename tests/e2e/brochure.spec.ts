@@ -28,9 +28,9 @@ test.describe("brochure vivo — /conoce", () => {
   }) => {
     await page.goto("/conoce");
 
-    // S7 (D-A): cinco puertas — la quinta, «Agrupar sin objetivo».
+    // S7 (D-A): cinco puertas — la quinta, «Agrupar sin objetivo». S16: la sexta, «Protocolo DS».
     const botones = page.locator(".tarjeta h3 > button");
-    await expect(botones).toHaveCount(5);
+    await expect(botones).toHaveCount(6);
     for (const boton of await botones.all()) {
       await expect(boton).toHaveAttribute("aria-expanded", "false");
     }
@@ -107,7 +107,7 @@ test.describe("brochure vivo — /conoce", () => {
   }) => {
     await page.goto("/conoce");
     await expect(page.locator(".conteo-glosa")).toContainText(
-      "41 funcionalidades",
+      "58 funcionalidades",
     );
   });
 
@@ -128,10 +128,17 @@ test.describe("brochure vivo — /conoce", () => {
       document.getAnimations().every((a) => a.playState !== "running"),
     );
 
-    const resultado = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-      .analyze();
-    expect(resultado.violations).toEqual([]);
+    // S16: también en el tema oscuro (la página sigue el tema del sistema, y hasta aquí solo se medía el claro).
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await page.waitForFunction(() =>
+        document.getAnimations().every((a) => a.playState !== "running"),
+      );
+      const resultado = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      expect(resultado.violations, `axe (${colorScheme})`).toEqual([]);
+    }
   });
 });
 
@@ -153,7 +160,7 @@ test.describe("brochure vivo — los dos idiomas", () => {
       }),
     ).toBeVisible();
     await expect(page).toHaveTitle("Probeta DS — Meet it");
-    await expect(page.locator(".conteo-glosa")).toContainText("41 features");
+    await expect(page.locator(".conteo-glosa")).toContainText("58 features");
     // axe también en inglés, con las puertas y lo fino abiertos.
     for (const boton of await page.locator(".tarjeta h3 > button").all()) {
       await boton.click();
@@ -164,10 +171,17 @@ test.describe("brochure vivo — los dos idiomas", () => {
     await page.waitForFunction(() =>
       document.getAnimations().every((a) => a.playState !== "running"),
     );
-    const enIngles = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-      .analyze();
-    expect(enIngles.violations).toEqual([]);
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await page.waitForFunction(() =>
+        document.getAnimations().every((a) => a.playState !== "running"),
+      );
+      const enIngles = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      expect(enIngles.violations, `axe en inglés (${colorScheme})`).toEqual([]);
+    }
+    await page.emulateMedia({ colorScheme: "light" });
     await page.getByRole("button", { name: "Español" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "es-CO");
     await expect(
@@ -229,12 +243,12 @@ test.describe("brochure vivo — los dos idiomas", () => {
     expect(ingles.otroIdioma).toBe(0);
     expect(espanol.otroIdioma).toBe(0);
     expect({ ...ingles, otroIdioma: 0 }).toEqual({ ...espanol, otroIdioma: 0 });
-    expect(espanol.puertas).toBe(5);
+    expect(espanol.puertas).toBe(6);
     expect(espanol.fichas).toBe(4);
-    expect(espanol.conteo).toBe("41");
+    expect(espanol.conteo).toBe("58");
     expect(
       espanol.porPuerta.reduce((a, b) => a + b, 0) + 2,
       "las funcionalidades de las puertas + las 2 de «lo fino» = el conteo del pie",
-    ).toBe(41);
+    ).toBe(58);
   });
 });

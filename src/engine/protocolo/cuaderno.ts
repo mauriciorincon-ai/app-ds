@@ -105,12 +105,21 @@ export function tieneEvidenciasConDatos(cuaderno: Cuaderno): boolean {
   return cuaderno.evidencias.some((evidencia) => evidencia.huella !== null);
 }
 
-/** Anota una apertura de la prueba (la lista solo crece, como las evidencias). */
+/** Cuántas aperturas distintas guarda un cuaderno (S16, S13 B5): muy por encima de cualquier uso, y el archivo lo exige. */
+export const APERTURAS_MAX = 500;
+
+/**
+ * Anota una apertura de la prueba (la lista solo crece, como las evidencias). Reabrir lo mismo no suma ni agranda el
+ * archivo: lo que se cuenta es cada apertura DISTINTA (`aperturasDistintas`), con un tope de `APERTURAS_MAX`.
+ */
 export function agregarApertura(
   cuaderno: Cuaderno,
   apertura: Apertura,
 ): Cuaderno {
-  return { ...cuaderno, aperturas: [...(cuaderno.aperturas ?? []), apertura] };
+  const previas = cuaderno.aperturas ?? [];
+  if (previas.some((a) => a.clave === apertura.clave)) return cuaderno;
+  if (previas.length >= APERTURAS_MAX) return cuaderno;
+  return { ...cuaderno, aperturas: [...previas, apertura] };
 }
 
 /** Cuántas veces se abrió la prueba con algo distinto: cada clave cuenta una vez. */

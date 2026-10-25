@@ -91,3 +91,9 @@ Two gaps found by the pre-close audit, one fixed and one documented:
    residual risk at H1 scale (self-inflicted for one's own CSVs; relevant only for "open this
    third-party dataset" scenarios); a verifier rule bounding non-claim sentences is the H2
    follow-up if that scenario becomes real.
+
+## Status note (2026-10-21, Sprint 016)
+
+The «rule of the verifier bounding non-claim sentences» (follow-up «H2» above) was not built in the H-2. It stays accepted as residual risk and
+moves to **H-4** (the red-teaming of the narration, which the constitution schedules for the production milestone). The narration still only
+covers the two-class task and never runs in the Protocolo, which has no generative AI.

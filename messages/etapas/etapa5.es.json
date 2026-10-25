@@ -13,9 +13,10 @@
           "col-hits": "Aciertos de cada 100",
           "majority": "La más frecuente en tus filas",
           "rule": "Tu regla de hoy",
-          "note": "Es una referencia, no un resultado: se mide sobre todas tus {rows} filas. La etapa 8 la vuelve a medir sobre la prueba."
+          "note": "Es una referencia, no un resultado: se mide sobre tus {rows} filas con objetivo. La etapa 8 la vuelve a medir sobre la prueba."
         },
         "no-previous": "{n} filas no tienen un valor anterior de su unidad (la primera de cada una, o sin unidad o sin fecha): ahí «el último valor» usa la mediana.",
+        "no-previous_one": "1 fila no tiene un valor anterior de su unidad (la primera de cada una, o sin unidad o sin fecha): ahí «el último valor» usa la mediana.",
         "rule": {
           "legend": "¿Hay una regla que se aplica hoy?",
           "help": "Lo que tu gente hace hoy, sin modelo. Si no hay ninguna, dilo: el modelo competirá contra la mejor referencia de arriba.",
@@ -39,7 +40,9 @@
           "then-num": "Si la regla se cumple, se estima",
           "otherwise-num": "Si la regla no se cumple, se estima",
           "measure": "La regla se cumple en {cumple} de {filas} filas.",
+          "measure_one": "La regla se cumple en {cumple} de 1 fila.",
           "empties": "En {vacios} filas alguna de estas columnas no tiene valor: ahí la condición no se cumple, tampoco «distinto de».",
+          "empties_one": "En 1 fila alguna de estas columnas no tiene valor: ahí la condición no se cumple, tampoco «distinto de».",
           "incomplete": "Completa la condición para medirla.",
           "outputs-missing": "Elige qué se hace cuando se cumple y cuando no para ver cuánto cuesta."
         },
