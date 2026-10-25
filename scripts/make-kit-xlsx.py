@@ -129,6 +129,23 @@ def bordes():
     wb.save(BORDES / "fechas-1904.xlsx")
 
 
+def malos():
+    """Los tres libros que Probeta tiene que rechazar diciendo por qué (los mismos bytes del e2e `excel-y-limpieza`).
+
+    No son libros de verdad: llevan solo la firma que el lector reconoce, y ninguna celda de nadie.
+    """
+    ole = bytes([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])
+
+    def utf16(texto):
+        return b"".join(bytes([ord(c), 0]) for c in texto)
+
+    (SALIDA / "libro-con-clave.xlsx").write_bytes(ole + bytes(200) + utf16("EncryptedPackage"))
+    (SALIDA / "libro-antiguo.xls").write_bytes(ole + utf16("Workbook") + bytes(200))
+    (SALIDA / "libro-danado.xlsx").write_bytes(
+        ("no es un libro de verdad, solo texto suelto" * 3).encode("utf-8")
+    )
+
+
 def main():
     """Sin argumentos rehace todo; con nombres (sin extensión) rehace solo esos ejemplos."""
     SALIDA.mkdir(parents=True, exist_ok=True)
@@ -138,6 +155,7 @@ def main():
             del_csv(nombre)
     if not sys.argv[1:]:
         bordes()
+        malos()
     print("kit en", SALIDA, "· bordes en", BORDES)
 
 

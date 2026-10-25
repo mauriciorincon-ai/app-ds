@@ -81,4 +81,18 @@ describe("leerArchivoXlsx", () => {
       error: { kind: "xlsx-danado" },
     });
   });
+
+  it.each([
+    ["libro-con-clave.xlsx", "xlsx-protegido"],
+    ["libro-antiguo.xls", "xlsx-antiguo"],
+    ["libro-danado.xlsx", "xlsx-danado"],
+  ] as const)(
+    "el %s del kit se rechaza diciendo por qué (%s)",
+    async (nombre, kind) => {
+      const r = await leerArchivoXlsx(
+        archivoDe(`docs/kit-de-prueba/xlsx/${nombre}`, nombre),
+      );
+      expect(r).toEqual({ ok: false, error: { kind } });
+    },
+  );
 });
