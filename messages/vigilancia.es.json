@@ -1,0 +1,29 @@
+{
+  "vigilancia": {
+    "titulo": "Vigilar el desempeño",
+    "ayuda": "Si el archivo nuevo trae la columna «{objetivo}» con lo que de verdad pasó, mira cómo le va hoy al modelo frente a lo que sacó en su prueba, y si conviene reentrenarlo.",
+    "sin_objetivo": "Este archivo no trae la columna «{objetivo}»: para vigilar el desempeño sube filas nuevas que tengan el resultado real.",
+    "sin_referencia": "Este modelo no trae la cifra de su prueba con la cual compararse, así que no se puede vigilar.",
+    "midiendo": "Calculando el desempeño de hoy…",
+    "error": "No se pudo vigilar el desempeño ({motivo}). Vuelve a cargar el archivo para intentarlo de nuevo.",
+    "sin_filas": "Ninguna fila trae un resultado real que el modelo conozca: no hay con qué medirlo.",
+    "veredicto": {
+      "sigue": "Sigue: hoy le va como en su prueba.",
+      "revisar": "Revisar: hoy le va peor que en su prueba, pero con estas filas no se puede asegurar que sea más que azar.",
+      "reentrenar": "Reentrenar: hoy le va claramente peor que en su prueba, más allá del margen de error."
+    },
+    "pocas": "Con solo {n} filas con resultado real no se decide nada: revisa el modelo con más filas.",
+    "cifras": "{metric}: hoy {hoy}, con un intervalo del 95 % de {bajo} a {alto} ({n} filas); en su prueba, {prueba}.",
+    "dejadas": "Se dejaron fuera {vacias} filas sin resultado y {desconocidas} con un resultado que el modelo nunca vio.",
+    "empate": "Una diferencia de hasta {empate} cuenta como empate.",
+    "detalle": "El intervalo es cuánto cambiaría la cifra de hoy si estas filas fueran otra muestra del mismo tipo ({remuestreos} remuestreos, semilla {semilla}). La cifra de la prueba es un solo número: el archivo del modelo no guarda su margen.",
+    "protocolo": {
+      "titulo": "Un modelo guardado desde el Protocolo DS",
+      "resumen": "{dataset}: el ganador de la etapa 8 del Protocolo ({modelo}), ajustado con {filas} filas de entrenamiento.",
+      "prueba": "En la prueba que se abrió una vez, {metric} fue {valor} ({n} filas).",
+      "no_trae": "No trae liga, comparación con una línea base ni fuga: el Protocolo no las mide en esa forma. Sirve para puntuar filas nuevas y para vigilar su desempeño.",
+      "continuar": "Usar este modelo",
+      "cancelar": "Elegir otro archivo"
+    }
+  }
+}

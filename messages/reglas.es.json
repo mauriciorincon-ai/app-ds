@@ -1,0 +1,52 @@
+{
+  "reglas": {
+    "titulo": "El modelo en reglas",
+    "titulo_aprox": "Un árbol que se parece al modelo",
+    "ayuda": "Un árbol de pocas preguntas sobre tus columnas, con los números en sus unidades, que copia lo que el modelo decide. Sirve para llevarlo a un sistema donde no corre Python. Es un resumen: casi nunca iguala al modelo, y la pantalla te dice cuánto se le parece.",
+    "boton": "Ver el modelo en reglas",
+    "calculando": "Armando las reglas…",
+    "error": "No se pudieron armar las reglas ({motivo}). Vuelve a intentarlo.",
+    "sin_filas": "Este modelo no conserva las filas con que se entrenó (un modelo importado no las trae): las reglas se arman en la corrida donde lo entrenaste.",
+    "pocas_filas": "Con tan pocas filas no hay un árbol que valga la pena.",
+    "fidelidad": {
+      "acuerdo": "Las reglas coinciden con el modelo en el {pct} % de {n} filas que el árbol no vio.",
+      "r2": "Las reglas explican el {pct} % de lo que el modelo estima (R², sobre {n} filas que el árbol no vio)."
+    },
+    "veredicto": {
+      "si": "Llegan al umbral de {umbral} %: se pueden usar en lugar del modelo.",
+      "no": "No llegan al umbral de {umbral} %: son un resumen del modelo, no el modelo."
+    },
+    "verdad": {
+      "accuracy": "Frente a la verdad, las reglas aciertan el {reglas} % y el modelo el {modelo} %.",
+      "mae": "Frente a la verdad, el error medio de las reglas es {reglas} y el del modelo {modelo}."
+    },
+    "detalle": "{hojas} reglas de hasta {profundidad} preguntas, ajustadas con {filas} filas de entrenamiento.",
+    "detalle_one": "{hojas} regla de hasta {profundidad} preguntas, ajustada con {filas} filas de entrenamiento.",
+    "descargar_texto": "Descargar las reglas (.txt)",
+    "descargar_sql": "Descargar el SQL (.sql)",
+    "lista": "Las reglas",
+    "grupo": "Grupo {n}",
+    "fuera": "Fuera de todo grupo",
+    "texto": {
+      "cabecera": "Reglas que copian al modelo ({tipo})",
+      "tipo": {
+        "clase": "predicen una categoría",
+        "cantidad": "estiman una cantidad",
+        "grupo": "asignan un grupo"
+      },
+      "regla": "{numero}. Si {condiciones}, entonces {resultado} ({filas} filas).",
+      "regla_one": "{numero}. Si {condiciones}, entonces {resultado} ({filas} fila).",
+      "siempre": "{numero}. Siempre, entonces {resultado} ({filas} filas).",
+      "siempre_one": "{numero}. Siempre, entonces {resultado} ({filas} fila).",
+      "y": " y ",
+      "mayor": "\"{columna}\" es mayor que {valor}",
+      "menor": "\"{columna}\" es menor o igual que {valor}",
+      "es": "\"{columna}\" es «{categoria}»",
+      "no_es": "\"{columna}\" no es «{categoria}»",
+      "resultado_clase": "«{clase}»",
+      "vacio": "Un valor vacío en \"{columna}\" se toma como {mediana}.",
+      "vacio_categoria": "Una categoría vacía cuenta como «no es».",
+      "aviso": "Es un resumen del modelo: no lo iguala en todas las filas."
+    }
+  }
+}

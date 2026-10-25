@@ -1,0 +1,52 @@
+{
+  "reglas": {
+    "titulo": "The model as rules",
+    "titulo_aprox": "A tree that resembles the model",
+    "ayuda": "A tree of a few questions about your columns, with numbers in their units, that copies what the model decides. It is meant to take the model to a system where Python does not run. It is a summary: it almost never matches the model exactly, and the screen tells you how closely it does.",
+    "boton": "See the model as rules",
+    "calculando": "Building the rules…",
+    "error": "The rules could not be built ({motivo}). Try again.",
+    "sin_filas": "This model does not keep the rows it was trained with (an imported model does not carry them): the rules are built in the run where you trained it.",
+    "pocas_filas": "With so few rows there is no tree worth building.",
+    "fidelidad": {
+      "acuerdo": "The rules agree with the model on {pct} % of {n} rows the tree did not see.",
+      "r2": "The rules explain {pct} % of what the model estimates (R², over {n} rows the tree did not see)."
+    },
+    "veredicto": {
+      "si": "They reach the {umbral} % threshold: they can stand in for the model.",
+      "no": "They do not reach the {umbral} % threshold: they are a summary of the model, not the model."
+    },
+    "verdad": {
+      "accuracy": "Against the truth, the rules are right {reglas} % of the time and the model {modelo} %.",
+      "mae": "Against the truth, the rules' mean error is {reglas} and the model's is {modelo}."
+    },
+    "detalle": "{hojas} rules of up to {profundidad} questions, fitted on {filas} training rows.",
+    "detalle_one": "{hojas} rule of up to {profundidad} questions, fitted on {filas} training rows.",
+    "descargar_texto": "Download the rules (.txt)",
+    "descargar_sql": "Download the SQL (.sql)",
+    "lista": "The rules",
+    "grupo": "Group {n}",
+    "fuera": "Outside every group",
+    "texto": {
+      "cabecera": "Rules that copy the model ({tipo})",
+      "tipo": {
+        "clase": "predict a category",
+        "cantidad": "estimate a quantity",
+        "grupo": "assign a group"
+      },
+      "regla": "{numero}. If {condiciones}, then {resultado} ({filas} rows).",
+      "regla_one": "{numero}. If {condiciones}, then {resultado} ({filas} row).",
+      "siempre": "{numero}. Always, then {resultado} ({filas} rows).",
+      "siempre_one": "{numero}. Always, then {resultado} ({filas} row).",
+      "y": " and ",
+      "mayor": "\"{columna}\" is greater than {valor}",
+      "menor": "\"{columna}\" is less than or equal to {valor}",
+      "es": "\"{columna}\" is «{categoria}»",
+      "no_es": "\"{columna}\" is not «{categoria}»",
+      "resultado_clase": "«{clase}»",
+      "vacio": "An empty value in \"{columna}\" is taken as {mediana}.",
+      "vacio_categoria": "An empty category counts as «is not».",
+      "aviso": "It is a summary of the model: it does not match it on every row."
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "vigilancia": {
+    "titulo": "Watch the performance",
+    "ayuda": "If the new file carries the «{objetivo}» column with what really happened, see how the model does today against what it scored on its test, and whether it is time to retrain it.",
+    "sin_objetivo": "This file does not carry the «{objetivo}» column: to watch the performance, upload new rows that have the real result.",
+    "sin_referencia": "This model does not carry its test figure to compare against, so it cannot be watched.",
+    "midiendo": "Calculating today's performance…",
+    "error": "The performance could not be watched ({motivo}). Load the file again to try once more.",
+    "sin_filas": "No row carries a real result the model knows: there is nothing to measure it with.",
+    "veredicto": {
+      "sigue": "Keeps going: today it does as well as on its test.",
+      "revisar": "Review: today it does worse than on its test, but with these rows you cannot tell it is more than chance.",
+      "reentrenar": "Retrain: today it does clearly worse than on its test, beyond the margin of error."
+    },
+    "pocas": "With only {n} rows with a real result nothing is decided: review the model with more rows.",
+    "cifras": "{metric}: today {hoy}, with a 95 % interval from {bajo} to {alto} ({n} rows); on its test, {prueba}.",
+    "dejadas": "{vacias} rows without a result and {desconocidas} with a result the model never saw were left out.",
+    "empate": "A difference of up to {empate} counts as a tie.",
+    "detalle": "The interval is how much today's figure would change if these rows were another sample of the same kind ({remuestreos} resamples, seed {semilla}). The test figure is a single number: the model file does not keep its margin.",
+    "protocolo": {
+      "titulo": "A model saved from the Protocol DS",
+      "resumen": "{dataset}: the winner of stage 8 of the Protocol ({modelo}), fitted on {filas} training rows.",
+      "prueba": "On the test that was opened once, {metric} was {valor} ({n} rows).",
+      "no_trae": "It carries no league, no comparison with a baseline and no leak findings: the Protocol does not measure them that way. It serves to score new rows and to watch their performance.",
+      "continuar": "Use this model",
+      "cancelar": "Choose another file"
+    }
+  }
+}
