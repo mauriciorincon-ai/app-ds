@@ -20,11 +20,9 @@ import {
   validateIntervalData,
   type IntervaloSent,
 } from "@/workers/contrato-intervalo";
+import { siguienteIdDePanel } from "@/workers/ids-panel";
 import type { RunnerResponse, TargetUnit } from "@/workers/protocol";
 import { TEXTOS_RESULTADOS } from "@/lib/narration/textos-resultados";
-
-/** Los ids del panel son negativos, como los del de estrés: la máquina de estados del hook (ids ≥ 0) ignora lo que no pidió. */
-let ultimoId = -1_000_000;
 
 export type IntervaloDe = {
   /** La identidad del resultado: una lectura de otro resultado no se enseña. */
@@ -76,7 +74,7 @@ export function IntervaloPanel({
       n_test: de.nTest,
       n_classes: de.nClasses,
     };
-    const id = --ultimoId;
+    const id = siguienteIdDePanel();
     const alResponder = (event: MessageEvent<RunnerResponse>) => {
       const message = event.data;
       if (message.id !== id || message.type === "progress") return;

@@ -4,7 +4,7 @@
 // entrenar, puntuar, exportar e importar el modelo; la orquestación pura
 // (split/veredicto/fuga/esquema/manifiesto) vive en el hilo principal.
 //
-// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test"|"stress"|"stress-test"|"interval", payload? }
+// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test"|"stress"|"stress-test"|"interval"|"simulate"|"fit-winner", payload? }
 //            out { id, type: "progress"|"result"|"error", ... }  (result lleva command)
 // S5: durante "train" (la liga), pipeline.py llama a un callback JS antes de cada
 // paso y el runner lo reenvía como progress con `detail` {phase, member, index,
@@ -15,6 +15,10 @@
 //
 // S17: "stress" (Probeta: el modelo y la prueba retenidos) y "stress-test" (etapa 8: el mismo envío que abrió la
 // prueba) son la prueba de estrés; no tienen progreso por pasos y se anuncian como "scoring".
+//
+// S19: "simulate" (¿qué pasaría si?: puntúa las mismas filas como están y con una columna cambiada; en Probeta, el modelo
+// retenido) y "fit-winner" (el Protocolo: vuelve a ajustar al ganador SOLO con el entrenamiento y lo deja retenido; el
+// envío es el de la etapa 8 sin la prueba, que este comando rechaza).
 //
 // El estado Python (_MODEL en pipeline.py) vive lo que viva este worker: tras
 // entrenar o importar, score/export operan sin re-entrenar.
@@ -36,6 +40,9 @@ const STAGE = {
   "stress-test": "scoring",
   // S18: los vectores de la prueba retenida para el intervalo de la métrica.
   interval: "scoring",
+  // S19: el simulador puntúa; el ajuste del ganador del Protocolo entrena (sin pasos por modelo).
+  simulate: "scoring",
+  "fit-winner": "training",
   score: "scoring",
   // S7 (P13): las etiquetas por fila del agrupamiento, solo para el CSV local.
   "cluster-labels": "exporting",
@@ -77,6 +84,8 @@ function ensureRuntime(post, id) {
         stress: pyodide.globals.get("run_stress"),
         "stress-test": pyodide.globals.get("run_stress_test"),
         interval: pyodide.globals.get("run_interval"),
+        simulate: pyodide.globals.get("run_simulate"),
+        "fit-winner": pyodide.globals.get("run_fit_winner"),
       };
     })();
     // Si la carga falla (red), se limpia para que un reintento re-cargue.

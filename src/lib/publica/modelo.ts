@@ -1,12 +1,11 @@
 // S17 (ADR 024): el `.probeta.json` del modelo activo, pedido al worker que lo tiene y empaquetado como en «Exportar»
-// (mismo contrato: el resultado pasa por su lector y el archivo lleva su SHA-256). Los ids son negativos: la máquina de
-// estados del hook de Probeta (ids ≥ 0) no los toma por suyos.
+// (mismo contrato: el resultado pasa por su lector y el archivo lleva su SHA-256). Los ids son negativos y salen del asignador
+// único de los paneles (S19): la máquina de estados del hook de Probeta (ids ≥ 0) no los toma por suyos y dos paneles no chocan.
 import type { SanitationReport } from "@/engine/sanitize";
 import { packModelFile, type ModelFile } from "@/lib/model-file";
 import { validateExportResult } from "@/workers/contract";
+import { siguienteIdDePanel } from "@/workers/ids-panel";
 import type { ExperimentResult, RunnerResponse } from "@/workers/protocol";
-
-let ultimoId = -1_000_000;
 
 export function pedirModelo(
   worker: Worker,
@@ -17,7 +16,7 @@ export function pedirModelo(
   },
 ): Promise<ModelFile> {
   return new Promise((ok, no) => {
-    const id = --ultimoId;
+    const id = siguienteIdDePanel();
     const alResponder = (event: MessageEvent<RunnerResponse>) => {
       const m = event.data;
       if (m.id !== id || m.type === "progress") return;
