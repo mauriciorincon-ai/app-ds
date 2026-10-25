@@ -1,0 +1,66 @@
+{
+  "limpieza": {
+    "origen": "The sheet “{hoja}” of your Excel file was read.",
+    "origen_otras": "The sheet “{hoja}” of your Excel file was read; the other {count} sheets were ignored.",
+    "origen_otras_one": "The sheet “{hoja}” of your Excel file was read; the other sheet was ignored.",
+    "personales": {
+      "titulo": "Possible personal data",
+      "item": "“{column}”: it seems to hold {tipo}, judging by {via}.",
+      "tipo": {
+        "correo": "email addresses",
+        "telefono": "phone numbers",
+        "documento": "identity documents",
+        "nombre": "people’s names"
+      },
+      "via": {
+        "valor": "its content",
+        "nombre": "the column name",
+        "ambos": "its content and the column name"
+      },
+      "fuera": "Probeta already left it out when cleaning: it has a different value on every row.",
+      "nota": "This is a notice, not a block, and the search is approximate: it does not find everything. Probeta does not show those values or send them anywhere. If the column is no use for predicting, you can remove it in the cleaning plan."
+    },
+    "plan": {
+      "titulo": "Cleaning plan",
+      "intro": "The code proposes these steps and you decide each one. Whatever you do not approve is not applied. Whatever depends on the data is computed only from the training rows, so the final test stays clean.",
+      "paso": {
+        "tipo-categoria": "“{column}” holds codes written as numbers ({count} different values): treat it as a category, not as a quantity.",
+        "vacio-indicador": "“{column}” has {count} empty cells ({pct} %): they are filled with the training median and a “was empty” flag is added.",
+        "vacio-indicador_one": "“{column}” has 1 empty cell ({pct} %): it is filled with the training median and a “was empty” flag is added.",
+        "vacio-categoria": "“{column}” has {count} empty cells ({pct} %): “no data” becomes one more category, instead of filling with the most common one.",
+        "vacio-categoria_one": "“{column}” has 1 empty cell ({pct} %): “no data” becomes one more category, instead of filling with the most common one.",
+        "atipicos-cuantiles": "“{column}” has {count} values far from the rest: the column becomes each value’s position among the others (training quantiles). Trees do not notice; linear and distance-based models do.",
+        "atipicos-cuantiles_one": "“{column}” has 1 value far from the rest: the column becomes each value’s position among the others (training quantiles). Trees do not notice; linear and distance-based models do.",
+        "quitar-columna": "“{column}” seems to hold {tipo}: remove it before training, so it does not enter the model."
+      },
+      "aprobar": "Approve",
+      "rechazar": "Reject",
+      "estado": {
+        "sin-decidir": "Undecided",
+        "aprobado": "Approved",
+        "rechazado": "Rejected"
+      },
+      "resumen": "{aprobados} approved · {rechazados} rejected · {pendientes} undecided",
+      "volver": "Press the active button again to leave the step undecided."
+    },
+    "ficha": {
+      "titulo": "Cleaning plan",
+      "corto": {
+        "tipo-categoria": "treated as a category",
+        "vacio-indicador": "“was empty” flag",
+        "vacio-categoria": "“no data” as a category",
+        "atipicos-cuantiles": "far values by quantiles",
+        "quitar-columna": "column removed"
+      },
+      "linea": "- “{column}” ({corto}): {estado}",
+      "estado": {
+        "aplicado": "approved and applied",
+        "rechazado": "rejected",
+        "sin-decidir": "undecided, not applied",
+        "objetivo": "approved, not applied: it is the column being predicted",
+        "columna-quitada": "approved, not applied: the column was removed",
+        "ahora-categoria": "approved, not applied: it is now a category"
+      }
+    }
+  }
+}

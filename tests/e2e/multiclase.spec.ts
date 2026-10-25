@@ -15,7 +15,7 @@ const kit = (name: string) =>
 
 async function load(page: Page, name: string) {
   await page.goto("/");
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles(kit(name));
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles(kit(name));
   await page.selectOption("#target", "plan");
 }
 
@@ -173,7 +173,7 @@ test("R10: 20 categorías y un nombre largo — la página no se desplaza de lad
 }) => {
   test.setTimeout(240_000);
   await page.goto("/");
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "veinte-clases.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(twentyClasses()),

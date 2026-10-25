@@ -1,7 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import type { EdaAlert } from "@/engine/eda";
+import type { Ingesta } from "@/engine/ingesta";
+import type { Decision } from "@/engine/limpieza-plan";
 import type { SanitationReport } from "@/engine/sanitize";
 import {
   isTrainableTask,
@@ -9,6 +12,7 @@ import {
   type AmbiguousChoice,
 } from "@/engine/tarea";
 import { useT } from "@/i18n/use-translation";
+import type { OrigenArchivo } from "@/lib/ds/archivo";
 import { formatEstimate } from "@/lib/duration";
 import type { ClusterPlan, TargetPlan } from "@/lib/useExperiment";
 import type { DatasetSummary } from "@/workers/protocol";
@@ -16,6 +20,12 @@ import { thousands } from "@/lib/quantity";
 import { RosterCard } from "./RosterCard";
 import { TaskCard } from "./TaskCard";
 import { Badge, Button, Card } from "./ui";
+
+// S18: la hoja leída, los posibles datos personales y el plan de limpieza viajan en su propio chunk (con sus textos).
+const LimpiezaPanel = dynamic(
+  () => import("./limpieza/LimpiezaPanel").then((m) => m.LimpiezaPanel),
+  { ssr: false },
+);
 
 /** S7 (P5): el valor de la opción «agrupar» no puede chocar con una columna que
  *  se llame igual: se alarga hasta que ninguna coincida. */
@@ -31,6 +41,9 @@ export function ConfigScreen({
   edaAlerts,
   plan,
   clusterPlan = null,
+  origen = null,
+  ingesta = null,
+  onDecidirLimpieza,
   onSelectTarget,
   onSelectCluster,
   onAnswerTask,
@@ -45,6 +58,11 @@ export function ConfigScreen({
   plan: TargetPlan | null;
   /** S7: el plan de agrupar (sin objetivo), si se eligió. */
   clusterPlan?: ClusterPlan | null;
+  /** S18: de qué hoja salió la tabla, si fue un Excel. */
+  origen?: OrigenArchivo | null;
+  /** S18: los posibles datos personales y el plan de limpieza, con lo decidido. */
+  ingesta?: Ingesta | null;
+  onDecidirLimpieza?: (id: string, decision: Decision | null) => void;
   onSelectTarget: (target: string) => void;
   /** S7: elegir agrupar filas parecidas en lugar de un objetivo. */
   onSelectCluster?: () => void;
@@ -93,6 +111,14 @@ export function ConfigScreen({
       </header>
 
       {sanitation && <SanitationBlock report={sanitation} />}
+
+      {(origen || ingesta) && onDecidirLimpieza && (
+        <LimpiezaPanel
+          ingesta={ingesta}
+          origen={origen}
+          onDecidir={onDecidirLimpieza}
+        />
+      )}
 
       {dataset.dateColumns.length > 0 && (
         <p className="rounded-md border border-caution/40 bg-caution/10 p-3 text-sm">

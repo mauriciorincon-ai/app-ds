@@ -8,6 +8,7 @@ import { useT } from "@/i18n/use-translation";
 import { matchByTask, matchTask } from "@/engine/despacho";
 import { memberNameKey } from "@/engine/roster";
 import { isTask } from "@/engine/tarea";
+import { ARCHIVOS_ACEPTADOS, esExcel } from "@/lib/ds/archivo";
 import { inferUnit } from "@/lib/experiment";
 import {
   manifestTask,
@@ -47,9 +48,12 @@ export const EXAMPLES = [
 
 export function StartScreen({
   onLoad,
+  onLoadXlsx,
   onImport,
 }: {
   onLoad: (csv: string, name: string) => void;
+  /** S18: un Excel llega como archivo (su lector se importa solo entonces). */
+  onLoadXlsx?: (file: File) => void;
   onImport: (file: ModelFile) => void;
 }) {
   const t = useT();
@@ -57,7 +61,8 @@ export function StartScreen({
   const [dragging, setDragging] = useState(false);
 
   async function handleFile(file: File) {
-    onLoad(await file.text(), file.name);
+    if (onLoadXlsx && esExcel(file)) onLoadXlsx(file);
+    else onLoad(await file.text(), file.name);
   }
 
   async function pickExample(file: string) {
@@ -110,7 +115,7 @@ export function StartScreen({
           // accesibilidad (Lighthouse S6: «label» en un input sin nombre).
           tabIndex={-1}
           aria-hidden
-          accept=".csv,text/csv"
+          accept={ARCHIVOS_ACEPTADOS}
           className="sr-only"
           onChange={(event) => {
             const file = event.target.files?.[0];

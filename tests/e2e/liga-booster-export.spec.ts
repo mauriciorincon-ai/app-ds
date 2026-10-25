@@ -73,7 +73,7 @@ test("elegir LightGBM → exportar → recargar → importar → puntuar", async
     timeout: 150_000,
   });
 
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "empleados-nuevos.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(NEW_CSV),

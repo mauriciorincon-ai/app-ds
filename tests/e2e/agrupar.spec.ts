@@ -18,7 +18,7 @@ async function loadAndCluster(
   file: { name: string; buffer: Buffer },
 ) {
   await page.goto("/");
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     ...file,
     mimeType: "text/csv",
   });

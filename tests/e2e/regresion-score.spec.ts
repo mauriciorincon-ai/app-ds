@@ -68,7 +68,7 @@ test("estimar: exportar → recargar → importar → puntuar con «_estimado»"
     timeout: 150_000,
   });
 
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "casas-nuevas.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(NEW_CSV),

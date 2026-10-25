@@ -59,6 +59,8 @@ export type ModelCardInput = {
   result: SupervisedResult;
   /** Saneamiento del dataset (S4) — cifras exactas en la constancia. */
   sanitation?: SanitationReport | null;
+  /** S18: el plan de limpieza ya dicho en el idioma de la ficha (líneas de Markdown); vacío si no hubo plan. */
+  limpieza?: readonly string[];
   /** Narración IA que PASÓ la verificación numérica; null ⇒ no se cita. */
   verifiedNarrative: string | null;
   /** Inyectable para tests deterministas. */
@@ -468,6 +470,7 @@ export function buildModelCard(input: ModelCardInput): string {
     "",
     ...blocks.estimate,
     ...sanitationSection,
+    ...(input.limpieza ?? []),
     section("split"),
     "",
     `- ${blocks.split}`,
@@ -533,6 +536,8 @@ export type ClusterCardInput = {
   excluded: readonly ClusterExclusion[];
   result: ClusterResult;
   sanitation?: SanitationReport | null;
+  /** S18: el plan de limpieza ya dicho en el idioma de la ficha (líneas de Markdown); vacío si no hubo plan. */
+  limpieza?: readonly string[];
   date?: Date;
 };
 
@@ -698,6 +703,7 @@ export function buildClusterCard(input: ClusterCardInput): string {
     ),
     "",
     ...sanitationSection,
+    ...(input.limpieza ?? []),
     section("method"),
     "",
     `- ${t("modelcard.cluster.pipeline", { seed: input.seed })}`,

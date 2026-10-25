@@ -9,6 +9,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { matchByTask } from "@/engine/despacho";
 import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
+import { ARCHIVOS_ACEPTADOS, esExcel } from "@/lib/ds/archivo";
 import { modelFeatures } from "@/lib/ds/schema-check";
 import { inferUnit } from "@/lib/experiment";
 import {
@@ -51,6 +52,8 @@ type ScoreScreenProps<M> = {
   scoring: ScoringState;
   exportState: ExportState;
   onScoreFile: (csv: string, name: string) => void;
+  /** S18: el archivo nuevo viene en Excel. */
+  onScoreXlsx?: (file: File) => void;
   onScoreAnother: () => void;
   onBackToResults: () => void;
   onExit: () => void;
@@ -150,6 +153,7 @@ function ScoreShell({
   scoring,
   exportState,
   onScoreFile,
+  onScoreXlsx,
   onScoreAnother,
   onBackToResults,
   onExit,
@@ -179,7 +183,8 @@ function ScoreShell({
     );
 
   async function handleFile(file: File) {
-    onScoreFile(await file.text(), file.name);
+    if (onScoreXlsx && esExcel(file)) onScoreXlsx(file);
+    else onScoreFile(await file.text(), file.name);
   }
 
   return (
@@ -239,7 +244,7 @@ function ScoreShell({
               // accesibilidad (Lighthouse S6: «label» en un input sin nombre).
               tabIndex={-1}
               aria-hidden
-              accept=".csv,text/csv"
+              accept={ARCHIVOS_ACEPTADOS}
               className="sr-only"
               onChange={(event) => {
                 const file = event.target.files?.[0];

@@ -129,7 +129,7 @@ test("Probeta se usa sin ratón: del ejemplo al archivo puntuado, y el error", a
   await a360(page);
 
   // Puntuar un CSV nuevo y descargarlo con el teclado.
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "clientes.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(NUEVO),
@@ -156,7 +156,7 @@ test("un archivo vacío lleva a la pantalla de error, que se recorre, pasa axe y
   await expect(
     page.getByRole("button", { name: /Elegir archivo/i }).first(),
   ).toBeVisible();
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "vacio.csv",
     mimeType: "text/csv",
     buffer: Buffer.from("a,b\n"),

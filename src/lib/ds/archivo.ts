@@ -18,9 +18,10 @@ export type LecturaTabular =
 export const ARCHIVOS_ACEPTADOS =
   ".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-export function esXlsx(archivo: { name: string; type?: string }): boolean {
+/** Un libro de Excel por su nombre o su tipo: `.xlsx`/`.xlsm`, y también el `.xls` antiguo (que el lector rechaza NOMBRÁNDOLO). */
+export function esExcel(archivo: { name: string; type?: string }): boolean {
   return (
-    /\.xlsx$/i.test(archivo.name) ||
+    /\.xls[xm]?$/i.test(archivo.name) ||
     archivo.type ===
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   );

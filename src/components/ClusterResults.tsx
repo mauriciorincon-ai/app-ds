@@ -27,6 +27,7 @@ import type {
   GroupProfile,
 } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
+import { lineasDeLimpieza } from "./limpieza/ficha";
 import type { FichaStatus } from "./FichaModelo";
 import { Level2Card } from "./Level2Card";
 import { ModelCardView } from "./ModelCardView";
@@ -156,6 +157,7 @@ export function ClusterResults({
             excluded: runMeta.excluded ?? [],
             result,
             sanitation,
+            limpieza: lineasDeLimpieza(cardLocale, runMeta.limpieza),
           })
         }
       />

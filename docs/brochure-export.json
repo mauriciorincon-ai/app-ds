@@ -555,10 +555,10 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 24,
+      "valor": 26,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/ (001–022): el 020 abre el Protocolo como segundo modo, el 021 fija qué guarda el cuaderno de una columna de texto y el 022 el formato del cuaderno y la ficha y la prueba sellada. Lo recuenta tests/unit/brochure-export.test.ts."
+      "detalle": "Archivos de decisions/ (001–026): el 023 y el 024 son la prueba de estrés y lo que el usuario se lleva; el 025 fija el lector de Excel sin dependencia y el 026 el plan de limpieza que el usuario aprueba paso a paso. Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [

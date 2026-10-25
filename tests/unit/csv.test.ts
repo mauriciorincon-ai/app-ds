@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isBinaryTarget,
   isNullToken,
+  limitarTabla,
   parseCsvWithLimits,
   parseNumber,
   parseRows,
@@ -92,6 +93,31 @@ describe("parseCsvWithLimits", () => {
 // ninguna cabecera) pero inútil. Se bloquea nombrando el separador real; NUNCA se
 // reinterpreta en silencio, porque un `;` suele venir con decimales por coma y
 // leerlo mal convertiría columnas numéricas en categorías sin avisar.
+describe("limitarTabla (S18: la misma medida para un CSV y para un .xlsx)", () => {
+  it("quita las filas en blanco, separa la cabecera y mide el ancho de cada fila", () => {
+    const r = limitarTabla([["a", "b"], [""], ["1", "2"], ["3", "4"]]);
+    expect(r).toEqual({ ok: true, table: { headers: ["a", "b"], rows: [["1", "2"], ["3", "4"]] } });
+    expect(limitarTabla([["a", "b"], ["1"]])).toEqual({
+      ok: false,
+      error: { kind: "ragged", row: 2, expected: 2, found: 1 },
+    });
+  });
+
+  it("pide al menos una cabecera y una fila, y respeta el tope de filas", () => {
+    expect(limitarTabla([["a", "b"]])).toEqual({ ok: false, error: { kind: "empty" } });
+    expect(limitarTabla([])).toEqual({ ok: false, error: { kind: "empty" } });
+    expect(limitarTabla([["a"], ["1"], ["2"], ["3"]], { maxRows: 2 })).toEqual({
+      ok: false,
+      error: { kind: "too-many-rows", rows: 3, maxRows: 2 },
+    });
+  });
+
+  it("parseCsvWithLimits da lo mismo que limitarTabla sobre las mismas filas", () => {
+    const filas = [["a", "b"], ["1", "2"], ["3", "4"]];
+    expect(parseCsvWithLimits("a,b\n1,2\n3,4\n")).toEqual(limitarTabla(filas));
+  });
+});
+
 describe("archivos que no son CSV con comas", () => {
   it("punto y coma ⇒ bloqueo nombrando el separador", () => {
     expect(parseCsvWithLimits("a;b;c\n1;2;3\n")).toMatchObject({

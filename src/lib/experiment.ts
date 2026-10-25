@@ -20,6 +20,7 @@ import {
 } from "@/engine/encarrilador";
 import { BASELINE_IDS_BY_TASK, type MemberId } from "@/engine/roster";
 import { clusterEdaAlerts } from "@/engine/eda";
+import type { PlanAplicado } from "@/engine/limpieza-plan";
 import { quantileSplit, stratifiedSplit } from "@/engine/split";
 import { matchTask } from "@/engine/despacho";
 import {
@@ -105,6 +106,8 @@ export function summarizeDataset(table: CsvTable): DatasetSummary {
 export type RunOptions = {
   /** S6 (D2): la respuesta a «¿clases o cantidad?» de una columna ambigua. */
   ambiguousChoice?: AmbiguousChoice | null;
+  /** S18: el plan de limpieza que el usuario aprobó (con el objetivo ya elegido). */
+  plan?: PlanAplicado | null;
   /** 1 = lo que cabe en el techo · 2 = la unión 1 ∪ 2 (D5). */
   level?: 1 | 2;
   /** Modelos «fuera» que el usuario incluye de todos modos (U3). */
@@ -173,14 +176,33 @@ export function estimateEncodedWidth(
 
 // Features = columnas no-objetivo, no-fecha; numéricas/categóricas según perfil.
 // Exportada para el spike de regresión de la F0 del S6 (arma payloads con la regla real).
-export function selectFeatures(table: CsvTable, targetColumn: string) {
+// S18: el plan de limpieza aprobado puede quitar una columna (datos personales) o tratar un código numérico como categoría.
+export function selectFeatures(
+  table: CsvTable,
+  targetColumn: string,
+  plan?: PlanAplicado | null,
+) {
   const numeric: string[] = [];
   const categorical: string[] = [];
+  const quitar = new Set(plan?.quitar ?? []);
+  const comoCategoria = new Set(plan?.categoricas ?? []);
   for (const profile of profileTable(table)) {
-    if (profile.name === targetColumn || profile.looksLikeDate) continue;
-    (profile.kind === "numeric" ? numeric : categorical).push(profile.name);
+    if (
+      profile.name === targetColumn ||
+      profile.looksLikeDate ||
+      quitar.has(profile.name)
+    )
+      continue;
+    const esNumerica =
+      profile.kind === "numeric" && !comoCategoria.has(profile.name);
+    (esNumerica ? numeric : categorical).push(profile.name);
   }
   return { numeric, categorical };
+}
+
+/** S18: la especificación del preprocesador, solo si hay algo aprobado (si no, el payload sale como antes). */
+function limpiezaDe(plan?: PlanAplicado | null) {
+  return plan?.limpieza ? { limpieza: plan.limpieza } : {};
 }
 
 export function prepareRun(
@@ -236,7 +258,7 @@ function prepareBinary(
     return { ok: false, error: "target-mixed-notation" };
   }
 
-  const { numeric, categorical } = selectFeatures(table, targetColumn);
+  const { numeric, categorical } = selectFeatures(table, targetColumn, options.plan);
   if (numeric.length + categorical.length === 0)
     return { ok: false, error: "no-features" };
 
@@ -299,6 +321,7 @@ function prepareBinary(
     target: targetColumn,
     numeric,
     categorical,
+    ...limpiezaDe(options.plan),
     train_idx: trainIdx,
     test_idx: testIdx,
     seed,
@@ -379,7 +402,7 @@ function prepareMulticlass(
     return { ok: false, error: "target-mixed-notation" };
   }
 
-  const { numeric, categorical } = selectFeatures(table, targetColumn);
+  const { numeric, categorical } = selectFeatures(table, targetColumn, options.plan);
   if (numeric.length + categorical.length === 0)
     return { ok: false, error: "no-features" };
 
@@ -437,6 +460,7 @@ function prepareMulticlass(
     target: targetColumn,
     numeric,
     categorical,
+    ...limpiezaDe(options.plan),
     train_idx: trainIdx,
     test_idx: testIdx,
     seed,
@@ -479,7 +503,7 @@ function prepareRegression(
   }
   const y = values as number[];
 
-  const { numeric, categorical } = selectFeatures(table, targetColumn);
+  const { numeric, categorical } = selectFeatures(table, targetColumn, options.plan);
   if (numeric.length + categorical.length === 0)
     return { ok: false, error: "no-features" };
 
@@ -523,6 +547,7 @@ function prepareRegression(
     target: targetColumn,
     numeric,
     categorical,
+    ...limpiezaDe(options.plan),
     train_idx: trainIdx,
     test_idx: testIdx,
     seed,
@@ -867,13 +892,18 @@ export function prepareClusterRun(
   const excluded: ClusterExclusion[] = [];
   const numeric: string[] = [];
   const categorical: string[] = [];
+  const quitar = new Set(options.plan?.quitar ?? []);
+  const comoCategoria = new Set(options.plan?.categoricas ?? []);
   for (const profile of profileTable(table)) {
+    if (quitar.has(profile.name)) continue; // lo quitó el plan de limpieza (queda en su registro)
     if (profile.looksLikeDate) {
       excluded.push({ column: profile.name, reason: "date" });
     } else if (idLike.has(profile.name)) {
       excluded.push({ column: profile.name, reason: "id-like" });
     } else {
-      (profile.kind === "numeric" ? numeric : categorical).push(profile.name);
+      const esNumerica =
+        profile.kind === "numeric" && !comoCategoria.has(profile.name);
+      (esNumerica ? numeric : categorical).push(profile.name);
     }
   }
   if (numeric.length + categorical.length === 0)
@@ -909,6 +939,7 @@ export function prepareClusterRun(
       rows,
       numeric,
       categorical,
+      ...limpiezaDe(options.plan),
       distance,
       seed,
       roster: rosterFor(routing, options.level ?? 1),

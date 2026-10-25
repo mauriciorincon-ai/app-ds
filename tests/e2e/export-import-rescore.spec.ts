@@ -75,7 +75,7 @@ test("exportar → recargar → importar → puntuar sin re-entrenar, sin payloa
   });
 
   // Puntuar SIN re-entrenar (jamás pasamos por "Entrenar modelo" tras recargar).
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "clientes.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(NEW_CSV),

@@ -28,6 +28,7 @@ import type {
   ExperimentResult,
   SupervisedResult,
 } from "@/workers/protocol";
+import { lineasDeLimpieza } from "./limpieza/ficha";
 import { ClusterResults } from "./ClusterResults";
 import { FichaButton } from "./FichaButton";
 import { LeagueTable } from "./LeagueTable";
@@ -146,6 +147,7 @@ export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
                 result={result}
                 datasetName={props.datasetName}
                 sanitation={props.sanitation}
+                limpieza={props.runMeta.limpieza}
                 target={null}
                 seed={props.runMeta.seed}
                 worker={props.worker}
@@ -374,6 +376,7 @@ function SupervisedResults({
         result={result}
         datasetName={datasetName}
         sanitation={sanitation}
+        limpieza={runMeta.limpieza}
         target={runMeta.target}
         seed={runMeta.seed}
         worker={worker}
@@ -394,6 +397,7 @@ function SupervisedResults({
             seed: runMeta.seed,
             result,
             sanitation,
+            limpieza: lineasDeLimpieza(locale, runMeta.limpieza),
             verifiedNarrative: ai.kind === "verified" ? ai.text : null,
           })
         }
