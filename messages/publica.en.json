@@ -1,0 +1,34 @@
+{
+  "publica": {
+    "title": "Take it with you",
+    "desc": "Three ways to use this model outside Probeta. Probeta deploys nothing and stores no credentials: it gives you the files and you decide where they go.",
+    "warning": {
+      "title": "Before you download: what each file carries",
+      "body": "The scorer and the service carry the trained model and its manifest: the ranges and categories it saw in training, the name of your data file and the metrics of its test. A nearest-neighbours model also carries rows of your training data. The recipe carries not one row: only column names, the seed and the metrics. Share the model only with someone you can give that to."
+    },
+    "receta": {
+      "title": "Reproducible recipe",
+      "desc": "A .py file that, with your CSV, repeats the sanitising, the seeded split, the preprocessor and the model, and writes the expected metrics next to the obtained ones. Pinned versions, not one row of your data.",
+      "button": "Download the recipe (.py)",
+      "aprox": "This is a forest of trees: in your Python it reproduces approximately, not figure by figure, and the recipe says so.",
+      "agrupar": "Clustering has no split and no test: there is no figure to reproduce."
+    },
+    "puntuador": {
+      "title": "Portable scorer",
+      "desc": "A single .html with the model inside. Whoever opens it drops a CSV and their own browser scores it: zero cost, no server. It needs internet the first time (it downloads the engine from the public Pyodide CDN, about 35 MB).",
+      "button": "Download the scorer (.html)"
+    },
+    "servicio": {
+      "title": "Service template",
+      "desc": "A .zip with a FastAPI service (pinned versions), the model and a README on how to keep the cost predictable: scale to zero, with an instance cap and a spending cap. You deploy it wherever you like; the real cost depends on your provider.",
+      "button": "Download the service (.zip)",
+      "knn": "A nearest-neighbours model stores its structure with 32-bit integers and does not open outside the browser: the service does not offer it. The portable scorer does serve it.",
+      "agrupar": "The service scores the three tasks with a target. For a clustering use the portable scorer."
+    },
+    "status": {
+      "preparing": "Preparing the file…",
+      "done": "✓ Downloaded: {archivo}",
+      "error": "✕ The file could not be prepared. Try again."
+    }
+  }
+}

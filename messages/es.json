@@ -236,7 +236,7 @@
       "button": "Exportar modelo",
       "exporting": "Exportando…",
       "error": "No se pudo exportar el modelo. Inténtalo de nuevo.",
-      "contents": "El archivo contiene lo que el modelo aprendió de tus datos (parámetros, categorías, medianas) — no tus filas crudas. Aun así, trátalo como un archivo sensible."
+      "contents": "El archivo contiene lo que el modelo aprendió de tus datos (parámetros, categorías, medianas) — no tus filas crudas, salvo con el modelo de vecinos más cercanos, que guarda filas de tu entrenamiento. Aun así, trátalo como un archivo sensible."
     },
     "candidates": {
       "model": {

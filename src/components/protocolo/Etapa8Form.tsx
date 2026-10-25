@@ -37,6 +37,7 @@ import { usePrueba } from "@/lib/protocolo/usePrueba";
 import { formatQuantity, thousands } from "@/lib/quantity";
 import type { TestResult } from "@/workers/protocol";
 import { CampoArea } from "./campos";
+import { Etapa8Estres } from "./Etapa8Estres";
 import { Registrar, Trampas, type PropsFormulario } from "./formulario-base";
 import { segmentoTexto } from "./segmento-texto";
 import { TEXTOS_ETAPA_8 } from "./textos/etapa8";
@@ -133,7 +134,7 @@ export function Etapa8Form({
     () => (tabla && plan ? envio8(tabla, plan, huella) : null),
     [tabla, plan, huella],
   );
-  const { estado, abrir, cancelar } = usePrueba();
+  const { estado, abrir, cancelar, estres, estresar } = usePrueba();
   const corrida = estado.tipo === "lista" ? estado.corrida : null;
   const contadas = aperturas > 0 ? aperturas : null;
   // Lo medido (con su bootstrap) no depende de lo que escribes: el patrón entra después, sin volver a calcular
@@ -660,6 +661,14 @@ export function Etapa8Form({
               </>
             )}
           </Seccion>
+
+          {/* S17: «Estrésalo», opcional, sobre la misma prueba ya abierta */}
+          <Etapa8Estres
+            corrida={corrida}
+            estado={estres}
+            onEstresar={() => envio && estresar(envio)}
+            deshabilitado={envio === null || ocupado}
+          />
         </>
       )}
 

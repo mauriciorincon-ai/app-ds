@@ -1,0 +1,34 @@
+{
+  "publica": {
+    "title": "Llévatelo",
+    "desc": "Tres formas de usar este modelo fuera de Probeta. Probeta no despliega nada ni guarda credenciales: te da los archivos y tú decides dónde van.",
+    "warning": {
+      "title": "Antes de descargar: qué lleva cada archivo",
+      "body": "El puntuador y el servicio llevan el modelo entrenado y su manifiesto: los rangos y las categorías que vio al entrenar, el nombre de tu archivo de datos y las métricas de su prueba. Un modelo de vecinos más cercanos lleva además filas de tu entrenamiento. La receta no lleva ni una fila: solo nombres de columnas, la semilla y las métricas. Comparte el modelo solo con quien puedas darle eso."
+    },
+    "receta": {
+      "title": "Receta reproducible",
+      "desc": "Un archivo .py que, con tu CSV, repite el saneamiento, la partición con su semilla, el preprocesador y el modelo, y escribe las métricas esperadas junto a las obtenidas. Versiones fijas, sin una fila de tus datos.",
+      "button": "Descargar la receta (.py)",
+      "aprox": "Es un bosque de árboles: en tu Python reproduce de forma aproximada, no cifra por cifra, y la receta lo dice.",
+      "agrupar": "Agrupar no tiene partición ni prueba: no hay una cifra que reproducir."
+    },
+    "puntuador": {
+      "title": "Puntuador portátil",
+      "desc": "Un solo .html con el modelo adentro. Quien lo abre arrastra un CSV y su propio navegador lo puntúa: costo cero, sin servidor. Necesita internet la primera vez (baja el motor del CDN público de Pyodide, unos 35 MB).",
+      "button": "Descargar el puntuador (.html)"
+    },
+    "servicio": {
+      "title": "Plantilla de servicio",
+      "desc": "Un .zip con un servicio FastAPI (versiones fijas), el modelo y un README con cómo mantener el costo predecible: que escale a cero y con tope de instancias y de gasto. Lo despliegas tú donde quieras; el costo real depende de tu proveedor.",
+      "button": "Descargar el servicio (.zip)",
+      "knn": "Un modelo de vecinos más cercanos guarda su estructura con enteros de 32 bits y no se abre fuera del navegador: el servicio no lo ofrece. El puntuador portátil sí lo sirve.",
+      "agrupar": "El servicio puntúa las tres tareas con objetivo. Para un agrupamiento usa el puntuador portátil."
+    },
+    "status": {
+      "preparing": "Preparando el archivo…",
+      "done": "✓ Descargado: {archivo}",
+      "error": "✕ No se pudo preparar el archivo. Vuelve a intentarlo."
+    }
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { matchByTask } from "@/engine/despacho";
+import { useEffect, useRef, type RefObject } from "react";
+import { matchByTask, taskOf } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
 import {
@@ -32,6 +32,7 @@ import { ClusterResults } from "./ClusterResults";
 import { FichaButton } from "./FichaButton";
 import { LeagueTable } from "./LeagueTable";
 import { Level2Card } from "./Level2Card";
+import dynamic from "next/dynamic";
 import { ModelCardView } from "./ModelCardView";
 import {
   MulticlassDetail,
@@ -44,6 +45,7 @@ import {
   RegressionVerdict,
 } from "./RegressionResults";
 import { WhySection } from "./WhySection";
+import type { EstresDe } from "./estres/EstresPanel";
 import { Button, Card, MetricTile } from "./ui";
 import {
   LEVEL_MARK,
@@ -51,6 +53,17 @@ import {
   VerdictCard,
   type Banner,
 } from "./VerdictCard";
+
+// S17: la prueba de estrés viaja en su propio chunk (texto, lector y vista); nada de ella entra al peso inicial.
+const EstresPanel = dynamic(
+  () => import("./estres/EstresPanel").then((m) => m.EstresPanel),
+  { ssr: false },
+);
+// S17: «Llévatelo» (receta, puntuador, servicio) también en su chunk: ni sus textos ni sus plantillas entran al peso inicial.
+const PublicaPanel = dynamic(
+  () => import("./publica/PublicaPanel").then((m) => m.PublicaPanel),
+  { ssr: false },
+);
 
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
@@ -70,6 +83,8 @@ type ResultsProps<R> = {
   onAgain: () => void;
   onUseModel: () => void;
   onExportModel: () => void;
+  /** S17: el worker del modelo activo (la prueba de estrés le pide el comando «stress»). */
+  worker?: RefObject<Worker | null>;
   exportState: ExportState;
   /** S5: el reparto con que se entrenó (pendientes del Nivel 2 y «fuera»). */
   routing: Routing | null;
@@ -122,7 +137,23 @@ export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
         binaria: supervised,
         multiclase: supervised,
         numerica: supervised,
-        agrupar: (result) => <ClusterResults {...props} result={result} />,
+        agrupar: (result) => (
+          <>
+            <ClusterResults {...props} result={result} />
+            <div className="mt-6 flex flex-col gap-6">
+              <EstresPanel de={null} />
+              <PublicaPanel
+                result={result}
+                datasetName={props.datasetName}
+                sanitation={props.sanitation}
+                target={null}
+                seed={props.runMeta.seed}
+                worker={props.worker}
+                ocupado={!(props.modelReady ?? true)}
+              />
+            </div>
+          </>
+        ),
       })}
     </div>
   );
@@ -138,6 +169,7 @@ function SupervisedResults({
   onAgain,
   onUseModel,
   onExportModel,
+  worker,
   exportState,
   routing,
   choice,
@@ -195,6 +227,22 @@ function SupervisedResults({
       classes: null,
     }),
   });
+
+  // S17: lo que el panel de estrés cotejará con la respuesta del worker (las columnas del modelo salen de la explicabilidad).
+  const estresDe: EstresDe = {
+    result,
+    task: taskOf(result),
+    metric: result.verdict.primaryMetric,
+    nTest: result.nTest,
+    numeric: result.explainability.features
+      .filter((f) => f.kind === "numeric")
+      .map((f) => f.name),
+    categorical: result.explainability.features
+      .filter((f) => f.kind === "categorical")
+      .map((f) => f.name),
+    rival: result.verdict.baselineScore,
+    unit: byResult.unit,
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -313,6 +361,24 @@ function SupervisedResults({
           </p>
         </Card>
       </section>
+
+      {/* S17: ¿cuánto aguanta? El mismo modelo, sin reentrenar, sobre la prueba ya abierta. */}
+      <EstresPanel
+        de={estresDe}
+        worker={worker}
+        ocupado={!modelReady || choice.status === "fitting"}
+      />
+
+      {/* S17: llevarse el modelo — receta reproducible, puntuador portátil y plantilla de servicio. */}
+      <PublicaPanel
+        result={result}
+        datasetName={datasetName}
+        sanitation={sanitation}
+        target={runMeta.target}
+        seed={runMeta.seed}
+        worker={worker}
+        ocupado={!modelReady || choice.status === "fitting"}
+      />
 
       {/* S2: la constancia exportable del experimento. */}
       <ModelCardView

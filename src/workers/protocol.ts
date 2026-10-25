@@ -844,6 +844,36 @@ export type RuntimeVersions = {
   lightgbm?: string;
 };
 
+/**
+ * S17 (ADR 023), la prueba de estrés: el mismo modelo, sin reentrenar, sobre la prueba ya abierta y perturbada con
+ * semilla fija. Solo nombres de columnas y números: ningún valor del dataset. `winner`, `huella` y `sello` viajan
+ * solo en la etapa 8 del Protocolo (el eco que TS coteja); en Probeta el comando no lleva payload.
+ */
+export type StressResult = {
+  task: SupervisedTask;
+  metric: { name: PrimaryMetric; direction: "higher" | "lower" };
+  /** La métrica primaria sobre la prueba sin perturbar (la misma que el veredicto). */
+  base: number;
+  n_test: number;
+  seed: number;
+  /** Ruido gaussiano en las numéricas, a este múltiplo de su desviación en train. */
+  noise: { level: number; value: number }[];
+  /** Cada columna barajada sola, de la que más duele a la que menos. */
+  shuffle: {
+    column: string;
+    kind: "numeric" | "categorical";
+    value: number;
+  }[];
+  /** Las numéricas más afectadas corridas este múltiplo de su desviación (el paso del tiempo). */
+  shift: { level: number; columns: string[]; value: number }[];
+  elapsed_ms: number;
+  /** Solo en la etapa 8: el mejor rival sin modelo en la misma métrica y la misma prueba (en Probeta lo da el veredicto). */
+  baseline?: { name: string; value: number };
+  winner?: MemberId;
+  huella?: string;
+  sello?: string;
+};
+
 export type ExportResult = {
   /** pipeline fitted + esquema + perfil: pickle → zlib → base64 (ADR-007). */
   payload_b64: string;
@@ -858,6 +888,10 @@ export type RunnerRequest =
   | { id: number; type: "train"; payload: PipelinePayload | ClusterPayload }
   | { id: number; type: "validate"; payload: ValidationPayload }
   | { id: number; type: "test"; payload: TestPayload }
+  // S17: la prueba de estrés. En Probeta no lleva payload (usa el modelo y la prueba retenidos en el worker);
+  // en la etapa 8 lleva el mismo envío que abrió la prueba.
+  | { id: number; type: "stress" }
+  | { id: number; type: "stress-test"; payload: TestPayload }
   | {
       id: number;
       type: "fit-member";
@@ -879,6 +913,7 @@ export type RunnerRequest =
 
 export type RunnerCommand = RunnerRequest["type"];
 
+
 export type RunnerResponse =
   | {
       id: number;
@@ -892,6 +927,8 @@ export type RunnerResponse =
   | { id: number; type: "result"; command: "train"; result: unknown }
   | { id: number; type: "result"; command: "validate"; result: unknown }
   | { id: number; type: "result"; command: "test"; result: unknown }
+  | { id: number; type: "result"; command: "stress"; result: unknown }
+  | { id: number; type: "result"; command: "stress-test"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }

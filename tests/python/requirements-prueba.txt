@@ -1,0 +1,4 @@
+# Solo para las pruebas del servicio en la CI (el cliente de pruebas de FastAPI); no viaja con el servicio.
+httpx==0.28.1
+httpcore==1.0.9
+certifi==2026.10.23

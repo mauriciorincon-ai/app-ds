@@ -236,7 +236,7 @@
       "button": "Export model",
       "exporting": "Exporting…",
       "error": "The model could not be exported. Try again.",
-      "contents": "The file contains what the model learned from your data (parameters, categories, medians) — not your raw rows. Still, treat it as a sensitive file."
+      "contents": "The file contains what the model learned from your data (parameters, categories, medians) — not your raw rows, except with the nearest-neighbours model, which keeps rows of your training data. Still, treat it as a sensitive file."
     },
     "candidates": {
       "model": {

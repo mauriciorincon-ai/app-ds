@@ -200,14 +200,16 @@ describe("TaskCard (E1)", () => {
     );
   });
 
-  it("cada respuesta se nombra por su etiqueta y se describe una sola vez (AU-S6-38)", () => {
+  it("cada respuesta lleva TODO su texto visible en el nombre y no se describe dos veces (AU-S6-38; etiqueta en el nombre, axe 4.14)", () => {
     const detection = detectTask(["1", "2", "3", "4", "5", "6", "2", "3"]);
     ui(
       <TaskCard detection={detection} target="ocupantes" onAnswer={vi.fn()} />,
     );
     const quantity = screen.getByRole("button", { name: /Una cantidad/ });
-    expect(quantity).toHaveAccessibleName(/^Una cantidad( Sugerida)?$/);
-    expect(quantity).toHaveAccessibleDescription(/^Se estima el número/);
+    // la regla de axe pide que el texto visible (etiqueta, «Sugerida» y descripción) esté en el nombre accesible
+    expect(quantity).toHaveAccessibleName(/^Una cantidad( Sugerida)? Se estima el número/);
+    // y como la descripción ya está en el nombre, no se vuelve a leer como descripción
+    expect(quantity).toHaveAccessibleDescription("");
   });
 
   it("una columna que no sirve como objetivo no promete una próxima versión (AU-S6-05)", () => {

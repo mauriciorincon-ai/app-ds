@@ -263,19 +263,17 @@ describe("brochure-export.json: el contrato de la vitrina (S16)", () => {
     expect(JSON.stringify(r.error?.issues)).toMatch(/total declarado/);
   });
 
-  it("las funcionalidades que la VISION nombra y no existen van como descartadas, con su razón", () => {
+  it("nada queda «descartado» sin una decisión escrita del usuario: hoy no hay ninguna, y lo que falta no se lista como construido", () => {
     const { descartadas, grupos } = completo.funcionalidades;
-    expect(descartadas.length).toBeGreaterThan(0);
+    // S17: la retro del S16 había dejado ocho en `descartadas` sin que el usuario las descartara. Se descarta con su decisión
+    // escrita (en el BLUEPRINT y aquí) o no se descarta. El usuario no ha descartado ninguna: el arreglo va vacío.
+    expect(descartadas).toEqual([]);
+    // y una que algún día se descarte no puede ser a la vez construida
     const construidas = new Set(
       grupos.flatMap((g) => g.features.map((f) => f.id)),
     );
-    for (const d of descartadas) {
-      expect(d.razon.length, d.id).toBeGreaterThan(0);
-      expect(
-        construidas.has(d.id),
-        `«${d.id}» no puede ser a la vez construida y descartada`,
-      ).toBe(false);
-    }
+    for (const d of descartadas as { id: string }[])
+      expect(construidas.has(d.id), `«${d.id}» construida y descartada`).toBe(false);
   });
 });
 

@@ -163,6 +163,12 @@ const ALLOWED: { file: string; text: string; reason: string }[] = [
     reason: "_task_of: el único «sin tarea = binaria» de Python",
   },
   {
+    file: "src/lib/ds/plantillas/puntuar.py",
+    text: 'return schema.get("task", "binaria")',
+    reason:
+      "tarea_de: el único «sin tarea = binaria» del archivo autónomo que se lleva el usuario (espejo de _task_of; no puede importar pipeline.py)",
+  },
+  {
     file: "src/workers/contract.ts",
     text: "raw.task !== CLUSTER_TASK",
     reason:

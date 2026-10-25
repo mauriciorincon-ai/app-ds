@@ -1689,6 +1689,8 @@ export function useExperiment() {
     resetScoring,
     scoreCsv,
     exportModel,
+    // S17: el worker del modelo activo, para el panel diferido de la prueba de estrés (ids negativos: esta máquina los ignora)
+    workerRef,
     activateImportedModel,
     chooseMember,
     runLevel2,

@@ -8,6 +8,10 @@ playwright-report/
 test-results/
 # Assets de Pyodide self-hosteados: generados en prebuild desde node_modules.
 public/pyodide/
+# Plantillas de lo que el usuario se lleva (S17): derivadas de src/lib/ds/plantillas/ en prebuild.
+public/plantillas/
+# Lo que la prueba de integración deja para los pasos de Python de la CI (S17).
+tests/integration/.salida/
 # El brochure servido en /conoce: derivado de docs/BROCHURE.html en prebuild (misma política).
 public/conoce.html
 .env
@@ -25,3 +29,7 @@ Thumbs.db
 
 # Respaldo de scripts/demo-rojo.sh (kit v1.35.0): UNA carpeta, se borra sola al restaurar
 .demo-rojo/
+
+# Python bytecode (the CI runs tests/python and the integration job writes tests/integration/.salida)
+__pycache__/
+*.pyc

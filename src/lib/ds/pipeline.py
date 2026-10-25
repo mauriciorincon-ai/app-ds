@@ -46,6 +46,7 @@ agrupador sobre datos sin estructura) y la estabilidad por re-muestreo. Las
 etiquetas por fila jamás viajan en el resultado (P13).
 """
 
+# plantilla:inicio imports
 import base64
 import json
 import math
@@ -109,6 +110,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+# plantilla:fin imports
 
 
 # LightGBM 4.6 registra nombres genéricos de columnas al ajustar; sklearn avisa
@@ -129,6 +131,7 @@ _MODEL = None
 _CLUSTER_LABELS = None
 
 
+# plantilla:inicio base
 # Espejo EXACTO de NULL_TOKENS/isNullToken de csv.ts (paridad TS↔Python,
 # auditoría H1) — el test unit null-token-parity falla si divergen. Antes se
 # reemplazaban solo literales exactos: "si " y "si" eran clases distintas y
@@ -178,8 +181,10 @@ def _make_preprocessor(numeric, categorical):
         [("num", numeric_pipe, numeric), ("cat", categorical_pipe, categorical)],
         remainder="drop",
     )
+# plantilla:fin base
 
 
+# plantilla:inicio metricas
 def _metrics(y_true, y_pred, y_score):
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
@@ -213,6 +218,9 @@ def _scores(pipe, X):
     if hasattr(pipe, "predict_proba"):
         return pipe.predict_proba(X)[:, 1]
     return pipe.decision_function(X)
+
+
+# plantilla:fin metricas
 
 
 def _fit_score(estimator, preprocessor, X_train, y_train, X_test):
@@ -384,6 +392,7 @@ MULTICLASS_MIN_CLASSES = 3
 MULTICLASS_MAX_CLASSES = 20
 
 
+# plantilla:inicio fabricas
 def _xgboost(seed):
     from xgboost import XGBClassifier
 
@@ -487,6 +496,9 @@ _REGRESSORS = {
         )
     ),
 }
+
+# plantilla:fin fabricas
+
 
 # --- S7: agrupar sin objetivo (ADR 016) --------------------------------------
 #
@@ -1225,6 +1237,7 @@ def metric_directions(payload_json="{}"):
     )
 
 
+# plantilla:inicio despacho
 def _contract(field):
     # El lado que LEE del contrato rechaza NOMBRANDO el campo (regla 15). Nunca
     # lleva valores del payload: solo el nombre del campo, que es de la app.
@@ -1259,6 +1272,9 @@ def _supervised_only():
     """La rama de agrupar en un camino supervisado: inalcanzable (run_experiment y
     fit_member despachan antes por tarea); si llega igual, se nombra la tarea."""
     _contract("task")
+
+
+# plantilla:fin despacho
 
 
 def _route_task(p):
@@ -1344,6 +1360,7 @@ def _validate_classes(classes):
         _contract("classes")
 
 
+# plantilla:inicio objetivos
 def _decimals(text):
     """Decimales escritos en un valor del objetivo (para mostrar predicciones con la
     precisión con que el usuario anotó sus datos). Notación científica ⇒ el tope."""
@@ -1457,6 +1474,9 @@ def _member_pipe(name, ctx):
     return Pipeline(
         [("prep", clone(ctx["preprocessor"])), ("model", ctx["factories"][name](ctx["seed"]))]
     )
+
+
+# plantilla:fin objetivos
 
 
 def _cross_validate(name, ctx, k, splits=None):
@@ -1647,6 +1667,9 @@ def _retain(pipe, ctx, target):
         "training_profile": _training_profile(
             ctx["X_train"], ctx["numeric"], ctx["categorical"]
         ),
+        # S17: lo que la prueba de estrés lee (la prueba ya abierta y la escala de train). Vive solo en
+        # memoria: export_model arma las claves del pickle una a una y esta no entra (vigilado por un test).
+        "eval": _stress_eval(ctx),
     }
 
 
@@ -1682,6 +1705,7 @@ def _multiclass_baselines(ctx):
     return baselines
 
 
+# plantilla:inicio metricas-multi
 def _proba(pipe, X):
     """La matriz de probabilidades, o None si el modelo decide sin darlas (ridge, SVM
     lineal): no se inventan (S5)."""
@@ -1709,6 +1733,9 @@ def _multiclass_metrics(y_true, y_pred, proba, n_classes):
                 roc_auc_score(y_true, proba, multi_class="ovr", average="macro", labels=labels)
             )
     return metrics
+
+
+# plantilla:fin metricas-multi
 
 
 def _regression_baselines(ctx):
@@ -1866,6 +1893,7 @@ def _run_league(p, on_progress=None):
     )
 
 
+# plantilla:inicio prueba
 def _test_metrics(pipe, y_pred, ctx):
     """Métricas de TEST según la tarea (binaria: necesita el puntaje continuo)."""
     return _by_task(ctx["task"], {
@@ -1876,6 +1904,9 @@ def _test_metrics(pipe, y_pred, ctx):
         "numerica": lambda: _reg_metrics(ctx["y_test"], y_pred),
         "agrupar": _supervised_only,
     })()
+
+
+# plantilla:fin prueba
 
 
 def fit_member(payload_json):
@@ -2583,3 +2614,214 @@ def run_test(payload_json):
             "elapsed_ms": _elapsed_ms(started),
         }
     )
+
+
+# --- S17: la prueba de estrés (ADR 023) ---------------------------------------------------------------
+#
+# «¿Cuánto aguanta?»: el MISMO modelo, sin reentrenar, sobre la prueba que ya se abrió, perturbada de tres
+# maneras con semilla fija: (a) ruido gaussiano en las numéricas a un 5, 10 y 20 % de su desviación en train;
+# (b) cada columna barajada, una a una; (c) las tres numéricas más afectadas por (b) corridas +0,5 y +1
+# desviación, como lo que pasa con el tiempo. La métrica es la primaria del veredicto. No elige nada ni abre
+# la prueba otra vez: lee las mismas filas. Devuelve nombres de columnas y números, jamás un valor del
+# dataset. Agrupar no tiene objetivo ni prueba: `not-applicable`. Errores: solo el tipo.
+
+STRESS_NOISE_LEVELS = (0.05, 0.10, 0.20)
+STRESS_SHIFT_LEVELS = (0.5, 1.0)
+STRESS_SHUFFLE_REPEATS = 5
+STRESS_SHIFT_COLUMNS = 3
+
+
+def _train_sigma(X_train, numeric):
+    """La desviación de cada numérica EN TRAIN (la escala del ruido y del corrimiento)."""
+    sigma = {}
+    for col in numeric:
+        value = float(X_train[col].std(ddof=0))
+        sigma[col] = value if math.isfinite(value) and value > 0 else 0.0
+    return sigma
+
+
+def _stress_eval(ctx):
+    classes = ctx["classes"]
+    return {
+        "X_test": ctx["X_test"],
+        "y_test": ctx["y_test"],
+        "numeric": list(ctx["numeric"]),
+        "features": list(ctx["features"]),
+        "sigma": _train_sigma(ctx["X_train"], ctx["numeric"]),
+        "metric": ctx["metric"],
+        "n_classes": len(classes) if classes else 0,
+        "seed": int(ctx["seed"]),
+    }
+
+
+def _stress_value(task, metric, pipe, X, y, n_classes):
+    """La métrica primaria sobre X (la misma cuenta que la liga, solo la que se pide)."""
+    y_pred = pipe.predict(X)
+    value = _by_task(task, {
+        "binaria": lambda: _metrics(y, y_pred, _scores(pipe, X))[metric],
+        "multiclase": lambda: float(balanced_accuracy_score(y, y_pred)),
+        "numerica": lambda: float(mean_absolute_error(y, y_pred)),
+        "agrupar": _supervised_only,
+    })()
+    if not math.isfinite(value):
+        raise ArithmeticError("non-finite-metric")
+    return float(value)
+
+
+def _stress_core(task, pipe, ev):
+    """Las tres perturbaciones sobre la prueba de `ev`. Determinista: cada paso tiene su propio generador
+    derivado de la semilla, así que el orden de los pasos no cambia las cifras."""
+    X_test, y_test = ev["X_test"], ev["y_test"]
+    metric, n_classes, seed = ev["metric"], ev["n_classes"], ev["seed"]
+    numeric, features, sigma = ev["numeric"], ev["features"], ev["sigma"]
+    direction = METRIC_DIRECTION[metric]
+    n = len(X_test)
+
+    def value(X):
+        return _stress_value(task, metric, pipe, X, y_test, n_classes)
+
+    base = value(X_test)
+
+    noise = []
+    for level_index, level in enumerate(STRESS_NOISE_LEVELS if numeric else ()):
+        rng = np.random.default_rng([seed, 1, level_index])
+        X = X_test.copy()
+        for col in numeric:
+            if sigma[col] > 0:
+                X[col] = X_test[col].to_numpy(dtype=float) + rng.normal(0.0, level * sigma[col], size=n)
+        noise.append({"level": level, "value": value(X)})
+
+    numeric_set = set(numeric)
+    shuffled = []
+    for col_index, col in enumerate(features):
+        values = []
+        for repeat in range(STRESS_SHUFFLE_REPEATS):
+            rng = np.random.default_rng([seed, 2, col_index, repeat])
+            X = X_test.copy()
+            X[col] = X_test[col].iloc[rng.permutation(n)].to_numpy()
+            values.append(value(X))
+        shuffled.append(
+            {
+                "column": col,
+                "kind": "numeric" if col in numeric_set else "categorical",
+                "value": float(np.mean(values)),
+            }
+        )
+
+    def worsening(entry):
+        return base - entry["value"] if direction == "higher" else entry["value"] - base
+
+    # lo que más duele primero; el empate lo desempata el orden de las columnas (sorted es estable)
+    shuffled.sort(key=lambda entry: -worsening(entry))
+
+    shift_columns = [
+        e["column"] for e in shuffled if e["kind"] == "numeric" and sigma[e["column"]] > 0
+    ][:STRESS_SHIFT_COLUMNS]
+    shift = []
+    for level in STRESS_SHIFT_LEVELS if shift_columns else ():
+        X = X_test.copy()
+        for col in shift_columns:
+            X[col] = X_test[col].to_numpy(dtype=float) + level * sigma[col]
+        shift.append({"level": level, "columns": list(shift_columns), "value": value(X)})
+
+    return {
+        "task": task,
+        "metric": {"name": metric, "direction": direction},
+        "base": base,
+        "n_test": int(n),
+        "seed": int(seed),
+        "noise": noise,
+        "shuffle": shuffled,
+        "shift": shift,
+    }
+
+
+def _stress_not_applicable():
+    raise RuntimeError("not-applicable")
+
+
+def run_stress(payload_json="{}"):
+    """«Estrésalo» en Probeta: el modelo retenido y la prueba de su corrida. Un modelo importado no trae
+    prueba (`no-eval`); agrupar no la tiene (`not-applicable`)."""
+    started = time.perf_counter()
+    if _MODEL is None:
+        raise RuntimeError("no-model")
+    task = _task_of(_MODEL["schema"])
+    _by_task(task, {
+        "binaria": _supervised,
+        "multiclase": _supervised,
+        "numerica": _supervised,
+        "agrupar": _stress_not_applicable,
+    })()
+    ev = _MODEL.get("eval")
+    if ev is None:
+        raise RuntimeError("no-eval")
+    result = _stress_core(task, _MODEL["pipe"], ev)
+    result["elapsed_ms"] = _elapsed_ms(started)
+    return json.dumps(result)
+
+
+def run_stress_test(payload_json):
+    """«Estrésalo» en la etapa 8 del Protocolo: el mismo envío que abrió la prueba (`TEST_KEYS`); el ganador
+    se vuelve a ajustar con el entrenamiento como en `run_test` y se estresa la MISMA prueba. No es una
+    apertura nueva: TS solo lo pide con el sello y la huella de la apertura registrada, y no devuelve filas."""
+    started = time.perf_counter()
+    p = json.loads(payload_json)
+    _validate_test_payload(p)
+    numeric = list(p["numeric"])
+    categorical = list(p["categorical"])
+    features = numeric + categorical
+    train = _build_frame(p["headers"], p["train"], numeric)
+    test = _build_frame(p["headers"], p["test"], numeric)
+    y_train, y_test, classes = _test_targets(train, test, p)
+    task = p["task"]
+    ctx = {
+        "factories": _FACTORIES_BY_TASK[task],
+        "seed": int(p["seed"]),
+        "preprocessor": _make_preprocessor(numeric, categorical),
+    }
+    X_train, X_test = train[features], test[features]
+    try:
+        pipe = _member_pipe(p["winner"], ctx).fit(X_train, y_train)
+    except Exception:  # noqa: BLE001 — el mensaje podría traer valores; se dice solo qué falló
+        raise RuntimeError("winner-fit-failed") from None
+    bctx = {
+        "X_train": X_train,
+        "y_train": y_train,
+        "X_test": X_test,
+        "y_test": y_test,
+        "seed": int(p["seed"]),
+        "preprocessor": ctx["preprocessor"],
+        "classes": classes,
+    }
+    ev = {
+        "X_test": X_test,
+        "y_test": y_test,
+        "numeric": numeric,
+        "features": features,
+        "sigma": _train_sigma(X_train, numeric),
+        "metric": p["primary_metric"],
+        "n_classes": len(classes) if classes else 0,
+        "seed": int(p["seed"]),
+    }
+    result = _stress_core(task, pipe, ev)
+    # el rival a batir en la MISMA métrica y la misma prueba (los de la liga: la mayoritaria/mediana y la logística/lineal)
+    metric = p["primary_metric"]
+    rivals = _by_task(task, {
+        "binaria": lambda: _binary_baselines(bctx),
+        "multiclase": lambda: _multiclass_baselines(bctx),
+        "numerica": lambda: _regression_baselines(bctx),
+        "agrupar": _supervised_only,
+    })()
+    pick = max if METRIC_DIRECTION[metric] == "higher" else min
+    rival = pick(rivals, key=lambda name: rivals[name][metric])
+    result.update(
+        {
+            "baseline": {"name": rival, "value": float(rivals[rival][metric])},
+            "winner": p["winner"],
+            "huella": p["huella"],
+            "sello": p["sello"],
+            "elapsed_ms": _elapsed_ms(started),
+        }
+    )
+    return json.dumps(result)

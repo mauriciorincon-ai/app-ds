@@ -1,0 +1,77 @@
+{
+  "task": "numerica",
+  "metric": {
+    "name": "mae",
+    "direction": "lower"
+  },
+  "base": 43.77304092785411,
+  "n_test": 50,
+  "seed": 42,
+  "noise": [
+    {
+      "level": 0.05,
+      "value": 43.90206102483115
+    },
+    {
+      "level": 0.1,
+      "value": 46.9059912216175
+    },
+    {
+      "level": 0.2,
+      "value": 48.28131225808098
+    }
+  ],
+  "shuffle": [
+    {
+      "column": "ocupantes",
+      "kind": "numeric",
+      "value": 98.96635227073858
+    },
+    {
+      "column": "superficie_m2",
+      "kind": "numeric",
+      "value": 70.30651926865671
+    },
+    {
+      "column": "temp_media_c",
+      "kind": "numeric",
+      "value": 56.03451933639782
+    },
+    {
+      "column": "calefaccion",
+      "kind": "categorical",
+      "value": 48.28251881717
+    },
+    {
+      "column": "anio_construccion",
+      "kind": "numeric",
+      "value": 43.586644895594745
+    },
+    {
+      "column": "aislamiento",
+      "kind": "categorical",
+      "value": 43.50682196852565
+    }
+  ],
+  "shift": [
+    {
+      "level": 0.5,
+      "columns": [
+        "ocupantes",
+        "superficie_m2",
+        "temp_media_c"
+      ],
+      "value": 66.80248042122167
+    },
+    {
+      "level": 1,
+      "columns": [
+        "ocupantes",
+        "superficie_m2",
+        "temp_media_c"
+      ],
+      "value": 106.43535752984072
+    }
+  ],
+  "elapsed_ms": 70
+}

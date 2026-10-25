@@ -81,6 +81,11 @@ test("agrupar: segmentos → 3 grupos que existen, perfiles, tabla y las filas c
   await expect(page.getByText(/clase positiva|supera al baseline/)).toHaveCount(
     0,
   );
+  // S17: agrupar no tiene objetivo ni prueba: «Estrésalo» lo dice en vez de callar, y no ofrece el botón
+  await expect(page.getByTestId("estres-panel")).toContainText(
+    "Agrupar no tiene objetivo ni prueba",
+  );
+  await expect(page.getByRole("button", { name: "Estrésalo" })).toHaveCount(0);
   await axeBothThemes(page);
 
   // Las otras columnas de un grupo se abren a pedido (control con su efecto).

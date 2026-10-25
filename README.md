@@ -8,14 +8,16 @@
 
 Probeta DS lleva a profesionales que no son científicos de datos por el ciclo: cargar un CSV,
 limpiarlo, entenderlo, modelar, comprobar el resultado y llevarse el modelo en un archivo para puntuar
-datos nuevos. Sirve para clasificar en dos o en varias
+datos nuevos, o llevárselo como una receta que reproduce, un puntuador portátil o una plantilla de servicio
+(Probeta no despliega nada ni guarda credenciales). Sirve para clasificar en dos o en varias
 categorías, estimar una cantidad o agrupar filas parecidas sin objetivo. La honestidad es automática:
 la selección del modelo vive en validación cruzada dentro de entrenamiento, la prueba se abre una sola
 vez, cada resultado se compara con un baseline y una posible fuga de datos se nombra.
 
 Tiene dos modos con el mismo motor y promesas distintas: **Probeta**, el laboratorio rápido, y
 **Protocolo DS**, el camino lento de diez etapas con compuertas que no se saltan, con tus propios
-datos y un cuaderno que guarda lo que cada etapa verificó. Las diez etapas están construidas.
+datos y un cuaderno que guarda lo que cada etapa verificó. Las diez etapas están construidas, y desde el
+Sprint 17 el modelo se puede estresar («¿cuánto aguanta?») en las dos.
 
 **Tus datos no salen de tu navegador.** El cómputo de Probeta (pandas y scikit-learn en WebAssembly,
 con Pyodide) corre en un Web Worker de tu equipo; el Protocolo calcula en tu navegador y guarda su
@@ -54,7 +56,8 @@ pnpm dev              # copia los assets de Pyodide y arranca en http://localhos
 ## English
 
 Probeta DS walks professionals who are not data scientists through the cycle: load a CSV, clean it,
-understand it, model, check the result, and take the model away in a file to score new data. It
+understand it, model, check the result, and take the model away in a file to score new data, or as a recipe that reproduces, a portable scorer or a
+service template (Probeta deploys nothing and stores no credentials). It
 classifies into two or several categories,
 estimates a quantity, or groups similar rows without a target. Honesty is automatic: model selection
 lives in cross-validation inside the training set, the test set is opened once, every result is
@@ -62,7 +65,8 @@ compared against a baseline, and a possible data leak is named.
 
 It has two modes on the same engine with different promises: **Probeta**, the quick lab, and
 **Protocolo DS**, the slow path of ten stages with gates that can't be skipped, on your own data and
-with a notebook that keeps what each stage verified. All ten stages are built.
+with a notebook that keeps what each stage verified. All ten stages are built, and since Sprint 17 the
+model can be stress-tested («how much does it take?») in both.
 
 **Your data never leaves your browser.** Probeta's computation (pandas and scikit-learn in
 WebAssembly, through Pyodide) runs in a Web Worker on your machine; the Protocol computes in your

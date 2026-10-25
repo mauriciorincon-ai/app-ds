@@ -113,3 +113,13 @@ The two items this ADR left for «H2» did not get built in the H-2 and have a p
 («Publícalo en un clic» is in `funcionalidades.descartadas` of the export; `skl2onnx` still does not load in Pyodide), and the **signature of
 the exported file** moves to H-4 (it matters when a third party receives a model; today the hash covers the payload and the manifest's
 informative fields are not covered, as stated above).
+
+## Status note (2026-10-24, Sprint 017)
+
+«Publícalo en un clic» was **not** discarded: it exists without ONNX, as the portable scorer (the `.probeta.json` inside a page that scores in the
+recipient's own browser) and a FastAPI service template that opens the same pickle on CPython 3.14 with pinned versions (ADR 024). The scorer
+validates the format, the SHA-256 and the Pyodide version before deserialising, exactly as the import does. Two facts about the payload became
+visible: the pickle of the **nearest-neighbours** model keeps training rows (the screen and the files now say so instead of «not your rows»), and
+it does **not** open on 64-bit CPython (32 vs 64-bit integers), so the service does not offer it; every other roster model crosses unchanged.
+
+Two sentences of the Consequences above are therefore no longer true as written and are corrected here, not rewritten: *"no server ever touches the file"* holds for Probeta and the scorer, but the **service opens this same pickle on a server the user runs**, so the risk is no longer only local to the user's browser; and *"the file is NOT portable outside Probeta"* now has an exception, the scoring engine `puntuar.py` (which opens it in Pyodide and on CPython 3.14 with the pinned versions). What did not change: the SHA-256 is **integrity, not authenticity** (it travels in the same file as the payload), so *open it only if you know where it came from* still applies to the scorer and the service, and the signature stays in H-4.

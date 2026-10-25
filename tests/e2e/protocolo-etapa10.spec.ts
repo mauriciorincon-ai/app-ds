@@ -101,7 +101,10 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   await cumplirEtapa5SinRegla(page);
   await cumplirEtapa6Credito(page);
   await cumplirEtapa7(page);
-  await cumplirEtapa8(page, "Falla con quienes trabajan en la informalidad");
+  // S17: con la lectura de estrés, la ficha dice la robustez con su cifra y su fuente (etapa 8)
+  await cumplirEtapa8(page, "Falla con quienes trabajan en la informalidad", {
+    estres: true,
+  });
   await cumplirEtapa9(
     page,
     "Usarlo",
@@ -211,6 +214,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
     "Partición Estratificada con prueba sellada",
   );
   await expect(cumplio).toContainText("Calibración medida");
+  // (con este kit el ganador es la logística y su rival sin modelo es la misma logística: la ficha dice que el ruido no es la causa)
+  await expect(cumplio).toContainText(/Robustez (medida )?\(etapa 8\): /);
+  await expect(cumplio).not.toContainText("Robustez: no se midió");
   await expect(cumplio).toContainText(/Etapa 6 · .* · huella [0-9a-f]{12}/);
   await expect(constancia.getByTestId("ficha-seccion-responde")).toContainText(
     "Escrito por el dueño",
@@ -351,6 +357,10 @@ test("etapa 10 con precio y «usar»: llega a «Protocolo completo» con su fich
   );
   await expect(constancia.getByTestId("ficha-seccion-cumplio")).toContainText(
     "Calibración: no aplica al estimar una cantidad.",
+  );
+  // S17: sin la lectura de estrés la ficha dice que la robustez no se midió (no es un hueco)
+  await expect(constancia.getByTestId("ficha-seccion-cumplio")).toContainText(
+    "Robustez: no se midió.",
   );
   await expect(
     constancia.getByTestId("ficha-seccion-vigilancia"),

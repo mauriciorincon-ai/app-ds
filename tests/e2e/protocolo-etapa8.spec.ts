@@ -10,6 +10,7 @@ import {
   cumplirEtapa6Bajas,
   cumplirEtapa6Credito,
   cumplirEtapa7,
+  estresarPrueba,
   prepararBajas,
   prepararCredito,
   sinDesborde,
@@ -98,6 +99,18 @@ test("etapa 8 con crédito: la prueba se abre una vez, se lee por segmento y cal
     )
     .toEqual(expect.arrayContaining([expect.stringMatching(/…$/), ""]));
   await expect(e8.getByTestId("protocolo-medida8")).toBeVisible();
+  await expect(e8.getByTestId("protocolo-aperturas")).toHaveText(
+    "Ya la abriste una vez.",
+  );
+
+  // S17: «Estrésalo» sobre la MISMA prueba: no es una apertura (la cuenta sigue en una), trae su frase, el ✓/⚠ con su palabra
+  // y las tres tablas, y la cifra con 10 % de ruido se guarda con la etapa
+  await e8.getByTestId("protocolo-estres8").scrollIntoViewIfNeeded();
+  await estresarPrueba(page);
+  await expect(e8.getByTestId("estres-frase")).toContainText(
+    /^Con 10 % de ruido en los números, tu /,
+  );
+  await expect(e8.getByTestId("estres-lectura").getByRole("table")).toHaveCount(3);
   await expect(e8.getByTestId("protocolo-aperturas")).toHaveText(
     "Ya la abriste una vez.",
   );

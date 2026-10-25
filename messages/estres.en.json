@@ -1,0 +1,62 @@
+{
+  "stress": {
+    "title": "Stress it",
+    "desc": "How much does this model take if the data shifts a little? The same model, without retraining it, is measured on the test that was already opened: with noise in the numbers, with one column shuffled and with a drift. It chooses and changes nothing.",
+    "button": "Stress it",
+    "running": "Stressing the model…",
+    "retry": "Measure again",
+    "error": "The model could not be stressed. Try again.",
+    "need-test": "An imported model does not carry the test it was measured on: stress it in the run where you trained it.",
+    "not-applicable": "Clustering has no target and no test: there is nothing to stress.",
+    "no-numeric": "This model uses no numeric columns: there is nowhere to put noise or drift. Below, what happens when each column is shuffled.",
+    "base": "Unperturbed: {metric} {value}, measured on the {n} rows of the test.",
+    "line": {
+      "worse": {
+        "higher": "With {pct} % noise in the numbers, your {metric} falls from {from} to {to}.",
+        "lower": "With {pct} % noise in the numbers, your {metric} rises from {from} to {to}."
+      },
+      "same": "With {pct} % noise in the numbers, your {metric} barely moves: from {from} to {to}.",
+      "better": "With {pct} % noise in the numbers, your {metric} does not get worse (from {from} to {to}); that is chance in the test, not an improvement."
+    },
+    "col": {
+      "what": "Disturbance",
+      "value": "Result",
+      "change": "Change"
+    },
+    "change": {
+      "worse": "▼ worse",
+      "same": "● about the same",
+      "better": "▲ better"
+    },
+    "noise": {
+      "title": "Noise in the numbers",
+      "desc": "Noise is added to every numeric column, in proportion to how much it varies in training.",
+      "row": "{pct} % noise"
+    },
+    "shuffle": {
+      "title": "One column shuffled",
+      "desc": "The values of one column are shuffled at a time: what the model loses is how much it relied on it. Here, the {count} that hurt most.",
+      "desc_one": "The values of one column are shuffled at a time: what the model loses is how much it relied on it. Here, the one that hurts most.",
+      "more": "{count} other columns hurt less than these.",
+      "more_one": "One other column hurts less than these."
+    },
+    "shift": {
+      "title": "A drift, like the passing of time",
+      "desc": "The numeric columns that weigh most are moved up, as if their values were different with time: {columns}.",
+      "row": "+{level} deviations",
+      "row_one": "+{level} deviation"
+    },
+    "seal": {
+      "holds": "✓ With {pct} % noise it still beats its best rival without a model: {value} against {rival}.",
+      "drops": "⚠ With {pct} % noise it stops beating its best rival without a model: {value} against {rival}.",
+      "already-lost": "⚠ Before the noise it already did not beat its best rival without a model ({base} against {rival}): noise is not the cause.",
+      "no-noise": "With no numeric columns, noise is not judged.",
+      "caveat": "This is a reading of this test, not a guarantee: other data may give another figure. The seed is fixed ({seed}): repeating it gives the same."
+    },
+    "stage8": {
+      "note": "It is optional and not a new opening: it uses the same test, with the same seal and the same winner, and chooses nothing. If you run it before registering the stage, its figure at 10 % noise and the rival without a model go into the notebook and the sheet.",
+      "saved": "This reading is saved with stage 8 when you register it.",
+      "reopen": "If you open the test again, the reading is lost and has to be requested again."
+    }
+  }
+}

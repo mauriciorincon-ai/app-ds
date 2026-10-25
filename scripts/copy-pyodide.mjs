@@ -61,6 +61,13 @@ async function main() {
   // El worker fetchea el pipeline anti-fuga desde /pyodide/pipeline.py
   // (fuente única en src/lib/ds/pipeline.py, también leída por el test de integración).
   await cp(resolve(root, "src", "lib", "ds", "pipeline.py"), join(dest, "pipeline.py"));
+  // S17 (ADR 024): lo que el usuario se lleva (receta, puntuador, servicio) se pide bajo demanda desde /plantillas/,
+  // para que nada de ello entre al peso inicial. Fuente única: src/lib/ds/plantillas/ (la CI ejecuta esos mismos archivos).
+  await cp(
+    resolve(root, "src", "lib", "ds", "plantillas"),
+    resolve(root, "public", "plantillas"),
+    { recursive: true },
+  );
 
   console.log(
     `[copy-pyodide] listo en ${dest} — ${wheels.length} wheels (${downloaded} descargadas del CDN) + pipeline.py.`,
