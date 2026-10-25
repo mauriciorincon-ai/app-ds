@@ -79,10 +79,17 @@ export function versionesDe(requirements: string): Record<string, string> {
   return versiones;
 }
 
-function reemplazar(texto: string, marca: string, por: string): string {
-  if (!texto.includes(marca)) throw new Error(`plantilla: falta la marca ${marca}`);
-  // split/join: `por` puede traer `$&` y compañía, que `String.replace` interpretaría
-  return texto.split(marca).join(por);
+/**
+ * Sustituye todas las marcas EN UNA SOLA PASADA: lo insertado nunca se vuelve a escanear. Con sustituciones en secuencia, un
+ * dato del usuario que se llamara como una marca posterior (una columna `@@VERSIONES@@`, una categoría `__PUNTUAR_PY__`) se
+ * sustituiría por segunda vez y dejaría el archivo roto. `Function` como reemplazo: `por` puede traer `$&` y compañía.
+ */
+function sustituir(texto: string, valores: Readonly<Record<string, string>>): string {
+  const marcas = Object.keys(valores);
+  for (const marca of marcas)
+    if (!texto.includes(marca)) throw new Error(`plantilla: falta la marca ${marca}`);
+  const alternativas = marcas.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return texto.replace(new RegExp(alternativas, "g"), (marca) => valores[marca]!);
 }
 
 /** JSON apto para ir dentro de un literal `r'''…'''` de Python: sin comillas simples crudas. */
@@ -107,11 +114,12 @@ export function armarReceta(
   const resto = BLOQUES.filter((id) => id !== "imports")
     .map((id) => bloques[id]!)
     .join("\n\n");
-  let salida = reemplazar(plantilla, "# @@IMPORTS@@", imports.trimEnd());
-  salida = reemplazar(salida, "# @@PIPELINE@@", resto.trimEnd());
-  salida = reemplazar(salida, "@@DECLARACION@@", jsonPython(declaracion));
-  salida = reemplazar(salida, "@@VERSIONES@@", jsonPython(versiones));
-  return salida;
+  return sustituir(plantilla, {
+    "# @@IMPORTS@@": imports.trimEnd(),
+    "# @@PIPELINE@@": resto.trimEnd(),
+    "@@DECLARACION@@": jsonPython(declaracion),
+    "@@VERSIONES@@": jsonPython(versiones),
+  });
 }
 
 /** El puntuador portátil: un HTML con el modelo y el motor de puntuar adentro. */
@@ -124,9 +132,10 @@ export function armarPuntuador(
     throw new Error("plantilla: puntuar.py no puede traer «</script»");
   // dentro de <script type="application/json"> lo único que corta es «</script»: cualquier «<» va escapado
   const json = archivoModelo.replaceAll("<", "\\u003c");
-  let salida = reemplazar(plantilla, "__MODELO_JSON__", json);
-  salida = reemplazar(salida, "__PUNTUAR_PY__", puntuarPy);
-  return salida;
+  return sustituir(plantilla, {
+    __MODELO_JSON__: json,
+    __PUNTUAR_PY__: puntuarPy,
+  });
 }
 
 export type EntradasServicio = {

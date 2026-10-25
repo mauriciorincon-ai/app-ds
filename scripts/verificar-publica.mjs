@@ -60,6 +60,26 @@ async function existe(buscar, url, metodo = "HEAD") {
  * Las tres comprobaciones, con `buscar` inyectable (la prueba la usa para demostrar que falla). Devuelve las líneas ✓ y las
  * fallas; no imprime ni sale.
  */
+/**
+ * La red de verdad, con dos reintentos para lo TRANSITORIO (el servicio no contesta o responde 5xx): `integration` es un check
+ * requerido y un parpadeo de PyPI o del CDN no debe ponerlo en rojo. Un 404 NO se reintenta: ese es el hallazgo del gate.
+ */
+async function conReintentos(url, opciones) {
+  let ultimo;
+  for (let intento = 0; intento < 3; intento++) {
+    try {
+      const respuesta = await fetch(url, { ...opciones, signal: AbortSignal.timeout(30_000) });
+      if (respuesta.status < 500) return respuesta;
+      ultimo = respuesta;
+    } catch (error) {
+      ultimo = error;
+    }
+    if (intento < 2) await new Promise((listo) => setTimeout(listo, 1500 * (intento + 1)));
+  }
+  if (ultimo instanceof Error) throw ultimo;
+  return ultimo;
+}
+
 export async function verificar({
   buscar,
   version,
@@ -119,7 +139,7 @@ async function principal() {
     process.exit(1);
   }
   const { bien, fallas } = await verificar({
-    buscar: (url, opciones) => fetch(url, { ...opciones, signal: AbortSignal.timeout(30_000) }),
+    buscar: conReintentos,
     version,
     archivosPyodide,
     pins,

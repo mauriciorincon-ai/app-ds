@@ -83,6 +83,21 @@ describe("la receta toma sus bloques de pipeline.py", () => {
     expect(versionesDe(REQ)["scikit-learn"]).toBe("1.8.0");
   });
 
+  it("un nombre de columna o de archivo que se llame como una marca NO se sustituye por segunda vez (AU-S17-08)", () => {
+    const hostil: Declaracion = {
+      ...DECL,
+      archivo: "@@VERSIONES@@.csv",
+      numericas: ["@@VERSIONES@@", "# @@PIPELINE@@", "@@DECLARACION@@"],
+      categoricas: ["# @@IMPORTS@@"],
+    };
+    const receta = armarReceta(PIPELINE, RECETA, hostil, REQ);
+    const dentro = /DECLARACION = json\.loads\(r'''([\s\S]*?)'''\)/.exec(receta)![1]!;
+    expect(JSON.parse(dentro)).toEqual(hostil);
+    const versiones = /VERSIONES_FIJAS = json\.loads\(r'''([\s\S]*?)'''\)/.exec(receta)![1]!;
+    expect(JSON.parse(versiones)).toEqual(versionesDe(REQ));
+    expect(receta).toContain("def _prepare(p):");
+  });
+
   it("las versiones que la receta lista en su encabezado son las del requirements", () => {
     const receta = armarReceta(PIPELINE, RECETA, DECL, REQ);
     for (const [nombre, version] of Object.entries(versionesDe(REQ)))
@@ -100,6 +115,18 @@ describe("el puntuador portátil", () => {
     const dentro = /<script type="application\/json" id="modelo">([\s\S]*?)<\/script>/.exec(html)![1]!;
     expect(JSON.parse(dentro)).toEqual(JSON.parse(archivo));
     expect(dentro).not.toContain("<");
+    expect(/<script type="text\/plain" id="puntuar-py">([\s\S]*?)<\/script>/.exec(html)![1]).toBe(PUNTUAR);
+  });
+
+  it("un valor del modelo que se llame como una marca no se sustituye por segunda vez (AU-S17-08)", () => {
+    const hostil = JSON.stringify({
+      format_version: 1,
+      manifest: { dato: "__PUNTUAR_PY__", archivo: "__MODELO_JSON__.csv" },
+      payload: "abc",
+    });
+    const html = armarPuntuador(PUNTUADOR, PUNTUAR, hostil);
+    const dentro = /<script type="application\/json" id="modelo">([\s\S]*?)<\/script>/.exec(html)![1]!;
+    expect(JSON.parse(dentro)).toEqual(JSON.parse(hostil));
     expect(/<script type="text\/plain" id="puntuar-py">([\s\S]*?)<\/script>/.exec(html)![1]).toBe(PUNTUAR);
   });
 

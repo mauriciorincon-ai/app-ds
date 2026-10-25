@@ -247,38 +247,61 @@ describe("los agrupadores: puntuar.py puntúa como score_new_data (el servicio n
   }, 600_000);
 });
 
+/** Las celdas de texto de los tres archivos del kit (≥ 3 caracteres, no numéricas, no son un encabezado). */
+function celdasDelKit(): Set<string> {
+  const celdas = new Set<string>();
+  for (const [, csv] of KIT) {
+    const t = tablaCruda(csv);
+    for (const fila of t.rows)
+      for (const v of fila)
+        if (v.length >= 3 && Number.isNaN(Number(v)) && !t.headers.includes(v))
+          celdas.add(v);
+  }
+  return celdas;
+}
+
+/** El barrido: qué textos traen entre comillas, dobles o simples, una celda del kit. Vacío = ninguna. */
+function barrer(textos: [string, string][], celdas: Set<string>): string[] {
+  const hallazgos: string[] = [];
+  for (const [nombre, texto] of textos)
+    for (const v of celdas)
+      if (texto.includes(`"${v}"`) || texto.includes(`'${v}'`))
+        hallazgos.push(`${nombre}: «${v}»`);
+  return hallazgos;
+}
+
 describe("lo que se arma sin el modelo no lleva un valor del kit", () => {
+  const textosSinModelo = (): [string, string][] => [
+    ["plantilla receta", RECETA_TPL],
+    ["plantilla servicio", SERVICIO],
+    ["plantilla puntuador", PUNTUADOR_TPL],
+    ["puntuar.py", PUNTUAR],
+    ...matriz.map((m): [string, string] => [
+      m.receta,
+      readFileSync(resolve(SALIDA, m.receta), "utf8"),
+    ]),
+  ];
+
   it("ni la receta ni las plantillas traen entre comillas una celda de texto de los tres archivos", () => {
-    const celdas = new Set<string>();
-    for (const [, csv] of KIT) {
-      const t = tablaCruda(csv);
-      for (const fila of t.rows)
-        for (const v of fila)
-          if (
-            v.length >= 3 &&
-            Number.isNaN(Number(v)) &&
-            !t.headers.includes(v)
-          )
-            celdas.add(v);
-    }
+    const celdas = celdasDelKit();
     expect(celdas.size).toBeGreaterThan(5);
-    const textos: [string, string][] = [
-      ["plantilla receta", RECETA_TPL],
-      ["plantilla servicio", SERVICIO],
-      ["plantilla puntuador", PUNTUADOR_TPL],
-      ["puntuar.py", PUNTUAR],
-      ...matriz.map((m): [string, string] => [
-        m.receta,
-        readFileSync(resolve(SALIDA, m.receta), "utf8"),
-      ]),
-    ];
     expect(matriz.length).toBeGreaterThan(30);
-    const hallazgos: string[] = [];
-    for (const [nombre, texto] of textos)
-      for (const v of celdas)
-        if (texto.includes(`"${v}"`) || texto.includes(`'${v}'`))
-          hallazgos.push(`${nombre}: «${v}»`);
-    expect(hallazgos.slice(0, 5)).toEqual([]);
+    expect(barrer(textosSinModelo(), celdas).slice(0, 5)).toEqual([]);
+  });
+
+  it("el barrido se demuestra fallando: con un valor del kit inyectado en una receta, lo encuentra (comillas dobles y simples)", () => {
+    const celdas = celdasDelKit();
+    const [valor] = [...celdas];
+    const [nombre, receta] = textosSinModelo().find(([n]) => n.endsWith(".py"))!;
+    for (const comilla of ['"', "'"]) {
+      const inyectada: [string, string] = [
+        nombre,
+        `${receta}\nFUGA = ${comilla}${valor}${comilla}\n`,
+      ];
+      expect(barrer([inyectada], celdas)).toEqual([`${nombre}: «${valor}»`]);
+    }
+    // y sin inyectar, la misma receta está limpia
+    expect(barrer([[nombre, receta]], celdas)).toEqual([]);
   });
 
   it("al terminar queda la matriz para los pasos de Python de la CI", () => {
