@@ -22,7 +22,7 @@ import { byTask, matchByTask } from "@/engine/despacho";
 import type { SupervisedTask } from "@/engine/tarea";
 import type { CsvTable } from "@/lib/ds/csv";
 import type { StressResult, TestResult } from "@/workers/protocol";
-import { SEAL_NOISE_LEVEL, noiseAt } from "@/engine/estres";
+import { SEAL_NOISE_LEVEL, noiseAt } from "@/engine/estres-niveles";
 import {
   REMUESTREOS,
   SEMILLA_8,

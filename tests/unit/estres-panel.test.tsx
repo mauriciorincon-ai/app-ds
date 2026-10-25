@@ -1,4 +1,4 @@
-// S17 (ADR 023): el panel «Estrésalo» de Probeta y su vista. Ningún worker: `ask` es un doble que entrega lo que
+// S17 (ADR 023): el panel «Estrésalo» de Probeta y su vista. Ningún worker de verdad: un doble entrega lo que
 // pipeline.py escribió (los fixtures del contrato). Lo que estas pruebas hacen FALLAR si se rompe:
 //  · nada se mide hasta pulsar el botón, y el comando es «stress» sin payload;
 //  · la frase dice cuánto cae y de dónde a dónde, y el ✓ / ⚠ lleva su palabra (el color nunca solo);
@@ -20,7 +20,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EstresDe } from "@/components/estres/EstresPanel";
 import { LOCALE_STORAGE_KEY } from "@/i18n/config";
-import type { RunnerCall, RunnerResponse } from "@/workers/protocol";
+import type { RunnerResponse } from "@/workers/protocol";
 
 vi.mock("@sentry/nextjs", () => ({
   addBreadcrumb: vi.fn(),
@@ -57,14 +57,21 @@ const DE: EstresDe = {
   unit: null,
 };
 
-type Respuesta = (m: RunnerResponse) => void;
+/** Un worker de mentira: al recibir el comando entrega la respuesta a quien escucha, como el real. */
 function doble(respuesta: RunnerResponse | ((id: number) => RunnerResponse)) {
-  const llamadas: RunnerCall[] = [];
-  const ask = vi.fn((call: RunnerCall, onResponse: Respuesta) => {
-    llamadas.push(call);
-    onResponse(typeof respuesta === "function" ? respuesta(1) : respuesta);
-  });
-  return { ask, llamadas };
+  const oyentes = new Set<(e: MessageEvent<RunnerResponse>) => void>();
+  const enviados: { id: number; type: string }[] = [];
+  const w = {
+    addEventListener: (_: string, f: (e: MessageEvent<RunnerResponse>) => void) => oyentes.add(f),
+    removeEventListener: (_: string, f: (e: MessageEvent<RunnerResponse>) => void) => oyentes.delete(f),
+    postMessage: (m: { id: number; type: string }) => {
+      enviados.push(m);
+      const r = typeof respuesta === "function" ? respuesta(m.id) : respuesta;
+      const respondida = { ...r, id: m.id } as RunnerResponse;
+      for (const f of [...oyentes]) f({ data: respondida } as MessageEvent<RunnerResponse>);
+    },
+  };
+  return { worker: { current: w as unknown as Worker }, enviados, oyentes };
 }
 const resultado = (result: unknown): RunnerResponse => ({
   id: 1,
@@ -80,13 +87,16 @@ afterEach(cleanup);
 
 describe("el panel «Estrésalo»", () => {
   it("no mide hasta pulsar; el comando es «stress» sin payload; la lectura trae la frase, el ✓/⚠ con su palabra y las tres tablas", async () => {
-    const { ask, llamadas } = doble(resultado(FIX));
-    pintar(<EstresPanel de={DE} ask={ask} />);
-    expect(ask).not.toHaveBeenCalled();
+    const { worker, enviados } = doble(resultado(FIX));
+    pintar(<EstresPanel de={DE} worker={worker} />);
+    expect(enviados).toHaveLength(0);
     expect(screen.queryByTestId("estres-lectura")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Estrésalo" }));
-    expect(llamadas).toEqual([{ type: "stress" }]);
+    expect(enviados).toHaveLength(1);
+    expect(enviados[0]!.type).toBe("stress");
+    // el id del panel es negativo: la máquina de estados del hook (ids ≥ 0) no lo toma por suyo
+    expect(enviados[0]!.id).toBeLessThan(0);
 
     const lectura = await screen.findByTestId("estres-lectura");
     // 10 % de ruido: F1 de 0.68 a 0.65 (fixture escrito por Python)
@@ -108,13 +118,13 @@ describe("el panel «Estrésalo»", () => {
 
   it("el rival sin modelo decide el ✓: ganándole sale ✓, si no ⚠ (y la cifra se ve igual)", async () => {
     const gana = doble(resultado(FIX));
-    pintar(<EstresPanel de={{ ...DE, rival: 0.3 }} ask={gana.ask} />);
+    pintar(<EstresPanel de={{ ...DE, rival: 0.3 }} worker={gana.worker} />);
     fireEvent.click(screen.getByRole("button", { name: "Estrésalo" }));
     expect((await screen.findByTestId("estres-sello")).textContent).toContain("✓ Con 10 % de ruido sigue ganándole");
     cleanup();
 
     const pierde = doble(resultado(FIX));
-    pintar(<EstresPanel de={{ ...DE, rival: 0.641 }} ask={pierde.ask} />);
+    pintar(<EstresPanel de={{ ...DE, rival: 0.641 }} worker={pierde.worker} />);
     fireEvent.click(screen.getByRole("button", { name: "Estrésalo" }));
     const sello = await screen.findByTestId("estres-sello");
     expect(sello.textContent).toContain("⚠ Con 10 % de ruido deja de ganarle");
@@ -123,8 +133,8 @@ describe("el panel «Estrésalo»", () => {
 
   it("una respuesta que el lector rechaza no se pinta: se dice que no se pudo", async () => {
     const mala = { ...FIX, n_test: FIX.n_test + 1 };
-    const { ask } = doble(resultado(mala));
-    pintar(<EstresPanel de={DE} ask={ask} />);
+    const { worker } = doble(resultado(mala));
+    pintar(<EstresPanel de={DE} worker={worker} />);
     fireEvent.click(screen.getByRole("button", { name: "Estrésalo" }));
     expect((await screen.findByRole("alert")).textContent).toContain("No se pudo estresar el modelo");
     expect(screen.queryByTestId("estres-lectura")).toBeNull();
@@ -132,13 +142,13 @@ describe("el panel «Estrésalo»", () => {
 
   it("un modelo importado dice que no trae la prueba; otro error, que se vuelva a intentar", async () => {
     const importado = doble({ id: 1, type: "error", message: "RuntimeError: no-eval" });
-    pintar(<EstresPanel de={DE} ask={importado.ask} />);
+    pintar(<EstresPanel de={DE} worker={importado.worker} />);
     fireEvent.click(screen.getByRole("button", { name: "Estrésalo" }));
     expect((await screen.findByRole("alert")).textContent).toContain("no trae la prueba");
     cleanup();
 
     const otro = doble({ id: 1, type: "error", message: "boom" });
-    pintar(<EstresPanel de={DE} ask={otro.ask} />);
+    pintar(<EstresPanel de={DE} worker={otro.worker} />);
     fireEvent.click(screen.getByRole("button", { name: "Estrésalo" }));
     expect((await screen.findByRole("alert")).textContent).toContain("Vuelve a intentarlo");
   });
@@ -150,12 +160,12 @@ describe("el panel «Estrésalo»", () => {
   });
 
   it("mientras el worker ajusta otro modelo no se mide; y la lectura de otro resultado no se enseña", async () => {
-    const { ask } = doble(resultado(FIX));
-    const { rerender } = pintar(<EstresPanel de={DE} ask={ask} ocupado />);
+    const { worker } = doble(resultado(FIX));
+    const { rerender } = pintar(<EstresPanel de={DE} worker={worker} ocupado />);
     expect((screen.getByRole("button", { name: "Estrésalo" }) as HTMLButtonElement).disabled).toBe(true);
     rerender(
       <I18nProvider>
-        <EstresPanel de={DE} ask={ask} />
+        <EstresPanel de={DE} worker={worker} />
       </I18nProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Estrésalo" }));
@@ -163,7 +173,7 @@ describe("el panel «Estrésalo»", () => {
     // otro modelo elegido ⇒ otro resultado ⇒ la lectura vieja no aplica
     rerender(
       <I18nProvider>
-        <EstresPanel de={{ ...DE, result: {} }} ask={ask} />
+        <EstresPanel de={{ ...DE, result: {} }} worker={worker} />
       </I18nProvider>,
     );
     await waitFor(() => expect(screen.queryByTestId("estres-lectura")).toBeNull());
@@ -172,8 +182,8 @@ describe("el panel «Estrésalo»", () => {
 
   it("en inglés, los mismos textos", async () => {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, "en");
-    const { ask } = doble(resultado(FIX));
-    pintar(<EstresPanel de={DE} ask={ask} />);
+    const { worker } = doble(resultado(FIX));
+    pintar(<EstresPanel de={DE} worker={worker} />);
     fireEvent.click(await screen.findByRole("button", { name: "Stress it" }));
     expect((await screen.findByTestId("estres-frase")).textContent).toBe(
       "With 10 % noise in the numbers, your F1 falls from 0.68 to 0.65.",

@@ -4,10 +4,10 @@
 // la medida corre en el worker que ya tiene el modelo y su prueba (no reentrena). Un modelo importado no trae la prueba
 // con la que se midió (`no-eval`) y agrupar no tiene ninguna (`not-applicable`): los dos lo dicen en pantalla en vez
 // de callar. La lectura pertenece al RESULTADO que la pidió: si cambias de modelo (o corres otra liga), se va.
-import { useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { Button, Card } from "@/components/ui";
-import type { RunnerCall, RunnerResponse, StressResult, TargetUnit } from "@/workers/protocol";
+import type { RunnerResponse, StressResult, TargetUnit } from "@/workers/protocol";
 import type { PrimaryMetric } from "@/engine/verdict";
 import type { SupervisedTask } from "@/engine/tarea";
 import {
@@ -17,10 +17,8 @@ import {
 import { EstresVista } from "./EstresVista";
 import { TEXTOS_ESTRES } from "./textos";
 
-export type Ask = (
-  call: RunnerCall,
-  onResponse: (message: RunnerResponse) => void,
-) => void;
+/** Los ids del panel son negativos: la máquina de estados del hook (ids ≥ 0) ignora lo que no pidió ella. */
+let ultimoId = 0;
 
 /** Lo que el panel necesita saber del resultado supervisado que estresa (el lector lo coteja con la respuesta). */
 export type EstresDe = {
@@ -44,20 +42,28 @@ type Estado =
 
 export function EstresPanel({
   de,
-  ask,
+  worker,
   ocupado = false,
 }: {
   /** `null` al agrupar: no hay objetivo ni prueba. */
   de: EstresDe | null;
-  ask?: Ask;
+  /** El worker del modelo activo: se lee al pulsar, no antes (puede haberse reiniciado). */
+  worker?: RefObject<Worker | null>;
   /** El worker está ajustando otro modelo: no se mide mientras tanto. */
   ocupado?: boolean;
 }) {
   const t = useTextosEtapa(TEXTOS_ESTRES);
   const [estado, setEstado] = useState<Estado>({ tipo: "inactivo" });
+  // el oyente en curso, para quitarlo si el panel se va antes de la respuesta
+  const quitar = useRef<(() => void) | null>(null);
+  useEffect(() => () => quitar.current?.(), []);
 
   const medir = () => {
-    if (!de || !ask) return;
+    const w = worker?.current;
+    if (!de || !w) {
+      setEstado({ tipo: "error", motivo: "error" });
+      return;
+    }
     setEstado({ tipo: "midiendo" });
     const sent: StressSent = {
       task: de.task,
@@ -66,8 +72,11 @@ export function EstresPanel({
       numeric: de.numeric,
       categorical: de.categorical,
     };
-    ask({ type: "stress" }, (message) => {
-      if (message.type === "progress") return;
+    const id = --ultimoId;
+    const alResponder = (event: MessageEvent<RunnerResponse>) => {
+      const message = event.data;
+      if (message.id !== id || message.type === "progress") return;
+      quitar.current?.();
       if (message.type === "error") {
         setEstado({
           tipo: "error",
@@ -75,14 +84,20 @@ export function EstresPanel({
         });
         return;
       }
-      if (message.type !== "result" || message.command !== "stress") return;
+      if (message.command !== "stress") return;
       const checked = validateStressResult(message.result, sent);
       setEstado(
         checked.ok
           ? { tipo: "lista", de: de.result, r: checked.value }
           : { tipo: "error", motivo: "error" },
       );
-    });
+    };
+    w.addEventListener("message", alResponder);
+    quitar.current = () => {
+      w.removeEventListener("message", alResponder);
+      quitar.current = null;
+    };
+    w.postMessage({ id, type: "stress" });
   };
 
   const lectura =
@@ -106,7 +121,7 @@ export function EstresPanel({
                 icon={lectura ? "retry" : "play"}
                 variant={lectura ? "secondary" : "primary"}
                 onClick={medir}
-                disabled={ocupado || estado.tipo === "midiendo" || !ask}
+                disabled={ocupado || estado.tipo === "midiendo" || !worker}
               >
                 {lectura ? t("stress.retry") : t("stress.button")}
               </Button>

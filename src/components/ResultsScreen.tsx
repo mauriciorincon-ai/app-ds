@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { matchByTask, taskOf } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
@@ -45,7 +45,7 @@ import {
   RegressionVerdict,
 } from "./RegressionResults";
 import { WhySection } from "./WhySection";
-import type { Ask, EstresDe } from "./estres/EstresPanel";
+import type { EstresDe } from "./estres/EstresPanel";
 import { Button, Card, MetricTile } from "./ui";
 import {
   LEVEL_MARK,
@@ -78,8 +78,8 @@ type ResultsProps<R> = {
   onAgain: () => void;
   onUseModel: () => void;
   onExportModel: () => void;
-  /** S17: un comando al worker del modelo activo (la prueba de estrés). */
-  onAsk?: Ask;
+  /** S17: el worker del modelo activo (la prueba de estrés le pide el comando «stress»). */
+  worker?: RefObject<Worker | null>;
   exportState: ExportState;
   /** S5: el reparto con que se entrenó (pendientes del Nivel 2 y «fuera»). */
   routing: Routing | null;
@@ -155,7 +155,7 @@ function SupervisedResults({
   onAgain,
   onUseModel,
   onExportModel,
-  onAsk,
+  worker,
   exportState,
   routing,
   choice,
@@ -351,7 +351,7 @@ function SupervisedResults({
       {/* S17: ¿cuánto aguanta? El mismo modelo, sin reentrenar, sobre la prueba ya abierta. */}
       <EstresPanel
         de={estresDe}
-        ask={onAsk}
+        worker={worker}
         ocupado={!modelReady || choice.status === "fitting"}
       />
 

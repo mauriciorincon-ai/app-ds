@@ -4,15 +4,18 @@
 // No elige nada ni abre la prueba otra vez. El juicio es la regla de siempre (`computeVerdict` con `METRIC_RULES`): no
 // se inventa un umbral nuevo. La cifra se ve aunque el criterio no pase.
 import type { StressResult } from "@/workers/protocol";
+import { SEAL_NOISE_LEVEL, noiseAt } from "./estres-niveles";
 import { METRIC_RULES, computeVerdict, type PrimaryMetric } from "./verdict";
 
-/** Espejo de pipeline.py (STRESS_*): paridad vigilada en tests/unit/estres.test.ts. */
-export const NOISE_LEVELS = [0.05, 0.1, 0.2] as const;
-export const SHIFT_LEVELS = [0.5, 1] as const;
-export const SHUFFLE_REPEATS = 5;
-export const SHIFT_COLUMNS = 3;
-/** El nivel con que se juzga y con que se escribe el sello de la ficha: 10 % de la desviación (ADR 023). */
-export const SEAL_NOISE_LEVEL = 0.1;
+export {
+  NOISE_LEVELS,
+  SEAL_NOISE_LEVEL,
+  SHIFT_COLUMNS,
+  SHIFT_LEVELS,
+  SHUFFLE_REPEATS,
+  noiseAt,
+} from "./estres-niveles";
+
 /** Un cambio menor que esto (medio punto, o 0,5 % del error base) se lee «casi igual», no «cae» ni «mejora». */
 export const SAME_TOLERANCE = 0.005;
 
@@ -38,11 +41,6 @@ export function trendOf(r: StressResult, value: number): Trend {
   if (delta > tolerance) return "worse";
   if (delta < -tolerance) return "better";
   return "same";
-}
-
-/** El renglón de ruido de un nivel, o `undefined` si ese nivel no se midió. */
-export function noiseAt(r: StressResult, level: number) {
-  return r.noise.find((n) => n.level === level);
 }
 
 /** La columna que más dolió al barajarla, o `null` si ninguna empeora el resultado. */

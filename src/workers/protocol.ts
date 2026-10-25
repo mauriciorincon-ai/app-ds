@@ -913,12 +913,6 @@ export type RunnerRequest =
 
 export type RunnerCommand = RunnerRequest["type"];
 
-/** Una petición sin su `id` (lo pone quien la manda): lo que un panel diferido le pide al worker de Probeta. */
-export type RunnerCall = RunnerRequest extends infer R
-  ? R extends { id: number }
-    ? Omit<R, "id">
-    : never
-  : never;
 
 export type RunnerResponse =
   | {
