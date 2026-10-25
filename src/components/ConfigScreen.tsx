@@ -13,6 +13,7 @@ import {
 } from "@/engine/tarea";
 import { useT } from "@/i18n/use-translation";
 import type { OrigenArchivo } from "@/lib/ds/archivo";
+import type { CsvTable } from "@/lib/ds/csv";
 import { formatEstimate } from "@/lib/duration";
 import type { ClusterPlan, TargetPlan } from "@/lib/useExperiment";
 import type { DatasetSummary } from "@/workers/protocol";
@@ -22,6 +23,11 @@ import { TaskCard } from "./TaskCard";
 import { Badge, Button, Card } from "./ui";
 
 // S18: la hoja leída, los posibles datos personales y el plan de limpieza viajan en su propio chunk (con sus textos).
+// S18: la exploración (distribuciones y correlaciones, con su resumen comprobado) también en su chunk.
+const ExploracionPanel = dynamic(
+  () => import("./exploracion/ExploracionPanel").then((m) => m.ExploracionPanel),
+  { ssr: false },
+);
 const LimpiezaPanel = dynamic(
   () => import("./limpieza/LimpiezaPanel").then((m) => m.LimpiezaPanel),
   { ssr: false },
@@ -44,6 +50,7 @@ export function ConfigScreen({
   origen = null,
   ingesta = null,
   onDecidirLimpieza,
+  getTable,
   onSelectTarget,
   onSelectCluster,
   onAnswerTask,
@@ -63,6 +70,8 @@ export function ConfigScreen({
   /** S18: los posibles datos personales y el plan de limpieza, con lo decidido. */
   ingesta?: Ingesta | null;
   onDecidirLimpieza?: (id: string, decision: Decision | null) => void;
+  /** S18: la tabla saneada, para explorarla (se lee al pulsar «Explorar»). */
+  getTable?: () => CsvTable | null;
   onSelectTarget: (target: string) => void;
   /** S7: elegir agrupar filas parecidas en lugar de un objetivo. */
   onSelectCluster?: () => void;
@@ -119,6 +128,8 @@ export function ConfigScreen({
           onDecidir={onDecidirLimpieza}
         />
       )}
+
+      {getTable && <ExploracionPanel getTable={getTable} />}
 
       {dataset.dateColumns.length > 0 && (
         <p className="rounded-md border border-caution/40 bg-caution/10 p-3 text-sm">

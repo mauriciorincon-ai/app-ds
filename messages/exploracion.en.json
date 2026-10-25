@@ -1,0 +1,47 @@
+{
+  "exploracion": {
+    "titulo": "Explore your data",
+    "desc": "How each column is spread and which columns move together, with a written summary checked against the numbers. It changes and chooses nothing.",
+    "boton": "Explore",
+    "ocultar": "Hide the exploration",
+    "calculando": "Exploring…",
+    "verificado": "Checked against your numbers",
+    "ayuda": "Every figure in the summary comes from your table, recomputed separately. It is a check of the text, not a conclusion about your data.",
+    "no_cuadro": "The written summary did not match the numbers, so it is not shown; the tables below are the ones that count.",
+    "resumen": {
+      "columnas": "Your table has {filas} rows. Numeric columns: {numericas}; categorical: {categoricas}.",
+      "sesgadas": "Heavily skewed (almost all values on one side and a few far away): {lista}.",
+      "sesgada": "{column} (skew {sesgo})",
+      "sin_sesgadas": "No numeric column is heavily skewed.",
+      "vacias": "With many empties: {lista}.",
+      "vacia": "{column} ({pct} %)",
+      "pareja": "The two numeric columns that move together the most: {par} (r = {r}; {sentido}).",
+      "par": "{a} and {b}",
+      "sentido": { "junto": "they rise and fall together", "contrario": "when one rises, the other falls" },
+      "sin_pareja": "No pair of numeric columns clearly moves together.",
+      "cramer": "Among the categorical columns, the strongest association is {par} (Cramér’s V {v}).",
+      "par_cramer": "{a} with {b}",
+      "aviso": "Two columns moving together does not mean one causes the other."
+    },
+    "distribuciones": {
+      "titulo": "How each column is spread",
+      "numerica": "numeric · minimum {min} · median {mediana} · mean {media} · maximum {max}",
+      "categorica_one": "categorical · 1 category",
+      "categorica": "categorical · {distintas} categories",
+      "vacios_one": "1 empty",
+      "vacios": "{count} empty",
+      "otras": "Others",
+      "casilla": "{desde} to {hasta}"
+    },
+    "matriz": {
+      "titulo": "Correlation between numeric columns (Pearson, from −1 to 1)",
+      "ayuda": "Close to 1: they rise and fall together. Close to −1: when one rises, the other falls. Close to 0: they do not move together in a straight line. “–” means there are not enough rows with both.",
+      "recortada": "The first {max} numeric columns of {total} are shown.",
+      "sin": "There are fewer than two numeric columns: no correlations to show."
+    },
+    "cramer": {
+      "titulo": "Association between categorical columns (Cramér’s V, from 0 to 1)",
+      "sin": "There are no two categorical columns with between 2 and 20 categories to associate."
+    }
+  }
+}

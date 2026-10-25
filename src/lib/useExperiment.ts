@@ -1262,6 +1262,9 @@ export function useExperiment() {
     [],
   );
 
+  /** S18: la tabla saneada con que se entrena (la exploración la lee al pulsar «Explorar»). */
+  const getTable = useCallback(() => tableRef.current, []);
+
   /** S18: aprobar, rechazar o dejar sin decidir un paso del plan de limpieza. Lo que no está aprobado no se aplica. */
   const decidirLimpieza = useCallback(
     (id: string, decision: Decision | null) => {
@@ -1802,6 +1805,7 @@ export function useExperiment() {
     loadCsv,
     loadXlsx,
     decidirLimpieza,
+    getTable,
     selectTarget,
     selectCluster,
     answerTask,

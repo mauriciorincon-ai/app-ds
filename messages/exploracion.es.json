@@ -1,0 +1,47 @@
+{
+  "exploracion": {
+    "titulo": "Explora tus datos",
+    "desc": "Cómo se reparte cada columna y qué columnas se mueven juntas, con un resumen escrito que se comprueba contra los números. No cambia ni elige nada.",
+    "boton": "Explorar",
+    "ocultar": "Ocultar la exploración",
+    "calculando": "Explorando…",
+    "verificado": "Verificado contra tus números",
+    "ayuda": "Cada cifra del resumen sale de tu tabla, recalculada aparte. Es una comprobación del texto, no una conclusión sobre tus datos.",
+    "no_cuadro": "El resumen escrito no cuadró con los números, así que no se muestra; las tablas de abajo son las que valen.",
+    "resumen": {
+      "columnas": "Tu tabla tiene {filas} filas. Columnas numéricas: {numericas}; categóricas: {categoricas}.",
+      "sesgadas": "Muy sesgadas (casi todos los valores de un lado y unos pocos muy lejos): {lista}.",
+      "sesgada": "{column} (sesgo {sesgo})",
+      "sin_sesgadas": "Ninguna columna numérica está muy sesgada.",
+      "vacias": "Con muchos vacíos: {lista}.",
+      "vacia": "{column} ({pct} %)",
+      "pareja": "Las dos numéricas que más se mueven juntas: {par} (r = {r}; {sentido}).",
+      "par": "{a} y {b}",
+      "sentido": { "junto": "suben y bajan juntas", "contrario": "cuando una sube, la otra baja" },
+      "sin_pareja": "Ninguna pareja de numéricas se mueve claramente junta.",
+      "cramer": "Entre las categóricas, la asociación más fuerte es {par} (V de Cramér {v}).",
+      "par_cramer": "{a} con {b}",
+      "aviso": "Que dos columnas se muevan juntas no dice que una cause la otra."
+    },
+    "distribuciones": {
+      "titulo": "Cómo se reparte cada columna",
+      "numerica": "numérica · mínimo {min} · mediana {mediana} · media {media} · máximo {max}",
+      "categorica_one": "categórica · 1 categoría",
+      "categorica": "categórica · {distintas} categorías",
+      "vacios_one": "1 vacío",
+      "vacios": "{count} vacíos",
+      "otras": "Otras",
+      "casilla": "{desde} a {hasta}"
+    },
+    "matriz": {
+      "titulo": "Correlación entre columnas numéricas (Pearson, de −1 a 1)",
+      "ayuda": "Cerca de 1: suben y bajan juntas. Cerca de −1: cuando una sube, la otra baja. Cerca de 0: no se mueven juntas en línea recta. «–» es que no hay suficientes filas con las dos.",
+      "recortada": "Se muestran las primeras {max} columnas numéricas de {total}.",
+      "sin": "Hay menos de dos columnas numéricas: no hay correlaciones que mostrar."
+    },
+    "cramer": {
+      "titulo": "Asociación entre columnas categóricas (V de Cramér, de 0 a 1)",
+      "sin": "No hay dos columnas categóricas con entre 2 y 20 categorías para asociar."
+    }
+  }
+}

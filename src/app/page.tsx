@@ -37,6 +37,7 @@ export default function Home() {
     loadCsv,
     loadXlsx,
     decidirLimpieza,
+    getTable,
     selectTarget,
     selectCluster,
     answerTask,
@@ -77,6 +78,7 @@ export default function Home() {
           origen={state.origen}
           ingesta={state.ingesta}
           onDecidirLimpieza={decidirLimpieza}
+          getTable={getTable}
           onSelectTarget={selectTarget}
           onSelectCluster={selectCluster}
           onAnswerTask={answerTask}
