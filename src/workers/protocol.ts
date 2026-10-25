@@ -825,6 +825,61 @@ export type SimulateResult = {
   elapsed_ms: number;
 };
 
+/** S19: un nodo del árbol de reglas ya en la forma que se descarga. «left» es «no» (≤ el corte, o «no es» la categoría). */
+export type RuleNode =
+  | { leaf: true; pred: string | number; n: number }
+  | {
+      leaf: false;
+      column: string;
+      kind: "numeric";
+      threshold: number;
+      left: RuleNode;
+      right: RuleNode;
+    }
+  | {
+      leaf: false;
+      column: string;
+      kind: "categorical";
+      category: string;
+      left: RuleNode;
+      right: RuleNode;
+    };
+
+export type RulesResult = {
+  task: TrainTask;
+  tree: RuleNode;
+  /** La mediana de entrenamiento con que se llenan los vacíos de cada numérica. */
+  numeric: { column: string; median: number }[];
+  /** Cuánto coinciden las reglas con el modelo en filas que el árbol no vio (acuerdo, o R² al estimar). */
+  fidelity: { metric: "agreement" | "r2"; value: number; n: number };
+  /** Cuánto aciertan las reglas frente a la verdad, junto al modelo; `null` al agrupar. */
+  truth: {
+    metric: "accuracy" | "mae";
+    rules: number;
+    model: number;
+    n: number;
+  } | null;
+  depth: number;
+  leaves: number;
+  n_fit: number;
+  elapsed_ms: number;
+};
+
+/** S19: lo real y lo predicho de un CSV nuevo que trae el resultado (dos clases 0/1, varias 0..K−1, estimar en sus unidades). */
+export type EvaluateNewPayload = { headers: string[]; rows: string[][] };
+
+export type EvaluateNewResult = {
+  task: SupervisedTask;
+  n_rows: number;
+  n_used: number;
+  dropped: { empty: number; unknown: number };
+  y: number[];
+  pred: number[];
+  /** Solo dos clases: el puntaje de la clase positiva por fila. */
+  score: number[] | null;
+  elapsed_ms: number;
+};
+
 export type FitWinnerResult = {
   task: SupervisedTask;
   winner: MemberId;
@@ -956,6 +1011,9 @@ export type RunnerRequest =
   // S19: el simulador «¿qué pasaría si?» (el modelo retenido) y el ajuste del ganador del Protocolo (solo entrenamiento).
   | { id: number; type: "simulate"; payload: SimulatePayload }
   | { id: number; type: "fit-winner"; payload: FitWinnerPayload }
+  // S19: el modelo en reglas (sin payload) y vigilar el desempeño con un CSV nuevo que trae el resultado.
+  | { id: number; type: "rules" }
+  | { id: number; type: "evaluate-new"; payload: EvaluateNewPayload }
   | {
       id: number;
       type: "fit-member";
@@ -996,6 +1054,8 @@ export type RunnerResponse =
   | { id: number; type: "result"; command: "interval"; result: unknown }
   | { id: number; type: "result"; command: "simulate"; result: unknown }
   | { id: number; type: "result"; command: "fit-winner"; result: unknown }
+  | { id: number; type: "result"; command: "rules"; result: unknown }
+  | { id: number; type: "result"; command: "evaluate-new"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }

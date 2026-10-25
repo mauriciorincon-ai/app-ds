@@ -1,0 +1,74 @@
+{
+  "task": "binaria",
+  "tree": {
+    "leaf": false,
+    "column": "correos_abiertos",
+    "kind": "numeric",
+    "left": {
+      "leaf": false,
+      "column": "visitas_web",
+      "kind": "numeric",
+      "left": {
+        "leaf": true,
+        "pred": "0",
+        "n": 27
+      },
+      "right": {
+        "leaf": false,
+        "column": "dispositivo",
+        "kind": "categorical",
+        "left": {
+          "leaf": true,
+          "pred": "0",
+          "n": 23
+        },
+        "right": {
+          "leaf": true,
+          "pred": "1",
+          "n": 25
+        },
+        "category": "movil"
+      },
+      "threshold": 13.5
+    },
+    "right": {
+      "leaf": true,
+      "pred": "1",
+      "n": 75
+    },
+    "threshold": 10.5
+  },
+  "numeric": [
+    {
+      "column": "edad",
+      "median": 47
+    },
+    {
+      "column": "ingreso_mensual",
+      "median": 4410
+    },
+    {
+      "column": "visitas_web",
+      "median": 20.5
+    },
+    {
+      "column": "correos_abiertos",
+      "median": 10.5
+    }
+  ],
+  "fidelity": {
+    "metric": "agreement",
+    "value": 0.86,
+    "n": 50
+  },
+  "truth": {
+    "metric": "accuracy",
+    "rules": 0.7,
+    "model": 0.76,
+    "n": 50
+  },
+  "depth": 3,
+  "leaves": 4,
+  "n_fit": 150,
+  "elapsed_ms": 26
+}

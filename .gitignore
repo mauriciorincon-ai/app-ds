@@ -12,6 +12,7 @@ public/pyodide/
 public/plantillas/
 # Lo que la prueba de integración deja para los pasos de Python de la CI (S17).
 tests/integration/.salida/
+tests/integration/.salida-reglas/
 # El brochure servido en /conoce: derivado de docs/BROCHURE.html en prebuild (misma política).
 public/conoce.html
 .env

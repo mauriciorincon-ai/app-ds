@@ -1,0 +1,74 @@
+{
+  "task": "multiclase",
+  "tree": {
+    "leaf": false,
+    "column": "uso_gb_mes",
+    "kind": "numeric",
+    "left": {
+      "leaf": true,
+      "pred": "basico",
+      "n": 82
+    },
+    "right": {
+      "leaf": false,
+      "column": "llamadas_soporte_mes",
+      "kind": "numeric",
+      "left": {
+        "leaf": false,
+        "column": "uso_gb_mes",
+        "kind": "numeric",
+        "left": {
+          "leaf": true,
+          "pred": "estandar",
+          "n": 24
+        },
+        "right": {
+          "leaf": true,
+          "pred": "premium",
+          "n": 22
+        },
+        "threshold": 122.6
+      },
+      "right": {
+        "leaf": true,
+        "pred": "empresa",
+        "n": 22
+      },
+      "threshold": 2.5
+    },
+    "threshold": 61.15
+  },
+  "numeric": [
+    {
+      "column": "usuarios",
+      "median": 2
+    },
+    {
+      "column": "uso_gb_mes",
+      "median": 52
+    },
+    {
+      "column": "antiguedad_meses",
+      "median": 34.5
+    },
+    {
+      "column": "llamadas_soporte_mes",
+      "median": 1
+    }
+  ],
+  "fidelity": {
+    "metric": "agreement",
+    "value": 0.84,
+    "n": 50
+  },
+  "truth": {
+    "metric": "accuracy",
+    "rules": 0.6,
+    "model": 0.64,
+    "n": 50
+  },
+  "depth": 3,
+  "leaves": 4,
+  "n_fit": 150,
+  "elapsed_ms": 6
+}

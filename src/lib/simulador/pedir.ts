@@ -7,13 +7,21 @@ import { pythonContractField } from "@/workers/contract";
 import {
   validateFitWinnerResult,
 } from "@/workers/contrato-ganador";
+import { validateRulesResult, type ReglasSent } from "@/workers/contrato-reglas";
 import {
   validateSimulateResult,
   type SimuladorSent,
 } from "@/workers/contrato-simulador";
+import {
+  validateEvaluateResult,
+  type VigilanciaSent,
+} from "@/workers/contrato-vigilancia";
 import { siguienteIdDePanel } from "@/workers/ids-panel";
 import type {
+  EvaluateNewPayload,
+  EvaluateNewResult,
   FitWinnerResult,
+  RulesResult,
   RunnerResponse,
   SimulatePayload,
   SimulateResult,
@@ -23,13 +31,24 @@ import type { Checked } from "@/lib/validate";
 /** El motivo corto de un fallo: el campo del contrato que se rompió, o «worker». */
 export function motivoDeFallo(mensaje: string): string {
   const campo = pythonContractField(mensaje);
-  return campo ? `contrato: ${campo}` : "worker";
+  if (campo) return `contrato: ${campo}`;
+  // las palabras con que pipeline.py dice lo que falta (sin valores): el panel las traduce a lo que el usuario puede hacer
+  const conocida = MOTIVOS_CONOCIDOS.find((m) => mensaje.includes(m));
+  return conocida ?? "worker";
 }
+
+const MOTIVOS_CONOCIDOS = [
+  "no-rows",
+  "too-few-rows",
+  "no-eval",
+  "no-model",
+  "not-applicable",
+];
 
 function pedir<T>(
   worker: Worker,
-  comando: "simulate" | "fit-winner",
-  payload: SimulatePayload | EnvioGanador["payload"],
+  comando: "simulate" | "fit-winner" | "rules" | "evaluate-new",
+  payload: SimulatePayload | EnvioGanador["payload"] | EvaluateNewPayload | undefined,
   validar: (crudo: unknown) => Checked<T>,
 ): Promise<T> {
   return new Promise((ok, no) => {
@@ -54,7 +73,9 @@ function pedir<T>(
       ok(r.value);
     };
     worker.addEventListener("message", alResponder);
-    worker.postMessage({ id, type: comando, payload });
+    worker.postMessage(
+      payload === undefined ? { id, type: comando } : { id, type: comando, payload },
+    );
   });
 }
 
@@ -74,6 +95,21 @@ export const pedirAjuste = (
   pedir(worker, "fit-winner", envio.payload, (c) =>
     validateFitWinnerResult(c, envio.sent),
   );
+
+/** El modelo en reglas del modelo retenido (sin payload). */
+export const pedirReglas = (
+  worker: Worker,
+  sent: ReglasSent,
+): Promise<RulesResult> =>
+  pedir(worker, "rules", undefined, (c) => validateRulesResult(c, sent));
+
+/** Puntúa un CSV nuevo que trae el resultado real y devuelve lo real y lo predicho como números. */
+export const pedirEvaluacion = (
+  worker: Worker,
+  payload: EvaluateNewPayload,
+  sent: VigilanciaSent,
+): Promise<EvaluateNewResult> =>
+  pedir(worker, "evaluate-new", payload, (c) => validateEvaluateResult(c, sent));
 
 export type PedirSimulacion = (
   payload: SimulatePayload,

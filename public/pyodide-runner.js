@@ -4,7 +4,7 @@
 // entrenar, puntuar, exportar e importar el modelo; la orquestación pura
 // (split/veredicto/fuga/esquema/manifiesto) vive en el hilo principal.
 //
-// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test"|"stress"|"stress-test"|"interval"|"simulate"|"fit-winner", payload? }
+// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test"|"stress"|"stress-test"|"interval"|"simulate"|"fit-winner"|"rules"|"evaluate-new", payload? }
 //            out { id, type: "progress"|"result"|"error", ... }  (result lleva command)
 // S5: durante "train" (la liga), pipeline.py llama a un callback JS antes de cada
 // paso y el runner lo reenvía como progress con `detail` {phase, member, index,
@@ -18,7 +18,9 @@
 //
 // S19: "simulate" (¿qué pasaría si?: puntúa las mismas filas como están y con una columna cambiada; en Probeta, el modelo
 // retenido) y "fit-winner" (el Protocolo: vuelve a ajustar al ganador SOLO con el entrenamiento y lo deja retenido; el
-// envío es el de la etapa 8 sin la prueba, que este comando rechaza).
+// envío es el de la etapa 8 sin la prueba, que este comando rechaza). "rules" (el modelo en reglas: un árbol sustituto sobre las
+// columnas originales, sin payload) y "evaluate-new" (vigilar el desempeño: puntúa un CSV nuevo que trae el resultado real y devuelve
+// lo real y lo predicho como números).
 //
 // El estado Python (_MODEL en pipeline.py) vive lo que viva este worker: tras
 // entrenar o importar, score/export operan sin re-entrenar.
@@ -43,6 +45,8 @@ const STAGE = {
   // S19: el simulador puntúa; el ajuste del ganador del Protocolo entrena (sin pasos por modelo).
   simulate: "scoring",
   "fit-winner": "training",
+  rules: "scoring",
+  "evaluate-new": "scoring",
   score: "scoring",
   // S7 (P13): las etiquetas por fila del agrupamiento, solo para el CSV local.
   "cluster-labels": "exporting",
@@ -86,6 +90,8 @@ function ensureRuntime(post, id) {
         interval: pyodide.globals.get("run_interval"),
         simulate: pyodide.globals.get("run_simulate"),
         "fit-winner": pyodide.globals.get("run_fit_winner"),
+        rules: pyodide.globals.get("run_rules"),
+        "evaluate-new": pyodide.globals.get("run_evaluate"),
       };
     })();
     // Si la carga falla (red), se limpia para que un reintento re-cargue.
