@@ -4,12 +4,16 @@
 //  · el umbral de tus costos por defecto; moverlo lo rotula «elegido mirando la prueba» y pide tu razón;
 //  · las cifras del modelo frente a no hacer nada y actuar con todos, con la marca de lo de hoy; la capacidad
 //    con el umbral que cabe; la curva en cifras, con la fila de tus costos;
-//  · sin la tabla de la 8 (registrada antes del S14) lo dice; con un número, el costo y el cuantil.
+//  · sin la tabla de la 8 (registrada antes del S14) lo dice; con un número, el costo y el cuantil;
+//  · S19, «¿qué pasaría si?»: pintar la etapa NO crea worker; pulsar «Simular» crea UNO, que recibe el ajuste del ganador SIN la
+//    prueba (`fit-winner`, sin clave `test`, solo las filas de entrenamiento) y después las filas de entrenamiento con el cambio;
+//    lo simulado no registra nada en el cuaderno.
 import {
   cleanup,
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -276,5 +280,106 @@ describe("sin probabilidades: la tabla de la 8 trae solo la clase predicha", () 
     expect(registrado.datos?.chequeos.alertas100).not.toBeNull();
     expect(registrado.datos?.chequeos.costo_modelo).not.toBeNull();
     expect(Espia).not.toHaveBeenCalled();
+  });
+});
+
+// --- S19: «¿qué pasaría si?» en la etapa 9 -----------------------------------------------------------
+
+type Mensaje = { id: number; type: string; payload: Record<string, unknown> };
+
+/** Un worker de mentira que contesta como pipeline.py: el eco del ajuste y una simulación con dos clases. */
+function instalarWorker() {
+  const creados: { url: unknown; mensajes: Mensaje[] }[] = [];
+  class FalsoWorker {
+    onerror: (() => void) | null = null;
+    private oyentes = new Set<(e: { data: unknown }) => void>();
+    private yo: { url: unknown; mensajes: Mensaje[] };
+    private positiva = "";
+    constructor(url: unknown) {
+      this.yo = { url, mensajes: [] };
+      creados.push(this.yo);
+    }
+    addEventListener(_: string, f: (e: { data: unknown }) => void) {
+      this.oyentes.add(f);
+    }
+    removeEventListener(_: string, f: (e: { data: unknown }) => void) {
+      this.oyentes.delete(f);
+    }
+    terminate() {}
+    postMessage(m: Mensaje) {
+      this.yo.mensajes.push(m);
+      const p = m.payload as Record<string, unknown> & { train?: unknown[]; rows?: unknown[]; column?: string };
+      const respuesta =
+        m.type === "fit-winner"
+          ? (this.positiva = String(p.positive ?? ""), {
+              task: p.task,
+              winner: p.winner,
+              n_train: (p.train as unknown[]).length,
+              huella: p.huella,
+              sello: p.sello,
+              elapsed_ms: 1,
+            })
+          : (() => {
+              const n = (p.rows as unknown[]).length;
+              return {
+                task: "binaria",
+                n,
+                column: p.column,
+                positive_class: this.positiva,
+                base: { pred: Array(n).fill(this.positiva), proba: Array(n).fill(0.7) },
+                changed: { pred: Array(n).fill(this.positiva), proba: Array(n).fill(0.9) },
+                outside: { before: 0, after: 0 },
+                elapsed_ms: 1,
+              };
+            })();
+      queueMicrotask(() =>
+        this.oyentes.forEach((f) =>
+          f({ data: { id: m.id, type: "result", command: m.type, result: respuesta } }),
+        ),
+      );
+    }
+  }
+  vi.stubGlobal("Worker", FalsoWorker);
+  return creados;
+}
+
+describe("la etapa 9: «¿qué pasaría si?» con las filas de entrenamiento", () => {
+  it("ESPÍA: pintar no crea worker; «Simular» crea UNO que ajusta al ganador sin la prueba y simula solo filas de entrenamiento; no registra nada", async () => {
+    const creados = instalarWorker();
+    const { registrado, onRegistrar } = montar();
+    expect(screen.getByRole("heading", { name: "¿Qué pasaría si?" })).toBeTruthy();
+    expect(screen.getByText(/Son los costos que escribiste en la etapa 1/)).toBeTruthy();
+    expect(screen.getByText(/la prueba se abrió una vez en la etapa 8 y no se vuelve a abrir/)).toBeTruthy();
+    expect(creados).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Simular" }));
+    await screen.findByTestId("simulador-resumen");
+    expect(creados).toHaveLength(1);
+    expect(creados[0]!.url).toBe("/pyodide-runner.js");
+    const [ajuste, simulacion] = creados[0]!.mensajes;
+    expect(ajuste!.type).toBe("fit-winner");
+    // la prueba no viaja: ni la clave `test`, ni una fila que no sea de entrenamiento
+    expect(Object.keys(ajuste!.payload)).not.toContain("test");
+    const entrenamiento = (ajuste!.payload.train as unknown[]).length;
+    expect(entrenamiento).toBeLessThan(CREDITO.tabla.rows.length);
+    expect(simulacion!.type).toBe("simulate");
+    expect((simulacion!.payload.rows as unknown[]).length).toBe(entrenamiento);
+    expect(Object.keys(simulacion!.payload).sort()).toEqual(["column", "headers", "rows", "values"]);
+    // los ids son negativos: la máquina de estados del hook de Probeta no los toma por suyos
+    expect(ajuste!.id).toBeLessThan(0);
+    // y lo simulado no entra al cuaderno ni a la compuerta
+    expect(onRegistrar).not.toHaveBeenCalled();
+    expect(registrado.datos).toBeNull();
+  });
+
+  it("pulsar «Simular» dos veces reajusta al ganador una sola vez", async () => {
+    const creados = instalarWorker();
+    montar();
+    fireEvent.click(screen.getByRole("button", { name: "Simular" }));
+    await screen.findByTestId("simulador-resumen");
+    fireEvent.click(screen.getByRole("button", { name: "Simular" }));
+    await waitFor(() => expect(creados[0]!.mensajes).toHaveLength(3));
+    expect(creados).toHaveLength(1);
+    expect(creados[0]!.mensajes.map((m) => m.type)).toEqual(["fit-winner", "simulate", "simulate"]);
   });
 });

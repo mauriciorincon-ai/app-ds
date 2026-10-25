@@ -25,9 +25,11 @@ import type {
   Level2State,
   RunMeta,
 } from "@/lib/useExperiment";
+import type { CsvTable } from "@/lib/ds/csv";
 import type {
   BinaryResult,
   ExperimentResult,
+  ScoringSchema,
   SupervisedResult,
 } from "@/workers/protocol";
 import { lineasDeLimpieza } from "./limpieza/ficha";
@@ -74,6 +76,19 @@ const IntervaloPanel = dynamic(
   { ssr: false },
 );
 
+// S19: «¿qué pasaría si?» sobre las filas cargadas, en su propio chunk (motor, panel y textos no entran al peso inicial).
+const SimuladorProbeta = dynamic(
+  () =>
+    import("./simulador/SimuladorProbeta").then((m) => m.SimuladorProbeta),
+  { ssr: false },
+);
+
+// S19: «el modelo en reglas» (el árbol sustituto, su texto y su SQL), también en su chunk.
+const ReglasPanel = dynamic(
+  () => import("./reglas/ReglasPanel").then((m) => m.ReglasPanel),
+  { ssr: false },
+);
+
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
   "precision",
@@ -109,6 +124,9 @@ type ResultsProps<R> = {
   /** S7 (P13): al agrupar, la descarga de las filas con su grupo. */
   labels?: LabelsState;
   onDownloadLabels?: (names: LabelsNames) => void;
+  /** S19: el esquema del modelo ACTIVO (columnas, clases) y las filas cargadas, para «¿qué pasaría si?». */
+  schema?: ScoringSchema | null;
+  getTable?: () => CsvTable | null;
 };
 
 /** Un resultado con objetivo llega siempre con su objetivo (run lo fija); si no,
@@ -150,6 +168,25 @@ export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
           <>
             <ClusterResults {...props} result={result} />
             <div className="mt-6 flex flex-col gap-6">
+              {props.schema && (
+                <SimuladorProbeta
+                  schema={props.schema}
+                  tabla={props.getTable?.() ?? null}
+                  worker={props.worker}
+                  semilla={props.runMeta.seed}
+                  modelo={result}
+                  ocupado={!(props.modelReady ?? true)}
+                />
+              )}
+              {props.schema && (
+                <ReglasPanel
+                  schema={props.schema}
+                  worker={props.worker}
+                  modelo={result}
+                  datasetName={props.datasetName}
+                  ocupado={!(props.modelReady ?? true)}
+                />
+              )}
               <IntervaloPanel de={null} />
               <EstresPanel de={null} />
               <PublicaPanel
@@ -191,6 +228,8 @@ function SupervisedResults({
   level2 = { status: "idle" },
   onRunLevel2,
   target,
+  schema = null,
+  getTable,
 }: ResultsProps<SupervisedResult> & { target: string }) {
   const t = useT();
   const { leakage } = result;
@@ -401,6 +440,31 @@ function SupervisedResults({
           </p>
         </Card>
       </section>
+
+      {/* S19: ¿qué pasaría si? Las filas cargadas con una columna cambiada, puntuadas por el modelo activo. */}
+      {schema && (
+        <SimuladorProbeta
+          schema={schema}
+          tabla={getTable?.() ?? null}
+          worker={worker}
+          semilla={runMeta.seed}
+          modelo={result}
+          ocupado={!modelReady || choice.status === "fitting"}
+          unidadObjetivo={byResult.unit?.symbol ?? null}
+        />
+      )}
+
+      {/* S19: el modelo en reglas — un árbol que copia lo que el modelo decide, con su fidelidad, en texto y en SQL. */}
+      {schema && (
+        <ReglasPanel
+          schema={schema}
+          worker={worker}
+          modelo={result}
+          datasetName={datasetName}
+          ocupado={!modelReady || choice.status === "fitting"}
+          unidadObjetivo={byResult.unit?.symbol ?? null}
+        />
+      )}
 
       {/* S17: ¿cuánto aguanta? El mismo modelo, sin reentrenar, sobre la prueba ya abierta. */}
       <EstresPanel

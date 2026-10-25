@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ETAPA_IDS, ETAPAS_ABIERTAS } from "@/engine/protocolo/ids";
 import { useRef, useState } from "react";
@@ -11,6 +12,8 @@ import { isTask } from "@/engine/tarea";
 import { ARCHIVOS_ACEPTADOS, esExcel } from "@/lib/ds/archivo";
 import { inferUnit } from "@/lib/experiment";
 import {
+  esArchivoDelProtocolo,
+  esManifiestoDelProtocolo,
   manifestTask,
   MAX_MODEL_FILE_BYTES,
   validateModelFile,
@@ -21,6 +24,7 @@ import {
   type ModelFileErrorKind,
   type VersionWarning,
 } from "@/lib/model-file";
+import type { ProtocolModelFile } from "@/lib/model-file-protocolo";
 import { reportImportError } from "@/lib/observability";
 import {
   csvLimitParams,
@@ -30,6 +34,15 @@ import {
   withUnit,
 } from "@/lib/quantity";
 import { Button, Card, Icon } from "./ui";
+
+// S19: el resumen de un archivo del Protocolo llega solo cuando se elige uno (sus textos viajan con él).
+const ProtocolImportSummary = dynamic(
+  () =>
+    import("./vigilancia/ProtocolImportSummary").then(
+      (m) => m.ProtocolImportSummary,
+    ),
+  { ssr: false },
+);
 
 export const EXAMPLES = [
   { key: "marketing", file: "marketing-campania.csv" },
@@ -54,7 +67,7 @@ export function StartScreen({
   onLoad: (csv: string, name: string) => void;
   /** S18: un Excel llega como archivo (su lector se importa solo entonces). */
   onLoadXlsx?: (file: File) => void;
-  onImport: (file: ModelFile) => void;
+  onImport: (file: ModelFile | ProtocolModelFile) => void;
 }) {
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -178,13 +191,17 @@ export function StartScreen({
 type ImportStatus =
   | { step: "idle" }
   | { step: "validating" }
-  | { step: "summary"; file: ModelFile; warnings: VersionWarning[] }
+  | {
+      step: "summary";
+      file: ModelFile | ProtocolModelFile;
+      warnings: VersionWarning[];
+    }
   | { step: "rejected"; error: ModelFileErrorKind; task?: string };
 
 function ImportModelSection({
   onImport,
 }: {
-  onImport: (file: ModelFile) => void;
+  onImport: (file: ModelFile | ProtocolModelFile) => void;
 }) {
   const { locale, t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -199,14 +216,23 @@ function ImportModelSection({
       return;
     }
     setStatus({ step: "validating" });
-    const validation = await validateModelFile(await file.text());
+    const text = await file.text();
+    // S19: el archivo del ganador del Protocolo tiene su propio validador, que llega solo entonces (no pesa en la portada).
+    const validation = esArchivoDelProtocolo(text)
+      ? await import("@/lib/model-file-protocolo").then((m) =>
+          m.validateProtocolModelFile(text),
+        )
+      : await validateModelFile(text);
     if (!validation.ok) {
       // Solo el kind del rechazo (metadata) — jamás el contenido del archivo.
       reportImportError(validation.error);
       setStatus({
         step: "rejected",
         error: validation.error,
-        task: validation.task,
+        task:
+          "task" in validation && typeof validation.task === "string"
+            ? validation.task
+            : undefined,
       });
       return;
     }
@@ -323,7 +349,12 @@ type ImportSummaryProps<M> = {
 function ImportSummary({
   file,
   ...rest
-}: Omit<ImportSummaryProps<ModelManifest>, "manifest"> & { file: ModelFile }) {
+}: Omit<ImportSummaryProps<ModelManifest>, "manifest"> & {
+  file: ModelFile | ProtocolModelFile;
+}) {
+  // S19: el archivo del ganador del Protocolo tiene su resumen (en su propio chunk y con sus propios textos).
+  if (esManifiestoDelProtocolo(file.manifest))
+    return <ProtocolImportSummary {...rest} manifest={file.manifest} />;
   return matchByTask(file.manifest, {
     binaria: (manifest) => (
       <SupervisedImportSummary {...rest} manifest={manifest} />

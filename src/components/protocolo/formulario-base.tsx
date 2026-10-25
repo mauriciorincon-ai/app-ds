@@ -46,6 +46,8 @@ export type PropsFormulario = {
 export type PropsConstancia = {
   readonly evaluadas: readonly EtapaEvaluada[];
   readonly cuaderno?: Cuaderno;
+  /** S19: los datos cargados (la etapa 10 los pide para guardar el ganador como archivo; la ficha no los necesita). */
+  readonly datos?: DatosCargados | null;
 };
 
 export function MensajeRechazo({

@@ -105,6 +105,16 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   await cumplirEtapa8(page, "Falla con quienes trabajan en la informalidad", {
     estres: true,
   });
+  // S19: ¿qué pasaría si? en la etapa 9, con los costos de la etapa 1 y solo las filas de entrenamiento; no registra nada
+  const sim9 = page.locator("#etapa-9").getByTestId("simulador-panel");
+  await expect(sim9).toContainText("la prueba se abrió una vez en la etapa 8 y no se vuelve a abrir");
+  await sim9.getByRole("button", { name: "Simular" }).click();
+  await expect(sim9.getByTestId("simulador-resumen")).toContainText("De ", {
+    timeout: 240_000,
+  });
+  await expect(sim9.getByTestId("simulador-verificada")).toBeVisible();
+  await expect(page.locator("#etapa-9").getByText("Cumplida")).toHaveCount(0);
+  await axeBothThemes(page);
   await cumplirEtapa9(
     page,
     "Usarlo",
@@ -321,6 +331,66 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
     );
     expect(red, `una fila del CSV en la red: ${fila}`).not.toContain(fila);
   }
+
+  // S19: «Llévate el ganador» — el archivo del Protocolo (la cifra de la prueba de la etapa 8, ninguna fila) que Probeta abre y vigila
+  const modelo = e10.getByTestId("protocolo-modelo10");
+  await expect(modelo).toContainText("Llévate el ganador");
+  await axeBothThemes(page);
+  const [guardado] = await Promise.all([
+    page.waitForEvent("download", { timeout: 240_000 }),
+    modelo
+      .getByRole("button", { name: "Guardar el ganador como .probeta.json" })
+      .click(),
+  ]);
+  expect(guardado.suggestedFilename()).toMatch(
+    /^modelo-credito-fuga-plantada-\d{4}-\d{2}-\d{2}\.probeta\.json$/,
+  );
+  const rutaModelo = (await guardado.path())!;
+  const textoModelo = readFileSync(rutaModelo, "utf8");
+  const archivoModelo = JSON.parse(textoModelo) as {
+    manifest: {
+      origin: string;
+      protocol: { winner: string; metric: string; test_value: number };
+    };
+  };
+  expect(archivoModelo.manifest.origin).toBe("protocolo");
+  expect(archivoModelo.manifest.protocol.test_value).toBeGreaterThan(0);
+  for (const fila of csv.slice(1).filter(Boolean))
+    expect(textoModelo, `una fila del CSV en el archivo del modelo: ${fila}`).not.toContain(fila);
+  await expect(modelo).toContainText("Guardado: modelo-credito-fuga-plantada");
+  // la prueba no se volvió a abrir: el cuaderno exportado de nuevo trae las MISMAS aperturas que el de antes de guardar el ganador
+  const [exporta2] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Exportar cuaderno" }).click(),
+  ]);
+  const despues = JSON.parse(readFileSync((await exporta2.path())!, "utf8")) as {
+    cuaderno: { aperturas?: { clave: string }[] };
+  };
+  const antesDeGuardar = JSON.parse(exportado) as typeof despues;
+  expect(despues.cuaderno.aperturas?.length).toBeGreaterThan(0);
+  expect(despues.cuaderno.aperturas).toEqual(antesDeGuardar.cuaderno.aperturas);
+
+  // Probeta lo abre, dice de dónde viene y lo vigila con filas nuevas que traen el resultado real
+  await page.goto("/");
+  await page
+    .locator('input[accept=".json,application/json"]')
+    .setInputFiles(rutaModelo);
+  const resumenProtocolo = page.getByTestId("importar-protocolo");
+  await expect(resumenProtocolo).toContainText(
+    "Un modelo guardado desde el Protocolo DS",
+  );
+  await expect(resumenProtocolo).toContainText("No trae liga");
+  await resumenProtocolo.getByRole("button", { name: "Usar este modelo" }).click();
+  await expect(page.getByText(/Arrastra tu CSV nuevo/)).toBeVisible({
+    timeout: 240_000,
+  });
+  await page
+    .locator('input[accept^=".csv,text/csv"]')
+    .setInputFiles(KIT("credito-fuga-plantada.csv"));
+  await expect(
+    page.getByTestId("vigilancia-panel").getByTestId("vigilancia-veredicto"),
+  ).toBeVisible({ timeout: 120_000 });
+  expect(peticiones.join("\n")).not.toContain("/api/narrate");
 });
 
 test("etapa 10 con precio y «usar»: llega a «Protocolo completo» con su ficha, sin calibración ni piso en beneficio neto", async ({

@@ -122,6 +122,8 @@ export default function Home() {
           onRunLevel2={runLevel2}
           labels={state.labels}
           onDownloadLabels={downloadClusterLabels}
+          schema={state.modelMeta?.schema ?? null}
+          getTable={getTable}
         />
       )}
 
@@ -138,6 +140,8 @@ export default function Home() {
           onBackToResults={backToResults}
           onExit={reset}
           onExportModel={exportModel}
+          worker={workerRef}
+          result={state.result}
         />
       )}
 

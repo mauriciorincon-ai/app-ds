@@ -48,7 +48,7 @@
           "title": "Monitoring plan",
           "body": "Drift is watched on {columnas} model columns against {n} rows of the sealed training set. The reference keeps only aggregates (cuts and frequencies; for text columns, only the ones you ticked, with their category names), never rows.",
           "thresholds": "A moderate change from a PSI of {moderada} and an alert from {alerta}: stage 4 conventions, not a test.",
-          "inputs": "This measures inputs, not performance: watching performance would need the new outcomes and the saved model.",
+          "inputs": "This measures inputs, not performance: to watch performance, save the winner as a file (below) and use it in Probeta with new rows that carry the real result.",
           "none": "The drift reference couldn't be built with this data: without it, the card isn't complete."
         },
         "preview": {
@@ -64,7 +64,7 @@
         },
         "drift": {
           "title": "Check whether your data changed",
-          "intro": "Load a new CSV with the model's columns and compare it with this card's reference. It measures whether today's inputs look like the training ones; it doesn't measure whether the model is still right. The file isn't saved and doesn't leave your browser.",
+          "intro": "Load a new CSV with the model's columns and compare it with this card's reference. It measures whether today's inputs look like the training ones; it does not measure whether the model is still right: for that, save the winner (below) and use it in Probeta with new rows that carry the real result. The file is not stored and does not leave your browser.",
           "button": "Load a new CSV",
           "clear": "Clear the result",
           "no-reference": "This card has no readable reference: record the stage again.",
@@ -204,7 +204,7 @@
             "columnas": "Columns watched for drift ({columnas}): {lista}.",
             "sin-vigilar": "Not watched by the owner's choice ({columnas}): {lista}. If they change, this plan won't notice.",
             "umbrales": "Drift thresholds (PSI): moderate from {moderada}, alert from {alerta}. They're conventions, not a test.",
-            "solo-entradas": "This plan measures whether today's inputs look like the training ones. It doesn't measure performance: that needs the new outcomes and the saved model.",
+            "solo-entradas": "This plan measures whether today's inputs look like the training ones. It doesn't measure performance: for that, save the winner as a file in this stage and use it in Probeta with new rows that carry the real result.",
             "piso": "Floor of the decision: stop using it if the model stops costing less than today's way ({hoy}): now {modelo100} against {hoy100} per 100 decisions.",
             "piso-beneficio": "In net benefit per 100 decisions the model gives {beneficio100} and today's way {hoy100}: if it drops to today's, stop using it.",
             "cadencia-sin-tiempo": "Retraining cadence (in months): {cadencia}. The owner wrote it: the test wasn't split by time and doesn't say how long the model holds.",
@@ -221,6 +221,18 @@
             "dueno": "Answers for the model: {dueno}.",
             "decisor": "Decides with it: {decisor}, about «{decision}»."
           }
+        },
+        "model": {
+          "title": "Take the winner with you",
+          "body": "Save the winner as a «.probeta.json» file to score new rows and watch its performance in Probeta («Load saved model»). It is fitted again with the training rows —the test is not opened— and the file carries the model, not your rows.",
+          "contains": "The file carries the model with the ranges and categories it saw in training, plus the name of your file, the fingerprint of the data, the seal of the split, the row counts and the library versions; no rows.",
+          "contains-knn": "This winner is nearest neighbours: the file carries the training rows (that is how this model works). Save it only where your data may be.",
+          "button": "Save the winner as .probeta.json",
+          "need-data": "Load the file you worked with above: the model is fitted with its training rows and the fingerprint confirms it is the same one.",
+          "other-file": "This is not the file you used: the partition seal does not match, so the model is not fitted.",
+          "working": "Fitting the winner with the training rows… The test is not opened.",
+          "saved": "Saved: {nombre}.",
+          "error": "The model could not be saved ({motivo}). Try again."
         }
       }
     }

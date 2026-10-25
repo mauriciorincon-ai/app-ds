@@ -1,0 +1,107 @@
+{
+  "task": "numerica",
+  "tree": {
+    "leaf": false,
+    "column": "ocupantes",
+    "kind": "numeric",
+    "left": {
+      "leaf": false,
+      "column": "superficie_m2",
+      "kind": "numeric",
+      "left": {
+        "leaf": true,
+        "pred": 239.947,
+        "n": 20
+      },
+      "right": {
+        "leaf": true,
+        "pred": 297.48252,
+        "n": 22
+      },
+      "threshold": 128.5
+    },
+    "right": {
+      "leaf": false,
+      "column": "superficie_m2",
+      "kind": "numeric",
+      "left": {
+        "leaf": false,
+        "column": "temp_media_c",
+        "kind": "numeric",
+        "left": {
+          "leaf": true,
+          "pred": 391.50169,
+          "n": 20
+        },
+        "right": {
+          "leaf": true,
+          "pred": 336.35953,
+          "n": 25
+        },
+        "threshold": 12.75
+      },
+      "right": {
+        "leaf": false,
+        "column": "temp_media_c",
+        "kind": "numeric",
+        "left": {
+          "leaf": false,
+          "column": "ocupantes",
+          "kind": "numeric",
+          "left": {
+            "leaf": true,
+            "pred": 456.45934,
+            "n": 21
+          },
+          "right": {
+            "leaf": true,
+            "pred": 515.99007,
+            "n": 22
+          },
+          "threshold": 4.5
+        },
+        "right": {
+          "leaf": true,
+          "pred": 384.42474,
+          "n": 20
+        },
+        "threshold": 16.95
+      },
+      "threshold": 110.5
+    },
+    "threshold": 2.5
+  },
+  "numeric": [
+    {
+      "column": "superficie_m2",
+      "median": 129
+    },
+    {
+      "column": "ocupantes",
+      "median": 4
+    },
+    {
+      "column": "anio_construccion",
+      "median": 1991.5
+    },
+    {
+      "column": "temp_media_c",
+      "median": 13.2
+    }
+  ],
+  "fidelity": {
+    "metric": "r2",
+    "value": 0.5918467912040156,
+    "n": 50
+  },
+  "truth": {
+    "metric": "mae",
+    "rules": 49.6952902,
+    "model": 43.77304092785411,
+    "n": 50
+  },
+  "depth": 4,
+  "leaves": 7,
+  "n_fit": 150,
+  "elapsed_ms": 6
+}

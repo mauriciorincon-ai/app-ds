@@ -243,7 +243,11 @@ function Tarjeta({
             !corrigiendo &&
             listo &&
             Constancia && (
-              <Constancia evaluadas={evaluadas} cuaderno={cuaderno} />
+              <Constancia
+                evaluadas={evaluadas}
+                cuaderno={cuaderno}
+                datos={datos}
+              />
             )}
 
           {trabajable &&

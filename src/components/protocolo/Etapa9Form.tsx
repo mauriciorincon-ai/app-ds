@@ -36,6 +36,7 @@ import { numero, texto } from "@/engine/protocolo/valores";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { cifra, proporcion } from "@/lib/protocolo/formato";
 import { CampoArea, CampoOpciones, CampoSelect, CampoTexto } from "./campos";
+import { Etapa9Simulador } from "./Etapa9Simulador";
 import { Registrar, Trampas, type PropsFormulario } from "./formulario-base";
 import { TEXTOS_ETAPA_9 } from "./textos/etapa9";
 
@@ -213,6 +214,8 @@ export function Etapa9Form({
       </p>
     );
 
+  // S19: «¿qué pasaría si?» con las filas de entrenamiento y los costos de la etapa 1; no registra nada.
+  const simulador = <Etapa9Simulador datos={datos} previas={previas} />;
   const c = registro.chequeos;
   const c8 = b.c8;
   const costos = costosBinarios(b.costos);
@@ -366,6 +369,7 @@ export function Etapa9Form({
             </p>
           )}
         </Seccion>
+        {simulador}
         {decision}
         {cierre}
       </div>
@@ -677,6 +681,7 @@ export function Etapa9Form({
         </Seccion>
       )}
 
+      {simulador}
       {decision}
       {cierre}
     </div>

@@ -1,0 +1,54 @@
+{
+  "task": "agrupar",
+  "tree": {
+    "leaf": false,
+    "column": "gasto_mensual_usd",
+    "kind": "numeric",
+    "left": {
+      "leaf": true,
+      "pred": 1,
+      "n": 89
+    },
+    "right": {
+      "leaf": false,
+      "column": "gasto_mensual_usd",
+      "kind": "numeric",
+      "left": {
+        "leaf": true,
+        "pred": 0,
+        "n": 89
+      },
+      "right": {
+        "leaf": true,
+        "pred": 2,
+        "n": 47
+      },
+      "threshold": 355.39
+    },
+    "threshold": 135.445
+  },
+  "numeric": [
+    {
+      "column": "gasto_mensual_usd",
+      "median": 194.28
+    },
+    {
+      "column": "visitas_mes",
+      "median": 5
+    },
+    {
+      "column": "antiguedad_meses",
+      "median": 30
+    }
+  ],
+  "fidelity": {
+    "metric": "agreement",
+    "value": 0.9866666666666667,
+    "n": 75
+  },
+  "truth": null,
+  "depth": 2,
+  "leaves": 3,
+  "n_fit": 225,
+  "elapsed_ms": 3
+}

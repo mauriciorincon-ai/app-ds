@@ -1,0 +1,8 @@
+{
+  "task": "multiclase",
+  "winner": "forest",
+  "n_train": 160,
+  "huella": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "sello": "cff2af31a95628994dfff487cf572cde0548f80f4f2b49b7121b807f37f6aab3",
+  "elapsed_ms": 159
+}

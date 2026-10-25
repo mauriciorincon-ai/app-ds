@@ -16,7 +16,7 @@ export type SchemaCheck = {
   missing: string[];
   /** Columnas del CSV que el modelo no usa (se ignoran), en el orden del CSV. */
   extra: string[];
-  /** El CSV trae la columna objetivo (se ignora: aquí se predice, no se evalúa).
+  /** El CSV trae la columna objetivo (no se usa para predecir; desde el S19 sirve para vigilar el desempeño).
    *  S7: al agrupar no hay objetivo, y es siempre false. */
   targetPresent: boolean;
 };

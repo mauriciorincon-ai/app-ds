@@ -1,0 +1,90 @@
+{
+  "simulador": {
+    "titulo": "¿Qué pasaría si?",
+    "ayuda": "Cambia una columna y mira cuántas decisiones del modelo se mueven y qué significa en dinero. Es una simulación con las probabilidades del propio modelo, no un resultado medido: para filas que no existen no hay respuesta real.",
+    "nota_entrenamiento": "Las filas que se mueven son las de entrenamiento: la prueba se abrió una vez en la etapa 8 y no se vuelve a abrir. Lo que simulas aquí no entra al cuaderno ni cambia ninguna etapa.",
+    "columna": "Columna a cambiar",
+    "sin_columnas": "Este modelo no tiene columnas que cambiar.",
+    "cambio": {
+      "titulo": "Cómo cambia",
+      "porcentaje": "Subir o bajar un porcentaje",
+      "fijo": "Poner un valor fijo",
+      "categoria": "Pasar a otra categoría",
+      "porcentaje_valor": "Porcentaje (10 sube un 10 %, -10 baja un 10 %)",
+      "fijo_valor": "Valor",
+      "categoria_valor": "Categoría"
+    },
+    "alcance": {
+      "titulo": "A quién se aplica",
+      "todas": "A todas las filas",
+      "segmento": "Solo a un segmento",
+      "columna": "Columna del segmento",
+      "operador": "Operador",
+      "valor": "Valor",
+      "union": "Unir con",
+      "y": "y",
+      "o": "o",
+      "otra": "Sumar otra condición",
+      "quitar": "Quitar la segunda condición",
+      "valor_invalido": "Escribe el valor con punto decimal y sin separador de miles (1500.5)."
+    },
+    "costos": {
+      "titulo": "Tus costos",
+      "ayuda": "Sin costos solo ves cuántas decisiones cambian. Con ellos, el costo esperado de cada decisión sale de las probabilidades del modelo.",
+      "ayuda_etapa1": "Son los costos que escribiste en la etapa 1.",
+      "fp": "Costo de actuar cuando no era (falso positivo)",
+      "fn": "Costo de no actuar cuando sí era (falso negativo)",
+      "clase": "Costo de equivocarse cuando la clase real es «{clase}»",
+      "unidad": "Unidad (opcional, por ejemplo USD)",
+      "invalido": "Escribe un número mayor que cero.",
+      "actuar": "«Actuar» es que el modelo diga «{positiva}».",
+      "clases_faltan": "Escribe el costo de todas las clases para ver el dinero."
+    },
+    "simular": "Simular",
+    "simulando": "Calculando…",
+    "ajustando": "Volviendo a ajustar al ganador con las filas de entrenamiento… La prueba no se abre.",
+    "error": "No se pudo simular ({motivo}). Vuelve a intentarlo.",
+    "rechazo": {
+      "columna": "Esa columna no está entre las del modelo.",
+      "cambio": "Ese cambio no sirve para esa columna.",
+      "valor": "Escribe un número que no pase de los límites.",
+      "categoria": "Esa categoría no existe en la columna: elige una de las que hay.",
+      "segmento": "El segmento no está bien escrito.",
+      "sin-filas": "No hay filas que simular."
+    },
+    "verificada": "Verificada contra tus números",
+    "ayuda_verificada": "Cada cifra de este texto sale de la simulación. Es una comprobación del texto, no una garantía de que el modelo acierte.",
+    "no_cuadro": "El texto no cuadró con tus números, así que se muestran solo las cifras.",
+    "resumen": {
+      "binaria": "De {n} filas, el modelo recomienda actuar en {antes} y, con el cambio, en {despues}: cambian {cambian} decisiones.",
+      "umbral": " Se actúa desde una probabilidad de {umbral}, la de tus costos.",
+      "multiclase": "De {n} filas, {cambian} cambian de opción con el cambio.",
+      "numerica": "De {n} filas, el valor estimado cambia en promedio {cambio}: el promedio pasa de {antes} a {despues}.",
+      "agrupar": "De {n} filas, {cambian} cambian de grupo con el cambio.",
+      "dinero": " Con tus costos, el costo esperado por cada 100 decisiones pasa de {costo_antes} a {costo_despues} ({delta}).",
+      "sin_dinero": {
+        "sin-costos": " Sin tus costos no hay cifra en dinero: escríbelos para verla.",
+        "sin-probabilidades": " Este modelo decide sin dar probabilidades, así que no hay costo esperado que calcular."
+      },
+      "binaria_one": "De {n} filas, el modelo recomienda actuar en {antes} y, con el cambio, en {despues}: cambia {cambian} decisión.",
+      "multiclase_one": "De {n} filas, {cambian} cambia de opción con el cambio.",
+      "agrupar_one": "De {n} filas, {cambian} cambia de grupo con el cambio."
+    },
+    "minima": "Cambian {cambian} de {n} decisiones.",
+    "tabla": {
+      "opciones": "Filas por opción",
+      "grupos": "Filas por grupo",
+      "opcion": "Opción",
+      "grupo": "Grupo",
+      "antes": "Antes",
+      "despues": "Con el cambio"
+    },
+    "muestra": "Se simularon {usadas} de {total} filas (una muestra con semilla fija).",
+    "toco": "El cambio modificó el valor de {tocadas} filas.",
+    "no_toco": "El cambio no modificó ninguna fila: revisa la columna, el valor o el segmento.",
+    "fuera": "Atención: con el cambio, {despues} filas quedan fuera de lo que el modelo vio al entrenar (antes eran {antes}); ahí la estimación es una extrapolación.",
+    "minima_one": "Cambia {cambian} de {n} decisiones.",
+    "toco_one": "El cambio modificó el valor de {tocadas} fila.",
+    "fuera_one": "Atención: con el cambio, {despues} fila queda fuera de lo que el modelo vio al entrenar (antes eran {antes}); ahí la estimación es una extrapolación."
+  }
+}

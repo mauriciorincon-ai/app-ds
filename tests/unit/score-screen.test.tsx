@@ -81,12 +81,14 @@ function ui(
 }
 
 describe("ScoreScreen — vacío", () => {
-  it("dropzone + columnas necesarias + aviso de no incluir el objetivo", async () => {
+  it("dropzone + columnas necesarias + aviso de que el objetivo no hace falta (y sirve para vigilar)", async () => {
     const props = ui({ status: "idle" });
     expect(screen.getByText("Usar el modelo")).toBeInTheDocument();
     expect(screen.getByText("edad")).toBeInTheDocument();
     expect(screen.getByText("region")).toBeInTheDocument();
-    expect(screen.getByText(/No incluyas «convirtio»/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/«convirtio» no hace falta para puntuar/),
+    ).toBeInTheDocument();
 
     // Subir un archivo dispara onScoreFile con contenido y nombre.
     const input = document.querySelector('input[type="file"]')!;

@@ -20,7 +20,10 @@ datos y un cuaderno que guarda lo que cada etapa verificó. Las diez etapas est�
 Sprint 17 el modelo se puede estresar («¿cuánto aguanta?») en las dos. Desde el Sprint 18, en Probeta un Excel
 (`.xlsx`) entra igual que un CSV, la app avisa de posibles datos personales (nombra la columna y el tipo, nunca
 el valor), propone un plan de limpieza que apruebas o rechazas paso a paso, explora tus datos, da el margen de
-error de la cifra del veredicto y comprueba contra tus números el texto que explica el resultado.
+error de la cifra del veredicto y comprueba contra tus números el texto que explica el resultado. Desde el Sprint 19
+el modelo también se vuelve una decisión: un «¿qué pasaría si?» que dice qué significa en dinero cambiar una columna,
+el modelo en reglas (texto y SQL) con su fidelidad, y vigilar el desempeño con filas nuevas que traen el resultado real;
+el Protocolo guarda su ganador como archivo para eso.
 
 **Tus datos no salen de tu navegador.** El cómputo de Probeta (pandas y scikit-learn en WebAssembly,
 con Pyodide) corre en un Web Worker de tu equipo; el Protocolo calcula en tu navegador y guarda su
@@ -72,7 +75,10 @@ with a notebook that keeps what each stage verified. All ten stages are built, a
 model can be stress-tested («how much does it take?») in both. Since Sprint 18, in Probeta an Excel file
 (`.xlsx`) comes in like a CSV, the app warns about possible personal data (it names the column and the type, never
 the value), proposes a cleaning plan that you approve or reject step by step, explores your data, gives the
-margin of error of the verdict's figure and checks the text that explains the result against your numbers.
+margin of error of the verdict's figure and checks the text that explains the result against your numbers. Since
+Sprint 19 the model also becomes a decision: a «what if?» that says what changing a column means in money, the model
+as rules (text and SQL) with its fidelity, and watching the performance with new rows that carry the real result;
+the Protocol saves its winner as a file for that.
 
 **Your data never leaves your browser.** Probeta's computation (pandas and scikit-learn in
 WebAssembly, through Pyodide) runs in a Web Worker on your machine; the Protocol computes in your

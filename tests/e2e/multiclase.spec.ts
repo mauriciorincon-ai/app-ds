@@ -185,12 +185,25 @@ test("R10: 20 categorías y un nombre largo — la página no se desplaza de lad
     name: "Matriz de confusión (prueba)",
   });
   await expect(matrix).toBeVisible({ timeout: 150_000 });
-  const pageBox = await page.evaluate(() => ({
-    sw: document.documentElement.scrollWidth,
-    cw: document.documentElement.clientWidth,
-  }));
-  expect(pageBox.sw, "la página se desplaza de lado").toBeLessThanOrEqual(
-    pageBox.cw,
+  const sinDesplazarse = async (mensaje: string) => {
+    const caja = await page.evaluate(() => ({
+      sw: document.documentElement.scrollWidth,
+      cw: document.documentElement.clientWidth,
+    }));
+    expect(caja.sw, mensaje).toBeLessThanOrEqual(caja.cw);
+  };
+  await sinDesplazarse("la página se desplaza de lado");
+  // S19: el «¿qué pasaría si?» pide un costo por categoría (20 campos, uno con el nombre largo) y, al simular, cuenta las filas
+  // de cada una antes y después: ni lo uno ni lo otro empuja la página.
+  const sim = page.getByTestId("simulador-panel");
+  await sim.getByLabel("Columna a cambiar").selectOption("x1");
+  await sim.getByLabel(/^Porcentaje/).fill("10");
+  await sim.getByRole("button", { name: "Simular" }).click();
+  await expect(sim.getByTestId("simulador-lectura")).toBeVisible({
+    timeout: 60_000,
+  });
+  await sinDesplazarse(
+    "la página se desplaza de lado con el simulador de 20 categorías",
   );
   // AU-S7-21: en un teléfono no hay `title` que ver. El nombre de cada FILA se lee
   // entero (nada recortado), en la matriz y en la tabla por categoría.

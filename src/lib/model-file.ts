@@ -14,6 +14,7 @@ import {
   type TagOf,
 } from "@/engine/despacho";
 import type { LeakageFinding } from "@/engine/leakage";
+import type { ProtocolManifest } from "@/lib/model-file-protocolo";
 import { isMemberOf, type MemberId } from "@/engine/roster";
 import type { RegistroPaso, TipoPaso } from "@/engine/limpieza-plan";
 import type { SanitationReport } from "@/engine/sanitize";
@@ -76,10 +77,12 @@ import type {
 import { datasetSlug } from "@/lib/files";
 import { version as APP_VERSION } from "../../package.json";
 
+export { APP_VERSION };
+
 export const MODEL_FILE_FORMAT_VERSION = 1;
 export const MODEL_FILE_EXTENSION = ".probeta.json";
 export const PAYLOAD_ENCODING = "pickle+zlib+base64";
-const APP_NAME = "probeta-ds";
+export const APP_NAME = "probeta-ds";
 
 // Tope del archivo de import (auditoría H1): se chequea con file.size ANTES de
 // leerlo a memoria — un archivo absurdo no debe tumbar la pestaña para luego
@@ -244,6 +247,22 @@ export type SupervisedManifest =
 
 export type ModelManifest = SupervisedManifest | ClusterManifest;
 
+/**
+ * S19: el archivo del ganador del Protocolo se reconoce por el inicio del texto (el manifiesto va antes del payload); su validador
+ * llega aparte, en su propio chunk. Es la ÚNICA copia: la portada la usa para elegir validador sin cargar el del Protocolo.
+ */
+export const esArchivoDelProtocolo = (texto: string): boolean =>
+  /"origin"\s*:\s*"protocolo"/.test(texto.slice(0, 20_000));
+
+/**
+ * S19: ¿es el manifiesto del Protocolo? Mira el VALOR, no la mera presencia de la clave. El validador de Probeta rechaza todo
+ * manifiesto que traiga `origin`, así que un manifiesto de Probeta nunca pasa por aquí con esa clave.
+ */
+export const esManifiestoDelProtocolo = (
+  manifest: ModelManifest | ProtocolManifest,
+): manifest is ProtocolManifest =>
+  (manifest as { origin?: unknown }).origin === "protocolo";
+
 export function isBinaryManifest(
   manifest: ModelManifest,
 ): manifest is BinaryManifest {
@@ -276,9 +295,9 @@ const multiclassMember: Validator = (v, path) =>
   isMemberOf("multiclase", v) ? null : path;
 const regressionMember: Validator = (v, path) =>
   isMemberOf("numerica", v) ? null : path;
-const METRIC_NAMES = ["accuracy", "precision", "recall", "f1", "auc"];
+export const METRIC_NAMES = ["accuracy", "precision", "recall", "f1", "auc"];
 
-const schemaV = obj({
+export const schemaV = obj({
   numeric: arr(str),
   categorical: arr(str),
   target: str,
@@ -309,7 +328,7 @@ const leakageV = arr(
   }),
 );
 
-const versionsV = obj({
+export const versionsV = obj({
   pyodide: str,
   sklearn: str,
   python: str,
@@ -590,6 +609,9 @@ function isKnownManifestTask(task: string): task is TrainTask {
 /** Sin `task`, el manifiesto binario (archivos del S3–S5); con ella, el de su tarea. */
 const manifestV: Validator = (v, path) => {
   if (!isRecord(v)) return path;
+  // S19: `origin` es la marca del archivo del Protocolo, que tiene su propio validador. Un archivo de Probeta no la lleva nunca:
+  // si la trae, o está alterado o es de otra clase, y las pantallas que la leen no deben recibirlo (el hash solo cubre el payload).
+  if (Object.hasOwn(v, "origin")) return `${path}.origin`;
   const task = declaredTask(v);
   return typeof task === "string" && isKnownManifestTask(task)
     ? MANIFEST_V_BY_TASK[task](v, path)
@@ -853,7 +875,7 @@ export type ModelFileValidation =
       task?: string;
     };
 
-function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
+export function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
   const warnings: VersionWarning[] = [];
   for (const component of [
     "pyodide",

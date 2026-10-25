@@ -48,7 +48,7 @@
           "title": "Plan de vigilancia",
           "body": "Se vigila la deriva de {columnas} columnas del modelo contra {n} filas del entrenamiento sellado. La referencia guarda solo agregados (cortes y frecuencias; de las columnas de texto, solo las que marcaste, con los nombres de sus categorías), nunca filas.",
           "thresholds": "Un cambio moderado desde un PSI de {moderada} y una alerta desde {alerta}: convenciones de la etapa 4, no una prueba.",
-          "inputs": "Esto mide las entradas, no el desempeño: para vigilar el desempeño harían falta los resultados nuevos y el modelo guardado.",
+          "inputs": "Esto mide las entradas, no el desempeño: para vigilar el desempeño guarda el ganador como archivo (más abajo) y úsalo en Probeta con filas nuevas que traigan el resultado real.",
           "none": "No se pudo armar la referencia de deriva con estos datos: sin ella, la ficha no se completa."
         },
         "preview": {
@@ -64,7 +64,7 @@
         },
         "drift": {
           "title": "Revisa si tus datos cambiaron",
-          "intro": "Carga un CSV nuevo con las columnas del modelo y compáralo con la referencia de esta ficha. Mide si las entradas de hoy se parecen a las del entrenamiento; no mide si el modelo sigue acertando. El archivo no se guarda ni sale de tu navegador.",
+          "intro": "Carga un CSV nuevo con las columnas del modelo y compáralo con la referencia de esta ficha. Mide si las entradas de hoy se parecen a las del entrenamiento; no mide si el modelo sigue acertando: para eso guarda el ganador (más abajo) y úsalo en Probeta con filas nuevas que traigan el resultado real. El archivo no se guarda ni sale de tu navegador.",
           "button": "Cargar un CSV nuevo",
           "clear": "Quitar el resultado",
           "no-reference": "Esta ficha no trae una referencia que se pueda leer: vuelve a registrar la etapa.",
@@ -204,7 +204,7 @@
             "columnas": "Columnas vigiladas por deriva ({columnas}): {lista}.",
             "sin-vigilar": "Sin vigilar por decisión del dueño ({columnas}): {lista}. Si cambian, este plan no lo notará.",
             "umbrales": "Umbrales de deriva (PSI): moderada desde {moderada}, alerta desde {alerta}. Son convenciones, no una prueba.",
-            "solo-entradas": "Este plan mide si las entradas de hoy se parecen a las del entrenamiento. No mide el desempeño: para eso hacen falta los resultados nuevos y el modelo guardado.",
+            "solo-entradas": "Este plan mide si las entradas de hoy se parecen a las del entrenamiento. No mide el desempeño: para eso guarda el ganador como archivo en esta etapa y úsalo en Probeta con filas nuevas que traigan el resultado real.",
             "piso": "Piso de la decisión: se deja de usar si el modelo deja de costar menos que lo de hoy ({hoy}): hoy {modelo100} frente a {hoy100} por cada 100 decisiones.",
             "piso-beneficio": "En beneficio neto por cada 100 decisiones el modelo da {beneficio100} y lo de hoy {hoy100}: si baja al de hoy, se deja de usar.",
             "cadencia-sin-tiempo": "Cadencia de reentreno (en meses): {cadencia}. La escribió el dueño: la prueba no fue por tiempo y no dice cuánto vale el modelo.",
@@ -221,6 +221,18 @@
             "dueno": "Responde por el modelo: {dueno}.",
             "decisor": "Decide con él: {decisor}, sobre «{decision}»."
           }
+        },
+        "model": {
+          "title": "Llévate el ganador",
+          "body": "Guarda el ganador como un archivo «.probeta.json» para puntuar filas nuevas y vigilar su desempeño en Probeta («Cargar modelo guardado»). Se vuelve a ajustar con las filas de entrenamiento —la prueba no se abre— y el archivo lleva el modelo, no tus filas.",
+          "contains": "El archivo lleva el modelo con los rangos y las categorías que vio al entrenar, además del nombre de tu archivo, la huella de los datos, el sello de la partición, las cuentas de filas y las versiones de las librerías; ninguna fila.",
+          "contains-knn": "Este ganador son los vecinos más cercanos: el archivo lleva las filas de entrenamiento (así funciona ese modelo). Guárdalo solo donde puedan estar tus datos.",
+          "button": "Guardar el ganador como .probeta.json",
+          "need-data": "Carga arriba el archivo con que trabajaste: el modelo se ajusta con sus filas de entrenamiento y la huella confirma que es el mismo.",
+          "other-file": "Este archivo no es el que usaste: el sello de la partición no coincide, así que no se ajusta el modelo.",
+          "working": "Ajustando el ganador con las filas de entrenamiento… La prueba no se abre.",
+          "saved": "Guardado: {nombre}.",
+          "error": "No se pudo guardar el modelo ({motivo}). Vuelve a intentarlo."
         }
       }
     }

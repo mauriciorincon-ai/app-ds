@@ -1151,6 +1151,9 @@ def _retain_cluster(ctx, swept, details):
             "mapping": rule["mapping"],
             "sample_rows": rule["sample_rows"],
         },
+        # S19: las filas con que se agrupó, SOLO en memoria (export_model arma las claves del pickle una a una): el modelo en
+        # reglas las lee para explicar los grupos con las columnas originales.
+        "rows": ctx["df"][list(ctx["distance_numeric"]) + list(ctx["distance_categorical"])],
     }
     _CLUSTER_LABELS = [int(v) for v in swept["labels"]]
 
@@ -2505,19 +2508,24 @@ TEST_KEYS = frozenset(
     )
 )
 
+# S19 (ADR 027): el mismo envío SIN la prueba. `fit-winner` lo recibe para volver a ajustar al ganador con el
+# entrenamiento: una clave `test` (o cualquiera fuera de este conjunto) rompe el contrato nombrándola.
+FIT_KEYS = TEST_KEYS - {"test"}
+
 
 def _hex64(value):
     return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
 
 
-def _validate_test_payload(p):
-    """Valida el payload de la etapa 8 antes de tocar los datos."""
+def _validate_test_payload(p, *, with_test=True):
+    """Valida el payload de la etapa 8 antes de tocar los datos. S19: con `with_test=False` valida el de `fit-winner`
+    (sin la prueba): ahí `test` es una clave de más y rompe el contrato."""
     if not isinstance(p, dict):
         _contract("payload")
     for key in p:
-        if key not in TEST_KEYS:
+        if key not in (TEST_KEYS if with_test else FIT_KEYS):
             _contract(key)
-    for key in ("headers", "train", "test", "numeric", "categorical"):
+    for key in ("headers", "train", "numeric", "categorical") + (("test",) if with_test else ()):
         if not isinstance(p.get(key), list):
             _contract(key)
     headers = p["headers"]
@@ -2532,7 +2540,7 @@ def _validate_test_payload(p):
         or any(not isinstance(c, str) or c not in headers or c == p["target"] for c in features)
     ):
         _contract("features")
-    for key, minimum in (("train", 2), ("test", 1)):
+    for key, minimum in (("train", 2),) + ((("test", 1),) if with_test else ()):
         rows = p[key]
         if len(rows) < minimum or any(not isinstance(r, list) or len(r) != len(headers) for r in rows):
             _contract(key)
@@ -2574,23 +2582,23 @@ def _validate_test_payload(p):
 
 
 def _test_targets(train, test, p):
-    """El objetivo del entrenamiento y de la prueba, codificado igual que en la etapa 7."""
+    """El objetivo del entrenamiento y de la prueba, codificado igual que en la etapa 7. S19: con `test=None`
+    (`fit-winner`) solo codifica el entrenamiento y devuelve `None` en el lugar de la prueba."""
     target = p["target"]
 
     def binary():
         y_train = train[target].astype("string")
-        y_test = test[target].astype("string")
         classes = sorted(y_train.dropna().unique().tolist())
         if y_train.isna().any() or len(classes) != 2 or p["positive"] not in classes:
             _contract("positive")
-        if y_test.isna().any() or not set(y_test.unique().tolist()) <= set(classes):
-            _contract("test")
         positive = p["positive"]
-        return (
-            (y_train == positive).astype(int).to_numpy(),
-            (y_test == positive).astype(int).to_numpy(),
-            classes,
-        )
+        y_test = None
+        if test is not None:
+            y_test = test[target].astype("string")
+            if y_test.isna().any() or not set(y_test.unique().tolist()) <= set(classes):
+                _contract("test")
+            y_test = (y_test == positive).astype(int).to_numpy()
+        return (y_train == positive).astype(int).to_numpy(), y_test, classes
 
     def multiclass():
         classes = list(p["classes"])
@@ -2598,22 +2606,23 @@ def _test_targets(train, test, p):
         y_train = train[target].astype("string")
         if sorted(y_train.dropna().unique().tolist()) != classes:
             _contract("classes")
-        y_test = test[target].astype("string")
-        if y_test.isna().any() or not set(y_test.unique().tolist()) <= set(classes):
-            _contract("test")
-        return (
-            y_train.map(index).astype(int).to_numpy(),
-            y_test.map(index).astype(int).to_numpy(),
-            classes,
-        )
+        y_test = None
+        if test is not None:
+            y_test = test[target].astype("string")
+            if y_test.isna().any() or not set(y_test.unique().tolist()) <= set(classes):
+                _contract("test")
+            y_test = y_test.map(index).astype(int).to_numpy()
+        return y_train.map(index).astype(int).to_numpy(), y_test, classes
 
     def numeric_target():
         y_train = pd.to_numeric(train[target], errors="coerce").to_numpy(dtype=float)
-        y_test = pd.to_numeric(test[target], errors="coerce").to_numpy(dtype=float)
         if not np.all(np.isfinite(y_train)):
             _contract("target")
-        if not np.all(np.isfinite(y_test)):
-            _contract("test")
+        y_test = None
+        if test is not None:
+            y_test = pd.to_numeric(test[target], errors="coerce").to_numpy(dtype=float)
+            if not np.all(np.isfinite(y_test)):
+                _contract("test")
         return y_train, y_test, None
 
     return _by_task(p["task"], {
@@ -2722,6 +2731,8 @@ def _stress_eval(ctx):
     return {
         "X_test": ctx["X_test"],
         "y_test": ctx["y_test"],
+        # S19: las filas de entrenamiento crudas, SOLO en memoria (como la prueba): el modelo en reglas las lee para entrenar su árbol.
+        "X_train": ctx["X_train"],
         "numeric": list(ctx["numeric"]),
         "features": list(ctx["features"]),
         "sigma": _train_sigma(ctx["X_train"], ctx["numeric"]),
@@ -2880,6 +2891,580 @@ def run_interval(payload_json="{}"):
         "y": [cast(v) for v in y],
         "pred": [cast(v) for v in pred],
         "score": score,
+    })
+
+
+# --- S19: «¿qué pasaría si?» y el ajuste del ganador del Protocolo (ADR 027) -----------------------------------
+#
+# `simulate` puntúa DOS veces las mismas filas con el modelo retenido —como están y con UNA columna cambiada— y entrega
+# lo que el dinero necesita: la predicción y, cuando el modelo las da, las probabilidades COMPLETAS (el comando `score`
+# solo da la de la clase elegida en varias categorías). No lee el objetivo y no devuelve ningún valor de la tabla.
+# `fit-winner` es el único camino que deja al ganador del Protocolo en `_MODEL`: lo ajusta con el ENTRENAMIENTO y
+# nada más —su payload es el de la etapa 8 sin la prueba, y una clave `test` rompe el contrato nombrándola—, así que
+# no abre la prueba ni cuenta como apertura.
+
+SIMULATE_MAX_ROWS = 5000
+SIMULATE_KEYS = frozenset(("headers", "rows", "column", "values"))
+
+
+def _validate_simulate_payload(p, schema):
+    """Valida el envío del simulador contra el esquema del modelo retenido, nombrando el campo que falla."""
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in p:
+        if key not in SIMULATE_KEYS:
+            _contract(key)
+    features = list(schema["numeric"]) + list(schema["categorical"])
+    headers, rows, values = p.get("headers"), p.get("rows"), p.get("values")
+    if (
+        not isinstance(headers, list)
+        or not all(isinstance(h, str) for h in headers)
+        or len(set(headers)) != len(headers)
+        or any(f not in headers for f in features)
+    ):
+        _contract("headers")
+    if (
+        not isinstance(rows, list)
+        or not 1 <= len(rows) <= SIMULATE_MAX_ROWS
+        or any(not isinstance(r, list) or len(r) != len(headers) for r in rows)
+    ):
+        _contract("rows")
+    if not isinstance(p.get("column"), str) or p["column"] not in features:
+        _contract("column")
+    if not isinstance(values, list) or len(values) != len(rows):
+        _contract("values")
+
+
+def _simulate_one(task, pipe, X, schema):
+    """La predicción de unas filas y sus probabilidades completas (None si el modelo decide sin darlas)."""
+    def binary():
+        scored = _score_binary(pipe, X, schema)
+        proba = scored["probabilities"]
+        return scored["predictions"], None if proba is None else _finite(proba)
+
+    def multiclass():
+        classes = schema["classes"]
+        proba = _proba(pipe, X)
+        matrix = None if proba is None else [_finite([float(v) for v in row]) for row in proba]
+        return [classes[int(v)] for v in pipe.predict(X)], matrix
+
+    def numeric():
+        return _finite([float(v) for v in pipe.predict(X)]), None
+
+    def cluster():
+        scored = _score_cluster(_MODEL, X)
+        return scored["predictions"], None
+
+    pred, proba = _by_task(task, {
+        "binaria": binary,
+        "multiclase": multiclass,
+        "numerica": numeric,
+        "agrupar": cluster,
+    })()
+    return {"pred": pred, "proba": proba}
+
+
+def _outside_profile(series, column, numeric, profile):
+    """Cuántas filas tienen en `column` un valor que el entrenamiento nunca vio (fuera del rango o categoría nueva)."""
+    if column in numeric:
+        bounds = profile["numeric"].get(column)
+        if not bounds or bounds["min"] is None:
+            return 0
+        return int((series.notna() & ((series < bounds["min"]) | (series > bounds["max"]))).sum())
+    seen = profile["categorical"].get(column, [])
+    return int((series.notna() & ~series.isin(list(seen))).sum())
+
+
+def run_simulate(payload_json):
+    """S19: el simulador «¿qué pasaría si?». `values` es la columna `column` con el cambio ya aplicado (TS lo calcula); aquí
+    solo se puntúa lo de antes y lo de después. SOLO números y etiquetas de la clase: ninguna fila vuelve a TS."""
+    started = time.perf_counter()
+    if _MODEL is None:
+        raise RuntimeError("no-model")
+    schema = _MODEL["schema"]
+    p = json.loads(payload_json)
+    _validate_simulate_payload(p, schema)
+    task = _task_of(schema)
+    numeric = list(schema["numeric"])
+    features = numeric + list(schema["categorical"])
+    column = p["column"]
+    base = _build_frame(p["headers"], p["rows"], numeric)[features]
+    at = p["headers"].index(column)
+    moved_rows = []
+    for row, value in zip(p["rows"], p["values"]):
+        moved = list(row)
+        moved[at] = value
+        moved_rows.append(moved)
+    moved = _build_frame(p["headers"], moved_rows, numeric)[features]
+    pipe = _MODEL["pipe"]
+    profile = _MODEL["training_profile"]
+    result = {
+        "task": task,
+        "n": int(len(base)),
+        "column": column,
+        "base": _simulate_one(task, pipe, base, schema),
+        "changed": _simulate_one(task, pipe, moved, schema),
+        "outside": {
+            "before": _outside_profile(base[column], column, numeric, profile),
+            "after": _outside_profile(moved[column], column, numeric, profile),
+        },
+        "elapsed_ms": _elapsed_ms(started),
+    }
+    result.update(_by_task(task, {
+        "binaria": lambda: {"positive_class": schema["positive_class"]},
+        "multiclase": lambda: {"classes": list(schema["classes"])},
+        "numerica": dict,
+        "agrupar": dict,
+    })())
+    return json.dumps(result)
+
+
+def run_fit_winner(payload_json):
+    """S19 (ADR 027): vuelve a ajustar al ganador del Protocolo con el ENTRENAMIENTO sellado y lo deja en `_MODEL`
+    (sin `eval`: no hay prueba). El envío es el de la etapa 8 sin la prueba. Devuelve el eco de lo que TS cotejará."""
+    global _MODEL, _CLUSTER_LABELS
+    started = time.perf_counter()
+    p = json.loads(payload_json)
+    _validate_test_payload(p, with_test=False)
+    numeric = list(p["numeric"])
+    categorical = list(p["categorical"])
+    features = numeric + categorical
+    train = _build_frame(p["headers"], p["train"], numeric)
+    y_train, _, classes = _test_targets(train, None, p)
+    task = p["task"]
+    ctx = {
+        "factories": _FACTORIES_BY_TASK[task],
+        "seed": int(p["seed"]),
+        "preprocessor": _make_preprocessor(numeric, categorical),
+    }
+    X_train = train[features]
+    try:
+        pipe = _member_pipe(p["winner"], ctx).fit(X_train, y_train)
+    except Exception:  # noqa: BLE001 — el mensaje podría traer valores; se dice solo qué falló
+        raise RuntimeError("winner-fit-failed") from None
+    target = p["target"]
+    schema = _by_task(task, {
+        "binaria": lambda: {
+            "numeric": numeric,
+            "categorical": categorical,
+            "target": target,
+            "classes": classes,
+            "positive_class": p["positive"],
+            "task": "binaria",
+        },
+        "multiclase": lambda: {
+            "numeric": numeric,
+            "categorical": categorical,
+            "target": target,
+            "classes": classes,
+            "task": "multiclase",
+        },
+        "numerica": lambda: {
+            "numeric": numeric,
+            "categorical": categorical,
+            "target": target,
+            "task": "numerica",
+            "target_stats": _target_stats(y_train, train[target].tolist()),
+        },
+        "agrupar": _supervised_only,
+    })()
+    _CLUSTER_LABELS = None
+    _MODEL = {
+        "pipe": pipe,
+        "schema": schema,
+        "training_profile": _training_profile(X_train, numeric, categorical),
+    }
+    return json.dumps(
+        {
+            "task": task,
+            "winner": p["winner"],
+            "n_train": int(len(y_train)),
+            "huella": p["huella"],
+            "sello": p["sello"],
+            "elapsed_ms": _elapsed_ms(started),
+        }
+    )
+
+
+# --- S19: el modelo en reglas y vigilar el desempeño (ADR 027) -----------------------------------------------------
+#
+# `rules`: un árbol sustituto de profundidad 4 sobre las columnas ORIGINALES (los números en sus unidades; las categorías como
+# «es / no es»), entrenado con lo que el ganador PREDICE en las filas de entrenamiento. Se devuelve el árbol ya en la forma que se
+# descarga (umbrales a 6 cifras significativas, valores de hoja a 8) y la fidelidad se mide con ESA forma, en filas que el árbol no
+# vio: la prueba retenida en Probeta; el 25 % apartado al agrupar. Solo números, nombres de columna y categorías: ninguna fila.
+# `evaluate-new`: puntúa un CSV nuevo QUE TRAE el resultado real y devuelve lo real y lo predicho como números; el margen de error y
+# el veredicto los calcula TS (src/engine/vigilancia.ts) con el bootstrap del S18.
+
+RULES_DEPTH = 4
+RULES_LEAF_MIN = 20
+RULES_LEAF_SHARE = 0.02
+RULES_CATEGORY_MIN_ROWS = 5
+RULES_CATEGORY_MAX = 15
+RULES_HOLDOUT = 0.25
+RULES_MIN_ROWS = 40
+RULES_SEED = 0
+EVALUATE_KEYS = frozenset(("headers", "rows"))
+EVALUATE_MAX_ROWS = 50000
+
+
+def _sig(value, digits):
+    """Redondeo a cifras significativas: el mismo número que se escribe en el texto y en el SQL."""
+    value = float(value)
+    return float(f"{value:.{digits}g}") if math.isfinite(value) else value
+
+
+def _rules_medians(X, numeric):
+    medians = {}
+    for col in numeric:
+        value = float(X[col].median()) if X[col].notna().any() else 0.0
+        medians[col] = _sig(value, 8) if math.isfinite(value) else 0.0
+    return medians
+
+
+def _rules_categories(X, categorical):
+    """Las categorías con su propia pregunta «es / no es»: las más frecuentes, con soporte (orden determinista)."""
+    out = {}
+    for col in categorical:
+        counts = X[col].dropna().astype(str).value_counts()
+        ranked = sorted(
+            ((c, int(n)) for c, n in counts.items() if n >= RULES_CATEGORY_MIN_ROWS),
+            key=lambda item: (-item[1], item[0]),
+        )
+        out[col] = [c for c, _ in ranked[:RULES_CATEGORY_MAX]]
+    return out
+
+
+def _rules_design(X, numeric, categorical, medians, categories):
+    columns, meta = [], []
+    for col in numeric:
+        columns.append(X[col].fillna(medians[col]).to_numpy(dtype=float))
+        meta.append({"column": col, "kind": "numeric"})
+    for col in categorical:
+        for category in categories[col]:
+            columns.append((X[col] == category).to_numpy(dtype=float))
+            meta.append({"column": col, "kind": "categorical", "category": category})
+    return np.column_stack(columns), meta
+
+
+def _rules_nodes(fitted, meta, leaf_value):
+    tree = fitted.tree_
+
+    def build(i):
+        if tree.children_left[i] == -1:
+            return {"leaf": True, "pred": leaf_value(i), "n": int(tree.n_node_samples[i])}
+        m = meta[int(tree.feature[i])]
+        node = {
+            "leaf": False,
+            "column": m["column"],
+            "kind": m["kind"],
+            "left": build(int(tree.children_left[i])),
+            "right": build(int(tree.children_right[i])),
+        }
+        if m["kind"] == "numeric":
+            node["threshold"] = _sig(tree.threshold[i], 6)
+        else:
+            node["category"] = m["category"]
+        return node
+
+    return build(0)
+
+
+def _rules_prune(node):
+    """Una pregunta cuyas dos respuestas dicen lo mismo no pregunta nada: se funden en una sola hoja (la lectura no cambia)."""
+    if node["leaf"]:
+        return node
+    left, right = _rules_prune(node["left"]), _rules_prune(node["right"])
+    if left["leaf"] and right["leaf"] and left["pred"] == right["pred"]:
+        return {"leaf": True, "pred": left["pred"], "n": left["n"] + right["n"]}
+    return {**node, "left": left, "right": right}
+
+
+def _rules_shape(node):
+    if node["leaf"]:
+        return 0, 1
+    dl, ll = _rules_shape(node["left"])
+    dr, lr = _rules_shape(node["right"])
+    return 1 + max(dl, dr), ll + lr
+
+
+def _rules_apply(node, X, medians):
+    """Las reglas tal como se descargan, aplicadas a unas filas: el mismo camino que el texto, el SQL y TS."""
+    n = len(X)
+    out = np.empty(n, dtype=object)
+
+    def walk(nd, mask):
+        if not mask.any():
+            return
+        if nd["leaf"]:
+            out[mask] = nd["pred"]
+            return
+        col = nd["column"]
+        if nd["kind"] == "numeric":
+            goes_left = X[col].fillna(medians[col]).to_numpy(dtype=float) <= nd["threshold"]
+        else:
+            goes_left = ~(X[col] == nd["category"]).to_numpy(dtype=bool)
+        walk(nd["left"], mask & goes_left)
+        walk(nd["right"], mask & ~goes_left)
+
+    walk(node, np.ones(n, dtype=bool))
+    return list(out)
+
+
+def _agreement(a, b):
+    return float(np.mean([x == y for x, y in zip(a, b)])) if len(a) else 0.0
+
+
+def _r2(truth, pred):
+    truth = np.asarray(truth, dtype=float)
+    pred = np.asarray(pred, dtype=float)
+    ss_res = float(np.sum((truth - pred) ** 2))
+    ss_tot = float(np.sum((truth - truth.mean()) ** 2)) if len(truth) else 0.0
+    if ss_tot == 0.0:
+        return 1.0 if ss_res == 0.0 else 0.0
+    return 1.0 - ss_res / ss_tot
+
+
+def run_rules(payload_json="{}"):
+    """S19 (ADR 027): el modelo en reglas. Sin payload. `no-rows` si el modelo no conserva las filas (uno importado)."""
+    started = time.perf_counter()
+    if _MODEL is None:
+        raise RuntimeError("no-model")
+    p = json.loads(payload_json or "{}")
+    for key in p if isinstance(p, dict) else ["payload"]:
+        _contract(key)
+    schema = _MODEL["schema"]
+    task = _task_of(schema)
+    numeric = list(schema["numeric"])
+    categorical = list(schema["categorical"])
+    pipe = _MODEL["pipe"]
+    ev = _MODEL.get("eval")
+
+    def supervised_rows():
+        if ev is None or "X_train" not in ev:
+            raise RuntimeError("no-rows")
+        return ev["X_train"], ev["X_test"], ev["y_test"]
+
+    def classes_of():
+        return _by_task(task, {
+            "binaria": lambda: [next(c for c in schema["classes"] if c != schema["positive_class"]), schema["positive_class"]],
+            "multiclase": lambda: list(schema["classes"]),
+            "numerica": _supervised_only,
+            "agrupar": _supervised_only,
+        })()
+
+    def classification():
+        X_train, X_test, y_test = supervised_rows()
+        labels = classes_of()
+        name = lambda pred: [labels[int(v)] for v in pred]
+        return {
+            "fit_X": X_train,
+            "fit_y": name(pipe.predict(X_train)),
+            "hold_X": X_test,
+            "hold_model": name(pipe.predict(X_test)),
+            "hold_truth": name(y_test),
+            "regression": False,
+        }
+
+    def regression():
+        X_train, X_test, y_test = supervised_rows()
+        return {
+            "fit_X": X_train,
+            "fit_y": [float(v) for v in pipe.predict(X_train)],
+            "hold_X": X_test,
+            "hold_model": [float(v) for v in pipe.predict(X_test)],
+            "hold_truth": [float(v) for v in y_test],
+            "regression": True,
+        }
+
+    def cluster():
+        X = _MODEL.get("rows")
+        if X is None:
+            raise RuntimeError("no-rows")
+        if len(X) < RULES_MIN_ROWS:
+            raise RuntimeError("too-few-rows")
+        groups = _score_cluster(_MODEL, X)["predictions"]
+        order = np.random.RandomState(RULES_SEED).permutation(len(X))
+        n_hold = max(1, int(round(len(X) * RULES_HOLDOUT)))
+        hold, fit = order[:n_hold], order[n_hold:]
+        return {
+            "fit_X": X.iloc[fit],
+            "fit_y": [int(groups[i]) for i in fit],
+            "hold_X": X.iloc[hold],
+            "hold_model": [int(groups[i]) for i in hold],
+            "hold_truth": None,
+            "regression": False,
+        }
+
+    data = _by_task(task, {
+        "binaria": classification,
+        "multiclase": classification,
+        "numerica": regression,
+        "agrupar": cluster,
+    })()
+    fit_X, hold_X = data["fit_X"], data["hold_X"]
+    if len(fit_X) < RULES_MIN_ROWS:
+        raise RuntimeError("too-few-rows")
+    medians = _rules_medians(fit_X, numeric)
+    categories = _rules_categories(fit_X, categorical)
+    design, meta = _rules_design(fit_X, numeric, categorical, medians, categories)
+    leaf_min = max(RULES_LEAF_MIN, int(math.ceil(RULES_LEAF_SHARE * len(fit_X))))
+    if data["regression"]:
+        fitted = DecisionTreeRegressor(max_depth=RULES_DEPTH, min_samples_leaf=leaf_min, random_state=RULES_SEED)
+        fitted.fit(design, np.asarray(data["fit_y"], dtype=float))
+        leaf_value = lambda i: _sig(fitted.tree_.value[i][0][0], 8)
+    else:
+        fitted = DecisionTreeClassifier(max_depth=RULES_DEPTH, min_samples_leaf=leaf_min, random_state=RULES_SEED)
+        fitted.fit(design, np.asarray(data["fit_y"]))
+        leaf_value = lambda i: (lambda v: v.item() if hasattr(v, "item") else v)(fitted.classes_[int(np.argmax(fitted.tree_.value[i][0]))])
+    root = _rules_prune(_rules_nodes(fitted, meta, leaf_value))
+    depth, leaves = _rules_shape(root)
+    rules_pred = _rules_apply(root, hold_X, medians)
+
+    if data["regression"]:
+        fidelity = {"metric": "r2", "value": _r2(data["hold_model"], rules_pred), "n": int(len(hold_X))}
+        truth = {
+            "metric": "mae",
+            "rules": float(np.mean(np.abs(np.asarray(rules_pred, dtype=float) - np.asarray(data["hold_truth"])))),
+            "model": float(np.mean(np.abs(np.asarray(data["hold_model"]) - np.asarray(data["hold_truth"])))),
+            "n": int(len(hold_X)),
+        }
+    else:
+        fidelity = {"metric": "agreement", "value": _agreement(data["hold_model"], rules_pred), "n": int(len(hold_X))}
+        truth = None
+        if data["hold_truth"] is not None:
+            truth = {
+                "metric": "accuracy",
+                "rules": _agreement(data["hold_truth"], rules_pred),
+                "model": _agreement(data["hold_truth"], data["hold_model"]),
+                "n": int(len(hold_X)),
+            }
+    return json.dumps({
+        "task": task,
+        "tree": root,
+        "numeric": [{"column": c, "median": medians[c]} for c in numeric],
+        "fidelity": fidelity,
+        "truth": truth,
+        "depth": depth,
+        "leaves": leaves,
+        "n_fit": int(len(fit_X)),
+        "elapsed_ms": _elapsed_ms(started),
+    })
+
+
+def _validate_evaluate_payload(p, schema):
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in p:
+        if key not in EVALUATE_KEYS:
+            _contract(key)
+    headers, rows = p.get("headers"), p.get("rows")
+    needed = list(schema["numeric"]) + list(schema["categorical"])
+    if (
+        not isinstance(headers, list)
+        or not all(isinstance(h, str) for h in headers)
+        or len(set(headers)) != len(headers)
+        or any(f not in headers for f in needed)
+    ):
+        _contract("headers")
+    if schema["target"] not in headers:
+        _contract("target")
+    if (
+        not isinstance(rows, list)
+        or not 1 <= len(rows) <= EVALUATE_MAX_ROWS
+        or any(not isinstance(r, list) or len(r) != len(headers) for r in rows)
+    ):
+        _contract("rows")
+
+
+def run_evaluate(payload_json):
+    """S19 (ADR 027): vigilar el desempeño. Puntúa un CSV nuevo que trae la columna del objetivo y entrega lo real y lo predicho como
+    números (dos clases 0/1, varias 0..K−1, estimar en sus unidades) y, en dos clases, el puntaje por fila. Las filas sin resultado o con
+    una clase nunca vista se cuentan y se dejan fuera. Sirve también con un modelo importado. Agrupar no tiene objetivo."""
+    started = time.perf_counter()
+    if _MODEL is None:
+        raise RuntimeError("no-model")
+    schema = _MODEL["schema"]
+    task = _task_of(schema)
+    _by_task(task, {
+        "binaria": _supervised,
+        "multiclase": _supervised,
+        "numerica": _supervised,
+        "agrupar": _stress_not_applicable,
+    })()
+    p = json.loads(payload_json)
+    _validate_evaluate_payload(p, schema)
+    numeric = list(schema["numeric"])
+    features = numeric + list(schema["categorical"])
+    df = _build_frame(p["headers"], p["rows"], numeric)
+    X = df[features]
+    raw = df[schema["target"]]
+
+    def classification(classes, encode):
+        text = raw.astype("string")
+        known = text.isin(list(classes)).fillna(False).to_numpy(dtype=bool)
+        empty = int(text.isna().sum())
+        unknown = int((text.notna().to_numpy(dtype=bool) & ~known).sum())
+        return known, encode(text[known]), empty, unknown
+
+    def binary():
+        return classification(
+            schema["classes"], lambda t: (t == schema["positive_class"]).astype(int).to_numpy()
+        )
+
+    def multiclass():
+        index = {c: i for i, c in enumerate(schema["classes"])}
+        return classification(schema["classes"], lambda t: t.map(index).astype(int).to_numpy())
+
+    def numeric_target():
+        values = pd.to_numeric(raw, errors="coerce")
+        keep = values.notna().to_numpy(dtype=bool) & np.isfinite(values.to_numpy(dtype=float, na_value=np.nan))
+        empty = int(raw.isna().sum())
+        invalid = int((raw.notna().to_numpy(dtype=bool) & ~keep).sum())
+        return keep, values[keep].to_numpy(dtype=float), empty, invalid
+
+    keep, y, empty, unknown = _by_task(task, {
+        "binaria": binary,
+        "multiclase": multiclass,
+        "numerica": numeric_target,
+        "agrupar": _supervised_only,
+    })()
+    pipe = _MODEL["pipe"]
+    Xk = X[keep]
+    if len(Xk) == 0:
+        pred, score = [], None
+    else:
+        raw_pred = pipe.predict(Xk)
+        cast = _by_task(task, {
+            "binaria": lambda: int,
+            "multiclase": lambda: int,
+            "numerica": lambda: float,
+            "agrupar": _supervised_only,
+        })()
+        pred = [cast(v) for v in raw_pred]
+        score = _by_task(task, {
+            "binaria": lambda: [float(v) for v in _scores(pipe, Xk)],
+            "multiclase": lambda: None,
+            "numerica": lambda: None,
+            "agrupar": _supervised_only,
+        })()
+        _finite([float(v) for v in pred])
+        if score is not None:
+            _finite(score)
+    cast_y = _by_task(task, {
+        "binaria": lambda: int,
+        "multiclase": lambda: int,
+        "numerica": lambda: float,
+        "agrupar": _supervised_only,
+    })()
+    return json.dumps({
+        "task": task,
+        "n_rows": int(len(df)),
+        "n_used": int(len(y)),
+        "dropped": {"empty": empty, "unknown": unknown},
+        "y": [cast_y(v) for v in y],
+        "pred": pred,
+        "score": score,
+        "elapsed_ms": _elapsed_ms(started),
     })
 
 

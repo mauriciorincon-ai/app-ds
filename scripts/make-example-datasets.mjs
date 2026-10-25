@@ -36,7 +36,7 @@ function toCsv(headers, rows) {
 }
 
 // 1) Campaña de marketing — LIMPIO, con señal real (el modelo debería superar al baseline).
-function marketingCampaign(n = 200, seed = 101) {
+function marketingCampaign(n = 200, seed = 101, corrido = false) {
   const rng = mulberry32(seed);
   const rows = [];
   for (let i = 0; i < n; i++) {
@@ -50,7 +50,10 @@ function marketingCampaign(n = 200, seed = 101) {
     // navega mucho la web; en escritorio, quien abre muchos correos. Los árboles
     // capturan la interacción; un modelo lineal sin términos cruzados, no → aquí
     // el Random Forest SÍ supera al baseline (happy-path del veredicto).
-    const engaged = device === "movil" ? webVisits >= 22 : emailOpens >= 11;
+    // S19 (vigilar el desempeño): con `corrido` el canal que convierte se invierte —el mundo cambió—, y el modelo entrenado con el
+    // archivo original ya no acierta; sin él, es el mismo mundo con otras filas.
+    const engaged =
+      (device === "movil") !== corrido ? webVisits >= 22 : emailOpens >= 11;
     const converted = rng() < (engaged ? 0.85 : 0.15) ? 1 : 0;
     rows.push([age, income, webVisits, emailOpens, region, device, converted]);
   }
@@ -493,6 +496,11 @@ async function main() {
     "bajas-con-fuga.csv": monthlyChurnWithLeak(),
     // S18: el aviso de posibles datos personales (todo de ficción).
     "clientes-con-datos-personales.csv": customersWithPersonalData(),
+    // S19: filas NUEVAS con el resultado real, para «Vigilar el desempeño» en el modo de puntuar. Las dos traen la columna `convirtio`.
+    // La primera es el mismo mundo del ejemplo `marketing-campania.csv` (el veredicto debe ser «sigue»); la segunda, el mismo
+    // formato con el canal que convierte invertido (el veredicto debe ser «reentrenar»). Todo de ficción.
+    "marketing-resultados-sin-cambio.csv": marketingCampaign(300, 131),
+    "marketing-resultados-corridos.csv": marketingCampaign(300, 132, true),
   };
   for (const [name, content] of Object.entries(kitOnly)) {
     await writeFile(resolve(kitDir, name), content, "utf8");

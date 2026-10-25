@@ -359,7 +359,7 @@
     },
     "needed": {
       "title": "Columns the model needs",
-      "noTarget": "Don't include “{target}”: the model predicts here, it isn't evaluated. If present, it is ignored.",
+      "noTarget": "“{target}” is not needed to score. If the file carries it with the real result, it is not used to predict: it serves to watch the model's performance.",
       "cluster": "Grouping has no target: these columns are enough. Any others are ignored."
     },
     "blocked": {
@@ -372,7 +372,7 @@
     "warnings": {
       "title": "Warnings",
       "extra": "Columns the model doesn't use, ignored: {columns}",
-      "target": "Your file includes the target column “{target}”: it is ignored (the model predicts here, it isn't evaluated)."
+      "target": "Your file includes the target column “{target}”: it is not used to predict; further down it is used to watch the model's performance."
     },
     "novelty": {
       "title": "The model is seeing new things",
@@ -1560,7 +1560,7 @@
         },
         "trap": {
           "sin-memoria": "This card comes only from what the notebook recorded in stages 1 to {etapas}: nothing was recomputed and the test set wasn't opened again.",
-          "solo-entradas": "The plan watches the inputs of {columnas} model columns. It doesn't say whether the model is still right: that would need the new outcomes and the saved model, and they're not here.",
+          "solo-entradas": "The plan watches the inputs of {columnas} model columns. It doesn't say whether the model is still right: for that, save the winner as a file in stage 10 and use it in Probeta with new rows that carry the real result.",
           "sin-tiempo": "Your test wasn't split by time, so it doesn't say how long the model holds: the cadence is yours alone.",
           "cadencia-alargada": "You chose a retraining cadence (in months) of {cadencia} and the test supports {sugerida}: it's written with your reason.",
           "sin-vigilar": "You left text columns unwatched ({lista}): if they change, the check won't notice.",

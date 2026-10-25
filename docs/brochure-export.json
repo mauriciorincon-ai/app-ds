@@ -19,7 +19,7 @@
     "ciclo": "H-2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 18,
+    "sprints_cerrados": 19,
     "version_repo": "0.1.0"
   },
   "promesa": {
@@ -29,7 +29,7 @@
     "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad. En Protocolo DS la honestidad además detiene: ninguna etapa se abre sin el criterio de salida de la anterior, la prueba se sella antes de tocar el modelo y se abre una vez, con cada apertura distinta contada, y «no usarlo» es un resultado válido que queda escrito."
   },
   "funcionalidades": {
-    "total": 68,
+    "total": 73,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
     "descartadas": [],
     "grupos": [
@@ -326,6 +326,24 @@
             "nombre": "Plantilla de servicio",
             "que_hace": "Un .zip con un servicio FastAPI de versiones fijas y un README para mantener el costo predecible; Probeta no despliega nada ni guarda credenciales.",
             "seccion_manual": "Llévatelo: la receta, el puntuador y el servicio"
+          },
+          {
+            "id": "U13",
+            "nombre": "¿Qué pasaría si?, en dinero",
+            "que_hace": "Cambias una columna —un porcentaje, un valor fijo u otra categoría que exista— para todas las filas o un segmento, y ves cuántas decisiones del modelo se mueven y su costo esperado por cada 100 decisiones con tus costos. Es una simulación con las probabilidades del modelo, no una medición.",
+            "seccion_manual": "¿Qué pasaría si?"
+          },
+          {
+            "id": "U14",
+            "nombre": "El modelo en reglas, con su fidelidad",
+            "que_hace": "Un árbol de pocas preguntas sobre tus columnas copia lo que el modelo decide y se descarga como texto y como SQL. La pantalla dice cuánto se le parece; debajo de 0,90 de coincidencia no lo llama «el modelo en reglas».",
+            "seccion_manual": "El modelo en reglas"
+          },
+          {
+            "id": "U15",
+            "nombre": "Vigilar el desempeño",
+            "que_hace": "Con filas nuevas que traen el resultado real, la cifra de hoy —con su margen del 95 %— junto a la de la prueba del modelo y un veredicto: sigue, revisar o reentrenar. Los resultados los subes tú; la app no los trae de ningún sistema.",
+            "seccion_manual": "Vigilar el desempeño y llevarte el ganador del Protocolo"
           }
         ]
       },
@@ -474,6 +492,18 @@
             "nombre": "La ficha del modelo y su vigilancia",
             "que_hace": "La ficha sale del cuaderno con la fuente de cada línea; con «usarlo» trae el plan de vigilancia, la cadencia de reentreno, quién responde y un chequeo de deriva de las entradas.",
             "seccion_manual": "Protocolo DS, el camino lento"
+          },
+          {
+            "id": "L18",
+            "nombre": "¿Qué pasaría si?, sin abrir la prueba",
+            "que_hace": "En la etapa 9, con los costos de la etapa 1 y solo las filas de entrenamiento: informa la decisión y no entra al cuaderno ni a la compuerta. La prueba no se vuelve a abrir.",
+            "seccion_manual": "¿Qué pasaría si?"
+          },
+          {
+            "id": "L19",
+            "nombre": "El ganador como archivo",
+            "que_hace": "La etapa 10 guarda el ganador de la etapa 7 como un archivo que Probeta abre para puntuar y vigilar. Lleva la cifra de su prueba y ninguna fila, y se vuelve a ajustar solo con el entrenamiento.",
+            "seccion_manual": "Vigilar el desempeño y llevarte el ganador del Protocolo"
           }
         ]
       },
@@ -503,10 +533,10 @@
     {
       "clave": "funcionalidades",
       "etiqueta": "Funcionalidades",
-      "valor": 68,
+      "valor": 73,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (51 de Probeta y 17 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad de la VISION está descartada: lo que aún no existe (S19 a S21) ni se cuenta ni se lista aquí."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (54 de Probeta y 19 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad de la VISION está descartada: lo que aún no existe (S20 y S21) ni se cuenta ni se lista aquí."
     },
     {
       "clave": "pantallas",
@@ -527,26 +557,26 @@
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 2623,
+      "valor": 2862,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-10-25 sobre el árbol final: `pnpm test` 2457 pruebas en 146 archivos + `pnpm test:integration` 166 en 18 archivos (con Pyodide real; una más se salta, el emisor del fixture del S6). Aparte, 13 pruebas de Python en CPython 3.14.0 que corre el job `integration` de la CI."
+      "detalle": "Salida del 2026-10-25 sobre el árbol final: `pnpm test` 2669 pruebas en 158 archivos + `pnpm test:integration` 193 en 21 archivos (con Pyodide real; una más se salta, el emisor del fixture del S6). Aparte, 17 pruebas de Python en CPython 3.14.0 que corre el job `integration` de la CI (el servicio y la receta, y el SQL de las reglas)."
     },
     {
       "clave": "pruebas_e2e",
       "etiqueta": "Pruebas end-to-end",
-      "valor": 152,
+      "valor": 156,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida de la suite e2e entera el 2026-10-25, sobre el build de producción: 34 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe en los dos temas; 152 pasan y 6 se omiten a propósito en móvil (Tab no aplica al teléfono; el puntuador, con Pyodide y sus wheels, se prueba una vez en escritorio). Cero flaky."
+      "detalle": "Salida de la suite e2e entera el 2026-10-25, sobre el build de producción: 35 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe en los dos temas; 156 pasan y 6 se omiten a propósito en móvil (Tab no aplica al teléfono; el puntuador, con Pyodide y sus wheels, se prueba una vez en escritorio). Cero flaky."
     },
     {
       "clave": "cobertura_lineas",
       "etiqueta": "Cobertura de líneas",
-      "valor": 95.54,
+      "valor": 95.24,
       "unidad": "%",
       "fuente": "medido",
-      "detalle": "v8 sobre engine, lib, components y workers; 9443 de 9883 líneas (salida de `pnpm test` del 2026-10-25, sobre el árbol final: imprime 95,54 %). Los motores puros de engine/ llevan umbral propio más alto."
+      "detalle": "v8 sobre engine, lib, components y workers; 10272 de 10785 líneas (salida de `pnpm test` del 2026-10-25, sobre el árbol final: imprime 95,24 %). Los motores puros de engine/ llevan umbral propio más alto."
     },
     {
       "clave": "dependencias_runtime",
@@ -583,7 +613,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 128628,
+      "valor": 133135,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
@@ -591,10 +621,10 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 26,
+      "valor": 27,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/ (001–026): el 023 y el 024 son la prueba de estrés y lo que el usuario se lleva; el 025 fija el lector de Excel sin dependencia y el 026 el plan de limpieza que el usuario aprueba paso a paso. Lo recuenta tests/unit/brochure-export.test.ts."
+      "detalle": "Archivos de decisions/ (001–027): el 023 y el 024 son la prueba de estrés y lo que el usuario se lleva; el 025 y el 026, el lector de Excel y el plan de limpieza; el 027, del modelo a la decisión (el «¿qué pasaría si?» en dinero, el modelo en reglas y vigilar el desempeño). Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [
