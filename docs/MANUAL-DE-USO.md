@@ -73,7 +73,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - El chequeo de fuga es una **ayuda honesta, no una garantía**: atrapa los casos evidentes, no
     todos.
   - Las columnas de fecha se **detectan y avisan**, pero no se usan para el análisis.
-  - Formato admitido: **CSV** (con cabecera). Los valores vacíos, `NA`, `null`, etc. se tratan como
+  - Formato admitido: **CSV** (con cabecera) y, desde el Sprint 018, **Excel `.xlsx`**. Los valores vacíos, `NA`, `null`, etc. se tratan como
     faltantes.
 
 ### El porqué, contado honesto · desde Sprint 002
@@ -136,7 +136,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Puntuar datos nuevos:**
   1. En Resultados, pulsa **"Usar el modelo"**.
-  2. Sube un CSV nuevo con **las mismas columnas** que usaste al entrenar (la pantalla te las
+  2. Sube un CSV (o un Excel) nuevo con **las mismas columnas** que usaste al entrenar (la pantalla te las
      lista), pero **sin la columna que predices** — aquí el modelo responde, no se evalúa. Si la
      incluyes de todos modos, se ignora y se te avisa.
   3. Si a tu archivo le **falta** alguna columna del modelo, la app **se niega a puntuar** y te
@@ -962,6 +962,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     vuelven vacías, con aviso, como antes. Arréglalos en la hoja de cálculo.
   - Un paso sobre **la columna que quieres predecir** no se aplica (el registro lo dice).
   - Los umbrales son fijos y están escritos en el código: no se ajustan.
+  - **Los conteos de cada propuesta** (cuántas celdas vacías, cuántos valores lejanos) miran **toda la tabla**, como las
+    alertas de antes de entrenar; lo que el modelo calcula al aplicar un paso mira **solo las filas de entrenamiento**.
 
 ### Entender los datos y confiar en la cifra · desde Sprint 018
 
@@ -992,7 +994,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   el modelo las pesó**. Si pasa, lleva la insignia **«Verificada contra tus números»**; si no, se muestra un
   texto mínimo con las cifras y se dice. Al agrupar, cada grupo se describe frente a **su media y al promedio de
   todos los grupos** (en las unidades de tu tabla), con las columnas que más separan. Es una comprobación del
-  texto, no una garantía de que el modelo sea bueno. La explicación con IA de dos clases sigue como estaba
+  texto, no una garantía de que el modelo sea bueno: comprueba que estén las cifras del resultado, con su signo,
+  y los nombres en su orden, pero no puede saber si el texto le pone cada cifra a la columna correcta más allá de ese orden. La explicación con IA de dos clases sigue como estaba
   (a demanda, con su propia verificación); **no hay ninguna llamada nueva a una IA**.
 
 - **La liga, contra lo prometido:** un chequeo automático cruza los modelos que se prometen (regresión lineal y

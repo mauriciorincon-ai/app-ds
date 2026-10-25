@@ -411,7 +411,7 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
   bloquea. `role="status"`; el color nunca va solo.
 - **Plan de limpieza (S18)** — una lista de pasos; cada fila lleva la frase de lo que hace, su estado con **símbolo y palabra** (○ Sin decidir ·
   ✓ Aprobado · ✕ Rechazado, el color solo refuerza) y dos botones, «Aprobar» (icono `check`) y «Rechazar» (icono `x`), con `aria-pressed`: pulsar el
-  activo lo deja sin decidir. Arriba, un resumen que sigue las decisiones («1 aprobados · 1 rechazados · 0 sin decidir») y, si el archivo es un
+  activo lo deja sin decidir. Arriba, un resumen que sigue las decisiones («Aprobados: 1 · Rechazados: 1 · Sin decidir: 0») y, si el archivo es un
   Excel, la hoja que se leyó (icono `table`, `role="status"`). Se alcanza con Tab y se activa con Enter o Espacio. Sus textos viajan con su chunk
   (`messages/limpieza.{es,en}.json`).
 - **Explora tus datos (S18)** — una tarjeta con un botón «Explorar» (icono `eye`; «Ocultar la exploración» con `x`): nada se calcula antes de

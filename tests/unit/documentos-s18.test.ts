@@ -161,6 +161,13 @@ describe("guía: la ruta «Ensayo general del H-2»", () => {
   });
 });
 
+describe("ningún marcador de relleno queda escrito en los documentos", () => {
+  it("el BLUEPRINT, la guía, el brochure y el manual no llevan un «@@» pendiente (auditoría H-09, S18)", () => {
+    for (const [nombre, texto] of Object.entries({ blueprint, guia, manual }))
+      expect(texto, nombre).not.toMatch(/@@\w*@@/);
+  });
+});
+
 describe("manual: lo que el S17 y el S18 construyeron está contado", () => {
   it("trae las secciones del S18, sus términos, sus preguntas frecuentes y su fila del historial", () => {
     for (const seccion of [

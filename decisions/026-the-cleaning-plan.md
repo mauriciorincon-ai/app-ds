@@ -53,6 +53,10 @@ the file carries.
 - It does **not** recover numbers written with a symbol or a thousands separator (`$1,200`): those cells become empty with a
   notice, as before. Doing it would need the same grammar in TypeScript and Python, for a case the user can fix in the spreadsheet.
 - It does not apply to the Protocol, whose stages have their own gates.
+- The **counts shown with each proposal** (how many empty cells, how many far-off values) are taken over the whole table, like the
+  EDA alerts that come before training; what the model **computes** when a step is applied (the median, the quantiles, the extra
+  category) is fitted on the training rows only. The user decides with a description of the data, never with the test rows' influence
+  on the model.
 
 ## Consequences
 
