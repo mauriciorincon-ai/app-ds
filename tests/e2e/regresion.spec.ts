@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
+import { estresar } from "./estres";
 
 // S6 — estimar una cantidad de punta a punta en el navegador real (build de
 // producción en CI): el ejemplo de consumo de energía → la tarjeta dice «en kWh» →
@@ -80,6 +81,13 @@ test("estimar: veredicto en unidades, gráfico y cero peticiones de narración",
   await axeBothThemes(page, "dialog");
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
+
+  // S17: al estimar, el error medio se dice en las unidades del objetivo (kWh) y «sube» al empeorar
+  await estresar(page);
+  await expect(page.getByTestId("estres-frase")).toContainText("MAE");
+  await expect(page.getByTestId("estres-lectura")).toContainText("kWh");
+  await axeBothThemes(page);
+  // ni la narración ni nada más salió: estresar corre en el navegador
   expect(narrateRequests).toHaveLength(0);
 });
 

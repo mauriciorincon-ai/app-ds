@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
+import { estresar } from "./estres";
 
 // Inicio VACÍO (antes de cargar nada) no tenía ningún escaneo axe: Lighthouse lo
 // encontró en el S6 (dos `<input type="file">` sin nombre). Ambos temas.
@@ -65,5 +66,9 @@ test("del inicio al veredicto con un dataset de ejemplo", async ({ page }) => {
   ).toBeVisible();
 
   // A11y: sin violaciones en la pantalla de resultados.
+  await axeBothThemes(page);
+
+  // S17: «Estrésalo» (bajo demanda): la lectura en una frase y tres tablas; axe en los dos temas con la lectura abierta.
+  await estresar(page);
   await axeBothThemes(page);
 });

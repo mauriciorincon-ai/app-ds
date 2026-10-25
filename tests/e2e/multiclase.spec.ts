@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { axeBothThemes } from "./axe-temas";
+import { estresar } from "./estres";
 
 // S7 (ADR 015) — clasificar en VARIAS categorías de punta a punta en el navegador
 // real (build de producción en CI): la tarjeta dice cuántas categorías → la liga
@@ -89,6 +90,12 @@ test("varias categorías: veredicto, matriz K×K, por categoría y cero peticion
     page.getByText(/Con varias categorías, la lectura es el texto estándar/),
   ).toBeVisible();
   await axeBothThemes(page);
+
+  // S17: con varias categorías la métrica es la exactitud balanceada
+  await estresar(page);
+  await expect(page.getByTestId("estres-frase")).toContainText(
+    "exactitud balanceada",
+  );
 
   // La ficha de la logística con varias categorías: sin «sí»/«no».
   await page

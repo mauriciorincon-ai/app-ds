@@ -47,6 +47,7 @@ export default function Home() {
     resetScoring,
     scoreCsv,
     exportModel,
+    ask,
     activateImportedModel,
     chooseMember,
     runLevel2,
@@ -97,6 +98,7 @@ export default function Home() {
           onAgain={reset}
           onUseModel={goToScoring}
           onExportModel={exportModel}
+          onAsk={ask}
           exportState={state.exportState}
           routing={state.routing}
           choice={state.choice}

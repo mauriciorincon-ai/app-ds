@@ -1,0 +1,62 @@
+{
+  "stress": {
+    "title": "Estrésalo",
+    "desc": "¿Cuánto aguanta este modelo si los datos cambian un poco? Se mide el mismo modelo, sin reentrenarlo, sobre la misma prueba que ya se abrió: con ruido en los números, con una columna revuelta y con un corrimiento. No elige ni cambia nada.",
+    "button": "Estrésalo",
+    "running": "Estresando el modelo…",
+    "retry": "Volver a medir",
+    "error": "No se pudo estresar el modelo. Vuelve a intentarlo.",
+    "need-test": "Un modelo importado no trae la prueba con la que se midió: estrésalo en la corrida donde lo entrenaste.",
+    "not-applicable": "Agrupar no tiene objetivo ni prueba: no hay nada que estresar.",
+    "no-numeric": "Este modelo no usa columnas numéricas: no hay dónde poner ruido ni corrimiento. Abajo, lo que pasa al revolver cada columna.",
+    "base": "Sin perturbar: {metric} {value}, medido sobre las {n} filas de la prueba.",
+    "line": {
+      "worse": {
+        "higher": "Con {pct} % de ruido en los números, tu {metric} cae de {from} a {to}.",
+        "lower": "Con {pct} % de ruido en los números, tu {metric} sube de {from} a {to}."
+      },
+      "same": "Con {pct} % de ruido en los números, tu {metric} casi no cambia: pasa de {from} a {to}.",
+      "better": "Con {pct} % de ruido en los números, tu {metric} no empeora (pasa de {from} a {to}); es el azar de la prueba, no una mejora."
+    },
+    "col": {
+      "what": "Perturbación",
+      "value": "Resultado",
+      "change": "Cambio"
+    },
+    "change": {
+      "worse": "▼ peor",
+      "same": "● casi igual",
+      "better": "▲ mejor"
+    },
+    "noise": {
+      "title": "Ruido en los números",
+      "desc": "A cada columna numérica se le suma ruido, en proporción a lo que varía en el entrenamiento.",
+      "row": "{pct} % de ruido"
+    },
+    "shuffle": {
+      "title": "Una columna revuelta",
+      "desc": "Se revuelven los valores de una columna a la vez: lo que pierde el modelo es cuánto dependía de ella. Aquí, las {count} que más duelen.",
+      "desc_one": "Se revuelven los valores de una columna a la vez: lo que pierde el modelo es cuánto dependía de ella. Aquí, la que más duele.",
+      "more": "Otras {count} columnas duelen menos que estas.",
+      "more_one": "Otra columna duele menos que estas."
+    },
+    "shift": {
+      "title": "Un corrimiento, como el paso del tiempo",
+      "desc": "Las columnas numéricas que más pesan se corren hacia arriba, como si con el tiempo sus valores fueran otros: {columns}.",
+      "row": "+{level} desviaciones",
+      "row_one": "+{level} desviación"
+    },
+    "seal": {
+      "holds": "✓ Con {pct} % de ruido sigue ganándole a su mejor rival sin modelo: {value} contra {rival}.",
+      "drops": "⚠ Con {pct} % de ruido deja de ganarle a su mejor rival sin modelo: {value} contra {rival}.",
+      "already-lost": "⚠ Antes del ruido ya no le ganaba a su mejor rival sin modelo ({base} contra {rival}): el ruido no es la causa.",
+      "no-noise": "Sin columnas numéricas no se juzga el ruido.",
+      "caveat": "Es una lectura de esta prueba, no una garantía: con otros datos puede dar otra cifra. La semilla es fija ({seed}): repetirlo da lo mismo."
+    },
+    "stage8": {
+      "note": "Es opcional y no es una apertura nueva: usa la misma prueba, con el mismo sello y el mismo ganador, y no elige nada. Si la corres antes de registrar la etapa, su cifra con 10 % de ruido y el rival sin modelo quedan en el cuaderno y entran a la ficha.",
+      "saved": "Esta lectura se guarda con la etapa 8 cuando la registras.",
+      "reopen": "Si abres la prueba otra vez, la lectura se pierde y se vuelve a pedir."
+    }
+  }
+}

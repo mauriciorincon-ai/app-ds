@@ -100,6 +100,7 @@ import type {
   ProgressDetail,
   ProgressStage,
   RegressionModelSchema,
+  RunnerCall,
   RunnerResponse,
   ScorePayload,
   ScoreResult,
@@ -638,6 +639,8 @@ export function useExperiment() {
   // Reporte de saneamiento del dataset activo (para adjuntarlo al export).
   const sanitationRef = useRef<SanitationReport | null>(null);
   const pendingRef = useRef(new Map<number, Pending>());
+  // S17: los comandos que pide un panel diferido (la prueba de estrés): su respuesta no pasa por la máquina de estados.
+  const askersRef = useRef(new Map<number, (message: RunnerResponse) => void>());
   // Espejos para leer en callbacks sin closures obsoletas (patrón tableRef).
   const modelRef = useRef<ModelMeta | null>(null);
   const resultRef = useRef<ExperimentResult | null>(null);
@@ -758,6 +761,12 @@ export function useExperiment() {
 
     const handleMessage = (event: MessageEvent<RunnerResponse>) => {
       const message = event.data;
+      const asker = askersRef.current.get(message.id);
+      if (asker) {
+        if (message.type !== "progress") askersRef.current.delete(message.id);
+        asker(message);
+        return;
+      }
       const pending = pendingRef.current.get(message.id);
       if (!pending) return;
 
@@ -1578,6 +1587,16 @@ export function useExperiment() {
     workerRef.current?.postMessage({ id, type: "score", payload });
   }, []);
 
+  /** S17: manda un comando al worker del modelo activo y entrega su respuesta tal cual (la valida quien pregunta). */
+  const ask = useCallback(
+    (call: RunnerCall, onResponse: (message: RunnerResponse) => void) => {
+      const id = nextId.current++;
+      askersRef.current.set(id, onResponse);
+      workerRef.current?.postMessage({ id, ...call });
+    },
+    [],
+  );
+
   const exportModel = useCallback(() => {
     const result = resultRef.current;
     const datasetName = datasetNameRef.current;
@@ -1689,6 +1708,7 @@ export function useExperiment() {
     resetScoring,
     scoreCsv,
     exportModel,
+    ask,
     activateImportedModel,
     chooseMember,
     runLevel2,
