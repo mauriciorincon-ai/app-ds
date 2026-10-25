@@ -16,9 +16,9 @@
   },
   "start": {
     "title": "Start your experiment",
-    "subtitle": "Upload a CSV or pick an example. Everything runs in your browser; your data never leaves it.",
+    "subtitle": "Upload a CSV or an Excel file, or pick an example. Everything runs in your browser; your data never leaves it.",
     "dropzone": {
-      "label": "Drag a CSV here or click to choose",
+      "label": "Drag a CSV or an Excel file here or click to choose",
       "hint": "Up to {mb} MB or {rows} rows",
       "button": "Choose file"
     },
@@ -353,7 +353,7 @@
       "importing": "Restoring the saved model…"
     },
     "dropzone": {
-      "label": "Drop your new CSV here or click to choose",
+      "label": "Drop your new CSV (or an Excel file) here or click to choose",
       "hint": "Up to {mb} MB or {rows} rows",
       "button": "Choose file"
     },

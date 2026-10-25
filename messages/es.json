@@ -16,9 +16,9 @@
   },
   "start": {
     "title": "Empieza tu experimento",
-    "subtitle": "Sube un CSV o elige un ejemplo. Todo corre en tu navegador; tus datos nunca salen de él.",
+    "subtitle": "Sube un CSV o un Excel, o elige un ejemplo. Todo corre en tu navegador; tus datos nunca salen de él.",
     "dropzone": {
-      "label": "Arrastra un CSV aquí o haz clic para elegir",
+      "label": "Arrastra un CSV o un Excel aquí o haz clic para elegir",
       "hint": "Hasta {mb} MB o {rows} filas",
       "button": "Elegir archivo"
     },
@@ -353,7 +353,7 @@
       "importing": "Restaurando el modelo guardado…"
     },
     "dropzone": {
-      "label": "Arrastra tu CSV nuevo aquí o haz clic para elegir",
+      "label": "Arrastra tu CSV nuevo (o un Excel) aquí o haz clic para elegir",
       "hint": "Hasta {mb} MB o {rows} filas",
       "button": "Elegir archivo"
     },
