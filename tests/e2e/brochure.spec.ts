@@ -107,7 +107,7 @@ test.describe("brochure vivo — /conoce", () => {
   }) => {
     await page.goto("/conoce");
     await expect(page.locator(".conteo-glosa")).toContainText(
-      "62 funcionalidades",
+      "68 funcionalidades",
     );
   });
 
@@ -160,7 +160,7 @@ test.describe("brochure vivo — los dos idiomas", () => {
       }),
     ).toBeVisible();
     await expect(page).toHaveTitle("Probeta DS — Meet it");
-    await expect(page.locator(".conteo-glosa")).toContainText("62 features");
+    await expect(page.locator(".conteo-glosa")).toContainText("68 features");
     // axe también en inglés, con las puertas y lo fino abiertos.
     for (const boton of await page.locator(".tarjeta h3 > button").all()) {
       await boton.click();
@@ -245,10 +245,10 @@ test.describe("brochure vivo — los dos idiomas", () => {
     expect({ ...ingles, otroIdioma: 0 }).toEqual({ ...espanol, otroIdioma: 0 });
     expect(espanol.puertas).toBe(6);
     expect(espanol.fichas).toBe(4);
-    expect(espanol.conteo).toBe("62");
+    expect(espanol.conteo).toBe("68");
     expect(
       espanol.porPuerta.reduce((a, b) => a + b, 0) + 2,
       "las funcionalidades de las puertas + las 2 de «lo fino» = el conteo del pie",
-    ).toBe(62);
+    ).toBe(68);
   });
 });
