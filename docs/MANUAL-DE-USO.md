@@ -878,8 +878,11 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Plantilla de servicio (`servicio-….zip`):** un `.zip` con un servicio **FastAPI** de dos
   rutas (`GET /salud` y `POST /puntuar` con un CSV o filas JSON), el modelo, las **versiones fijas** y
-  un README (en español y en inglés) con el **costo predecible**: no guarda nada, escala a cero y
-  nunca cobra encendido sin uso. Lo despliegas tú donde quieras.
+  un README (en español y en inglés) con cómo mantener el **costo predecible**: el servicio no guarda
+  nada, y el README aconseja desplegarlo donde escale a cero y poner tope de instancias y de gasto. El
+  costo real depende de tu proveedor, no de Probeta. Lo despliegas tú donde quieras. **No trae
+  autenticación:** por defecto solo escucha en tu máquina (`HOST=0.0.0.0` lo abre a la red, detrás de la
+  autenticación y el HTTPS de tu proveedor).
   - Al arrancar comprueba el SHA-256 del modelo, que las versiones instaladas sean las fijas y que el
     modelo puntúe en esa máquina; si algo no cuadra, **se niega a arrancar y dice qué**.
   - Abre el modelo con `pickle`: ábrelo solo si conoces su origen.
@@ -1116,9 +1119,11 @@ cuando una te frene.
 
 - **¿"Estrésalo" cambia mi modelo o mi veredicto?** No. Mide el mismo modelo sobre la misma prueba
   perturbada; no reentrena, no elige nada y, en el Protocolo, no cuenta como abrir la prueba otra vez.
-- **¿La receta me da exactamente mis cifras?** Con casi todos los modelos, sí (dentro de una
-  millonésima); con los bosques de árboles, **aproximadamente**, y te lo dice con la diferencia. Si no
-  reproduce, dice cuáles métricas difieren.
+- **¿La receta me da exactamente mis cifras?** En el kit de prueba, con casi todos los modelos, sí:
+  dentro de una millonésima (se midió en Linux x86-64, con Python 3.14.0 y las versiones fijas); con los
+  bosques de árboles, **aproximadamente**, y te lo dice con la diferencia. En otra máquina, con otra
+  librería de álgebra, algún modelo puede diferir en las últimas cifras: la receta lo dice, no lo calla.
+  Si no reproduce, dice cuáles métricas difieren.
 - **¿Probeta publica mi modelo o lo despliega?** No. "Llévatelo" arma archivos que se quedan en tu
   equipo. Probeta no despliega nada ni guarda credenciales; tú decides dónde ponerlos.
 - **¿Qué lleva el archivo que comparto?** El puntuador y el servicio llevan el modelo y su manifiesto

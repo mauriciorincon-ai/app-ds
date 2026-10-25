@@ -288,7 +288,7 @@
           {
             "id": "U12",
             "nombre": "Plantilla de servicio",
-            "que_hace": "Un .zip con un servicio FastAPI de versiones fijas y un README de costo predecible; Probeta no despliega nada ni guarda credenciales.",
+            "que_hace": "Un .zip con un servicio FastAPI de versiones fijas y un README para mantener el costo predecible; Probeta no despliega nada ni guarda credenciales.",
             "seccion_manual": "Llévatelo: la receta, el puntuador y el servicio"
           }
         ]
@@ -547,7 +547,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 123298,
+      "valor": 123320,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."

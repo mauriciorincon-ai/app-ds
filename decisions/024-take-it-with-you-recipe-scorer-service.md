@@ -15,7 +15,7 @@ WebAssembly), which is a different machine from the one a service will run on.
 
 1. **Three outputs, one panel, nothing deployed.** `receta.py` (repeats the experiment), `puntuador-<model>.html` (the model inside;
    whoever opens it drops a CSV and their own browser scores it: zero cost, no server) and `servicio-<model>.zip` (a FastAPI service,
-   the model, pinned versions and a README of predictable cost). They are built in the browser from files fetched on demand
+   the model, pinned versions and a README on keeping the cost predictable). They are built in the browser from files fetched on demand
    (`/plantillas/`, copied at prebuild from `src/lib/ds/plantillas/`), so none of it enters the initial weight of `/` or `/protocolo`.
    The assemblers are pure functions (`src/lib/publica/ensamblar.ts`) used by the screen and by the test that feeds CI.
 2. **What each one carries.** The recipe carries **no row and no value of the data**: column names, the task, the seed, the test
@@ -30,7 +30,7 @@ WebAssembly), which is a different machine from the one a service will run on.
 4. **The recipe's single source.** Its model factories, preprocessor, metrics and target preparation are **copied from `pipeline.py` by
    marked blocks** (`# plantilla:inicio/fin`, eight of them), so there is no second copy of a hyperparameter. What lives in TypeScript in
    the app (reading the CSV, the structural sanitising, the seeded split) is ported to Python (`mulberry32`, the stratified split and
-   the quantile split, bit for bit: a test compares them with `split.ts` on thirty cases) and declared by name (the columns set aside).
+   the quantile split, bit for bit: `tests/unit/particion-paridad.test.ts` freezes thirty cases from `split.ts` in `tests/fixtures/particion/casos.json` and `tests/python/test_publica.py` runs the same thirty through the assembled recipe) and declared by name (the columns set aside).
    The recipe is for the three tasks with a target; clustering has no split and no test (ADR 016) and says so on screen.
 5. **«Reproduces» is a measured word with two levels.** The recipe prints the expected metrics next to the obtained ones. Within `1e-6`
    it says «reproduces»; if not, it names the metrics that differ and exits with 1. Measured in CPython 3.14 against Pyodide, every

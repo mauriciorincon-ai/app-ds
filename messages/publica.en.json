@@ -20,7 +20,7 @@
     },
     "servicio": {
       "title": "Service template",
-      "desc": "A .zip with a FastAPI service (pinned versions), the model and a README with a predictable cost: it scales to zero and never bills while idle. You deploy it wherever you like.",
+      "desc": "A .zip with a FastAPI service (pinned versions), the model and a README on how to keep the cost predictable: scale to zero, with an instance cap and a spending cap. You deploy it wherever you like; the real cost depends on your provider.",
       "button": "Download the service (.zip)",
       "knn": "A nearest-neighbours model stores its structure with 32-bit integers and does not open outside the browser: the service does not offer it. The portable scorer does serve it.",
       "agrupar": "The service scores the three tasks with a target. For a clustering use the portable scorer."

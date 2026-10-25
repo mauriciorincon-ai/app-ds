@@ -20,7 +20,7 @@
     },
     "servicio": {
       "title": "Plantilla de servicio",
-      "desc": "Un .zip con un servicio FastAPI (versiones fijas), el modelo y un README de costo predecible: escala a cero y nunca cobra encendido sin uso. Lo despliegas tú donde quieras.",
+      "desc": "Un .zip con un servicio FastAPI (versiones fijas), el modelo y un README con cómo mantener el costo predecible: que escale a cero y con tope de instancias y de gasto. Lo despliegas tú donde quieras; el costo real depende de tu proveedor.",
       "button": "Descargar el servicio (.zip)",
       "knn": "Un modelo de vecinos más cercanos guarda su estructura con enteros de 32 bits y no se abre fuera del navegador: el servicio no lo ofrece. El puntuador portátil sí lo sirve.",
       "agrupar": "El servicio puntúa las tres tareas con objetivo. Para un agrupamiento usa el puntuador portátil."
