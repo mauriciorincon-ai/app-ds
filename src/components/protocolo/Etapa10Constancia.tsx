@@ -16,11 +16,16 @@ import { downloadTextFile } from "@/lib/files";
 import { fichaVista, nombresDe } from "@/lib/protocolo/ficha-texto";
 import { Button } from "@/components/ui";
 import { Etapa10Deriva } from "./Etapa10Deriva";
+import { Etapa10Modelo } from "./Etapa10Modelo";
 import { FichaVista } from "./FichaVista";
 import type { PropsConstancia } from "./formulario-base";
 import { TEXTOS_ETAPA_10 } from "./textos/etapa10";
 
-export function Etapa10Constancia({ evaluadas, cuaderno }: PropsConstancia) {
+export function Etapa10Constancia({
+  evaluadas,
+  cuaderno,
+  datos = null,
+}: PropsConstancia) {
   const t = useTextosEtapa(TEXTOS_ETAPA_10);
   const { locale } = useI18n();
   const [descargado, setDescargado] = useState<string | null>(null);
@@ -90,6 +95,10 @@ export function Etapa10Constancia({ evaluadas, cuaderno }: PropsConstancia) {
           </span>
         </div>
       </section>
+      {/* S19: el ganador como archivo, para puntuar y vigilar su desempeño en Probeta. */}
+      {ficha.decision === "usar" && (
+        <Etapa10Modelo evidencias={evidencias} datos={datos} />
+      )}
       {ficha.decision === "usar" && evidencias[10] && (
         <Etapa10Deriva evidencia={evidencias[10].datos} />
       )}

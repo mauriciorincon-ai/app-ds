@@ -78,6 +78,10 @@ import {
   type ModelFile,
   type ModelManifest,
 } from "@/lib/model-file";
+import type {
+  ProtocolManifest,
+  ProtocolModelFile,
+} from "@/lib/model-file-protocolo";
 import {
   recordLeagueRun,
   reportExperimentError,
@@ -146,7 +150,7 @@ export type ModelMeta = {
   schema: ScoringSchema;
   datasetName: string;
   /** Solo `imported`: manifiesto validado, para el resumen honesto. */
-  manifest: ModelManifest | null;
+  manifest: ModelManifest | ProtocolManifest | null;
 };
 
 export type ScoringErrorKind =
@@ -1756,8 +1760,9 @@ export function useExperiment() {
     workerRef.current?.postMessage({ id, type: "cluster-labels" });
   }, []);
 
-  /** Activa un modelo importado (el archivo YA pasó validateModelFile). */
-  const activateImportedModel = useCallback((file: ModelFile) => {
+  /** Activa un modelo importado (el archivo YA pasó validateModelFile, o validateProtocolModelFile si es el del Protocolo, S19). */
+  const activateImportedModel = useCallback(
+    (file: ModelFile | ProtocolModelFile) => {
     // validateModelFile solo deja pasar tareas que la UI sabe usar (S6).
     const meta: ModelMeta = {
       source: "imported",
@@ -1789,7 +1794,9 @@ export function useExperiment() {
         expected_schema: file.manifest.schema,
       },
     });
-  }, []);
+    },
+    [],
+  );
 
   const reset = useCallback(() => {
     // R15: si quedaba cómputo en vuelo (p. ej. un Nivel 2), se corta de verdad

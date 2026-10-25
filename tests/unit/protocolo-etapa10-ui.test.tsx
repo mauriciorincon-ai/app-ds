@@ -7,7 +7,10 @@
 //    ni un nombre de categoría, y lo que dejas sin vigilar lo dicen la trampa, la ficha y el chequeo;
 //  · la vista previa de la ficha sale del cuaderno más lo que escribes, con su etapa, fecha y huella;
 //  · la constancia de la etapa cumplida: la ficha, su descarga en Markdown en el idioma activo (sin una sola
-//    fila de tus datos), y el chequeo de deriva con un CSV nuevo (que no se guarda ni sale por la red).
+//    fila de tus datos), y el chequeo de deriva con un CSV nuevo (que no se guarda ni sale por la red);
+//  · S19, «Llévate el ganador»: sin los datos cargados lo dice y el botón no se puede pulsar; pintar la etapa NO crea worker; pulsar el
+//    botón crea UNO, que ajusta al ganador SIN la prueba y lo exporta, y lo que se descarga es un `.probeta.json` con origen
+//    «protocolo», la cifra de la prueba de la etapa 8 y ni una fila; con otro archivo (el sello no coincide) no se ajusta nada.
 import {
   cleanup,
   fireEvent,
@@ -100,14 +103,22 @@ function montar(
 }
 
 /** La constancia de una etapa 10 ya registrada con esa entrada. */
-function montarConstancia(a: Armado, entrada: Parameters<typeof datos10>[1]) {
+function montarConstancia(
+  a: Armado,
+  entrada: Parameters<typeof datos10>[1],
+  conDatos = false,
+) {
   const r = registrar10(a, datos10(a, entrada));
   if (!r.ok) throw new Error(JSON.stringify(r.rechazo));
   const cuaderno = { ...r.cuaderno, cargas: [cargaDe(a)] };
   const evaluadas = evaluar(PROTOCOLO_DS, cuaderno, HUELLA, a.tabla);
   return render(
     <I18nProvider>
-      <Etapa10Constancia evaluadas={evaluadas} cuaderno={cuaderno} />
+      <Etapa10Constancia
+        evaluadas={evaluadas}
+        cuaderno={cuaderno}
+        datos={conDatos ? { tabla: a.tabla, carga: cargaDe(a) } : null}
+      />
     </I18nProvider>,
   );
 }
@@ -638,7 +649,11 @@ describe("el chequeo de deriva con un CSV nuevo", () => {
         screen.getByRole("button", { name: "Quitar el resultado" }),
       ).toBeTruthy(),
     );
-    expect(screen.getByText(/⚠/, { exact: false })).toBeTruthy();
+    expect(
+      within(screen.getByTestId("protocolo-deriva10")).getByText(/⚠/, {
+        exact: false,
+      }),
+    ).toBeTruthy();
     fireEvent.click(
       screen.getByRole("button", { name: "Quitar el resultado" }),
     );
@@ -731,5 +746,142 @@ describe("en el cuaderno y en la página: «Protocolo completo»", () => {
       evidencias: cuaderno.evidencias.filter((e) => e.etapa !== 10),
     });
     expect(screen.queryByTestId("protocolo-completo")).toBeNull();
+  });
+});
+
+// --- S19: «Llévate el ganador» ----------------------------------------------------------------------
+
+type Mensaje = { id: number; type: string; payload?: Record<string, unknown> };
+
+/** Un worker de mentira que contesta como pipeline.py: el eco del ajuste y la exportación que escribió el emisor real. */
+function instalarWorker() {
+  const exportacion = JSON.parse(
+    readFileSync("tests/fixtures/contrato/export-result.json", "utf8"),
+  ) as unknown;
+  const creados: Mensaje[][] = [];
+  class FalsoWorker {
+    onerror: (() => void) | null = null;
+    private oyentes = new Set<(e: { data: unknown }) => void>();
+    private mensajes: Mensaje[] = [];
+    constructor() {
+      creados.push(this.mensajes);
+    }
+    addEventListener(_: string, f: (e: { data: unknown }) => void) {
+      this.oyentes.add(f);
+    }
+    removeEventListener(_: string, f: (e: { data: unknown }) => void) {
+      this.oyentes.delete(f);
+    }
+    terminate() {}
+    postMessage(m: Mensaje) {
+      this.mensajes.push(m);
+      const p = (m.payload ?? {}) as Record<string, unknown> & { train?: unknown[] };
+      const resultado =
+        m.type === "fit-winner"
+          ? {
+              task: p.task,
+              winner: p.winner,
+              n_train: (p.train as unknown[]).length,
+              huella: p.huella,
+              sello: p.sello,
+              elapsed_ms: 1,
+            }
+          : exportacion;
+      queueMicrotask(() =>
+        this.oyentes.forEach((f) =>
+          f({ data: { id: m.id, type: "result", command: m.type, result: resultado } }),
+        ),
+      );
+    }
+  }
+  vi.stubGlobal("Worker", FalsoWorker);
+  return creados;
+}
+
+describe("la etapa 10: llévate el ganador", () => {
+  const A = armarCredito9("usar");
+  it("sin los datos cargados lo dice, el botón no se puede pulsar y no se crea ningún worker", () => {
+    const creados = instalarWorker();
+    montarConstancia(A, ENTRADA_USAR);
+    expect(screen.getByTestId("protocolo-modelo10")).toBeTruthy();
+    expect(screen.getByText(/Carga arriba el archivo con que trabajaste/)).toBeTruthy();
+    expect(
+      (screen.getByRole("button", { name: "Guardar el ganador como .probeta.json" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(creados).toHaveLength(0);
+  });
+
+  it("«iterar» y «no usarlo» no ofrecen el archivo: no hay nada que vigilar", () => {
+    montarConstancia(armarCredito9("no-usar"), ENTRADA_NO_USAR);
+    expect(screen.queryByTestId("protocolo-modelo10")).toBeNull();
+  });
+
+  it("al pulsar: UN worker, ajusta sin la prueba, exporta y descarga un archivo del Protocolo con la cifra de la prueba y ninguna fila", async () => {
+    const creados = instalarWorker();
+    descargas.length = 0;
+    montarConstancia(A, ENTRADA_USAR, true);
+    expect(creados).toHaveLength(0);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Guardar el ganador como .probeta.json" }),
+    );
+    await waitFor(() => expect(descargas).toHaveLength(1));
+    expect(creados).toHaveLength(1);
+    const [ajuste, exportacion] = creados[0]!;
+    expect(ajuste!.type).toBe("fit-winner");
+    expect(Object.keys(ajuste!.payload!)).not.toContain("test");
+    expect(exportacion!.type).toBe("export-model");
+    expect(ajuste!.id).toBeLessThan(0);
+
+    const { nombre, contenido, tipo } = descargas[0]!;
+    expect(nombre).toMatch(/^modelo-.+\.probeta\.json$/);
+    expect(tipo).toBe("application/json");
+    const archivo = JSON.parse(contenido) as {
+      format_version: number;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- el archivo descargado se lee a propósito sin tipos
+      manifest: Record<string, any>;
+      payload: string;
+    };
+    expect(archivo.format_version).toBe(1);
+    expect(archivo.manifest.origin).toBe("protocolo");
+    // lo que el Protocolo midió: el ganador y la cifra de la prueba que la etapa 8 abrió una vez
+    const c7 = A.previas[7]!.chequeos;
+    const c8 = A.previas[8]!.chequeos;
+    expect(archivo.manifest.protocol.winner).toBe(c7.ganador);
+    expect(archivo.manifest.protocol.metric).toBe(c7.metrica);
+    expect(archivo.manifest.protocol.test_value).toBe(c8.prueba_metrica);
+    expect(archivo.manifest.protocol.n_test).toBe(c8.n_prueba);
+    expect(archivo.manifest.protocol.huella).toBe(HUELLA);
+    // sin liga, sin comparación con una línea base, sin fuga, y ni una fila del entrenamiento ni de la prueba
+    for (const k of ["league", "selection", "metrics", "verdict", "leakage", "rows", "train", "test"])
+      expect(archivo.manifest).not.toHaveProperty(k);
+    expect(contenido).not.toContain("monto_prestamo\n");
+    expect(screen.getByText(/Guardado: modelo-/)).toBeTruthy();
+  });
+
+  it("con otro archivo (el sello de la partición no coincide) lo dice y no ajusta nada", () => {
+    const creados = instalarWorker();
+    const cuaderno = { ...A.cuaderno, cargas: [cargaDe(A)] };
+    const evaluadas = evaluar(PROTOCOLO_DS, cuaderno, HUELLA, A.tabla);
+    const r = registrar10(A, datos10(A, ENTRADA_USAR));
+    if (!r.ok) throw new Error("registrar");
+    render(
+      <I18nProvider>
+        <Etapa10Constancia
+          evaluadas={evaluar(PROTOCOLO_DS, { ...r.cuaderno, cargas: [cargaDe(A)] }, HUELLA, A.tabla)}
+          cuaderno={{ ...r.cuaderno, cargas: [cargaDe(A)] }}
+          datos={{
+            // otra tabla con otra huella: la partición sellada no sale igual
+            tabla: { headers: A.tabla.headers, rows: A.tabla.rows.slice(0, A.tabla.rows.length - 7) },
+            carga: { ...cargaDe(A), sha256: "e".repeat(64) },
+          }}
+        />
+      </I18nProvider>,
+    );
+    void evaluadas;
+    expect(screen.getByText(/Este archivo no es el que usaste/)).toBeTruthy();
+    expect(
+      (screen.getByRole("button", { name: "Guardar el ganador como .probeta.json" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(creados).toHaveLength(0);
   });
 });

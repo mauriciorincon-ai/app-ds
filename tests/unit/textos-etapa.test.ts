@@ -37,7 +37,12 @@ const ETAPAS: Record<number, { textos: TextosEtapa; formas: string[] }> = {
   // S15: la forma, la constancia de la etapa cumplida y el chequeo de deriva (la ficha se dice desde lib/)
   10: {
     textos: TEXTOS_ETAPA_10,
-    formas: ["Etapa10Form", "Etapa10Constancia", "Etapa10Deriva"],
+    formas: [
+      "Etapa10Form",
+      "Etapa10Constancia",
+      "Etapa10Deriva",
+      "Etapa10Modelo",
+    ],
   },
 };
 

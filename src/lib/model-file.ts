@@ -76,10 +76,12 @@ import type {
 import { datasetSlug } from "@/lib/files";
 import { version as APP_VERSION } from "../../package.json";
 
+export { APP_VERSION };
+
 export const MODEL_FILE_FORMAT_VERSION = 1;
 export const MODEL_FILE_EXTENSION = ".probeta.json";
 export const PAYLOAD_ENCODING = "pickle+zlib+base64";
-const APP_NAME = "probeta-ds";
+export const APP_NAME = "probeta-ds";
 
 // Tope del archivo de import (auditoría H1): se chequea con file.size ANTES de
 // leerlo a memoria — un archivo absurdo no debe tumbar la pestaña para luego
@@ -276,9 +278,9 @@ const multiclassMember: Validator = (v, path) =>
   isMemberOf("multiclase", v) ? null : path;
 const regressionMember: Validator = (v, path) =>
   isMemberOf("numerica", v) ? null : path;
-const METRIC_NAMES = ["accuracy", "precision", "recall", "f1", "auc"];
+export const METRIC_NAMES = ["accuracy", "precision", "recall", "f1", "auc"];
 
-const schemaV = obj({
+export const schemaV = obj({
   numeric: arr(str),
   categorical: arr(str),
   target: str,
@@ -309,7 +311,7 @@ const leakageV = arr(
   }),
 );
 
-const versionsV = obj({
+export const versionsV = obj({
   pyodide: str,
   sklearn: str,
   python: str,
@@ -853,7 +855,7 @@ export type ModelFileValidation =
       task?: string;
     };
 
-function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
+export function versionWarnings(versions: RuntimeVersions): VersionWarning[] {
   const warnings: VersionWarning[] = [];
   for (const component of [
     "pyodide",

@@ -5,9 +5,14 @@
 // sellado (`envioGanador`: el envío de la etapa 8 sin la prueba), no abre la prueba, no cuenta como apertura y no escribe en el
 // cuaderno. Un mismo ajuste (misma huella, mismo sello, mismo ganador) se hace una sola vez; si el worker muere, se rehace.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { pedirExport } from "@/lib/publica/modelo";
 import { pedirAjuste, pedirSimulacion } from "@/lib/simulador/pedir";
 import type { SimuladorSent } from "@/workers/contrato-simulador";
-import type { SimulatePayload, SimulateResult } from "@/workers/protocol";
+import type {
+  ExportResult,
+  SimulatePayload,
+  SimulateResult,
+} from "@/workers/protocol";
 import type { EnvioGanador } from "./ganador";
 
 export type EstadoGanador =
@@ -90,5 +95,14 @@ export function useGanador() {
     [ajustar],
   );
 
-  return { estado, ajustar, simular };
+  /** Ajusta (si hace falta) y entrega el modelo para el archivo de la etapa 10: esquema, perfil de entrenamiento y payload. */
+  const exportar = useCallback(
+    async (envio: EnvioGanador): Promise<ExportResult> => {
+      const worker = await ajustar(envio);
+      return pedirExport(worker);
+    },
+    [ajustar],
+  );
+
+  return { estado, ajustar, simular, exportar };
 }

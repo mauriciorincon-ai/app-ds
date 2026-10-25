@@ -64,7 +64,7 @@
         },
         "drift": {
           "title": "Revisa si tus datos cambiaron",
-          "intro": "Carga un CSV nuevo con las columnas del modelo y compáralo con la referencia de esta ficha. Mide si las entradas de hoy se parecen a las del entrenamiento; no mide si el modelo sigue acertando. El archivo no se guarda ni sale de tu navegador.",
+          "intro": "Carga un CSV nuevo con las columnas del modelo y compáralo con la referencia de esta ficha. Mide si las entradas de hoy se parecen a las del entrenamiento; no mide si el modelo sigue acertando: para eso guarda el ganador (más abajo) y úsalo en Probeta con filas nuevas que traigan el resultado real. El archivo no se guarda ni sale de tu navegador.",
           "button": "Cargar un CSV nuevo",
           "clear": "Quitar el resultado",
           "no-reference": "Esta ficha no trae una referencia que se pueda leer: vuelve a registrar la etapa.",
@@ -221,6 +221,18 @@
             "dueno": "Responde por el modelo: {dueno}.",
             "decisor": "Decide con él: {decisor}, sobre «{decision}»."
           }
+        },
+        "model": {
+          "title": "Llévate el ganador",
+          "body": "Guarda el ganador como un archivo «.probeta.json» para puntuar filas nuevas y vigilar su desempeño en Probeta («Usar un modelo guardado»). Se vuelve a ajustar con las filas de entrenamiento —la prueba no se abre— y el archivo lleva el modelo, no tus filas.",
+          "contains": "El archivo lleva el modelo con los rangos y las categorías que vio al entrenar, nada más.",
+          "contains-knn": "Este ganador son los vecinos más cercanos: el archivo lleva las filas de entrenamiento (así funciona ese modelo). Guárdalo solo donde puedan estar tus datos.",
+          "button": "Guardar el ganador como .probeta.json",
+          "need-data": "Carga arriba el archivo con que trabajaste: el modelo se ajusta con sus filas de entrenamiento y la huella confirma que es el mismo.",
+          "other-file": "Este archivo no es el que usaste: el sello de la partición no coincide, así que no se ajusta el modelo.",
+          "working": "Ajustando el ganador con las filas de entrenamiento… La prueba no se abre.",
+          "saved": "Guardado: {nombre}.",
+          "error": "No se pudo guardar el modelo ({motivo}). Vuelve a intentarlo."
         }
       }
     }
