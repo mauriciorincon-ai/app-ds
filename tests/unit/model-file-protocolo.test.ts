@@ -7,14 +7,19 @@
  *    (una versión anterior al S19 también lo haría) y este rechaza uno de Probeta;
  *  - cada carnada rompe UNA cosa y el validador la nombra: otra tarea, un ganador que no es el modelo del archivo, una métrica que
  *    no es de la tarea, una huella que no es de 64 hex, filas imposibles, un payload alterado (el hash no cuadra);
- *  - el reconocimiento por el inicio del texto no se deja engañar por un `origin` que vive en el payload.
+ *  - el reconocimiento por el inicio del texto no se deja engañar por un `origin` que vive en el payload;
+ *  - (AUDITORÍA A-04) la guarda del manifiesto mira el valor de `origin`; que el validador de Probeta rechace la clave se prueba en
+ *    model-file.test.ts.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { validateModelFile } from "@/lib/model-file";
 import {
   esArchivoDelProtocolo,
+  esManifiestoDelProtocolo,
+  validateModelFile,
+} from "@/lib/model-file";
+import {
   packProtocolModelFile,
   validateProtocolModelFile,
   type ProtocolBlock,
@@ -109,6 +114,12 @@ describe("no se confunden", () => {
     expect(esArchivoDelProtocolo(JSON.stringify({ format_version: 1, manifest: { task: "binaria" } }))).toBe(false);
     const relleno = "x".repeat(30_000);
     expect(esArchivoDelProtocolo(`{"a":"${relleno}","origin":"protocolo"}`)).toBe(false);
+  });
+
+  it("la guarda del manifiesto mira el valor, no la mera presencia de la clave", async () => {
+    const protocolo = await empaquetar();
+    expect(esManifiestoDelProtocolo(protocolo.manifest)).toBe(true);
+    expect(esManifiestoDelProtocolo({ ...protocolo.manifest, origin: "otro" } as never)).toBe(false);
   });
 });
 

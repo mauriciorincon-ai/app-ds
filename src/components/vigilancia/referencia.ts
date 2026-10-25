@@ -3,6 +3,7 @@
 // recién entrenado. Agrupar no tiene prueba ni objetivo: no hay desempeño que vigilar.
 import { matchByTask } from "@/engine/despacho";
 import type { ReferenciaVigilancia } from "@/engine/vigilancia";
+import { esManifiestoDelProtocolo } from "@/lib/model-file";
 import type { ModelMeta } from "@/lib/useExperiment";
 import type { ExperimentResult } from "@/workers/protocol";
 
@@ -12,7 +13,7 @@ export function referenciaDe(
 ): ReferenciaVigilancia | null {
   const m = meta.manifest;
   if (m) {
-    if ("origin" in m)
+    if (esManifiestoDelProtocolo(m))
       return {
         metric: m.protocol.metric,
         valor: m.protocol.test_value,

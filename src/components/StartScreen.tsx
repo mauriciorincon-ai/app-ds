@@ -12,6 +12,8 @@ import { isTask } from "@/engine/tarea";
 import { ARCHIVOS_ACEPTADOS, esExcel } from "@/lib/ds/archivo";
 import { inferUnit } from "@/lib/experiment";
 import {
+  esArchivoDelProtocolo,
+  esManifiestoDelProtocolo,
   manifestTask,
   MAX_MODEL_FILE_BYTES,
   validateModelFile,
@@ -41,10 +43,6 @@ const ProtocolImportSummary = dynamic(
     ),
   { ssr: false },
 );
-
-/** S19: el archivo del ganador del Protocolo se reconoce por el inicio (el manifiesto va antes del payload); su validador llega aparte. */
-const esArchivoDelProtocolo = (texto: string): boolean =>
-  /"origin"\s*:\s*"protocolo"/.test(texto.slice(0, 20_000));
 
 export const EXAMPLES = [
   { key: "marketing", file: "marketing-campania.csv" },
@@ -355,7 +353,7 @@ function ImportSummary({
   file: ModelFile | ProtocolModelFile;
 }) {
   // S19: el archivo del ganador del Protocolo tiene su resumen (en su propio chunk y con sus propios textos).
-  if ("origin" in file.manifest)
+  if (esManifiestoDelProtocolo(file.manifest))
     return <ProtocolImportSummary {...rest} manifest={file.manifest} />;
   return matchByTask(file.manifest, {
     binaria: (manifest) => (

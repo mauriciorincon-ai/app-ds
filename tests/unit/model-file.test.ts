@@ -95,6 +95,24 @@ async function pack() {
   });
 }
 
+describe("`origin` es solo del archivo del Protocolo (AUDITORÍA A-04)", () => {
+  it("un archivo de Probeta con una clave `origin` —la que sea— se rechaza nombrándola; sin ella, el mismo archivo entra", async () => {
+    expect((await validateModelFile(JSON.stringify(await pack()))).ok).toBe(true);
+    for (const origin of ["protocolo", "x", 1, null]) {
+      const archivo = JSON.parse(JSON.stringify(await pack())) as {
+        manifest: Record<string, unknown>;
+      };
+      archivo.manifest.origin = origin;
+      const v = await validateModelFile(JSON.stringify(archivo));
+      expect(v.ok, `origin ${JSON.stringify(origin)}`).toBe(false);
+      if (!v.ok) {
+        expect(v.error).toBe("invalid-format");
+        expect(v.field).toContain("origin");
+      }
+    }
+  });
+});
+
 describe("packModelFile → validateModelFile (roundtrip)", () => {
   it("un archivo empaquetado valida OK y sin advertencias de versión", async () => {
     const file = await pack();

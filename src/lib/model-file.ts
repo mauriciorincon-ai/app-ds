@@ -14,6 +14,7 @@ import {
   type TagOf,
 } from "@/engine/despacho";
 import type { LeakageFinding } from "@/engine/leakage";
+import type { ProtocolManifest } from "@/lib/model-file-protocolo";
 import { isMemberOf, type MemberId } from "@/engine/roster";
 import type { RegistroPaso, TipoPaso } from "@/engine/limpieza-plan";
 import type { SanitationReport } from "@/engine/sanitize";
@@ -245,6 +246,22 @@ export type SupervisedManifest =
   | RegressionManifest;
 
 export type ModelManifest = SupervisedManifest | ClusterManifest;
+
+/**
+ * S19: el archivo del ganador del Protocolo se reconoce por el inicio del texto (el manifiesto va antes del payload); su validador
+ * llega aparte, en su propio chunk. Es la ÚNICA copia: la portada la usa para elegir validador sin cargar el del Protocolo.
+ */
+export const esArchivoDelProtocolo = (texto: string): boolean =>
+  /"origin"\s*:\s*"protocolo"/.test(texto.slice(0, 20_000));
+
+/**
+ * S19: ¿es el manifiesto del Protocolo? Mira el VALOR, no la mera presencia de la clave. El validador de Probeta rechaza todo
+ * manifiesto que traiga `origin`, así que un manifiesto de Probeta nunca pasa por aquí con esa clave.
+ */
+export const esManifiestoDelProtocolo = (
+  manifest: ModelManifest | ProtocolManifest,
+): manifest is ProtocolManifest =>
+  (manifest as { origin?: unknown }).origin === "protocolo";
 
 export function isBinaryManifest(
   manifest: ModelManifest,
@@ -592,6 +609,9 @@ function isKnownManifestTask(task: string): task is TrainTask {
 /** Sin `task`, el manifiesto binario (archivos del S3–S5); con ella, el de su tarea. */
 const manifestV: Validator = (v, path) => {
   if (!isRecord(v)) return path;
+  // S19: `origin` es la marca del archivo del Protocolo, que tiene su propio validador. Un archivo de Probeta no la lleva nunca:
+  // si la trae, o está alterado o es de otra clase, y las pantallas que la leen no deben recibirlo (el hash solo cubre el payload).
+  if (Object.hasOwn(v, "origin")) return `${path}.origin`;
   const task = declaredTask(v);
   return typeof task === "string" && isKnownManifestTask(task)
     ? MANIFEST_V_BY_TASK[task](v, path)

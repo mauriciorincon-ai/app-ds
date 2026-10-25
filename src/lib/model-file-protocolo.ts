@@ -86,10 +86,6 @@ export type ProtocolModelFile = {
   payload: string;
 };
 
-/** ¿Es de este tipo el texto de un `.probeta.json`? Mira solo el inicio: el manifiesto va antes del payload. */
-export const esArchivoDelProtocolo = (texto: string): boolean =>
-  /"origin"\s*:\s*"protocolo"/.test(texto.slice(0, 20_000));
-
 // --- validar (import) — ANTES de deserializar ------------------------------------------------------
 
 type ProtocolTask = Extract<
