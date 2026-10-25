@@ -14,7 +14,11 @@ EN — You deploy it wherever you like: Probeta deploys nothing and stores no cr
   exported (SHA-256), that the installed versions are the pinned ones in requirements.txt and that the model scores on this
   machine; if anything is off it refuses to start and says what.
 
-python servicio.py   (variables / variables: PORT, MODELO, MAX_BYTES, MAX_FILAS)
+ES — Sin autenticación: por defecto solo escucha en esta máquina (127.0.0.1). Para un contenedor o un servidor, HOST=0.0.0.0 y
+ponlo detrás de la autenticación y el HTTPS de tu proveedor. / EN — No authentication: by default it only listens on this machine
+(127.0.0.1). For a container or a server, HOST=0.0.0.0 and put it behind your provider's authentication and HTTPS.
+
+python servicio.py   (variables / variables: HOST, PORT, MODELO, MAX_BYTES, MAX_FILAS)
 """
 import base64
 import csv
@@ -27,6 +31,7 @@ from importlib import metadata
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
+from starlette.concurrency import run_in_threadpool
 
 from puntuar import columns_of, load_model, score, tarea_de
 
@@ -129,8 +134,10 @@ def salud():
 
 
 def _filas_de_csv(texto):
-    lector = csv.reader(io.StringIO(texto.lstrip("﻿")))
-    filas = [fila for fila in lector if fila]
+    try:
+        filas = [fila for fila in csv.reader(io.StringIO(texto.lstrip("﻿"))) if fila]
+    except csv.Error:  # un campo más largo que el límite de `csv`, comillas sin cerrar: el archivo es el problema, no el servicio
+        raise HTTPException(400, "csv-invalido") from None
     if len(filas) < 2:
         raise HTTPException(400, "csv-vacio")
     return filas[0], filas[1:]
@@ -141,7 +148,7 @@ def _filas_de_json(cuerpo):
         filas = json.loads(cuerpo)["filas"]
         if not isinstance(filas, list) or not filas or not all(isinstance(f, dict) for f in filas):
             raise ValueError
-    except (ValueError, KeyError, TypeError):
+    except (ValueError, KeyError, TypeError, RecursionError):  # RecursionError: un JSON anidado a propósito
         raise HTTPException(400, "json-invalido") from None
     claves = set().union(*(f.keys() for f in filas))
     encabezados = [c for c in COLUMNAS if c in claves]
@@ -153,9 +160,14 @@ async def puntuar(request: Request):
     declarado = request.headers.get("content-length")
     if declarado is not None and declarado.isdigit() and int(declarado) > MAX_BYTES:
         raise HTTPException(413, "cuerpo-demasiado-grande")
-    cuerpo = await request.body()
-    if len(cuerpo) > MAX_BYTES:
-        raise HTTPException(413, "cuerpo-demasiado-grande")
+    # el cuerpo se lee por partes y se corta al pasar el tope, también cuando no declara su tamaño (transfer-encoding: chunked)
+    partes, total = [], 0
+    async for parte in request.stream():
+        total += len(parte)
+        if total > MAX_BYTES:
+            raise HTTPException(413, "cuerpo-demasiado-grande")
+        partes.append(parte)
+    cuerpo = b"".join(partes)
     tipo = request.headers.get("content-type", "").split(";")[0].strip().lower()
     if tipo == "text/csv":
         encabezados, filas = _filas_de_csv(cuerpo.decode("utf-8", errors="replace"))
@@ -169,7 +181,8 @@ async def puntuar(request: Request):
     if faltan:
         raise HTTPException(400, "columnas-faltan:" + ",".join(faltan))
     try:
-        return score(MODELO, encabezados, filas)
+        # `score` es síncrono: en un hilo aparte, para que mientras puntúa 50 000 filas `/salud` siga contestando
+        return await run_in_threadpool(score, MODELO, encabezados, filas)
     except Exception as error:  # noqa: BLE001 — jamás un valor en el error
         raise HTTPException(422, f"no-puntua:{type(error).__name__}") from None
 
@@ -177,4 +190,5 @@ async def puntuar(request: Request):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
+    # sin autenticación: por defecto solo esta máquina; en un contenedor o servidor, HOST=0.0.0.0 detrás de la autenticación del proveedor
+    uvicorn.run(app, host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", "8080")))

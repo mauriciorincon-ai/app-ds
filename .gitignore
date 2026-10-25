@@ -29,3 +29,7 @@ Thumbs.db
 
 # Respaldo de scripts/demo-rojo.sh (kit v1.35.0): UNA carpeta, se borra sola al restaurar
 .demo-rojo/
+
+# Python bytecode (the CI runs tests/python and the integration job writes tests/integration/.salida)
+__pycache__/
+*.pyc

@@ -174,6 +174,9 @@ def preparar(decl, cabecera, filas):
     }
 
     def dos_clases():
+        distintas = len({f[k].strip() for f in filas})
+        if distintas != 2:  # otro archivo con otro objetivo: se dice la causa en vez de medir algo sin sentido
+            raise Falla(t("clases", c=objetivo, n=distintas))
         return particion_estratificada([f[k] for f in filas], fraccion, semilla)
 
     def varias_categorias():
@@ -219,6 +222,7 @@ TEXTOS = {
         "falta_objetivo": "falta la columna objetivo «{c}»",
         "faltan": "faltan columnas: {c}",
         "no_numero": "el objetivo trae valores que no son números",
+        "clases": "el objetivo «{c}» tiene {n} valores distintos y esta receta es de dos clases: ¿es el mismo archivo?",
         "tarea": "tarea no soportada: {t}",
         "ilegible": "no se pudo leer el archivo ({tipo})",
     },
@@ -241,6 +245,7 @@ TEXTOS = {
         "falta_objetivo": "the target column «{c}» is missing",
         "faltan": "missing columns: {c}",
         "no_numero": "the target has values that are not numbers",
+        "clases": "the target «{c}» has {n} distinct values and this recipe is for two classes: is it the same file?",
         "tarea": "unsupported task: {t}",
         "ilegible": "the file could not be read ({tipo})",
     },
