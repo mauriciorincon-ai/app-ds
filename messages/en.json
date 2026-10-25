@@ -359,7 +359,7 @@
     },
     "needed": {
       "title": "Columns the model needs",
-      "noTarget": "Don't include “{target}”: the model predicts here, it isn't evaluated. If present, it is ignored.",
+      "noTarget": "“{target}” is not needed to score. If the file carries it with the real result, it is not used to predict: it serves to watch the model's performance.",
       "cluster": "Grouping has no target: these columns are enough. Any others are ignored."
     },
     "blocked": {
@@ -372,7 +372,7 @@
     "warnings": {
       "title": "Warnings",
       "extra": "Columns the model doesn't use, ignored: {columns}",
-      "target": "Your file includes the target column “{target}”: it is ignored (the model predicts here, it isn't evaluated)."
+      "target": "Your file includes the target column “{target}”: it is not used to predict; further down it is used to watch the model's performance."
     },
     "novelty": {
       "title": "The model is seeing new things",

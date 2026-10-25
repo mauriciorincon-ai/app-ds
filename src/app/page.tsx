@@ -141,6 +141,7 @@ export default function Home() {
           onExit={reset}
           onExportModel={exportModel}
           worker={workerRef}
+          result={state.result}
         />
       )}
 

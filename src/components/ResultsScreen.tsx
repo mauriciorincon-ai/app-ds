@@ -83,6 +83,12 @@ const SimuladorProbeta = dynamic(
   { ssr: false },
 );
 
+// S19: «el modelo en reglas» (el árbol sustituto, su texto y su SQL), también en su chunk.
+const ReglasPanel = dynamic(
+  () => import("./reglas/ReglasPanel").then((m) => m.ReglasPanel),
+  { ssr: false },
+);
+
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
   "precision",
@@ -169,6 +175,15 @@ export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
                   worker={props.worker}
                   semilla={props.runMeta.seed}
                   modelo={result}
+                  ocupado={!(props.modelReady ?? true)}
+                />
+              )}
+              {props.schema && (
+                <ReglasPanel
+                  schema={props.schema}
+                  worker={props.worker}
+                  modelo={result}
+                  datasetName={props.datasetName}
                   ocupado={!(props.modelReady ?? true)}
                 />
               )}
@@ -434,6 +449,18 @@ function SupervisedResults({
           worker={worker}
           semilla={runMeta.seed}
           modelo={result}
+          ocupado={!modelReady || choice.status === "fitting"}
+          unidadObjetivo={byResult.unit?.symbol ?? null}
+        />
+      )}
+
+      {/* S19: el modelo en reglas — un árbol que copia lo que el modelo decide, con su fidelidad, en texto y en SQL. */}
+      {schema && (
+        <ReglasPanel
+          schema={schema}
+          worker={worker}
+          modelo={result}
+          datasetName={datasetName}
           ocupado={!modelReady || choice.status === "fitting"}
           unidadObjetivo={byResult.unit?.symbol ?? null}
         />

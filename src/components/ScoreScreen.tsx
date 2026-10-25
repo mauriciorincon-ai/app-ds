@@ -29,6 +29,7 @@ import {
 import type { ExportState, ModelMeta, ScoringState } from "@/lib/useExperiment";
 import type {
   BinaryScoreResult,
+  ExperimentResult,
   ClusterScoringSchema,
   MulticlassScoreResult,
   ProgressStage,
@@ -36,12 +37,21 @@ import type {
   ScoreResult,
   SupervisedSchema,
 } from "@/workers/protocol";
+import type { ReferenciaVigilancia } from "@/engine/vigilancia";
+import { referenciaDe } from "./vigilancia/referencia";
 import { Button, Card, Icon, MetricTile } from "./ui";
 
 // S19: «¿qué pasaría si?» sobre las filas nuevas, en su propio chunk (el motor, el panel y sus textos no entran al peso de esta pantalla).
 const SimuladorProbeta = dynamic(
   () =>
     import("./simulador/SimuladorProbeta").then((m) => m.SimuladorProbeta),
+  { ssr: false },
+);
+
+// S19: vigilar el desempeño con filas nuevas que traen el resultado real, también en su chunk.
+const VigilanciaPanel = dynamic(
+  () =>
+    import("./vigilancia/VigilanciaPanel").then((m) => m.VigilanciaPanel),
   { ssr: false },
 );
 
@@ -68,6 +78,8 @@ type ScoreScreenProps<M> = {
   onExportModel: () => void;
   /** S19: el worker del modelo activo (el simulador le pide puntuar las filas con el cambio). */
   worker?: RefObject<Worker | null>;
+  /** S19: el resultado del modelo recién entrenado (la cifra de su prueba, con que se compara lo de hoy); un modelo importado la trae en su archivo. */
+  result?: ExperimentResult | null;
 };
 
 /** El modelo activo de una tarea con objetivo. */
@@ -92,6 +104,7 @@ export function ScoreScreen(props: ScoreScreenProps<ModelMeta>) {
             scoring={scoring}
             onScoreAnother={props.onScoreAnother}
             worker={props.worker}
+            referencia={referenciaDe(props.meta, props.result ?? null)}
           />
         )}
       />
@@ -435,11 +448,13 @@ function ScoredResults({
   scoring,
   onScoreAnother,
   worker,
+  referencia,
 }: {
   meta: SupervisedMeta;
   scoring: Scored;
   onScoreAnother: () => void;
   worker?: RefObject<Worker | null>;
+  referencia: ReferenciaVigilancia | null;
 }) {
   const t = useT();
   const { check, table, fileName } = scoring;
@@ -658,6 +673,20 @@ function ScoredResults({
           {t("score.another")}
         </Button>
       </div>
+
+      {/* S19: vigilar el desempeño — si el archivo trae el resultado real, la cifra de hoy contra la de la prueba. */}
+      <VigilanciaPanel
+        schema={schema}
+        worker={worker}
+        tabla={table}
+        referencia={referencia}
+        modelo={scoring}
+        unidadObjetivo={matchByTask(schema, {
+          binaria: () => null,
+          multiclase: () => null,
+          numerica: (quantitySchema) => inferUnit(quantitySchema.target).symbol,
+        })}
+      />
 
       {/* S19: ¿qué pasaría si? — las mismas filas con una columna cambiada, puntuadas por este modelo. */}
       <SimuladorProbeta

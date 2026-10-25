@@ -359,7 +359,7 @@
     },
     "needed": {
       "title": "Columnas que el modelo necesita",
-      "noTarget": "No incluyas «{target}»: aquí el modelo predice, no se evalúa. Si viene, se ignora.",
+      "noTarget": "«{target}» no hace falta para puntuar. Si el archivo la trae con el resultado real, no se usa para predecir: sirve para vigilar el desempeño del modelo.",
       "cluster": "Al agrupar no hay objetivo: basta con estas columnas. Las demás se ignoran."
     },
     "blocked": {
@@ -372,7 +372,7 @@
     "warnings": {
       "title": "Avisos",
       "extra": "Columnas que el modelo no usa y se ignoran: {columns}",
-      "target": "Tu archivo trae la columna objetivo «{target}»: se ignora (aquí se predice, no se evalúa)."
+      "target": "Tu archivo trae la columna objetivo «{target}»: no se usa para predecir; más abajo se usa para vigilar el desempeño del modelo."
     },
     "novelty": {
       "title": "El modelo está viendo cosas nuevas",
