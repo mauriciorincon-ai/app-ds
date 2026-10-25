@@ -81,6 +81,29 @@ Cárgalos en **«Cargar modelo guardado»**:
 En ninguno de los dos casos la app llega a deserializar nada: el rechazo ocurre antes de que el
 contenido toque el motor de cómputo.
 
+## Excel, datos personales y el plan de limpieza (Sprint 018)
+
+| Archivo                                  | Qué demuestra                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clientes-con-datos-personales.csv`      | 150 clientes de ficción (dominios reservados, teléfonos que no existen) con `nombre_completo`, `correo`, `telefono` y `documento`. El aviso nombra las cuatro columnas y su tipo **sin mostrar un solo valor**; `correo` y `documento` ya las apartó el saneamiento (un valor distinto por fila) y el aviso lo dice. El plan propone quitar `nombre_completo` y `telefono`. El objetivo de la guía es `se_dio_de_baja`. |
+| `xlsx/<ejemplo>.xlsx`                    | Los mismos datos que cada CSV de ejemplo, como libro de Excel hecho por **otro programa** (openpyxl): la hoja `Datos`, los números como números y las fechas como fechas. Cargados, dan la misma tabla y el mismo veredicto que su CSV. Están diez ejemplos del kit y `clientes-con-datos-personales`.                                       |
+| `xlsx/libro-con-clave.xlsx`              | Prueba T2. **No es un libro de verdad**: lleva solo la firma de un libro cifrado. Se rechaza diciendo que está protegido con contraseña o cifrado.                                                                                                                                                                                                              |
+| `xlsx/libro-antiguo.xls`                 | Prueba T2. La firma de un Excel antiguo. Se rechaza diciendo que es un `.xls` y cómo guardarlo.                                                                                                                                                                                                                                                                 |
+| `xlsx/libro-danado.xlsx`                 | Prueba T2. Texto suelto con extensión `.xlsx`. Se rechaza diciendo que está dañado o no es un `.xlsx` de verdad.                                                                                                                                                                                                                                              |
+
+**El plan que propone cada archivo** (lo que ves en «Plan de limpieza»; los demás no proponen nada):
+
+| Archivo                       | Pasos propuestos                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| `clientes-sucio.csv`          | marca de «estaba vacío» en `edad`                                                         |
+| `planes-suscripcion.csv`      | valores lejanos por cuantiles en `uso_gb_mes`                                             |
+| `planes-fuga-plantada.csv`    | valores lejanos por cuantiles en `cargo_corporativo_usd`, `uso_gb_mes` y `usuarios`       |
+| `liga-mediana.csv`            | marcas de «estaba vacío» en `x1` y `x2`, y «sin dato» como categoría en `c2`              |
+| `bajas-con-fuga.csv`          | «sin dato» como categoría en `motivo_baja`                                                |
+| `clientes-con-datos-personales.csv` | quitar `nombre_completo` y `telefono`                                              |
+
+Los `.xlsx` de ejemplo y los tres libros que se rechazan salen de `scripts/make-kit-xlsx.py` (openpyxl 3.1.5; no corre en la CI: los archivos viven en el repo y `archivo.test.ts` los abre). El CSV de datos personales sale de `node scripts/make-example-datasets.mjs`.
+
 ## Nota de reproducibilidad
 
 Estos CSV se generan de forma determinista con `node scripts/make-example-datasets.mjs` (semilla

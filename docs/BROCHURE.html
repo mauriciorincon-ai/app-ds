@@ -35,8 +35,8 @@
   sitio): 1) grid-template-rows en la apertura de tarjeta · 2) stroke-dashoffset para calibrar
   los iconos · 3) filter:blur en la apertura del titular, con opacidad SIEMPRE 1 (LCP honesto).
 
-  CONTEO: 62 funcionalidades (13 + 7 + 6 + 12 + 5 + 17 en las seis tarjetas + 2 en "lo fino"),
-  cuadrado contra docs/MANUAL-DE-USO.md. S17 suma cuatro: «Estrésalo» en la tarjeta del porqué y la receta, el puntuador y el servicio en la del modelo que se usa. S16 (cierre de H-2) suma la sexta puerta, «Protocolo DS»,
+  CONTEO: 68 funcionalidades (14 + 11 + 7 + 12 + 5 + 17 en las seis tarjetas + 2 en "lo fino"),
+  cuadrado contra docs/MANUAL-DE-USO.md. S18 suma seis: el Excel, el aviso de datos personales, el plan de limpieza y la exploración en la tarjeta de los datos, el margen de error en la del veredicto y el texto comprobado en la del porqué. S17 suma cuatro: «Estrésalo» en la tarjeta del porqué y la receta, el puntuador y el servicio en la del modelo que se usa. S16 (cierre de H-2) suma la sexta puerta, «Protocolo DS»,
   con las 17 funcionalidades de la VISION (compuerta, cuaderno, porqué, glosario y las diez etapas). S6 suma dos en la tarjeta del veredicto (estimar una
   cantidad y la pregunta «¿categorías o una cantidad?»); S7 suma seis (clasificar en varias
   categorías en la tarjeta del veredicto y las cinco de la quinta puerta, «Agrupar sin
@@ -906,7 +906,7 @@
               </svg>
             </span>
             <span class="tarjeta-titulo"><span class="es" lang="es">El veredicto honesto</span><span class="en" lang="en">The honest verdict</span></span>
-            <span class="tarjeta-n">13</span>
+            <span class="tarjeta-n">14</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"/>
@@ -930,6 +930,7 @@
               <li style="--i:10"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Clasifica en varias categorías.</b> <em>De 3 a 20: la exactitud balanceada contra la categoría más frecuente y una regresión logística, la matriz con los aciertos marcados ✓ y, en una frase, la confusión más frecuente.</em></span><span class="en" lang="en"><b>Classify into several categories.</b> <em>From 3 to 20: balanced accuracy against the most frequent category and a logistic regression, the matrix with the hits marked ✓ and, in one sentence, the most frequent mix-up.</em></span></li>
               <li style="--i:11"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>¿Categorías o una cantidad? Te lo pregunta.</b> <em>Si una columna tiene pocos números distintos, la app no adivina: pregunta, con la lectura más probable marcada. Respondas lo que respondas, entrena.</em></span><span class="en" lang="en"><b>Categories or a quantity? It asks you.</b> <em>If a column has few distinct numbers, the app doesn't guess: it asks, with the likeliest reading marked. Whatever you answer, it trains.</em></span></li>
               <li style="--i:12"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Nuevo experimento cuando quieras.</b> <em>Un botón y vuelves a empezar.</em></span><span class="en" lang="en"><b>A new experiment whenever you like.</b> <em>One button and you start over.</em></span></li>
+              <li style="--i:13"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>El margen de error de la cifra.</b> <em>Mil remuestreos de la prueba dan un intervalo del 95 % para la métrica del veredicto, con su semilla: repetirlo da lo mismo. Dice cuánto se movería la cifra con otra muestra de las mismas filas, no más.</em></span><span class="en" lang="en"><b>The margin of error of the figure.</b> <em>A thousand resamples of the test give a 95 % interval for the verdict's metric, with its seed: repeating it gives the same. It says how much the figure would move with another sample of the same rows, no more.</em></span></li>
             </ul>
           </div>
         </div>
@@ -948,14 +949,14 @@
               </svg>
             </span>
             <span class="tarjeta-titulo"><span class="es" lang="es">Datos reales, tratados de frente</span><span class="en" lang="en">Real data, handled head-on</span></span>
-            <span class="tarjeta-n">7</span>
+            <span class="tarjeta-n">11</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"/>
             </svg>
           </button>
         </h3>
-        <p class="es tarjeta-resumen" lang="es">Tus tablas vienen con huecos, basura y filas repetidas. Se limpian contándote cada paso.</p><p class="en tarjeta-resumen" lang="en">Your tables come with gaps, junk and repeated rows. They're cleaned while it tells you every step.</p>
+        <p class="es tarjeta-resumen" lang="es">Tus tablas, en CSV o en Excel, vienen con huecos, basura y filas repetidas. Se limpian contándote cada paso, y los pasos de más peso los apruebas tú.</p><p class="en tarjeta-resumen" lang="en">Your tables, in CSV or Excel, come with gaps, junk and repeated rows. They're cleaned while it tells you every step, and you approve the heavier ones.</p>
         <div class="detalle" id="d-datos">
           <div class="detalle-caja">
             <ul class="features">
@@ -966,6 +967,10 @@
               <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Saneamiento con el conteo exacto.</b> <em>Filas repetidas eliminadas, columnas identificadoras o constantes apartadas, celdas basura vaciadas. Y si venías limpio, un franco «nada que sanear».</em></span><span class="en" lang="en"><b>Cleaning, with the exact count.</b> <em>Duplicate rows removed, identifier or constant columns set aside, junk cells emptied. And if your data was clean, a frank “nothing to clean up”.</em></span></li>
               <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Cinco alertas antes de entrenar.</b> <em>Una columna que huele a fuga (con varias categorías, nombra la categoría que delata), una que parece un código de cliente, un objetivo desbalanceado (con varias categorías, la más chica, con su nombre) y, al estimar, un objetivo muy sesgado o con valores muy lejos del resto. Con símbolo y texto, nunca solo color.</em></span><span class="en" lang="en"><b>Five alerts before training.</b> <em>A column that smells like a leak (with several categories, it names the category the column gives away), one that looks like a customer code, an imbalanced target (with several categories, the smallest one, by name) and, when estimating, a heavily skewed target or one with values far from the rest. With a symbol and text, never colour alone.</em></span></li>
               <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Si tu CSV separa con punto y coma, se bloquea y se te dice.</b> <em>El caso típico de Excel en español. Adivinar el separador sería convertir tus números en categorías en silencio.</em></span><span class="en" lang="en"><b>If your CSV uses semicolons, it stops and tells you.</b> <em>The classic case of Excel in Spanish. Guessing the separator would silently turn your numbers into categories.</em></span></li>
+              <li style="--i:7"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>También entra un Excel.</b> <em>Un libro .xlsx se lee en tu navegador, con los mismos límites que un CSV, y la app dice qué hoja leyó. Con contraseña o en formato antiguo (.xls), se rechaza diciendo por qué.</em></span><span class="en" lang="en"><b>An Excel workbook works too.</b> <em>An .xlsx file is read in your browser, under the same limits as a CSV, and the app says which sheet it read. Password-protected or in the old .xls format, it is refused with a reason.</em></span></li>
+              <li style="--i:8"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Avisa de posibles datos personales.</b> <em>Correos, teléfonos, documentos y nombres: te dice la columna y el tipo, jamás el valor. Es un aviso, no un bloqueo, y es aproximado.</em></span><span class="en" lang="en"><b>It warns about possible personal data.</b> <em>Emails, phone numbers, ID numbers and names: it tells you the column and the type, never the value. It is a notice, not a block, and it is approximate.</em></span></li>
+              <li style="--i:9"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Un plan de limpieza que apruebas tú.</b> <em>El código propone los pasos y tú apruebas o rechazas cada uno. Lo que no apruebas no se aplica, y lo que depende de los datos se calcula solo con el entrenamiento, para que la prueba siga limpia.</em></span><span class="en" lang="en"><b>A cleaning plan you approve.</b> <em>The code proposes the steps and you approve or reject each one. What you do not approve is not applied, and whatever depends on the data is computed from the training rows only, so the test stays clean.</em></span></li>
+              <li style="--i:10"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Explora tus datos antes de entrenar.</b> <em>Cómo se reparte cada columna, qué columnas se mueven juntas y un resumen escrito cuyas cifras se recalculan aparte desde tu tabla.</em></span><span class="en" lang="en"><b>Explore your data before training.</b> <em>How each column is spread, which columns move together and a written summary whose figures are recomputed separately from your table.</em></span></li>
             </ul>
           </div>
         </div>
@@ -985,7 +990,7 @@
               </svg>
             </span>
             <span class="tarjeta-titulo"><span class="es" lang="es">El porqué, contado honesto</span><span class="en" lang="en">The why, told honestly</span></span>
-            <span class="tarjeta-n">6</span>
+            <span class="tarjeta-n">7</span>
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"/>
@@ -1002,6 +1007,7 @@
               <li style="--i:3"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Si la narración falla, te dice por qué.</b> <em>El proveedor no respondió · no pasó la verificación · no está configurada. Y puedes reintentar.</em></span><span class="en" lang="en"><b>If the narration fails, it tells you why.</b> <em>The provider didn't answer · it failed the check · it isn't set up. And you can retry.</em></span></li>
               <li style="--i:4"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Model card descargable.</b> <em>La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites; al agrupar, la lectura y los grupos. Tu constancia ante quien pregunte.</em></span><span class="en" lang="en"><b>A downloadable model card.</b> <em>The experiment's full record: data, split, method, metrics, verdict and limits; when grouping, the reading and the groups. Your proof for whoever asks.</em></span></li>
               <li style="--i:5"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>Estrésalo: ¿cuánto aguanta?</b> <em>Ruido en los números, una columna revuelta y un corrimiento sobre la misma prueba; dice si el modelo sigue ganándole a su rival sin modelo, y que es una lectura, no una garantía.</em></span><span class="en" lang="en"><b>Stress it: how much does it take?</b> <em>Noise in the numbers, one column shuffled and a drift on the same test; it says whether the model still beats its rival without a model, and that it is a reading, not a guarantee.</em></span></li>
+              <li style="--i:6"><span class="marca-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 7"/></svg></span><span class="es" lang="es"><b>El texto estándar, comprobado contra tus números.</b> <em>En las cuatro tareas, el texto pasa una comprobación de cifras y de orden antes de mostrarse; si no cuadra, la app muestra solo las cifras. Es una comprobación del texto, no una garantía de que el modelo sea bueno.</em></span><span class="en" lang="en"><b>The standard text, checked against your numbers.</b> <em>In all four tasks the text passes a check of figures and order before it is shown; if it does not match, the app shows only the figures. It is a check on the text, not a guarantee that the model is good.</em></span></li>
             </ul>
           </div>
         </div>
@@ -1363,9 +1369,9 @@
 <footer>
   <div class="env">
     <p class="conteo">
-      <span class="conteo-cifra" data-contador="62" aria-hidden="true">62</span>
+      <span class="conteo-cifra" data-contador="68" aria-hidden="true">68</span>
       <span class="conteo-glosa">
-        <span class="es" lang="es"><b><span class="oculto-visual">62 </span>funcionalidades</b>, todas en esta página; la liga honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin mirar la prueba”, estimar una cantidad, del Sprint 006, suma dos, el Sprint 007 suma seis: clasificar en varias categorías y las cinco de agrupar; el Sprint 017 suma cuatro: la prueba de estrés, la receta, el puntuador portátil y la plantilla de servicio; y el Protocolo DS, de los Sprints 008 a 015, suma las 17 de su puerta.</span><span class="en" lang="en"><b><span class="oculto-visual">62 </span>features</b>, all on this page. Sprint 005's honest league is summed up as “A league of models, picked without looking at the test”; Sprint 006 adds two for estimating a quantity, Sprint 007 adds six: classifying into several categories and five for grouping rows; Sprint 017 adds four: the stress test, the recipe, the portable scorer and the service template; and Protocolo DS, from Sprints 008 to 015, adds the 17 behind its door.</span>
+        <span class="es" lang="es"><b><span class="oculto-visual">68 </span>funcionalidades</b>, todas en esta página; la liga honesta del Sprint 005 se resume en “Una liga de modelos, elegida sin mirar la prueba”, estimar una cantidad, del Sprint 006, suma dos, el Sprint 007 suma seis: clasificar en varias categorías y las cinco de agrupar; el Sprint 017 suma cuatro: la prueba de estrés, la receta, el puntuador portátil y la plantilla de servicio; el Sprint 018 suma seis: el Excel, el aviso de datos personales, el plan de limpieza, la exploración, el margen de error y el texto comprobado; y el Protocolo DS, de los Sprints 008 a 015, suma las 17 de su puerta.</span><span class="en" lang="en"><b><span class="oculto-visual">68 </span>features</b>, all on this page. Sprint 005's honest league is summed up as “A league of models, picked without looking at the test”; Sprint 006 adds two for estimating a quantity, Sprint 007 adds six: classifying into several categories and five for grouping rows; Sprint 017 adds four: the stress test, the recipe, the portable scorer and the service template; Sprint 018 adds six: Excel, the personal-data notice, the cleaning plan, the exploration, the margin of error and the checked text; and Protocolo DS, from Sprints 008 to 015, adds the 17 behind its door.</span>
       </span>
     </p>
 
@@ -1472,7 +1478,7 @@
     window.addEventListener("resize", () => { medir(); despertar(); }, { passive: true });
   }
 
-  // ── E08 · el contador. El texto accesible ya dice 62 desde el primer byte; esto solo
+  // ── E08 · el contador. El texto accesible ya dice 68 desde el primer byte; esto solo
   // dramatiza la cifra decorativa (aria-hidden), así que ningún e2e depende de él.
   const cifra = document.querySelector(".conteo-cifra");
   if (cifra && !menosMovimiento.matches) {

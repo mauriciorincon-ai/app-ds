@@ -975,7 +975,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     cifra escrita junto a cada barra.
   - **La matriz de correlaciones de Pearson** (de −1 a 1) entre las numéricas, con el signo escrito en cada
     celda (hasta 15 columnas; si hay más, lo dice) y las **asociaciones entre columnas de texto** (V de Cramér, de
-    0 a 1; las de entre 2 y 20 categorías).
+    0 a 1; solo columnas con hasta 20 categorías).
   - Una correlación fuerte **no dice que una columna cause la otra**, y el resumen lo recuerda.
 
 - **El margen de error de la cifra** (en Resultados, bajo las métricas): el veredicto da UNA cifra; el margen

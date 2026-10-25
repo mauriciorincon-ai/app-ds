@@ -406,6 +406,22 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
   `role="status"` («Preparando el archivo…», «✓ Descargado: …», «✕ No se pudo…»). Sus textos viajan con su chunk.
 - **El puntuador portátil (S17)** — una página aparte, autocontenida (`docs`/descarga), con los mismos tokens claro/oscuro por
   `prefers-color-scheme`, blancos táctiles de 44 px, foco visible y el estado en `role="status"`; el idioma sale del navegador.
+- **Aviso de datos personales (S18)** — un recuadro de aviso (`caution`, ⚠ + palabra «Posibles datos personales») con una línea por columna
+  («telefono»: parece guardar teléfonos, a juzgar por su contenido), **jamás un valor**, y una nota de que es un aviso aproximado que no
+  bloquea. `role="status"`; el color nunca va solo.
+- **Plan de limpieza (S18)** — una lista de pasos; cada fila lleva la frase de lo que hace, su estado con **símbolo y palabra** (○ Sin decidir ·
+  ✓ Aprobado · ✕ Rechazado, el color solo refuerza) y dos botones, «Aprobar» (icono `check`) y «Rechazar» (icono `x`), con `aria-pressed`: pulsar el
+  activo lo deja sin decidir. Arriba, un resumen que sigue las decisiones («1 aprobados · 1 rechazados · 0 sin decidir») y, si el archivo es un
+  Excel, la hoja que se leyó (icono `table`, `role="status"`). Se alcanza con Tab y se activa con Enter o Espacio. Sus textos viajan con su chunk
+  (`messages/limpieza.{es,en}.json`).
+- **Explora tus datos (S18)** — una tarjeta con un botón «Explorar» (icono `eye`; «Ocultar la exploración» con `x`): nada se calcula antes de
+  pulsarlo. Trae un **resumen escrito** con la insignia «Verificado contra tus números» (símbolo + texto), una lista de columnas donde cada una
+  se abre (`details`) y escribe su cifra junto a cada barra, y la **matriz de correlación** como `<table>` con el número **y su signo** en cada
+  celda (la intensidad nunca es el único dato). Sus textos viajan con su chunk (`messages/exploracion.{es,en}.json`).
+- **Margen de error de la cifra (S18)** — una línea con la métrica del veredicto y su intervalo del 95 % bajo las métricas, y debajo la semilla y el
+  número de remuestreos; «Calculando…» como `role="status"`, un fallo como `role="alert"`, y una frase que dice por qué no hay cifra al agrupar o con
+  un modelo importado. Sus textos viajan con su chunk (`messages/resultados.{es,en}.json`), como la insignia **«Verificada contra tus números»**
+  del texto estándar de «por qué».
 - **Foco y tema** — `:focus-visible` es un contorno de 2 px en `accent` a 2 px de distancia, para todo lo enfocable; la página
   declara `color-scheme` claro y oscuro para que los controles nativos (radios, casillas, selectores) sigan el tema; el alias
   `--sunken` equivale a `--surface-sunken`.
@@ -413,11 +429,11 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
 ## Jerarquía por pantalla (la "una cosa importante")
 
 1. **Inicio/carga** → la elección: subir CSV o elegir ejemplo. Estado vacío diseñado (no ícono gris).
-2. **Configuración** → seleccionar el objetivo; desde S5 la **TaskCard** y la **RosterCard** dicen
+2. **Configuración** → (desde el S18, antes del objetivo, el aviso de datos personales, el plan de limpieza y «Explorar») seleccionar el objetivo; desde S5 la **TaskCard** y la **RosterCard** dicen
    qué se entrenaría y quién compite, y «Entrenar modelos» queda arriba de la vista previa. El
    **SanitationBlock** y el **EdaBlock** lo enmarcan.
 3. **Entrenamiento** → el progreso honesto (qué modelo, en qué fase); en el Nivel 2, cancelar.
-4. **Resultados** → (desde el S17 también «Estrésalo» y «Llévatelo», después de «Usa tu modelo») el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
+4. **Resultados** → (desde el S17 también «Estrésalo» y «Llévatelo», después de «Usa tu modelo»; desde el S18 el margen de error bajo las métricas) el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
    métricas, matriz y advertencias lo sostienen. Al estimar (S6), el veredicto va en unidades y el
    **PredichoVsReal** ocupa el lugar de la matriz. Con varias categorías (S7), la matriz es K×K.
    Al agrupar (S7), la **lectura** ocupa el lugar del veredicto, y los grupos y la tabla de
