@@ -148,8 +148,8 @@ class _Spy(TransformerMixin, BaseEstimator):
     def named_transformers_(self):
         return self.inner_.named_transformers_
 _REAL_MAKE_PREPROCESSOR = _make_preprocessor
-def _make_preprocessor(numeric, categorical):
-    return _Spy(_REAL_MAKE_PREPROCESSOR(numeric, categorical))
+def _make_preprocessor(numeric, categorical, limpieza=None):
+    return _Spy(_REAL_MAKE_PREPROCESSOR(numeric, categorical, limpieza))
 `;
   const RESTORE = `
 _make_preprocessor = _REAL_MAKE_PREPROCESSOR
