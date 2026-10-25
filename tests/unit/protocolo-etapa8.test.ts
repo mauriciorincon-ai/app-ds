@@ -939,6 +939,8 @@ describe("el resumen para el cuaderno", () => {
       brierBase: c.brier_base,
       aperturas: 1,
       patron: PATRON.patron,
+      estresRuido: null,
+      estresRival: null,
     });
   });
 });

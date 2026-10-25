@@ -229,9 +229,23 @@ export async function abrirPrueba(page: Page) {
   });
 }
 
-/** Etapa 8: abrir la prueba, escribir el patrón de fallo y registrar (la 9 abre). */
-export async function cumplirEtapa8(page: Page, patron: string) {
+/** S17: «Estrésalo» sobre la prueba ya abierta (no es una apertura nueva); espera la lectura. */
+export async function estresarPrueba(page: Page) {
+  const e8 = page.locator("#etapa-8");
+  await e8.getByRole("button", { name: "Estrésalo" }).click();
+  await expect(e8.getByTestId("estres-lectura")).toBeVisible({
+    timeout: 240_000,
+  });
+}
+
+/** Etapa 8: abrir la prueba, escribir el patrón de fallo y registrar (la 9 abre). Con `estres`, antes lee el estrés. */
+export async function cumplirEtapa8(
+  page: Page,
+  patron: string,
+  { estres = false }: { estres?: boolean } = {},
+) {
   await abrirPrueba(page);
+  if (estres) await estresarPrueba(page);
   const e8 = page.locator("#etapa-8");
   await e8.getByLabel("Tu patrón de fallo").fill(patron);
   await e8.getByRole("button", { name: "Registrar la etapa 8" }).click();

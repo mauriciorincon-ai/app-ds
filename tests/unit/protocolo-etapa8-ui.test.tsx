@@ -39,12 +39,15 @@ const hook = vi.hoisted(() => ({
   estado: { tipo: "inactiva" } as EstadoPrueba,
   abrir: vi.fn(),
   cancelar: vi.fn(),
+  estresar: vi.fn(),
 }));
 vi.mock("@/lib/protocolo/usePrueba", () => ({
   usePrueba: () => ({
     estado: hook.estado,
     abrir: hook.abrir,
     cancelar: hook.cancelar,
+    estres: { tipo: "inactivo" },
+    estresar: hook.estresar,
   }),
 }));
 

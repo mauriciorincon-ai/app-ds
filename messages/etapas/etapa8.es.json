@@ -144,7 +144,10 @@
           "prueba_pos": "Filas positivas en la prueba",
           "regla_vp": "Tu regla: alertas que aciertan en la prueba",
           "regla_fp": "Tu regla: falsas alarmas en la prueba",
-          "tabla_umbrales": "Alertas que aciertan y falsas, por umbral"
+          "tabla_umbrales": "Alertas que aciertan y falsas, por umbral",
+          "estres_ruido": "Estrés: la métrica con 10 % de ruido en los números",
+          "estres_rival": "Estrés: el mejor rival sin modelo, en la misma métrica",
+          "estres_rival_id": "Estrés: cuál es ese rival"
         }
       }
     }

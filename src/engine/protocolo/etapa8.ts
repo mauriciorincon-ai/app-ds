@@ -21,7 +21,8 @@
 import { byTask, matchByTask } from "@/engine/despacho";
 import type { SupervisedTask } from "@/engine/tarea";
 import type { CsvTable } from "@/lib/ds/csv";
-import type { TestResult } from "@/workers/protocol";
+import type { StressResult, TestResult } from "@/workers/protocol";
+import { SEAL_NOISE_LEVEL, noiseAt } from "@/engine/estres";
 import {
   REMUESTREOS,
   SEMILLA_8,
@@ -141,6 +142,10 @@ export const DEL_WORKER_8 = [
   "aperturas",
   // S14: la tabla agregada de umbrales (con dos clases)
   "tabla_umbrales",
+  // S17: la prueba de estrés (opcional): la métrica con 10 % de ruido y el mejor rival sin modelo en la misma prueba
+  "estres_ruido",
+  "estres_rival",
+  "estres_rival_id",
 ] as const;
 
 /**
@@ -154,6 +159,19 @@ export const NUEVOS_S14 = [
   "tabla_umbrales",
 ] as const;
 
+/**
+ * S17 (ADR 023): lo que la etapa guarda desde la prueba de estrés. Es opcional: un cuaderno de antes (o uno donde no
+ * la corriste) no lo trae y se sigue leyendo; la ficha dice entonces «robustez: no se midió».
+ */
+export const NUEVOS_S17 = [
+  "estres_ruido",
+  "estres_rival",
+  "estres_rival_id",
+] as const;
+
+/** Todo lo que un registro viejo puede no traer. */
+const NUEVOS = [...NUEVOS_S14, ...NUEVOS_S17] as const;
+
 // Lo que sale de los dos (el optimismo, el peor segmento, la lectura) se vuelve a calcular: `derivados`.
 
 const TEXTOS = [
@@ -162,6 +180,7 @@ const TEXTOS = [
   "metrica",
   "calibracion",
   "peor_segmento",
+  "estres_rival_id",
 ] as const;
 const NUMEROS = [
   ...NUMEROS_TABLA,
@@ -177,6 +196,8 @@ const NUMEROS = [
   "peor_exceso",
   "seg_con_soporte",
   "cal_lectura",
+  "estres_ruido",
+  "estres_rival",
 ] as const;
 const LISTAS = [...LISTAS_TABLA] as const;
 const MAPAS = [
@@ -394,7 +415,11 @@ export function claveApertura(huella: string, plan: Plan8): string | null {
 // --- lo que se registra ------------------------------------------------------------------------
 
 /** Lo que devolvió el worker al abrir la prueba, ya validado (contrato-prueba.ts). */
-export type Corrida8 = { readonly resultado: TestResult };
+export type Corrida8 = {
+  readonly resultado: TestResult;
+  /** S17: la lectura de estrés de ESTA apertura (mismo sello y ganador), si la pediste. */
+  readonly estres?: StressResult;
+};
 
 export type EntradaEtapa8 = { readonly patron: string };
 export const ENTRADA_8_VACIA: EntradaEtapa8 = { patron: "" };
@@ -581,6 +606,12 @@ function delWorker(
     peores_n: Math.min(PEORES, plan.plan7.particion.prueba.length),
     aperturas,
     tabla_umbrales: tablaUmbrales(plan, r),
+    // S17: sin lectura de estrés quedan en vacío, no inventados
+    estres_ruido: corrida.estres
+      ? (noiseAt(corrida.estres, SEAL_NOISE_LEVEL)?.value ?? null)
+      : null,
+    estres_rival: corrida.estres?.baseline?.value ?? null,
+    estres_rival_id: corrida.estres?.baseline?.name ?? null,
   };
 }
 
@@ -681,7 +712,7 @@ function recalcular(
   for (const k of DEL_WORKER_8) c[k] = datos.chequeos[k] ?? null;
   Object.assign(c, derivados(c, plan?.plan7.forma ?? null));
   // un registro de antes del S14 no trae la tabla de umbrales: se compara con lo que tenía
-  for (const k of NUEVOS_S14)
+  for (const k of NUEVOS)
     if (!Object.hasOwn(datos.chequeos, k)) delete c[k];
   return { respuestas: datos.respuestas, chequeos: c };
 }
@@ -779,12 +810,12 @@ function leer(datos: DatosEtapa): Lectura {
   )
     return { ok: false, campo: "respuestas.patron" };
   // un registro de antes del S14 no trae lo nuevo: se lee como vacío
-  const c: Registro = { ...nulos(NUEVOS_S14), ...datos.chequeos };
+  const c: Registro = { ...nulos(NUEVOS), ...datos.chequeos };
   const extra = claveExtra(c, CHEQUEOS_8);
   if (extra !== null) return { ok: false, campo: `chequeos.${extra}` };
   const malo = (k: string) => ({ ok: false as const, campo: `chequeos.${k}` });
   for (const k of CHEQUEOS_8)
-    if (!Object.hasOwn(c, k) && !(NUEVOS_S14 as readonly string[]).includes(k))
+    if (!Object.hasOwn(c, k) && !(NUEVOS as readonly string[]).includes(k))
       return malo(k);
   for (const k of TEXTOS)
     if (c[k] !== null && typeof c[k] !== "string") return malo(k);
@@ -794,6 +825,11 @@ function leer(datos: DatosEtapa): Lectura {
   if (c.ganador !== null && !esIdGuardado(c.ganador)) return malo("ganador");
   if (c.metrica !== null && !esIdGuardado(c.metrica)) return malo("metrica");
   if (c.base_id !== null && !esIdGuardado(c.base_id)) return malo("base_id");
+  // S17: el rival del estrés es un identificador, y la cifra con ruido no viaja sin su rival (ni al revés)
+  if (c.estres_rival_id !== null && !esIdGuardado(c.estres_rival_id))
+    return malo("estres_rival_id");
+  if ((c.estres_ruido === null) !== (c.estres_rival === null))
+    return malo("estres_ruido");
   for (const p of ["base", "regla", "ganador"] as const) {
     const [bajo, alto] = [numero(c, `${p}_bajo`), numero(c, `${p}_alto`)];
     if (bajo !== null && alto !== null && bajo > alto) return malo(`${p}_bajo`);
@@ -1025,6 +1061,9 @@ export type ResumenEtapa8 = {
   readonly brierBase: number | null;
   readonly aperturas: number | null;
   readonly patron: string | null;
+  /** S17: la métrica con 10 % de ruido y el mejor rival sin modelo en la misma prueba (`null` si no se corrió el estrés). */
+  readonly estresRuido: number | null;
+  readonly estresRival: number | null;
 };
 
 export function resumenEtapa8(datos: DatosEtapa): ResumenEtapa8 {
@@ -1047,6 +1086,8 @@ export function resumenEtapa8(datos: DatosEtapa): ResumenEtapa8 {
     brierBase: numero(c, "brier_base"),
     aperturas: numero(c, "aperturas"),
     patron: texto(datos.respuestas, "patron"),
+    estresRuido: numero(c, "estres_ruido"),
+    estresRival: numero(c, "estres_rival"),
   };
 }
 

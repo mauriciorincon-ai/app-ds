@@ -144,7 +144,10 @@
           "prueba_pos": "Positive rows in the test set",
           "regla_vp": "Your rule: alerts that are right in the test set",
           "regla_fp": "Your rule: false alarms in the test set",
-          "tabla_umbrales": "Right and false alerts, by threshold"
+          "tabla_umbrales": "Right and false alerts, by threshold",
+          "estres_ruido": "Stress: the metric with 10 % noise in the numbers",
+          "estres_rival": "Stress: the best rival without a model, on the same metric",
+          "estres_rival_id": "Stress: which rival it is"
         }
       }
     }

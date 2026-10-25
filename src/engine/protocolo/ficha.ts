@@ -9,6 +9,8 @@
 // Secciones: los datos · población y periodo · lo medido en la prueba · la decisión · límites y para qué NO
 // usarlo · «Lo que este modelo cumplió» · el plan de vigilancia (con «usar») o qué cambiar (con «no usar» e
 // «iterar») · quién responde.
+import { robustnessOf } from "@/engine/estres";
+import { METRIC_RULES, type PrimaryMetric } from "@/engine/verdict";
 import type { EtapaEvaluada } from "./compuerta";
 import type { Carga, Cuaderno } from "./cuaderno";
 import { PSI_ALERTA, PSI_MODERADA } from "./deriva";
@@ -119,6 +121,11 @@ export const LINEAS_FICHA = {
     "calibracion",
     "calibracion-sin-probabilidades",
     "calibracion-no-aplica",
+    // S17 (ADR 023): la robustez, de la prueba de estrés de la etapa 8
+    "robustez",
+    "robustez-cae",
+    "robustez-ya-perdia",
+    "robustez-sin-medir",
   ],
   vigilancia: [
     "columnas",
@@ -360,6 +367,38 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
   if (r8.calibracion === "medida")
     linea(cum, 8, "calibracion", { brier: r8.brier, brierBase: r8.brierBase });
   else if (r8.calibracion) linea(cum, 8, `calibracion-${r8.calibracion}`);
+  // S17: la robustez es opcional (no hay compuerta): sin lectura, «no se midió» es una línea honesta, no un hueco
+  const rob =
+    r8.estresRuido !== null &&
+    r8.estresRival !== null &&
+    r8.enPrueba !== null &&
+    r8.metrica !== null &&
+    Object.hasOwn(METRIC_RULES, r8.metrica)
+      ? robustnessOf(
+          r8.metrica as PrimaryMetric,
+          r8.enPrueba,
+          r8.estresRuido,
+          r8.estresRival,
+        )
+      : null;
+  if (rob === null || rob.kind === "no-noise") linea(cum, 8, "robustez-sin-medir");
+  else
+    linea(
+      cum,
+      8,
+      rob.kind === "holds"
+        ? "robustez"
+        : rob.alreadyLost
+          ? "robustez-ya-perdia"
+          : "robustez-cae",
+      {
+        nivel: rob.level * 100,
+        metrica: rob.metric,
+        de: rob.base,
+        a: rob.value,
+        rival: rob.rival,
+      },
+    );
 
   const vig: LineaFicha[] = [];
   const vari: LineaFicha[] = [];

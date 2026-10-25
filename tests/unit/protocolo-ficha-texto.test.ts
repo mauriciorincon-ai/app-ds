@@ -136,6 +136,27 @@ const FICHAS: [string, Ficha][] = [
     ),
   ],
   [
+    "la robustez medida (sigue ganando)",
+    fichaCon(USAR, {
+      etapa: 8,
+      c: { metrica: "auc", prueba_metrica: 0.9, estres_ruido: 0.8, estres_rival: 0.5, estres_rival_id: "majority" },
+    }),
+  ],
+  [
+    "la robustez medida (deja de ganar)",
+    fichaCon(USAR, {
+      etapa: 8,
+      c: { metrica: "auc", prueba_metrica: 0.9, estres_ruido: 0.505, estres_rival: 0.5, estres_rival_id: "majority" },
+    }),
+  ],
+  [
+    "la robustez medida (ya no ganaba sin ruido)",
+    fichaCon(USAR, {
+      etapa: 8,
+      c: { metrica: "mae", prueba_metrica: 1250.5, estres_ruido: 1300, estres_rival: 1200, estres_rival_id: "median" },
+    }),
+  ],
+  [
     "calibración que no aplica",
     fichaCon(USAR, {
       etapa: 8,

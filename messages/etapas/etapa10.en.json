@@ -194,7 +194,11 @@
             "incertidumbre": "Uncertainty measured: on the test set the cost runs from {bajo100} to {alto100} per 100 decisions.",
             "calibracion": "Calibration measured: Brier {brier} against {brierBase} for always saying the base rate.",
             "calibracion-sin-probabilidades": "Calibration: couldn't be measured, the winner gives no probabilities.",
-            "calibracion-no-aplica": "Calibration: doesn't apply when estimating a quantity."
+            "calibracion-no-aplica": "Calibration: doesn't apply when estimating a quantity.",
+            "robustez": "Robustness measured (stage 8): with {nivel} % noise in the numbers, {metrica} goes from {de} to {a} and still beats its best rival without a model ({rival}).",
+            "robustez-cae": "Robustness (stage 8): with {nivel} % noise in the numbers, {metrica} goes from {de} to {a} and stops beating its best rival without a model ({rival}). It is on the record.",
+            "robustez-ya-perdia": "Robustness (stage 8): noise is not the cause; before adding it, {metrica} ({de}) already did not beat its best rival without a model ({rival}).",
+            "robustez-sin-medir": "Robustness: not measured. The stage 8 stress test is optional and was not run on this opening of the test."
           },
           "vigilancia": {
             "columnas": "Columns watched for drift ({columnas}): {lista}.",

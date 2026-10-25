@@ -130,6 +130,8 @@ describe("la ficha con «usar»", () => {
       [7, expect.stringMatching(/^(sin-)?senal$/)],
       [8, "incertidumbre"],
       [8, "calibracion"],
+      // S17: sin lectura de estrés, la robustez dice que no se midió (no es un hueco)
+      [8, "robustez-sin-medir"],
     ]);
     expect(cumplio[1]!.params.sello).toMatch(/^[0-9a-f]{12}$/);
   });
@@ -292,6 +294,10 @@ describe("lo que cambia en la ficha según lo registrado (cada línea sale de su
     ["la calibración corrida en la 8", [{ etapa: 9, c: { brecha: 0.2 } }], "limites", "poco-fiable"],
     ["el periodo de los datos", [{ etapa: 2, c: { fecha_min: "2024-01-01", fecha_max: "2025-06-30" } }], "poblacion", "periodo"],
     ["sin exclusiones escritas", [{ etapa: 3, r: { exclusiones: " " } }], "poblacion", "sin-exclusiones"],
+    ["la robustez medida: con ruido sigue ganándole al rival", [{ etapa: 8, c: { metrica: "auc", prueba_metrica: 0.9, estres_ruido: 0.8, estres_rival: 0.5, estres_rival_id: "majority" } }], "cumplio", "robustez"],
+    ["la robustez medida: con ruido deja de ganarle", [{ etapa: 8, c: { metrica: "auc", prueba_metrica: 0.9, estres_ruido: 0.505, estres_rival: 0.5, estres_rival_id: "majority" } }], "cumplio", "robustez-cae"],
+    ["la robustez medida: ya no le ganaba sin ruido", [{ etapa: 8, c: { metrica: "auc", prueba_metrica: 0.505, estres_ruido: 0.5, estres_rival: 0.5, estres_rival_id: "majority" } }], "cumplio", "robustez-ya-perdia"],
+    ["la robustez sin medir", [{ etapa: 8, c: { estres_ruido: null, estres_rival: null } }], "cumplio", "robustez-sin-medir"],
     ["el modelo que no supera ni muestra señal", [{ etapa: 7, c: { veredicto: "no-supera", senal: "sin-senal" } }], "cumplio", "sin-senal"],
   ] as const)("%s", (_, cambios, seccion, clave) => {
     expect(claves(fichaCon(...(cambios as readonly Cambio[])), seccion)).toContain(clave);
