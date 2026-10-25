@@ -15,6 +15,7 @@ vacías: lo que haría Excel al abrir el CSV y guardarlo.
 import csv
 import datetime as dt
 import re
+import sys
 from pathlib import Path
 
 from openpyxl import Workbook
@@ -129,11 +130,14 @@ def bordes():
 
 
 def main():
+    """Sin argumentos rehace todo; con nombres (sin extensión) rehace solo esos ejemplos."""
     SALIDA.mkdir(parents=True, exist_ok=True)
-    for nombre in EJEMPLOS:
+    nombres = sys.argv[1:] or EJEMPLOS
+    for nombre in nombres:
         if (KIT / f"{nombre}.csv").exists():
             del_csv(nombre)
-    bordes()
+    if not sys.argv[1:]:
+        bordes()
     print("kit en", SALIDA, "· bordes en", BORDES)
 
 
