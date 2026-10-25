@@ -46,7 +46,10 @@ const libroMinimo = (
 
 describe("el kit de prueba en Excel carga igual que en CSV", () => {
   const carpeta = "docs/kit-de-prueba/xlsx";
-  const archivos = readdirSync(carpeta).filter((f) => f.endsWith(".xlsx"));
+  // los «libro-*» son los que Probeta debe rechazar (los abre `archivo.test.ts`): no tienen un CSV que igualar
+  const archivos = readdirSync(carpeta).filter(
+    (f) => f.endsWith(".xlsx") && !f.startsWith("libro-"),
+  );
 
   it("hay un libro por cada ejemplo del kit", () => {
     expect(archivos.length).toBeGreaterThanOrEqual(10);
