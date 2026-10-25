@@ -67,6 +67,7 @@ export function IntervaloPanel({
     if (!de || ocupado || !worker?.current) return;
     if (pedido.current === de.result) return; // este resultado ya se pidió
     pedido.current = de.result;
+    quitar.current?.(); // un pedido anterior que siga en vuelo ya no importa: su respuesta no debe quitar el manejador de este
     const w = worker.current;
     setEstado({ tipo: "midiendo" });
     const sent: IntervaloSent = {
@@ -79,7 +80,7 @@ export function IntervaloPanel({
     const alResponder = (event: MessageEvent<RunnerResponse>) => {
       const message = event.data;
       if (message.id !== id || message.type === "progress") return;
-      quitar.current?.();
+      quitarEste();
       if (message.type === "error") {
         setEstado({
           tipo: "error",
@@ -111,11 +112,12 @@ export function IntervaloPanel({
         }
       }, 0);
     };
-    w.addEventListener("message", alResponder);
-    quitar.current = () => {
+    const quitarEste = () => {
       w.removeEventListener("message", alResponder);
-      quitar.current = null;
+      if (quitar.current === quitarEste) quitar.current = null;
     };
+    w.addEventListener("message", alResponder);
+    quitar.current = quitarEste;
     w.postMessage({ id, type: "interval" });
     // `result` identifica la corrida; `ocupado` la reabre cuando el worker queda libre
   }, [de, ocupado, worker, result]);
@@ -179,8 +181,8 @@ export function IntervaloPanel({
                 </p>
                 <p className="text-sm text-ink-muted">
                   {t("resultados.intervalo.detalle", {
-                    n: lectura.n,
-                    remuestreos: lectura.remuestreos,
+                    n: formatQuantity(lectura.n, 0),
+                    remuestreos: formatQuantity(lectura.remuestreos, 0),
                     semilla: lectura.semilla,
                   })}
                 </p>
@@ -189,7 +191,7 @@ export function IntervaloPanel({
                     <span aria-hidden className="mr-1">
                       ⚠
                     </span>
-                    {t("resultados.intervalo.pocas", { n: lectura.n })}
+                    {t("resultados.intervalo.pocas", { n: formatQuantity(lectura.n, 0) })}
                   </p>
                 )}
               </div>

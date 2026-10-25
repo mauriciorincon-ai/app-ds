@@ -83,13 +83,17 @@ describe("datos personales", () => {
   });
 
   it("dice cuáles el saneamiento ya dejó fuera por tener un valor distinto por fila, y solo esas", () => {
-    expect(ingesta.personales.filter((a) => a.fuera).map((a) => a.column).sort()).toEqual([
-      "correo",
-      "documento",
-    ]);
+    expect(
+      ingesta.personales
+        .filter((a) => a.fuera)
+        .map((a) => a.column)
+        .sort(),
+    ).toEqual(["correo", "documento"]);
     pintar(ingesta);
     const lineas = screen.getAllByText(/parece guardar/);
-    const fuera = lineas.filter((li) => /ya la dejó fuera al sanear/.test(li.textContent!));
+    const fuera = lineas.filter((li) =>
+      /ya la dejó fuera al sanear/.test(li.textContent!),
+    );
     expect(fuera).toHaveLength(2);
   });
 
@@ -139,7 +143,9 @@ describe("el plan", () => {
 
   it("los botones llevan icono y se anuncian como interruptores", () => {
     pintar(ingesta);
-    const aprobar = screen.getByRole("button", { name: /Aprobar · nombre_completo/ });
+    const aprobar = screen.getByRole("button", {
+      name: /Aprobar · nombre_completo/,
+    });
     expect(aprobar.getAttribute("aria-pressed")).toBe("false");
     expect(aprobar.querySelector("svg")).not.toBeNull();
     expect(
@@ -152,7 +158,9 @@ describe("el plan", () => {
   it("aprobar, rechazar y volver a pulsar el activo llegan con el id del paso", () => {
     const onDecidir = vi.fn();
     const { rerender } = pintar(ingesta, { onDecidir });
-    fireEvent.click(screen.getByRole("button", { name: /Aprobar · nombre_completo/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Aprobar · nombre_completo/ }),
+    );
     expect(onDecidir).toHaveBeenLastCalledWith(
       "quitar-columna:nombre_completo",
       "aprobado",
@@ -177,10 +185,15 @@ describe("el plan", () => {
         />
       </I18nProvider>,
     );
-    const activo = screen.getByRole("button", { name: /Aprobar · nombre_completo/ });
+    const activo = screen.getByRole("button", {
+      name: /Aprobar · nombre_completo/,
+    });
     expect(activo.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(activo);
-    expect(onDecidir).toHaveBeenLastCalledWith("quitar-columna:nombre_completo", null);
+    expect(onDecidir).toHaveBeenLastCalledWith(
+      "quitar-columna:nombre_completo",
+      null,
+    );
   });
 
   it("el resumen cuenta aprobados, rechazados y sin decidir; el estado lleva su símbolo", () => {
@@ -192,13 +205,15 @@ describe("el plan", () => {
       },
     });
     expect(
-      screen.getByText("1 aprobados · 1 rechazados · 0 sin decidir"),
+      screen.getByText("Aprobados: 1 · Rechazados: 1 · Sin decidir: 0"),
     ).toBeTruthy();
     const fila = (columna: string) =>
       screen
         .getByRole("button", { name: new RegExp(`Aprobar · ${columna}`) })
         .closest("li")!;
-    expect(within(fila("nombre_completo")).getByText(/Aprobado/).textContent).toContain("Aprobado");
+    expect(
+      within(fila("nombre_completo")).getByText(/Aprobado/).textContent,
+    ).toContain("Aprobado");
     expect(fila("nombre_completo").textContent).toContain("✓");
     expect(fila("telefono").textContent).toContain("✕");
   });
@@ -272,11 +287,15 @@ describe("la ficha del modelo", () => {
   it("lista cada paso con su decisión, en el idioma de la ficha", () => {
     const es = lineasDeLimpieza("es", registro).join("\n");
     expect(es).toContain("## Plan de limpieza");
-    expect(es).toContain("- «nombre_completo» (columna quitada): aprobado y aplicado");
+    expect(es).toContain(
+      "- «nombre_completo» (columna quitada): aprobado y aplicado",
+    );
     expect(es).toContain("- «telefono» (columna quitada): rechazado");
     const en = lineasDeLimpieza("en", registro).join("\n");
     expect(en).toContain("## Cleaning plan");
-    expect(en).toContain("- “nombre_completo” (column removed): approved and applied");
+    expect(en).toContain(
+      "- “nombre_completo” (column removed): approved and applied",
+    );
   });
 
   it("sin plan no escribe nada", () => {
@@ -293,5 +312,30 @@ describe("la ficha del modelo", () => {
     expect(lineasDeLimpieza("es", sobreObjetivo).join("\n")).toContain(
       "aprobado, no se aplicó: es la columna que se predice",
     );
+  });
+});
+
+describe("las cifras del plan se escriben como en el resto de la app (R9, auditoría H-06 del S18)", () => {
+  it("miles con coma y porcentaje con punto decimal, en español y en inglés", () => {
+    const ingesta = {
+      personales: [],
+      plan: [
+        {
+          id: "vacio-indicador:ingreso",
+          tipo: "vacio-indicador" as const,
+          columna: "ingreso",
+          celdas: 1234,
+          de: 23_456,
+        },
+      ],
+      decisiones: {},
+    };
+    pintar(ingesta);
+    // 1234 de 23 456 = 5.26 % → «5.3» (no «5,3» del español de Intl) y «1,234» (no «1234»)
+    expect(screen.getByText(/1,234 celdas vacías \(5\.3 %\)/)).toBeTruthy();
+    cleanup();
+    localStorage.setItem(LOCALE_STORAGE_KEY, "en");
+    pintar(ingesta);
+    expect(screen.getByText(/1,234 empty cells \(5\.3 %\)/)).toBeTruthy();
   });
 });

@@ -142,13 +142,13 @@
     "eda": {
       "clean": "Sin alertas para este objetivo.",
       "title": "Antes de entrenar, revisa estas señales:",
-      "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo.",
-      "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu CSV sin perder nada.",
+      "possible-leak": "«{column}» predice el objetivo casi a la perfección: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu archivo y vuelve a cargarlo.",
+      "id-like": "«{column}» parece un identificador (casi un valor por fila): rara vez ayuda a generalizar. Puedes quitarla de tu archivo sin perder nada.",
       "target-skewed": "El objetivo está muy sesgado (sesgo {skew}): unos pocos valores muy grandes pesan mucho. El error medio (MAE) trata cada error igual; el RMSE castiga más los errores en esos valores grandes.",
       "target-outliers": "{share} % de los valores del objetivo están muy lejos del resto (más de 3 rangos intercuartílicos). Revisa si son errores de captura antes de entrenar: pueden mover mucho al modelo.",
       "imbalance": "El objetivo está desbalanceado: la clase minoritaria es {rate} % de los datos. El veredicto lo tiene en cuenta (usa AUC).",
       "imbalanceMulticlass": "La categoría más chica, «{class}», es el {rate} % de las filas. El veredicto usa la exactitud balanceada, que pesa igual cada categoría.",
-      "possible-leak-class": "«{column}» separa casi a la perfección la categoría «{class}» del resto: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu CSV y vuelve a cargarlo."
+      "possible-leak-class": "«{column}» separa casi a la perfección la categoría «{class}» del resto: podría ser una fuga (un dato que no tendrías al predecir de verdad). Si es el caso, quítala de tu archivo y vuelve a cargarlo."
     },
     "trainHint": "Nivel 1: {count} modelos · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
     "trainHint_one": "Nivel 1: 1 modelo · unos {time} de cálculo en un computador de escritorio (en un móvil puede tardar el doble o más; la primera vez se suma la descarga del motor).",
@@ -229,7 +229,7 @@
     "again": "Nuevo experimento",
     "use": {
       "title": "Usa tu modelo",
-      "desc": "Puntúa un CSV nuevo con este modelo, o guárdalo como archivo para reutilizarlo sin volver a entrenar.",
+      "desc": "Puntúa un CSV o un Excel nuevo con este modelo, o guárdalo como archivo para reutilizarlo sin volver a entrenar.",
       "button": "Usar el modelo"
     },
     "export": {
@@ -346,7 +346,7 @@
   },
   "score": {
     "title": "Usar el modelo",
-    "subtitle": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la predicción y su probabilidad para cada fila. Todo ocurre en tu navegador.",
+    "subtitle": "Sube un CSV o un Excel nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la predicción y su probabilidad para cada fila. Todo ocurre en tu navegador.",
     "modelLine": "Modelo: {dataset} · objetivo: {target} · clase positiva: {positive}",
     "preparing": {
       "title": "Preparando el modelo…",
@@ -408,7 +408,7 @@
       "import-failed": "No se pudo restaurar el modelo guardado. El archivo puede venir de una versión incompatible; re-entrena y exporta de nuevo."
     },
     "noProbabilities": "Este modelo decide la clase pero no da una probabilidad, así que la columna de probabilidad no se incluye. Si necesitas ordenar las filas por riesgo, elige un modelo que sí la dé.",
-    "subtitleQuantity": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la cantidad estimada para cada fila. Todo ocurre en tu navegador.",
+    "subtitleQuantity": "Sube un CSV o un Excel nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la cantidad estimada para cada fila. Todo ocurre en tu navegador.",
     "modelLineQuantity": "Modelo: {dataset} · estima: {target}",
     "quantity": {
       "title": "Estimaciones ({rows} filas)",
@@ -418,10 +418,10 @@
       "max": "Máximo"
     },
     "quantityNote": "Estimar no da una probabilidad: cada fila trae su cantidad estimada, con los decimales con que escribiste el objetivo.",
-    "subtitleMulticlass": "Sube un CSV nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la categoría predicha y su probabilidad para cada fila. Todo ocurre en tu navegador.",
+    "subtitleMulticlass": "Sube un CSV o un Excel nuevo con las columnas que el modelo conoce (sin la columna objetivo) y obtén la categoría predicha y su probabilidad para cada fila. Todo ocurre en tu navegador.",
     "modelLineMulticlass": "Modelo: {dataset} · objetivo: {target} · {count} categorías",
     "multiclassProbabilityNote": "La probabilidad es la de la categoría predicha: qué tan seguro está el modelo de esa fila. Con varias categorías puede ser baja aunque la predicha sea la más probable.",
-    "subtitleCluster": "Sube un CSV nuevo con las columnas que usa el agrupamiento y la app le asigna un grupo a cada fila, con la misma regla. Todo ocurre en tu navegador.",
+    "subtitleCluster": "Sube un CSV o un Excel nuevo con las columnas que usa el agrupamiento y la app le asigna un grupo a cada fila, con la misma regla. Todo ocurre en tu navegador.",
     "modelLineCluster": "Modelo: {dataset} · {k} grupos",
     "groups": {
       "title": "Grupos asignados ({rows} filas)",
@@ -669,7 +669,7 @@
     "xlsx-protegido": "Este Excel está protegido con contraseña o cifrado, y Probeta no puede abrirlo. Quítale la protección, o guárdalo como «CSV (delimitado por comas)», y cárgalo otra vez.",
     "xlsx-antiguo": "Este archivo es un Excel antiguo (.xls), que Probeta no lee. Guárdalo como «Libro de Excel (.xlsx)» o como «CSV (delimitado por comas)» y cárgalo otra vez.",
     "xlsx-danado": "No se pudo leer el Excel: el archivo está dañado o no es un .xlsx de verdad. Vuelve a guardarlo, o expórtalo como «CSV (delimitado por comas)», y cárgalo otra vez.",
-    "target-not-numeric": "Para estimar una cantidad, el objetivo tiene que ser un número en todas las filas, y esta columna trae valores que no lo son. Revísala en tu CSV o elige otra columna.",
+    "target-not-numeric": "Para estimar una cantidad, el objetivo tiene que ser un número en todas las filas, y esta columna trae valores que no lo son. Revísala en tu archivo o elige otra columna.",
     "target-ambiguous": "Esta columna puede guardar categorías o una cantidad, y falta tu respuesta. Responde la pregunta de la tarjeta «Tipo de predicción» y vuelve a entrenar.",
     "no-features": "No hay columnas utilizables como predictores.",
     "runtime": "Ocurrió un error al procesar. Intenta de nuevo.",
@@ -679,7 +679,7 @@
     "too-few-rows": "Hay muy pocos ejemplos de una de las dos clases para comparar modelos con honestidad: la validación cruzada necesita al menos 2 de cada clase en el conjunto de entrenamiento. Prueba con más filas.",
     "too-few-rows-quantity": "Hay muy pocas filas para estimar una cantidad con honestidad: la prueba necesita al menos 2 filas que el modelo no vio al entrenar. Prueba con más filas.",
     "contract": "El motor devolvió un resultado con una forma inesperada, así que no lo mostramos: preferimos no enseñarte un número que no podemos verificar. Intenta de nuevo; si se repite, prueba con otro archivo.",
-    "target-mixed-notation": "Tu objetivo tiene clases escritas de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalas en tu CSV y vuelve a cargarlo.",
+    "target-mixed-notation": "Tu objetivo tiene clases escritas de más de una forma (por ejemplo «1» y «1.0»): para entrenar, cada clase tiene que escribirse igual en todas las filas. Unifícalas en tu archivo y vuelve a cargarlo.",
     "league-empty": "Ningún modelo terminó la validación cruzada sin problemas (no convergieron o fallaron), así que no hay un ganador que se pueda defender. Prueba con más filas o con otras columnas.",
     "too-few-rows-per-class": "Una de las categorías tiene muy pocas filas para comparar modelos con honestidad: la validación cruzada necesita al menos 2 filas de cada categoría en el conjunto de entrenamiento. Prueba con más filas o junta las categorías más raras en una sola.",
     "too-few-rows-cluster": "Hay muy pocas filas para agrupar con honestidad: para saber si los grupos se sostienen, la app los vuelve a buscar en partes de tus datos, y cada parte necesita más filas que grupos. Prueba con más filas.",

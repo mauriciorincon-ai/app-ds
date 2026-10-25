@@ -5,9 +5,9 @@
 // decide no se aplica. El aviso de datos personales nombra la columna y el tipo, jamás un valor.
 import type { Ingesta } from "@/engine/ingesta";
 import type { Decision, PasoLimpieza } from "@/engine/limpieza-plan";
-import { useI18n } from "@/i18n/provider";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import type { OrigenArchivo } from "@/lib/ds/archivo";
+import { formatQuantity } from "@/lib/quantity";
 import { Button, Card, Icon } from "@/components/ui";
 import { TEXTOS_LIMPIEZA } from "./textos";
 
@@ -27,11 +27,11 @@ export function LimpiezaPanel({
   onDecidir: (id: string, decision: Decision | null) => void;
 }) {
   const t = useTextosEtapa(TEXTOS_LIMPIEZA);
-  const { locale } = useI18n();
-  const porcentaje = (paso: PasoLimpieza) =>
-    new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
-      (100 * paso.celdas) / Math.max(paso.de, 1),
-    );
+  // R9 del design system: punto decimal y miles con coma en los dos idiomas (no los de `Intl` del idioma)
+  const porcentaje = (paso: PasoLimpieza) => {
+    const pct = Math.round((1000 * paso.celdas) / Math.max(paso.de, 1)) / 10;
+    return formatQuantity(pct, Number.isInteger(pct) ? 0 : 1);
+  };
 
   const personales = ingesta?.personales ?? [];
   const plan = ingesta?.plan ?? [];
@@ -101,6 +101,7 @@ export function LimpiezaPanel({
               const frase = t(`limpieza.plan.paso.${paso.tipo}`, {
                 column: paso.columna,
                 count: paso.celdas,
+                cuenta: formatQuantity(paso.celdas, 0),
                 pct: porcentaje(paso),
                 tipo: paso.personal
                   ? t(`limpieza.personales.tipo.${paso.personal}`)

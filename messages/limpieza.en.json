@@ -24,12 +24,12 @@
       "titulo": "Cleaning plan",
       "intro": "The code proposes these steps and you decide each one. Whatever you do not approve is not applied. Whatever depends on the data is computed only from the training rows, so the final test stays clean.",
       "paso": {
-        "tipo-categoria": "“{column}” holds codes written as numbers ({count} different values): treat it as a category, not as a quantity.",
-        "vacio-indicador": "“{column}” has {count} empty cells ({pct} %): they are filled with the training median and a “was empty” flag is added.",
+        "tipo-categoria": "“{column}” holds codes written as numbers ({cuenta} different values): treat it as a category, not as a quantity.",
+        "vacio-indicador": "“{column}” has {cuenta} empty cells ({pct} %): they are filled with the training median and a “was empty” flag is added.",
         "vacio-indicador_one": "“{column}” has 1 empty cell ({pct} %): it is filled with the training median and a “was empty” flag is added.",
-        "vacio-categoria": "“{column}” has {count} empty cells ({pct} %): “no data” becomes one more category, instead of filling with the most common one.",
+        "vacio-categoria": "“{column}” has {cuenta} empty cells ({pct} %): “no data” becomes one more category, instead of filling with the most common one.",
         "vacio-categoria_one": "“{column}” has 1 empty cell ({pct} %): “no data” becomes one more category, instead of filling with the most common one.",
-        "atipicos-cuantiles": "“{column}” has {count} values far from the rest: the column becomes each value’s position among the others (training quantiles). Trees do not notice; linear and distance-based models do.",
+        "atipicos-cuantiles": "“{column}” has {cuenta} values far from the rest: the column becomes each value’s position among the others (training quantiles). Trees do not notice; linear and distance-based models do.",
         "atipicos-cuantiles_one": "“{column}” has 1 value far from the rest: the column becomes each value’s position among the others (training quantiles). Trees do not notice; linear and distance-based models do.",
         "quitar-columna": "“{column}” seems to hold {tipo}: remove it before training, so it does not enter the model."
       },
@@ -40,7 +40,7 @@
         "aprobado": "Approved",
         "rechazado": "Rejected"
       },
-      "resumen": "{aprobados} approved · {rechazados} rejected · {pendientes} undecided",
+      "resumen": "Approved: {aprobados} · Rejected: {rechazados} · Undecided: {pendientes}",
       "volver": "Press the active button again to leave the step undecided."
     },
     "ficha": {

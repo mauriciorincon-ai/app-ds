@@ -113,13 +113,13 @@ test("el plan se decide paso a paso: aprobar, rechazar, volver a dejar sin decid
   await page.goto("/");
   await entrada(page).setInputFiles(kit("clientes-con-datos-personales.csv"));
   await expect(
-    page.getByText("0 aprobados · 0 rechazados · 2 sin decidir"),
+    page.getByText("Aprobados: 0 · Rechazados: 0 · Sin decidir: 2"),
   ).toBeVisible();
 
   await page.getByRole("button", { name: /Aprobar · nombre_completo/ }).click();
   await page.getByRole("button", { name: /Rechazar · telefono/ }).click();
   await expect(
-    page.getByText("1 aprobados · 1 rechazados · 0 sin decidir"),
+    page.getByText("Aprobados: 1 · Rechazados: 1 · Sin decidir: 0"),
   ).toBeVisible();
   const filaNombre = page
     .getByRole("button", { name: /Aprobar · nombre_completo/ })
@@ -130,7 +130,7 @@ test("el plan se decide paso a paso: aprobar, rechazar, volver a dejar sin decid
   // volver a pulsar el botón activo lo deja sin decidir
   await page.getByRole("button", { name: /Rechazar · telefono/ }).click();
   await expect(
-    page.getByText("1 aprobados · 0 rechazados · 1 sin decidir"),
+    page.getByText("Aprobados: 1 · Rechazados: 0 · Sin decidir: 1"),
   ).toBeVisible();
 
   await axeBothThemes(page);
@@ -139,7 +139,7 @@ test("el plan se decide paso a paso: aprobar, rechazar, volver a dejar sin decid
   await page.getByRole("button", { name: /Rechazar · telefono/ }).focus();
   await page.keyboard.press("Enter");
   await expect(
-    page.getByText("1 aprobados · 1 rechazados · 0 sin decidir"),
+    page.getByText("Aprobados: 1 · Rechazados: 1 · Sin decidir: 0"),
   ).toBeVisible();
 
   await page.selectOption("#target", "se_dio_de_baja");

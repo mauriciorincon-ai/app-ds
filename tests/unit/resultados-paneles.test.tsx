@@ -105,11 +105,43 @@ describe("el margen de error de la cifra", () => {
     expect(linea).toMatch(
       /con un intervalo del 95 % de \d\.\d\d a \d\.\d\d\.$/,
     );
-    expect(
-      screen.getByText(
-        /1000 veces, con la semilla 42|1,000 veces, con la semilla 42/,
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText(/1,000 veces, con la semilla 42/)).toBeTruthy();
+  });
+
+  it("si el resultado cambia con un pedido en vuelo, la respuesta tardía del viejo no quita el manejador del nuevo (auditoría H-11, S18)", async () => {
+    const oyentes = new Set<(e: MessageEvent<RunnerResponse>) => void>();
+    const enviados: number[] = [];
+    const w = {
+      addEventListener: (
+        _: string,
+        f: (e: MessageEvent<RunnerResponse>) => void,
+      ) => oyentes.add(f),
+      removeEventListener: (
+        _: string,
+        f: (e: MessageEvent<RunnerResponse>) => void,
+      ) => oyentes.delete(f),
+      postMessage: (m: { id: number }) => {
+        enviados.push(m.id);
+      },
+    };
+    const worker = { current: w as unknown as Worker };
+    const responder = (id: number) => {
+      for (const f of [...oyentes])
+        f({ data: { ...lista(BIN), id } } as MessageEvent<RunnerResponse>);
+    };
+    const { rerender } = pintar(
+      <IntervaloPanel de={DE_BIN({})} worker={worker} />,
+    );
+    await waitFor(() => expect(enviados).toHaveLength(1));
+    rerender(
+      <I18nProvider>
+        <IntervaloPanel de={DE_BIN({})} worker={worker} />
+      </I18nProvider>,
+    );
+    await waitFor(() => expect(enviados).toHaveLength(2));
+    responder(enviados[0]!); // llega tarde la del resultado anterior…
+    responder(enviados[1]!); // …y la del actual todavía tiene quien la escuche
+    expect(await screen.findByTestId("intervalo-linea")).toBeTruthy();
   });
 
   it("con pocas filas de prueba avisa de que la cifra dice poco, y con las suficientes no", async () => {

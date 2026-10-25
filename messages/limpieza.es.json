@@ -24,12 +24,12 @@
       "titulo": "Plan de limpieza",
       "intro": "El código propone estos pasos y tú decides cada uno. Lo que no apruebes no se aplica. Lo que depende de los datos se calcula solo con las filas de entrenamiento, para que la prueba final siga limpia.",
       "paso": {
-        "tipo-categoria": "«{column}» guarda códigos escritos con números ({count} valores distintos): tratarla como categoría, no como cantidad.",
-        "vacio-indicador": "«{column}» tiene {count} celdas vacías ({pct} %): se rellenan con la mediana del entrenamiento y se agrega una marca de «estaba vacío».",
+        "tipo-categoria": "«{column}» guarda códigos escritos con números ({cuenta} valores distintos): tratarla como categoría, no como cantidad.",
+        "vacio-indicador": "«{column}» tiene {cuenta} celdas vacías ({pct} %): se rellenan con la mediana del entrenamiento y se agrega una marca de «estaba vacío».",
         "vacio-indicador_one": "«{column}» tiene 1 celda vacía ({pct} %): se rellena con la mediana del entrenamiento y se agrega una marca de «estaba vacío».",
-        "vacio-categoria": "«{column}» tiene {count} celdas vacías ({pct} %): «sin dato» pasa a ser una categoría más, en lugar de rellenar con la más común.",
+        "vacio-categoria": "«{column}» tiene {cuenta} celdas vacías ({pct} %): «sin dato» pasa a ser una categoría más, en lugar de rellenar con la más común.",
         "vacio-categoria_one": "«{column}» tiene 1 celda vacía ({pct} %): «sin dato» pasa a ser una categoría más, en lugar de rellenar con la más común.",
-        "atipicos-cuantiles": "«{column}» tiene {count} valores muy lejos del resto: la columna pasa a ser la posición de cada valor entre los demás (cuantiles del entrenamiento). Los árboles no lo notan; los modelos lineales y de distancia, sí.",
+        "atipicos-cuantiles": "«{column}» tiene {cuenta} valores muy lejos del resto: la columna pasa a ser la posición de cada valor entre los demás (cuantiles del entrenamiento). Los árboles no lo notan; los modelos lineales y de distancia, sí.",
         "atipicos-cuantiles_one": "«{column}» tiene 1 valor muy lejos del resto: la columna pasa a ser la posición de cada valor entre los demás (cuantiles del entrenamiento). Los árboles no lo notan; los modelos lineales y de distancia, sí.",
         "quitar-columna": "«{column}» parece guardar {tipo}: quitarla antes de entrenar, para que no entre al modelo."
       },
@@ -40,7 +40,7 @@
         "aprobado": "Aprobado",
         "rechazado": "Rechazado"
       },
-      "resumen": "{aprobados} aprobados · {rechazados} rechazados · {pendientes} sin decidir",
+      "resumen": "Aprobados: {aprobados} · Rechazados: {rechazados} · Sin decidir: {pendientes}",
       "volver": "Pulsa otra vez el botón activo para dejar el paso sin decidir."
     },
     "ficha": {

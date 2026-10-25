@@ -650,6 +650,17 @@ function edaFor(table: CsvTable, plan: TargetPlan | null, target: string) {
   return computeEdaAlerts(table, target, plan.resolved);
 }
 
+/** S18: lee un Excel con el lector que llega por `import()`. Si el chunk no llega o el navegador no puede leer el archivo, se
+ *  dice como cualquier libro que no se pudo leer (y se ofrece guardarlo como CSV) en vez de dejar la pantalla sin responder. */
+async function leerExcel(file: File) {
+  try {
+    const { leerArchivoXlsx } = await import("@/lib/ds/archivo");
+    return await leerArchivoXlsx(file);
+  } catch {
+    return { ok: false, error: { kind: "xlsx-danado" } } as const;
+  }
+}
+
 // Gestiona el runner de Pyodide y la máquina de estados del experimento. El
 // parseo/perfilado/split/veredicto/fuga/esquema/manifiesto corren aquí (puro,
 // testeado); el runner solo entrena, puntúa y (de)serializa el modelo. El
@@ -1289,8 +1300,7 @@ export function useExperiment() {
   /** S18 (ADR 025): un `.xlsx`; el lector se importa solo ahora. */
   const loadXlsx = useCallback(
     async (file: File) => {
-      const { leerArchivoXlsx } = await import("@/lib/ds/archivo");
-      const leido = await leerArchivoXlsx(file);
+      const leido = await leerExcel(file);
       cargarTabla(leido, file.name, leido.ok ? leido.origen : null);
     },
     [cargarTabla],
@@ -1698,8 +1708,7 @@ export function useExperiment() {
   /** S18: puntuar un archivo nuevo que viene en Excel (mismos límites que un CSV). */
   const scoreXlsx = useCallback(
     async (file: File) => {
-      const { leerArchivoXlsx } = await import("@/lib/ds/archivo");
-      scoreTable(await leerArchivoXlsx(file), file.name);
+      scoreTable(await leerExcel(file), file.name);
     },
     [scoreTable],
   );
