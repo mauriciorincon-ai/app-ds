@@ -6,7 +6,7 @@
  * casilla y su chip «N de 37», sin huecos ni repetidos y en el orden en que se recorren). La parada R11 cuenta lo mismo que el
  * BLUEPRINT. Un cambio que descuadre cualquiera de ellos falla aquí nombrando cuál.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const blueprint = readFileSync("docs/BLUEPRINT.html", "utf8");
@@ -195,11 +195,48 @@ describe("guía: lo que dicen las paradas es lo que la app dice", () => {
       "Guardar el ganador como .probeta.json",
       "Un modelo guardado desde el Protocolo DS",
       "Vigilar el desempeño",
+      "Cargar modelo guardado",
     ])
       expect(todos, `«${texto}»`).toContain(texto);
     const u = guia.slice(guia.indexOf("BLOQUE U"), guia.indexOf('<div class="promesa">'));
     expect(u).not.toContain("Probar con otro archivo");
+    // AUDITORÍA A-05: el botón de la portada que abre un archivo guardado se llama como se llama, no «Importar un modelo»
+    expect(u).toContain("Cargar modelo guardado");
+    expect(u).not.toContain("Importar un modelo");
   });
+});
+
+describe("frases caducadas: ningún texto dice que vigilar el desempeño no está (S19, AUDITORÍA A-02/A-05/A-19)", () => {
+  // Cada patrón es una afirmación que el S19 volvió falsa o el nombre de un control que no existe. Se barren el manual, la guía, el
+  // glosario y TODOS los diccionarios (es y en), incluidos los de las etapas.
+  const textos: Record<string, string> = {
+    manual,
+    guia,
+    glosario: readFileSync("src/content/glosario.ts", "utf8"),
+  };
+  const recorre = (dir: string): string[] =>
+    readdirSync(dir, { recursive: true, withFileTypes: true })
+      .filter((e) => e.isFile() && e.name.endsWith(".json"))
+      .map((e) => `${e.parentPath}/${e.name}`);
+  for (const ruta of recorre("messages")) textos[ruta] = readFileSync(ruta, "utf8");
+
+  const CADUCAS: [RegExp, string][] = [
+    [/no est[áa] en esta versi[óo]n/i, "«no está en esta versión»"],
+    // «hacen falta los resultados nuevos y el modelo guardado» a secas (con punto) dice que falta algo que ya existe; la frase que sigue
+    // con «desde el Sprint 19 …» o con «:» sí es cierta y no se prohíbe
+    [/hacen falta los resultados nuevos y el modelo guardado\./i, "«hacen falta los resultados nuevos y el modelo guardado.» sin decir que ya se hace"],
+    [/needs the new outcomes and the saved model\./i, "«needs the new outcomes and the saved model.» sin decir que ya se hace"],
+    [/(pide|needs) (los )?(resultados nuevos|new outcomes)[^.]*(no est[áa] aqu[íi]|isn't here)/i, "vigilar el desempeño «no está aquí»"],
+    [/aqu[íi] el modelo predice, no se eval[úu]a/i, "«aquí el modelo predice, no se evalúa»"],
+    [/Usar un modelo guardado|Use a saved model/, "«Usar un modelo guardado» (el botón es «Cargar modelo guardado»)"],
+  ];
+  for (const [patron, que] of CADUCAS)
+    it(`ningún documento ni diccionario dice ${que}`, () => {
+      const hallados = Object.entries(textos)
+        .filter(([, texto]) => patron.test(texto))
+        .map(([nombre]) => nombre);
+      expect(hallados, que).toEqual([]);
+    });
 });
 
 describe("ningún marcador de relleno queda escrito en los documentos", () => {

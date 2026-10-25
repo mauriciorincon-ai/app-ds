@@ -13,7 +13,7 @@
       "r2": "Las reglas explican el {pct} % de lo que el modelo estima (R², sobre {n} filas que el árbol no vio)."
     },
     "veredicto": {
-      "si": "Llegan al umbral de {umbral} %: se pueden usar en lugar del modelo.",
+      "si": "Llegan al umbral de {umbral} %: copian al modelo lo bastante para llevarlas a un sistema sin Python, y aun así difieren de él en algunas filas.",
       "no": "No llegan al umbral de {umbral} %: son un resumen del modelo, no el modelo."
     },
     "verdad": {

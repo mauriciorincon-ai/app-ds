@@ -1057,8 +1057,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   cuenta como «no es»). Una prueba automática corre ese SQL en otro programa (CPython) sobre las filas que predijo el
   navegador y exige **la misma respuesta en cada fila**.
 - **Límites:** solo para un modelo **entrenado en esta sesión** (necesita las filas de entrenamiento, que viven en
-  la memoria de la pestaña y nunca van al archivo); un modelo **importado**, el ganador del Protocolo o uno con muy
-  pocas filas lo dicen en vez de inventar un árbol. Profundidad máxima 4; un árbol así casi nunca iguala a un bosque
+  la memoria de la pestaña y nunca van al archivo): el botón está en **Resultados**, así que un modelo **importado**
+  o el ganador del Protocolo no lo tienen, y uno entrenado con muy pocas filas lo dice en vez de inventar un
+  árbol. Profundidad máxima 4; un árbol así casi nunca iguala a un bosque
   de árboles o a un boosting.
 
 ### Vigilar el desempeño y llevarte el ganador del Protocolo · desde Sprint 019
@@ -1226,7 +1227,7 @@ cuando una te frene.
 | **Beneficio neto** | Lo que gana una forma de decidir, contado en casos: las alertas que aciertan, menos las falsas pesadas por lo que cuesta cada una frente a un caso que se escapa. «No hacer nada» vale 0. |
 | **Falsas alarmas por cada 100 alertas** | De cada 100 veces que el modelo dice «actúa», cuántas no hacía falta. Es lo que vive tu equipo: con 60, más de la mitad del trabajo que le llega no servía. |
 | **Ficha del modelo del Protocolo** | Distinta de la explicación corta de cada modelo de la liga. Es el documento que resume el modelo para quien lo hereda: con qué datos, para qué sirve, para qué no, qué compuertas pasó y quién responde. Sale del cuaderno: cada línea dice de qué etapa, fecha y huella viene, y lo que escribes tú va marcado como tuyo. |
-| **Plan de vigilancia** | Lo que se mira después de usar el modelo y cuándo se deja de usar: las columnas que se revisan por deriva, el piso de la decisión, cada cuánto se reentrena y quién responde. Mide las entradas; vigilar el desempeño pide resultados nuevos, y no está aquí. |
+| **Plan de vigilancia** | Lo que se mira después de usar el modelo y cuándo se deja de usar: las columnas que se revisan por deriva, el piso de la decisión, cada cuánto se reentrena y quién responde. Mide las entradas; el desempeño se vigila en Probeta, con el ganador guardado como archivo y filas nuevas que traigan el resultado real. |
 | **Capacidad de atención** | Cuántos casos de cada 100 alcanza a atender tu equipo. Un umbral que da más alertas que eso no se puede cumplir: sube el umbral, crece el equipo, o las alertas que sobran se quedan sin atender. |
 
 ## Preguntas frecuentes
@@ -1317,8 +1318,9 @@ cuando una te frene.
 - **¿Qué hago con la ficha?** Descárgala en Markdown y compártela con quien responda por el modelo. Cada
   línea trae su etapa, su fecha y la huella del archivo; lo que escribió el dueño va rotulado así.
 - **¿El chequeo de deriva me dice si el modelo sigue funcionando?** No: mide si las **entradas** de hoy se
-  parecen a las del entrenamiento. Un modelo puede fallar con entradas parecidas; para vigilar el desempeño
-  hacen falta los resultados nuevos, y eso no está en esta versión.
+  parecen a las del entrenamiento. Un modelo puede fallar con entradas parecidas; para saber si sigue acertando,
+  guarda el ganador en la etapa 10 y úsalo en Probeta con filas nuevas que traigan el resultado real
+  («Vigilar el desempeño»).
 
 - **¿"Estrésalo" cambia mi modelo o mi veredicto?** No. Mide el mismo modelo sobre la misma prueba
   perturbada; no reentrena, no elige nada y, en el Protocolo, no cuenta como abrir la prueba otra vez.

@@ -59,13 +59,14 @@ model's own figure.
 - **The threshold.** Fidelity ≥ **0.90** agreement (two classes, several classes, grouping) or ≥ **0.80** R² (estimating). Below it
   the screen gives the figure and calls it «a tree that resembles the model», **never «the model as rules»**. The numbers are
   conventions fixed here by design, like the 0.10 gap and 0.7 stability of grouping (ADR 016); they are constants with a test at the edge.
-- **Output.** A text in the user's language (`{es, en}`), one line per leaf, and SQL: one `CASE WHEN … THEN … ELSE … END` with
+- **Output.** A text in the user's language (`{es, en}`), one line per leaf, and SQL: one `CASE WHEN … THEN … END` per rule (no `ELSE`: every row has exactly one leaf) with
   double-quoted identifiers (`"` doubled), single-quoted literals (`'` doubled) and `COALESCE` equal to the imputation. «Is not» is
   `(col IS NULL OR col <> 'x')` because an empty category counts as «is not».
 - **The gate.** The SQL is run by **CPython's `sqlite3`** (CI job `integration`, no new job) over the CSV that Pyodide predicted and must
   give the same prediction on every row (exact for classes and groups; for numbers, the same literal).
-- **Scope.** Only for a model trained in Probeta (it needs the training rows, which live in memory and never in the file). An imported
-  model, the Protocol winner and a model with no rows say so.
+- **Scope.** Only for a model trained in Probeta (it needs the training rows, which live in memory and never in the file). The button
+  lives in Results, which only appears after training in the session, so an imported model and the Protocol winner never see it; a model
+  with too few rows says so, and if the worker holds no rows the panel says so (`reglas.sin_filas`) instead of inventing a tree.
 
 ### 4. Watching the performance: today's figure against the test figure, with its margin
 

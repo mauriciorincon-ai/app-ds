@@ -13,7 +13,7 @@
       "r2": "The rules explain {pct} % of what the model estimates (R², over {n} rows the tree did not see)."
     },
     "veredicto": {
-      "si": "They reach the {umbral} % threshold: they can stand in for the model.",
+      "si": "They reach the {umbral} % threshold: they copy the model closely enough to take them to a system without Python, and they still differ from it on some rows.",
       "no": "They do not reach the {umbral} % threshold: they are a summary of the model, not the model."
     },
     "verdad": {

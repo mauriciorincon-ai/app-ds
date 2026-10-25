@@ -331,8 +331,8 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
   "plan-de-vigilancia": {
     termino: { es: "Plan de vigilancia", en: "Monitoring plan" },
     definicion: {
-      es: "Lo que se mira después de usar el modelo y cuándo se deja de usar: qué columnas se revisan por deriva y con qué umbrales, el piso de la decisión (si deja de ganarle a lo de hoy), cada cuánto se reentrena y quién responde. Este plan mide las entradas; vigilar el desempeño pide los resultados nuevos y el modelo guardado, y no está aquí.",
-      en: "What gets watched after the model is in use and when it stops being used: which columns are checked for drift and with which thresholds, the floor of the decision (if it stops beating today's way), how often it's retrained and who answers for it. This plan measures inputs; watching performance needs the new outcomes and the saved model, and isn't here.",
+      es: "Lo que se mira después de usar el modelo y cuándo se deja de usar: qué columnas se revisan por deriva y con qué umbrales, el piso de la decisión (si deja de ganarle a lo de hoy), cada cuánto se reentrena y quién responde. Este plan mide las entradas; el desempeño se vigila en Probeta, con el ganador guardado como archivo y filas nuevas que traigan el resultado real.",
+      en: "What gets watched after the model is in use and when it stops being used: which columns are checked for drift and with which thresholds, the floor of the decision (if it stops beating today's way), how often it's retrained and who answers for it. This plan measures inputs; performance is watched in Probeta, with the winner saved as a file and new rows that carry the real result.",
     },
   },
   // S9 (etapa 4)
