@@ -8,7 +8,7 @@ en la app.
 
 | Archivo                     | Qué demuestra                                                                                                                                        |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `marketing-campania.csv`    | Señal real: el modelo **supera** al baseline (veredicto franco positivo).                                                                            |
+| `marketing-campania.csv`    | Señal real: el modelo **supera** al baseline (veredicto franco positivo). Desde el S17 también es el archivo de las paradas S1 a S3 del ensayo: «Estrésalo», «Llévatelo» y el puntuador portátil. |
 | `rotacion-empleados.csv`    | Un caso donde un modelo simple basta (veredicto de empate honesto).                                                                                  |
 | `credito-fuga-plantada.csv` | Trae una **fuga plantada** (`monto_recuperado`): mira cómo se detecta.                                                                               |
 | `clientes-sucio.csv`        | Datos "reales" sucios: nulos, basura, un ID, una constante y filas duplicadas → mira el **saneamiento transparente** y la alerta de desbalance (S4). |

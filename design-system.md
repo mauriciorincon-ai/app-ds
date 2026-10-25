@@ -359,7 +359,7 @@ corto y declarada en la guía (la orden fija el corto en unos 20 minutos; plan d
   probabilidad de esa categoría) y su nota. Al agrupar, la columna `grupo` desde 1 o «fuera de todo
   grupo», y `grupo_probabilidad` solo con la mezcla gaussiana.
 
-### Añadidos Sprint 008–016 — Protocolo DS, el camino lento (mismos tokens, cero valores nuevos; ADR 020, 021 y 022)
+### Añadidos Sprint 008–017 — Protocolo DS, el camino lento (mismos tokens, cero valores nuevos; ADR 020, 021 y 022)
 
 Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma paleta. Lo que se suma son patrones, no colores.
 
@@ -397,6 +397,15 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
 - **Cuaderno** — lista de entradas en el orden en que se registraron, con el resumen de cada etapa, «Guardado en este navegador.» /
   «Guardando en este navegador…» como estado visible,
   y debajo exportar, importar y empezar otro, con una nota junto a «Exportar» que dice qué lleva el archivo (y que no lleva filas).
+- **Estrésalo (S17)** — una tarjeta con su botón (icono `play`, «Volver a medir» con `retry` cuando ya hay lectura), una **frase** con los
+  números del usuario, una línea de criterio que lleva **✓ o ⚠ y su palabra** (el ⚠ en `caution`; el color nunca va solo) y tres **tablas**
+  (`caption` solo para lectores, encabezados de columna y de fila) cuyas filas dicen **▼ peor / ● casi igual / ▲ mejor**. En la etapa 8 es una
+  sección más de la etapa, con la misma vista. Sus textos viajan con su chunk (`messages/estres.{es,en}.json`).
+- **Llévatelo (S17)** — una tarjeta con un **recuadro de aviso** (`caution`, ⚠ + palabra) ANTES de las tres salidas, y una lista de tres filas
+  (título, una línea, la nota de lo que no se ofrece y su razón, y un botón secundario con icono `download`). Estado en una línea con
+  `role="status"` («Preparando el archivo…», «✓ Descargado: …», «✕ No se pudo…»). Sus textos viajan con su chunk.
+- **El puntuador portátil (S17)** — una página aparte, autocontenida (`docs`/descarga), con los mismos tokens claro/oscuro por
+  `prefers-color-scheme`, blancos táctiles de 44 px, foco visible y el estado en `role="status"`; el idioma sale del navegador.
 - **Foco y tema** — `:focus-visible` es un contorno de 2 px en `accent` a 2 px de distancia, para todo lo enfocable; la página
   declara `color-scheme` claro y oscuro para que los controles nativos (radios, casillas, selectores) sigan el tema; el alias
   `--sunken` equivale a `--surface-sunken`.
@@ -408,7 +417,7 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
    qué se entrenaría y quién compite, y «Entrenar modelos» queda arriba de la vista previa. El
    **SanitationBlock** y el **EdaBlock** lo enmarcan.
 3. **Entrenamiento** → el progreso honesto (qué modelo, en qué fase); en el Nivel 2, cancelar.
-4. **Resultados** → el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
+4. **Resultados** → (desde el S17 también «Estrésalo» y «Llévatelo», después de «Usa tu modelo») el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
    métricas, matriz y advertencias lo sostienen. Al estimar (S6), el veredicto va en unidades y el
    **PredichoVsReal** ocupa el lugar de la matriz. Con varias categorías (S7), la matriz es K×K.
    Al agrupar (S7), la **lectura** ocupa el lugar del veredicto, y los grupos y la tabla de
@@ -416,7 +425,7 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
 5. **Error** → el mensaje llano + la acción de recuperación.
 6. **Usar el modelo (S3)** → el **NoveltyPanel** antes de descargar; la descarga lo sostiene.
    Encabezado estático (candidato LCP, patrón lcp-nace-estatico).
-7. **Protocolo DS (S8–S16)** → la **etapa abierta**: la lista de diez etapas deja una sola con formulario; la cerrada dice qué
+7. **Protocolo DS (S8–S17)** → la **etapa abierta**: la lista de diez etapas deja una sola con formulario; la cerrada dice qué
    la abre. «Tus datos» y el **cuaderno** viven arriba y abajo de la lista, y el glosario al final. Cuando la 10 se cumple, lo
    importante es la **ficha** y su descarga.
 

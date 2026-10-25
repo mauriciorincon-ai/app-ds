@@ -159,8 +159,9 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - En Resultados, pulsa **"Exportar modelo"**. Se descarga un único archivo `.probeta.json`.
   - **Qué contiene, dicho honesto:** lo que el modelo **aprendió** de tus datos (parámetros,
     categorías vistas, medianas, rangos) y su constancia (métricas, veredicto, advertencias) —
-    **no tus filas crudas**. Aun así, lo aprendido refleja tus datos: **trátalo como un archivo
-    sensible** y compártelo solo con quien compartirías el resultado.
+    **no tus filas crudas**, con una excepción: el modelo de **vecinos más cercanos** guarda **filas
+    de tu entrenamiento** (ya transformadas) para poder comparar. Aun así, lo aprendido refleja tus
+    datos: **trátalo como un archivo sensible** y compártelo solo con quien compartirías el resultado.
 
 - **Volver a usar un modelo guardado (importar):**
   1. En la pantalla de inicio, pulsa **"Cargar modelo guardado"** y elige tu `.probeta.json`.
@@ -796,6 +797,99 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     - **La cadencia es tuya, salvo con partición por tiempo.** Con una prueba por tiempo, la app propone los meses que respalda; sin ella, la cadencia la escribes tú y la ficha lo dice.
     - **La app no supone quién responde.** El campo empieza vacío. Puedes poner al decisor de la etapa 1 con un clic, y la compuerta exige que haya un nombre.
 
+### Estrésalo: ¿cuánto aguanta tu modelo? · desde Sprint 017
+
+- **Qué hace:** en Resultados, el botón **"Estrésalo"** le hace a tu modelo una pregunta que el
+  veredicto no responde: *si los datos cambian un poco, ¿cuánto de ese veredicto sobrevive?* Mide el
+  **mismo modelo, sin reentrenarlo**, sobre la **misma prueba que ya se abrió**, perturbada de tres
+  maneras. No elige nada ni cambia nada: es una lectura.
+
+- **Cómo se usa:** pulsa **"Estrésalo"**; no se mide nada hasta que lo pulsas. Mientras trabaja dice
+  "Estresando el modelo…". La lectura trae una frase, el criterio y tres tablas:
+  - **La frase**, con tus números: «Con 10 % de ruido en los números, tu AUC cae de 0.91 a 0.74».
+    Con la exactitud, el F1 o la sensibilidad también cae; con el error medio (al estimar una
+    cantidad) **sube**, en las unidades de tu columna.
+  - **Ruido en los números** (5, 10 y 20 %): a cada columna numérica se le suma ruido, en proporción a
+    lo que varía en el entrenamiento.
+  - **Una columna revuelta**: se revuelven los valores de una columna a la vez; lo que pierde el
+    modelo es cuánto dependía de ella. Salen las cinco que más duelen.
+  - **Un corrimiento, como el paso del tiempo**: las tres columnas numéricas que más pesan se corren
+    media y una desviación hacia arriba.
+  - Cada fila de las tablas lleva su símbolo **y** su palabra: **▼ peor**, **● casi igual**,
+    **▲ mejor**. El color nunca va solo.
+
+- **El ✓ y el ⚠:** la pregunta es si, **con 10 % de ruido, el modelo sigue ganándole a su mejor rival
+  sin modelo** (la línea base del veredicto), con la misma regla del veredicto. **✓** dice que sí;
+  **⚠** dice que ya no, con las cifras a la vista. Si el modelo **ya no le ganaba antes del ruido**,
+  lo dice así, para no culpar al ruido. Tampoco hay un umbral nuevo: se usa la regla de siempre.
+
+- **En el Protocolo (etapa 8):** la etapa 8 trae su propio **"Estrésalo"** sobre la prueba **que ya
+  abriste**. **No es una apertura nueva** (la cuenta de aperturas no cambia): usa el mismo sello y el
+  mismo ganador. Es **opcional**: no hay compuerta. Si lo corres antes de registrar la etapa, la
+  cifra con 10 % de ruido y el rival sin modelo quedan en el cuaderno, y la **ficha** de la etapa 10
+  gana una línea en «Lo que este modelo cumplió»: *«Robustez medida (etapa 8)…»* si sigue ganando,
+  *«Robustez (etapa 8)…»* si deja de ganar, o *«Robustez: no se midió»* si no la corriste. Si abres la
+  prueba otra vez, la lectura se pierde y se vuelve a pedir.
+
+- **Limitaciones:**
+  - Es **una lectura de esta prueba, no una garantía**: con otros datos o con otro ruido puede dar
+    otra cifra. La semilla es fija (se muestra), así que repetirlo da lo mismo.
+  - El ruido y el corrimiento solo tocan las columnas **numéricas**; a las de categorías solo se las
+    revuelve. Si el modelo no usa numéricas, la lectura lo dice.
+  - Con una prueba chica, que algo "mejore" con ruido es **azar**, y se escribe así.
+  - **Agrupar** no tiene objetivo ni prueba: la app lo dice en vez de ofrecer el botón. Un modelo
+    **importado** de un archivo no trae la prueba con la que se midió: estrésalo en la corrida donde
+    lo entrenaste.
+  - Cuesta más cuanto más filas y columnas: son unas cinco predicciones del modelo por columna.
+
+### Llévatelo: la receta, el puntuador y el servicio · desde Sprint 017
+
+- **Qué hace:** en Resultados, la sección **"Llévatelo"** te da tres archivos para usar el modelo
+  **fuera de Probeta**. **Probeta no despliega nada ni guarda credenciales**: los archivos se
+  quedan en tu equipo y tú decides dónde van.
+
+- **Antes de descargar, la app te dice qué lleva cada uno** (con un ⚠ y la palabra, a la vista, sin
+  que pulses nada). El puntuador y el servicio llevan el **modelo entrenado y su manifiesto**: los
+  rangos y las categorías que vio al entrenar, el **nombre de tu archivo de datos** y las métricas de
+  su prueba. Un modelo de **vecinos más cercanos** lleva además **filas de tu entrenamiento**. La
+  receta **no lleva ni una fila**. Comparte el modelo solo con quien puedas darle eso.
+
+- **Receta reproducible (`receta-….py`):** un archivo de Python que, **con tu CSV**, repite lo que
+  hizo la app: lee el archivo, lo sanea igual (las columnas que apartó, las filas repetidas), parte
+  entrenamiento y prueba con la misma semilla, ajusta el mismo preprocesador y el mismo modelo, y
+  escribe las **métricas esperadas junto a las obtenidas**.
+  - Se corre con Python 3.14 y las **versiones fijas** que trae en su encabezado:
+    `python receta.py tu-archivo.csv`.
+  - Dice **"✓ reproduce"** si coinciden (dentro de una millonésima); si no, dice **"✕ NO
+    reproduce"** y cuáles métricas difieren y por cuánto. Nunca dice "reproduce" sin haberlo comprobado.
+  - Los **bosques de árboles** son la excepción medida: entre el navegador y un Python de 64 bits, una
+    diferencia de coma flotante puede cambiar uno o dos de sus 200 árboles. Su receta declara una
+    tolerancia mayor y dice **"≈ reproduce de forma aproximada"**, con la diferencia y el porqué.
+  - Está en el idioma de la app cuando la descargas. Lleva solo nombres de columnas, la semilla, el
+    modelo y las métricas: la clase positiva y las clases las toma de **tu** archivo al correr.
+  - No se ofrece al **agrupar** (no hay partición ni prueba, así que no hay cifra que reproducir).
+
+- **Puntuador portátil (`puntuador-….html`):** un solo archivo con el modelo adentro. Quien lo abre
+  **arrastra un CSV y su propio navegador lo puntúa**: costo cero, sin servidor, y las filas no salen
+  de ese navegador. Necesita internet **la primera vez** (baja el motor de Pyodide, unos 35 MB, del
+  CDN público). Antes de abrir nada comprueba que el archivo no cambió (SHA-256) y que la versión del
+  motor es la del modelo; si no, se niega y lo dice. Puntúa las cuatro tareas, y el CSV que descarga
+  trae la predicción y la probabilidad (o el grupo, al agrupar) junto a tus columnas.
+
+- **Plantilla de servicio (`servicio-….zip`):** un `.zip` con un servicio **FastAPI** de dos
+  rutas (`GET /salud` y `POST /puntuar` con un CSV o filas JSON), el modelo, las **versiones fijas** y
+  un README (en español y en inglés) con el **costo predecible**: no guarda nada, escala a cero y
+  nunca cobra encendido sin uso. Lo despliegas tú donde quieras.
+  - Al arrancar comprueba el SHA-256 del modelo, que las versiones instaladas sean las fijas y que el
+    modelo puntúe en esa máquina; si algo no cuadra, **se niega a arrancar y dice qué**.
+  - Abre el modelo con `pickle`: ábrelo solo si conoces su origen.
+  - **No se ofrece para el modelo de vecinos más cercanos** (guarda su estructura con enteros de 32
+    bits y no se abre fuera del navegador) **ni al agrupar**; el puntuador portátil sí los sirve.
+
+- **Limitaciones:** el puntuador necesita internet la primera vez; el servicio es una plantilla (la
+  autenticación, el HTTPS y los permisos de origen —CORS— los pones tú); y si cambias la versión de
+  Pyodide o de scikit-learn, el modelo de antes ya no se abre en lo nuevo: se vuelve a exportar.
+
 ## Diccionario de términos
 
 Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
@@ -810,6 +904,9 @@ cuando una te frene.
 | **Entrenamiento y prueba** | La app parte tus datos en dos: con tres cuartas partes aprende y con la cuarta parte restante, que nunca vio, se examina. Por eso el número del veredicto es real.                                                                                                            |
 | **Liga**                   | Todos los modelos que compiten entre sí. Se elige al ganador sin mirar la prueba; puedes elegir otro, y queda registrado.                                                                                                                                                     |
 | **Clase detectada**        | De las dos respuestas posibles, la que el modelo intenta encontrar (normalmente la menos frecuente).                                                                                                                                                                          |
+| **Prueba de estrés**       | Medir el mismo modelo, sin reentrenarlo, sobre la prueba perturbada: con ruido, con una columna revuelta y con un corrimiento. Dice cuánto aguanta; no es una garantía.                |
+| **Receta reproducible**    | Un archivo de Python que, con tu CSV, repite lo que hizo la app y compara sus métricas con las que midió. Dice "reproduce", "reproduce de forma aproximada" o "NO reproduce".          |
+| **Puntuador portátil**     | Un solo archivo `.html` con el modelo adentro: quien lo abre arrastra un CSV y su navegador lo puntúa, sin servidor.                                                                   |
 
 **Sobre la liga** (desde Sprint 005)
 
@@ -1017,6 +1114,17 @@ cuando una te frene.
   parecen a las del entrenamiento. Un modelo puede fallar con entradas parecidas; para vigilar el desempeño
   hacen falta los resultados nuevos, y eso no está en esta versión.
 
+- **¿"Estrésalo" cambia mi modelo o mi veredicto?** No. Mide el mismo modelo sobre la misma prueba
+  perturbada; no reentrena, no elige nada y, en el Protocolo, no cuenta como abrir la prueba otra vez.
+- **¿La receta me da exactamente mis cifras?** Con casi todos los modelos, sí (dentro de una
+  millonésima); con los bosques de árboles, **aproximadamente**, y te lo dice con la diferencia. Si no
+  reproduce, dice cuáles métricas difieren.
+- **¿Probeta publica mi modelo o lo despliega?** No. "Llévatelo" arma archivos que se quedan en tu
+  equipo. Probeta no despliega nada ni guarda credenciales; tú decides dónde ponerlos.
+- **¿Qué lleva el archivo que comparto?** El puntuador y el servicio llevan el modelo y su manifiesto
+  (rangos, categorías vistas, nombre de tu archivo, métricas) y, con vecinos más cercanos, filas de tu
+  entrenamiento. La receta no lleva filas. La app lo dice antes de descargar.
+
 ## Historial
 
 | Sprint | Features añadidas a este manual                                                                                                                                                                                                                                                                                      |
@@ -1038,3 +1146,4 @@ cuando una te frene.
 | 014    | Protocolo DS, etapa 9 «¿Sirve para la decisión?» (la decisión con números, sin volver a abrir la prueba: el umbral de tus costos con sus falsas alarmas por cada 100 alertas, el costo y el beneficio neto frente a no hacer nada, actuar con todos y tu regla de hoy; la capacidad de tu equipo; la curva de decisión; y tu decisión, usar, iterar o no usar, con razón. «No usarlo» pasa la compuerta. Con un número, el costo y el cuantil de tus costos). Además: el peor segmento exige que el error supere al total, y la etapa 8 deja de recalcularse a cada tecla de tu patrón. |
 | 015    | Protocolo DS, etapa 10 «La ficha del modelo y su vigilancia» (la ficha sale solo del cuaderno, cada línea con su etapa, fecha y huella; quién responde; con «usar», la cadencia de reentreno que respalda la prueba y el plan de vigilancia con un chequeo de deriva de un CSV nuevo que mide las entradas, y las columnas de texto que vigilas las eliges tú; con «no usar» o «iterar», qué cambiar; la ficha se descarga en Markdown; «Protocolo completo» cuando las diez etapas están cumplidas).
 | 016    | El producto completo (cierre de H-2: las diez etapas, la ficha y Probeta se recorren enteras con el teclado; el tamaño de muestra dice sus supuestos; el chequeo de deriva dice «sin referencia» en vez de «estable» cuando no hay con qué comparar; nota junto a «Exportar cuaderno»; costos con tope; la prueba no cuenta dos veces la misma apertura; preguntas frecuentes del Protocolo).                                                                                                        |
+| 017    | Estrésalo (¿cuánto aguanta tu modelo? el mismo modelo sobre la misma prueba con ruido, una columna revuelta y un corrimiento; en la etapa 8 del Protocolo sin abrir la prueba otra vez, con la línea de robustez en la ficha) y Llévatelo (la receta reproducible, el puntuador portátil y la plantilla de servicio, con el aviso de lo que lleva cada archivo antes de descargar). |

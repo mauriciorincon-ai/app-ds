@@ -12,14 +12,14 @@
     "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
   },
   "schema_version": "1.0.0",
-  "actualizado": "2026-10-21",
+  "actualizado": "2026-10-24",
   "app": {
     "slug": "ds",
     "nombre": "Probeta DS",
     "ciclo": "H-2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 16,
+    "sprints_cerrados": 17,
     "version_repo": "0.1.0"
   },
   "promesa": {
@@ -29,58 +29,9 @@
     "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad. En Protocolo DS la honestidad además detiene: ninguna etapa se abre sin el criterio de salida de la anterior, la prueba se sella antes de tocar el modelo y se abre una vez, con cada apertura distinta contada, y «no usarlo» es un resultado válido que queda escrito."
   },
   "funcionalidades": {
-    "total": 58,
+    "total": 62,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
-    "descartadas": [
-      {
-        "id": "prueba-de-estres",
-        "nombre": "Prueba de estrés de robustez",
-        "fecha": "2026-10-21",
-        "razon": "No se construyó: el Protocolo lee el error por segmento y la calibración (etapa 8), pero ningún botón perturba columnas, permuta o simula cambios en el tiempo para medir cuánto aguanta el modelo."
-      },
-      {
-        "id": "publicalo-en-un-clic",
-        "nombre": "Publícalo en un clic",
-        "fecha": "2026-10-21",
-        "razon": "No se construyó: el modelo se exporta como archivo `.probeta.json` y se vuelve a puntuar en el navegador, pero no se despliega como servicio ni a ONNX (skl2onnx no carga en Pyodide, ADR 007) y el producto no tiene un backend de servicio."
-      },
-      {
-        "id": "receta-reproducible",
-        "nombre": "Receta reproducible (pipeline exportable)",
-        "fecha": "2026-10-21",
-        "razon": "No se construyó: la model card y la ficha del Protocolo se descargan, pero no hay un pipeline que se reejecute fuera de la app."
-      },
-      {
-        "id": "conversa-con-tus-datos",
-        "nombre": "Conversa con tus datos",
-        "fecha": "2026-10-21",
-        "razon": "Del roadmap y fuera del producto completo: pide un modelo de lenguaje que escriba consultas, y la regla dura 4 deja al LLM solo narrar, jamás ejecutar."
-      },
-      {
-        "id": "simulador-que-pasaria-si",
-        "nombre": "Simulador «¿qué pasaría si?» con impacto en dinero",
-        "fecha": "2026-10-21",
-        "razon": "Del roadmap, no se construyó."
-      },
-      {
-        "id": "datos-sinteticos",
-        "nombre": "Datos sintéticos que protegen la privacidad",
-        "fecha": "2026-10-21",
-        "razon": "Del roadmap, no se construyó."
-      },
-      {
-        "id": "series-de-tiempo",
-        "nombre": "Pronóstico de series de tiempo",
-        "fecha": "2026-10-21",
-        "razon": "Del roadmap, no se construyó: las fechas se usan para partir por tiempo y vigilar la deriva, no para pronosticar."
-      },
-      {
-        "id": "traduccion-a-reglas",
-        "nombre": "Traducción a reglas para sistemas antiguos",
-        "fecha": "2026-10-21",
-        "razon": "Del roadmap, no se construyó."
-      }
-    ],
+    "descartadas": [],
     "grupos": [
       {
         "orden": 1,
@@ -222,7 +173,7 @@
         "orden": 3,
         "estrella": false,
         "nombre": "El porqué, contado honesto",
-        "linea": "Qué variables pesan, hacia dónde empujan, y una explicación en palabras llanas.",
+        "linea": "Qué variables pesan, hacia dónde empujan, cuánto aguanta el modelo y una explicación en palabras llanas.",
         "features": [
           {
             "id": "P1",
@@ -253,6 +204,12 @@
             "nombre": "Model card descargable",
             "que_hace": "La ficha completa del experimento: datos, partición, método, métricas, veredicto y límites; al agrupar, la lectura, los grupos y la regla de asignación.",
             "seccion_manual": "El porqué, contado honesto"
+          },
+          {
+            "id": "P6",
+            "nombre": "Prueba de estrés: ¿cuánto aguanta?",
+            "que_hace": "Con ruido, una columna revuelta y un corrimiento, mide el mismo modelo sobre la misma prueba y dice si sigue ganándole a su rival sin modelo.",
+            "seccion_manual": "Estrésalo: ¿cuánto aguanta tu modelo?"
           }
         ]
       },
@@ -260,7 +217,7 @@
         "orden": 4,
         "estrella": false,
         "nombre": "El modelo se usa",
-        "linea": "Deja de ser un experimento: puntúa datos nuevos y guarda el modelo para otro día.",
+        "linea": "Puntúa datos nuevos, guarda el modelo y se lo lleva: receta, puntuador portátil y servicio.",
         "features": [
           {
             "id": "U1",
@@ -295,7 +252,7 @@
           {
             "id": "U6",
             "nombre": "Exportar el modelo a un archivo",
-            "que_hace": "Lo que aprendió y su constancia, no las filas del usuario.",
+            "que_hace": "Lo que aprendió y su constancia, no las filas del usuario (el modelo de vecinos más cercanos guarda filas de entrenamiento y la app lo dice).",
             "seccion_manual": "El modelo se usa"
           },
           {
@@ -315,6 +272,24 @@
             "nombre": "Puntuar sin volver a entrenar",
             "que_hace": "Otro día, otro computador, el mismo modelo.",
             "seccion_manual": "El modelo se usa"
+          },
+          {
+            "id": "U10",
+            "nombre": "Receta reproducible",
+            "que_hace": "Un .py con versiones fijas que, con tu CSV, repite el experimento y dice si reproduce; no lleva ni una fila de tus datos.",
+            "seccion_manual": "Llévatelo: la receta, el puntuador y el servicio"
+          },
+          {
+            "id": "U11",
+            "nombre": "Puntuador portátil",
+            "que_hace": "Un solo .html con el modelo adentro: quien lo abre arrastra un CSV y su navegador lo puntúa, sin servidor y sin costo.",
+            "seccion_manual": "Llévatelo: la receta, el puntuador y el servicio"
+          },
+          {
+            "id": "U12",
+            "nombre": "Plantilla de servicio",
+            "que_hace": "Un .zip con un servicio FastAPI de versiones fijas y un README de costo predecible; Probeta no despliega nada ni guarda credenciales.",
+            "seccion_manual": "Llévatelo: la receta, el puntuador y el servicio"
           }
         ]
       },
@@ -492,10 +467,10 @@
     {
       "clave": "funcionalidades",
       "etiqueta": "Funcionalidades",
-      "valor": 58,
+      "valor": 62,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (41 de Probeta y 17 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Las ocho de la VISION que no existen van en `descartadas`, con su razón."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (45 de Probeta y 17 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad de la VISION está descartada: lo que aún no existe (S18 a S21) ni se cuenta ni se lista aquí."
     },
     {
       "clave": "pantallas",
@@ -572,7 +547,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 119949,
+      "valor": 123298,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
