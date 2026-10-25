@@ -14,6 +14,7 @@ import { describe, expect, it } from "vitest";
 import type { Intervalo } from "@/engine/intervalo";
 import {
   empateDe,
+  metricaIndefinida,
   veredictoDe,
   vigilar,
   VEREDICTOS_VIGILANCIA,
@@ -79,6 +80,54 @@ describe("con pocas filas nada se decide", () => {
     expect(veredictoDe(hoy(0.99, 0.95, 1, 49), F1)).toBe("revisar");
     expect(veredictoDe(hoy(0.1, 0.05, 0.2, 49), F1)).toBe("revisar");
     expect(veredictoDe(hoy(0.99, 0.95, 1, 50), F1)).toBe("sigue");
+  });
+});
+
+describe("una cifra que no se puede calcular no es una cifra peor (AUDITORÍA A-01)", () => {
+  const filas = (y: number[], pred: number[]) => ({
+    task: "binaria" as const,
+    y,
+    pred,
+  });
+  const sinPositivos = Array.from({ length: 80 }, () => 0);
+  const sinNegativos = Array.from({ length: 80 }, () => 1);
+  const mezcla = Array.from({ length: 80 }, (_, i) => i % 2);
+
+  it("la AUC necesita las dos clases; el recall y el F1, algún positivo real; la precisión, alguna predicción positiva", () => {
+    expect(metricaIndefinida(filas(sinPositivos, sinPositivos), "auc")).toBe(true);
+    expect(metricaIndefinida(filas(sinNegativos, sinNegativos), "auc")).toBe(true);
+    expect(metricaIndefinida(filas(mezcla, mezcla), "auc")).toBe(false);
+    expect(metricaIndefinida(filas(sinPositivos, mezcla), "recall")).toBe(true);
+    expect(metricaIndefinida(filas(sinPositivos, mezcla), "f1")).toBe(true);
+    expect(metricaIndefinida(filas(mezcla, sinPositivos), "f1")).toBe(false);
+    expect(metricaIndefinida(filas(mezcla, sinPositivos), "precision")).toBe(true);
+    expect(metricaIndefinida(filas(mezcla, mezcla), "precision")).toBe(false);
+  });
+
+  it("la exactitud y las tareas de varias clases o de un número siempre están definidas", () => {
+    expect(metricaIndefinida(filas(sinPositivos, sinPositivos), "accuracy")).toBe(false);
+    expect(
+      metricaIndefinida({ task: "multiclase", y: sinPositivos, pred: sinPositivos }, "balanced_accuracy"),
+    ).toBe(false);
+    expect(metricaIndefinida({ task: "numerica", y: sinPositivos, pred: sinPositivos }, "mae")).toBe(false);
+  });
+
+  it("80 filas donde nadie convirtió, con una AUC de 0,85 en la prueba: «revisar», no «reentrenar»", () => {
+    const datos: EvaluateNewResult = {
+      task: "binaria",
+      n_rows: 80,
+      n_used: 80,
+      dropped: { empty: 0, unknown: 0 },
+      y: sinPositivos,
+      pred: sinPositivos,
+      score: sinPositivos.map(() => 0.1),
+      elapsed_ms: 1,
+    };
+    const lectura = vigilar(datos, { metric: "auc", valor: 0.85, nPrueba: 100 }, { semilla: 42 });
+    expect(lectura.indefinida).toBe(true);
+    expect(lectura.veredicto).toBe("revisar");
+    // el mismo intervalo, sin la marca, SÍ diría «reentrenar»: la marca es lo que lo detiene
+    expect(veredictoDe(lectura.hoy, { metric: "auc", valor: 0.85, nPrueba: 100 })).toBe("reentrenar");
   });
 });
 

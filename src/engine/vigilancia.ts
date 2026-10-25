@@ -4,13 +4,16 @@
 // (`METRIC_RULES`: dirección y tolerancia de empate de cada métrica), no una nueva:
 //  · reentrenar: TODO el intervalo de hoy queda peor que la cifra de la prueba más allá del empate;
 //  · sigue: la cifra de hoy no es peor que la de la prueba más allá del empate;
-//  · revisar: en medio, y siempre con menos de FILAS_PRUEBA_POCAS filas con resultado real (con pocas filas nada se decide).
+//  · revisar: en medio, y siempre con menos de FILAS_PRUEBA_POCAS filas con resultado real (con pocas filas nada se decide) o cuando la
+//    métrica no está definida en esas filas (sin las dos clases no hay curva, sin positivos reales no hay recall ni F1): la cifra de hoy
+//    sería un valor por defecto (0,5 o 0), no una medición, y decir «reentrenar» por eso sería una mentira.
 // La cifra de la prueba es un punto: el archivo del modelo no guarda su margen, así que solo la de hoy lo lleva.
 import {
   calcularIntervalo,
   FILAS_PRUEBA_POCAS,
   type Intervalo,
 } from "@/engine/intervalo";
+import { matchTask } from "@/engine/despacho";
 import { METRIC_RULES, type PrimaryMetric } from "@/engine/verdict";
 import type { EvaluateNewResult } from "@/workers/protocol";
 
@@ -35,6 +38,8 @@ export type LecturaVigilancia = {
   readonly empate: number;
   /** Menos de FILAS_PRUEBA_POCAS filas con resultado real: el veredicto es «revisar» pase lo que pase. */
   readonly pocas: boolean;
+  /** La métrica no está definida en estas filas (falta una clase, o no hay positivos): el veredicto es «revisar» pase lo que pase. */
+  readonly indefinida: boolean;
 };
 
 /** El empate de la métrica en SUS unidades: absoluto en las de clasificación, relativo a la cifra de la prueba con MAE. */
@@ -43,11 +48,34 @@ export function empateDe(metric: PrimaryMetric, referencia: number): number {
   return t.kind === "absolute" ? t.value : Math.abs(referencia) * t.value;
 }
 
+/**
+ * ¿La métrica no existe en estas filas? Con dos clases: la AUC pide las dos clases en lo real; el recall y el F1, algún positivo real;
+ * la precisión, alguna predicción positiva. La exactitud, la balanceada y el error medio siempre están definidos.
+ */
+export function metricaIndefinida(
+  datos: Pick<EvaluateNewResult, "task" | "y" | "pred">,
+  metric: PrimaryMetric,
+): boolean {
+  return matchTask(datos.task, {
+    binaria: () => {
+      const positivos = datos.y.filter((v) => v === 1).length;
+      if (metric === "auc")
+        return positivos === 0 || positivos === datos.y.length;
+      if (metric === "recall" || metric === "f1") return positivos === 0;
+      if (metric === "precision") return !datos.pred.some((v) => v === 1);
+      return false;
+    },
+    multiclase: () => false,
+    numerica: () => false,
+  });
+}
+
 export function veredictoDe(
   hoy: Intervalo,
   referencia: ReferenciaVigilancia,
+  indefinida = false,
 ): VeredictoVigilancia {
-  if (hoy.n < FILAS_PRUEBA_POCAS) return "revisar";
+  if (indefinida || hoy.n < FILAS_PRUEBA_POCAS) return "revisar";
   const regla = METRIC_RULES[referencia.metric];
   const empate = empateDe(referencia.metric, referencia.valor);
   const peor = (v: number) =>
@@ -75,12 +103,14 @@ export function vigilar(
     clases: opciones.clases,
     semilla: opciones.semilla,
   });
+  const indefinida = metricaIndefinida(datos, referencia.metric);
   return {
-    veredicto: veredictoDe(hoy, referencia),
+    veredicto: veredictoDe(hoy, referencia, indefinida),
     hoy,
     referencia,
     diferencia: hoy.valor - referencia.valor,
     empate: empateDe(referencia.metric, referencia.valor),
     pocas: hoy.n < FILAS_PRUEBA_POCAS,
+    indefinida,
   };
 }

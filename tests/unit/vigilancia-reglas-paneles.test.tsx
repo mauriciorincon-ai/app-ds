@@ -174,6 +174,21 @@ describe("vigilar el desempeño", () => {
     const linea = await screen.findByTestId("vigilancia-veredicto");
     expect(linea.getAttribute("data-veredicto")).toBe("revisar");
     expect(screen.getByText(/Con solo 30 filas con resultado real no se decide nada/)).toBeTruthy();
+    // AUDITORÍA A-03: no afirma «le va peor» cuando lo único que dice es que con tan pocas filas no se decide
+    expect(linea.textContent).toMatch(/con tan pocas filas no se puede decidir/);
+    expect(linea.textContent).not.toMatch(/le va peor/);
+  });
+
+  it("filas donde nadie tiene un positivo real: la cifra no está definida, se dice y NUNCA se pide reentrenar (AUDITORÍA A-01)", async () => {
+    const ceros = Array.from({ length: 60 }, () => 0);
+    const { worker } = doble(() =>
+      lista("evaluate-new", puntaje(60, 60, { y: ceros, pred: ceros, score: ceros.map(() => 0.1) })),
+    );
+    pintar(<VigilanciaPanel schema={ESQUEMA} worker={worker} tabla={tablaDe(60)} referencia={F1_PRUEBA} modelo={{}} />);
+    const linea = await screen.findByTestId("vigilancia-veredicto");
+    expect(linea.getAttribute("data-veredicto")).toBe("revisar");
+    expect(linea.textContent).toMatch(/la cifra no se puede calcular/);
+    expect(screen.getByText(/no hay ningún positivo real/)).toBeTruthy();
   });
 
   it("ninguna fila con resultado, y una respuesta rechazada, se dicen", async () => {

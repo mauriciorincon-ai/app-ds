@@ -195,7 +195,15 @@ function Lectura({
         <span aria-hidden="true" className="mr-1">
           {SIMBOLO[lectura.veredicto]}
         </span>
-        {t(`vigilancia.veredicto.${lectura.veredicto}`)}
+        {t(
+          `vigilancia.veredicto.${
+            lectura.veredicto === "revisar" && lectura.indefinida
+              ? "revisar_indefinida"
+              : lectura.veredicto === "revisar" && lectura.pocas
+                ? "revisar_pocas"
+                : lectura.veredicto
+          }`,
+        )}
       </p>
       <p className="text-sm tabular-nums" data-testid="vigilancia-cifras">
         {t("vigilancia.cifras", {
@@ -207,6 +215,14 @@ function Lectura({
           prueba: f(referencia.valor),
         })}
       </p>
+      {lectura.indefinida && (
+        <p className="text-sm text-caution">
+          <span aria-hidden="true" className="mr-1">
+            ⚠
+          </span>
+          {t("vigilancia.indefinida")}
+        </p>
+      )}
       {lectura.pocas && (
         <p className="text-sm text-caution">
           <span aria-hidden="true" className="mr-1">
