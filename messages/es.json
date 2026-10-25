@@ -1560,7 +1560,7 @@
         },
         "trap": {
           "sin-memoria": "Esta ficha sale solo de lo que el cuaderno registró en las etapas 1 a {etapas}: nada se recalculó ni la prueba se abrió de nuevo.",
-          "solo-entradas": "El plan vigila las entradas de {columnas} columnas del modelo. No dice si el modelo sigue acertando: para eso harían falta los resultados nuevos y el modelo guardado, y no están aquí.",
+          "solo-entradas": "El plan vigila las entradas de {columnas} columnas del modelo. No dice si el modelo sigue acertando: para eso guarda el ganador como archivo en la etapa 10 y úsalo en Probeta con filas nuevas que traigan el resultado real.",
           "sin-tiempo": "Tu prueba no fue por tiempo, así que no dice por cuánto tiempo vale el modelo: la cadencia es solo tuya.",
           "cadencia-alargada": "Elegiste una cadencia de reentreno (en meses) de {cadencia} y la prueba respalda {sugerida}: queda escrito con tu razón.",
           "sin-vigilar": "Dejaste sin vigilar columnas de texto ({lista}): si cambian, el chequeo no lo notará.",

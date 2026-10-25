@@ -1,6 +1,6 @@
 // Protocolo DS (S15, etapa 10, G-Plan 2a): el CHEQUEO DE DERIVA de un CSV nuevo contra la referencia de la
 // ficha (referencia-deriva.ts). Dice si las ENTRADAS de hoy se parecen a las del entrenamiento; no mide el
-// desempeño (para eso harían falta los resultados nuevos y el modelo guardado), y la pantalla lo dice.
+// desempeño (desde el S19 eso se vigila en Probeta con el ganador guardado y filas nuevas que traen el resultado real), y la pantalla lo dice.
 //  · Por columna: el PSI sobre las casillas de la referencia (los mismos cortes y categorías), con la
 //    guarda de ruido de la etapa 4: si con esas filas el azar solo ya puede dar una alerta, «pocas filas».
 //    Estable < PSI_MODERADA ≤ moderada < PSI_ALERTA ≤ alerta (convenciones de deriva.ts, no una prueba).

@@ -48,7 +48,7 @@
           "title": "Plan de vigilancia",
           "body": "Se vigila la deriva de {columnas} columnas del modelo contra {n} filas del entrenamiento sellado. La referencia guarda solo agregados (cortes y frecuencias; de las columnas de texto, solo las que marcaste, con los nombres de sus categorías), nunca filas.",
           "thresholds": "Un cambio moderado desde un PSI de {moderada} y una alerta desde {alerta}: convenciones de la etapa 4, no una prueba.",
-          "inputs": "Esto mide las entradas, no el desempeño: para vigilar el desempeño harían falta los resultados nuevos y el modelo guardado.",
+          "inputs": "Esto mide las entradas, no el desempeño: para vigilar el desempeño guarda el ganador como archivo (más abajo) y úsalo en Probeta con filas nuevas que traigan el resultado real.",
           "none": "No se pudo armar la referencia de deriva con estos datos: sin ella, la ficha no se completa."
         },
         "preview": {

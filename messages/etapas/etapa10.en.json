@@ -48,7 +48,7 @@
           "title": "Monitoring plan",
           "body": "Drift is watched on {columnas} model columns against {n} rows of the sealed training set. The reference keeps only aggregates (cuts and frequencies; for text columns, only the ones you ticked, with their category names), never rows.",
           "thresholds": "A moderate change from a PSI of {moderada} and an alert from {alerta}: stage 4 conventions, not a test.",
-          "inputs": "This measures inputs, not performance: watching performance would need the new outcomes and the saved model.",
+          "inputs": "This measures inputs, not performance: to watch performance, save the winner as a file (below) and use it in Probeta with new rows that carry the real result.",
           "none": "The drift reference couldn't be built with this data: without it, the card isn't complete."
         },
         "preview": {

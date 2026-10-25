@@ -1560,7 +1560,7 @@
         },
         "trap": {
           "sin-memoria": "This card comes only from what the notebook recorded in stages 1 to {etapas}: nothing was recomputed and the test set wasn't opened again.",
-          "solo-entradas": "The plan watches the inputs of {columnas} model columns. It doesn't say whether the model is still right: that would need the new outcomes and the saved model, and they're not here.",
+          "solo-entradas": "The plan watches the inputs of {columnas} model columns. It doesn't say whether the model is still right: for that, save the winner as a file in stage 10 and use it in Probeta with new rows that carry the real result.",
           "sin-tiempo": "Your test wasn't split by time, so it doesn't say how long the model holds: the cadence is yours alone.",
           "cadencia-alargada": "You chose a retraining cadence (in months) of {cadencia} and the test supports {sugerida}: it's written with your reason.",
           "sin-vigilar": "You left text columns unwatched ({lista}): if they change, the check won't notice.",
