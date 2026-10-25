@@ -59,6 +59,11 @@ const EstresPanel = dynamic(
   () => import("./estres/EstresPanel").then((m) => m.EstresPanel),
   { ssr: false },
 );
+// S17: «Llévatelo» (receta, puntuador, servicio) también en su chunk: ni sus textos ni sus plantillas entran al peso inicial.
+const PublicaPanel = dynamic(
+  () => import("./publica/PublicaPanel").then((m) => m.PublicaPanel),
+  { ssr: false },
+);
 
 const METRIC_KEYS: MetricName[] = [
   "accuracy",
@@ -135,8 +140,17 @@ export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
         agrupar: (result) => (
           <>
             <ClusterResults {...props} result={result} />
-            <div className="mt-6">
+            <div className="mt-6 flex flex-col gap-6">
               <EstresPanel de={null} />
+              <PublicaPanel
+                result={result}
+                datasetName={props.datasetName}
+                sanitation={props.sanitation}
+                target={null}
+                seed={props.runMeta.seed}
+                worker={props.worker}
+                ocupado={!(props.modelReady ?? true)}
+              />
             </div>
           </>
         ),
@@ -351,6 +365,17 @@ function SupervisedResults({
       {/* S17: ¿cuánto aguanta? El mismo modelo, sin reentrenar, sobre la prueba ya abierta. */}
       <EstresPanel
         de={estresDe}
+        worker={worker}
+        ocupado={!modelReady || choice.status === "fitting"}
+      />
+
+      {/* S17: llevarse el modelo — receta reproducible, puntuador portátil y plantilla de servicio. */}
+      <PublicaPanel
+        result={result}
+        datasetName={datasetName}
+        sanitation={sanitation}
+        target={runMeta.target}
+        seed={runMeta.seed}
         worker={worker}
         ocupado={!modelReady || choice.status === "fitting"}
       />
