@@ -6,7 +6,7 @@
 // numéricas, y en la etapa 8 el ganador, el sello y la huella vuelven tal cual se mandaron (el eco). Rechaza
 // nombrando el campo, jamás con un valor.
 import { byTask } from "@/engine/despacho";
-import { SHIFT_COLUMNS, NOISE_LEVELS, SHIFT_LEVELS } from "@/engine/estres-niveles";
+import { SHIFT_COLUMNS, NOISE_LEVELS, SHIFT_LEVELS } from "@/engine/estres";
 import type { SupervisedTask } from "@/engine/tarea";
 import { METRIC_RULES, type PrimaryMetric } from "@/engine/verdict";
 import {

@@ -7,14 +7,12 @@ import type { StressResult } from "@/workers/protocol";
 import { SEAL_NOISE_LEVEL, noiseAt } from "./estres-niveles";
 import { METRIC_RULES, computeVerdict, type PrimaryMetric } from "./verdict";
 
-export {
-  NOISE_LEVELS,
-  SEAL_NOISE_LEVEL,
-  SHIFT_COLUMNS,
-  SHIFT_LEVELS,
-  SHUFFLE_REPEATS,
-  noiseAt,
-} from "./estres-niveles";
+/** Espejo de pipeline.py (STRESS_*): paridad vigilada en tests/unit/estres.test.ts. */
+export const NOISE_LEVELS = [0.05, 0.1, 0.2] as const;
+export const SHIFT_LEVELS = [0.5, 1] as const;
+export const SHUFFLE_REPEATS = 5;
+export const SHIFT_COLUMNS = 3;
+export { SEAL_NOISE_LEVEL, noiseAt } from "./estres-niveles";
 
 /** Un cambio menor que esto (medio punto, o 0,5 % del error base) se lee «casi igual», no «cae» ni «mejora». */
 export const SAME_TOLERANCE = 0.005;
