@@ -1076,7 +1076,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     El empate es el de cada métrica: 0,01 en las de clasificación y el 1 % de la cifra de la prueba con el error medio.
 - **Lo que no sabe:** la cifra de la prueba es **un número**, el archivo del modelo no guarda su margen: solo la de
   hoy lo lleva. Las filas **sin resultado** o con una **clase que el modelo nunca vio** se cuentan y se dejan fuera.
-  Sirve también con un modelo **importado**. **Tú subes los resultados**: la app no los trae de ningún sistema. Al
+  Sirve también con un modelo **importado**. **Tú subes los resultados**: la app no los trae de ningún sistema, y no lo hará (por decisión de diseño no se conecta a tus sistemas ni guarda credenciales). Al
   agrupar no hay objetivo, así que no aplica.
 - **Llévate el ganador (etapa 10 del Protocolo):** si tu decisión de la etapa 9 es **usarlo**, la etapa 10 ofrece
   **«Guardar el ganador como .probeta.json»**. Pide que tengas cargado el archivo con que trabajaste (el **sello** de
