@@ -137,8 +137,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 - **Puntuar datos nuevos:**
   1. En Resultados, pulsa **"Usar el modelo"**.
   2. Sube un CSV (o un Excel) nuevo con **las mismas columnas** que usaste al entrenar (la pantalla te las
-     lista), pero **sin la columna que predices** — aquí el modelo responde, no se evalúa. Si la
-     incluyes de todos modos, se ignora y se te avisa.
+     lista), y **no hace falta la columna que predices**: aquí el modelo responde. Si el archivo la trae con el resultado real, no se
+     usa para predecir; la app la usa para **vigilar el desempeño** (más abajo, «Vigilar el desempeño»).
   3. Si a tu archivo le **falta** alguna columna del modelo, la app **se niega a puntuar** y te
      dice exactamente cuáles faltan. Nunca puntúa "a medias" rellenando en silencio.
   4. Antes de descargar verás el **aviso de novedad**: cuántos valores de tu archivo el modelo
@@ -623,6 +623,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      - **Lo que tu equipo alcanza:** escribes de cada 100 casos cuántos puede atender. Si el umbral da más alertas que eso, la pantalla dice cuántas sobran y muestra el umbral de tu capacidad con su costo.
      - **La curva de decisión:** el beneficio neto en cada umbral, con una gráfica y una tabla con las mismas cifras cada 0.05. El umbral de tus costos sale marcado con ◆ y el que elegiste con ●. Donde el modelo queda por debajo de actuar con todos o de cero, no aporta.
      - **Con una cantidad** (estimar un número): no hay umbral, capacidad ni curva. Ves el costo del modelo por cada 100 decisiones frente a lo de hoy y el **cuantil** que conviene apuntar con tus costos: quedarse corto y pasarse no cuestan lo mismo.
+     - **«¿Qué pasaría si?» (Sprint 019):** un simulador con tus costos de la etapa 1 que mueve **solo las filas de entrenamiento** —la prueba no se vuelve a abrir—. Ver «¿Qué pasaría si?» más abajo. Lo que simulas no entra al cuaderno.
      - **Tu decisión:** **Usarlo**, **Iterar** (mejorarlo antes de decidir) o **No usarlo**, con una razón escrita. **No usarlo es un resultado válido**: queda en el cuaderno con sus números.
   12. **Etapa 10 · La ficha del modelo y su vigilancia (Sprint 015).** Ahora la app arma la **ficha del
      modelo** sola, con lo que el cuaderno ya guardó en las etapas 1 a 9: nada se recalcula y la prueba
@@ -649,7 +650,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      - **Chequeo de deriva (solo con «usar»):** cargas un CSV nuevo con las columnas del modelo y la app dice,
        columna por columna, si sigue **estable**, tuvo un **cambio moderado** o dio **alerta**. El veredicto
        del plan es **sigue**, **revisa** o **reentrena**. Mide si las entradas de hoy se parecen a las del
-       entrenamiento; **no mide si el modelo sigue acertando**. El archivo nuevo no se guarda.
+       entrenamiento; **no mide si el modelo sigue acertando** (eso se vigila en Probeta con el ganador guardado: ver «Vigilar el desempeño»). El archivo nuevo no se guarda.
+     - **Llévate el ganador (Sprint 019, solo con «usar»):** la etapa ofrece **«Guardar el ganador como .probeta.json»**, un archivo que Probeta abre para puntuar y vigilar el desempeño. Ver «Vigilar el desempeño y llevarte el ganador del Protocolo» más abajo.
      - Cuando las diez etapas están cumplidas, la página dice **«Protocolo completo»**.
   13. **Lee «En tus datos».** Cada etapa te muestra lo que acaba de evitar, calculado con tus datos:
      «tu unidad se repite: 361 filas para 100 unidades», «con tus costos actúas desde 0.17, no
@@ -788,7 +790,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
     - **Lo que guarda el cuaderno no tiene filas.** Guarda tu decisión, tus razones, el umbral, tu capacidad y los conteos y costos que los sostienen; ninguna fila de tu CSV.
   - **Etapa 10, límites (Sprint 015):**
     - **La ficha sale del cuaderno, y no lo corrige.** Si una etapa anterior cambia, la ficha se rehace con lo nuevo. Lo que escribe el dueño no lo revisa la app.
-    - **El chequeo mide las entradas, no el desempeño.** Un CSV nuevo puede parecerse al de entrenamiento y el modelo fallar igual. Para vigilar el desempeño hacen falta los resultados nuevos y el modelo guardado, y eso no está en esta versión.
+    - **El chequeo mide las entradas, no el desempeño.** Un CSV nuevo puede parecerse al de entrenamiento y el modelo fallar igual. Para vigilar el desempeño hacen falta los resultados nuevos y el modelo guardado: desde el Sprint 19 la etapa 10 guarda el ganador como archivo y Probeta lo vigila con filas nuevas que traigan el resultado real.
     - **Sin con qué comparar, el chequeo lo dice.** Una columna de texto marcada cuyas categorías no
       juntan 5 filas, o una numérica con menos de 25 filas con valor, no tiene referencia: el chequeo la
       marca **«sin referencia»**, no «estable». Un «sigue» solo habla de las columnas que sí se pudieron medir.
@@ -1003,6 +1005,88 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   LightGBM, una red neuronal ligera, K-Means) con los que compiten en cada tarea: si uno falta, el código
   tiene que decir por qué (Lasso, por ejemplo, es una regresión: para clasificar compite la logística).
 
+### ¿Qué pasaría si? · desde Sprint 019
+
+- **Qué es:** un simulador sobre el modelo que ya tienes. Eliges **una columna** y **un cambio** —subirla o bajarla
+  un **porcentaje**, **ponerle un valor fijo** o **pasarla a otra categoría de las que existen**— para **todas las
+  filas** o solo para **un segmento** (hasta dos condiciones, unidas con «y» u «o», con las mismas reglas que
+  «tu regla de hoy» del Protocolo), y la app puntúa las filas **como están** y **con el cambio**. Está en la pantalla
+  de **resultados**, en la de **«Usar el modelo»** (sobre las filas nuevas) y, en el Protocolo, en la **etapa 9**.
+- **Qué te dice:**
+  - **Dos clases:** en cuántas filas el modelo recomienda actuar antes y después, y cuántas decisiones cambian. Con
+    **tus costos** (el de actuar cuando no era y el de no actuar cuando sí era; en Probeta los escribes en el panel,
+    en la etapa 9 son los de la etapa 1) calcula el **costo esperado por cada 100 decisiones**, antes y después, y la
+    diferencia. Se actúa desde la probabilidad que dan tus costos (`costo de actuar ÷ (costo de actuar + costo de no actuar)`).
+  - **Varias categorías:** cuántas filas cambian de opción y cuántas hay en cada una antes y después; con el costo de
+    equivocarse por categoría, el costo esperado por cada 100 decisiones.
+  - **Estimar una cantidad:** cuánto cambia el valor estimado, en promedio, en las unidades de tu columna. **Sin
+    dinero:** para filas que no existen no hay respuesta real contra la que medir un costo.
+  - **Agrupar:** cuántas filas cambian de grupo y cuántas hay en cada grupo antes y después.
+- **El dinero es un costo ESPERADO, no una medición.** Sale de las **probabilidades que da el propio modelo**: es lo
+  que cuestan, en promedio, las decisiones si el modelo tiene razón sobre cuán seguro está. Si el modelo decide **sin
+  dar probabilidades** (Ridge y el vector de soporte lineal) o no escribiste costos, el panel lo dice y muestra solo
+  cuántas decisiones cambian.
+- **La frase del resumen se comprueba:** va con la insignia **«Verificada contra tus números»** —cada cifra sale de la
+  simulación—; si no cuadra, se muestran solo las cifras. Es una comprobación del texto, no una garantía de que el
+  modelo acierte.
+- **Honestidad:** si el cambio manda filas **fuera de lo que el modelo vio al entrenar** (otro rango o una categoría
+  nueva), el panel lo cuenta —ahí la estimación es una extrapolación—. Un vacío **sigue vacío**; una categoría que no
+  existe en la columna no se puede elegir. Mover una columna no dice qué pasaría de verdad: **el modelo no sabe de
+  causas**, y en tus datos otras columnas se moverían con ella.
+- **En el Protocolo (etapa 9)** el simulador mueve **solo las filas de entrenamiento**: la prueba se abrió una vez
+  en la etapa 8 y no se vuelve a abrir. Para ello el ganador de la etapa 7 se **vuelve a ajustar con el
+  entrenamiento** en un worker que se crea al pulsar **«Simular»** (tarda un momento). No cuenta como apertura,
+  **no entra al cuaderno ni a la compuerta** y no cambia ninguna etapa: informa tu decisión, no es evidencia.
+- **Límites:** hasta **5 000 filas** por simulación (con más, una muestra con semilla fija, y la pantalla lo dice).
+  Un modelo **importado** se simula sobre las filas que subas en «Usar el modelo».
+
+### El modelo en reglas · desde Sprint 019
+
+- **Qué es:** un **árbol de pocas preguntas** sobre tus columnas, con los números en sus unidades y las categorías
+  como «es / no es», que **copia lo que el modelo decide**. Sirve para llevar el modelo a un sistema donde no corre
+  Python. Está en **Resultados**, y se pide con **«Ver el modelo en reglas»**.
+- **Su fidelidad, siempre primero:** se mide en **filas que el árbol no vio** (la prueba retenida; al agrupar, el 25 %
+  que se aparta) y con **las mismas reglas que te llevas**: cuánto **coinciden con el modelo** (o, al estimar, cuánto
+  explican de lo que el modelo estima, R²) y cuánto **aciertan frente a la verdad**, junto al modelo.
+- **Cuándo se llama «el modelo en reglas»:** solo si la coincidencia llega a **0,90** (o **0,80** de R² al estimar).
+  Debajo, la pantalla da la cifra y lo llama **«un árbol que se parece al modelo»**: es un resumen, no el modelo. Con
+  pocas filas (los ejemplos de 200) casi nunca llega.
+- **Qué te llevas:** un **texto** en tu idioma, una línea por regla («Si "visitas_web" es mayor que 24.5 y …, entonces
+  «1» (30 filas).»), y un **SQL**: un `CASE WHEN` por regla, con los nombres de columna entre comillas dobles y
+  **el mismo trato de los vacíos** (un número vacío se toma como la mediana de entrenamiento y una categoría vacía
+  cuenta como «no es»). Una prueba automática corre ese SQL en otro programa (CPython) sobre las filas que predijo el
+  navegador y exige **la misma respuesta en cada fila**.
+- **Límites:** solo para un modelo **entrenado en esta sesión** (necesita las filas de entrenamiento, que viven en
+  la memoria de la pestaña y nunca van al archivo); un modelo **importado**, el ganador del Protocolo o uno con muy
+  pocas filas lo dicen en vez de inventar un árbol. Profundidad máxima 4; un árbol así casi nunca iguala a un bosque
+  de árboles o a un boosting.
+
+### Vigilar el desempeño y llevarte el ganador del Protocolo · desde Sprint 019
+
+- **Vigilar el desempeño** (en **«Usar el modelo»**): si el archivo nuevo trae la columna del objetivo **con lo que de
+  verdad pasó**, la app puntúa esas filas y pone la **cifra de hoy** junto a la que sacó el modelo en su **prueba**.
+  La cifra de hoy lleva su **margen del 95 %** (el bootstrap de «El margen de error de la cifra», 1 000 remuestreos,
+  semilla 42). El veredicto usa las palabras del chequeo de deriva de la etapa 10 y la regla del veredicto del
+  modelo:
+  - **✕ Reentrenar:** **todo** el intervalo de hoy queda peor que la cifra de la prueba, más allá del empate;
+  - **✓ Sigue:** la cifra de hoy no es peor que la de la prueba más allá del empate;
+  - **⚠ Revisar:** en medio —peor, pero con el intervalo todavía tocando la cifra de la prueba— y **siempre con menos
+    de 50 filas con resultado real**, porque con pocas filas nada se decide.
+    El empate es el de cada métrica: 0,01 en las de clasificación y el 1 % de la cifra de la prueba con el error medio.
+- **Lo que no sabe:** la cifra de la prueba es **un número**, el archivo del modelo no guarda su margen: solo la de
+  hoy lo lleva. Las filas **sin resultado** o con una **clase que el modelo nunca vio** se cuentan y se dejan fuera.
+  Sirve también con un modelo **importado**. **Tú subes los resultados**: la app no los trae de ningún sistema. Al
+  agrupar no hay objetivo, así que no aplica.
+- **Llévate el ganador (etapa 10 del Protocolo):** si tu decisión de la etapa 9 es **usarlo**, la etapa 10 ofrece
+  **«Guardar el ganador como .probeta.json»**. Pide que tengas cargado el archivo con que trabajaste (el **sello** de
+  la partición confirma que es el mismo), vuelve a ajustar al ganador **solo con las filas de entrenamiento** —la
+  prueba **no se abre**— y descarga un archivo que **Probeta abre** para puntuar y vigilar. Lleva el modelo, sus
+  rangos y categorías, y lo que el Protocolo midió del ganador: **su cifra en la prueba de la etapa 8**, sus filas y
+  la huella y el sello. **No lleva** liga, comparación con una línea base ni fuga, porque el Protocolo no las mide en
+  esa forma, y no lleva ninguna fila de tus datos (salvo si el ganador son los **vecinos más cercanos**: ese modelo
+  guarda las filas de entrenamiento, y la pantalla lo dice antes de descargar). Una versión de la app anterior al
+  Sprint 19 no lo abre.
+
 ## Diccionario de términos
 
 Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
@@ -1021,6 +1105,9 @@ cuando una te frene.
 | **Receta reproducible**    | Un archivo de Python que, con tu CSV, repite lo que hizo la app y compara sus métricas con las que midió. Dice "reproduce", "reproduce de forma aproximada" o "NO reproduce".          |
 | **Puntuador portátil**     | Un solo archivo `.html` con el modelo adentro: quien lo abre arrastra un CSV y su navegador lo puntúa, sin servidor.                                                                   |
 | **Margen de error (intervalo del 95 %)** | El rango en que podría estar la cifra del veredicto si la prueba hubiera sido otra muestra de las mismas filas: se remuestrean las filas de la prueba 1 000 veces, con semilla fija, y se descarta el 2,5 % más bajo y el 2,5 % más alto. |
+| **Costo esperado** | Lo que cuestan, en promedio, las decisiones si el modelo tiene razón sobre cuán seguro está: se calcula con sus probabilidades y los costos que escribiste, por cada 100 decisiones. No es un resultado medido: para filas hipotéticas no hay respuesta real. |
+| **Fidelidad (del modelo en reglas)** | Cuánto coinciden las reglas con el modelo en filas que el árbol no vio, medida con las mismas reglas que te llevas. Con 0,90 de coincidencia (0,80 de R² al estimar) se llama «el modelo en reglas»; debajo, «un árbol que se parece al modelo». |
+| **Vigilar el desempeño** | Poner la cifra de hoy del modelo, medida con filas nuevas que traen el resultado real, junto a la que sacó en su prueba, con el margen de la de hoy. Dice sigue, revisar o reentrenar. Es distinto del chequeo de deriva, que solo mira si las entradas cambiaron. |
 | **Explicación verificada** | Un texto cuyas cifras y orden de columnas se comprobaron contra tu resultado antes de mostrarse. Si no cuadra, se muestra solo lo que sí: las cifras. |
 | **Plan de limpieza** | Los pasos que el código propone para tus datos y que tú apruebas o rechazas uno a uno. Lo que no apruebas no se aplica, y lo que depende de los datos se calcula solo con el entrenamiento. |
 | **Posibles datos personales** | Una columna que parece guardar correos, teléfonos, documentos o nombres de personas. Es un aviso aproximado: nombra la columna y el tipo, nunca un valor. |
@@ -1263,6 +1350,19 @@ cuando una te frene.
 - **¿La insignia «verificada» quiere decir que el modelo es bueno?** No. Quiere decir que el **texto** coincide
   con tus números. Si el modelo es bueno o no lo dice el veredicto.
 
+- **¿El «¿qué pasaría si?» me dice qué pasaría de verdad?** No: mueve una columna y le pregunta al modelo. El dinero es un
+  **costo esperado** con las probabilidades del propio modelo, no una medición, y en tus datos otras columnas se moverían
+  con ella. Si el cambio saca filas de lo que el modelo vio al entrenar, la pantalla lo cuenta: ahí es una extrapolación.
+- **¿Por qué mi «modelo en reglas» dice que es «un árbol que se parece al modelo»?** Porque no llega al umbral de fidelidad
+  (0,90 de coincidencia, o 0,80 de R² al estimar). Un árbol de pocas preguntas casi nunca iguala a un bosque o a un boosting,
+  y con pocas filas menos. Puedes usarlo para entender el modelo, no para sustituirlo.
+- **¿Por qué el SQL no tiene «ELSE»?** Las reglas parten el espacio sin huecos: a cada fila le toca exactamente una. Si
+  alguna vez no le tocara ninguna (imposible con las columnas del modelo), saldría vacío en vez de una respuesta inventada.
+- **¿Mi archivo de resultados sale de mi navegador?** No. «Vigilar el desempeño» puntúa las filas con el modelo en tu
+  navegador; la app no trae resultados de ningún sistema: los subes tú.
+- **¿Guardar el ganador del Protocolo abre otra vez la prueba?** No. Vuelve a ajustar al ganador con las filas de
+  entrenamiento, con la misma semilla; una prueba comprueba que predice exactamente lo que predijo cuando se probó.
+
 ## Historial
 
 | Sprint | Features añadidas a este manual                                                                                                                                                                                                                                                                                      |
@@ -1286,3 +1386,4 @@ cuando una te frene.
 | 016    | El producto completo (cierre de H-2: las diez etapas, la ficha y Probeta se recorren enteras con el teclado; el tamaño de muestra dice sus supuestos; el chequeo de deriva dice «sin referencia» en vez de «estable» cuando no hay con qué comparar; nota junto a «Exportar cuaderno»; costos con tope; la prueba no cuenta dos veces la misma apertura; preguntas frecuentes del Protocolo).                                                                                                        |
 | 017    | Estrésalo (¿cuánto aguanta tu modelo? el mismo modelo sobre la misma prueba con ruido, una columna revuelta y un corrimiento; en la etapa 8 del Protocolo sin abrir la prueba otra vez, con la línea de robustez en la ficha) y Llévatelo (la receta reproducible, el puntuador portátil y la plantilla de servicio, con el aviso de lo que lleva cada archivo antes de descargar). |
 | 018    | Probeta completa (un Excel `.xlsx` además del CSV, el aviso de posibles datos personales que nunca muestra un valor, el plan de limpieza que apruebas paso a paso y que se calcula solo con el entrenamiento, la exploración con distribuciones, correlaciones y un resumen verificado, el margen de error de la cifra del veredicto, las explicaciones verificadas en las cuatro tareas y la liga contra lo prometido). |
+| 019    | Del modelo a la decisión («¿qué pasaría si?» en dinero, con tus costos, en resultados, en «Usar el modelo» y en la etapa 9 del Protocolo —sin abrir la prueba—; el modelo en reglas con su fidelidad, su texto y su SQL; vigilar el desempeño con filas nuevas que traen el resultado real, con el margen de la cifra de hoy; y el ganador del Protocolo guardado como archivo desde la etapa 10). |

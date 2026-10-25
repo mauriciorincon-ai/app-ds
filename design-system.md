@@ -422,6 +422,17 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
   número de remuestreos; «Calculando…» como `role="status"`, un fallo como `role="alert"`, y una frase que dice por qué no hay cifra al agrupar o con
   un modelo importado. Sus textos viajan con su chunk (`messages/resultados.{es,en}.json`), como la insignia **«Verificada contra tus números»**
   del texto estándar de «por qué».
+- **¿Qué pasaría si? (S19)** — una tarjeta con la columna, el cambio (porcentaje, valor fijo o categoría), el alcance (todas las filas o un segmento con
+  hasta dos condiciones) y, en dos y varias clases, los costos y su unidad opcional; un botón «Simular» (icono `play`). La lectura es **una frase**
+  con la insignia «✓ Verificada contra tus números» (símbolo + texto), las notas (filas tocadas, muestra de 5 000, ⚠ filas que quedan fuera de lo que el
+  modelo vio) y, con varias opciones o grupos, una tabla de filas antes y con el cambio. En la etapa 9 dice que lo simulado no entra al cuaderno. Sus
+  textos viajan con su chunk (`messages/simulador.{es,en}.json`).
+- **El modelo en reglas (S19)** — una tarjeta con «Ver el modelo en reglas» (icono `table`); la lectura pone **primero la fidelidad** y su veredicto
+  con símbolo y palabra (✓ llega al umbral · ⚠ no llega: «un árbol que se parece al modelo»), luego lo que aciertan las reglas frente a la verdad, el
+  texto de las reglas en una región enfocable y dos descargas (`download`): el texto y el SQL. Textos en `messages/reglas.{es,en}.json`.
+- **Vigilar el desempeño (S19)** — en «Usar el modelo», cuando el archivo trae el objetivo: una línea de veredicto con **símbolo y palabra** (✓ Sigue ·
+  ⚠ Revisar · ✕ Reentrenar), la cifra de hoy con su intervalo del 95 % junto a la de la prueba, el empate y la nota de lo que se dejó fuera; sin
+  objetivo en el archivo dice qué subir. Textos en `messages/vigilancia.{es,en}.json`.
 - **Foco y tema** — `:focus-visible` es un contorno de 2 px en `accent` a 2 px de distancia, para todo lo enfocable; la página
   declara `color-scheme` claro y oscuro para que los controles nativos (radios, casillas, selectores) sigan el tema; el alias
   `--sunken` equivale a `--surface-sunken`.
@@ -433,7 +444,7 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
    qué se entrenaría y quién compite, y «Entrenar modelos» queda arriba de la vista previa. El
    **SanitationBlock** y el **EdaBlock** lo enmarcan.
 3. **Entrenamiento** → el progreso honesto (qué modelo, en qué fase); en el Nivel 2, cancelar.
-4. **Resultados** → (desde el S17 también «Estrésalo» y «Llévatelo», después de «Usa tu modelo»; desde el S18 el margen de error bajo las métricas) el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
+4. **Resultados** → (desde el S17 también «Estrésalo» y «Llévatelo», después de «Usa tu modelo»; desde el S18 el margen de error bajo las métricas; desde el S19 «¿Qué pasaría si?» y «El modelo en reglas» antes de «Estrésalo») el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
    métricas, matriz y advertencias lo sostienen. Al estimar (S6), el veredicto va en unidades y el
    **PredichoVsReal** ocupa el lugar de la matriz. Con varias categorías (S7), la matriz es K×K.
    Al agrupar (S7), la **lectura** ocupa el lugar del veredicto, y los grupos y la tabla de
