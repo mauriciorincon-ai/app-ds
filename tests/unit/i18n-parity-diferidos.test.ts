@@ -1,7 +1,7 @@
 // @vitest-environment node
 /**
  * Paridad ES/EN de los diccionarios DIFERIDOS (los que viajan con su pantalla: `estres`, `publica`, y desde el S18 `limpieza`,
- * `exploracion` y `resultados`). `i18n-parity.test.ts` solo compara `es.json` con `en.json` y `textos-etapa.test.ts` solo mira
+ * `exploracion` y `resultados`, y desde el S19 `simulador`). `i18n-parity.test.ts` solo compara `es.json` con `en.json` y `textos-etapa.test.ts` solo mira
  * `messages/etapas/`: sin esta prueba, una clave que falta en el inglés de un diccionario diferido aparece cruda en pantalla
  * (auditoría H-05, S18; el hueco venía del S17). Regla 20: el dato nace `{ es, en }` con test automático de paridad.
  */
@@ -45,6 +45,7 @@ describe("diccionarios diferidos: paridad ES/EN", () => {
         "limpieza",
         "exploracion",
         "resultados",
+        "simulador",
       ]),
     );
   });

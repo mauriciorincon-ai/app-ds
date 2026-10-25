@@ -1,0 +1,90 @@
+{
+  "simulador": {
+    "titulo": "What if?",
+    "ayuda": "Change a column and see how many of the model's decisions move and what that means in money. It is a simulation with the model's own probabilities, not a measured result: rows that do not exist have no real answer.",
+    "nota_entrenamiento": "The rows that move are the training rows: the test was opened once in stage 8 and is not opened again. What you simulate here does not enter the notebook or change any stage.",
+    "columna": "Column to change",
+    "sin_columnas": "This model has no columns to change.",
+    "cambio": {
+      "titulo": "How it changes",
+      "porcentaje": "Raise or lower by a percentage",
+      "fijo": "Set a fixed value",
+      "categoria": "Switch to another category",
+      "porcentaje_valor": "Percentage (10 raises it by 10 %, -10 lowers it by 10 %)",
+      "fijo_valor": "Value",
+      "categoria_valor": "Category"
+    },
+    "alcance": {
+      "titulo": "Who it applies to",
+      "todas": "To every row",
+      "segmento": "Only to a segment",
+      "columna": "Segment column",
+      "operador": "Operator",
+      "valor": "Value",
+      "union": "Join with",
+      "y": "and",
+      "o": "or",
+      "otra": "Add another condition",
+      "quitar": "Remove the second condition",
+      "valor_invalido": "Write the value with a decimal point and no thousands separator (1500.5)."
+    },
+    "costos": {
+      "titulo": "Your costs",
+      "ayuda": "Without costs you only see how many decisions change. With them, the expected cost of each decision comes from the model's probabilities.",
+      "ayuda_etapa1": "These are the costs you wrote in stage 1.",
+      "fp": "Cost of acting when it was not needed (false positive)",
+      "fn": "Cost of not acting when it was needed (false negative)",
+      "clase": "Cost of being wrong when the real class is «{clase}»",
+      "unidad": "Unit (optional, for example USD)",
+      "invalido": "Write a number greater than zero.",
+      "actuar": "«Act» means the model says «{positiva}».",
+      "clases_faltan": "Write the cost of every class to see the money."
+    },
+    "simular": "Simulate",
+    "simulando": "Calculating…",
+    "ajustando": "Refitting the winner with the training rows… The test is not opened.",
+    "error": "The simulation failed ({motivo}). Try again.",
+    "rechazo": {
+      "columna": "That column is not one of the model's columns.",
+      "cambio": "That change does not work for that column.",
+      "valor": "Write a number within the limits.",
+      "categoria": "That category does not exist in the column: pick one that does.",
+      "segmento": "The segment is not written correctly.",
+      "sin-filas": "There are no rows to simulate."
+    },
+    "verificada": "Checked against your numbers",
+    "ayuda_verificada": "Every figure in this text comes from the simulation. It is a check of the text, not a guarantee that the model is right.",
+    "no_cuadro": "The text did not match your numbers, so only the figures are shown.",
+    "resumen": {
+      "binaria": "Of {n} rows, the model recommends acting on {antes} and, with the change, on {despues}: {cambian} decisions change.",
+      "umbral": " It acts from a probability of {umbral}, the one your costs give.",
+      "multiclase": "Of {n} rows, {cambian} change option with the change.",
+      "numerica": "Of {n} rows, the estimated value changes by {cambio} on average: the average goes from {antes} to {despues}.",
+      "agrupar": "Of {n} rows, {cambian} change group with the change.",
+      "dinero": " With your costs, the expected cost per 100 decisions goes from {costo_antes} to {costo_despues} ({delta}).",
+      "sin_dinero": {
+        "sin-costos": " Without your costs there is no figure in money: write them to see it.",
+        "sin-probabilidades": " This model decides without giving probabilities, so there is no expected cost to compute."
+      },
+      "binaria_one": "Of {n} rows, the model recommends acting on {antes} and, with the change, on {despues}: {cambian} decision changes.",
+      "multiclase_one": "Of {n} rows, {cambian} changes option with the change.",
+      "agrupar_one": "Of {n} rows, {cambian} changes group with the change."
+    },
+    "minima": "{cambian} of {n} decisions change.",
+    "tabla": {
+      "opciones": "Rows per option",
+      "grupos": "Rows per group",
+      "opcion": "Option",
+      "grupo": "Group",
+      "antes": "Before",
+      "despues": "With the change"
+    },
+    "muestra": "{usadas} of {total} rows were simulated (a sample with a fixed seed).",
+    "toco": "The change modified the value of {tocadas} rows.",
+    "no_toco": "The change did not modify any row: check the column, the value or the segment.",
+    "fuera": "Heads up: with the change, {despues} rows fall outside what the model saw in training (before: {antes}); there the estimate is an extrapolation.",
+    "minima_one": "{cambian} of {n} decisions changes.",
+    "toco_one": "The change modified the value of {tocadas} row.",
+    "fuera_one": "Heads up: with the change, {despues} row falls outside what the model saw in training (before: {antes}); there the estimate is an extrapolation."
+  }
+}
