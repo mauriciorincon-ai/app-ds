@@ -557,10 +557,10 @@
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 2850,
+      "valor": 2862,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-10-25 sobre el árbol final: `pnpm test` 2657 pruebas en 158 archivos + `pnpm test:integration` 193 en 21 archivos (con Pyodide real; una más se salta, el emisor del fixture del S6). Aparte, 17 pruebas de Python en CPython 3.14.0 que corre el job `integration` de la CI (el servicio y la receta, y el SQL de las reglas)."
+      "detalle": "Salida del 2026-10-25 sobre el árbol final: `pnpm test` 2669 pruebas en 158 archivos + `pnpm test:integration` 193 en 21 archivos (con Pyodide real; una más se salta, el emisor del fixture del S6). Aparte, 17 pruebas de Python en CPython 3.14.0 que corre el job `integration` de la CI (el servicio y la receta, y el SQL de las reglas)."
     },
     {
       "clave": "pruebas_e2e",
@@ -576,7 +576,7 @@
       "valor": 95.24,
       "unidad": "%",
       "fuente": "medido",
-      "detalle": "v8 sobre engine, lib, components y workers; 10262 de 10774 líneas (salida de `pnpm test` del 2026-10-25, sobre el árbol final: imprime 95,24 %). Los motores puros de engine/ llevan umbral propio más alto."
+      "detalle": "v8 sobre engine, lib, components y workers; 10272 de 10785 líneas (salida de `pnpm test` del 2026-10-25, sobre el árbol final: imprime 95,24 %). Los motores puros de engine/ llevan umbral propio más alto."
     },
     {
       "clave": "dependencias_runtime",
