@@ -1,0 +1,77 @@
+{
+  "task": "binaria",
+  "metric": {
+    "name": "f1",
+    "direction": "higher"
+  },
+  "base": 0.6842105263157895,
+  "n_test": 50,
+  "seed": 42,
+  "noise": [
+    {
+      "level": 0.05,
+      "value": 0.6842105263157895
+    },
+    {
+      "level": 0.1,
+      "value": 0.65
+    },
+    {
+      "level": 0.2,
+      "value": 0.6666666666666666
+    }
+  ],
+  "shuffle": [
+    {
+      "column": "visitas_web",
+      "kind": "numeric",
+      "value": 0.5790476190476189
+    },
+    {
+      "column": "correos_abiertos",
+      "kind": "numeric",
+      "value": 0.5922987581524167
+    },
+    {
+      "column": "dispositivo",
+      "kind": "categorical",
+      "value": 0.6083333333333333
+    },
+    {
+      "column": "ingreso_mensual",
+      "kind": "numeric",
+      "value": 0.6553658922079975
+    },
+    {
+      "column": "edad",
+      "kind": "numeric",
+      "value": 0.6592982456140352
+    },
+    {
+      "column": "region",
+      "kind": "categorical",
+      "value": 0.6700806069227122
+    }
+  ],
+  "shift": [
+    {
+      "level": 0.5,
+      "columns": [
+        "visitas_web",
+        "correos_abiertos",
+        "ingreso_mensual"
+      ],
+      "value": 0.6111111111111112
+    },
+    {
+      "level": 1,
+      "columns": [
+        "visitas_web",
+        "correos_abiertos",
+        "ingreso_mensual"
+      ],
+      "value": 0.15384615384615385
+    }
+  ],
+  "elapsed_ms": 761
+}

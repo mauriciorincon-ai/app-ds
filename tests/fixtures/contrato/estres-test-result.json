@@ -1,0 +1,74 @@
+{
+  "task": "binaria",
+  "metric": {
+    "name": "f1",
+    "direction": "higher"
+  },
+  "base": 0.5333333333333333,
+  "n_test": 40,
+  "seed": 20261025,
+  "noise": [
+    {
+      "level": 0.05,
+      "value": 0.5333333333333333
+    },
+    {
+      "level": 0.1,
+      "value": 0.5333333333333333
+    },
+    {
+      "level": 0.2,
+      "value": 0.5161290322580645
+    }
+  ],
+  "shuffle": [
+    {
+      "column": "puntaje_credito",
+      "kind": "numeric",
+      "value": 0.34158883180017774
+    },
+    {
+      "column": "monto_prestamo",
+      "kind": "numeric",
+      "value": 0.46618464961067857
+    },
+    {
+      "column": "empleo",
+      "kind": "categorical",
+      "value": 0.5098850574712643
+    },
+    {
+      "column": "ingreso_mensual",
+      "kind": "numeric",
+      "value": 0.5333333333333333
+    }
+  ],
+  "shift": [
+    {
+      "level": 0.5,
+      "columns": [
+        "puntaje_credito",
+        "monto_prestamo",
+        "ingreso_mensual"
+      ],
+      "value": 0.42857142857142855
+    },
+    {
+      "level": 1,
+      "columns": [
+        "puntaje_credito",
+        "monto_prestamo",
+        "ingreso_mensual"
+      ],
+      "value": 0.3076923076923077
+    }
+  ],
+  "baseline": {
+    "name": "logistic",
+    "value": 0.5333333333333333
+  },
+  "winner": "logistic",
+  "huella": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "sello": "848697366fbc4e9d368bf81429efba84ad6af89747e4a268ec399124d8f3d3f8",
+  "elapsed_ms": 189
+}
