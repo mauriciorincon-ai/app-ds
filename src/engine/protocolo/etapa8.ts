@@ -825,10 +825,11 @@ function leer(datos: DatosEtapa): Lectura {
   if (c.ganador !== null && !esIdGuardado(c.ganador)) return malo("ganador");
   if (c.metrica !== null && !esIdGuardado(c.metrica)) return malo("metrica");
   if (c.base_id !== null && !esIdGuardado(c.base_id)) return malo("base_id");
-  // S17: el rival del estrés es un identificador, y la cifra con ruido no viaja sin su rival (ni al revés)
+  // S17: el rival del estrés es un identificador, y la cifra con ruido no viaja sin su rival. Al revés sí: sin columnas
+  // numéricas no hay dónde poner ruido (`noise: []`) y el rival se mide igual; la ficha lo dice «sin medir» (AU-S17-01)
   if (c.estres_rival_id !== null && !esIdGuardado(c.estres_rival_id))
     return malo("estres_rival_id");
-  if ((c.estres_ruido === null) !== (c.estres_rival === null))
+  if (c.estres_ruido !== null && c.estres_rival === null)
     return malo("estres_ruido");
   for (const p of ["base", "regla", "ganador"] as const) {
     const [bajo, alto] = [numero(c, `${p}_bajo`), numero(c, `${p}_alto`)];

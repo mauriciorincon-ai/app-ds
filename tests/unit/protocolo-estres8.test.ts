@@ -88,6 +88,30 @@ describe("la etapa 8 guarda la lectura de estrés, si la pediste", () => {
     expect(resumen.estresRival).toBe(ESTRES.baseline!.value);
   });
 
+  it("un dataset sin columnas numéricas (noise: []) se registra y cumple: el rival queda, la cifra con ruido no (AU-S17-01)", () => {
+    const sinNumericas: Corrida8 = {
+      resultado: RESULTADO,
+      estres: { ...ESTRES, noise: [], shift: [] },
+    };
+    const d = datos(sinNumericas);
+    expect(d.chequeos.estres_ruido).toBeNull();
+    expect(d.chequeos.estres_rival).toBe(ESTRES.baseline!.value);
+    expect(ETAPA_8.leer(d)).toEqual({ ok: true });
+    const r = registrar(PROTOCOLO_DS, A.cuaderno, 8, d, {
+      huella: HUELLA,
+      tabla: A.tabla,
+      ahora: AHORA,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(
+      evaluar(PROTOCOLO_DS, r.cuaderno, HUELLA, A.tabla)[7]!.estado.tipo,
+    ).toBe("cumplida");
+    const resumen = resumenEtapa8(r.cuaderno.evidencias.at(-1)!.datos);
+    expect(resumen.estresRuido).toBeNull();
+    expect(resumen.estresRival).toBe(ESTRES.baseline!.value);
+  });
+
   it("un registro de ANTES (sin las tres claves) se sigue leyendo y no se las inventa", () => {
     const viejo = datos(SIN_ESTRES);
     const chequeos = { ...viejo.chequeos };
@@ -107,15 +131,13 @@ describe("el lector de la etapa 8 rechaza lo que no cuadra de la lectura de estr
     return { ...d, chequeos: { ...d.chequeos, ...cambios } } as typeof d;
   };
 
-  it("una cifra con ruido sin su rival (o al revés) no es una lectura", () => {
+  it("una cifra con ruido sin su rival no es una lectura (el rival sin cifra sí: AU-S17-01)", () => {
     expect(ETAPA_8.leer(con({ estres_rival: null, estres_rival_id: null }))).toEqual({
       ok: false,
       campo: "chequeos.estres_ruido",
     });
-    expect(ETAPA_8.leer(con({ estres_ruido: null }))).toEqual({
-      ok: false,
-      campo: "chequeos.estres_ruido",
-    });
+    // sin columnas numéricas no hay dónde poner ruido, y el rival se mide igual
+    expect(ETAPA_8.leer(con({ estres_ruido: null }))).toEqual({ ok: true });
   });
 
   it("el rival es un identificador, no texto libre", () => {

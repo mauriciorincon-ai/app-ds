@@ -298,6 +298,7 @@ describe("lo que cambia en la ficha según lo registrado (cada línea sale de su
     ["la robustez medida: con ruido deja de ganarle", [{ etapa: 8, c: { metrica: "auc", prueba_metrica: 0.9, estres_ruido: 0.505, estres_rival: 0.5, estres_rival_id: "majority" } }], "cumplio", "robustez-cae"],
     ["la robustez medida: ya no le ganaba sin ruido", [{ etapa: 8, c: { metrica: "auc", prueba_metrica: 0.505, estres_ruido: 0.5, estres_rival: 0.5, estres_rival_id: "majority" } }], "cumplio", "robustez-ya-perdia"],
     ["la robustez sin medir", [{ etapa: 8, c: { estres_ruido: null, estres_rival: null } }], "cumplio", "robustez-sin-medir"],
+    ["la robustez sin medir: hay rival pero no había dónde poner ruido (AU-S17-01)", [{ etapa: 8, c: { metrica: "auc", prueba_metrica: 0.9, estres_ruido: null, estres_rival: 0.5, estres_rival_id: "majority" } }], "cumplio", "robustez-sin-medir"],
     ["el modelo que no supera ni muestra señal", [{ etapa: 7, c: { veredicto: "no-supera", senal: "sin-senal" } }], "cumplio", "sin-senal"],
   ] as const)("%s", (_, cambios, seccion, clave) => {
     expect(claves(fichaCon(...(cambios as readonly Cambio[])), seccion)).toContain(clave);
