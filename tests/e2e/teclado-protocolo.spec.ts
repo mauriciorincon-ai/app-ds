@@ -169,6 +169,14 @@ test("las diez etapas, el cuaderno, el glosario y los cuatro diálogos se usan s
   await abrirPrueba(page);
   await recorrerConTeclado(page, "#etapa-8", { minimo: 2 });
   const e8 = page.locator("#etapa-8");
+  // S17 — «Estrésalo» sobre la prueba ya abierta: Tab hasta el botón, Enter, la lectura llega y el recorrido sigue sin trampa.
+  await tabularHasta(page, /^Estrésalo/);
+  await activarConTeclado(page);
+  await expect(e8.getByTestId("estres-lectura")).toBeVisible({
+    timeout: 240_000,
+  });
+  await recorrerConTeclado(page, "#etapa-8", { minimo: 4 });
+  await axeBothThemes(page);
   await e8
     .getByLabel("Tu patrón de fallo")
     .fill("Falla con quienes trabajan en la informalidad");

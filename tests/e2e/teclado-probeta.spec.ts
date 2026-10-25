@@ -96,6 +96,17 @@ test("Probeta se usa sin ratón: del ejemplo al archivo puntuado, y el error", a
   const archivo = (await descarga.path())!;
   expect(JSON.parse(readFileSync(archivo, "utf8")).format_version).toBe(1);
 
+  // S17 — «Estrésalo» sigue a «Exportar» en el documento: se alcanza con Tab, se activa con Enter, la lectura (tablas con
+  // símbolo y palabra) llega y la pantalla sigue sin trampa, sin desborde a 360 px y con axe en los dos temas.
+  await tabularHasta(page, /^Estrésalo/);
+  await activarConTeclado(page);
+  await expect(page.getByTestId("estres-lectura")).toBeVisible({
+    timeout: 240_000,
+  });
+  await recorrerConTeclado(page, "main", { minimo: 8 });
+  await a360(page);
+  await axeBothThemes(page);
+
   // Sesión nueva: importar el modelo, ver el resumen y usarlo.
   await page.reload();
   await expect(page.getByText("Empieza tu experimento")).toBeVisible();
