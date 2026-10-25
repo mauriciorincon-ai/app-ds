@@ -147,10 +147,11 @@ const NO_ES_PERSONA = new Set([
   "articulo",
 ]);
 
-/** Una columna que CUENTA cosas («correos_abiertos», «llamadas_telefono») no guarda el dato: guarda cuántas veces. */
+/** Una columna que CUENTA cosas («correos_abiertos», «llamadas_telefono») no guarda el dato: guarda cuántas veces.
+ *  «número» no va aquí: «número de teléfono» y «número de cédula» son el dato (auditoría H-04, S18). */
 const PALABRAS_DE_CONTEO = new Set([
   "abiertos", "abierto", "enviados", "enviado", "recibidos", "recibido", "cantidad", "total", "totales",
-  "numero", "num", "count", "opens", "opened", "sent", "clicks", "llamadas", "calls", "cuenta", "conteo",
+  "count", "opens", "opened", "sent", "clicks", "llamadas", "calls", "cuenta", "conteo",
   "veces", "tasa", "rate", "tipo", "type",
 ]);
 

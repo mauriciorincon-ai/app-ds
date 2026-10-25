@@ -291,6 +291,25 @@ describe("por el nombre de la columna", () => {
     expect(detectarPersonales(de(["total_correos"], [cuenta]))).toEqual([]);
   });
 
+  it("«número de teléfono» y «número de cédula» SÍ son el dato; los conteos con «número» siguen sin avisar (auditoría H-04, S18)", () => {
+    const digitos = Array.from({ length: 20 }, (_, i) =>
+      String(3001230000 + i * 7919),
+    );
+    expect(
+      detectarPersonales(de(["numero_telefono"], [digitos]))[0]?.tipo,
+    ).toBe("telefono");
+    expect(
+      detectarPersonales(de(["Número de cédula"], [digitos]))[0]?.tipo,
+    ).toBe("documento");
+    expect(detectarPersonales(de(["num_documento"], [digitos]))[0]?.tipo).toBe(
+      "documento",
+    );
+    const cuenta = Array.from({ length: 12 }, (_, i) => String(i));
+    expect(detectarPersonales(de(["numero_llamadas"], [cuenta]))).toEqual([]);
+    expect(detectarPersonales(de(["total_telefonos"], [cuenta]))).toEqual([]);
+    expect(detectarPersonales(de(["numero_de_pedidos"], [cuenta]))).toEqual([]);
+  });
+
   it("el nombre con tildes, mayúsculas y camelCase se reconoce igual", () => {
     expect(
       detectarPersonales(de(["TeléfonoMóvil"], [distintos(12)]))[0]?.tipo,
