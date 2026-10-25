@@ -37,6 +37,7 @@ import type {
   MulticlassPipelineResult,
   PipelineResult,
   RegressionPipelineResult,
+  RegressionResult,
   SupervisedResult,
 } from "@/workers/protocol";
 import type { Locale } from "@/i18n/config";
@@ -71,20 +72,33 @@ const ALERTAS_NUMERO: EdaAlert[] = [
   { kind: "target-outliers", share: 0.034 },
 ];
 
-type Caso = { result: SupervisedResult; plantilla: (l: Locale) => string; alertas: EdaAlert[] };
+type Caso = {
+  result: SupervisedResult;
+  plantilla: (l: Locale) => string;
+  alertas: EdaAlert[];
+};
 
 function binaria(): Caso {
   const t = tabla("marketing-campania.csv");
   const prep = prepareRun(t, "convirtio", 42);
   if (!prep.ok) throw new Error("prepare");
-  const bruto = call("run_experiment", { ...prep.payload, roster: LIGA }) as PipelineResult;
+  const bruto = call("run_experiment", {
+    ...prep.payload,
+    roster: LIGA,
+  }) as PipelineResult;
   const result = assembleResult(bruto, prep.leakage, prep.smallSample);
   return {
     result,
     alertas: ALERTAS_CLASIFICACION,
     plantilla: (locale) =>
       buildTemplateNarrative(
-        buildNarrationPayload({ result, target: "convirtio", cols: t.headers.length, locale, edaAlerts: ALERTAS_CLASIFICACION }),
+        buildNarrationPayload({
+          result,
+          target: "convirtio",
+          cols: t.headers.length,
+          locale,
+          edaAlerts: ALERTAS_CLASIFICACION,
+        }),
       ),
   };
 }
@@ -92,24 +106,45 @@ function multiclase(): Caso {
   const t = tabla("planes-suscripcion.csv");
   const prep = prepareRun(t, "plan", 42);
   if (!prep.ok) throw new Error("prepare");
-  const bruto = call("run_experiment", { ...prep.payload, roster: LIGA }) as MulticlassPipelineResult;
-  const result = assembleMulticlassResult(bruto, prep.leakage, prep.smallSample);
+  const bruto = call("run_experiment", {
+    ...prep.payload,
+    roster: LIGA,
+  }) as MulticlassPipelineResult;
+  const result = assembleMulticlassResult(
+    bruto,
+    prep.leakage,
+    prep.smallSample,
+  );
   return {
     result,
     alertas: ALERTAS_CLASIFICACION,
-    plantilla: (locale) => buildMulticlassTemplate({ result, locale, edaAlerts: ALERTAS_CLASIFICACION }),
+    plantilla: (locale) =>
+      buildMulticlassTemplate({
+        result,
+        locale,
+        edaAlerts: ALERTAS_CLASIFICACION,
+      }),
   };
 }
 function numerica(): Caso {
   const t = tabla("consumo-energia.csv");
   const prep = prepareRun(t, "consumo_kwh", 42);
   if (!prep.ok) throw new Error("prepare");
-  const bruto = call("run_experiment", { ...prep.payload, roster: LIGA_NUMERICA }) as RegressionPipelineResult;
-  const result = assembleRegressionResult(bruto, prep.leakage, "consumo_kwh", prep.smallSample);
+  const bruto = call("run_experiment", {
+    ...prep.payload,
+    roster: LIGA_NUMERICA,
+  }) as RegressionPipelineResult;
+  const result = assembleRegressionResult(
+    bruto,
+    prep.leakage,
+    "consumo_kwh",
+    prep.smallSample,
+  );
   return {
     result,
     alertas: ALERTAS_NUMERO,
-    plantilla: (locale) => buildRegressionTemplate({ result, locale, edaAlerts: ALERTAS_NUMERO }),
+    plantilla: (locale) =>
+      buildRegressionTemplate({ result, locale, edaAlerts: ALERTAS_NUMERO }),
   };
 }
 
@@ -126,15 +161,23 @@ describe.each(TAREAS)("la explicación en %s", (_nombre, armar) => {
   }, 300_000);
 
   const explicar = (locale: Locale, candidata: string) =>
-    explicarSupervisada({ result: caso.result, locale, edaAlerts: caso.alertas, candidata });
+    explicarSupervisada({
+      result: caso.result,
+      locale,
+      edaAlerts: caso.alertas,
+      candidata,
+    });
 
-  it.each(["es", "en"] as const)("el texto estándar de hoy pasa la comprobación (%s)", (locale) => {
-    const texto = caso.plantilla(locale);
-    const r = explicar(locale, texto);
-    expect(r.fallos).toEqual([]);
-    expect(r.verificada).toBe(true);
-    expect(r.texto).toBe(texto);
-  });
+  it.each(["es", "en"] as const)(
+    "el texto estándar de hoy pasa la comprobación (%s)",
+    (locale) => {
+      const texto = caso.plantilla(locale);
+      const r = explicar(locale, texto);
+      expect(r.fallos).toEqual([]);
+      expect(r.verificada).toBe(true);
+      expect(r.texto).toBe(texto);
+    },
+  );
 
   it("una cifra del veredicto cambiada cae al texto mínimo, que trae las cifras verdaderas", () => {
     const texto = caso.plantilla("es");
@@ -151,7 +194,10 @@ describe.each(TAREAS)("la explicación en %s", (_nombre, armar) => {
 
   it("una cifra inventada, las columnas en otro orden o una variable inventada también caen", () => {
     const texto = caso.plantilla("es");
-    expect(explicar("es", `${texto} Además, el 87 % de tus clientes lo agradecerá.`).verificada).toBe(false);
+    expect(
+      explicar("es", `${texto} Además, el 87 % de tus clientes lo agradecerá.`)
+        .verificada,
+    ).toBe(false);
 
     const [a, b] = caso.result.explainability.features.map((f) => f.name);
     const cambiado = texto.replace(a!, "@@").replace(b!, a!).replace("@@", b!);
@@ -165,10 +211,46 @@ describe.each(TAREAS)("la explicación en %s", (_nombre, armar) => {
   });
 
   it("lo que falta también falla: un texto sin las cifras del veredicto no pasa", () => {
-    const r = explicar("es", `Tu modelo es bueno. ${caso.result.explainability.features.map((f) => f.name).join(" ")}`);
+    const r = explicar(
+      "es",
+      `Tu modelo es bueno. ${caso.result.explainability.features.map((f) => f.name).join(" ")}`,
+    );
     expect(r.verificada).toBe(false);
     expect(r.fallos.map((f) => f.tipo)).toContain("cifra-falta");
   });
+});
+
+describe("estimar con el modelo peor que el promedio", () => {
+  // Auditoría H-02 (S18): el verificador no leía el signo, así que un R² negativo —el caso que más hay que explicar— caía siempre
+  // al texto mínimo diciendo que «no cuadró», cuando era un límite del verificador y no del texto.
+  it("el texto estándar con un R² negativo pasa la comprobación, y con el signo cambiado no", () => {
+    const caso = numerica();
+    const result = {
+      ...caso.result,
+      model: { ...caso.result.model, r2: -0.2 },
+    } as RegressionResult;
+    const texto = buildRegressionTemplate({
+      result,
+      locale: "es",
+      edaAlerts: caso.alertas,
+    });
+    expect(texto).toContain("-0.20");
+    const buena = explicarSupervisada({
+      result,
+      locale: "es",
+      edaAlerts: caso.alertas,
+      candidata: texto,
+    });
+    expect(buena.fallos).toEqual([]);
+    expect(buena.verificada).toBe(true);
+    const sinSigno = explicarSupervisada({
+      result,
+      locale: "es",
+      edaAlerts: caso.alertas,
+      candidata: texto.replace("-0.20", "0.20"),
+    });
+    expect(sinSigno.verificada).toBe(false);
+  }, 300_000);
 });
 
 describe("la explicación al agrupar", () => {
@@ -181,29 +263,51 @@ describe("la explicación al agrupar", () => {
     resultado = assembleClusterResult(bruto, run.smallSample);
   }, 300_000);
 
-  it.each(["es", "en"] as const)("describe cada grupo contra su media y el promedio, y pasa la comprobación (%s)", (locale) => {
-    const r = explicarGrupos({ result: resultado, locale });
-    expect(r.fallos).toEqual([]);
-    expect(r.verificada).toBe(true);
-    const k = resultado.profiles.groups.length;
-    expect(r.texto.split(locale === "es" ? "El grupo " : "Group ").length - 1).toBe(k);
-  });
+  it.each(["es", "en"] as const)(
+    "describe cada grupo contra su media y el promedio, y pasa la comprobación (%s)",
+    (locale) => {
+      const r = explicarGrupos({ result: resultado, locale });
+      expect(r.fallos).toEqual([]);
+      expect(r.verificada).toBe(true);
+      const k = resultado.profiles.groups.length;
+      expect(
+        r.texto.split(locale === "es" ? "El grupo " : "Group ").length - 1,
+      ).toBe(k);
+    },
+  );
 
   it("una cifra de un grupo cambiada, un grupo con otro tamaño o las columnas en otro orden caen al texto mínimo", () => {
     const { texto } = armarTextoGrupos(resultado, "es");
     const cifra = /\((\d+) %, /.exec(texto)![1]!;
-    const alterada = explicarGrupos({ result: resultado, locale: "es", candidata: texto.replace(`(${cifra} %, `, "(77 %, ") });
+    const alterada = explicarGrupos({
+      result: resultado,
+      locale: "es",
+      candidata: texto.replace(`(${cifra} %, `, "(77 %, "),
+    });
     expect(alterada.verificada).toBe(false);
     expect(alterada.texto).toMatch(/Se formaron \d+ grupos/);
 
     const filas = resultado.profiles.groups[0]!.size;
-    const otroTamano = texto.replace(/(\d[\d,]*) filas/, `${filas + 1000} filas`);
-    expect(explicarGrupos({ result: resultado, locale: "es", candidata: otroTamano }).verificada).toBe(false);
+    const otroTamano = texto.replace(
+      /(\d[\d,]*) filas/,
+      `${filas + 1000} filas`,
+    );
+    expect(
+      explicarGrupos({ result: resultado, locale: "es", candidata: otroTamano })
+        .verificada,
+    ).toBe(false);
 
     const separan = resultado.profiles.separating.map((s) => s.column);
     if (separan.length >= 2) {
-      const cambiado = texto.replace(separan[0]!, "@@").replace(separan[1]!, separan[0]!).replace("@@", separan[1]!);
-      const r = explicarGrupos({ result: resultado, locale: "es", candidata: cambiado });
+      const cambiado = texto
+        .replace(separan[0]!, "@@")
+        .replace(separan[1]!, separan[0]!)
+        .replace("@@", separan[1]!);
+      const r = explicarGrupos({
+        result: resultado,
+        locale: "es",
+        candidata: cambiado,
+      });
       expect(r.verificada).toBe(false);
       expect(r.fallos.map((f) => f.tipo)).toContain("frase-falta");
     }

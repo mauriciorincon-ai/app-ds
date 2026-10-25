@@ -5,8 +5,10 @@
 // para otra tarea) tiene que pasar antes de mostrarse. No juzga si el texto es bueno; juzga si cuadra con los números.
 import { formatQuantity } from "@/lib/quantity";
 
-/** Cifras en la app: punto decimal y miles con coma, en los dos idiomas (design-system R9). */
-const CIFRA = /\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g;
+/** Cifras en la app: punto decimal y miles con coma, en los dos idiomas (design-system R9). Un «-» o «−» es el signo de la cifra
+ *  solo cuando no está pegado a una palabra o a otro número: «2026-05», «0-1» o «p-valor 3» no llevan signo. */
+const CIFRA =
+  /(?:(?<![\w.])[-−])?(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)/g;
 
 /** Cómo se escribe `valor` con `decimales` decimales: lo mismo que escribe la pantalla. */
 export const escribir = (valor: number, decimales: number): string =>
@@ -42,7 +44,8 @@ export function cifrasDe(
   for (const nombre of [...nombres].sort((a, b) => b.length - a.length)) {
     if (nombre.length > 0) limpio = limpio.split(nombre).join(" ");
   }
-  return limpio.match(CIFRA) ?? [];
+  // el signo se compara como lo escribe la pantalla: «-» ASCII
+  return (limpio.match(CIFRA) ?? []).map((c) => c.replace("−", "-"));
 }
 
 export function verificarTexto(texto: string, esperado: Esperado): Fallo[] {
