@@ -131,10 +131,12 @@ function AmbiguousQuestion({
                 ref={id === CHOICES[0]!.id ? firstRef : undefined}
                 type="button"
                 onClick={() => onAnswer(id)}
-                // El nombre es la etiqueta (y «Sugerida»); la descripción va
-                // aparte, para que el lector no la lea dos veces (AU-S6-38).
-                aria-labelledby={`task-answer-${id}-label`}
-                aria-describedby={`task-answer-${id}`}
+                // El nombre contiene TODO el texto visible (la etiqueta, «Sugerida» y la descripción), como pide
+                // «etiqueta en el nombre» (WCAG 2.5.3; la regla nueva de axe 4.14 la vigila). Y no hay `describedby`,
+                // para que el lector no lea la descripción dos veces (AU-S6-38). Los `{" "}` son espacios de verdad: en una
+                // columna flex no se pintan, pero sin ellos el texto visible que mide axe sale pegado («cantidadSe») y
+                // no cabe en el nombre, que sí separa la etiqueta de la descripción.
+                aria-labelledby={`task-answer-${id}-label task-answer-${id}`}
                 className={`flex min-h-11 w-full items-start gap-3 rounded-md border p-3 text-left transition-colors motion-reduce:transition-none hover:bg-sunken ${
                   suggested
                     ? "border-accent bg-accent/5"
@@ -147,14 +149,14 @@ function AmbiguousQuestion({
                     id={`task-answer-${id}-label`}
                     className="flex flex-wrap items-center gap-x-2 font-medium"
                   >
-                    {t(`task.ask.${id}.label`)}
+                    {t(`task.ask.${id}.label`)}{" "}
                     {suggested && (
                       <span className="inline-flex items-center gap-1 text-xs font-semibold text-accent">
                         <span aria-hidden>★</span>
                         {t("task.ask.suggested")}
                       </span>
                     )}
-                  </span>
+                  </span>{" "}
                   <span
                     id={`task-answer-${id}`}
                     className="text-xs text-ink-muted"
