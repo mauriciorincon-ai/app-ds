@@ -7,7 +7,9 @@
 //   2) "Narración con IA" — a demanda, con botón; nunca se pide sola.
 // El método se nombra con honestidad (importancia por permutación, ADR-004).
 import { isFeatureUsed } from "@/engine/explainability";
+import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { useT } from "@/i18n/use-translation";
+import { TEXTOS_RESULTADOS } from "@/lib/narration/textos-resultados";
 // SOLO tipo (un import runtime de schemas.ts metería zod al bundle del cliente).
 import type { FallbackReason } from "@/lib/ia/schemas";
 import { importanceFormatter } from "@/lib/regression-text";
@@ -137,6 +139,7 @@ export function WhySection({
   target,
   positiveClass,
   template,
+  verificada,
   ai,
   aiAvailable = true,
   onRequestNarration,
@@ -151,6 +154,8 @@ export function WhySection({
   positiveClass: string | null;
   /** Texto determinista local: siempre presente, jamás depende de la red. */
   template: string;
+  /** S18: true ⇒ el texto cuadró con los números del resultado; false ⇒ es el texto mínimo de cifras. */
+  verificada?: boolean;
   ai: AiNarrationState;
   /** S6 (P7): false al estimar — la IA solo narra clasificación binaria. */
   aiAvailable?: boolean;
@@ -161,6 +166,7 @@ export function WhySection({
   onRequestNarration: () => void;
 }) {
   const t = useT();
+  const textos = useTextosEtapa(TEXTOS_RESULTADOS);
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="why-title">
@@ -201,8 +207,27 @@ export function WhySection({
             {t("why.narration.templateTitle")}
           </h3>
           <Badge>{t("why.narration.templateBadge")}</Badge>
+          {verificada === true && (
+            <Badge tone="positive">
+              <span aria-hidden>✓</span>{" "}
+              {textos("resultados.explicacion.verificada")}
+            </Badge>
+          )}
         </div>
         <p className="text-sm leading-relaxed">{template}</p>
+        {verificada === true && (
+          <p className="mt-2 text-xs text-ink-muted">
+            {textos("resultados.explicacion.ayuda")}
+          </p>
+        )}
+        {verificada === false && (
+          <p className="mt-2 text-sm text-caution" role="status">
+            <span aria-hidden className="mr-1">
+              ⚠
+            </span>
+            {textos("resultados.explicacion.no_cuadro")}
+          </p>
+        )}
       </Card>
 
       {/* Bloque 2 — la IA, SEPARADA y a demanda. S6 (P7): al estimar no hay IA, y

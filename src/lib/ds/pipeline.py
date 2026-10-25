@@ -2829,6 +2829,51 @@ def run_stress(payload_json="{}"):
     return json.dumps(result)
 
 
+def run_interval(payload_json="{}"):
+    """S18: lo que el intervalo de la métrica necesita de la prueba retenida: lo real, lo predicho y, en dos clases, el
+    puntaje por fila. SOLO números (las clases viajan como 0..K−1): ninguna columna, ningún nombre. El bootstrap lo hace TS
+    (src/engine/intervalo.ts) con la semilla del experimento. Un modelo importado no trae la prueba (`no-eval`) y agrupar
+    no la tiene (`not-applicable`)."""
+    if _MODEL is None:
+        raise RuntimeError("no-model")
+    task = _task_of(_MODEL["schema"])
+    _by_task(task, {
+        "binaria": _supervised,
+        "multiclase": _supervised,
+        "numerica": _supervised,
+        "agrupar": _stress_not_applicable,
+    })()
+    ev = _MODEL.get("eval")
+    if ev is None:
+        raise RuntimeError("no-eval")
+    pipe = _MODEL["pipe"]
+    X, y = ev["X_test"], ev["y_test"]
+    pred = pipe.predict(X)
+    cast = _by_task(task, {
+        "binaria": lambda: int,
+        "multiclase": lambda: int,
+        "numerica": lambda: float,
+        "agrupar": _supervised_only,
+    })()
+    score = _by_task(task, {
+        "binaria": lambda: [float(v) for v in _scores(pipe, X)],
+        "multiclase": lambda: None,
+        "numerica": lambda: None,
+        "agrupar": _supervised_only,
+    })()
+    if score is not None and not all(math.isfinite(v) for v in score):
+        raise ArithmeticError("non-finite-metric")
+    return json.dumps({
+        "task": task,
+        "metric": ev["metric"],
+        "n": int(len(y)),
+        "seed": int(ev["seed"]),
+        "y": [cast(v) for v in y],
+        "pred": [cast(v) for v in pred],
+        "score": score,
+    })
+
+
 def run_stress_test(payload_json):
     """«Estrésalo» en la etapa 8 del Protocolo: el mismo envío que abrió la prueba (`TEST_KEYS`); el ganador
     se vuelve a ajustar con el entrenamiento como en `run_test` y se estresa la MISMA prueba. No es una

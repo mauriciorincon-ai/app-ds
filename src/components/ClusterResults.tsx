@@ -9,7 +9,10 @@ import {
   CLUSTER_STABILITY_MIN,
   hasConsensus,
 } from "@/engine/verdict";
+import { useMemo } from "react";
 import { useI18n } from "@/i18n/provider";
+import { useTextosEtapa } from "@/i18n/textos-etapa";
+import { explicarGrupos } from "@/lib/narration/explicacion";
 import { formatEstimate } from "@/lib/duration";
 import { buildClusterCard } from "@/lib/modelcard";
 import { profileNumber, quantityDecimals, thousands } from "@/lib/quantity";
@@ -27,6 +30,7 @@ import type {
   GroupProfile,
 } from "@/workers/protocol";
 import { FichaButton } from "./FichaButton";
+import { TEXTOS_RESULTADOS } from "@/lib/narration/textos-resultados";
 import { lineasDeLimpieza } from "./limpieza/ficha";
 import type { FichaStatus } from "./FichaModelo";
 import { Level2Card } from "./Level2Card";
@@ -111,6 +115,7 @@ export function ClusterResults({
       <ClusterReading result={result} n={n} />
 
       <GroupProfiles result={result} n={n} />
+      <ExplicacionGrupos result={result} />
 
       <ClusterLeague
         result={result}
@@ -259,6 +264,46 @@ export function AggloSampleNote({
         {t("cluster.sample.why", { max: n(AGGLO_MAX_ROWS) })}
       </p>
     </div>
+  );
+}
+
+/** S18: cómo se distingue cada grupo, comprobado contra los perfiles que Python midió (la misma regla que en las otras tareas). */
+function ExplicacionGrupos({ result }: { result: ClusterResult }) {
+  const { locale } = useI18n();
+  const t = useTextosEtapa(TEXTOS_RESULTADOS);
+  const explicada = useMemo(
+    () => explicarGrupos({ result, locale }),
+    [result, locale],
+  );
+  return (
+    <Card className="p-5">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <h2 className="text-sm font-semibold">
+          {t("resultados.grupos.titulo")}
+        </h2>
+        {explicada.verificada && (
+          <Badge tone="positive">
+            <span aria-hidden>✓</span>{" "}
+            {t("resultados.explicacion.verificada")}
+          </Badge>
+        )}
+      </div>
+      <p className="text-sm leading-relaxed" data-testid="explicacion-grupos">
+        {explicada.texto}
+      </p>
+      {explicada.verificada ? (
+        <p className="mt-2 text-xs text-ink-muted">
+          {t("resultados.explicacion.ayuda")}
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-caution" role="status">
+          <span aria-hidden className="mr-1">
+            ⚠
+          </span>
+          {t("resultados.explicacion.no_cuadro")}
+        </p>
+      )}
+    </Card>
   );
 }
 

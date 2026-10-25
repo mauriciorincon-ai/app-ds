@@ -34,6 +34,8 @@ const STAGE = {
   test: "scoring",
   stress: "scoring",
   "stress-test": "scoring",
+  // S18: los vectores de la prueba retenida para el intervalo de la métrica.
+  interval: "scoring",
   score: "scoring",
   // S7 (P13): las etiquetas por fila del agrupamiento, solo para el CSV local.
   "cluster-labels": "exporting",
@@ -74,6 +76,7 @@ function ensureRuntime(post, id) {
         test: pyodide.globals.get("run_test"),
         stress: pyodide.globals.get("run_stress"),
         "stress-test": pyodide.globals.get("run_stress_test"),
+        interval: pyodide.globals.get("run_interval"),
       };
     })();
     // Si la carga falla (red), se limpia para que un reintento re-cargue.

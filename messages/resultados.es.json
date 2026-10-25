@@ -1,0 +1,35 @@
+{
+  "resultados": {
+    "explicacion": {
+      "verificada": "Verificada contra tus números",
+      "ayuda": "Cada cifra de este texto sale de tu resultado y las columnas aparecen en el orden en que el modelo las pesó. Es una comprobación del texto, no una garantía de que el modelo sea bueno.",
+      "no_cuadro": "El texto estándar no cuadró con tus números, así que se muestran solo las cifras.",
+      "minima": {
+        "clasificacion": "{metric}: el modelo saca {modelo} y la línea base {base}. Las columnas que más pesan: {lista}.",
+        "numerica": "{metric}: el error del modelo es {modelo} y el de la línea base {base}. Las columnas que más pesan: {lista}."
+      }
+    },
+    "grupos": {
+      "titulo": "Cómo se distinguen los grupos",
+      "separan": "Los grupos se separan sobre todo por {lista}.",
+      "sin_separan": "Ninguna columna separa claramente los grupos.",
+      "grupo": "El grupo {n} ({pct} %, {filas} filas): {rasgos}.",
+      "mas_alta": "{column} más alta ({valor} frente a {promedio} de promedio)",
+      "mas_baja": "{column} más baja ({valor} frente a {promedio} de promedio)",
+      "moda": "{column} = {moda} en el {pct} % de sus filas",
+      "sin_rasgos": "se parece al promedio en las columnas que más separan",
+      "minima": "Se formaron {k} grupos: {lista}.",
+      "minima_item": "grupo {n}: {filas} filas ({pct} %)"
+    },
+    "intervalo": {
+      "titulo": "Margen de error de la cifra",
+      "linea": "{metric}: {valor}, con un intervalo del 95 % de {bajo} a {alto}.",
+      "detalle": "Se remuestrearon las {n} filas de la prueba {remuestreos} veces, con la semilla {semilla}. Es cuánto cambiaría la cifra si la prueba hubiera sido otra muestra de las mismas filas; no incluye entrenar con otras filas ni un cambio en tus datos (para eso está «Estrésalo»).",
+      "pocas": "Con solo {n} filas de prueba el intervalo es muy ancho: la cifra dice poco.",
+      "midiendo": "Calculando el margen de error…",
+      "error": "No se pudo calcular el margen de error. Vuelve a entrenar para intentarlo de nuevo.",
+      "sin_prueba": "Un modelo importado no trae la prueba con la que se midió: el margen de error se calcula en la corrida donde lo entrenaste.",
+      "no_aplica": "Agrupar no tiene objetivo ni prueba: no hay una cifra con margen de error que medir."
+    }
+  }
+}

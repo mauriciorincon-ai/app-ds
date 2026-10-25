@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { matchByTask, taskOf } from "@/engine/despacho";
 import type { EdaAlert } from "@/engine/eda";
 import type { RouteProfile, Routing } from "@/engine/encarrilador";
@@ -11,7 +11,9 @@ import {
 } from "@/engine/roster";
 import type { SanitationReport } from "@/engine/sanitize";
 import { pickBestBaseline, type MetricName } from "@/engine/verdict";
+import { useI18n } from "@/i18n/provider";
 import { useT } from "@/i18n/use-translation";
+import { explicarSupervisada } from "@/lib/narration/explicacion";
 import { useNarration } from "@/lib/useNarration";
 import { buildModelCard } from "@/lib/modelcard";
 import { thousands } from "@/lib/quantity";
@@ -63,6 +65,12 @@ const EstresPanel = dynamic(
 // S17: «Llévatelo» (receta, puntuador, servicio) también en su chunk: ni sus textos ni sus plantillas entran al peso inicial.
 const PublicaPanel = dynamic(
   () => import("./publica/PublicaPanel").then((m) => m.PublicaPanel),
+  { ssr: false },
+);
+
+// S18: el margen de error de la cifra (bootstrap sobre la prueba retenida), también en su chunk.
+const IntervaloPanel = dynamic(
+  () => import("./resultados/IntervaloPanel").then((m) => m.IntervaloPanel),
   { ssr: false },
 );
 
@@ -142,6 +150,7 @@ export function ResultsScreen(props: ResultsProps<ExperimentResult>) {
           <>
             <ClusterResults {...props} result={result} />
             <div className="mt-6 flex flex-col gap-6">
+              <IntervaloPanel de={null} />
               <EstresPanel de={null} />
               <PublicaPanel
                 result={result}
@@ -194,6 +203,19 @@ function SupervisedResults({
     cols,
     edaAlerts,
   });
+  // S18: el texto estándar pasa por la comprobación contra los números antes de mostrarse (en las cuatro tareas); si no
+  // cuadra, se muestra el texto mínimo de cifras y se dice.
+  const { locale } = useI18n();
+  const explicada = useMemo(
+    () =>
+      explicarSupervisada({
+        result,
+        locale,
+        edaAlerts,
+        candidata: template,
+      }),
+    [result, locale, edaAlerts, template],
+  );
   const hasLeak = leakage.length > 0;
   // S7 (P2): cada pieza que depende de la tarea escribe la rama de cada una.
   const byResult = matchByTask(result, {
@@ -294,6 +316,21 @@ function SupervisedResults({
 
       {byResult.metrics}
 
+      {/* S18: el margen de error de la cifra de arriba, con la semilla del experimento. */}
+      <IntervaloPanel
+        de={{
+          result,
+          task: taskOf(result),
+          metric: result.verdict.primaryMetric,
+          nTest: result.nTest,
+          nClasses: byResult.classes,
+          seed: runMeta.seed,
+          unit: byResult.unit,
+        }}
+        worker={worker}
+        ocupado={!modelReady || choice.status === "fitting"}
+      />
+
       {/* S5: la liga — filas = modelos, CV para elegir, prueba para creer. */}
       <LeagueTable
         result={result}
@@ -320,7 +357,8 @@ function SupervisedResults({
         explain={result.explainability}
         target={target}
         positiveClass={byResult.positiveClass}
-        template={template}
+        template={explicada.texto}
+        verificada={explicada.verificada}
         ai={ai}
         aiAvailable={aiAvailable}
         onRequestNarration={requestNarration}

@@ -901,6 +901,8 @@ export type RunnerRequest =
   // en la etapa 8 lleva el mismo envío que abrió la prueba.
   | { id: number; type: "stress" }
   | { id: number; type: "stress-test"; payload: TestPayload }
+  // S18: los vectores de la prueba retenida (lo real, lo predicho, el puntaje) para el intervalo; sin payload.
+  | { id: number; type: "interval" }
   | {
       id: number;
       type: "fit-member";
@@ -938,6 +940,7 @@ export type RunnerResponse =
   | { id: number; type: "result"; command: "test"; result: unknown }
   | { id: number; type: "result"; command: "stress"; result: unknown }
   | { id: number; type: "result"; command: "stress-test"; result: unknown }
+  | { id: number; type: "result"; command: "interval"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }
