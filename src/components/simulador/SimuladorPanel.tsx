@@ -295,7 +295,11 @@ export function SimuladorPanel(props: SimuladorProps) {
   const costosCampos = costosEscritos === null && conCostos;
 
   return (
-    <section aria-labelledby="simulador-title" data-testid="simulador-panel">
+    <section
+      aria-labelledby="simulador-title"
+      data-testid="simulador-panel"
+      className="min-w-0 [overflow-wrap:anywhere]"
+    >
       <Card className="p-5">
         <h2 id="simulador-title" className="text-sm font-semibold">
           {t("simulador.titulo")}
@@ -356,7 +360,7 @@ export function SimuladorPanel(props: SimuladorProps) {
                 onCambio={setCategoria}
               />
             )}
-            <fieldset className="flex flex-col gap-2">
+            <fieldset className="flex min-w-0 flex-col gap-2">
               <legend className="text-sm font-medium">
                 {t("simulador.alcance.titulo")}
               </legend>
@@ -486,7 +490,7 @@ export function SimuladorPanel(props: SimuladorProps) {
               </p>
             )}
             {costosCampos && (
-              <fieldset className="flex flex-col gap-3">
+              <fieldset className="flex min-w-0 flex-col gap-3">
                 <legend className="text-sm font-medium">
                   {t("simulador.costos.titulo")}
                 </legend>
