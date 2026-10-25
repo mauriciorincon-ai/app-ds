@@ -48,7 +48,7 @@ test("entrenar → puntuar con novedad plantada → descargar, sin datos en la r
   ).toBeVisible();
 
   // Caso bloqueo: falta «dispositivo» ⇒ se nombra EXACTAMENTE y no se puntúa.
-  const csvInput = page.locator('input[accept=".csv,text/csv"]');
+  const csvInput = page.locator('input[accept^=".csv,text/csv"]');
   await csvInput.setInputFiles({
     name: "incompleto.csv",
     mimeType: "text/csv",

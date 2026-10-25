@@ -7,6 +7,7 @@
 import { useState, type RefObject } from "react";
 import { Button, Card } from "@/components/ui";
 import { matchByTask } from "@/engine/despacho";
+import { especificacionDe, type RegistroPaso } from "@/engine/limpieza-plan";
 import type { SanitationReport } from "@/engine/sanitize";
 import { useI18n } from "@/i18n/provider";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
@@ -36,6 +37,7 @@ export function PublicaPanel({
   result,
   datasetName,
   sanitation,
+  limpieza,
   target,
   seed,
   worker,
@@ -44,6 +46,8 @@ export function PublicaPanel({
   result: ExperimentResult;
   datasetName: string | null;
   sanitation: SanitationReport | null;
+  /** S18: el registro del plan de limpieza (la receta repite lo aprobado). */
+  limpieza?: readonly RegistroPaso[];
   /** `null` al agrupar. */
   target: string | null;
   seed: number;
@@ -86,6 +90,7 @@ export function PublicaPanel({
             seed,
             datasetName: nombre,
             sanitation,
+            limpieza: especificacionDe(limpieza),
             appVersion: APP_VERSION,
             idioma: locale,
           }),

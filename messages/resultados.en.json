@@ -1,0 +1,35 @@
+{
+  "resultados": {
+    "explicacion": {
+      "verificada": "Checked against your numbers",
+      "ayuda": "Every figure in this text comes from your result and the columns appear in the order the model weighed them. It is a check of the text, not a guarantee that the model is any good.",
+      "no_cuadro": "The standard text did not match your numbers, so only the figures are shown.",
+      "minima": {
+        "clasificacion": "{metric}: the model scores {modelo} and the baseline {base}. The columns that weigh most: {lista}.",
+        "numerica": "{metric}: the model’s error is {modelo} and the baseline’s {base}. The columns that weigh most: {lista}."
+      }
+    },
+    "grupos": {
+      "titulo": "How the groups differ",
+      "separan": "The groups are told apart mostly by {lista}.",
+      "sin_separan": "No column clearly separates the groups.",
+      "grupo": "Group {n} ({pct} %, {filas} rows): {rasgos}.",
+      "mas_alta": "{column} higher ({valor} against an average of {promedio})",
+      "mas_baja": "{column} lower ({valor} against an average of {promedio})",
+      "moda": "{column} = {moda} in {pct} % of its rows",
+      "sin_rasgos": "it looks like the average on the columns that separate most",
+      "minima": "{k} groups were formed: {lista}.",
+      "minima_item": "group {n}: {filas} rows ({pct} %)"
+    },
+    "intervalo": {
+      "titulo": "Margin of error of the figure",
+      "linea": "{metric}: {valor}, with a 95 % interval from {bajo} to {alto}.",
+      "detalle": "The {n} test rows were resampled {remuestreos} times, with seed {semilla}. It is how much the figure would change if the test had been another sample of the same rows; it does not include training on other rows or a change in your data (that is what “Stress it” is for).",
+      "pocas": "With only {n} test rows the interval is very wide: the figure says little.",
+      "midiendo": "Computing the margin of error…",
+      "error": "The margin of error could not be computed. Train again to try once more.",
+      "sin_prueba": "An imported model does not carry the test it was measured on: the margin of error is computed in the run where you trained it.",
+      "no_aplica": "Clustering has no target and no test: there is no figure with a margin of error to measure."
+    }
+  }
+}

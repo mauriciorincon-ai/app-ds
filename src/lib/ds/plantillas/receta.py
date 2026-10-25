@@ -25,6 +25,9 @@ ran in the browser; the rest (reading the CSV, sanitising, splitting) lives in t
 # @@IMPORTS@@
 import csv
 
+# S18: el ajuste por cuantiles avisa si un pliegue trae menos filas que cuantiles; es ruido en tu consola, no un problema.
+warnings.filterwarnings("ignore", message="n_quantiles", category=UserWarning)
+
 DECLARACION = json.loads(r'''@@DECLARACION@@''')
 VERSIONES_FIJAS = json.loads(r'''@@VERSIONES@@''')
 
@@ -172,6 +175,8 @@ def preparar(decl, cabecera, filas):
         "seed": semilla,
         "primary_metric": decl["metrica"],
     }
+    if decl.get("limpieza"):  # S18: el plan de limpieza que el usuario aprobó en la app (solo nombres de columnas)
+        payload["limpieza"] = decl["limpieza"]
 
     def dos_clases():
         distintas = len({f[k].strip() for f in filas})

@@ -183,6 +183,73 @@ describe("compatibilidad S3↔S4 (campos aditivos opcionales — ADR-007 revisad
   });
 });
 
+describe("S18 — el plan de limpieza en el manifiesto (aditivo-opcional, ADR 026)", () => {
+  const registro = [
+    { id: "quitar-columna:correo", tipo: "quitar-columna", columna: "correo", celdas: 40, de: 40, decision: "aprobado", aplicado: true, motivo: null },
+    { id: "vacio-indicador:edad", tipo: "vacio-indicador", columna: "edad", celdas: 9, de: 40, decision: "rechazado", aplicado: false, motivo: null },
+    { id: "atipicos-cuantiles:monto", tipo: "atipicos-cuantiles", columna: "monto", celdas: 3, de: 40, decision: "sin-decidir", aplicado: false, motivo: null },
+  ] as const;
+
+  it("se registra cada paso con su decisión y valida; el formato sigue en 1", async () => {
+    const file = await packModelFile({
+      datasetName: "a.csv",
+      result: RESULT,
+      exported: EXPORTED,
+      date: DATE,
+      cleaningPlan: registro,
+    });
+    expect(file.format_version).toBe(1);
+    expect(file.manifest.cleaning_plan).toEqual([
+      { id: "quitar-columna:correo", type: "quitar-columna", column: "correo", decision: "approved", applied: true, cells: 40, of: 40 },
+      { id: "vacio-indicador:edad", type: "vacio-indicador", column: "edad", decision: "rejected", applied: false, cells: 9, of: 40 },
+      { id: "atipicos-cuantiles:monto", type: "atipicos-cuantiles", column: "monto", decision: "undecided", applied: false, cells: 3, of: 40 },
+    ]);
+    expect((await validateModelFile(JSON.stringify(file))).ok).toBe(true);
+  });
+
+  it("sin plan (o con un plan vacío) el manifiesto no gana la clave: un archivo anterior al S18 importa igual", async () => {
+    for (const cleaningPlan of [undefined, []]) {
+      const file = await packModelFile({
+        datasetName: "a.csv",
+        result: RESULT,
+        exported: EXPORTED,
+        date: DATE,
+        cleaningPlan,
+      });
+      expect(file.manifest.cleaning_plan).toBeUndefined();
+      expect((await validateModelFile(JSON.stringify(file))).ok).toBe(true);
+    }
+  });
+
+  it("un plan mal formado se rechaza nombrando el campo", async () => {
+    const file = await packModelFile({
+      datasetName: "a.csv",
+      result: RESULT,
+      exported: EXPORTED,
+      date: DATE,
+      cleaningPlan: registro,
+    });
+    const rota = (cambio: (paso: Record<string, unknown>) => void) => {
+      const copia = JSON.parse(JSON.stringify(file)) as {
+        manifest: { cleaning_plan: Record<string, unknown>[] };
+      };
+      cambio(copia.manifest.cleaning_plan[1]!);
+      return JSON.stringify(copia);
+    };
+    for (const [clave, valor] of [
+      ["type", "inventado"],
+      ["decision", "quizas"],
+      ["applied", "si"],
+      ["cells", 1.5],
+      ["column", 7],
+    ] as const) {
+      const validacion = await validateModelFile(rota((p) => (p[clave] = valor)));
+      expect(validacion.ok, clave).toBe(false);
+      if (!validacion.ok) expect(JSON.stringify(validacion)).toContain("cleaning_plan");
+    }
+  });
+});
+
 describe("validateModelFile — rechazos ANTES de deserializar", () => {
   it("payload manipulado ⇒ hash-mismatch", async () => {
     const file = await pack();

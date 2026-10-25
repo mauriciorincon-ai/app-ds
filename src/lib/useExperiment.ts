@@ -13,7 +13,19 @@ import {
   sanitizeTable,
   type SanitationReport,
 } from "@/engine/sanitize";
-import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
+import type { Ingesta } from "@/engine/ingesta";
+import {
+  aplicarDecisiones,
+  type Decision,
+  type PlanAplicado,
+  type RegistroPaso,
+} from "@/engine/limpieza-plan";
+import type { OrigenArchivo } from "@/lib/ds/archivo";
+import {
+  parseCsvWithLimits,
+  type CsvParseResult,
+  type CsvTable,
+} from "@/lib/ds/csv";
 import {
   checkSchema,
   modelFeatures,
@@ -120,6 +132,8 @@ export type RunMeta = {
   seed: number;
   /** S7: al agrupar, las columnas que no entraron, con su razón (ninguna se esconde). */
   excluded?: ClusterExclusion[];
+  /** S18: cada paso del plan de limpieza con lo que el usuario decidió (vacío si no hubo plan). */
+  limpieza?: RegistroPaso[];
 };
 
 /** De dónde salió el modelo activo (S3): entrenado aquí o importado. */
@@ -142,6 +156,9 @@ export type ScoringErrorKind =
   | "csv-ragged"
   | "csv-semicolon"
   | "csv-tab"
+  | "xlsx-protegido"
+  | "xlsx-antiguo"
+  | "xlsx-danado"
   | "runtime"
   | "import-failed";
 
@@ -240,6 +257,10 @@ export type ExperimentState = {
   error: { kind: WorkerErrorKind; message: string } | null;
   // S4 — saneamiento (fijado UNA vez en loadCsv) + alertas EDA por objetivo elegido.
   sanitation: SanitationReport | null;
+  /** S18: si la tabla salió de un Excel, de qué hoja (y cuántas se ignoraron). */
+  origen: OrigenArchivo | null;
+  /** S18: los posibles datos personales y el plan de limpieza propuesto, con lo decidido (llega tras cargar). */
+  ingesta: Ingesta | null;
   edaAlerts: EdaAlert[] | null;
   // S5 — la liga: el plan del objetivo elegido, el reparto con que se entrenó y
   // la elección manual en curso.
@@ -273,6 +294,8 @@ const INITIAL: ExperimentState = {
   runMeta: null,
   error: null,
   sanitation: null,
+  origen: null,
+  ingesta: null,
   edaAlerts: null,
   plan: null,
   clusterPlan: null,
@@ -297,6 +320,9 @@ const CSV_ERROR: Record<string, WorkerErrorKind & ScoringErrorKind> = {
   ragged: "csv-ragged",
   "semicolon-delimiter": "csv-semicolon",
   "tab-delimiter": "csv-tab",
+  "xlsx-protegido": "xlsx-protegido",
+  "xlsx-antiguo": "xlsx-antiguo",
+  "xlsx-danado": "xlsx-danado",
 };
 
 // Qué esperaba cada mensaje en vuelo. Mapa por id (no un único pending): un
@@ -624,6 +650,17 @@ function edaFor(table: CsvTable, plan: TargetPlan | null, target: string) {
   return computeEdaAlerts(table, target, plan.resolved);
 }
 
+/** S18: lee un Excel con el lector que llega por `import()`. Si el chunk no llega o el navegador no puede leer el archivo, se
+ *  dice como cualquier libro que no se pudo leer (y se ofrece guardarlo como CSV) en vez de dejar la pantalla sin responder. */
+async function leerExcel(file: File) {
+  try {
+    const { leerArchivoXlsx } = await import("@/lib/ds/archivo");
+    return await leerArchivoXlsx(file);
+  } catch {
+    return { ok: false, error: { kind: "xlsx-danado" } } as const;
+  }
+}
+
 // Gestiona el runner de Pyodide y la máquina de estados del experimento. El
 // parseo/perfilado/split/veredicto/fuga/esquema/manifiesto corren aquí (puro,
 // testeado); el runner solo entrena, puntúa y (de)serializa el modelo. El
@@ -637,6 +674,9 @@ export function useExperiment() {
   const rawTableRef = useRef<CsvTable | null>(null);
   // Reporte de saneamiento del dataset activo (para adjuntarlo al export).
   const sanitationRef = useRef<SanitationReport | null>(null);
+  // S18: lo mismo que `state.ingesta`, para los callbacks que corren sin re-render.
+  const ingestaRef = useRef<Ingesta | null>(null);
+  const registroLimpiezaRef = useRef<RegistroPaso[]>([]);
   const pendingRef = useRef(new Map<number, Pending>());
   // Espejos para leer en callbacks sin closures obsoletas (patrón tableRef).
   const modelRef = useRef<ModelMeta | null>(null);
@@ -720,6 +760,7 @@ export function useExperiment() {
           result: pending.result,
           exported,
           sanitation: sanitationRef.current ?? undefined,
+          cleaningPlan: registroLimpiezaRef.current,
         });
         downloadTextFile(
           modelFileName(pending.datasetName),
@@ -1171,46 +1212,99 @@ export function useExperiment() {
     };
   }, [restoreLevel1]);
 
-  const loadCsv = useCallback((csvText: string, name: string) => {
-    const parsed = parseCsvWithLimits(csvText);
-    if (!parsed.ok) {
-      setState({
-        ...INITIAL,
-        phase: "error",
-        datasetName: name,
-        error: {
-          kind: CSV_ERROR[parsed.error.kind],
-          message: parsed.error.kind,
-        },
-      });
-      return;
-    }
-    // S4: saneamiento estructural pre-split (dedup previene fuga por duplicación,
-    // excluye ID/constantes, coacciona numéricas mixtas). Se fija UNA vez aquí.
-    const { table, report } = sanitizeTable(parsed.table);
-    if (!report.usable) {
+  // S18: lo que sigue a leer un archivo es lo mismo para un CSV y para un `.xlsx`.
+  const cargarTabla = useCallback(
+    (
+      parsed: CsvParseResult | { ok: false; error: { kind: string } },
+      name: string,
+      origen: OrigenArchivo | null,
+    ) => {
+      if (!parsed.ok) {
+        setState({
+          ...INITIAL,
+          phase: "error",
+          datasetName: name,
+          error: {
+            kind: CSV_ERROR[parsed.error.kind]!,
+            message: parsed.error.kind,
+          },
+        });
+        return;
+      }
+      // S4: saneamiento estructural pre-split (dedup previene fuga por duplicación,
+      // excluye ID/constantes, coacciona numéricas mixtas). Se fija UNA vez aquí.
+      const { table, report } = sanitizeTable(parsed.table);
+      if (!report.usable) {
+        sanitationRef.current = report;
+        setState({
+          ...INITIAL,
+          phase: "error",
+          datasetName: name,
+          sanitation: report,
+          error: { kind: "csv-unusable", message: "csv-unusable" },
+        });
+        return;
+      }
+      tableRef.current = table;
+      rawTableRef.current = parsed.table;
       sanitationRef.current = report;
+      datasetNameRef.current = name;
+      ingestaRef.current = null;
+      registroLimpiezaRef.current = [];
       setState({
         ...INITIAL,
-        phase: "error",
+        phase: "configuring",
         datasetName: name,
+        dataset: summarizeDataset(table),
         sanitation: report,
-        error: { kind: "csv-unusable", message: "csv-unusable" },
+        origen,
       });
-      return;
-    }
-    tableRef.current = table;
-    rawTableRef.current = parsed.table;
-    sanitationRef.current = report;
-    datasetNameRef.current = name;
-    setState({
-      ...INITIAL,
-      phase: "configuring",
-      datasetName: name,
-      dataset: summarizeDataset(table),
-      sanitation: report,
-    });
-  }, []);
+      // S18: los datos personales y el plan de limpieza se miran con código que llega SOLO ahora (no pesa en la carga)
+      // (si el chunk no llega, el análisis no aparece y todo lo demás sigue igual: es un aviso y una propuesta, nada más)
+      void import("@/engine/ingesta")
+        .then(({ analizarIngesta }) => {
+          if (tableRef.current !== table) return; // ya se cargó otro archivo
+          const ingesta = analizarIngesta(parsed.table, table);
+          ingestaRef.current = ingesta;
+          setState((s) => (s.datasetName === name ? { ...s, ingesta } : s));
+        })
+        .catch(() => undefined);
+    },
+    [],
+  );
+
+  /** S18: la tabla saneada con que se entrena (la exploración la lee al pulsar «Explorar»). */
+  const getTable = useCallback(() => tableRef.current, []);
+
+  /** S18: aprobar, rechazar o dejar sin decidir un paso del plan de limpieza. Lo que no está aprobado no se aplica. */
+  const decidirLimpieza = useCallback(
+    (id: string, decision: Decision | null) => {
+      const actual = ingestaRef.current;
+      if (!actual) return;
+      const decisiones = { ...actual.decisiones };
+      if (decision === null) delete decisiones[id];
+      else decisiones[id] = decision;
+      const ingesta = { ...actual, decisiones };
+      ingestaRef.current = ingesta;
+      setState((s) => (s.ingesta ? { ...s, ingesta } : s));
+    },
+    [],
+  );
+
+  const loadCsv = useCallback(
+    (csvText: string, name: string) =>
+      cargarTabla(parseCsvWithLimits(csvText), name, null),
+    [cargarTabla],
+  );
+
+  /** S18 (ADR 025): un `.xlsx`; el lector se importa solo ahora. */
+  const loadXlsx = useCallback(
+    async (file: File) => {
+      const leido = await leerExcel(file);
+      cargarTabla(leido, file.name, leido.ok ? leido.origen : null);
+    },
+    [cargarTabla],
+  );
 
   // S4: alertas EDA para el objetivo elegido (posible fuga / id-like / desbalance).
   // Puras y baratas sobre la tabla saneada; se recomputan al cambiar el objetivo.
@@ -1313,12 +1407,24 @@ export function useExperiment() {
     [],
   );
 
+  /** S18: lo aprobado del plan, con el objetivo ya elegido (null si no hay nada que proponer). */
+  const planAprobado = useCallback(
+    (objetivo: string | null): PlanAplicado | null => {
+      const ingesta = ingestaRef.current;
+      if (!ingesta || ingesta.plan.length === 0) return null;
+      return aplicarDecisiones(ingesta.plan, ingesta.decisiones, objetivo);
+    },
+    [],
+  );
+
   const run = useCallback((targetColumn: string) => {
     const table = tableRef.current;
     if (!table) return;
 
+    const plan = planAprobado(targetColumn);
     const prepared = prepareRun(table, targetColumn, SEED, {
       ambiguousChoice: choiceRef.current,
+      plan,
     });
     if (!prepared.ok) {
       setState((s) => ({
@@ -1329,19 +1435,22 @@ export function useExperiment() {
       return;
     }
 
+    registroLimpiezaRef.current = plan?.registro ?? [];
     launch(trainPending(prepared, 1, []), prepared, {
       target: targetColumn,
       numericFeatures: prepared.payload.numeric.length,
       categoricalFeatures: prepared.payload.categorical.length,
       seed: SEED,
+      limpieza: plan?.registro,
     });
-  }, [launch]);
+  }, [launch, planAprobado]);
 
   /** S7 (ADR 016): agrupar las filas, sin objetivo ni partición. */
   const runCluster = useCallback(() => {
     const table = tableRef.current;
     if (!table) return;
-    const prepared = prepareClusterRun(table, SEED);
+    const plan = planAprobado(null);
+    const prepared = prepareClusterRun(table, SEED, { plan });
     if (!prepared.ok) {
       setState((s) => ({
         ...s,
@@ -1350,14 +1459,16 @@ export function useExperiment() {
       }));
       return;
     }
+    registroLimpiezaRef.current = plan?.registro ?? [];
     launch(clusterPending(prepared, 1, []), prepared, {
       target: null,
       numericFeatures: prepared.payload.numeric.length,
       categoricalFeatures: prepared.payload.categorical.length,
       seed: SEED,
       excluded: prepared.excluded,
+      limpieza: plan?.registro,
     });
-  }, [launch]);
+  }, [launch, planAprobado]);
 
   /**
    * S5 (U1): elegir a mano un miembro de la liga. El worker lo ajusta en train
@@ -1409,6 +1520,7 @@ export function useExperiment() {
         level: 2,
         forced,
         ambiguousChoice: choiceRef.current,
+        plan: planAprobado(p.target),
       });
       return next.ok
         ? {
@@ -1423,7 +1535,11 @@ export function useExperiment() {
       multiclase: supervised,
       numerica: supervised,
       agrupar: () => {
-        const prepared = prepareClusterRun(table, SEED, { level: 2, forced });
+        const prepared = prepareClusterRun(table, SEED, {
+          level: 2,
+          forced,
+          plan: planAprobado(null),
+        });
         return prepared.ok
           ? {
               pending: clusterPending(prepared, 2, forced),
@@ -1474,7 +1590,7 @@ export function useExperiment() {
       },
     }));
     workerRef.current?.postMessage({ id, type: "export-model" });
-  }, []);
+  }, [planAprobado]);
 
   /**
    * S5 (R1): cancelar el Nivel 2. Una llamada síncrona de Python no se puede
@@ -1534,11 +1650,14 @@ export function useExperiment() {
     setState((s) => ({ ...s, scoring: { status: "idle" } }));
   }, []);
 
-  const scoreCsv = useCallback((csvText: string, fileName: string) => {
+  const scoreTable = useCallback(
+    (
+      parsed: CsvParseResult | { ok: false; error: { kind: string } },
+      fileName: string,
+    ) => {
     const meta = modelRef.current;
     if (!meta) return;
 
-    const parsed = parseCsvWithLimits(csvText);
     if (!parsed.ok) {
       const kind = CSV_ERROR[parsed.error.kind];
       reportScoringError(kind);
@@ -1576,7 +1695,23 @@ export function useExperiment() {
       scoring: { status: "running", progress: null },
     }));
     workerRef.current?.postMessage({ id, type: "score", payload });
-  }, []);
+    },
+    [],
+  );
+
+  const scoreCsv = useCallback(
+    (csvText: string, fileName: string) =>
+      scoreTable(parseCsvWithLimits(csvText), fileName),
+    [scoreTable],
+  );
+
+  /** S18: puntuar un archivo nuevo que viene en Excel (mismos límites que un CSV). */
+  const scoreXlsx = useCallback(
+    async (file: File) => {
+      scoreTable(await leerExcel(file), file.name);
+    },
+    [scoreTable],
+  );
 
   const exportModel = useCallback(() => {
     const result = resultRef.current;
@@ -1677,6 +1812,9 @@ export function useExperiment() {
   return {
     state,
     loadCsv,
+    loadXlsx,
+    decidirLimpieza,
+    getTable,
     selectTarget,
     selectCluster,
     answerTask,
@@ -1688,6 +1826,7 @@ export function useExperiment() {
     backToResults,
     resetScoring,
     scoreCsv,
+    scoreXlsx,
     exportModel,
     // S17: el worker del modelo activo, para el panel diferido de la prueba de estrés (ids negativos: esta máquina los ignora)
     workerRef,

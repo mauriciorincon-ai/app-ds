@@ -6,7 +6,7 @@
 
 ## Español
 
-Probeta DS lleva a profesionales que no son científicos de datos por el ciclo: cargar un CSV,
+Probeta DS lleva a profesionales que no son científicos de datos por el ciclo: cargar un CSV o un Excel,
 limpiarlo, entenderlo, modelar, comprobar el resultado y llevarse el modelo en un archivo para puntuar
 datos nuevos, o llevárselo como una receta que reproduce, un puntuador portátil o una plantilla de servicio
 (Probeta no despliega nada ni guarda credenciales). Sirve para clasificar en dos o en varias
@@ -17,7 +17,10 @@ vez, cada resultado se compara con un baseline y una posible fuga de datos se no
 Tiene dos modos con el mismo motor y promesas distintas: **Probeta**, el laboratorio rápido, y
 **Protocolo DS**, el camino lento de diez etapas con compuertas que no se saltan, con tus propios
 datos y un cuaderno que guarda lo que cada etapa verificó. Las diez etapas están construidas, y desde el
-Sprint 17 el modelo se puede estresar («¿cuánto aguanta?») en las dos.
+Sprint 17 el modelo se puede estresar («¿cuánto aguanta?») en las dos. Desde el Sprint 18, en Probeta un Excel
+(`.xlsx`) entra igual que un CSV, la app avisa de posibles datos personales (nombra la columna y el tipo, nunca
+el valor), propone un plan de limpieza que apruebas o rechazas paso a paso, explora tus datos, da el margen de
+error de la cifra del veredicto y comprueba contra tus números el texto que explica el resultado.
 
 **Tus datos no salen de tu navegador.** El cómputo de Probeta (pandas y scikit-learn en WebAssembly,
 con Pyodide) corre en un Web Worker de tu equipo; el Protocolo calcula en tu navegador y guarda su
@@ -55,7 +58,7 @@ pnpm dev              # copia los assets de Pyodide y arranca en http://localhos
 
 ## English
 
-Probeta DS walks professionals who are not data scientists through the cycle: load a CSV, clean it,
+Probeta DS walks professionals who are not data scientists through the cycle: load a CSV or an Excel, clean it,
 understand it, model, check the result, and take the model away in a file to score new data, or as a recipe that reproduces, a portable scorer or a
 service template (Probeta deploys nothing and stores no credentials). It
 classifies into two or several categories,
@@ -66,7 +69,10 @@ compared against a baseline, and a possible data leak is named.
 It has two modes on the same engine with different promises: **Probeta**, the quick lab, and
 **Protocolo DS**, the slow path of ten stages with gates that can't be skipped, on your own data and
 with a notebook that keeps what each stage verified. All ten stages are built, and since Sprint 17 the
-model can be stress-tested («how much does it take?») in both.
+model can be stress-tested («how much does it take?») in both. Since Sprint 18, in Probeta an Excel file
+(`.xlsx`) comes in like a CSV, the app warns about possible personal data (it names the column and the type, never
+the value), proposes a cleaning plan that you approve or reject step by step, explores your data, gives the
+margin of error of the verdict's figure and checks the text that explains the result against your numbers.
 
 **Your data never leaves your browser.** Probeta's computation (pandas and scikit-learn in
 WebAssembly, through Pyodide) runs in a Web Worker on your machine; the Protocol computes in your

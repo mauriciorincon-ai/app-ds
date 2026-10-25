@@ -146,7 +146,7 @@ async function interact(label, read, act) {
 
 async function upload(page, file) {
   await page.goto(BASE);
-  const input = page.locator('input[type="file"][accept=".csv,text/csv"]');
+  const input = page.locator('input[type="file"][accept^=".csv,text/csv"]');
   if (typeof file === "string") await input.setInputFiles(KIT(file));
   else
     await input.setInputFiles({
@@ -295,7 +295,7 @@ for (const [width, scheme] of [
   await element(page, page.getByRole("region", { name: /contenido/i }), `${tag}-07-model-card-planes`);
   await page.getByRole("button", { name: /Usar el modelo/i }).click();
   await page.getByText(/Arrastra tu CSV nuevo/).waitFor({ timeout: 120_000 });
-  await page.locator('input[type="file"][accept=".csv,text/csv"]').setInputFiles(KIT("planes-suscripcion.csv"));
+  await page.locator('input[type="file"][accept^=".csv,text/csv"]').setInputFiles(KIT("planes-suscripcion.csv"));
   await page.getByText(/Predicciones \(200 filas\)/i).waitFor({ timeout: 60_000 });
   await shot(page, `${tag}-08-puntuar-planes`);
 
@@ -421,7 +421,7 @@ for (const [width, scheme] of [
   await element(page, page.getByRole("region", { name: /contenido/i }), `${tag}-18-model-card-agrupar`);
   await page.getByRole("button", { name: /Asignar filas nuevas/ }).first().click();
   await page.getByText(/Arrastra tu CSV nuevo/).waitFor({ timeout: 120_000 });
-  await page.locator('input[type="file"][accept=".csv,text/csv"]').setInputFiles(KIT("segmentos-clientes.csv"));
+  await page.locator('input[type="file"][accept^=".csv,text/csv"]').setInputFiles(KIT("segmentos-clientes.csv"));
   await page.getByText(/Grupos asignados/).waitFor({ timeout: 60_000 });
   await shot(page, `${tag}-19-asignar`);
 

@@ -97,7 +97,7 @@ test("estimar con una fuga plantada: la nombra antes y después de entrenar", as
   test.setTimeout(240_000);
   await page.goto("/");
   await page
-    .locator('input[type="file"][accept=".csv,text/csv"]')
+    .locator('input[type="file"][accept^=".csv,text/csv"]')
     .setInputFiles({
       name: "precio-fuga-plantada.csv",
       mimeType: "text/csv",

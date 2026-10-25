@@ -16,9 +16,9 @@
   },
   "start": {
     "title": "Start your experiment",
-    "subtitle": "Upload a CSV or pick an example. Everything runs in your browser; your data never leaves it.",
+    "subtitle": "Upload a CSV or an Excel file, or pick an example. Everything runs in your browser; your data never leaves it.",
     "dropzone": {
-      "label": "Drag a CSV here or click to choose",
+      "label": "Drag a CSV or an Excel file here or click to choose",
       "hint": "Up to {mb} MB or {rows} rows",
       "button": "Choose file"
     },
@@ -142,13 +142,13 @@
     "eda": {
       "clean": "No alerts for this target.",
       "title": "Before training, look at these signals:",
-      "possible-leak": "“{column}” predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again.",
-      "id-like": "“{column}” looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your CSV without losing anything.",
+      "possible-leak": "“{column}” predicts the target almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your file and load it again.",
+      "id-like": "“{column}” looks like an identifier (almost one value per row): it rarely helps generalize. You can remove it from your file without losing anything.",
       "target-skewed": "The target is heavily skewed (skewness {skew}): a few very large values carry a lot of weight. The mean absolute error (MAE) treats every miss alike; RMSE punishes misses on those large values harder.",
       "target-outliers": "{share}% of the target's values sit far from the rest (beyond 3 interquartile ranges). Check whether they are data-entry mistakes before training: they can pull the model a long way.",
       "imbalance": "The target is imbalanced: the minority class is {rate}% of the data. The verdict accounts for it (uses AUC).",
       "imbalanceMulticlass": "The smallest category, “{class}”, is {rate}% of the rows. The verdict uses balanced accuracy, which weighs every category equally.",
-      "possible-leak-class": "“{column}” separates the category “{class}” from the rest almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your CSV and load it again."
+      "possible-leak-class": "“{column}” separates the category “{class}” from the rest almost perfectly: it could be a leak (data you wouldn't have at real prediction time). If so, remove it from your file and load it again."
     },
     "trainHint": "Level 1: {count} models · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
     "trainHint_one": "Level 1: 1 model · about {time} of computation on a desktop computer (a phone can take twice as long or more; the first time also downloads the engine).",
@@ -229,7 +229,7 @@
     "again": "New experiment",
     "use": {
       "title": "Use your model",
-      "desc": "Score a new CSV with this model, or save it as a file to reuse it without retraining.",
+      "desc": "Score a new CSV or Excel file with this model, or save it as a file to reuse it without retraining.",
       "button": "Use the model"
     },
     "export": {
@@ -346,14 +346,14 @@
   },
   "score": {
     "title": "Use the model",
-    "subtitle": "Upload a new CSV with the columns the model knows (without the target column) and get the prediction and its probability for every row. Everything happens in your browser.",
+    "subtitle": "Upload a new CSV or Excel file with the columns the model knows (without the target column) and get the prediction and its probability for every row. Everything happens in your browser.",
     "modelLine": "Model: {dataset} · target: {target} · positive class: {positive}",
     "preparing": {
       "title": "Preparing the model…",
       "importing": "Restoring the saved model…"
     },
     "dropzone": {
-      "label": "Drop your new CSV here or click to choose",
+      "label": "Drop your new CSV (or an Excel file) here or click to choose",
       "hint": "Up to {mb} MB or {rows} rows",
       "button": "Choose file"
     },
@@ -408,7 +408,7 @@
       "import-failed": "The saved model could not be restored. The file may come from an incompatible version; retrain and export again."
     },
     "noProbabilities": "This model decides the class but does not give a probability, so the probability column is left out. If you need to rank rows by risk, choose a model that gives one.",
-    "subtitleQuantity": "Upload a new CSV with the columns the model knows (without the target column) and get the estimated quantity for each row. Everything happens in your browser.",
+    "subtitleQuantity": "Upload a new CSV or Excel file with the columns the model knows (without the target column) and get the estimated quantity for each row. Everything happens in your browser.",
     "modelLineQuantity": "Model: {dataset} · estimates: {target}",
     "quantity": {
       "title": "Estimates ({rows} rows)",
@@ -418,10 +418,10 @@
       "max": "Maximum"
     },
     "quantityNote": "Estimating gives no probability: each row gets its estimated quantity, with the decimals you used for the target.",
-    "subtitleMulticlass": "Upload a new CSV with the columns the model knows (without the target column) and get the predicted category and its probability for each row. Everything happens in your browser.",
+    "subtitleMulticlass": "Upload a new CSV or Excel file with the columns the model knows (without the target column) and get the predicted category and its probability for each row. Everything happens in your browser.",
     "modelLineMulticlass": "Model: {dataset} · target: {target} · {count} categories",
     "multiclassProbabilityNote": "The probability is the predicted category's: how sure the model is about that row. With several categories it can be low even when the predicted one is the most likely.",
-    "subtitleCluster": "Upload a new CSV with the columns the grouping uses and the app assigns each row a group, with the same rule. Everything happens in your browser.",
+    "subtitleCluster": "Upload a new CSV or Excel file with the columns the grouping uses and the app assigns each row a group, with the same rule. Everything happens in your browser.",
     "modelLineCluster": "Model: {dataset} · {k} groups",
     "groups": {
       "title": "Assigned groups ({rows} rows)",
@@ -666,7 +666,10 @@
     "csv-ragged": "Some rows have a different number of columns than the header.",
     "csv-semicolon": "Your file separates columns with semicolons (;) rather than commas, so no column is recognised. This usually happens when saving from Excel in a European locale. Save it again as “CSV (comma delimited)” and upload it once more.",
     "csv-tab": "Your file separates columns with tabs rather than commas, so no column is recognised. Save it again as “CSV (comma delimited)” and upload it once more.",
-    "target-not-numeric": "To estimate a quantity, the target has to be a number in every row, and this column has values that are not. Check it in your CSV or pick another column.",
+    "xlsx-protegido": "This Excel file is password-protected or encrypted, and Probeta cannot open it. Remove the protection, or save it as “CSV (comma delimited)”, and upload it again.",
+    "xlsx-antiguo": "This file is an old Excel format (.xls), which Probeta does not read. Save it as “Excel Workbook (.xlsx)” or as “CSV (comma delimited)” and upload it again.",
+    "xlsx-danado": "The Excel file could not be read: it is damaged or not a real .xlsx. Save it again, or export it as “CSV (comma delimited)”, and upload it once more.",
+    "target-not-numeric": "To estimate a quantity, the target has to be a number in every row, and this column has values that are not. Check it in your file or pick another column.",
     "target-ambiguous": "This column could hold categories or a quantity, and your answer is missing. Answer the question on the “Kind of prediction” card and train again.",
     "no-features": "There are no usable columns as predictors.",
     "runtime": "Something went wrong while processing. Please try again.",
@@ -676,7 +679,7 @@
     "too-few-rows": "There are too few examples of one of the two classes to compare models honestly: cross-validation needs at least 2 of each class in the training set. Try with more rows.",
     "too-few-rows-quantity": "There are too few rows to estimate a quantity honestly: the test set needs at least 2 rows the model never saw in training. Try with more rows.",
     "contract": "The engine returned a result with an unexpected shape, so we are not showing it: we would rather not show you a number we cannot verify. Try again; if it happens again, try another file.",
-    "target-mixed-notation": "Your target has classes written in more than one way (for example “1” and “1.0”): to train, each class must be written the same way in every row. Make them consistent in your CSV and load it again.",
+    "target-mixed-notation": "Your target has classes written in more than one way (for example “1” and “1.0”): to train, each class must be written the same way in every row. Make them consistent in your file and load it again.",
     "league-empty": "No model finished cross-validation cleanly (they did not converge or failed), so there is no winner that can be defended. Try more rows or other columns.",
     "too-few-rows-per-class": "One of the categories has too few rows to compare models honestly: cross-validation needs at least 2 rows of each category in the training set. Try with more rows, or merge the rarest categories into one.",
     "too-few-rows-cluster": "There are too few rows to cluster honestly: to tell whether the groups hold up, the app searches for them again in parts of your data, and each part needs more rows than groups. Try with more rows.",

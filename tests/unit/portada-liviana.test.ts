@@ -29,6 +29,27 @@ const LAZY = [
   "src/components/FichaModelo.tsx",
   "src/content/modelos.ts",
   "src/lib/modelcard.ts",
+  // S18: el lector de Excel, el análisis de lo recién cargado (datos personales y plan de limpieza) y su panel
+  // llegan con `import()` / `next/dynamic` DESPUÉS de elegir un archivo. (limpieza-plan.ts SÍ va en la página: es
+  // la parte pequeña que aplica lo decidido.)
+  "src/lib/ds/xlsx.ts",
+  "src/engine/ingesta.ts",
+  "src/engine/limpieza.ts",
+  "src/engine/personales.ts",
+  "src/components/limpieza/LimpiezaPanel.tsx",
+  "src/components/limpieza/textos.ts",
+  // S18: la exploración, el margen de error y la explicación verificada llegan con la pantalla de configuración o de
+  // resultados (dynamic), nunca con la portada.
+  "src/components/exploracion/ExploracionPanel.tsx",
+  "src/components/resultados/IntervaloPanel.tsx",
+  "src/engine/exploracion.ts",
+  "src/engine/intervalo.ts",
+  "src/workers/contrato-intervalo.ts",
+  "src/lib/narration/exploracion.ts",
+  "src/lib/narration/explicacion.ts",
+  "src/lib/narration/cifras.ts",
+  "src/lib/narration/textos-exploracion.ts",
+  "src/lib/narration/textos-resultados.ts",
   // S8 (ADR 020): el Protocolo DS vive en /protocolo; la portada solo lleva su enlace
   // y la cuenta de etapas (src/engine/protocolo/ids.ts, sin imports).
   "src/components/protocolo/ProtocoloApp.tsx",
@@ -117,6 +138,21 @@ const LAZY_PROTOCOLO = [
   "src/engine/protocolo/chequeo-deriva.ts",
   "src/lib/protocolo/ficha-texto.ts",
   "src/lib/protocolo/ficha-markdown.ts",
+  // S18: el Protocolo lee CSV; ni el lector de Excel ni el plan de limpieza de Probeta entran a su página.
+  "src/lib/ds/xlsx.ts",
+  "src/lib/ds/archivo.ts",
+  "src/engine/ingesta.ts",
+  "src/engine/limpieza.ts",
+  "src/engine/limpieza-plan.ts",
+  "src/engine/personales.ts",
+  "src/components/exploracion/ExploracionPanel.tsx",
+  "src/components/resultados/IntervaloPanel.tsx",
+  "src/engine/exploracion.ts",
+  "src/engine/intervalo.ts",
+  "src/workers/contrato-intervalo.ts",
+  "src/lib/narration/exploracion.ts",
+  "src/lib/narration/explicacion.ts",
+  "src/lib/narration/cifras.ts",
   // (src/workers/contract.ts ya llega desde el S10 por useProtocolo → quantity.ts: no se vigila aquí)
 ];
 

@@ -23,7 +23,7 @@ test("agrupar: exportar → recargar → importar → asignar filas nuevas con �
 
   await page.goto("/");
   await page
-    .locator('input[accept=".csv,text/csv"]')
+    .locator('input[accept^=".csv,text/csv"]')
     .setInputFiles(
       resolve(process.cwd(), "docs/kit-de-prueba/segmentos-clientes.csv"),
     );
@@ -82,7 +82,7 @@ test("agrupar: exportar → recargar → importar → asignar filas nuevas con �
     timeout: 150_000,
   });
 
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "clientes-nuevos.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(NEW_CSV),

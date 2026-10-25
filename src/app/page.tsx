@@ -35,6 +35,9 @@ export default function Home() {
   const {
     state,
     loadCsv,
+    loadXlsx,
+    decidirLimpieza,
+    getTable,
     selectTarget,
     selectCluster,
     answerTask,
@@ -46,6 +49,7 @@ export default function Home() {
     backToResults,
     resetScoring,
     scoreCsv,
+    scoreXlsx,
     exportModel,
     workerRef,
     activateImportedModel,
@@ -57,7 +61,11 @@ export default function Home() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
       {state.phase === "empty" && (
-        <StartScreen onLoad={loadCsv} onImport={activateImportedModel} />
+        <StartScreen
+          onLoad={loadCsv}
+          onLoadXlsx={loadXlsx}
+          onImport={activateImportedModel}
+        />
       )}
 
       {state.phase === "configuring" && state.dataset && (
@@ -67,6 +75,10 @@ export default function Home() {
           edaAlerts={state.edaAlerts}
           plan={state.plan}
           clusterPlan={state.clusterPlan}
+          origen={state.origen}
+          ingesta={state.ingesta}
+          onDecidirLimpieza={decidirLimpieza}
+          getTable={getTable}
           onSelectTarget={selectTarget}
           onSelectCluster={selectCluster}
           onAnswerTask={answerTask}
@@ -121,6 +133,7 @@ export default function Home() {
           scoring={state.scoring}
           exportState={state.exportState}
           onScoreFile={scoreCsv}
+          onScoreXlsx={scoreXlsx}
           onScoreAnother={resetScoring}
           onBackToResults={backToResults}
           onExit={reset}

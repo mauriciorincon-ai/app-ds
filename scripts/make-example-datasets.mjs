@@ -413,6 +413,46 @@ function monthlyChurnWithLeak(clients = 120, seed = 1313) {
   );
 }
 
+// S18: un archivo con DATOS PERSONALES PLANTADOS para probar el aviso (correo, teléfono, documento y nombre). Todo es de
+// ficción: dominios reservados (example.com), teléfonos del rango de ficción 555-010x y nombres combinados al azar.
+function customersWithPersonalData(n = 150, seed = 1414) {
+  const rng = mulberry32(seed);
+  const nombres = ["Ana", "Luis", "Marta", "Pedro", "Lucía", "Jorge", "Elena", "Pablo", "Sofía", "Diego", "Carmen", "Andrés", "Laura", "Iván", "Rosa", "Tomás"];
+  const apellidos = ["García", "Rodríguez", "López", "Martínez", "Sánchez", "Pérez", "Gómez", "Fernández", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Navarro", "Torres", "Ramos"];
+  const dominios = ["example.com", "example.org", "example.net"];
+  const letras = "TRWAGMYFPDXBNJZSQVHLCKE";
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const nombre = pick(rng, nombres);
+    const apellido = `${pick(rng, apellidos)} ${pick(rng, apellidos)}`;
+    const plan = pick(rng, ["basico", "estandar", "premium"]);
+    const edad = round(20 + rng() * 50);
+    const uso = round(5 + rng() * 120, 1);
+    const reclamos = round(rng() * 6);
+    const baja = rng() < sigmoid((reclamos - 3) * 0.9 + (plan === "basico" ? 0.6 : -0.4)) ? 1 : 0;
+    const dni = Math.floor(10000000 + rng() * 89999999);
+    const correo = `${nombre}.${apellido.split(" ")[0]}${i}@${pick(rng, dominios)}`
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+    rows.push([
+      `${nombre} ${apellido}`,
+      correo,
+      `+1 555 010 ${String(100 + (i % 100)).padStart(4, "0")}`,
+      `${dni}${letras[dni % 23]}`,
+      edad,
+      plan,
+      uso,
+      reclamos,
+      baja,
+    ]);
+  }
+  return toCsv(
+    ["nombre_completo", "correo", "telefono", "documento", "edad", "plan", "uso_mensual_gb", "reclamos", "se_dio_de_baja"],
+    rows,
+  );
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   await mkdir(kitDir, { recursive: true });
@@ -451,6 +491,8 @@ async function main() {
     "renovaciones-mensuales.csv": monthlyRenewals(),
     // S9: la etapa 4 (fuga por vacíos, deriva, identificador, filas repetidas).
     "bajas-con-fuga.csv": monthlyChurnWithLeak(),
+    // S18: el aviso de posibles datos personales (todo de ficción).
+    "clientes-con-datos-personales.csv": customersWithPersonalData(),
   };
   for (const [name, content] of Object.entries(kitOnly)) {
     await writeFile(resolve(kitDir, name), content, "utf8");

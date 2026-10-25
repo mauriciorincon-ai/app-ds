@@ -18,6 +18,8 @@ import {
   ROSTER_BY_TASK,
   type MemberId,
 } from "@/engine/roster";
+import { proponerPlan } from "@/engine/limpieza";
+import { aplicarDecisiones, especificacionDe } from "@/engine/limpieza-plan";
 import { sanitizeTable } from "@/engine/sanitize";
 import type { SupervisedTask } from "@/engine/tarea";
 import { parseCsvWithLimits } from "@/lib/ds/csv";
@@ -226,6 +228,107 @@ describe("lo que el usuario se lleva: un modelo por miembro del roster, de punta
       }
     }, 900_000);
   }
+});
+
+// S18 (ADR 026): un modelo entrenado con el plan de limpieza APROBADO (marca de vacío, «sin dato» y cuantiles). El plan viaja
+// dentro del pickle: la CI de CPython 3.14 abre ese modelo (la receta lo reentrena con la declaración, el servicio lo puntúa).
+describe("con un plan de limpieza aprobado, la receta y el servicio de CPython lo reproducen", () => {
+  const MIEMBROS = ["logistic", "forest", "hgb"] as const;
+  it("binaria con huecos y atípicos: el plan se propone, se aprueba entero y el modelo se lleva", async () => {
+    const original = tablaCruda("marketing-campania.csv");
+    const cruda = {
+      headers: [...original.headers],
+      rows: original.rows.map((r) => [...r]),
+    };
+    const ingreso = cruda.headers.indexOf("ingreso_mensual");
+    const region = cruda.headers.indexOf("region");
+    const visitas = cruda.headers.indexOf("visitas_web");
+    cruda.rows.forEach((fila, i) => {
+      if (i % 7 === 0) fila[ingreso] = "";
+      if (i % 9 === 0) fila[region] = "";
+      if (i % 31 === 1) fila[visitas] = "100000";
+    });
+    const sanea = sanitizeTable(cruda);
+    const propuesta = proponerPlan(sanea.table);
+    const plan = aplicarDecisiones(
+      propuesta,
+      Object.fromEntries(propuesta.map((p) => [p.id, "aprobado" as const])),
+      "convirtio",
+    );
+    expect(plan.limpieza).toEqual({
+      indicador_vacio: ["ingreso_mensual"],
+      sin_dato: ["region"],
+      cuantiles: ["visitas_web"],
+    });
+    const prep = prepareRun(sanea.table, "convirtio", 42, { plan });
+    if (!prep.ok) throw new Error(`prepare: ${prep.error}`);
+
+    const entre = (valor: string) =>
+      /[",\n]/.test(valor) ? `"${valor.replace(/"/g, '""')}"` : valor;
+    const csvTexto = [cruda.headers, ...cruda.rows]
+      .map((fila) => fila.map(entre).join(","))
+      .join("\n");
+    mkdirSync(resolve(SALIDA, "datos"), { recursive: true });
+    writeFileSync(resolve(SALIDA, "datos/marketing-con-plan.csv"), csvTexto);
+
+    for (const miembro of MIEMBROS) {
+      const bruto = llamar("run_experiment", { ...prep.payload, roster: [miembro] });
+      const result = assembleResult(bruto as PipelineResult, prep.leakage, prep.smallSample);
+      const exportado = exportar();
+      const archivo = await packModelFile({
+        datasetName: "marketing-con-plan.csv",
+        result,
+        exported: exportado,
+        sanitation: sanea.report,
+        cleaningPlan: plan.registro,
+        date: FECHA,
+      });
+      expect(archivo.manifest.cleaning_plan?.length).toBe(propuesta.length);
+      const texto = JSON.stringify(archivo, null, 2);
+      const esperado = paridadDePuntuar(exportado, cruda.headers, cruda.rows);
+
+      const id = `binaria-con-plan__${miembro}`;
+      const declaracion = declaracionDe({
+        result,
+        target: "convirtio",
+        seed: 42,
+        datasetName: "marketing-con-plan.csv",
+        sanitation: sanea.report,
+        limpieza: especificacionDe(plan.registro),
+        appVersion: "prueba",
+        idioma: "es",
+      });
+      expect(declaracion.limpieza).toEqual(plan.limpieza);
+      writeFileSync(
+        resolve(SALIDA, `recetas/${id}.py`),
+        armarReceta(PIPELINE, RECETA_TPL, declaracion, REQ_RECETA),
+      );
+      writeFileSync(resolve(SALIDA, `esperados/${id}.json`), JSON.stringify(esperado));
+      writeFileSync(
+        resolve(SALIDA, `servicios/${id}.zip`),
+        armarServicio(
+          {
+            servicio: SERVICIO,
+            puntuar: PUNTUAR,
+            requirements: REQ_SERVICIO,
+            readme: README,
+            modelo: texto,
+          },
+          FECHA,
+        ),
+      );
+      matriz.push({
+        id,
+        tarea: "binaria",
+        miembro,
+        csv: "tests/integration/.salida/datos/marketing-con-plan.csv",
+        servible: esServible(miembro),
+        receta: `recetas/${id}.py`,
+        servicio: `servicios/${id}.zip`,
+        esperado: `esperados/${id}.json`,
+      });
+    }
+  }, 900_000);
 });
 
 describe("los agrupadores: puntuar.py puntúa como score_new_data (el servicio no los ofrece)", () => {

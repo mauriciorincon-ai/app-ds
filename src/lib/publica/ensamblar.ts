@@ -25,6 +25,12 @@ export type Declaracion = {
   readonly categoricas: readonly string[];
   /** Las columnas que el saneamiento apartó (identificadores y constantes). */
   readonly excluidas: readonly string[];
+  /** S18: el plan de limpieza que el usuario aprobó (solo nombres de columnas); ausente si no aprobó ninguno. */
+  readonly limpieza?: {
+    readonly indicador_vacio: readonly string[];
+    readonly sin_dato: readonly string[];
+    readonly cuantiles: readonly string[];
+  };
   readonly semilla: number;
   readonly fraccion_prueba: number;
   readonly metrica: PrimaryMetric;

@@ -1,6 +1,7 @@
 // Tipos compartidos entre el hilo principal (orquestación pura y testeada) y el
 // runner de Pyodide (public/pyodide-runner.js), que solo entrena y devuelve
 // métricas. La UI no habla WASM: lee el estado de useExperiment.
+import type { SpecLimpieza } from "@/engine/limpieza-plan";
 import type { LeakageFinding } from "@/engine/leakage";
 import type { MemberId } from "@/engine/roster";
 import type { SupervisedTask, TaskDetection } from "@/engine/tarea";
@@ -32,6 +33,10 @@ export type WorkerErrorKind =
   // configuración regional europea/latina. Se nombra el separador real.
   | "csv-semicolon"
   | "csv-tab"
+  // S18 (ADR 025): un Excel que no se puede leer, con su motivo.
+  | "xlsx-protegido"
+  | "xlsx-antiguo"
+  | "xlsx-danado"
   // S7: la columna no sirve como objetivo (constante, vacía o con demasiadas
   // categorías); el texto viejo («exactamente dos categorías») caducó.
   | "target-not-usable"
@@ -90,6 +95,8 @@ export type PipelinePayload = {
   target: string;
   numeric: string[];
   categorical: string[];
+  /** S18: el plan de limpieza aprobado (solo nombres de columnas); ausente = el preprocesador de siempre. */
+  limpieza?: SpecLimpieza;
   train_idx: number[];
   test_idx: number[];
   seed: number;
@@ -532,6 +539,8 @@ export type ClusterPayload = {
   /** Columnas utilizables (las que describen los perfiles). */
   numeric: string[];
   categorical: string[];
+  /** S18: el plan de limpieza aprobado (solo nombres de columnas). */
+  limpieza?: SpecLimpieza;
   /** Qué columnas forman la distancia: «numeric» con ≥ CLUSTER_MIN_NUMERIC
    *  numéricas (las categóricas solo describen), «all» si no. TS decide. */
   distance: ClusterDistance;
@@ -892,6 +901,8 @@ export type RunnerRequest =
   // en la etapa 8 lleva el mismo envío que abrió la prueba.
   | { id: number; type: "stress" }
   | { id: number; type: "stress-test"; payload: TestPayload }
+  // S18: los vectores de la prueba retenida (lo real, lo predicho, el puntaje) para el intervalo; sin payload.
+  | { id: number; type: "interval" }
   | {
       id: number;
       type: "fit-member";
@@ -929,6 +940,7 @@ export type RunnerResponse =
   | { id: number; type: "result"; command: "test"; result: unknown }
   | { id: number; type: "result"; command: "stress"; result: unknown }
   | { id: number; type: "result"; command: "stress-test"; result: unknown }
+  | { id: number; type: "result"; command: "interval"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }

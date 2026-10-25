@@ -159,7 +159,7 @@ for (const [width, scheme] of [
   await page.getByRole("button", { name: /Usar el modelo/i }).click();
   await page.getByText(/Arrastra tu CSV nuevo/).waitFor({ timeout: 60_000 });
   await page
-    .locator('input[type="file"][accept=".csv,text/csv"]')
+    .locator('input[type="file"][accept^=".csv,text/csv"]')
     .setInputFiles(KIT("casas-nuevas.csv"));
   await page.getByText(/Estimaciones \(8 filas\)/).waitFor({ timeout: 60_000 });
   await shot(page, `${tag}-11-puntuar`);
@@ -177,7 +177,7 @@ for (const [width, scheme] of [
       .click();
     await page.getByRole("button", { name: /Nuevo experimento/i }).click();
     await page
-      .locator('input[type="file"][accept=".csv,text/csv"]')
+      .locator('input[type="file"][accept^=".csv,text/csv"]')
       .setInputFiles(KIT("precio-fuga-plantada.csv"));
     await page.selectOption("#target", "precio_usd");
     await shot(page, `${tag}-12-config-precio`);
@@ -188,7 +188,7 @@ for (const [width, scheme] of [
     // El Nivel 2 con 5 000 filas.
     await page.getByRole("button", { name: /Nuevo experimento/i }).click();
     await page
-      .locator('input[type="file"][accept=".csv,text/csv"]')
+      .locator('input[type="file"][accept^=".csv,text/csv"]')
       .setInputFiles(KIT("consumo-energia-mediano.csv"));
     await page.selectOption("#target", "consumo_kwh");
     await shot(page, `${tag}-14-config-mediano`);

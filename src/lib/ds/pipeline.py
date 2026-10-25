@@ -107,7 +107,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, QuantileTransformer, StandardScaler
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 # plantilla:fin imports
@@ -119,6 +119,9 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 warnings.filterwarnings(
     "ignore", message="X does not have valid feature names", category=UserWarning
 )
+# S18: QuantileTransformer avisa si el pliegue tiene menos filas que sus 1000 cuantiles y se ajusta solo a las que hay
+# (que es lo correcto): el aviso es ruido en la consola del usuario.
+warnings.filterwarnings("ignore", message="n_quantiles", category=UserWarning)
 
 
 # Modelo fitted retenido tras run_experiment/import_model (S3). Vive a nivel de
@@ -154,34 +157,90 @@ def _build_frame(headers, rows, numeric):
     return df
 
 
-def _make_preprocessor(numeric, categorical):
-    numeric_pipe = Pipeline(
-        [("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]
+def _one_hot():
+    # S4 — saneamiento estadístico DENTRO del pipeline (ADR-002 extendido):
+    # min_frequency agrupa las categorías raras (count < 2) en un bucket
+    # "infrecuente" APRENDIDO SOLO EN TRAIN (el fit del pipeline es train-only
+    # ⇒ fuga imposible por construcción). handle_unknown="infrequent_if_exist"
+    # manda las categorías nunca vistas a ese mismo bucket. sparse_output=False
+    # porque HistGradientBoosting no acepta matrices dispersas.
+    return OneHotEncoder(
+        handle_unknown="infrequent_if_exist",
+        min_frequency=2,
+        sparse_output=False,
     )
-    categorical_pipe = Pipeline(
-        [
-            ("imputer", SimpleImputer(strategy="most_frequent")),
-            # S4 — saneamiento estadístico DENTRO del pipeline (ADR-002 extendido):
-            # min_frequency agrupa las categorías raras (count < 2) en un bucket
-            # "infrecuente" APRENDIDO SOLO EN TRAIN (el fit del pipeline es train-only
-            # ⇒ fuga imposible por construcción). handle_unknown="infrequent_if_exist"
-            # manda las categorías nunca vistas a ese mismo bucket. sparse_output=False
-            # porque HistGradientBoosting no acepta matrices dispersas.
-            (
-                "onehot",
-                OneHotEncoder(
-                    handle_unknown="infrequent_if_exist",
-                    min_frequency=2,
-                    sparse_output=False,
-                ),
-            ),
+
+
+def _make_preprocessor(numeric, categorical, limpieza=None):
+    """S18 (ADR 026): `limpieza` es el plan de limpieza que el usuario aprobó, SOLO con nombres de columnas:
+    `indicador_vacio` (una marca de «estaba vacío» junto a la mediana), `cuantiles` (la columna pasa a su posición
+    entre las demás) y `sin_dato` (el vacío de una categórica es una categoría más). Todo se ajusta con las filas de
+    train, como el resto del preprocesador. Sin `limpieza` el preprocesador es el de siempre."""
+    spec = limpieza or {}
+    indicador = set(spec.get("indicador_vacio", ()))
+    cuantiles = set(spec.get("cuantiles", ()))
+    sin_dato = set(spec.get("sin_dato", ()))
+
+    def numeric_pipe(con_marca, por_cuantiles):
+        pasos = [("imputer", SimpleImputer(strategy="median", add_indicator=con_marca))]
+        if por_cuantiles:
+            # random_state fijo: con más de 10 000 filas el ajuste usa una submuestra
+            pasos.append(("quantil", QuantileTransformer(output_distribution="normal", random_state=0)))
+        else:
+            pasos.append(("scaler", StandardScaler()))
+        return Pipeline(pasos)
+
+    def categorical_pipe(vacio_es_categoria):
+        imputer = (
+            SimpleImputer(strategy="constant", fill_value="(sin dato)")
+            if vacio_es_categoria
+            else SimpleImputer(strategy="most_frequent")
+        )
+        return Pipeline([("imputer", imputer), ("onehot", _one_hot())])
+
+    if not (indicador or cuantiles or sin_dato):
+        transformers = [
+            ("num", numeric_pipe(False, False), numeric),
+            ("cat", categorical_pipe(False), categorical),
         ]
-    )
-    return ColumnTransformer(
-        [("num", numeric_pipe, numeric), ("cat", categorical_pipe, categorical)],
-        remainder="drop",
-    )
+    else:
+        transformers = []
+        for nombre, con_marca, por_cuantiles in (
+            ("num", False, False),
+            ("num_marca", True, False),
+            ("num_cuantiles", False, True),
+            ("num_marca_cuantiles", True, True),
+        ):
+            columnas = [
+                c for c in numeric if (c in indicador) == con_marca and (c in cuantiles) == por_cuantiles
+            ]
+            transformers.append((nombre, numeric_pipe(con_marca, por_cuantiles), columnas))
+        transformers.append(("cat", categorical_pipe(False), [c for c in categorical if c not in sin_dato]))
+        transformers.append(("cat_sin_dato", categorical_pipe(True), [c for c in categorical if c in sin_dato]))
+    return ColumnTransformer(transformers, remainder="drop")
 # plantilla:fin base
+
+
+def _aprendido_por_columna(pre):
+    """S18: lo que el preprocesador AJUSTADO aprendió de cada columna —la mediana de las numéricas y las categorías raras de las
+    categóricas—, recorriendo TODOS sus transformadores. Con un plan de limpieza aprobado las columnas se reparten en varios
+    (`num`, `num_marca`, `num_cuantiles`, `cat_sin_dato`…) y alguno puede quedar sin columnas (entonces no se ajusta)."""
+    medianas, raras = {}, {}
+    for _nombre, transformador, columnas in pre.transformers_:
+        if isinstance(columnas, str) or not len(columnas) or not hasattr(transformador, "named_steps"):
+            continue
+        columnas = list(columnas)
+        pasos = transformador.named_steps
+        if "onehot" in pasos:
+            infrecuentes = getattr(pasos["onehot"], "infrequent_categories_", None)
+            if infrecuentes is not None:
+                for col, cats in zip(columnas, infrecuentes):
+                    if cats is not None and len(cats) > 0:
+                        raras[col] = sorted(str(c) for c in cats)
+        elif "imputer" in pasos and hasattr(pasos["imputer"], "statistics_"):
+            for col, valor in zip(columnas, pasos["imputer"].statistics_):
+                medianas[col] = float(valor)
+    return medianas, raras
 
 
 # plantilla:inicio metricas
@@ -1005,7 +1064,11 @@ def _cluster_prepare(p):
     distance_numeric = numeric
     distance_categorical = [] if p["distance"] == "numeric" else categorical
     features = distance_numeric + distance_categorical
-    preprocessor = _make_preprocessor(distance_numeric, distance_categorical)
+    preprocessor = _make_preprocessor(
+        distance_numeric,
+        distance_categorical,
+        _limpieza_of(p, distance_numeric, distance_categorical, filtrar=True),
+    )
     Z = np.asarray(preprocessor.fit_transform(df[features]), dtype=float)
     n = len(df)
     rng = np.random.default_rng(int(p["seed"]))
@@ -1035,14 +1098,8 @@ def _cluster_details(name, ctx, swept):
     gap = score - null
     rule = _cluster_rule(name, ctx, swept)
     agreement = float((_assign(rule, ctx["Z"]) == swept["labels"]).mean())
-    rare = {}
-    if ctx["distance_categorical"]:
-        onehot = ctx["preprocessor"].named_transformers_["cat"].named_steps["onehot"]
-        infreq = getattr(onehot, "infrequent_categories_", None)
-        if infreq is not None:
-            for col, cats in zip(ctx["distance_categorical"], infreq):
-                if cats is not None and len(cats) > 0:
-                    rare[col] = sorted(str(c) for c in cats)
+    _medianas, raras = _aprendido_por_columna(ctx["preprocessor"])
+    rare = {col: raras[col] for col in ctx["distance_categorical"] if col in raras}
     return {
         "reading": {
             "level": _reading_level(gap, stability["ari_mean"]),
@@ -1429,6 +1486,33 @@ def _numeric_target(df, p, train_idx):
     return y, None, None, stats
 
 
+def _limpieza_of(p, numeric, categorical, filtrar=False):
+    """S18: el plan de limpieza aprobado que manda la app, validado (nombra el campo, jamás valores) o None.
+    Con `filtrar` (agrupar: la distancia puede dejar fuera las categóricas) se quedan solo las columnas que se usan."""
+    spec = p.get("limpieza")
+    if spec is None:
+        return None
+    claves = ("indicador_vacio", "sin_dato", "cuantiles")
+    if not isinstance(spec, dict) or set(spec) != set(claves):
+        _contract("limpieza")
+    for clave in claves:
+        if not isinstance(spec[clave], list) or not all(isinstance(c, str) for c in spec[clave]):
+            _contract("limpieza")
+    if filtrar:
+        return {
+            "indicador_vacio": [c for c in spec["indicador_vacio"] if c in numeric],
+            "cuantiles": [c for c in spec["cuantiles"] if c in numeric],
+            "sin_dato": [c for c in spec["sin_dato"] if c in categorical],
+        }
+    if (
+        not set(spec["indicador_vacio"]) <= set(numeric)
+        or not set(spec["cuantiles"]) <= set(numeric)
+        or not set(spec["sin_dato"]) <= set(categorical)
+    ):
+        _contract("limpieza")
+    return spec
+
+
 def _prepare(p):
     """Frame, objetivo y partición — compartido por la liga y fit_member. Binaria:
     objetivo 0/1. Numérica (S6): el objetivo en sus unidades (float)."""
@@ -1466,7 +1550,7 @@ def _prepare(p):
         "y_test": y[test_idx],
         "seed": int(p["seed"]),
         "metric": p["primary_metric"],
-        "preprocessor": _make_preprocessor(numeric, categorical),
+        "preprocessor": _make_preprocessor(numeric, categorical, _limpieza_of(p, numeric, categorical)),
     }
 
 
@@ -1587,18 +1671,11 @@ def _selected_details(pipe, y_pred, ctx):
 
     # Medianas del imputer numérico (para el test anti-fuga: deben provenir SOLO
     # de train — son idénticas entre miembros, mismo preprocesador).
-    num_imputer = pipe.named_steps["prep"].named_transformers_["num"].named_steps["imputer"]
-    learned_medians = {col: float(val) for col, val in zip(numeric, num_imputer.statistics_)}
+    medianas, raras = _aprendido_por_columna(pipe.named_steps["prep"])
+    learned_medians = {col: medianas[col] for col in numeric if col in medianas}
 
     # Categorías raras agrupadas por el OneHotEncoder (min_frequency, train-only).
-    rare_categories = {}
-    if categorical:
-        cat_oh = pipe.named_steps["prep"].named_transformers_["cat"].named_steps["onehot"]
-        infreq = getattr(cat_oh, "infrequent_categories_", None)
-        if infreq is not None:
-            for col, cats in zip(categorical, infreq):
-                if cats is not None and len(cats) > 0:
-                    rare_categories[col] = sorted(str(c) for c in cats)
+    rare_categories = {col: raras[col] for col in categorical if col in raras}
 
     return {
         **task_details,
@@ -2759,6 +2836,51 @@ def run_stress(payload_json="{}"):
     result = _stress_core(task, _MODEL["pipe"], ev)
     result["elapsed_ms"] = _elapsed_ms(started)
     return json.dumps(result)
+
+
+def run_interval(payload_json="{}"):
+    """S18: lo que el intervalo de la métrica necesita de la prueba retenida: lo real, lo predicho y, en dos clases, el
+    puntaje por fila. SOLO números (las clases viajan como 0..K−1): ninguna columna, ningún nombre. El bootstrap lo hace TS
+    (src/engine/intervalo.ts) con la semilla del experimento. Un modelo importado no trae la prueba (`no-eval`) y agrupar
+    no la tiene (`not-applicable`)."""
+    if _MODEL is None:
+        raise RuntimeError("no-model")
+    task = _task_of(_MODEL["schema"])
+    _by_task(task, {
+        "binaria": _supervised,
+        "multiclase": _supervised,
+        "numerica": _supervised,
+        "agrupar": _stress_not_applicable,
+    })()
+    ev = _MODEL.get("eval")
+    if ev is None:
+        raise RuntimeError("no-eval")
+    pipe = _MODEL["pipe"]
+    X, y = ev["X_test"], ev["y_test"]
+    pred = pipe.predict(X)
+    cast = _by_task(task, {
+        "binaria": lambda: int,
+        "multiclase": lambda: int,
+        "numerica": lambda: float,
+        "agrupar": _supervised_only,
+    })()
+    score = _by_task(task, {
+        "binaria": lambda: [float(v) for v in _scores(pipe, X)],
+        "multiclase": lambda: None,
+        "numerica": lambda: None,
+        "agrupar": _supervised_only,
+    })()
+    if score is not None and not all(math.isfinite(v) for v in score):
+        raise ArithmeticError("non-finite-metric")
+    return json.dumps({
+        "task": task,
+        "metric": ev["metric"],
+        "n": int(len(y)),
+        "seed": int(ev["seed"]),
+        "y": [cast(v) for v in y],
+        "pred": [cast(v) for v in pred],
+        "score": score,
+    })
 
 
 def run_stress_test(payload_json):

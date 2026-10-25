@@ -16,7 +16,7 @@ nunca se suben a ningún servidor.
 
 ## Primeros pasos
 
-No hay que instalar nada ni crear una cuenta. Abre la app en el navegador y ya puedes empezar. En la
+No hay que instalar nada ni crear una cuenta. Abre la app en el navegador y ya puedes empezar. Puedes traer un **CSV o un Excel (`.xlsx`)**. En la
 esquina superior derecha puedes cambiar el idioma entre **Español** e **English**. La página abre en español. La primera vez que eliges **English**, tu navegador baja el diccionario en inglés, que es un archivo aparte; mientras llega, la página sigue en español.
 
 ## Features
@@ -73,7 +73,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - El chequeo de fuga es una **ayuda honesta, no una garantía**: atrapa los casos evidentes, no
     todos.
   - Las columnas de fecha se **detectan y avisan**, pero no se usan para el análisis.
-  - Formato admitido: **CSV** (con cabecera). Los valores vacíos, `NA`, `null`, etc. se tratan como
+  - Formato admitido: **CSV** (con cabecera) y, desde el Sprint 018, **Excel `.xlsx`**. Los valores vacíos, `NA`, `null`, etc. se tratan como
     faltantes.
 
 ### El porqué, contado honesto · desde Sprint 002
@@ -136,7 +136,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Puntuar datos nuevos:**
   1. En Resultados, pulsa **"Usar el modelo"**.
-  2. Sube un CSV nuevo con **las mismas columnas** que usaste al entrenar (la pantalla te las
+  2. Sube un CSV (o un Excel) nuevo con **las mismas columnas** que usaste al entrenar (la pantalla te las
      lista), pero **sin la columna que predices** — aquí el modelo responde, no se evalúa. Si la
      incluyes de todos modos, se ignora y se te avisa.
   3. Si a tu archivo le **falta** alguna columna del modelo, la app **se niega a puntuar** y te
@@ -893,6 +893,116 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   autenticación, el HTTPS y los permisos de origen —CORS— los pones tú); y si cambias la versión de
   Pyodide o de scikit-learn, el modelo de antes ya no se abre en lo nuevo: se vuelve a exportar.
 
+### Traer un Excel · desde Sprint 018
+
+- **Qué hace:** además del CSV, la pantalla de inicio acepta un libro de **Excel (`.xlsx`)**. Se lee en tu
+  navegador, al instante, sin subir nada, con **los mismos límites que un CSV** (5 MB y 50 000 filas) y sigue
+  el mismo camino: saneamiento, objetivo, liga y veredicto. También sirve para **puntuar un archivo nuevo**
+  con un modelo ya entrenado.
+
+- **Cómo se lee:** la app toma **la primera hoja visible**, con los títulos de las columnas en su primera fila
+  con datos, y te dice cuál leyó («Se leyó la hoja “Datos” de tu Excel; las otras 2 hojas se ignoraron»). Una
+  fórmula se lee por **el último valor que guardó Excel**; las fechas y las horas se vuelven fechas ISO
+  (`2026-10-25`); un verdadero/falso queda como `true`/`false`; una celda con error queda vacía. Si un
+  título está en blanco sobre datos, la columna se llama `col_3` (por su posición).
+
+- **Lo que no hace, y te dice:**
+  - Un libro **con contraseña o cifrado** se rechaza diciendo que está protegido: quítale la protección o
+    guárdalo como CSV.
+  - Un **Excel antiguo (`.xls`)** no se lee: guárdalo como «Libro de Excel (.xlsx)» o como CSV.
+  - Un archivo **dañado** se rechaza como dañado, no se carga a medias.
+  - **Las celdas combinadas no se expanden** (la primera celda lleva el valor; las demás quedan vacías), y
+    una fórmula que nadie calculó (un libro generado sin abrirse en Excel) llega vacía.
+  - El **Protocolo DS** lee CSV: su huella cuenta los bytes del archivo y su cuaderno guarda esa huella.
+
+- **¿Por qué no usa una librería?** Un `.xlsx` es un archivo comprimido de texto; el navegador ya sabe
+  descomprimirlo. Leerlo sin dependencia nueva evita heredar avisos de seguridad y no suma nada al peso con
+  que abre la app: el lector llega solo cuando eliges un Excel.
+
+### Datos personales y plan de limpieza · desde Sprint 018
+
+- **Qué hace:** al cargar tu archivo, la app **avisa de posibles datos personales** y, aparte, **propone un
+  plan de limpieza** que tú apruebas o rechazas **paso a paso**. Ninguna de las dos cosas bloquea: es un aviso
+  y una propuesta.
+
+- **El aviso de datos personales:** busca, por el contenido y por el nombre de la columna (en español y en
+  inglés), correos, teléfonos (escritos con «+» o con separadores, no un número corrido), documentos de
+  identidad con su dígito de control (DNI, NIE, RUT, CURP, un número de seguro social con formato) y nombres de
+  persona. Dice **la columna, el tipo y cómo lo supo** («por su contenido», «por el nombre de la columna»).
+  **Nunca muestra un valor** —ni un correo, ni un teléfono— y no envía nada a ningún lado. Si el saneamiento ya
+  apartó la columna (un correo distinto en cada fila se aparta como identificador), el aviso lo dice.
+  Es **aproximado**: no encuentra todo, y puede señalar una columna que no lo es.
+
+- **El plan de limpieza:** cada paso lleva **una frase de qué hace, cuántas celdas toca y cómo se deshace**.
+  Tiene **Aprobar** y **Rechazar**; volver a pulsar el botón activo lo deja **sin decidir**. **Lo que no
+  apruebas, no se aplica.** Hasta 12 pasos, los de más alcance primero. Cinco tipos:
+  - **Marca de «estaba vacío»** (una columna numérica con entre 5 y 60 % de vacíos): los vacíos se rellenan con
+    la mediana del **entrenamiento** y se agrega una columna que marca cuáles estaban vacíos.
+  - **«Sin dato» como categoría** (una columna de texto con vacíos): el vacío pasa a ser una categoría más, en
+    lugar de rellenar con la más común.
+  - **Valores muy lejanos por cuantiles** (tres o más valores a más de tres rangos intercuartílicos): la columna
+    pasa a ser la posición de cada valor entre los demás. A los árboles no les cambia nada; a los modelos
+    lineales y de distancia, sí.
+  - **Un código como categoría** (números enteros con pocos valores y un nombre como «código», «tipo» o
+    «zona»): se trata como categoría, no como cantidad.
+  - **Quitar la columna** que el aviso señaló como posibles datos personales.
+
+- **Cómo se evita la fuga:** nada de lo que apruebas toca tu tabla antes de partirla. La mediana, las
+  posiciones por cuantiles y las categorías raras se calculan **solo con las filas de entrenamiento**, dentro
+  del modelo, y viajan con él: el puntuador, el servicio y la receta hacen lo mismo con tus datos nuevos.
+
+- **Dónde queda el registro:** la **ficha del modelo** gana una sección «Plan de limpieza» con cada paso y su
+  decisión (aplicado, rechazado, sin decidir, o aprobado pero no aplicado y por qué: era la columna que
+  predices, la columna se quitó, o pasó a ser categoría). También va en el archivo del modelo
+  (`.probeta.json`, que sigue siendo versión 1: un archivo anterior se abre igual) y la receta repite lo que
+  se aplicó. El plan se aplica igual en las cuatro tareas.
+
+- **Limitaciones:**
+  - **No recupera números escritos con símbolo o separador de miles** (`$1,200`, `12 %`): esas celdas se
+    vuelven vacías, con aviso, como antes. Arréglalos en la hoja de cálculo.
+  - Un paso sobre **la columna que quieres predecir** no se aplica (el registro lo dice).
+  - Los umbrales son fijos y están escritos en el código: no se ajustan.
+  - **Los conteos de cada propuesta** (cuántas celdas vacías, cuántos valores lejanos) miran **toda la tabla**, como las
+    alertas de antes de entrenar; lo que el modelo calcula al aplicar un paso mira **solo las filas de entrenamiento**.
+
+### Entender los datos y confiar en la cifra · desde Sprint 018
+
+- **Explora tus datos** (en la pantalla de configuración, botón **«Explorar»**): no calcula nada hasta que lo
+  pulsas. Trae:
+  - **Un resumen escrito** que dice cuántas filas y columnas hay, cuáles están muy sesgadas, cuáles tienen muchos
+    vacíos, qué dos columnas numéricas se mueven más juntas y qué dos de texto se asocian más. Va con la
+    insignia **«Verificado contra tus números»**: cada cifra se recalculó aparte desde tu tabla; si el texto no
+    cuadra, **no se muestra** y se dice, y quedan las tablas.
+  - **Cómo se reparte cada columna:** casillas de igual ancho en las numéricas y conteo en las de texto, con la
+    cifra escrita junto a cada barra.
+  - **La matriz de correlaciones de Pearson** (de −1 a 1) entre las numéricas, con el signo escrito en cada
+    celda (hasta 15 columnas; si hay más, lo dice) y las **asociaciones entre columnas de texto** (V de Cramér, de
+    0 a 1; solo columnas con hasta 20 categorías).
+  - Una correlación fuerte **no dice que una columna cause la otra**, y el resumen lo recuerda.
+
+- **El margen de error de la cifra** (en Resultados, bajo las métricas): el veredicto da UNA cifra; el margen
+  dice cuánto podría moverse. La app remuestrea **1 000 veces las filas de la prueba** y muestra el **intervalo
+  del 95 %** de la métrica del veredicto —AUC, F1, exactitud, exactitud balanceada o el error medio— con la
+  **semilla** del experimento: repetirlo da lo mismo. Es el margen por tener **esa** prueba; no incluye entrenar
+  con otras filas ni un cambio en tus datos (eso es «Estrésalo»). Con **menos de 50 filas de prueba** avisa de
+  que el intervalo es muy ancho. En **agrupar** no hay prueba: lo dice. Un modelo **importado** no trae la
+  prueba con que se midió: el margen se calcula en la corrida donde lo entrenaste. No va a la ficha del modelo.
+
+- **Explicaciones verificadas, en las cuatro tareas:** el texto estándar de «por qué» (dos clases, varias
+  categorías y estimar una cantidad) y la descripción de cada grupo (agrupar) pasan una comprobación antes de
+  mostrarse: **las cifras son las de tu resultado** y **las columnas que más pesan aparecen en el orden en que
+  el modelo las pesó**. Si pasa, lleva la insignia **«Verificada contra tus números»**; si no, se muestra un
+  texto mínimo con las cifras y se dice. Al agrupar, cada grupo se describe frente a **su media y al promedio de
+  todos los grupos** (en las unidades de tu tabla), con las columnas que más separan. Es una comprobación del
+  texto, no una garantía de que el modelo sea bueno: comprueba que estén las cifras del resultado, con su signo,
+  y los nombres en su orden, pero no puede saber si el texto le pone cada cifra a la columna correcta más allá de ese orden. La explicación con IA de dos clases sigue como estaba
+  (a demanda, con su propia verificación); **no hay ninguna llamada nueva a una IA**.
+
+- **La liga, contra lo prometido:** un chequeo automático cruza los modelos que se prometen (regresión lineal y
+  logística, Ridge y Lasso, Naive Bayes, KNN, árboles, Random Forest, ExtraTrees, HistGradientBoosting, XGBoost,
+  LightGBM, una red neuronal ligera, K-Means) con los que compiten en cada tarea: si uno falta, el código
+  tiene que decir por qué (Lasso, por ejemplo, es una regresión: para clasificar compite la logística).
+
 ## Diccionario de términos
 
 Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
@@ -910,6 +1020,12 @@ cuando una te frene.
 | **Prueba de estrés**       | Medir el mismo modelo, sin reentrenarlo, sobre la prueba perturbada: con ruido, con una columna revuelta y con un corrimiento. Dice cuánto aguanta; no es una garantía.                |
 | **Receta reproducible**    | Un archivo de Python que, con tu CSV, repite lo que hizo la app y compara sus métricas con las que midió. Dice "reproduce", "reproduce de forma aproximada" o "NO reproduce".          |
 | **Puntuador portátil**     | Un solo archivo `.html` con el modelo adentro: quien lo abre arrastra un CSV y su navegador lo puntúa, sin servidor.                                                                   |
+| **Margen de error (intervalo del 95 %)** | El rango en que podría estar la cifra del veredicto si la prueba hubiera sido otra muestra de las mismas filas: se remuestrean las filas de la prueba 1 000 veces, con semilla fija, y se descarta el 2,5 % más bajo y el 2,5 % más alto. |
+| **Explicación verificada** | Un texto cuyas cifras y orden de columnas se comprobaron contra tu resultado antes de mostrarse. Si no cuadra, se muestra solo lo que sí: las cifras. |
+| **Plan de limpieza** | Los pasos que el código propone para tus datos y que tú apruebas o rechazas uno a uno. Lo que no apruebas no se aplica, y lo que depende de los datos se calcula solo con el entrenamiento. |
+| **Posibles datos personales** | Una columna que parece guardar correos, teléfonos, documentos o nombres de personas. Es un aviso aproximado: nombra la columna y el tipo, nunca un valor. |
+| **Correlación (Pearson)** | Cuánto se mueven juntas dos columnas numéricas en línea recta, de −1 (una sube cuando la otra baja) a 1 (suben juntas). 0 es que no se mueven juntas en línea recta. No dice que una cause la otra. |
+| **V de Cramér** | Cuánto se asocian dos columnas de texto, de 0 (no se asocian) a 1 (una decide la otra). |
 
 **Sobre la liga** (desde Sprint 005)
 
@@ -1130,6 +1246,23 @@ cuando una te frene.
   (rangos, categorías vistas, nombre de tu archivo, métricas) y, con vecinos más cercanos, filas de tu
   entrenamiento. La receta no lleva filas. La app lo dice antes de descargar.
 
+- **¿Puedo traer un Excel?** Sí, un `.xlsx`: se lee en tu navegador con los mismos límites que un CSV y la
+  app te dice qué hoja leyó. Un libro con contraseña, un `.xls` antiguo o uno dañado se rechazan diciendo por
+  qué; en esos casos, guárdalo como CSV.
+- **¿La app guarda o muestra mis correos y teléfonos?** No. El aviso de posibles datos personales nombra la
+  columna y el tipo, nunca un valor, y no sale de tu navegador. Si no necesitas esa columna para predecir,
+  puedes quitarla en el plan de limpieza; si la dejas, el archivo del modelo que exportes puede llevar las
+  categorías que vio (la app lo avisa antes de descargar).
+- **¿Por qué el plan no rellena todo de una vez?** Porque rellenar con una mediana calculada con TODAS tus
+  filas dejaría que la prueba influyera en el entrenamiento. Por eso cada paso se calcula dentro del modelo,
+  solo con el entrenamiento, y por eso lo apruebas tú.
+- **Aprobé un paso y no se aplicó, ¿por qué?** El registro del plan (en la ficha del modelo) dice el motivo:
+  era la columna que predices, la columna se quitó con otro paso, o pasó a ser una categoría.
+- **¿Qué significa el intervalo de mi AUC?** Que con esta prueba la cifra podría haber salido un poco más
+  alta o más baja por azar. Cuanto más ancho, menos dice la cifra; con pocas filas de prueba es muy ancho.
+- **¿La insignia «verificada» quiere decir que el modelo es bueno?** No. Quiere decir que el **texto** coincide
+  con tus números. Si el modelo es bueno o no lo dice el veredicto.
+
 ## Historial
 
 | Sprint | Features añadidas a este manual                                                                                                                                                                                                                                                                                      |
@@ -1152,3 +1285,4 @@ cuando una te frene.
 | 015    | Protocolo DS, etapa 10 «La ficha del modelo y su vigilancia» (la ficha sale solo del cuaderno, cada línea con su etapa, fecha y huella; quién responde; con «usar», la cadencia de reentreno que respalda la prueba y el plan de vigilancia con un chequeo de deriva de un CSV nuevo que mide las entradas, y las columnas de texto que vigilas las eliges tú; con «no usar» o «iterar», qué cambiar; la ficha se descarga en Markdown; «Protocolo completo» cuando las diez etapas están cumplidas).
 | 016    | El producto completo (cierre de H-2: las diez etapas, la ficha y Probeta se recorren enteras con el teclado; el tamaño de muestra dice sus supuestos; el chequeo de deriva dice «sin referencia» en vez de «estable» cuando no hay con qué comparar; nota junto a «Exportar cuaderno»; costos con tope; la prueba no cuenta dos veces la misma apertura; preguntas frecuentes del Protocolo).                                                                                                        |
 | 017    | Estrésalo (¿cuánto aguanta tu modelo? el mismo modelo sobre la misma prueba con ruido, una columna revuelta y un corrimiento; en la etapa 8 del Protocolo sin abrir la prueba otra vez, con la línea de robustez en la ficha) y Llévatelo (la receta reproducible, el puntuador portátil y la plantilla de servicio, con el aviso de lo que lleva cada archivo antes de descargar). |
+| 018    | Probeta completa (un Excel `.xlsx` además del CSV, el aviso de posibles datos personales que nunca muestra un valor, el plan de limpieza que apruebas paso a paso y que se calcula solo con el entrenamiento, la exploración con distribuciones, correlaciones y un resumen verificado, el margen de error de la cifra del veredicto, las explicaciones verificadas en las cuatro tareas y la liga contra lo prometido). |

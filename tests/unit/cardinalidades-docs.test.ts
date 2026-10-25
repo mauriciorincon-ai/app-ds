@@ -23,6 +23,12 @@ import {
   STABILITY_FRACTION,
   STABILITY_RUNS,
 } from "@/engine/verdict";
+import {
+  CATEGORIAS_CRAMER_MAX,
+  COLUMNAS_MATRIZ_MAX,
+} from "@/engine/exploracion";
+import { REMUESTREOS } from "@/engine/intervalo";
+import { MAXIMO_PASOS } from "@/engine/limpieza";
 import { MAX_ROWS } from "@/lib/ds/csv";
 import { csvLimitParams, thousands } from "@/lib/quantity";
 
@@ -50,6 +56,8 @@ const PALABRAS: Record<string, number> = {
   seven: 7,
   eight: 8,
   nine: 9,
+  doce: 12,
+  twelve: 12,
 };
 
 // Los ejemplos de la portada, contados en la fuente para no montar React.
@@ -139,6 +147,28 @@ const REGLAS: Regla[] = [
     re: /\b(siete|seis|ocho|nueve|seven|six|eight|nine) (?:ejemplos|bundled examples)/gi,
     esperado: [String(N_EJEMPLOS)],
     normaliza: enNumero,
+  },
+  {
+    nombre: "pasos del plan de limpieza (MAXIMO_PASOS)",
+    re: /\b(?:[Hh]asta|[Uu]p to) \**(\d+|doce|twelve)\** (?:pasos|steps)/g,
+    esperado: [String(MAXIMO_PASOS)],
+    normaliza: enNumero,
+  },
+  {
+    nombre: "columnas de la matriz de correlación (COLUMNAS_MATRIZ_MAX)",
+    re: /\((?:hasta|up to) \**(\d+)\** (?:columnas|columns)/g,
+    esperado: [String(COLUMNAS_MATRIZ_MAX)],
+  },
+  {
+    nombre: "categorías de la V de Cramér (CATEGORIAS_CRAMER_MAX)",
+    re: /solo columnas con hasta \**(\d+)\** categor/g,
+    esperado: [String(CATEGORIAS_CRAMER_MAX)],
+  },
+  {
+    nombre: "remuestreos del margen de error (REMUESTREOS)",
+    re: /remuestrea \**([\d\s\u00a0\u202f,.]+?)\s+veces/g,
+    esperado: [String(REMUESTREOS)],
+    normaliza: (captura) => captura.replace(/\D/g, ""),
   },
   {
     nombre: "límite del CSV (MAX_BYTES y MAX_ROWS)",

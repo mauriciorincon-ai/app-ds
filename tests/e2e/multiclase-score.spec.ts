@@ -22,7 +22,7 @@ test("varias categorías: exportar → recargar → importar → puntuar con «_
 
   await page.goto("/");
   await page
-    .locator('input[accept=".csv,text/csv"]')
+    .locator('input[accept^=".csv,text/csv"]')
     .setInputFiles(
       resolve(process.cwd(), "docs/kit-de-prueba/planes-suscripcion.csv"),
     );
@@ -73,7 +73,7 @@ test("varias categorías: exportar → recargar → importar → puntuar con «_
     timeout: 150_000,
   });
 
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "planes-nuevos.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(NEW_CSV),

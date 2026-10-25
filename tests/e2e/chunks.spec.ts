@@ -29,7 +29,7 @@ test("mientras llega el chunk de la fase siguiente, «Cargando…»", async ({
     await held;
     await route.continue();
   });
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles(SEGMENTOS);
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles(SEGMENTOS);
   await expect(
     page.getByRole("status").filter({ hasText: "Cargando…" }),
   ).toBeVisible();
@@ -42,7 +42,7 @@ test("si el chunk no llega, la página lo dice (y no queda en blanco)", async ({
 }) => {
   await landing(page);
   await page.route("**/_next/static/chunks/**", (route) => route.abort());
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles(SEGMENTOS);
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles(SEGMENTOS);
   await expect(
     page.getByText(
       "No se pudo cargar esta parte de la app. Revisa tu conexión y vuelve a intentarlo; tus datos siguen solo en este navegador.",

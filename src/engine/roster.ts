@@ -92,6 +92,46 @@ export const ROSTER_BY_TASK: Record<TrainTask, readonly MemberId[]> = {
   agrupar: CLUSTER_MEMBER_IDS,
 };
 
+/**
+ * S18: la liga contra la VISION. La VISION (v2.1.0) nombra los modelos de la liga y un test (`liga-vision.test.ts`) cruza esos
+ * nombres con el roster de CADA tarea: si uno falta de una tarea, tiene que estar aquí con su razón; y si está aquí y el roster
+ * ya lo lleva, la razón caducó y el test lo dice. Las razones son de dominio (qué estima cada familia), no excusas.
+ */
+export const SIN_LUGAR_EN_LA_TAREA: Readonly<
+  Partial<Record<TrainTask, Readonly<Record<string, string>>>>
+> = {
+  binaria: {
+    linear:
+      "la regresión lineal estima un número; para clasificar, la familia lineal es la logística",
+    lasso:
+      "Lasso es la regresión con penalización L1; para clasificar la liga lleva la logística con hiperparámetros fijos (ADR 009)",
+  },
+  multiclase: {
+    linear:
+      "la regresión lineal estima un número; para clasificar, la familia lineal es la logística multinomial",
+    lasso:
+      "Lasso es la regresión con penalización L1; para clasificar la liga lleva la logística multinomial con hiperparámetros fijos (ADR 009)",
+  },
+  numerica: {
+    logistic:
+      "la logística clasifica; para estimar un número, la familia lineal es la regresión lineal, Ridge y Lasso",
+    naive_bayes: "Naive Bayes clasifica en categorías; no estima números",
+  },
+};
+
+/**
+ * S18: miembros del roster que la VISION no nombra uno por uno, con lo que son. Son variantes o afines de lo que sí nombra
+ * (la VISION dice «K-Means y afines»); el mismo test los exige declarados.
+ */
+export const FUERA_DE_LA_LISTA_DE_LA_VISION: Readonly<Record<string, string>> = {
+  logistic_balanced: "la logística con class_weight balanceado (D4): la misma familia, para clases desiguales",
+  forest_balanced: "Random Forest con class_weight balanceado (D4): la misma familia, para clases desiguales",
+  linear_svc: "máquina de vectores de soporte lineal: de la familia lineal que la VISION nombra como «regresión lineal y logística»",
+  agglomerative: "agrupamiento jerárquico (ward): uno de los «afines» de K-Means",
+  gmm: "mezcla gaussiana: uno de los «afines» de K-Means",
+  hdbscan: "agrupamiento por densidad: uno de los «afines» de K-Means",
+};
+
 /** Rivales honestos del veredicto (no compiten en la liga: la juzgan). */
 export const BASELINE_IDS = ["majority", "logistic"] as const;
 /** S6 (decisión del usuario en el STOP de la F0): con MAE, la mediana + la lineal. */

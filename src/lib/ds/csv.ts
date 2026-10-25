@@ -194,9 +194,20 @@ export function parseCsvWithLimits(
     return { ok: false, error: { kind: "tab-delimiter" } };
   }
 
-  const allRows = parseRows(clean).filter(
-    (r) => !(r.length === 1 && r[0].trim() === ""),
-  );
+  return limitarTabla(parseRows(clean), { maxRows });
+}
+
+/**
+ * S18: lo que se mide DESPUÉS de leer, igual para un CSV y para un `.xlsx` (que llega ya en filas de
+ * texto): filas en blanco fuera, al menos una cabecera y una fila, el tope de filas y el ancho de
+ * cada fila. Una sola regla para los dos formatos; el límite de bytes se mide antes, sobre el archivo.
+ */
+export function limitarTabla(
+  filas: readonly string[][],
+  options: { maxRows?: number } = {},
+): CsvParseResult {
+  const maxRows = options.maxRows ?? MAX_ROWS;
+  const allRows = filas.filter((r) => !(r.length === 1 && r[0].trim() === ""));
   if (allRows.length < 2) {
     return { ok: false, error: { kind: "empty" } };
   }

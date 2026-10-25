@@ -141,7 +141,7 @@ for (const [width, scheme] of [
   if (scheme === "light") {
     await page.getByRole("button", { name: /Nuevo experimento/i }).click();
     await page
-      .locator('input[type="file"][accept=".csv,text/csv"]')
+      .locator('input[type="file"][accept^=".csv,text/csv"]')
       .setInputFiles(MEDIANA);
     await page.selectOption("#target", "objetivo");
     await shot(page, `${tag}-08-config-mediana`);

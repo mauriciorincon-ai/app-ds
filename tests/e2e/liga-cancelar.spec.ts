@@ -17,7 +17,7 @@ test("Nivel 2: estimar → arrancar → cancelar → el Nivel 1 vuelve y exporta
   test.setTimeout(300_000);
 
   await page.goto("/");
-  await page.locator('input[accept=".csv,text/csv"]').setInputFiles({
+  await page.locator('input[accept^=".csv,text/csv"]').setInputFiles({
     name: "liga-mediana.csv",
     mimeType: "text/csv",
     buffer: readFileSync(MEDIANA),

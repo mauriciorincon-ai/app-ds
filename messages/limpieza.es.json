@@ -1,0 +1,66 @@
+{
+  "limpieza": {
+    "origen": "Se leyó la hoja «{hoja}» de tu Excel.",
+    "origen_otras": "Se leyó la hoja «{hoja}» de tu Excel; las otras {count} hojas se ignoraron.",
+    "origen_otras_one": "Se leyó la hoja «{hoja}» de tu Excel; la otra hoja se ignoró.",
+    "personales": {
+      "titulo": "Posibles datos personales",
+      "item": "«{column}»: parece guardar {tipo}, a juzgar por {via}.",
+      "tipo": {
+        "correo": "correos electrónicos",
+        "telefono": "teléfonos",
+        "documento": "documentos de identidad",
+        "nombre": "nombres de personas"
+      },
+      "via": {
+        "valor": "su contenido",
+        "nombre": "el nombre de la columna",
+        "ambos": "su contenido y el nombre de la columna"
+      },
+      "fuera": "Probeta ya la dejó fuera al sanear: tiene un valor distinto por fila.",
+      "nota": "Es un aviso, no un bloqueo, y la búsqueda es aproximada: no encuentra todo. Probeta no muestra esos valores ni los envía a ningún lado. Si la columna no te sirve para predecir, puedes quitarla en el plan de limpieza."
+    },
+    "plan": {
+      "titulo": "Plan de limpieza",
+      "intro": "El código propone estos pasos y tú decides cada uno. Lo que no apruebes no se aplica. Lo que depende de los datos se calcula solo con las filas de entrenamiento, para que la prueba final siga limpia.",
+      "paso": {
+        "tipo-categoria": "«{column}» guarda códigos escritos con números ({cuenta} valores distintos): tratarla como categoría, no como cantidad.",
+        "vacio-indicador": "«{column}» tiene {cuenta} celdas vacías ({pct} %): se rellenan con la mediana del entrenamiento y se agrega una marca de «estaba vacío».",
+        "vacio-indicador_one": "«{column}» tiene 1 celda vacía ({pct} %): se rellena con la mediana del entrenamiento y se agrega una marca de «estaba vacío».",
+        "vacio-categoria": "«{column}» tiene {cuenta} celdas vacías ({pct} %): «sin dato» pasa a ser una categoría más, en lugar de rellenar con la más común.",
+        "vacio-categoria_one": "«{column}» tiene 1 celda vacía ({pct} %): «sin dato» pasa a ser una categoría más, en lugar de rellenar con la más común.",
+        "atipicos-cuantiles": "«{column}» tiene {cuenta} valores muy lejos del resto: la columna pasa a ser la posición de cada valor entre los demás (cuantiles del entrenamiento). Los árboles no lo notan; los modelos lineales y de distancia, sí.",
+        "atipicos-cuantiles_one": "«{column}» tiene 1 valor muy lejos del resto: la columna pasa a ser la posición de cada valor entre los demás (cuantiles del entrenamiento). Los árboles no lo notan; los modelos lineales y de distancia, sí.",
+        "quitar-columna": "«{column}» parece guardar {tipo}: quitarla antes de entrenar, para que no entre al modelo."
+      },
+      "aprobar": "Aprobar",
+      "rechazar": "Rechazar",
+      "estado": {
+        "sin-decidir": "Sin decidir",
+        "aprobado": "Aprobado",
+        "rechazado": "Rechazado"
+      },
+      "resumen": "Aprobados: {aprobados} · Rechazados: {rechazados} · Sin decidir: {pendientes}",
+      "volver": "Pulsa otra vez el botón activo para dejar el paso sin decidir."
+    },
+    "ficha": {
+      "titulo": "Plan de limpieza",
+      "corto": {
+        "tipo-categoria": "tratada como categoría",
+        "vacio-indicador": "marca de «estaba vacío»",
+        "vacio-categoria": "«sin dato» como categoría",
+        "atipicos-cuantiles": "valores lejanos por cuantiles",
+        "quitar-columna": "columna quitada"
+      },
+      "linea": "- «{column}» ({corto}): {estado}",
+      "estado": {
+        "aplicado": "aprobado y aplicado",
+        "rechazado": "rechazado",
+        "sin-decidir": "sin decidir, no se aplicó",
+        "objetivo": "aprobado, no se aplicó: es la columna que se predice",
+        "columna-quitada": "aprobado, no se aplicó: la columna se quitó",
+        "ahora-categoria": "aprobado, no se aplicó: ahora es una categoría"
+      }
+    }
+  }
+}

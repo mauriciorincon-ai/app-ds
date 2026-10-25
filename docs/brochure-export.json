@@ -12,14 +12,14 @@
     "enlaces.produccion": "null cuando la app no tiene URL pública. `razon` explica por qué, y es lo que la vitrina muestra en lugar del enlace. Nunca se rellena con un enlace de repositorio ni con una promesa."
   },
   "schema_version": "1.0.0",
-  "actualizado": "2026-10-24",
+  "actualizado": "2026-10-25",
   "app": {
     "slug": "ds",
     "nombre": "Probeta DS",
     "ciclo": "H-2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 17,
+    "sprints_cerrados": 18,
     "version_repo": "0.1.0"
   },
   "promesa": {
@@ -29,7 +29,7 @@
     "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad. En Protocolo DS la honestidad además detiene: ninguna etapa se abre sin el criterio de salida de la anterior, la prueba se sella antes de tocar el modelo y se abre una vez, con cada apertura distinta contada, y «no usarlo» es un resultado válido que queda escrito."
   },
   "funcionalidades": {
-    "total": 62,
+    "total": 68,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
     "descartadas": [],
     "grupos": [
@@ -116,6 +116,12 @@
             "nombre": "Nuevo experimento",
             "que_hace": "Un botón devuelve la app al inicio para volver a empezar.",
             "seccion_manual": "El veredicto honesto"
+          },
+          {
+            "id": "V14",
+            "nombre": "El margen de error de la cifra",
+            "que_hace": "Mil remuestreos de la prueba dan un intervalo del 95 % para la métrica del veredicto, con la semilla del experimento: repetirlo da lo mismo. Dice cuánto se movería la cifra con otra muestra de las mismas filas.",
+            "seccion_manual": "Entender los datos y confiar en la cifra"
           }
         ]
       },
@@ -123,7 +129,7 @@
         "orden": 2,
         "estrella": false,
         "nombre": "Datos reales, tratados de frente",
-        "linea": "Tus tablas vienen con huecos, basura y filas repetidas. Se limpian contándote cada paso.",
+        "linea": "Tus tablas, en CSV o Excel, vienen con huecos, basura y filas repetidas. Se limpian contándote cada paso.",
         "features": [
           {
             "id": "D1",
@@ -166,6 +172,30 @@
             "nombre": "Bloqueo del CSV con separador equivocado",
             "que_hace": "El caso típico de Excel en español: se nombra el separador real en vez de adivinarlo, porque una lectura adivinada convertiría columnas numéricas en categorías en silencio.",
             "seccion_manual": "Sobrevive datos reales"
+          },
+          {
+            "id": "D8",
+            "nombre": "También entra un Excel",
+            "que_hace": "Un libro .xlsx se lee en tu navegador, con los mismos límites que un CSV, y la app dice qué hoja leyó. Uno con contraseña, uno antiguo (.xls) o uno dañado se rechaza diciendo por qué.",
+            "seccion_manual": "Traer un Excel"
+          },
+          {
+            "id": "D9",
+            "nombre": "Aviso de posibles datos personales",
+            "que_hace": "Busca correos, teléfonos, documentos y nombres por su contenido y por el nombre de la columna, y avisa la columna y el tipo, jamás el valor. Es un aviso aproximado, no un bloqueo.",
+            "seccion_manual": "Datos personales y plan de limpieza"
+          },
+          {
+            "id": "D10",
+            "nombre": "Un plan de limpieza que apruebas tú",
+            "que_hace": "El código propone hasta doce pasos y tú apruebas o rechazas cada uno; lo que no apruebas no se aplica, lo que depende de los datos se calcula solo con el entrenamiento y la decisión queda en la ficha y en el archivo del modelo.",
+            "seccion_manual": "Datos personales y plan de limpieza"
+          },
+          {
+            "id": "D11",
+            "nombre": "Explora tus datos antes de entrenar",
+            "que_hace": "Cómo se reparte cada columna, la correlación de Pearson entre las numéricas, la V de Cramér entre las de texto y un resumen escrito cuyas cifras se recalculan aparte desde tu tabla.",
+            "seccion_manual": "Entender los datos y confiar en la cifra"
           }
         ]
       },
@@ -210,6 +240,12 @@
             "nombre": "Prueba de estrés: ¿cuánto aguanta?",
             "que_hace": "Con ruido, una columna revuelta y un corrimiento, mide el mismo modelo sobre la misma prueba y dice si sigue ganándole a su rival sin modelo.",
             "seccion_manual": "Estrésalo: ¿cuánto aguanta tu modelo?"
+          },
+          {
+            "id": "P7",
+            "nombre": "El texto estándar, comprobado contra tus números",
+            "que_hace": "En las cuatro tareas, el texto pasa una comprobación de cifras y de orden antes de mostrarse; si no cuadra, se muestran solo las cifras. Es una comprobación del texto, no una garantía de que el modelo sea bueno.",
+            "seccion_manual": "Entender los datos y confiar en la cifra"
           }
         ]
       },
@@ -467,10 +503,10 @@
     {
       "clave": "funcionalidades",
       "etiqueta": "Funcionalidades",
-      "valor": 62,
+      "valor": 68,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (45 de Probeta y 17 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad de la VISION está descartada: lo que aún no existe (S18 a S21) ni se cuenta ni se lista aquí."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (51 de Probeta y 17 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad de la VISION está descartada: lo que aún no existe (S19 a S21) ni se cuenta ni se lista aquí."
     },
     {
       "clave": "pantallas",
@@ -491,26 +527,26 @@
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 2248,
+      "valor": 2623,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-10-25 sobre el árbol final: `pnpm test` 2116 pruebas en 134 archivos + `pnpm test:integration` 132 en 15 archivos (con Pyodide real; una más se salta, el emisor del fixture del S6). Aparte, 13 pruebas de Python en CPython 3.14.0 que corre el job `integration` de la CI."
+      "detalle": "Salida del 2026-10-25 sobre el árbol final: `pnpm test` 2457 pruebas en 146 archivos + `pnpm test:integration` 166 en 18 archivos (con Pyodide real; una más se salta, el emisor del fixture del S6). Aparte, 13 pruebas de Python en CPython 3.14.0 que corre el job `integration` de la CI."
     },
     {
       "clave": "pruebas_e2e",
       "etiqueta": "Pruebas end-to-end",
-      "valor": 134,
+      "valor": 152,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida de la suite e2e entera el 2026-10-25, sobre el build de producción: 32 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe en los dos temas; 134 pasan y 6 se omiten a propósito en móvil (Tab no aplica al teléfono; el puntuador, con Pyodide y sus wheels, se prueba una vez en escritorio). Cero flaky."
+      "detalle": "Salida de la suite e2e entera el 2026-10-25, sobre el build de producción: 34 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe en los dos temas; 152 pasan y 6 se omiten a propósito en móvil (Tab no aplica al teléfono; el puntuador, con Pyodide y sus wheels, se prueba una vez en escritorio). Cero flaky."
     },
     {
       "clave": "cobertura_lineas",
       "etiqueta": "Cobertura de líneas",
-      "valor": 95.55,
+      "valor": 95.54,
       "unidad": "%",
       "fuente": "medido",
-      "detalle": "v8 sobre engine, lib, components y workers; 8420 de 8812 líneas (salida de `pnpm test` del 2026-10-25, sobre el árbol final). Los motores puros de engine/ llevan umbral propio más alto."
+      "detalle": "v8 sobre engine, lib, components y workers; 9443 de 9883 líneas (salida de `pnpm test` del 2026-10-25, sobre el árbol final: imprime 95,54 %). Los motores puros de engine/ llevan umbral propio más alto."
     },
     {
       "clave": "dependencias_runtime",
@@ -547,7 +583,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 123320,
+      "valor": 128628,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
@@ -555,10 +591,10 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 24,
+      "valor": 26,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/ (001–022): el 020 abre el Protocolo como segundo modo, el 021 fija qué guarda el cuaderno de una columna de texto y el 022 el formato del cuaderno y la ficha y la prueba sellada. Lo recuenta tests/unit/brochure-export.test.ts."
+      "detalle": "Archivos de decisions/ (001–026): el 023 y el 024 son la prueba de estrés y lo que el usuario se lleva; el 025 fija el lector de Excel sin dependencia y el 026 el plan de limpieza que el usuario aprueba paso a paso. Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [

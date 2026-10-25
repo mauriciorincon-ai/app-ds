@@ -15,6 +15,7 @@ import {
 } from "@/engine/despacho";
 import type { LeakageFinding } from "@/engine/leakage";
 import { isMemberOf, type MemberId } from "@/engine/roster";
+import type { RegistroPaso, TipoPaso } from "@/engine/limpieza-plan";
 import type { SanitationReport } from "@/engine/sanitize";
 import {
   CLUSTER_TASK,
@@ -33,6 +34,7 @@ import {
 } from "@/engine/verdict";
 import {
   arr,
+  bool,
   check,
   int,
   isRecord,
@@ -143,6 +145,9 @@ export type BinaryManifest = {
     SanitationReport,
     "duplicateRowsRemoved" | "exclusions" | "coercions"
   >;
+  // S18 (ADR 026): el plan de limpieza que el usuario aprobó o rechazó, paso a paso (solo nombres de columnas y
+  // conteos). Aditivo-opcional: un archivo viejo importa y este no sube format_version.
+  cleaning_plan?: ManifestCleaningStep[];
   // S5 — también aditivos-opcionales (los archivos S3/S4 siguen importando):
   // la liga que compitió y cómo se eligió el modelo. Si vienen, se validan.
   league?: ManifestLeagueRow[];
@@ -169,6 +174,7 @@ export type RegressionManifest = {
   payload_encoding: typeof PAYLOAD_ENCODING;
   model_name: MemberId;
   sanitation?: BinaryManifest["sanitation"];
+  cleaning_plan?: ManifestCleaningStep[];
   league: ManifestLeagueRow<RegressionMetrics>[];
   selection: ManifestSelection<"mae">;
 };
@@ -193,6 +199,7 @@ export type MulticlassManifest = {
   payload_encoding: typeof PAYLOAD_ENCODING;
   model_name: MemberId;
   sanitation?: BinaryManifest["sanitation"];
+  cleaning_plan?: ManifestCleaningStep[];
   league: ManifestLeagueRow<MulticlassMetrics>[];
   selection: ManifestSelection<"balanced_accuracy">;
 };
@@ -215,6 +222,7 @@ export type ClusterManifest = {
   payload_encoding: typeof PAYLOAD_ENCODING;
   model_name: MemberId;
   sanitation?: BinaryManifest["sanitation"];
+  cleaning_plan?: ManifestCleaningStep[];
   league: {
     name: MemberId;
     status: ClusterMemberStatus;
@@ -309,6 +317,28 @@ const versionsV = obj({
   lightgbm: optional(str),
 });
 
+const CLEANING_TYPES = [
+  "tipo-categoria",
+  "vacio-indicador",
+  "vacio-categoria",
+  "atipicos-cuantiles",
+  "quitar-columna",
+] as const;
+
+const cleaningPlanV = optional(
+  arr(
+    obj({
+      id: str,
+      type: oneOf(CLEANING_TYPES),
+      column: str,
+      decision: oneOf(["approved", "rejected", "undecided"]),
+      applied: bool,
+      cells: int,
+      of: int,
+    }),
+  ),
+);
+
 const sanitationV = optional(
   obj({
     duplicateRowsRemoved: num,
@@ -335,6 +365,7 @@ const binaryManifestV = obj({
   payload_sha256: str,
   payload_encoding: oneOf([PAYLOAD_ENCODING]),
   model_name: optional(member),
+  cleaning_plan: cleaningPlanV,
   league: optional(
     arr(
       obj({
@@ -383,6 +414,7 @@ const regressionManifestV = obj({
   payload_encoding: oneOf([PAYLOAD_ENCODING]),
   model_name: regressionMember,
   sanitation: sanitationV,
+  cleaning_plan: cleaningPlanV,
   league: arr(
     obj({
       name: regressionMember,
@@ -438,6 +470,7 @@ const multiclassManifestV = obj({
   payload_encoding: oneOf([PAYLOAD_ENCODING]),
   model_name: multiclassMember,
   sanitation: sanitationV,
+  cleaning_plan: cleaningPlanV,
   league: arr(
     obj({
       name: multiclassMember,
@@ -475,6 +508,7 @@ const clusterManifestShapeV = obj({
   payload_encoding: oneOf([PAYLOAD_ENCODING]),
   model_name: clusterMember,
   sanitation: sanitationV,
+  cleaning_plan: cleaningPlanV,
   league: arr(
     obj({
       name: clusterMember,
@@ -583,12 +617,24 @@ export { sha256Hex };
 
 // --- Empaquetar (export) --------------------------------------------------
 
+export type ManifestCleaningStep = {
+  id: string;
+  type: TipoPaso;
+  column: string;
+  decision: "approved" | "rejected" | "undecided";
+  applied: boolean;
+  cells: number;
+  of: number;
+};
+
 export type PackModelInput = {
   datasetName: string;
   result: ExperimentResult;
   exported: ExportResult;
   /** Reporte de saneamiento del entrenamiento (S4) — se registra si no estaba limpio. */
   sanitation?: SanitationReport;
+  /** S18: el registro del plan de limpieza (se guarda si hubo algo que proponer). */
+  cleaningPlan?: readonly RegistroPaso[];
   /** Inyectable para tests deterministas. */
   date?: Date;
 };
@@ -606,6 +652,19 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
           coercions: sanitation.coercions,
         }
       : undefined;
+  const decisionDe = { aprobado: "approved", rechazado: "rejected", "sin-decidir": "undecided" } as const;
+  const cleaningPlan =
+    input.cleaningPlan && input.cleaningPlan.length > 0
+      ? input.cleaningPlan.map((paso) => ({
+          id: paso.id,
+          type: paso.tipo,
+          column: paso.columna,
+          decision: decisionDe[paso.decision],
+          applied: paso.aplicado,
+          cells: paso.celdas,
+          of: paso.de,
+        }))
+      : undefined;
   // Lo que todo archivo lleva, de cualquier tarea.
   const common = {
     app: { name: APP_NAME, version: APP_VERSION },
@@ -616,6 +675,7 @@ export async function packModelFile(input: PackModelInput): Promise<ModelFile> {
     payload_encoding: PAYLOAD_ENCODING,
     model_name: result.modelName,
     ...(sanitationSummary ? { sanitation: sanitationSummary } : {}),
+    ...(cleaningPlan ? { cleaning_plan: cleaningPlan } : {}),
   } as const;
   // Lo de una tarea con objetivo: la partición, la fuga y la selección por CV.
   const supervised = (r: SupervisedResult) =>
