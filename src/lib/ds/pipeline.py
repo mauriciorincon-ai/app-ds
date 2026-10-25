@@ -46,6 +46,7 @@ agrupador sobre datos sin estructura) y la estabilidad por re-muestreo. Las
 etiquetas por fila jamás viajan en el resultado (P13).
 """
 
+# plantilla:inicio imports
 import base64
 import json
 import math
@@ -109,6 +110,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+# plantilla:fin imports
 
 
 # LightGBM 4.6 registra nombres genéricos de columnas al ajustar; sklearn avisa
@@ -129,6 +131,7 @@ _MODEL = None
 _CLUSTER_LABELS = None
 
 
+# plantilla:inicio base
 # Espejo EXACTO de NULL_TOKENS/isNullToken de csv.ts (paridad TS↔Python,
 # auditoría H1) — el test unit null-token-parity falla si divergen. Antes se
 # reemplazaban solo literales exactos: "si " y "si" eran clases distintas y
@@ -178,8 +181,10 @@ def _make_preprocessor(numeric, categorical):
         [("num", numeric_pipe, numeric), ("cat", categorical_pipe, categorical)],
         remainder="drop",
     )
+# plantilla:fin base
 
 
+# plantilla:inicio metricas
 def _metrics(y_true, y_pred, y_score):
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
@@ -213,6 +218,9 @@ def _scores(pipe, X):
     if hasattr(pipe, "predict_proba"):
         return pipe.predict_proba(X)[:, 1]
     return pipe.decision_function(X)
+
+
+# plantilla:fin metricas
 
 
 def _fit_score(estimator, preprocessor, X_train, y_train, X_test):
@@ -384,6 +392,7 @@ MULTICLASS_MIN_CLASSES = 3
 MULTICLASS_MAX_CLASSES = 20
 
 
+# plantilla:inicio fabricas
 def _xgboost(seed):
     from xgboost import XGBClassifier
 
@@ -487,6 +496,9 @@ _REGRESSORS = {
         )
     ),
 }
+
+# plantilla:fin fabricas
+
 
 # --- S7: agrupar sin objetivo (ADR 016) --------------------------------------
 #
@@ -1225,6 +1237,7 @@ def metric_directions(payload_json="{}"):
     )
 
 
+# plantilla:inicio despacho
 def _contract(field):
     # El lado que LEE del contrato rechaza NOMBRANDO el campo (regla 15). Nunca
     # lleva valores del payload: solo el nombre del campo, que es de la app.
@@ -1259,6 +1272,9 @@ def _supervised_only():
     """La rama de agrupar en un camino supervisado: inalcanzable (run_experiment y
     fit_member despachan antes por tarea); si llega igual, se nombra la tarea."""
     _contract("task")
+
+
+# plantilla:fin despacho
 
 
 def _route_task(p):
@@ -1344,6 +1360,7 @@ def _validate_classes(classes):
         _contract("classes")
 
 
+# plantilla:inicio objetivos
 def _decimals(text):
     """Decimales escritos en un valor del objetivo (para mostrar predicciones con la
     precisión con que el usuario anotó sus datos). Notación científica ⇒ el tope."""
@@ -1457,6 +1474,9 @@ def _member_pipe(name, ctx):
     return Pipeline(
         [("prep", clone(ctx["preprocessor"])), ("model", ctx["factories"][name](ctx["seed"]))]
     )
+
+
+# plantilla:fin objetivos
 
 
 def _cross_validate(name, ctx, k, splits=None):
@@ -1685,6 +1705,7 @@ def _multiclass_baselines(ctx):
     return baselines
 
 
+# plantilla:inicio metricas-multi
 def _proba(pipe, X):
     """La matriz de probabilidades, o None si el modelo decide sin darlas (ridge, SVM
     lineal): no se inventan (S5)."""
@@ -1712,6 +1733,9 @@ def _multiclass_metrics(y_true, y_pred, proba, n_classes):
                 roc_auc_score(y_true, proba, multi_class="ovr", average="macro", labels=labels)
             )
     return metrics
+
+
+# plantilla:fin metricas-multi
 
 
 def _regression_baselines(ctx):
@@ -1869,6 +1893,7 @@ def _run_league(p, on_progress=None):
     )
 
 
+# plantilla:inicio prueba
 def _test_metrics(pipe, y_pred, ctx):
     """Métricas de TEST según la tarea (binaria: necesita el puntaje continuo)."""
     return _by_task(ctx["task"], {
@@ -1879,6 +1904,9 @@ def _test_metrics(pipe, y_pred, ctx):
         "numerica": lambda: _reg_metrics(ctx["y_test"], y_pred),
         "agrupar": _supervised_only,
     })()
+
+
+# plantilla:fin prueba
 
 
 def fit_member(payload_json):
