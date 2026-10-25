@@ -527,26 +527,26 @@
     {
       "clave": "pruebas_unitarias",
       "etiqueta": "Pruebas unitarias y de integración",
-      "valor": 2248,
+      "valor": 2623,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida del 2026-10-25 sobre el árbol final: `pnpm test` 2116 pruebas en 134 archivos + `pnpm test:integration` 132 en 15 archivos (con Pyodide real; una más se salta, el emisor del fixture del S6). Aparte, 13 pruebas de Python en CPython 3.14.0 que corre el job `integration` de la CI."
+      "detalle": "Salida del 2026-10-25 sobre el árbol final: `pnpm test` 2457 pruebas en 146 archivos + `pnpm test:integration` 166 en 18 archivos (con Pyodide real; una más se salta, el emisor del fixture del S6). Aparte, 13 pruebas de Python en CPython 3.14.0 que corre el job `integration` de la CI."
     },
     {
       "clave": "pruebas_e2e",
       "etiqueta": "Pruebas end-to-end",
-      "valor": 134,
+      "valor": 152,
       "unidad": "pruebas",
       "fuente": "medido",
-      "detalle": "Salida de la suite e2e entera el 2026-10-25, sobre el build de producción: 32 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe en los dos temas; 134 pasan y 6 se omiten a propósito en móvil (Tab no aplica al teléfono; el puntuador, con Pyodide y sus wheels, se prueba una vez en escritorio). Cero flaky."
+      "detalle": "Salida de la suite e2e entera el 2026-10-25, sobre el build de producción: 34 specs de Playwright sobre 2 dispositivos (móvil y escritorio), con axe en los dos temas; 152 pasan y 6 se omiten a propósito en móvil (Tab no aplica al teléfono; el puntuador, con Pyodide y sus wheels, se prueba una vez en escritorio). Cero flaky."
     },
     {
       "clave": "cobertura_lineas",
       "etiqueta": "Cobertura de líneas",
-      "valor": 95.55,
+      "valor": 95.54,
       "unidad": "%",
       "fuente": "medido",
-      "detalle": "v8 sobre engine, lib, components y workers; 8420 de 8812 líneas (salida de `pnpm test` del 2026-10-25, sobre el árbol final). Los motores puros de engine/ llevan umbral propio más alto."
+      "detalle": "v8 sobre engine, lib, components y workers; 9443 de 9883 líneas (salida de `pnpm test` del 2026-10-25, sobre el árbol final: imprime 95,54 %). Los motores puros de engine/ llevan umbral propio más alto."
     },
     {
       "clave": "dependencias_runtime",
@@ -583,7 +583,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 128582,
+      "valor": 128628,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
