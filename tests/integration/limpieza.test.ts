@@ -17,7 +17,7 @@ import { proponerPlan } from "@/engine/limpieza";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import { prepareClusterRun, prepareRun } from "@/lib/experiment";
 import type { ExportResult, ScoreResult } from "@/workers/protocol";
-import { loadRuntime, pyFunction } from "./runtime";
+import { loadRuntime, pyFunction, withLeague } from "./runtime";
 
 let py: PyodideInterface;
 beforeAll(async () => {
@@ -117,6 +117,93 @@ describe("el plan aprobado llega al preprocesador", () => {
       'str([n for n, _, c in _MODEL["pipe"].named_steps["prep"].transformers_])',
     ) as string;
     expect(nombres).toBe("['num', 'cat']");
+  }, 300_000);
+});
+
+describe("lo que el preprocesador cuenta de cada columna, repartido en varios transformadores", () => {
+  // Auditoría H-01 (S18): con un plan aprobado las columnas se reparten en `num`, `num_marca`, `num_cuantiles`…, y el informe
+  // asumía `num` y `cat` completos: con todas las numéricas en el plan fallaba, y con algunas atribuía la mediana a otra columna.
+  const filas = Array.from({ length: 60 }, (_, i) => [
+    i % 5 === 0 ? "" : String(i), // n1: vacíos, mediana de train distinta de la de n2
+    String(1000 + i * 3), // n2
+    ["a", "b", "c"][i % 3]!, // c1: sin rarezas
+    i % 7 === 0 ? "raro" : i % 2 === 0 ? "par" : "impar", // c2
+    i % 2 === 0 ? "0" : "1",
+  ]);
+  const base = {
+    headers: ["n1", "n2", "c1", "c2", "y"],
+    rows: filas,
+    target: "y",
+    numeric: ["n1", "n2"],
+    categorical: ["c1", "c2"],
+    train_idx: Array.from({ length: 45 }, (_, i) => i),
+    test_idx: Array.from({ length: 15 }, (_, i) => i + 45),
+    seed: 7,
+  };
+  const medianaTrain = (col: number) => {
+    const v = filas
+      .slice(0, 45)
+      .map((f) => f[col]!)
+      .filter((x) => x !== "")
+      .map(Number)
+      .sort((a, b) => a - b);
+    const m = Math.floor(v.length / 2);
+    return v.length % 2 ? v[m]! : (v[m - 1]! + v[m]!) / 2;
+  };
+
+  it("con TODAS las numéricas y las categóricas en el plan entrena, y cada mediana y cada categoría rara es de su columna", () => {
+    const plan = {
+      indicador_vacio: ["n1", "n2"],
+      cuantiles: ["n1", "n2"],
+      sin_dato: ["c1", "c2"],
+    };
+    const r = call<{
+      preprocessing: {
+        numeric_medians: Record<string, number>;
+        rare_categories: Record<string, string[]>;
+      };
+    }>("run_experiment", withLeague({ ...base, limpieza: plan }, ["logistic"]));
+    expect(r.preprocessing.numeric_medians.n1).toBe(medianaTrain(0));
+    expect(r.preprocessing.numeric_medians.n2).toBe(medianaTrain(1));
+    expect(Object.keys(r.preprocessing.numeric_medians).sort()).toEqual([
+      "n1",
+      "n2",
+    ]);
+    // «raro» (una de cada siete filas, 7 en train) no es raro; nada lo es con min_frequency = 2
+    expect(Object.keys(r.preprocessing.rare_categories)).toEqual([]);
+  }, 300_000);
+
+  it("con algunas columnas en el plan y otras no, no mezcla las medianas ni las categorías raras", () => {
+    const filasRaras = filas.map((f, i) => [
+      f[0]!,
+      f[1]!,
+      i === 3 ? "unica" : f[2]!, // c1 tiene UNA categoría con un solo caso en train
+      f[3]!,
+      f[4]!,
+    ]);
+    const r = call<{
+      preprocessing: {
+        numeric_medians: Record<string, number>;
+        rare_categories: Record<string, string[]>;
+      };
+    }>(
+      "run_experiment",
+      withLeague(
+        {
+          ...base,
+          rows: filasRaras,
+          limpieza: {
+            indicador_vacio: ["n1"],
+            cuantiles: [],
+            sin_dato: ["c1"],
+          },
+        },
+        ["logistic"],
+      ),
+    );
+    expect(r.preprocessing.numeric_medians.n1).toBe(medianaTrain(0));
+    expect(r.preprocessing.numeric_medians.n2).toBe(medianaTrain(1));
+    expect(r.preprocessing.rare_categories).toEqual({ c1: ["unica"] });
   }, 300_000);
 });
 

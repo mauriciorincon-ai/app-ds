@@ -221,6 +221,28 @@ def _make_preprocessor(numeric, categorical, limpieza=None):
 # plantilla:fin base
 
 
+def _aprendido_por_columna(pre):
+    """S18: lo que el preprocesador AJUSTADO aprendió de cada columna —la mediana de las numéricas y las categorías raras de las
+    categóricas—, recorriendo TODOS sus transformadores. Con un plan de limpieza aprobado las columnas se reparten en varios
+    (`num`, `num_marca`, `num_cuantiles`, `cat_sin_dato`…) y alguno puede quedar sin columnas (entonces no se ajusta)."""
+    medianas, raras = {}, {}
+    for _nombre, transformador, columnas in pre.transformers_:
+        if isinstance(columnas, str) or not len(columnas) or not hasattr(transformador, "named_steps"):
+            continue
+        columnas = list(columnas)
+        pasos = transformador.named_steps
+        if "onehot" in pasos:
+            infrecuentes = getattr(pasos["onehot"], "infrequent_categories_", None)
+            if infrecuentes is not None:
+                for col, cats in zip(columnas, infrecuentes):
+                    if cats is not None and len(cats) > 0:
+                        raras[col] = sorted(str(c) for c in cats)
+        elif "imputer" in pasos and hasattr(pasos["imputer"], "statistics_"):
+            for col, valor in zip(columnas, pasos["imputer"].statistics_):
+                medianas[col] = float(valor)
+    return medianas, raras
+
+
 # plantilla:inicio metricas
 def _metrics(y_true, y_pred, y_score):
     return {
@@ -1076,14 +1098,8 @@ def _cluster_details(name, ctx, swept):
     gap = score - null
     rule = _cluster_rule(name, ctx, swept)
     agreement = float((_assign(rule, ctx["Z"]) == swept["labels"]).mean())
-    rare = {}
-    if ctx["distance_categorical"]:
-        onehot = ctx["preprocessor"].named_transformers_["cat"].named_steps["onehot"]
-        infreq = getattr(onehot, "infrequent_categories_", None)
-        if infreq is not None:
-            for col, cats in zip(ctx["distance_categorical"], infreq):
-                if cats is not None and len(cats) > 0:
-                    rare[col] = sorted(str(c) for c in cats)
+    _medianas, raras = _aprendido_por_columna(ctx["preprocessor"])
+    rare = {col: raras[col] for col in ctx["distance_categorical"] if col in raras}
     return {
         "reading": {
             "level": _reading_level(gap, stability["ari_mean"]),
@@ -1655,18 +1671,11 @@ def _selected_details(pipe, y_pred, ctx):
 
     # Medianas del imputer numérico (para el test anti-fuga: deben provenir SOLO
     # de train — son idénticas entre miembros, mismo preprocesador).
-    num_imputer = pipe.named_steps["prep"].named_transformers_["num"].named_steps["imputer"]
-    learned_medians = {col: float(val) for col, val in zip(numeric, num_imputer.statistics_)}
+    medianas, raras = _aprendido_por_columna(pipe.named_steps["prep"])
+    learned_medians = {col: medianas[col] for col in numeric if col in medianas}
 
     # Categorías raras agrupadas por el OneHotEncoder (min_frequency, train-only).
-    rare_categories = {}
-    if categorical:
-        cat_oh = pipe.named_steps["prep"].named_transformers_["cat"].named_steps["onehot"]
-        infreq = getattr(cat_oh, "infrequent_categories_", None)
-        if infreq is not None:
-            for col, cats in zip(categorical, infreq):
-                if cats is not None and len(cats) > 0:
-                    rare_categories[col] = sorted(str(c) for c in cats)
+    rare_categories = {col: raras[col] for col in categorical if col in raras}
 
     return {
         **task_details,
