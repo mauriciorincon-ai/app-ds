@@ -2,6 +2,7 @@
 // del modelo: ninguna fila, ninguna etiqueta de clase, ningún valor del objetivo (la clase positiva y las clases las deriva la
 // receta del archivo del usuario al correr).
 import { taskOf } from "@/engine/despacho";
+import type { SpecLimpieza } from "@/engine/limpieza-plan";
 import type { SanitationReport } from "@/engine/sanitize";
 import type { SupervisedResult } from "@/workers/protocol";
 import type { Declaracion, Tolerancia } from "./ensamblar";
@@ -31,6 +32,8 @@ export function declaracionDe(entrada: {
   readonly seed: number;
   readonly datasetName: string;
   readonly sanitation: SanitationReport | null;
+  /** S18: lo que el plan de limpieza aprobó, o null. */
+  readonly limpieza?: SpecLimpieza | null;
   readonly appVersion: string;
   readonly idioma: "es" | "en";
 }): Declaracion {
@@ -51,6 +54,7 @@ export function declaracionDe(entrada: {
       .filter((c) => c.kind === "categorical")
       .map((c) => c.name),
     excluidas: sanitation?.exclusions.map((e) => e.column) ?? [],
+    ...(entrada.limpieza ? { limpieza: entrada.limpieza } : {}),
     semilla: entrada.seed,
     fraccion_prueba: FRACCION_PRUEBA,
     metrica: result.verdict.primaryMetric,

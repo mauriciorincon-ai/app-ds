@@ -254,6 +254,26 @@ describe("la declaración sale del resultado con nombres y números, nada más",
     expect(JSON.stringify(d)).not.toMatch(/positive|classes|rows/i);
   });
 
+  it("S18: el plan de limpieza aprobado viaja como nombres de columnas; sin plan, la receta no gana la clave", () => {
+    const base = {
+      result: resultado,
+      target: "compró",
+      seed: 42,
+      datasetName: "tienda.csv",
+      sanitation: null,
+      appVersion: "0",
+      idioma: "es" as const,
+    };
+    expect("limpieza" in declaracionDe(base)).toBe(false);
+    expect("limpieza" in declaracionDe({ ...base, limpieza: null })).toBe(false);
+    const spec = { indicador_vacio: ["edad"], sin_dato: ["región"], cuantiles: [] };
+    expect(declaracionDe({ ...base, limpieza: spec }).limpieza).toEqual(spec);
+    // solo nombres: ningún número de celdas ni valor
+    expect(JSON.stringify(declaracionDe({ ...base, limpieza: spec }).limpieza)).toBe(
+      '{"indicador_vacio":["edad"],"sin_dato":["región"],"cuantiles":[]}',
+    );
+  });
+
   it("solo los bosques de árboles declaran tolerancia aproximada; los demás, exacta", () => {
     const de = (miembro: string) =>
       declaracionDe({
