@@ -50,6 +50,19 @@ const LAZY = [
   "src/lib/narration/cifras.ts",
   "src/lib/narration/textos-exploracion.ts",
   "src/lib/narration/textos-resultados.ts",
+  // S19: «¿qué pasaría si?» (motor, panel, textos, contratos y pedidos al worker) llega con la pantalla de resultados o de puntuar
+  // (dynamic), nunca con la portada.
+  "src/engine/simulador.ts",
+  "src/components/simulador/SimuladorPanel.tsx",
+  "src/components/simulador/SimuladorProbeta.tsx",
+  "src/lib/simulador/pedir.ts",
+  "src/lib/narration/simulador.ts",
+  "src/lib/narration/textos-simulador.ts",
+  "src/workers/contrato-simulador.ts",
+  "src/workers/contrato-ganador.ts",
+  "src/lib/protocolo/ganador.ts",
+  "src/lib/protocolo/useGanador.ts",
+  "src/components/protocolo/Etapa9Simulador.tsx",
   // S8 (ADR 020): el Protocolo DS vive en /protocolo; la portada solo lleva su enlace
   // y la cuenta de etapas (src/engine/protocolo/ids.ts, sin imports).
   "src/components/protocolo/ProtocoloApp.tsx",
@@ -153,6 +166,17 @@ const LAZY_PROTOCOLO = [
   "src/lib/narration/exploracion.ts",
   "src/lib/narration/explicacion.ts",
   "src/lib/narration/cifras.ts",
+  // S19: el simulador de la etapa 9 y el reajuste del ganador llegan con la etapa 9 (dynamic): ni el panel, ni el motor, ni el
+  // worker del ganador, ni sus lectores entran a la página del Protocolo.
+  "src/components/protocolo/Etapa9Simulador.tsx",
+  "src/components/simulador/SimuladorPanel.tsx",
+  "src/engine/simulador.ts",
+  "src/lib/protocolo/ganador.ts",
+  "src/lib/protocolo/useGanador.ts",
+  "src/lib/simulador/pedir.ts",
+  "src/lib/narration/simulador.ts",
+  "src/workers/contrato-simulador.ts",
+  "src/workers/contrato-ganador.ts",
   // (src/workers/contract.ts ya llega desde el S10 por useProtocolo → quantity.ts: no se vigila aquí)
 ];
 

@@ -7,6 +7,7 @@
 // los que registró la etapa 7. Vive fuera del motor y lo importa solo el hook diferido de la etapa 8.
 import { byCodePoint } from "@/engine/tarea";
 import { matchTask } from "@/engine/despacho";
+import type { Plan7 } from "@/engine/protocolo/etapa7";
 import type { Plan8 } from "@/engine/protocolo/etapa8";
 import { SEMILLA_7 } from "@/engine/protocolo/pliegues";
 import { isMemberOf } from "@/engine/roster";
@@ -25,6 +26,38 @@ export type Envio8 = {
   readonly sent: TestSent;
 };
 
+/**
+ * S19: lo que comparten la apertura de la prueba y el reajuste del ganador (`ganador.ts`): las columnas en «usar» más el objetivo,
+ * la clase de cada fila con el nombre que le da el Protocolo («1.0» y «1» son la misma clase) y las clases de las filas dadas.
+ * Una sola implementación: el ganador se reajusta con EXACTAMENTE las filas de entrenamiento con que se abrió la prueba.
+ */
+export function lecturaDeEnvio(tabla: CsvTable, p7: Plan7) {
+  const numeric = [...p7.numericas];
+  const categorical = [...p7.categoricas];
+  const headers = [...numeric, ...categorical, p7.objetivo];
+  const columnas = headers.map((h) => tabla.headers.indexOf(h));
+  const clases = p7.diseno.clases;
+  const fila = (f: number) =>
+    columnas.map((j, i) =>
+      i === columnas.length - 1 && clases ? clases[f]! : tabla.rows[f]![j]!,
+    );
+  const classes = matchTask(p7.forma, {
+    binaria: () => undefined,
+    multiclase: () =>
+      // S16 (S13 B4): el orden de las clases no depende del idioma del navegador
+      [...new Set(p7.particion.entrenamiento.map((f) => clases![f]!))].sort(
+        byCodePoint,
+      ),
+    numerica: () => undefined,
+  });
+  const positive = matchTask(p7.forma, {
+    binaria: () => p7.diseno.positivo ?? undefined,
+    multiclase: () => undefined,
+    numerica: () => undefined,
+  });
+  return { numeric, categorical, headers, fila, classes, positive };
+}
+
 /** El payload que abre la prueba, o `null` si el sello no cuadra o falta algo de la etapa 7. */
 export function envio8(
   tabla: CsvTable,
@@ -41,31 +74,11 @@ export function envio8(
     !esMetrica(metrica)
   )
     return null;
-  const numeric = [...p7.numericas];
-  const categorical = [...p7.categoricas];
+  const { numeric, categorical, headers, fila, classes, positive } =
+    lecturaDeEnvio(tabla, p7);
   if (numeric.length + categorical.length === 0) return null;
   const { entrenamiento, prueba } = p7.particion;
   if (entrenamiento.length < 2 || prueba.length === 0) return null;
-  const headers = [...numeric, ...categorical, p7.objetivo];
-  const columnas = headers.map((h) => tabla.headers.indexOf(h));
-  // la clase de cada fila con el nombre que le da el Protocolo («1.0» y «1» son la misma clase), como en la 7
-  const clases = p7.diseno.clases;
-  const fila = (f: number) =>
-    columnas.map((j, i) =>
-      i === columnas.length - 1 && clases ? clases[f]! : tabla.rows[f]![j]!,
-    );
-  const classes = matchTask(p7.forma, {
-    binaria: () => undefined,
-    multiclase: () =>
-      // S16 (S13 B4): el orden de las clases no depende del idioma del navegador
-      [...new Set(entrenamiento.map((f) => clases![f]!))].sort(byCodePoint),
-    numerica: () => undefined,
-  });
-  const positive = matchTask(p7.forma, {
-    binaria: () => p7.diseno.positivo ?? undefined,
-    multiclase: () => undefined,
-    numerica: () => undefined,
-  });
   const sello = p7.sello6;
   const payload: TestPayload = {
     task: p7.forma,

@@ -5,7 +5,8 @@
 // puntuado. El panel de novedad (categorías nunca vistas / fuera de rango)
 // SIEMPRE se muestra antes de descargar. El encabezado es el candidato LCP y
 // nace estático (patrón lcp-nace-estatico: sin motion, sin opacity inicial).
-import { useRef, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { matchByTask } from "@/engine/despacho";
 import { useT } from "@/i18n/use-translation";
 import { downloadTextFile } from "@/lib/files";
@@ -37,6 +38,13 @@ import type {
 } from "@/workers/protocol";
 import { Button, Card, Icon, MetricTile } from "./ui";
 
+// S19: «¿qué pasaría si?» sobre las filas nuevas, en su propio chunk (el motor, el panel y sus textos no entran al peso de esta pantalla).
+const SimuladorProbeta = dynamic(
+  () =>
+    import("./simulador/SimuladorProbeta").then((m) => m.SimuladorProbeta),
+  { ssr: false },
+);
+
 const PREVIEW_ROWS = 10;
 
 const IMPORT_STAGES: ProgressStage[] = [
@@ -58,6 +66,8 @@ type ScoreScreenProps<M> = {
   onBackToResults: () => void;
   onExit: () => void;
   onExportModel: () => void;
+  /** S19: el worker del modelo activo (el simulador le pide puntuar las filas con el cambio). */
+  worker?: RefObject<Worker | null>;
 };
 
 /** El modelo activo de una tarea con objetivo. */
@@ -81,6 +91,7 @@ export function ScoreScreen(props: ScoreScreenProps<ModelMeta>) {
             meta={meta}
             scoring={scoring}
             onScoreAnother={props.onScoreAnother}
+            worker={props.worker}
           />
         )}
       />
@@ -106,6 +117,7 @@ export function ScoreScreen(props: ScoreScreenProps<ModelMeta>) {
             schema={schema}
             scoring={scoring}
             onScoreAnother={props.onScoreAnother}
+            worker={props.worker}
           />
         )}
       />
@@ -422,10 +434,12 @@ function ScoredResults({
   meta,
   scoring,
   onScoreAnother,
+  worker,
 }: {
   meta: SupervisedMeta;
   scoring: Scored;
   onScoreAnother: () => void;
+  worker?: RefObject<Worker | null>;
 }) {
   const t = useT();
   const { check, table, fileName } = scoring;
@@ -644,6 +658,19 @@ function ScoredResults({
           {t("score.another")}
         </Button>
       </div>
+
+      {/* S19: ¿qué pasaría si? — las mismas filas con una columna cambiada, puntuadas por este modelo. */}
+      <SimuladorProbeta
+        schema={schema}
+        tabla={table}
+        worker={worker}
+        modelo={scoring}
+        unidadObjetivo={matchByTask(schema, {
+          binaria: () => null,
+          multiclase: () => null,
+          numerica: (quantitySchema) => inferUnit(quantitySchema.target).symbol,
+        })}
+      />
     </div>
   );
 }
@@ -742,10 +769,12 @@ function ClusterScoredResults({
   schema,
   scoring,
   onScoreAnother,
+  worker,
 }: {
   schema: ClusterScoringSchema;
   scoring: Scored;
   onScoreAnother: () => void;
+  worker?: RefObject<Worker | null>;
 }) {
   const t = useT();
   const { check, table, fileName } = scoring;
@@ -905,6 +934,14 @@ function ClusterScoredResults({
           {t("score.another")}
         </Button>
       </div>
+
+      {/* S19: ¿qué pasaría si? — a cuántas filas les cambiaría el grupo. */}
+      <SimuladorProbeta
+        schema={schema}
+        tabla={table}
+        worker={worker}
+        modelo={scoring}
+      />
     </div>
   );
 }
