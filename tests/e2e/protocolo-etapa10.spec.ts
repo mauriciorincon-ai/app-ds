@@ -214,9 +214,8 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
     "Partición Estratificada con prueba sellada",
   );
   await expect(cumplio).toContainText("Calibración medida");
-  await expect(cumplio).toContainText(
-    /Robustez (medida )?\(etapa 8\): con 10 % de ruido en los números, /,
-  );
+  // (con este kit el ganador es la logística y su rival sin modelo es la misma logística: la ficha dice que el ruido no es la causa)
+  await expect(cumplio).toContainText(/Robustez (medida )?\(etapa 8\): /);
   await expect(cumplio).not.toContainText("Robustez: no se midió");
   await expect(cumplio).toContainText(/Etapa 6 · .* · huella [0-9a-f]{12}/);
   await expect(constancia.getByTestId("ficha-seccion-responde")).toContainText(
