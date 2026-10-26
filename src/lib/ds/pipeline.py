@@ -3104,6 +3104,9 @@ RULES_HOLDOUT = 0.25
 RULES_MIN_ROWS = 40
 RULES_SEED = 0
 EVALUATE_KEYS = frozenset(("headers", "rows"))
+# S20 (ADR 027, adenda): las reglas también se arman con las filas que sube el usuario. `truth` pide medir contra el objetivo del
+# archivo SI lo trae; el Protocolo nunca lo pide (la prueba ya se abrió una vez) y TypeScript quita esa columna antes de enviar.
+RULES_KEYS = frozenset(("headers", "rows", "truth"))
 EVALUATE_MAX_ROWS = 50000
 
 
@@ -3224,15 +3227,43 @@ def _r2(truth, pred):
     return 1.0 - ss_res / ss_tot
 
 
+def _validate_rules_payload(p, schema):
+    for key in p:
+        if key not in RULES_KEYS:
+            _contract(key)
+    headers, rows = p.get("headers"), p.get("rows")
+    needed = list(schema["numeric"]) + list(schema["categorical"])
+    if (
+        not isinstance(headers, list)
+        or not all(isinstance(h, str) for h in headers)
+        or len(set(headers)) != len(headers)
+        or any(f not in headers for f in needed)
+    ):
+        _contract("headers")
+    if (
+        not isinstance(rows, list)
+        or not 1 <= len(rows) <= EVALUATE_MAX_ROWS
+        or any(not isinstance(r, list) or len(r) != len(headers) for r in rows)
+    ):
+        _contract("rows")
+    if "truth" in p and not isinstance(p["truth"], bool):
+        _contract("truth")
+
+
 def run_rules(payload_json="{}"):
-    """S19 (ADR 027): el modelo en reglas. Sin payload. `no-rows` si el modelo no conserva las filas (uno importado)."""
+    """S19 (ADR 027): el modelo en reglas. Sin payload, con las filas de entrenamiento del modelo (`no-rows` si no las conserva: uno
+    importado o el ganador del Protocolo). S20: con `{headers, rows, truth?}` el árbol se ajusta a lo que el modelo predice SOBRE ESAS
+    filas (las que sube el usuario), con el 25 % aparte para medir; la verdad se mide solo si `truth` y el archivo trae el objetivo."""
     started = time.perf_counter()
     if _MODEL is None:
         raise RuntimeError("no-model")
     p = json.loads(payload_json or "{}")
-    for key in p if isinstance(p, dict) else ["payload"]:
-        _contract(key)
+    if not isinstance(p, dict):
+        _contract("payload")
+    uploaded = bool(p)
     schema = _MODEL["schema"]
+    if uploaded:
+        _validate_rules_payload(p, schema)
     task = _task_of(schema)
     numeric = list(schema["numeric"])
     categorical = list(schema["categorical"])
@@ -3295,12 +3326,87 @@ def run_rules(payload_json="{}"):
             "regression": False,
         }
 
-    data = _by_task(task, {
-        "binaria": classification,
-        "multiclase": classification,
-        "numerica": regression,
-        "agrupar": cluster,
-    })()
+    def uploaded_data():
+        features = numeric + categorical
+        df = _build_frame(p["headers"], p["rows"], numeric)
+        X = df[features].reset_index(drop=True)
+        n = len(X)
+        if n < RULES_MIN_ROWS:
+            raise RuntimeError("too-few-rows")
+        order = np.random.RandomState(RULES_SEED).permutation(n)
+        n_hold = max(1, int(round(n * RULES_HOLDOUT)))
+        hold, fit = order[:n_hold], order[n_hold:]
+        target = schema.get("target")
+        has_truth = _by_task(task, {
+            "binaria": lambda: True,
+            "multiclase": lambda: True,
+            "numerica": lambda: True,
+            "agrupar": lambda: False,
+        })()
+        wants_truth = p.get("truth") is True and has_truth and target in p["headers"]
+
+        def take(values, idx):
+            return [values[i] for i in idx]
+
+        def classes_data():
+            labels = classes_of()
+            predicted = [labels[int(v)] for v in pipe.predict(X)]
+            truth = None
+            if wants_truth:
+                text = df[target].astype("string")
+                known = text.isin(list(labels)).fillna(False).to_numpy(dtype=bool)
+                truth = [str(v) if k else None for v, k in zip(text.tolist(), known)]
+            return {
+                "fit_X": X.iloc[fit],
+                "fit_y": take(predicted, fit),
+                "hold_X": X.iloc[hold],
+                "hold_model": take(predicted, hold),
+                "hold_truth": None if truth is None else take(truth, hold),
+                "regression": False,
+            }
+
+        def regression_data():
+            predicted = [float(v) for v in pipe.predict(X)]
+            truth = None
+            if wants_truth:
+                values = pd.to_numeric(df[target], errors="coerce").to_numpy(dtype=float, na_value=np.nan)
+                truth = [float(v) if math.isfinite(v) else None for v in values]
+            return {
+                "fit_X": X.iloc[fit],
+                "fit_y": take(predicted, fit),
+                "hold_X": X.iloc[hold],
+                "hold_model": take(predicted, hold),
+                "hold_truth": None if truth is None else take(truth, hold),
+                "regression": True,
+            }
+
+        def cluster_data():
+            groups = [int(v) for v in _score_cluster(_MODEL, X)["predictions"]]
+            return {
+                "fit_X": X.iloc[fit],
+                "fit_y": take(groups, fit),
+                "hold_X": X.iloc[hold],
+                "hold_model": take(groups, hold),
+                "hold_truth": None,
+                "regression": False,
+            }
+
+        return _by_task(task, {
+            "binaria": classes_data,
+            "multiclase": classes_data,
+            "numerica": regression_data,
+            "agrupar": cluster_data,
+        })()
+
+    if uploaded:
+        data = uploaded_data()
+    else:
+        data = _by_task(task, {
+            "binaria": classification,
+            "multiclase": classification,
+            "numerica": regression,
+            "agrupar": cluster,
+        })()
     fit_X, hold_X = data["fit_X"], data["hold_X"]
     if len(fit_X) < RULES_MIN_ROWS:
         raise RuntimeError("too-few-rows")
@@ -3320,26 +3426,37 @@ def run_rules(payload_json="{}"):
     depth, leaves = _rules_shape(root)
     rules_pred = _rules_apply(root, hold_X, medians)
 
+    # la verdad se mide solo en las filas de apartar que la traen (con las filas del entrenamiento, todas)
+    known = (
+        []
+        if data["hold_truth"] is None
+        else [i for i, v in enumerate(data["hold_truth"]) if v is not None]
+    )
     if data["regression"]:
         fidelity = {"metric": "r2", "value": _r2(data["hold_model"], rules_pred), "n": int(len(hold_X))}
-        truth = {
-            "metric": "mae",
-            "rules": float(np.mean(np.abs(np.asarray(rules_pred, dtype=float) - np.asarray(data["hold_truth"])))),
-            "model": float(np.mean(np.abs(np.asarray(data["hold_model"]) - np.asarray(data["hold_truth"])))),
-            "n": int(len(hold_X)),
-        }
+        truth = None
+        if known:
+            t = np.asarray([data["hold_truth"][i] for i in known], dtype=float)
+            truth = {
+                "metric": "mae",
+                "rules": float(np.mean(np.abs(np.asarray([rules_pred[i] for i in known], dtype=float) - t))),
+                "model": float(np.mean(np.abs(np.asarray([data["hold_model"][i] for i in known], dtype=float) - t))),
+                "n": int(len(known)),
+            }
     else:
         fidelity = {"metric": "agreement", "value": _agreement(data["hold_model"], rules_pred), "n": int(len(hold_X))}
         truth = None
-        if data["hold_truth"] is not None:
+        if known:
+            t = [data["hold_truth"][i] for i in known]
             truth = {
                 "metric": "accuracy",
-                "rules": _agreement(data["hold_truth"], rules_pred),
-                "model": _agreement(data["hold_truth"], data["hold_model"]),
-                "n": int(len(hold_X)),
+                "rules": _agreement(t, [rules_pred[i] for i in known]),
+                "model": _agreement(t, [data["hold_model"][i] for i in known]),
+                "n": int(len(known)),
             }
     return json.dumps({
         "task": task,
+        "source": "uploaded" if uploaded else "training",
         "tree": root,
         "numeric": [{"column": c, "median": medians[c]} for c in numeric],
         "fidelity": fidelity,

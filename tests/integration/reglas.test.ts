@@ -31,7 +31,7 @@ import { vigilar } from "@/engine/vigilancia";
 import { parseCsvWithLimits, type CsvTable } from "@/lib/ds/csv";
 import { prepareClusterRun, prepareRun } from "@/lib/experiment";
 import { sqlDeReglas, etiquetaDe } from "@/lib/narration/reglas";
-import { envioGanador } from "@/lib/protocolo/ganador";
+import { clasesDelGanador, envioGanador } from "@/lib/protocolo/ganador";
 import { pythonContractField } from "@/workers/contract";
 import { validateRulesResult } from "@/workers/contrato-reglas";
 import { validateEvaluateResult } from "@/workers/contrato-vigilancia";
@@ -225,6 +225,7 @@ describe("el SQL con nombres hostiles", () => {
   it("escapa las comillas y trata el vacío como el evaluador: lo comprueba el gate de CPython", () => {
     const r: RulesResult = {
       task: "binaria",
+      source: "training",
       tree: {
         leaf: false,
         column: 'ed"ad',
@@ -399,6 +400,107 @@ describe("el modelo en reglas (Pyodide)", () => {
     expect(pythonContractField(failure("run_rules", { extra: 1 }))).toBe(
       "extra",
     );
+  }, 300_000);
+});
+
+// --- S20: las reglas con las filas que sube el usuario -----------------------------------------
+
+describe("las reglas con filas que subes (Pyodide)", () => {
+  const filasKit = () => cargar(csvKit("marketing-filas-para-reglas.csv"));
+  const conObjetivo = () => cargar(csvKit("marketing-resultados-sin-cambio.csv"));
+  const enviado = (m: Modelo, extra: { truthAsked?: boolean } = {}) => ({
+    task: m.tarea,
+    numeric: m.numericas,
+    categorical: m.categoricas,
+    classes: m.clases,
+    source: "uploaded" as const,
+    truthAsked: extra.truthAsked ?? false,
+  });
+  const pedir = (tabla: CsvTable, truth?: boolean) =>
+    call("run_rules", { headers: tabla.headers, rows: tabla.rows, ...(truth === undefined ? {} : { truth }) });
+  /** La tabla del usuario como «tabla del modelo» para el gate de TypeScript ↔ Python ↔ SQL. */
+  const conTabla = (m: Modelo, tabla: CsvTable): Modelo => ({ ...m, tabla, headers: tabla.headers });
+
+  it("un modelo entrenado: el árbol se arma con las filas del archivo, sin objetivo no hay verdad, y el SQL coincide con el árbol", () => {
+    const m = entrenar("marketing-campania.csv", "convirtio");
+    const tabla = filasKit();
+    const raw = pedir(tabla);
+    emit("rules-result-subidas", raw);
+    const v = validateRulesResult(raw, enviado(m));
+    if (!v.ok) throw new Error(`el lector rechazó el resultado: ${v.field}`);
+    expect(v.value.source).toBe("uploaded");
+    expect(v.value.truth).toBeNull();
+    // 300 filas: 75 % arma el árbol y 25 % mide; el árbol no usa las filas de entrenamiento del modelo
+    expect(v.value.n_fit).toBe(225);
+    expect(v.value.fidelity.n).toBe(75);
+    // determinista
+    const otra = validateRulesResult(pedir(tabla), enviado(m));
+    expect(otra.ok && sinTiempo(otra.value)).toEqual(sinTiempo(v.value));
+    // el árbol de las filas del archivo no es el de las del entrenamiento (otro conjunto de filas)
+    verificarYGuardar("subidas-binaria", conTabla(m, tabla), v.value);
+  }, 300_000);
+
+  it("si lo pides y el archivo trae el objetivo, mide contra la verdad; si no lo pides, no", () => {
+    const m = entrenar("marketing-campania.csv", "convirtio");
+    const tabla = conObjetivo();
+    const midiendo = validateRulesResult(pedir(tabla, true), enviado(m, { truthAsked: true }));
+    if (!midiendo.ok) throw new Error(`el lector rechazó el resultado: ${midiendo.field}`);
+    expect(midiendo.value.truth?.metric).toBe("accuracy");
+    expect(midiendo.value.truth!.n).toBeGreaterThan(0);
+    // sin pedirlo, aunque el archivo traiga el objetivo, la verdad no se mide
+    const sinPedir = validateRulesResult(pedir(tabla), enviado(m));
+    if (!sinPedir.ok) throw new Error(`el lector rechazó el resultado: ${sinPedir.field}`);
+    expect(sinPedir.value.truth).toBeNull();
+    // pedirlo sin el objetivo en el archivo: nada que medir, no es un error
+    const sinObjetivo = validateRulesResult(pedir(filasKit(), true), enviado(m, { truthAsked: true }));
+    expect(sinObjetivo.ok && sinObjetivo.value.truth).toBeNull();
+  }, 300_000);
+
+  it("un modelo importado ya no dice «sin filas»: las reglas se arman con el archivo", () => {
+    const m = entrenar("marketing-campania.csv", "convirtio");
+    const exportado = call("export_model") as { payload_b64: string; schema: unknown };
+    call("reset_model");
+    call("import_model", { payload_b64: exportado.payload_b64, expected_schema: exportado.schema });
+    expect(failure("run_rules")).toContain("no-rows");
+    const tabla = filasKit();
+    const v = validateRulesResult(pedir(tabla), enviado(m));
+    if (!v.ok) throw new Error(`el lector rechazó el resultado: ${v.field}`);
+    verificarYGuardar("subidas-importado", conTabla(m, tabla), v.value);
+  }, 300_000);
+
+  it("el ganador del Protocolo reajustado: las reglas con las filas subidas, la prueba sin abrir y la verdad vacía", () => {
+    const a = armarCredito7();
+    const envio = envioGanador(a.tabla, a.previas, HUELLA)!;
+    call("run_fit_winner", envio.payload);
+    const { numeric, categorical } = envio.payload;
+    const usadas = [...numeric, ...categorical];
+    const indices = usadas.map((c) => a.tabla.headers.indexOf(c));
+    const rows = a.tabla.rows.map((fila) => indices.map((i) => fila[i]!));
+    const raw = call("run_rules", { headers: usadas, rows });
+    const v = validateRulesResult(raw, {
+      task: envio.sent.task,
+      numeric,
+      categorical,
+      classes: clasesDelGanador(a.tabla, a.previas, HUELLA),
+      source: "uploaded",
+      truthAsked: false,
+    });
+    if (!v.ok) throw new Error(`el lector rechazó el resultado: ${v.field}`);
+    expect(v.value.source).toBe("uploaded");
+    expect(v.value.truth).toBeNull();
+    // la prueba sigue sin existir en el worker: lo que la lee dice «no-eval»
+    expect(failure("run_stress")).toContain("no-eval");
+  }, 300_000);
+
+  it("pocas filas, una columna que el modelo lee y falta, y claves de más se dicen por su nombre", () => {
+    entrenar("marketing-campania.csv", "convirtio");
+    const tabla = filasKit();
+    expect(failure("run_rules", { headers: tabla.headers, rows: tabla.rows.slice(0, 30) })).toContain("too-few-rows");
+    const sinColumna = { headers: tabla.headers.slice(1), rows: tabla.rows.map((f) => f.slice(1)) };
+    expect(pythonContractField(failure("run_rules", sinColumna))).toBe("headers");
+    expect(pythonContractField(failure("run_rules", { headers: tabla.headers, rows: tabla.rows, extra: 1 }))).toBe("extra");
+    expect(pythonContractField(failure("run_rules", { headers: tabla.headers, rows: tabla.rows, truth: "si" }))).toBe("truth");
+    expect(pythonContractField(failure("run_rules", { headers: tabla.headers, rows: [] }))).toBe("rows");
   }, 300_000);
 });
 

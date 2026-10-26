@@ -9,6 +9,7 @@ import { plan7 } from "@/engine/protocolo/etapa7";
 import { SEMILLA_7 } from "@/engine/protocolo/pliegues";
 import { texto } from "@/engine/protocolo/valores";
 import { isMemberOf } from "@/engine/roster";
+import { byCodePoint } from "@/engine/tarea";
 import { METRIC_RULES, type PrimaryMetric } from "@/engine/verdict";
 import type { CsvTable } from "@/lib/ds/csv";
 import type { GanadorSent } from "@/workers/contrato-ganador";
@@ -72,6 +73,24 @@ export function envioGanador(
     sello,
   };
   return { payload, sent };
+}
+
+/**
+ * S20: las clases que el ganador reajustado conoce (las del entrenamiento sellado, en orden de punto de código), para que el lector
+ * de las reglas compruebe que cada hoja dice una de ellas. `null` al estimar una cantidad o si el envío no sale.
+ */
+export function clasesDelGanador(
+  tabla: CsvTable,
+  previas: Previas,
+  huella: string | null,
+): string[] | null {
+  const envio = envioGanador(tabla, previas, huella);
+  const p7 = envio ? plan7(tabla, previas, huella!) : null;
+  const clases = p7?.diseno.clases;
+  if (!p7 || !clases) return null;
+  return [...new Set(p7.particion.entrenamiento.map((f) => clases[f]!))].sort(
+    byCodePoint,
+  );
 }
 
 /** Las filas de entrenamiento de la partición sellada, con TODAS las columnas de la tabla (un segmento puede usar cualquiera). */

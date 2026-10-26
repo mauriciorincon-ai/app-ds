@@ -233,6 +233,20 @@
           "working": "Fitting the winner with the training rows… The test is not opened.",
           "saved": "Saved: {nombre}.",
           "error": "The model could not be saved ({motivo}). Try again."
+        },
+        "reglas": {
+          "title": "The winner's rules",
+          "body": "A tree of a few questions about the model's columns that copies what the winner decides on the rows you upload, so you can take it to a system where Python does not run (text and SQL). Pick a CSV with rows shaped like your data: the winner is refitted with the training rows, and the tree is built with yours.",
+          "never-truth": "Here the rules are never measured against the truth: the test was opened once in stage 8 and is not opened again. The target column, if your file has one, does not leave your browser and is not used: only the columns the model reads travel.",
+          "button": "Pick a CSV with rows",
+          "need-data": "Load the file you worked with above: the winner is fitted with its training rows and the fingerprint confirms it is the same one.",
+          "other-file": "This is not the file you used: the partition seal does not match, so the winner is not fitted.",
+          "working": "Fitting the winner and building the tree with your rows… The test is not opened.",
+          "csv": "The file could not be read as a CSV ({motivo}).",
+          "missing": "The file is missing columns the model reads: {columnas}.",
+          "too-few": "With so few rows there is no tree worth building: at least {min} are needed.",
+          "error": "The rules could not be built ({motivo}). Try again.",
+          "from-file": "Rules built with the rows of “{nombre}”."
         }
       }
     }

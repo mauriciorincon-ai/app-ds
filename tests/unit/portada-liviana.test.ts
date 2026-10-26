@@ -154,6 +154,12 @@ const LAZY_PROTOCOLO = [
   "src/components/protocolo/Etapa10Form.tsx",
   "src/components/protocolo/Etapa10Constancia.tsx",
   "src/components/protocolo/Etapa10Deriva.tsx",
+  // S20: las reglas del ganador con filas que sube el usuario (el panel, el motor, los textos y la lectura llegan al pintarlas)
+  "src/components/protocolo/Etapa10Reglas.tsx",
+  "src/components/reglas/ReglasPanel.tsx",
+  "src/engine/reglas.ts",
+  "src/lib/narration/reglas.ts",
+  "src/lib/narration/textos-reglas.ts",
   "src/components/protocolo/FichaVista.tsx",
   "src/components/protocolo/textos/etapa10.ts",
   "src/engine/protocolo/ficha.ts",

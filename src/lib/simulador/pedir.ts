@@ -27,6 +27,7 @@ import type {
   FitWinnerResult,
   ForecastPayload,
   ForecastResult,
+  RulesPayload,
   RulesResult,
   RunnerResponse,
   SimulatePayload,
@@ -59,6 +60,7 @@ function pedir<T>(
     | EnvioGanador["payload"]
     | EvaluateNewPayload
     | ForecastPayload
+    | RulesPayload
     | undefined,
   validar: (crudo: unknown) => Checked<T>,
 ): Promise<T> {
@@ -107,12 +109,16 @@ export const pedirAjuste = (
     validateFitWinnerResult(c, envio.sent),
   );
 
-/** El modelo en reglas del modelo retenido (sin payload). */
+/**
+ * El modelo en reglas del modelo retenido. Sin filas, con las de entrenamiento que el modelo conserva; con `payload` (S20), con las
+ * que sube el usuario: entonces `sent.source` es «uploaded» y `sent.truthAsked` dice si se pidió medir contra su objetivo.
+ */
 export const pedirReglas = (
   worker: Worker,
   sent: ReglasSent,
+  payload?: RulesPayload,
 ): Promise<RulesResult> =>
-  pedir(worker, "rules", undefined, (c) => validateRulesResult(c, sent));
+  pedir(worker, "rules", payload, (c) => validateRulesResult(c, sent));
 
 /** Puntúa un CSV nuevo que trae el resultado real y devuelve lo real y lo predicho como números. */
 export const pedirEvaluacion = (

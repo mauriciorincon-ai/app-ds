@@ -456,6 +456,14 @@ function customersWithPersonalData(n = 150, seed = 1414) {
   );
 }
 
+/** El mismo CSV sin una columna (por nombre): para entregar «filas sin el resultado». */
+function sinColumna(csv, nombre) {
+  const filas = csv.trimEnd().split("\n").map((linea) => linea.split(","));
+  const i = filas[0].indexOf(nombre);
+  if (i < 0) throw new Error(`sinColumna: no hay «${nombre}»`);
+  return filas.map((f) => f.filter((_, j) => j !== i).join(",")).join("\n") + "\n";
+}
+
 // S20: dos series mensuales para «Pronosticar una serie» (todo de ficción, 60 meses desde enero de 2021). `serieMensual` pone
 // tendencia + temporada de 12 meses (el ingenuo estacional es el mejor método simple y Holt-Winters o los rezagos le ganan);
 // `serieRuido` es ruido blanco alrededor de un nivel (nadie le gana a la media: el veredicto lo dice). `conHuecos` quita meses
@@ -533,6 +541,9 @@ async function main() {
     "marketing-resultados-sin-cambio.csv": marketingCampaign(300, 131),
     "marketing-resultados-corridos.csv": marketingCampaign(300, 132, true),
     // S20: las series de «Pronosticar»: una con tendencia y temporada, una de ruido blanco y la primera con tres meses sin dato.
+    // S20: filas para armar «las reglas» de un modelo (importado o el ganador del Protocolo): las columnas del ejemplo de marketing, SIN el
+    // objetivo `convirtio` (el archivo que se sube en la etapa 10 no lo necesita, y allí la verdad nunca se mide). Todo de ficción.
+    "marketing-filas-para-reglas.csv": sinColumna(marketingCampaign(300, 141), "convirtio"),
     "serie-ventas-mensual.csv": serieMensual(),
     "serie-ruido.csv": serieRuido(),
     "serie-ventas-con-huecos.csv": serieMensual(2001, [17, 18, 40]),

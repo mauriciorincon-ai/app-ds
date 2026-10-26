@@ -845,8 +845,20 @@ export type RuleNode =
       right: RuleNode;
     };
 
+/**
+ * S20: las filas con que se arma el árbol cuando las pone el usuario (el archivo que cargó, o el que sube en la etapa 10). `truth`
+ * pide medir contra el objetivo del archivo si lo trae; el Protocolo nunca lo pide ni envía esa columna.
+ */
+export type RulesPayload = {
+  headers: string[];
+  rows: string[][];
+  truth?: boolean;
+};
+
 export type RulesResult = {
   task: TrainTask;
+  /** S20: de dónde salieron las filas del árbol: las de entrenamiento del modelo, o las que subió el usuario. */
+  source: "training" | "uploaded";
   tree: RuleNode;
   /** La mediana de entrenamiento con que se llenan los vacíos de cada numérica. */
   numeric: { column: string; median: number }[];
@@ -1075,7 +1087,7 @@ export type RunnerRequest =
   | { id: number; type: "simulate"; payload: SimulatePayload }
   | { id: number; type: "fit-winner"; payload: FitWinnerPayload }
   // S19: el modelo en reglas (sin payload) y vigilar el desempeño con un CSV nuevo que trae el resultado.
-  | { id: number; type: "rules" }
+  | { id: number; type: "rules"; payload?: RulesPayload }
   | { id: number; type: "evaluate-new"; payload: EvaluateNewPayload }
   // S20: el pronóstico de una serie regular (flujo propio; no usa el modelo retenido).
   | { id: number; type: "forecast"; payload: ForecastPayload }

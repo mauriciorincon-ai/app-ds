@@ -6,10 +6,13 @@
 // cuaderno. Un mismo ajuste (misma huella, mismo sello, mismo ganador) se hace una sola vez; si el worker muere, se rehace.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { pedirExport } from "@/lib/publica/modelo";
-import { pedirAjuste, pedirSimulacion } from "@/lib/simulador/pedir";
+import { pedirAjuste, pedirReglas, pedirSimulacion } from "@/lib/simulador/pedir";
+import type { ReglasSent } from "@/workers/contrato-reglas";
 import type { SimuladorSent } from "@/workers/contrato-simulador";
 import type {
   ExportResult,
+  RulesPayload,
+  RulesResult,
   SimulatePayload,
   SimulateResult,
 } from "@/workers/protocol";
@@ -104,5 +107,21 @@ export function useGanador() {
     [ajustar],
   );
 
-  return { estado, ajustar, simular, exportar };
+  /**
+   * S20: el modelo en reglas del ganador, armado con filas que el usuario sube (el ganador reajustado no conserva las de su
+   * entrenamiento). La prueba no se abre y la verdad no se mide: el envío no lleva el objetivo y el lector exige `truth: null`.
+   */
+  const reglas = useCallback(
+    async (
+      envio: EnvioGanador,
+      payload: RulesPayload,
+      sent: ReglasSent,
+    ): Promise<RulesResult> => {
+      const worker = await ajustar(envio);
+      return pedirReglas(worker, sent, payload);
+    },
+    [ajustar],
+  );
+
+  return { estado, ajustar, simular, exportar, reglas };
 }

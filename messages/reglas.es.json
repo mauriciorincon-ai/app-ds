@@ -6,7 +6,8 @@
     "boton": "Ver el modelo en reglas",
     "calculando": "Armando las reglas…",
     "error": "No se pudieron armar las reglas ({motivo}). Vuelve a intentarlo.",
-    "sin_filas": "Este modelo no conserva las filas con que se entrenó (un modelo importado no las trae): las reglas se arman en la corrida donde lo entrenaste.",
+    "ayuda_subidas": "Un árbol de pocas preguntas sobre tus columnas, con los números en sus unidades, que copia lo que el modelo decide EN LAS FILAS DE TU ARCHIVO (el que acabas de cargar). Sirve para llevar el modelo a un sistema donde no corre Python, también si lo importaste: no necesita las filas con que se entrenó. Es un resumen: casi nunca iguala al modelo, y la pantalla te dice cuánto se le parece.",
+    "sin_filas": "Este modelo no conserva las filas con que se entrenó (un modelo importado o el ganador del Protocolo no las trae): las reglas se arman con un archivo de filas, el que cargas en «Usar el modelo».",
     "pocas_filas": "Con tan pocas filas no hay un árbol que valga la pena.",
     "fidelidad": {
       "acuerdo": "Las reglas coinciden con el modelo en el {pct} % de {n} filas que el árbol no vio.",
@@ -17,11 +18,16 @@
       "no": "No llegan al umbral de {umbral} %: son un resumen del modelo, no el modelo."
     },
     "verdad": {
+      "ausente": "Tu archivo no trae el resultado real: las reglas se midieron contra lo que el modelo decide, no contra la verdad.",
+      "filas": "Se midió en {n} filas de las apartadas que traen el resultado real.",
+      "filas_one": "Se midió en {n} fila de las apartadas que trae el resultado real.",
       "accuracy": "Frente a la verdad, las reglas aciertan el {reglas} % y el modelo el {modelo} %.",
       "mae": "Frente a la verdad, el error medio de las reglas es {reglas} y el del modelo {modelo}."
     },
     "detalle": "{hojas} reglas de hasta {profundidad} preguntas, ajustadas con {filas} filas de entrenamiento.",
     "detalle_one": "{hojas} regla de hasta {profundidad} preguntas, ajustada con {filas} filas de entrenamiento.",
+    "detalle_subidas": "{hojas} reglas de hasta {profundidad} preguntas, ajustadas con {filas} filas de tu archivo.",
+    "detalle_subidas_one": "{hojas} regla de hasta {profundidad} preguntas, ajustada con {filas} filas de tu archivo.",
     "descargar_texto": "Descargar las reglas (.txt)",
     "descargar_sql": "Descargar el SQL (.sql)",
     "lista": "Las reglas",

@@ -42,6 +42,7 @@ const ARBOL: RuleNode = {
 
 const resultado = (over: Partial<RulesResult> = {}): RulesResult => ({
   task: "binaria",
+  source: "training",
   tree: ARBOL,
   numeric: [{ column: "precio", median: 80 }],
   fidelity: { metric: "agreement", value: 0.95, n: 50 },

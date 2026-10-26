@@ -321,3 +321,61 @@ describe("el modelo en reglas", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "A tree that resembles the model" })).toBeTruthy());
   });
 });
+
+// --- S20: las reglas con las filas del archivo que el usuario cargó -------------------------------
+
+describe("el modelo en reglas con las filas del archivo (S20)", () => {
+  const SCHEMA: SupervisedSchema = {
+    numeric: ["edad", "ingreso_mensual", "visitas_web", "correos_abiertos"],
+    categorical: ["region", "dispositivo"],
+    target: "convirtio",
+    classes: ["0", "1"],
+    positive_class: "1",
+    task: "binaria",
+  };
+  const TABLA: CsvTable = {
+    headers: ["edad", "ingreso_mensual", "visitas_web", "correos_abiertos", "region", "dispositivo", "convirtio"],
+    rows: Array.from({ length: 60 }, (_, i) => [String(20 + (i % 40)), "2000", String(i % 9), String(i % 5), "norte", "movil", String(i % 2)]),
+  };
+  const subidas = (extra: Record<string, unknown> = {}) => ({ ...fixture("rules-result-subidas"), ...extra });
+
+  it("manda las filas del archivo y pide medir contra la verdad; la lectura dice de dónde salieron y cuántas filas midieron", async () => {
+    const r = subidas({ truth: { metric: "accuracy", rules: 0.8, model: 0.85, n: 17 } });
+    const { worker, enviados } = doble(() => lista("rules", r));
+    pintar(<ReglasPanel schema={SCHEMA} worker={worker} modelo={{}} datasetName="mis-filas.csv" tabla={TABLA} />);
+    expect(screen.getByText(/EN LAS FILAS DE TU ARCHIVO/)).toBeTruthy();
+    expect(enviados).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    await screen.findByTestId("reglas-lectura");
+    expect(enviados).toHaveLength(1);
+    const payload = enviados[0]!.payload as { headers: string[]; rows: string[][]; truth?: boolean };
+    expect(payload.headers).toEqual(TABLA.headers);
+    expect(payload.rows).toHaveLength(60);
+    expect(payload.truth).toBe(true);
+    expect(screen.getByText(/ajustadas con \d+ filas de tu archivo/)).toBeTruthy();
+    expect(screen.getByText(/Se midió en 17 filas de las apartadas que traen el resultado real/)).toBeTruthy();
+    expect(screen.queryByTestId("reglas-sin-verdad")).toBeNull();
+  });
+
+  it("si el archivo no trae el resultado real lo dice: las reglas se midieron contra el modelo, no contra la verdad", async () => {
+    const { worker } = doble(() => lista("rules", subidas()));
+    pintar(<ReglasPanel schema={SCHEMA} worker={worker} modelo={{}} datasetName={null} tabla={TABLA} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    await screen.findByTestId("reglas-lectura");
+    expect(screen.getByTestId("reglas-sin-verdad").textContent).toMatch(/no trae el resultado real/);
+  });
+
+  it("con muy pocas filas dice que no hay un árbol que valga la pena", async () => {
+    const { worker } = doble(() => ({ id: 0, type: "error", message: "RuntimeError: too-few-rows" }));
+    pintar(<ReglasPanel schema={SCHEMA} worker={worker} modelo={{}} datasetName={null} tabla={{ ...TABLA, rows: TABLA.rows.slice(0, 5) }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    expect((await screen.findByTestId("reglas-aviso")).textContent).toMatch(/no hay un árbol que valga la pena/);
+  });
+
+  it("el lector rechaza una respuesta cuyas filas no son las pedidas (las del entrenamiento donde se pidieron las del archivo)", async () => {
+    const { worker } = doble(() => lista("rules", fixture("rules-result-binaria")));
+    pintar(<ReglasPanel schema={SCHEMA} worker={worker} modelo={{}} datasetName={null} tabla={TABLA} />);
+    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("contrato: source");
+  });
+});

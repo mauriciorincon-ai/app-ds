@@ -1,5 +1,6 @@
 {
   "task": "agrupar",
+  "source": "training",
   "tree": {
     "leaf": false,
     "column": "gasto_mensual_usd",

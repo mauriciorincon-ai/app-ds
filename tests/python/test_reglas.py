@@ -2,7 +2,8 @@
 
 Lee tests/integration/.salida-reglas/, que escribe tests/integration/reglas.test.ts con el Pyodide real: por cada tarea (dos clases,
 varias clases, estimar una cantidad y agrupar) las filas del modelo, lo que predicen las reglas en Python y el SQL que armó TypeScript;
-más un caso con nombres y categorías con comillas y con vacíos. Aquí se comprueba que
+más un caso con nombres y categorías con comillas y con vacíos y, desde el S20, los casos de «filas subidas» (las reglas de un modelo
+entrenado y de uno importado, armadas con las filas de un archivo). Aquí se comprueba que
   · el SQL da EXACTAMENTE la misma predicción que las reglas en cada fila (para las cantidades, el mismo literal);
   · no deja ninguna fila sin hoja (una predicción vacía sería una regla inventada);
   · un SQL alterado SÍ difiere: el gate se demuestra fallando.
@@ -18,7 +19,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
 SALIDA = RAIZ / "tests" / "integration" / ".salida-reglas"
-CASOS = ("binaria", "multiclase", "numerica", "agrupar", "hostil")
+CASOS = ("binaria", "multiclase", "numerica", "agrupar", "hostil", "subidas-binaria", "subidas-importado")
 
 
 def _caso(nombre):

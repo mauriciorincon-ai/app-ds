@@ -1,5 +1,6 @@
 {
   "task": "numerica",
+  "source": "training",
   "tree": {
     "leaf": false,
     "column": "ocupantes",

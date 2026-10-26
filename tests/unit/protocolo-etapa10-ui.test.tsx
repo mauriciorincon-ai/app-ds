@@ -804,7 +804,7 @@ describe("la etapa 10: llévate el ganador", () => {
     const creados = instalarWorker();
     montarConstancia(A, ENTRADA_USAR);
     expect(screen.getByTestId("protocolo-modelo10")).toBeTruthy();
-    expect(screen.getByText(/Carga arriba el archivo con que trabajaste/)).toBeTruthy();
+    expect(screen.getAllByText(/Carga arriba el archivo con que trabajaste/).length).toBeGreaterThan(0);
     expect(
       (screen.getByRole("button", { name: "Guardar el ganador como .probeta.json" }) as HTMLButtonElement).disabled,
     ).toBe(true);
@@ -878,10 +878,179 @@ describe("la etapa 10: llévate el ganador", () => {
       </I18nProvider>,
     );
     void evaluadas;
-    expect(screen.getByText(/Este archivo no es el que usaste/)).toBeTruthy();
+    // «Llévate el ganador» y «Las reglas del ganador» lo dicen cada una
+    expect(screen.getAllByText(/Este archivo no es el que usaste/).length).toBeGreaterThan(0);
     expect(
       (screen.getByRole("button", { name: "Guardar el ganador como .probeta.json" }) as HTMLButtonElement).disabled,
     ).toBe(true);
     expect(creados).toHaveLength(0);
+  });
+});
+
+// --- S20: «Las reglas del ganador», con filas que subes -----------------------------------------------
+
+describe("la etapa 10: las reglas del ganador con filas que subes", () => {
+  const A = armarCredito9("usar");
+  const E = async () => await import("@/lib/protocolo/ganador");
+
+  /** Un worker de mentira que contesta como pipeline.py: el ajuste del ganador y las reglas con las filas recibidas. */
+  function instalarWorkerReglas(
+    responder: (p: { headers: string[]; rows: string[][] }, clases: string[]) => Record<string, unknown> | { error: string },
+    clases: string[],
+  ) {
+    const creados: Mensaje[][] = [];
+    class FalsoWorker {
+      onerror: (() => void) | null = null;
+      private oyentes = new Set<(e: { data: unknown }) => void>();
+      private mensajes: Mensaje[] = [];
+      constructor() {
+        creados.push(this.mensajes);
+      }
+      addEventListener(_: string, f: (e: { data: unknown }) => void) {
+        this.oyentes.add(f);
+      }
+      removeEventListener(_: string, f: (e: { data: unknown }) => void) {
+        this.oyentes.delete(f);
+      }
+      terminate() {}
+      postMessage(m: Mensaje) {
+        this.mensajes.push(m);
+        const p = (m.payload ?? {}) as Record<string, unknown> & { train?: unknown[] };
+        let respuesta: unknown;
+        if (m.type === "fit-winner") {
+          respuesta = {
+            type: "result",
+            result: { task: p.task, winner: p.winner, n_train: (p.train as unknown[]).length, huella: p.huella, sello: p.sello, elapsed_ms: 1 },
+          };
+        } else {
+          const r = responder(m.payload as { headers: string[]; rows: string[][] }, clases);
+          respuesta = "error" in r ? { type: "error", message: r.error } : { type: "result", result: r };
+        }
+        queueMicrotask(() =>
+          this.oyentes.forEach((f) => f({ data: { id: m.id, command: m.type, ...(respuesta as object) } })),
+        );
+      }
+    }
+    vi.stubGlobal("Worker", FalsoWorker);
+    return creados;
+  }
+
+  /** Un resultado de reglas válido para el esquema enviado: una sola hoja que dice la primera clase. */
+  let medianas: { column: string; median: number }[] = [];
+  const hoja = (p: { headers: string[]; rows: string[][] }, clases: string[], extra: Record<string, unknown> = {}) => ({
+    task: "binaria",
+    source: "uploaded",
+    tree: { leaf: true, pred: clases[0], n: Math.round(p.rows.length * 0.75) },
+    numeric: medianas,
+    fidelity: { metric: "agreement", value: 0.95, n: Math.round(p.rows.length * 0.25) },
+    truth: null,
+    depth: 0,
+    leaves: 1,
+    n_fit: Math.round(p.rows.length * 0.75),
+    elapsed_ms: 1,
+    ...extra,
+  });
+
+  async function preparar() {
+    const { envioGanador, clasesDelGanador } = await E();
+    const envio = envioGanador(A.tabla, A.previas, HUELLA)!;
+    const clases = clasesDelGanador(A.tabla, A.previas, HUELLA)!;
+    const usadas = [...envio.payload.numeric, ...envio.payload.categorical];
+    const objetivo = envio.payload.target;
+    medianas = envio.payload.numeric.map((column) => ({ column, median: 1 }));
+    return { envio, clases, usadas, objetivo };
+  }
+
+  /** El CSV del usuario: las columnas del modelo y, si se pide, también la del objetivo y una columna que el modelo no lee. */
+  function csvDe(columnas: string[], filas = 120) {
+    const indices = columnas.map((c) => A.tabla.headers.indexOf(c));
+    const lineas = [columnas.join(",")];
+    for (let i = 0; i < filas; i++) lineas.push(indices.map((j) => A.tabla.rows[i % A.tabla.rows.length]![j]).join(","));
+    return lineas.join("\n");
+  }
+  const elegir = (texto: string) => {
+    const entrada = screen.getByTestId("protocolo-reglas-csv") as HTMLInputElement;
+    fireEvent.change(entrada, { target: { files: [new File([texto], "mis-filas.csv", { type: "text/csv" })] } });
+  };
+
+  it("pintar la sección no crea worker; sin los datos cargados lo dice y el botón no se puede pulsar", async () => {
+    const creados = instalarWorkerReglas(() => ({ error: "x" }), []);
+    montarConstancia(A, ENTRADA_USAR);
+    expect(await screen.findByTestId("protocolo-reglas10")).toBeTruthy();
+    expect(screen.getByText(/La columna del objetivo, si tu archivo la trae, no sale de tu navegador/)).toBeTruthy();
+    expect(screen.getAllByText(/Carga arriba el archivo con que trabajaste/).length).toBeGreaterThan(0);
+    expect((screen.getByRole("button", { name: "Elegir un CSV con filas" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(creados).toHaveLength(0);
+  });
+
+  it("«iterar» y «no usarlo» no ofrecen las reglas", async () => {
+    instalarWorkerReglas(() => ({ error: "x" }), []);
+    montarConstancia(armarCredito9("no-usar"), ENTRADA_NO_USAR);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByTestId("protocolo-reglas10")).toBeNull();
+  });
+
+  it("el envío lleva SOLO las columnas que el modelo lee (el objetivo no sale), ajusta sin la prueba y la lectura enseña las reglas", async () => {
+    const { clases, usadas, objetivo } = await preparar();
+    let recibido: { headers: string[]; rows: string[][] } | null = null;
+    const creados = instalarWorkerReglas((p, c) => {
+      recibido = p;
+      return hoja(p, c);
+    }, clases);
+    montarConstancia(A, ENTRADA_USAR, true);
+    await screen.findByTestId("protocolo-reglas10");
+    expect(creados).toHaveLength(0);
+    // el archivo trae el objetivo y una columna que el modelo no lee
+    elegir(csvDe([...usadas, objetivo]));
+    await waitFor(() => expect(screen.getByTestId("reglas-lectura")).toBeTruthy());
+    expect(creados).toHaveLength(1);
+    const [ajuste, reglas] = creados[0]!;
+    expect(ajuste!.type).toBe("fit-winner");
+    expect(Object.keys(ajuste!.payload!)).not.toContain("test");
+    expect(reglas!.type).toBe("rules");
+    expect(Object.keys(reglas!.payload!).sort()).toEqual(["headers", "rows"]);
+    expect(recibido!.headers).toEqual(usadas);
+    expect(recibido!.headers).not.toContain(objetivo);
+    expect(recibido!.rows.every((fila) => fila.length === usadas.length)).toBe(true);
+    expect(JSON.stringify(reglas)).not.toContain(`"${objetivo}"`);
+    expect(screen.getByText(/Reglas armadas con las filas de «mis-filas.csv»/)).toBeTruthy();
+    // sin objetivo en lo que viaja, la lectura dice que no se midió contra la verdad
+    expect(screen.getByTestId("reglas-sin-verdad")).toBeTruthy();
+    expect(screen.getByText(/ajustada con \d+ filas de tu archivo/)).toBeTruthy();
+  });
+
+  it("si el worker contestara con una verdad medida, el lector lo rechaza nombrando el campo y no se enseña nada", async () => {
+    const { clases, usadas } = await preparar();
+    instalarWorkerReglas(
+      (p, c) => hoja(p, c, { truth: { metric: "accuracy", rules: 0.9, model: 0.9, n: 10 } }),
+      clases,
+    );
+    montarConstancia(A, ENTRADA_USAR, true);
+    await screen.findByTestId("protocolo-reglas10");
+    elegir(csvDe(usadas));
+    const alerta = await screen.findByTestId("protocolo-reglas-aviso");
+    expect(alerta.textContent).toContain("contrato: truth");
+    expect(screen.queryByTestId("reglas-lectura")).toBeNull();
+  });
+
+  it("un archivo al que le falta una columna que el modelo lee lo dice y no ajusta nada", async () => {
+    const { clases, usadas } = await preparar();
+    const creados = instalarWorkerReglas((p, c) => hoja(p, c), clases);
+    montarConstancia(A, ENTRADA_USAR, true);
+    await screen.findByTestId("protocolo-reglas10");
+    elegir(csvDe(usadas.slice(1)));
+    const aviso = await screen.findByTestId("protocolo-reglas-aviso");
+    expect(aviso.textContent).toContain(`faltan columnas que el modelo lee: ${usadas[0]}`.replace("faltan", "faltan"));
+    expect(creados).toHaveLength(0);
+  });
+
+  it("con pocas filas el worker dice «too-few-rows» y la pantalla lo traduce", async () => {
+    const { clases, usadas } = await preparar();
+    instalarWorkerReglas(() => ({ error: "too-few-rows" }), clases);
+    montarConstancia(A, ENTRADA_USAR, true);
+    await screen.findByTestId("protocolo-reglas10");
+    elegir(csvDe(usadas, 10));
+    const aviso = await screen.findByTestId("protocolo-reglas-aviso");
+    expect(aviso.textContent).toMatch(/Con tan pocas filas no hay un árbol que valga la pena: hacen falta al menos 40/);
   });
 });
