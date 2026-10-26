@@ -170,6 +170,25 @@ describe("la liga con origen móvil", () => {
     }
   });
 
+  it("el backtest nunca ve la ventana que tiene que acertar: con la ventana de un pliegue fija en 500, el error del ingenuo y de la media es el de no haberla visto", () => {
+    const y = serieDelKit("serie-ventas-mensual.csv");
+    const h = 12;
+    const completa = viable(call(mensual(y, h)));
+    const o = completa.origins.at(-1)!;
+    const ventana = y.map((v, i) => (i >= o ? 500 : v));
+    const r = viable(call(mensual(ventana, h)));
+    const ultimo = (m: string) => r.league.find((f) => f.name === m)!.cv!.folds.at(-1)!;
+    // ingenuo: repite y[o-1]; media: el promedio de lo anterior — sin ver la ventana, el error es |500 − eso|
+    expect(ultimo("ingenuo")).toBeCloseTo(Math.abs(500 - y[o - 1]!), 9);
+    const media = y.slice(0, o).reduce((a, b) => a + b, 0) / o;
+    expect(ultimo("media")).toBeCloseTo(Math.abs(500 - media), 9);
+    // deriva: la recta entre el primero y el último de lo anterior, extendida h periodos
+    const pendiente = (y[o - 1]! - y[0]!) / (o - 1);
+    const esperado =
+      Array.from({ length: h }, (_, i) => Math.abs(500 - (y[o - 1]! + pendiente * (i + 1)))).reduce((a, b) => a + b, 0) / h;
+    expect(ultimo("deriva")).toBeCloseTo(esperado, 9);
+  });
+
   it("propiedad: una serie constante no se equivoca y no tiene escala", () => {
     const r = viable(call(mensual(Array.from({ length: 60 }, () => 5))));
     for (const fila of r.league) {
