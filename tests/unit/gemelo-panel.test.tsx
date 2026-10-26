@@ -158,6 +158,27 @@ describe("el gemelo y su informe", () => {
     expect(screen.queryByTestId("gemelo-lectura")).toBeNull();
   });
 
+  it("el campo de filas se teclea dígito a dígito: lo escrito no salta al mínimo mientras se escribe, y se ajusta al salir", async () => {
+    const { worker, enviados } = doble(() => fixture());
+    panel(worker, []);
+    const campo = screen.getByLabelText("Filas del gemelo") as HTMLInputElement;
+    for (const parcial of ["5", "50", "500"]) {
+      fireEvent.change(campo, { target: { value: parcial } });
+      expect(campo.value).toBe(parcial);
+    }
+    fireEvent.change(campo, { target: { value: "3" } });
+    expect(campo.value).toBe("3");
+    fireEvent.blur(campo);
+    expect(campo.value).toBe("10");
+    fireEvent.change(campo, { target: { value: "" } });
+    expect(campo.value).toBe("");
+    fireEvent.change(campo, { target: { value: "120" } });
+    fireEvent.click(screen.getByRole("button", { name: "Generar el gemelo" }));
+    // la respuesta de la fixture trae 200 filas y el lector la rechaza (pidió 120): lo que se prueba aquí es lo que SALE
+    await waitFor(() => expect(enviados).toHaveLength(1));
+    expect(enviados[0]!.payload).toMatchObject({ n_rows: 120 });
+  });
+
   it("una respuesta que el lector rechaza se dice sin valores", async () => {
     const mala = fixture();
     mala.copies = 3;

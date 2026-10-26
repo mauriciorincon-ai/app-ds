@@ -57,12 +57,15 @@ export function GemeloPanel({ getTable, personales, worker, datasetName }: Gemel
   const t = useTextosEtapa(TEXTOS_GEMELO);
   const tabla = getTable();
   const plan = useMemo(() => (tabla && personales ? planGemelo(tabla, personales) : null), [tabla, personales]);
-  const [filas, setFilas] = useState<number | null>(null);
+  /** Lo que el usuario lleva escrito en el campo de filas, tal cual: se ajusta al rango al salir del campo o al pedir, no mientras teclea. */
+  const [texto, setTexto] = useState<string | null>(null);
   const [estado, setEstado] = useState<Estado>({ tipo: "inactivo" });
   const pedido = useRef(false);
 
   const reales = tabla?.rows.length ?? 0;
-  const filasEf = Math.min(GEMELO_FILAS_MAX, Math.max(GEMELO_SALIDA_MIN, filas ?? Math.min(reales, GEMELO_FILAS_MAX)));
+  const porDefecto = Math.min(reales, GEMELO_FILAS_MAX);
+  const escritas = texto === null || texto.trim() === "" ? porDefecto : Math.trunc(Number(texto));
+  const filasEf = Math.min(GEMELO_FILAS_MAX, Math.max(GEMELO_SALIDA_MIN, Number.isFinite(escritas) ? escritas : porDefecto));
   const pocas = reales > 0 && reales < GEMELO_FILAS_MIN;
   const sinColumnas = plan !== null && plan.incluidas.length === 0;
   const listoParaPedir = plan !== null && !sinColumnas && !pocas && !!worker && estado.tipo !== "calculando";
@@ -157,14 +160,12 @@ export function GemeloPanel({ getTable, personales, worker, datasetName }: Gemel
               min={GEMELO_SALIDA_MIN}
               max={GEMELO_FILAS_MAX}
               className="min-h-11 w-40 rounded-md border border-hairline bg-surface px-3 text-sm"
-              value={filasEf}
+              value={texto ?? String(filasEf)}
               onChange={(e) => {
-                const v = Math.trunc(Number(e.target.value));
-                if (Number.isFinite(v)) {
-                  setFilas(v);
-                  setEstado({ tipo: "inactivo" });
-                }
+                setTexto(e.target.value);
+                setEstado({ tipo: "inactivo" });
               }}
+              onBlur={() => setTexto(String(filasEf))}
             />
             <span className="text-xs text-ink-muted">
               {t("gemelo.filas_ayuda", { max: formatQuantity(GEMELO_FILAS_MAX, 0) })}

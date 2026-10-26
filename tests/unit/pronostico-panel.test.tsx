@@ -129,6 +129,26 @@ describe("el flujo del panel", () => {
     expect(screen.queryByTestId("pronostico-lectura")).toBeNull();
   });
 
+  it("el horizonte se puede borrar y teclear de nuevo: lo escrito no salta al mínimo mientras se escribe", async () => {
+    const { worker, enviados } = doble(() => fixture("forecast-result"));
+    panel(kit("serie-ventas-mensual.csv"), worker);
+    const campo = screen.getByLabelText("Periodos a pronosticar") as HTMLInputElement;
+    fireEvent.change(campo, { target: { value: "" } });
+    expect(campo.value).toBe("");
+    fireEvent.change(campo, { target: { value: "2" } });
+    expect(campo.value).toBe("2");
+    fireEvent.change(campo, { target: { value: "24" } });
+    expect(campo.value).toBe("24");
+    fireEvent.click(screen.getByRole("button", { name: "Pronosticar" }));
+    // la respuesta de la fixture es de 12 periodos y el lector la rechaza (pidió 24): lo que se prueba aquí es lo que SALE
+    await waitFor(() => expect(enviados).toHaveLength(1));
+    expect(enviados[0]!.payload).toMatchObject({ horizon: 24 });
+    // un valor fuera de rango se ajusta al salir del campo
+    fireEvent.change(campo, { target: { value: "0" } });
+    fireEvent.blur(campo);
+    expect(campo.value).toBe("1");
+  });
+
   it("una respuesta que el lector rechaza se dice sin valores", async () => {
     const mala = fixture("forecast-result");
     mala.league[3].cv.mean *= 1.5;

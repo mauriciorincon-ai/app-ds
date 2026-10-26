@@ -92,7 +92,8 @@ export function PronosticoPanel({
   const [orden, setOrden] = useState<Orden | null>(null);
   const [periodo, setPeriodo] = useState<Periodo | null>(null);
   const [agregado, setAgregado] = useState<Agregado | null>(null);
-  const [horizonte, setHorizonte] = useState<number | null>(null);
+  /** Lo que el usuario lleva escrito en el campo del horizonte, tal cual: se ajusta al rango al salir del campo o al pedir, no mientras teclea. */
+  const [horizonteTexto, setHorizonteTexto] = useState<string | null>(null);
   const [completar, setCompletar] = useState(false);
   const [estado, setEstado] = useState<Estado>({ tipo: "inactivo" });
   const pedido = useRef(false);
@@ -132,9 +133,18 @@ export function PronosticoPanel({
     : null;
   const periodoEf: Periodo = periodo ?? propuesto ?? "mes";
   const agregadoEf: Agregado = agregado ?? proponerAgregado(valorCol);
+  const horizonteEscrito =
+    horizonteTexto === null || horizonteTexto.trim() === ""
+      ? HORIZONTE_DEFECTO[periodoEf]
+      : Math.trunc(Number(horizonteTexto));
   const horizonteEf = Math.min(
     HORIZONTE_MAX,
-    Math.max(1, horizonte ?? HORIZONTE_DEFECTO[periodoEf]),
+    Math.max(
+      1,
+      Number.isFinite(horizonteEscrito)
+        ? horizonteEscrito
+        : HORIZONTE_DEFECTO[periodoEf],
+    ),
   );
   const armada = lectura?.porFila
     ? armarSerie(lectura.porFila.fechas, lectura.numeros, periodoEf, agregadoEf)
@@ -269,7 +279,7 @@ export function PronosticoPanel({
               value={periodoEf}
               onChange={(e) => {
                 cambia(setPeriodo)(e.target.value as Periodo);
-                setHorizonte(null);
+                setHorizonteTexto(null);
               }}
             >
               {OPCIONES_PERIODO.map((p) => (
@@ -303,11 +313,9 @@ export function PronosticoPanel({
               min={1}
               max={HORIZONTE_MAX}
               className={selectClase}
-              value={horizonteEf}
-              onChange={(e) => {
-                const v = Math.trunc(Number(e.target.value));
-                if (Number.isFinite(v)) cambia(setHorizonte)(v);
-              }}
+              value={horizonteTexto ?? String(horizonteEf)}
+              onChange={(e) => cambia(setHorizonteTexto)(e.target.value)}
+              onBlur={() => setHorizonteTexto(String(horizonteEf))}
             />
           </Campo>
           <p className="text-xs text-ink-muted sm:col-span-3">

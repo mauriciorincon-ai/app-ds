@@ -111,6 +111,16 @@ describe("el gemelo del kit", () => {
     expect(call({ ...payload, seed: payload.seed + 1 }).rows).not.toEqual(call(payload).rows);
   });
 
+  it("los números salen con diez cifras significativas y sin notación científica; el recuento de copias sigue siendo el mismo para Python y para el lector", () => {
+    const filas = Array.from({ length: 300 }, (_, i) => [String(1234567.891 + i * 137.4271), String(i % 7)]);
+    const grande: SynthesizePayload = { headers: ["importe", "grupo"], kinds: ["numeric", "numeric"], rows: filas, n_rows: 120, seed: 42 };
+    const raw = call(grande);
+    const importes = raw.rows.map((f) => f[0]!);
+    expect(importes.filter((t) => /e[+-]/i.test(t)), "una cifra en notación científica").toEqual([]);
+    expect(importes.some((t) => t.replace(/\D/g, "").length >= 8), "ninguna cifra sale con más de 6 dígitos").toBe(true);
+    expect(valido(grande, raw).copies).toBe(0);
+  });
+
   it("n filas pedidas es lo que sale, también más que las reales", () => {
     const grande = call({ ...payload, n_rows: 500 });
     expect(grande.rows).toHaveLength(500);

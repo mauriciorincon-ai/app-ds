@@ -21,8 +21,8 @@ import type { ReglasSent } from "@/workers/contrato-reglas";
 import type { RulesResult } from "@/workers/protocol";
 import { TEXTOS_ETAPA_10 } from "./textos/etapa10";
 
-/** Las filas mínimas que pide `pipeline.py` (RULES_MIN_ROWS): solo para el texto; quien decide es el worker. */
-const FILAS_MINIMAS = 40;
+/** Las filas mínimas que pide `pipeline.py` con filas subidas (RULES_MIN_UPLOADED: 40 de ajuste más el 25 % apartado): solo para el texto; quien decide es el worker. */
+const FILAS_MINIMAS = 53;
 
 type Estado =
   | { readonly tipo: "inactivo" }

@@ -3102,6 +3102,10 @@ RULES_CATEGORY_MIN_ROWS = 5
 RULES_CATEGORY_MAX = 15
 RULES_HOLDOUT = 0.25
 RULES_MIN_ROWS = 40
+# con las filas que sube el usuario se aparta el 25 % antes de armar el árbol: el menor total que deja RULES_MIN_ROWS de ajuste (53)
+RULES_MIN_UPLOADED = next(
+    n for n in range(RULES_MIN_ROWS, 10 * RULES_MIN_ROWS) if n - max(1, int(round(n * RULES_HOLDOUT))) >= RULES_MIN_ROWS
+)
 RULES_SEED = 0
 EVALUATE_KEYS = frozenset(("headers", "rows"))
 # S20 (ADR 027, adenda): las reglas también se arman con las filas que sube el usuario. `truth` pide medir contra el objetivo del
@@ -3331,7 +3335,7 @@ def run_rules(payload_json="{}"):
         df = _build_frame(p["headers"], p["rows"], numeric)
         X = df[features].reset_index(drop=True)
         n = len(X)
-        if n < RULES_MIN_ROWS:
+        if n < RULES_MIN_UPLOADED:
             raise RuntimeError("too-few-rows")
         order = np.random.RandomState(RULES_SEED).permutation(n)
         n_hold = max(1, int(round(n * RULES_HOLDOUT)))
@@ -3940,6 +3944,8 @@ SYNTH_PROXIMITY_MAX = 2000
 SYNTH_RESAMPLE_ROUNDS = 20
 SYNTH_EIGEN_FLOOR = 1e-6
 SYNTH_SIG = 6
+# cifras significativas con que SALE un número del gemelo; SYNTH_SIG (6) es solo la clave con que se cuentan las copias exactas, y el lector TS usa la misma
+SYNTH_OUT_SIG = 10
 
 
 def _synth_key(values, kinds):
@@ -3955,7 +3961,10 @@ def _synth_text(value, kind, integer):
         return ""
     if kind != "numeric":
         return str(value)
-    return str(int(round(value))) if integer else f"{float(value):.{SYNTH_SIG}g}"
+    if integer:
+        return str(int(round(value)))
+    text = repr(float(f"{float(value):.{SYNTH_OUT_SIG}g}"))
+    return text[:-2] if text.endswith(".0") else text
 
 
 def run_synthesize(payload_json="{}"):

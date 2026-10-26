@@ -1051,6 +1051,6 @@ describe("la etapa 10: las reglas del ganador con filas que subes", () => {
     await screen.findByTestId("protocolo-reglas10");
     elegir(csvDe(usadas, 10));
     const aviso = await screen.findByTestId("protocolo-reglas-aviso");
-    expect(aviso.textContent).toMatch(/Con tan pocas filas no hay un árbol que valga la pena: hacen falta al menos 40/);
+    expect(aviso.textContent).toMatch(/Con tan pocas filas no hay un árbol que valga la pena: hacen falta al menos 53/);
   });
 });

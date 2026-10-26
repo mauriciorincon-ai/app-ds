@@ -496,6 +496,10 @@ describe("las reglas con filas que subes (Pyodide)", () => {
     entrenar("marketing-campania.csv", "convirtio");
     const tabla = filasKit();
     expect(failure("run_rules", { headers: tabla.headers, rows: tabla.rows.slice(0, 30) })).toContain("too-few-rows");
+    // el borde es el que la pantalla dice (Etapa10Reglas.FILAS_MINIMAS): se aparta el 25 %, así que 40 de ajuste piden 53 en total (con 52 quedan 39)
+    expect(failure("run_rules", { headers: tabla.headers, rows: tabla.rows.slice(0, 52) })).toContain("too-few-rows");
+    const justas = call("run_rules", { headers: tabla.headers, rows: tabla.rows.slice(0, 53) }) as { source: string };
+    expect(justas.source).toBe("uploaded");
     const sinColumna = { headers: tabla.headers.slice(1), rows: tabla.rows.map((f) => f.slice(1)) };
     expect(pythonContractField(failure("run_rules", sinColumna))).toBe("headers");
     expect(pythonContractField(failure("run_rules", { headers: tabla.headers, rows: tabla.rows, extra: 1 }))).toBe("extra");
