@@ -170,6 +170,7 @@ export function Etapa10Reglas({
             locale={locale}
             unidad={null}
             datasetName={datos?.carga.nombre ?? null}
+            sinVerdad={t("protocol.stage.10.reglas.sin-verdad")}
           />
         </>
       )}

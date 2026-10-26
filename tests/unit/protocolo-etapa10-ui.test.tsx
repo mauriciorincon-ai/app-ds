@@ -1015,7 +1015,7 @@ describe("la etapa 10: las reglas del ganador con filas que subes", () => {
     expect(JSON.stringify(reglas)).not.toContain(`"${objetivo}"`);
     expect(screen.getByText(/Reglas armadas con las filas de «mis-filas.csv»/)).toBeTruthy();
     // sin objetivo en lo que viaja, la lectura dice que no se midió contra la verdad
-    expect(screen.getByTestId("reglas-sin-verdad")).toBeTruthy();
+    expect(screen.getByTestId("reglas-sin-verdad").textContent).toMatch(/no contra la verdad: la prueba ya se abrió una vez/);
     expect(screen.getByText(/ajustada con \d+ filas de tu archivo/)).toBeTruthy();
   });
 

@@ -246,6 +246,7 @@
           "missing": "The file is missing columns the model reads: {columnas}.",
           "too-few": "With so few rows there is no tree worth building: at least {min} are needed.",
           "error": "The rules could not be built ({motivo}). Try again.",
+          "sin-verdad": "The rules were measured against what the winner decides on rows the tree did not see, not against the truth: the test was already opened once and is not opened again.",
           "from-file": "Rules built with the rows of “{nombre}”."
         }
       }

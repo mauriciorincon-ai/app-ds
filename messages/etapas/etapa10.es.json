@@ -246,6 +246,7 @@
           "missing": "Al archivo le faltan columnas que el modelo lee: {columnas}.",
           "too-few": "Con tan pocas filas no hay un árbol que valga la pena: hacen falta al menos {min}.",
           "error": "No se pudieron armar las reglas ({motivo}). Vuelve a intentarlo.",
+          "sin-verdad": "Las reglas se midieron contra lo que el ganador decide en filas que el árbol no vio, no contra la verdad: la prueba ya se abrió una vez y no se vuelve a abrir.",
           "from-file": "Reglas armadas con las filas de «{nombre}»."
         }
       }

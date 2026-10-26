@@ -166,12 +166,15 @@ export function LecturaReglas({
   locale,
   unidad,
   datasetName,
+  sinVerdad,
 }: {
   r: RulesResult;
   t: (key: string, params?: Record<string, string | number>) => string;
   locale: "es" | "en";
   unidad: string | null;
   datasetName: string | null;
+  /** El texto de «no se midió contra la verdad» cuando no es el de siempre (la etapa 10: la prueba ya se abrió una vez). */
+  sinVerdad?: string;
 }) {
   const suficiente = fidelidadSuficiente(r);
   const pct = (v: number) => formatQuantity(v * 100, 1);
@@ -226,7 +229,7 @@ export function LecturaReglas({
       )}
       {r.source === "uploaded" && !verdad && tieneVerdad && (
         <p className="text-sm text-ink-muted" data-testid="reglas-sin-verdad">
-          {t("reglas.verdad.ausente")}
+          {sinVerdad ?? t("reglas.verdad.ausente")}
         </p>
       )}
       <p className="text-sm text-ink-muted">
