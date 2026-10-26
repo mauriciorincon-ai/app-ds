@@ -7,6 +7,10 @@ import { pythonContractField } from "@/workers/contract";
 import {
   validateFitWinnerResult,
 } from "@/workers/contrato-ganador";
+import {
+  validateForecastResult,
+  type PronosticoSent,
+} from "@/workers/contrato-pronostico";
 import { validateRulesResult, type ReglasSent } from "@/workers/contrato-reglas";
 import {
   validateSimulateResult,
@@ -21,6 +25,8 @@ import type {
   EvaluateNewPayload,
   EvaluateNewResult,
   FitWinnerResult,
+  ForecastPayload,
+  ForecastResult,
   RulesResult,
   RunnerResponse,
   SimulatePayload,
@@ -47,8 +53,13 @@ const MOTIVOS_CONOCIDOS = [
 
 function pedir<T>(
   worker: Worker,
-  comando: "simulate" | "fit-winner" | "rules" | "evaluate-new",
-  payload: SimulatePayload | EnvioGanador["payload"] | EvaluateNewPayload | undefined,
+  comando: "simulate" | "fit-winner" | "rules" | "evaluate-new" | "forecast",
+  payload:
+    | SimulatePayload
+    | EnvioGanador["payload"]
+    | EvaluateNewPayload
+    | ForecastPayload
+    | undefined,
   validar: (crudo: unknown) => Checked<T>,
 ): Promise<T> {
   return new Promise((ok, no) => {
@@ -110,6 +121,14 @@ export const pedirEvaluacion = (
   sent: VigilanciaSent,
 ): Promise<EvaluateNewResult> =>
   pedir(worker, "evaluate-new", payload, (c) => validateEvaluateResult(c, sent));
+
+/** S20: el pronóstico de una serie regular; no usa el modelo que el worker tenga retenido. */
+export const pedirPronostico = (
+  worker: Worker,
+  payload: ForecastPayload,
+  sent: PronosticoSent,
+): Promise<ForecastResult> =>
+  pedir(worker, "forecast", payload, (c) => validateForecastResult(c, sent));
 
 export type PedirSimulacion = (
   payload: SimulatePayload,

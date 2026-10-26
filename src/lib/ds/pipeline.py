@@ -3532,3 +3532,272 @@ def run_stress_test(payload_json):
         }
     )
     return json.dumps(result)
+
+
+# --- S20 (ADR 028): pronosticar una serie -------------------------------------------------------------------------------------
+#
+# Un flujo propio, no una cuarta tarea del encarrilador: la serie llega ya regular (TypeScript junta las filas por periodo y
+# completa los huecos que el usuario aprobó) como una lista de números y una temporada; el worker no ve fechas ni columnas. La liga
+# usa ORIGEN MÓVIL que se expande hacia adelante: en cada origen se ajusta cada método SOLO con lo anterior y se le pide que acierte
+# los `h` periodos siguientes (nunca mira el futuro: lo prueba la integración). Todo es determinista —no hay semilla porque no hay
+# azar— y no depende de nada que no esté ya en el worker (numpy, scipy y scikit-learn).
+FORECAST_KEYS = frozenset(("y", "season", "horizon", "period"))
+FORECAST_PERIODS = ("dia", "semana", "mes")
+FORECAST_METHODS = ("media", "ingenuo", "ingenuo_estacional", "deriva", "holt_winters", "rezagos")
+FORECAST_SIMPLE = ("media", "ingenuo", "ingenuo_estacional", "deriva")
+FORECAST_MAX_PERIODS = 2000
+FORECAST_MAX_FOLDS = 12
+FORECAST_MIN_FOLDS = 3
+FORECAST_MIN_TRAIN = 8
+FORECAST_HORIZON_MAX = 120
+FORECAST_LAGS_MAX = 12
+FORECAST_RIDGE_ALPHA = 1.0
+FORECAST_HW_STARTS = ((0.3, 0.1, 0.1), (0.6, 0.05, 0.3), (0.1, 0.01, 0.6))
+FORECAST_BANDS = (0.80, 0.95)
+
+
+def _fc_media(train, h, season):
+    return np.full(h, float(np.mean(train)))
+
+
+def _fc_ingenuo(train, h, season):
+    return np.full(h, float(train[-1]))
+
+
+def _fc_ingenuo_estacional(train, h, season):
+    cycle = np.asarray(train[-season:], dtype=float)
+    return np.array([cycle[i % season] for i in range(h)])
+
+
+def _fc_deriva(train, h, season):
+    slope = (float(train[-1]) - float(train[0])) / (len(train) - 1)
+    return float(train[-1]) + slope * np.arange(1, h + 1)
+
+
+def _fc_holt_winters(train, h, season):
+    """Holt-Winters aditivo (nivel, tendencia y, si hay dos temporadas, temporada), con numpy y scipy: tres arranques fijos del
+    optimizador y se queda con el de menor error de un paso. Sin dos temporadas completas corre como Holt (sin parte estacional)."""
+    from scipy.optimize import minimize
+
+    y = [float(v) for v in train]
+    n = len(y)
+    m = season if season > 1 and n >= 2 * season else 1
+    if m > 1:
+        level0 = sum(y[:m]) / m
+        trend0 = (sum(y[m : 2 * m]) / m - level0) / m
+        seas0 = [v - level0 for v in y[:m]]
+    else:
+        level0, trend0, seas0 = y[0], y[1] - y[0], [0.0]
+
+    def run(params):
+        a, b, g = params
+        level, trend, seas = level0, trend0, list(seas0)
+        sse = 0.0
+        for t in range(n):
+            s = seas[t % m]
+            err = y[t] - (level + trend + s)
+            sse += err * err
+            new_level = a * (y[t] - s) + (1 - a) * (level + trend)
+            trend = b * (new_level - level) + (1 - b) * trend
+            if m > 1:
+                seas[t % m] = g * (y[t] - new_level) + (1 - g) * s
+            level = new_level
+        return sse, level, trend, seas
+
+    best = None
+    for start in FORECAST_HW_STARTS:
+        fit = minimize(
+            lambda p: run(p)[0],
+            np.array(start),
+            method="L-BFGS-B",
+            bounds=[(0.001, 0.999)] * 3,
+            options={"maxiter": 60},
+        )
+        if best is None or fit.fun < best.fun:
+            best = fit
+    _, level, trend, seas = run(best.x)
+    return np.array([level + (i + 1) * trend + seas[(n + i) % m] for i in range(h)])
+
+
+def _fc_lag_count(season):
+    return min(season, FORECAST_LAGS_MAX) if season > 1 else 3
+
+
+def _fc_lag_features(window, t, season, n_lags, seasonal_lag):
+    """Los rezagos del periodo `t` (los `n_lags` anteriores, y el de una temporada atrás si es larga) y el lugar de `t` en su
+    temporada (uno-caliente, solo si la temporada cabe en una docena de periodos)."""
+    row = [window[t - k] for k in range(1, n_lags + 1)]
+    if seasonal_lag:
+        row.append(window[t - season])
+    if 1 < season <= FORECAST_LAGS_MAX:
+        row.extend(1.0 if t % season == j else 0.0 for j in range(season))
+    return row
+
+
+def _fc_rezagos(train, h, season):
+    """Regresión con rezagos y calendario (Ridge), recursiva: cada pronóstico entra como rezago del siguiente. Los valores se
+    estandarizan con la media y la desviación del propio entrenamiento."""
+    y = np.asarray(train, dtype=float)
+    n = len(y)
+    mean, std = float(y.mean()), float(y.std())
+    z = ((y - mean) / (std if std > 0 else 1.0)).tolist()
+    n_lags = _fc_lag_count(season)
+    seasonal_lag = season > FORECAST_LAGS_MAX and n >= 2 * season
+    first = max(n_lags, season if seasonal_lag else 0)
+    if n - first < 5:
+        raise ArithmeticError("short")
+    X = [_fc_lag_features(z, t, season, n_lags, seasonal_lag) for t in range(first, n)]
+    model = Ridge(alpha=FORECAST_RIDGE_ALPHA).fit(np.asarray(X), np.asarray(z[first:]))
+    window = list(z)
+    for t in range(n, n + h):
+        window.append(float(model.predict(np.asarray([_fc_lag_features(window, t, season, n_lags, seasonal_lag)]))[0]))
+    return np.asarray(window[n:]) * (std if std > 0 else 1.0) + mean
+
+
+_FC_FIT = {
+    "media": _fc_media,
+    "ingenuo": _fc_ingenuo,
+    "ingenuo_estacional": _fc_ingenuo_estacional,
+    "deriva": _fc_deriva,
+    "holt_winters": _fc_holt_winters,
+    "rezagos": _fc_rezagos,
+}
+
+
+def _fc_origins(n, h, min_train):
+    """Los orígenes del origen móvil: el último deja justo `h` periodos para medir; hacia atrás de a `max(1, h // 4)`, hasta
+    `FORECAST_MAX_FOLDS` y sin bajar de `min_train` periodos de entrenamiento. Devuelve (orígenes en orden, paso)."""
+    step = max(1, h // 4)
+    origins = []
+    o = n - h
+    while o >= min_train and len(origins) < FORECAST_MAX_FOLDS:
+        origins.append(o)
+        o -= step
+    origins.reverse()
+    return origins, step
+
+
+def run_forecast(payload_json="{}"):
+    """S20 (ADR 028): la liga de pronóstico con origen móvil y el pronóstico a `horizon` periodos con sus bandas.
+
+    Payload: `y` (la serie regular, ya completa), `season` (7, 52 o 12; 1 si no hay), `horizon`, `period`. Una clave más se rechaza
+    nombrándola. Devuelve `viable: false` (con cuánto falta) si la serie no alcanza para tres pliegues honestos."""
+    started = time.perf_counter()
+    p = json.loads(payload_json or "{}")
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in p:
+        if key not in FORECAST_KEYS:
+            _contract(key)
+    y_in, season, h, period = p.get("y"), p.get("season"), p.get("horizon"), p.get("period")
+    if not isinstance(y_in, list) or not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in y_in):
+        _contract("y")
+    if not all(math.isfinite(v) for v in y_in):
+        _contract("y")
+    if not isinstance(season, int) or isinstance(season, bool) or season < 1:
+        _contract("season")
+    if not isinstance(h, int) or isinstance(h, bool) or not 1 <= h <= FORECAST_HORIZON_MAX:
+        _contract("horizon")
+    if period not in FORECAST_PERIODS:
+        _contract("period")
+
+    n_input = len(y_in)
+    y = np.asarray(y_in[-FORECAST_MAX_PERIODS:], dtype=float)
+    n = len(y)
+
+    # ¿hay dos temporadas completas en el entrenamiento de, al menos, tres pliegues? Si no, los métodos estacionales no compiten
+    seasonal_ok = False
+    reason = "no_season"
+    origins, step = _fc_origins(n, h, FORECAST_MIN_TRAIN)
+    if season > 1:
+        seasonal_origins, seasonal_step = _fc_origins(n, h, 2 * season)
+        if len(seasonal_origins) >= FORECAST_MIN_FOLDS:
+            seasonal_ok, origins, step, reason = True, seasonal_origins, seasonal_step, "ok"
+        else:
+            reason = "short"
+    if len(origins) < FORECAST_MIN_FOLDS:
+        needed = h + FORECAST_MIN_FOLDS - 1 + FORECAST_MIN_TRAIN if step == 1 else h + (FORECAST_MIN_FOLDS - 1) * step + FORECAST_MIN_TRAIN
+        return json.dumps({"viable": False, "n": n_input, "needed": int(needed), "horizon": h})
+
+    # sin dos temporadas completas en tres pliegues NINGÚN método supone una temporada (no solo el ingenuo estacional)
+    season_used = season if seasonal_ok else 1
+    league = []
+    errors = {}
+    for name in FORECAST_METHODS:
+        if name == "ingenuo_estacional" and not seasonal_ok:
+            league.append({"name": name, "status": "skipped", "reason": reason, "cv": None, "mase": None})
+            continue
+        fit = _FC_FIT[name]
+        folds, signed = [], []
+        try:
+            for o in origins:
+                predicted = np.asarray(fit(y[:o], h, season_used), dtype=float)
+                if predicted.shape != (h,) or not np.all(np.isfinite(predicted)):
+                    raise ArithmeticError("non-finite")
+                e = y[o : o + h] - predicted
+                signed.append(e)
+                folds.append(float(np.mean(np.abs(e))))
+        except (ArithmeticError, ValueError, np.linalg.LinAlgError):
+            league.append({"name": name, "status": "skipped", "reason": "numeric", "cv": None, "mase": None})
+            continue
+        errors[name] = np.vstack(signed)
+        league.append(
+            {
+                "name": name,
+                "status": "ok",
+                "reason": None,
+                "cv": {"mean": float(np.mean(folds)), "std": float(np.std(folds)), "folds": folds},
+                "mase": None,
+            }
+        )
+
+    # MASE: el error medio dividido por el de «lo mismo que hace una temporada» (o lo mismo que el periodo anterior) en TODA la serie
+    m = season_used
+    scale = float(np.mean(np.abs(y[m:] - y[:-m]))) if n > m else 0.0
+    for row in league:
+        if row["status"] == "ok" and scale > 0:
+            row["mase"] = row["cv"]["mean"] / scale
+
+    best, winner, se = select_one_se(league, len(origins), "lower")
+    ok_simple = [row for row in league if row["status"] == "ok" and row["name"] in FORECAST_SIMPLE]
+    best_simple = min(ok_simple, key=lambda row: row["cv"]["mean"])["name"]  # empate → el primero del orden
+
+    forecast = np.asarray(_FC_FIT[winner](y, h, season_used), dtype=float)
+    e = errors[winner]
+    bands = {}
+    for level in FORECAST_BANDS:
+        tail = (1 - level) / 2
+        lo = np.minimum(np.quantile(e, tail, axis=0), 0.0)
+        hi = np.maximum(np.quantile(e, 1 - tail, axis=0), 0.0)
+        # la banda nunca se angosta al alejarse y siempre contiene al pronóstico
+        bands[level] = (np.minimum.accumulate(lo), np.maximum.accumulate(hi))
+    lo95 = np.minimum(bands[0.95][0], bands[0.80][0])
+    hi95 = np.maximum(bands[0.95][1], bands[0.80][1])
+
+    return json.dumps(
+        {
+            "viable": True,
+            "n": n,
+            "n_input": n_input,
+            "truncated": n_input > n,
+            "season": season,
+            "seasonal_ok": seasonal_ok,
+            "seasonal_reason": reason,
+            "period": period,
+            "horizon": h,
+            "step": step,
+            "origins": [int(o) for o in origins],
+            "scale": scale if scale > 0 else None,
+            "league": league,
+            "best": best,
+            "winner": winner,
+            "best_simple": best_simple,
+            "se": float(se),
+            "forecast": [float(v) for v in forecast],
+            "lo80": [float(v) for v in forecast + bands[0.80][0]],
+            "hi80": [float(v) for v in forecast + bands[0.80][1]],
+            "lo95": [float(v) for v in forecast + lo95],
+            "hi95": [float(v) for v in forecast + hi95],
+            "elapsed_ms": _elapsed_ms(started),
+        }
+    )

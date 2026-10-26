@@ -998,6 +998,69 @@ export type ExportResult = {
 
 export type ImportResult = { ok: true };
 
+/** S20 (ADR 028): el pronóstico de una serie regular. El worker recibe números, la temporada y el horizonte; ninguna fecha ni columna. */
+export type ForecastPeriod = "dia" | "semana" | "mes";
+export type ForecastMethod =
+  | "media"
+  | "ingenuo"
+  | "ingenuo_estacional"
+  | "deriva"
+  | "holt_winters"
+  | "rezagos";
+
+export type ForecastPayload = {
+  y: number[];
+  season: number;
+  horizon: number;
+  period: ForecastPeriod;
+};
+
+export type ForecastLeagueRow = {
+  name: ForecastMethod;
+  status: "ok" | "skipped";
+  /** Por qué no compite: menos de dos temporadas, sin temporada o una cuenta que no cerró. */
+  reason: "short" | "no_season" | "numeric" | null;
+  /** El error medio en las unidades de la serie, pliegue por pliegue. */
+  cv: { mean: number; std: number; folds: number[] } | null;
+  /** El error medio dividido por el de repetir el periodo (o la temporada) anterior; `null` en una serie constante. */
+  mase: number | null;
+};
+
+export type ForecastResult =
+  | {
+      viable: false;
+      /** Cuántos periodos trae la serie y cuántos hacen falta para tres pliegues con ese horizonte. */
+      n: number;
+      needed: number;
+      horizon: number;
+    }
+  | {
+      viable: true;
+      /** Periodos usados y recibidos (se usan los 2 000 más recientes). */
+      n: number;
+      n_input: number;
+      truncated: boolean;
+      season: number;
+      seasonal_ok: boolean;
+      seasonal_reason: "ok" | "short" | "no_season";
+      period: ForecastPeriod;
+      horizon: number;
+      step: number;
+      origins: number[];
+      scale: number | null;
+      league: ForecastLeagueRow[];
+      best: ForecastMethod;
+      winner: ForecastMethod;
+      best_simple: ForecastMethod;
+      se: number;
+      forecast: number[];
+      lo80: number[];
+      hi80: number[];
+      lo95: number[];
+      hi95: number[];
+      elapsed_ms: number;
+    };
+
 export type RunnerRequest =
   | { id: number; type: "train"; payload: PipelinePayload | ClusterPayload }
   | { id: number; type: "validate"; payload: ValidationPayload }
@@ -1014,6 +1077,8 @@ export type RunnerRequest =
   // S19: el modelo en reglas (sin payload) y vigilar el desempeño con un CSV nuevo que trae el resultado.
   | { id: number; type: "rules" }
   | { id: number; type: "evaluate-new"; payload: EvaluateNewPayload }
+  // S20: el pronóstico de una serie regular (flujo propio; no usa el modelo retenido).
+  | { id: number; type: "forecast"; payload: ForecastPayload }
   | {
       id: number;
       type: "fit-member";
@@ -1056,6 +1121,7 @@ export type RunnerResponse =
   | { id: number; type: "result"; command: "fit-winner"; result: unknown }
   | { id: number; type: "result"; command: "rules"; result: unknown }
   | { id: number; type: "result"; command: "evaluate-new"; result: unknown }
+  | { id: number; type: "result"; command: "forecast"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }

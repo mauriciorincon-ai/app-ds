@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { EdaAlert } from "@/engine/eda";
 import type { Ingesta } from "@/engine/ingesta";
 import type { Decision } from "@/engine/limpieza-plan";
@@ -15,6 +15,7 @@ import { useT } from "@/i18n/use-translation";
 import type { OrigenArchivo } from "@/lib/ds/archivo";
 import type { CsvTable } from "@/lib/ds/csv";
 import { formatEstimate } from "@/lib/duration";
+import { seriePosible } from "@/lib/experiment";
 import type { ClusterPlan, TargetPlan } from "@/lib/useExperiment";
 import type { DatasetSummary } from "@/workers/protocol";
 import { thousands } from "@/lib/quantity";
@@ -32,11 +33,23 @@ const LimpiezaPanel = dynamic(
   () => import("./limpieza/LimpiezaPanel").then((m) => m.LimpiezaPanel),
   { ssr: false },
 );
+// S20: pronosticar una serie (otro flujo, con su gráfico y sus textos) también en su chunk.
+const PronosticoPanel = dynamic(
+  () => import("./pronostico/PronosticoPanel").then((m) => m.PronosticoPanel),
+  { ssr: false },
+);
 
 /** S7 (P5): el valor de la opción «agrupar» no puede chocar con una columna que
  *  se llame igual: se alarga hasta que ninguna coincida. */
 export function clusterOptionValue(headers: readonly string[]): string {
   let value = "__agrupar__";
+  while (headers.includes(value)) value += "_";
+  return value;
+}
+
+/** S20: el valor de la opción «pronosticar»: como el de agrupar, se alarga hasta no chocar con una columna. */
+export function forecastOptionValue(headers: readonly string[]): string {
+  let value = "__pronosticar__";
   while (headers.includes(value)) value += "_";
   return value;
 }
@@ -51,12 +64,16 @@ export function ConfigScreen({
   ingesta = null,
   onDecidirLimpieza,
   getTable,
+  getRawTable,
+  soloSerie = false,
   onSelectTarget,
   onSelectCluster,
   onAnswerTask,
   onRun,
   onRunCluster,
   onBack,
+  worker,
+  datasetName = null,
 }: {
   dataset: DatasetSummary;
   sanitation: SanitationReport | null;
@@ -72,6 +89,10 @@ export function ConfigScreen({
   onDecidirLimpieza?: (id: string, decision: Decision | null) => void;
   /** S18: la tabla saneada, para explorarla (se lee al pulsar «Explorar»). */
   getTable?: () => CsvTable | null;
+  /** S20: la tabla tal como llegó (con la fecha que el saneamiento descartó), para pronosticar una serie. */
+  getRawTable?: () => CsvTable | null;
+  /** S20: el archivo es una serie sin columnas con qué entrenar: solo se ofrece pronosticarla. */
+  soloSerie?: boolean;
   onSelectTarget: (target: string) => void;
   /** S7: elegir agrupar filas parecidas en lugar de un objetivo. */
   onSelectCluster?: () => void;
@@ -80,21 +101,36 @@ export function ConfigScreen({
   onRun: (target: string) => void;
   onRunCluster?: () => void;
   onBack: () => void;
+  /** S20: el worker de la sesión, para pronosticar (sin él no se ofrece la opción). */
+  worker?: RefObject<Worker | null>;
+  datasetName?: string | null;
 }) {
   const t = useT();
-  const [target, setTarget] = useState("");
+  const [target, setTarget] = useState(() =>
+    soloSerie ? forecastOptionValue(dataset.headers) : "",
+  );
   // AU-S7-18: «agrupar en su lugar» desmonta la tarjeta de tarea (y su botón); el
   // foco va al título de agrupar. Solo por esa vía: desde el <select> se queda ahí.
   const [focusPlan, setFocusPlan] = useState(false);
   const profileByName = new Map(dataset.profiles.map((p) => [p.name, p]));
   const clusterValue = clusterOptionValue(dataset.headers);
   const clustering = target === clusterValue && onSelectCluster !== undefined;
+  // S20: pronosticar una serie necesita una fecha, un número y el worker; es otro flujo, con su panel.
+  const forecastValue = forecastOptionValue(dataset.headers);
+  const rawTable = getRawTable?.() ?? null;
+  const serieLegible = useMemo(
+    () => (rawTable ? seriePosible(rawTable) : false),
+    [rawTable],
+  );
+  const canForecast = worker !== undefined && serieLegible;
+  const forecasting = target === forecastValue && canForecast;
+  const ownFlow = clustering || forecasting;
   const readyCluster = clustering && clusterPlan?.ok ? clusterPlan : null;
 
   // Solo se entrena lo que E1 reconoce (o el usuario respondió) como una tarea
   // entrenable y prepareRun pudo armar.
   const trainable =
-    !clustering &&
+    !ownFlow &&
     plan !== null &&
     plan.target === target &&
     isTrainableTask(plan.resolved) &&
@@ -104,6 +140,7 @@ export function ConfigScreen({
     setFocusPlan(fromTaskCard);
     setTarget(value);
     if (value === clusterValue && onSelectCluster) onSelectCluster();
+    else if (value === forecastValue && canForecast) return;
     else onSelectTarget(value);
   };
 
@@ -129,9 +166,9 @@ export function ConfigScreen({
         />
       )}
 
-      {getTable && <ExploracionPanel getTable={getTable} />}
+      {getTable && !soloSerie && <ExploracionPanel getTable={getTable} />}
 
-      {dataset.dateColumns.length > 0 && (
+      {dataset.dateColumns.length > 0 && !soloSerie && (
         <p className="rounded-md border border-caution/40 bg-caution/10 p-3 text-sm">
           <span className="mr-1 text-caution" aria-hidden>
             ⚠
@@ -154,12 +191,15 @@ export function ConfigScreen({
             {t("config.target.placeholder")}
           </option>
           {/* S7 (P5): agrupar va primero — no es una columna, es otra pregunta. */}
-          {onSelectCluster && (
+          {onSelectCluster && !soloSerie && (
             <option value={clusterValue}>{t("config.target.cluster")}</option>
+          )}
+          {canForecast && (
+            <option value={forecastValue}>{t("config.target.forecast")}</option>
           )}
           {/* S5 (E1): TODAS las columnas, cada una con la tarea que plantearía —
               ninguna se esconde; la tarjeta de tarea dice si ya se entrena. */}
-          {dataset.headers.map((column) => {
+          {(soloSerie ? [] : dataset.headers).map((column) => {
             const detection = dataset.targetTasks[column];
             return (
               <option key={column} value={column}>
@@ -174,9 +214,20 @@ export function ConfigScreen({
           })}
         </select>
         <p className="text-sm text-ink-muted">
-          {t("config.target.help", { max: MULTICLASS_MAX_CLASSES })}
+          {soloSerie
+            ? t("config.target.solo_serie")
+            : t("config.target.help", { max: MULTICLASS_MAX_CLASSES })}
         </p>
       </div>
+
+      {/* S20: pronosticar una serie — otro flujo, con su propio panel y su propio botón. */}
+      {forecasting && getRawTable && (
+        <PronosticoPanel
+          getTable={getRawTable}
+          worker={worker}
+          datasetName={datasetName}
+        />
+      )}
 
       {/* S7: agrupar — qué columnas forman la distancia y cuáles quedan fuera. */}
       {clustering && clusterPlan && (
@@ -184,7 +235,7 @@ export function ConfigScreen({
       )}
 
       {/* S5 (E1): qué tarea plantea el objetivo elegido, con su razón. */}
-      {target !== "" && !clustering && plan && (
+      {target !== "" && !ownFlow && plan && (
         <TaskCard
           // Otra columna, otra tarjeta: el foco solo se mueve tras responder.
           key={plan.target}
@@ -207,14 +258,14 @@ export function ConfigScreen({
       {/* Alertas EDA del objetivo elegido — role="status" (no "alert": no
           interrumpe; el route announcer de Next reserva alert — regla 7). */}
       {target !== "" &&
-        !clustering &&
+        !ownFlow &&
         edaAlerts &&
         (plan === null || isTrainableTask(plan.resolved)) && (
           <EdaBlock alerts={edaAlerts} />
         )}
 
       {/* S5: binaria pero sin validación cruzada honesta posible (o sin features). */}
-      {target !== "" && !clustering && plan?.blocked && (
+      {target !== "" && !ownFlow && plan?.blocked && (
         <p
           role="status"
           className="rounded-md border border-negative/40 bg-negative/10 p-3 text-sm"
@@ -234,7 +285,7 @@ export function ConfigScreen({
       )}
 
       {/* S5 (E2): quién compite y en qué nivel, con su razón. */}
-      {target !== "" && !clustering && plan?.routing && plan.profile && (
+      {target !== "" && !ownFlow && plan?.routing && plan.profile && (
         <RosterCard
           routing={plan.routing}
           rows={plan.profile.rows}
@@ -271,7 +322,7 @@ export function ConfigScreen({
         </p>
       )}
       <div className="flex flex-wrap gap-3">
-        {clustering ? (
+        {forecasting ? null : clustering ? (
           <Button
             icon="play"
             onClick={() => onRunCluster?.()}

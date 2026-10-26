@@ -456,6 +456,37 @@ function customersWithPersonalData(n = 150, seed = 1414) {
   );
 }
 
+// S20: dos series mensuales para «Pronosticar una serie» (todo de ficción, 60 meses desde enero de 2021). `serieMensual` pone
+// tendencia + temporada de 12 meses (el ingenuo estacional es el mejor método simple y Holt-Winters o los rezagos le ganan);
+// `serieRuido` es ruido blanco alrededor de un nivel (nadie le gana a la media: el veredicto lo dice). `conHuecos` quita meses
+// para ver la pregunta de los periodos que faltan.
+function gaussian(rng) {
+  // Box-Muller: determinista con la semilla
+  const u = Math.max(rng(), 1e-12);
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng());
+}
+
+function mesISO(i) {
+  const anio = 2021 + Math.floor(i / 12);
+  return `${anio}-${String((i % 12) + 1).padStart(2, "0")}-01`;
+}
+
+function serieMensual(seed = 2001, quitar = []) {
+  const rng = mulberry32(seed);
+  const rows = [];
+  for (let i = 0; i < 60; i++) {
+    const ventas = 200 + 0.8 * i + 40 * Math.sin((2 * Math.PI * (i % 12)) / 12) + 6 * gaussian(rng);
+    if (!quitar.includes(i)) rows.push([mesISO(i), round(ventas)]);
+  }
+  return toCsv(["mes", "ventas"], rows);
+}
+
+function serieRuido(seed = 2002) {
+  const rng = mulberry32(seed);
+  const rows = Array.from({ length: 60 }, (_, i) => [mesISO(i), round(100 + 12 * gaussian(rng))]);
+  return toCsv(["mes", "visitas"], rows);
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   await mkdir(kitDir, { recursive: true });
@@ -501,6 +532,10 @@ async function main() {
     // formato con el canal que convierte invertido (el veredicto debe ser «reentrenar»). Todo de ficción.
     "marketing-resultados-sin-cambio.csv": marketingCampaign(300, 131),
     "marketing-resultados-corridos.csv": marketingCampaign(300, 132, true),
+    // S20: las series de «Pronosticar»: una con tendencia y temporada, una de ruido blanco y la primera con tres meses sin dato.
+    "serie-ventas-mensual.csv": serieMensual(),
+    "serie-ruido.csv": serieRuido(),
+    "serie-ventas-con-huecos.csv": serieMensual(2001, [17, 18, 40]),
   };
   for (const [name, content] of Object.entries(kitOnly)) {
     await writeFile(resolve(kitDir, name), content, "utf8");

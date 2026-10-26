@@ -1,0 +1,132 @@
+{
+  "pronostico": {
+    "titulo": "Forecast a series",
+    "ayuda": "With a date column and a column of numbers, Probeta groups the rows by period, pits six methods against each other with a rolling origin (each one only sees what came before the period it tries to hit) and projects the periods ahead with an error band. It also tells you when no method beats a simple one. It runs in your browser, and the first time it downloads the Python engine (about 40 MiB).",
+    "sin_serie": "Forecasting needs a date column and a column of numbers. This file doesn't have both.",
+    "fecha": "Date column",
+    "valor": "Column to forecast",
+    "orden": {
+      "pregunta": "The dates in “{columna}” can be read two ways (05/06 can be June 5 or May 6). Which order do they use?",
+      "dia_mes": "Day, month, year (05/06 = June 5)",
+      "mes_dia": "Month, day, year (05/06 = May 6)"
+    },
+    "lectura": {
+      "mezclada": "“{columna}” mixes dates written in different ways, and Probeta doesn't guess which one is right. Make the column consistent and load the file again.",
+      "ninguna": "“{columna}” doesn't read as a date: no value is a real date."
+    },
+    "periodo": {
+      "etiqueta": "One value per…",
+      "dia": "day",
+      "semana": "week (starts on Monday)",
+      "mes": "month",
+      "propuesto": "Suggested from the median gap between your dates; you can change it.",
+      "sin_propuesta": "Your dates are far apart, or there is only one: pick the period yourself."
+    },
+    "agregado": {
+      "etiqueta": "The rows of one period are…",
+      "suma": "added up (sales, visits, kilos)",
+      "promedio": "averaged (prices, rates, temperatures)",
+      "propuesto": "Suggested from the column name; change it if it isn't what you measure."
+    },
+    "horizonte": "Periods to forecast",
+    "serie": "{n} periods, from {desde} to {hasta}, built from {filas} rows ({sin_fecha} with no readable date and {sin_valor} with no number, which are left out).",
+    "serie_one": "{n} period, from {desde} to {hasta}, built from {filas} rows ({sin_fecha} with no readable date and {sin_valor} with no number, which are left out).",
+    "sin_filas": "No row has both a readable date and a number: there is no series.",
+    "muy_larga": "At this period, the date range goes past {max} periods. Pick a wider period.",
+    "una_sola": "Once the incomplete end periods are dropped, nothing is left to forecast.",
+    "quitados": "The end periods your data doesn't fully cover were dropped ({lista}): a half-filled sum would read like a drop.",
+    "huecos": {
+      "titulo": "{count} periods are missing: {lista}{mas}.",
+      "titulo_one": "{count} period is missing: {lista}{mas}.",
+      "mas": " and {resto} more",
+      "completar": "Fill them in with the straight line between their neighbours (they stay flagged in the CSV you download).",
+      "obligatorio": "To forecast you have to decide what to do with the gaps: they aren't filled on their own.",
+      "demasiados": "Too many periods are missing ({pct} %) to fill them in honestly. Pick a wider period."
+    },
+    "boton": "Forecast",
+    "calculando": "Forecasting… each method is refitted at every origin.",
+    "error": "The forecast could not be made ({motivo}). Try again.",
+    "corta": "The series is too short to forecast {horizonte} periods honestly: it has {n} and needs at least {necesarios} for three folds. Lower the horizon or pick a finer period.",
+    "truncada": "The series has {n_input} periods: the {n} most recent were used.",
+    "metodo": {
+      "media": "Historical mean",
+      "ingenuo": "Naive (repeats the last value)",
+      "ingenuo_estacional": "Seasonal naive (repeats last season)",
+      "deriva": "Drift (follows the slope of the whole series)",
+      "holt_winters": "Holt-Winters (level, trend and season)",
+      "rezagos": "Regression on lags and calendar"
+    },
+    "corto": {
+      "media": "historical mean",
+      "ingenuo": "naive",
+      "ingenuo_estacional": "seasonal naive",
+      "deriva": "drift",
+      "holt_winters": "Holt-Winters",
+      "rezagos": "lag regression"
+    },
+    "liga": {
+      "titulo": "The league, with a rolling origin",
+      "detalle": "{pliegues} folds that expand forward: in each one, every method is fitted only on what came before and hits {horizonte} periods it didn't see. The error is in the units of “{columna}”, and the one-standard-error rule picks the simplest among those that tie with the best.",
+      "metodo": "Method",
+      "error": "Mean error",
+      "mase": "Relative error (MASE)",
+      "marca": "Mark",
+      "ganador": "★ Winner",
+      "simple": "◆ Best simple",
+      "ganador_simple": "★ ◆ Winner and best simple",
+      "no_compite": "Doesn't compete",
+      "razon": {
+        "short": "there are no two full seasons",
+        "no_season": "the series has no season",
+        "numeric": "the computation didn't close"
+      },
+      "mase_ayuda": "MASE: the mean error divided by the error of repeating the previous period (or season) over the whole series. Below 1: better than repeating; above 1: worse."
+    },
+    "temporada": {
+      "sin_dos": "Seasonal naive doesn't compete and no method assumes a season: the series doesn't have two full seasons of {temporada} periods in three folds. A shorter horizon or a longer series would.",
+      "con": "Season of {temporada} periods."
+    },
+    "veredicto": {
+      "titulo": {
+        "supera": "Beats the best simple method",
+        "empata": "Ties with the best simple method",
+        "no_supera": "Doesn't beat a simple method"
+      },
+      "supera": "“{ganador}” beats “{referencia}”, the best simple method: {horizonte} periods ahead it is off by {mae} on average (in the units of “{columna}”), against {mae_ref} for “{referencia}”; that is {pct} % less error, measured over {pliegues} folds it didn't see.",
+      "empata": "“{ganador}” is on par with “{referencia}”, the best simple method: {mae} against {mae_ref} of mean error (in the units of “{columna}”), a gap under 1 %. Without a reason to prefer it, stay with the simple one.",
+      "simple": "No elaborate method beats “{ganador}”: it is off by {mae} on average (in the units of “{columna}”), measured over {pliegues} folds it didn't see. When a simple method is enough, it is the forecast that is easiest to defend.",
+      "sin_estructura": "No method beats the historical mean: the series shows no trend or season that could be projected with what is there. The forecast is its usual level, with a mean error of {mae} (in the units of “{columna}”), and the band says how far it strays.",
+      "minimo": "Mean error of “{ganador}”: {mae}; of the best simple method, “{referencia}”: {mae_ref} (in the units of “{columna}”)."
+    },
+    "grafico": {
+      "titulo": "The series and its forecast",
+      "etiqueta": "Chart of the series and its forecast: {n} periods of history and {horizonte} of forecast, with 80 % and 95 % bands.",
+      "historia": "Solid line: the history",
+      "pronostico": "Dashed line: the forecast",
+      "banda80": "Dark band: 80 % of the backtest errors",
+      "banda95": "Light band: 95 %",
+      "bandas_nota": "The bands are empirical: they come from the errors that method made over {pliegues} folds, by distance from the origin. They are not a guarantee.",
+      "tabla": "See the forecast as a table",
+      "tabla_periodo": "Period",
+      "tabla_pronostico": "Forecast",
+      "tabla_80": "80 % band",
+      "tabla_95": "95 % band",
+      "completado": "A hollow point marks a period that was filled in with the straight line between its neighbours."
+    },
+    "descargar": "Download the forecast (.csv)",
+    "csv": {
+      "periodo": "period",
+      "tipo": "type",
+      "valor": "value",
+      "inferior80": "lower_80",
+      "superior80": "upper_80",
+      "inferior95": "lower_95",
+      "superior95": "upper_95",
+      "completado": "filled_in",
+      "historia": "history",
+      "pronostico": "forecast",
+      "si": "yes",
+      "no": "no"
+    }
+  }
+}

@@ -38,6 +38,7 @@ export default function Home() {
     loadXlsx,
     decidirLimpieza,
     getTable,
+    getRawTable,
     selectTarget,
     selectCluster,
     answerTask,
@@ -79,12 +80,16 @@ export default function Home() {
           ingesta={state.ingesta}
           onDecidirLimpieza={decidirLimpieza}
           getTable={getTable}
+          getRawTable={getRawTable}
+          soloSerie={state.soloSerie}
           onSelectTarget={selectTarget}
           onSelectCluster={selectCluster}
           onAnswerTask={answerTask}
           onRun={run}
           onRunCluster={runCluster}
           onBack={reset}
+          worker={workerRef}
+          datasetName={state.datasetName}
         />
       )}
 

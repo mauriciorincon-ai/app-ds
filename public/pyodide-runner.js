@@ -4,7 +4,7 @@
 // entrenar, puntuar, exportar e importar el modelo; la orquestación pura
 // (split/veredicto/fuga/esquema/manifiesto) vive en el hilo principal.
 //
-// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test"|"stress"|"stress-test"|"interval"|"simulate"|"fit-winner"|"rules"|"evaluate-new", payload? }
+// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test"|"stress"|"stress-test"|"interval"|"simulate"|"fit-winner"|"rules"|"evaluate-new"|"forecast", payload? }
 //            out { id, type: "progress"|"result"|"error", ... }  (result lleva command)
 // S5: durante "train" (la liga), pipeline.py llama a un callback JS antes de cada
 // paso y el runner lo reenvía como progress con `detail` {phase, member, index,
@@ -21,6 +21,9 @@
 // envío es el de la etapa 8 sin la prueba, que este comando rechaza). "rules" (el modelo en reglas: un árbol sustituto sobre las
 // columnas originales, sin payload) y "evaluate-new" (vigilar el desempeño: puntúa un CSV nuevo que trae el resultado real y devuelve
 // lo real y lo predicho como números).
+//
+// S20: "forecast" (pronosticar una serie regular: la liga con origen móvil y el pronóstico con sus bandas; no usa ni toca el modelo
+// retenido, así que sirve igual antes de entrenar nada).
 //
 // El estado Python (_MODEL en pipeline.py) vive lo que viva este worker: tras
 // entrenar o importar, score/export operan sin re-entrenar.
@@ -47,6 +50,7 @@ const STAGE = {
   "fit-winner": "training",
   rules: "scoring",
   "evaluate-new": "scoring",
+  forecast: "scoring",
   score: "scoring",
   // S7 (P13): las etiquetas por fila del agrupamiento, solo para el CSV local.
   "cluster-labels": "exporting",
@@ -92,6 +96,7 @@ function ensureRuntime(post, id) {
         "fit-winner": pyodide.globals.get("run_fit_winner"),
         rules: pyodide.globals.get("run_rules"),
         "evaluate-new": pyodide.globals.get("run_evaluate"),
+        forecast: pyodide.globals.get("run_forecast"),
       };
     })();
     // Si la carga falla (red), se limpia para que un reintento re-cargue.

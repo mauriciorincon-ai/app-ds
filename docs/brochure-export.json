@@ -621,10 +621,10 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 27,
+      "valor": 28,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/ (001–027): el 023 y el 024 son la prueba de estrés y lo que el usuario se lleva; el 025 y el 026, el lector de Excel y el plan de limpieza; el 027, del modelo a la decisión (el «¿qué pasaría si?» en dinero, el modelo en reglas y vigilar el desempeño). Lo recuenta tests/unit/brochure-export.test.ts."
+      "detalle": "Archivos de decisions/ (001–028): el 023 y el 024 son la prueba de estrés y lo que el usuario se lleva; el 025 y el 026, el lector de Excel y el plan de limpieza; el 027, del modelo a la decisión (el «¿qué pasaría si?» en dinero, el modelo en reglas y vigilar el desempeño); el 028, pronosticar una serie. Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [

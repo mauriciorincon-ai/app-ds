@@ -115,7 +115,9 @@
       "placeholder": "Pick a column…",
       "help": "You can pick any column: we tell you what kind of prediction it would be. The app trains two-category columns (yes/no, 0/1), several-category columns (up to {max}, like a plan or a region) and quantities (a price, a consumption, a duration). If there's nothing to predict, pick “No target” to group similar rows.",
       "option": "{column} · {task}",
-      "cluster": "No target: group similar rows"
+      "cluster": "No target: group similar rows",
+      "forecast": "With a date: forecast a series",
+      "solo_serie": "This file is a series: a date and numbers, with no other columns to train a model on. What you can do with it is forecast it."
     },
     "profile": {
       "numeric": "numeric",
