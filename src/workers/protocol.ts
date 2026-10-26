@@ -1073,6 +1073,45 @@ export type ForecastResult =
       elapsed_ms: number;
     };
 
+/**
+ * S20 (ADR 029): el gemelo sintético. El worker recibe SOLO las columnas que TypeScript dejó viajar (lo marcado como dato personal,
+ * el texto libre, los identificadores y las fechas se quedan fuera), con su tipo, las filas y cuántas sintéticas pedir.
+ */
+export type SynthesizePayload = {
+  headers: string[];
+  kinds: ("numeric" | "categorical")[];
+  rows: string[][];
+  n_rows: number;
+  seed: number;
+};
+
+export type SynthesizeResult = {
+  headers: string[];
+  kinds: ("numeric" | "categorical")[];
+  n_real: number;
+  n_rows: number;
+  seed: number;
+  /** Las filas sintéticas como texto; el vacío es "". */
+  rows: string[][];
+  /** Por columna: el KS (números) o la distancia de variación total (categorías) contra los datos, y entre dos mitades reales. */
+  columns: { name: string; kind: "numeric" | "categorical"; value: number; floor: number }[];
+  /** Qué tan cerca queda cada fila sintética de la fila real más cercana, frente a lo cerca que están entre sí las reales. */
+  proximity: {
+    median_syn: number;
+    median_real: number;
+    p5_real: number;
+    share_below: number;
+    n_real: number;
+    n_syn: number;
+  };
+  /** Filas sintéticas idénticas a una real que quedaron tras volver a sacarlas (0 si se logró). */
+  copies: number;
+  resampled: number;
+  rounds: number;
+  rare_merged: { column: string; merged: number }[];
+  elapsed_ms: number;
+};
+
 export type RunnerRequest =
   | { id: number; type: "train"; payload: PipelinePayload | ClusterPayload }
   | { id: number; type: "validate"; payload: ValidationPayload }
@@ -1091,6 +1130,8 @@ export type RunnerRequest =
   | { id: number; type: "evaluate-new"; payload: EvaluateNewPayload }
   // S20: el pronóstico de una serie regular (flujo propio; no usa el modelo retenido).
   | { id: number; type: "forecast"; payload: ForecastPayload }
+  // S20: el gemelo sintético (cópula gaussiana con semilla fija) de las columnas que TypeScript dejó viajar.
+  | { id: number; type: "synthesize"; payload: SynthesizePayload }
   | {
       id: number;
       type: "fit-member";
@@ -1134,6 +1175,7 @@ export type RunnerResponse =
   | { id: number; type: "result"; command: "rules"; result: unknown }
   | { id: number; type: "result"; command: "evaluate-new"; result: unknown }
   | { id: number; type: "result"; command: "forecast"; result: unknown }
+  | { id: number; type: "result"; command: "synthesize"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }

@@ -4,7 +4,7 @@
 // entrenar, puntuar, exportar e importar el modelo; la orquestación pura
 // (split/veredicto/fuga/esquema/manifiesto) vive en el hilo principal.
 //
-// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test"|"stress"|"stress-test"|"interval"|"simulate"|"fit-winner"|"rules"|"evaluate-new"|"forecast", payload? }
+// Mensajes:  in  { id, type: "train"|"fit-member"|"score"|"cluster-labels"|"export-model"|"import-model"|"validate"|"test"|"stress"|"stress-test"|"interval"|"simulate"|"fit-winner"|"rules"|"evaluate-new"|"forecast"|"synthesize", payload? }
 //            out { id, type: "progress"|"result"|"error", ... }  (result lleva command)
 // S5: durante "train" (la liga), pipeline.py llama a un callback JS antes de cada
 // paso y el runner lo reenvía como progress con `detail` {phase, member, index,
@@ -24,6 +24,9 @@
 //
 // S20: "forecast" (pronosticar una serie regular: la liga con origen móvil y el pronóstico con sus bandas; no usa ni toca el modelo
 // retenido, así que sirve igual antes de entrenar nada).
+//
+// S20: "synthesize" (el gemelo sintético de las columnas que el hilo principal deja viajar: cópula gaussiana con semilla fija, su
+// informe de fidelidad y de cercanía a las filas reales; tampoco usa el modelo retenido).
 //
 // El estado Python (_MODEL en pipeline.py) vive lo que viva este worker: tras
 // entrenar o importar, score/export operan sin re-entrenar.
@@ -51,6 +54,7 @@ const STAGE = {
   rules: "scoring",
   "evaluate-new": "scoring",
   forecast: "scoring",
+  synthesize: "scoring",
   score: "scoring",
   // S7 (P13): las etiquetas por fila del agrupamiento, solo para el CSV local.
   "cluster-labels": "exporting",
@@ -97,6 +101,7 @@ function ensureRuntime(post, id) {
         rules: pyodide.globals.get("run_rules"),
         "evaluate-new": pyodide.globals.get("run_evaluate"),
         forecast: pyodide.globals.get("run_forecast"),
+        synthesize: pyodide.globals.get("run_synthesize"),
       };
     })();
     // Si la carga falla (red), se limpia para que un reintento re-cargue.

@@ -64,9 +64,10 @@ model's own figure.
   `(col IS NULL OR col <> 'x')` because an empty category counts as «is not».
 - **The gate.** The SQL is run by **CPython's `sqlite3`** (CI job `integration`, no new job) over the CSV that Pyodide predicted and must
   give the same prediction on every row (exact for classes and groups; for numbers, the same literal).
-- **Scope.** Only for a model trained in Probeta (it needs the training rows, which live in memory and never in the file). The button
-  lives in Results, which only appears after training in the session, so an imported model and the Protocol winner never see it; a model
-  with too few rows says so, and if the worker holds no rows the panel says so (`reglas.sin_filas`) instead of inventing a tree.
+- **Scope.** _Sprint 19:_ only for a model trained in Probeta (it needs the training rows, which live in memory and never in the file).
+  _Sprint 20 widened it_ — see the addendum at the end: with the rows of a file the user loads, an imported model and the Protocol winner
+  get their rules too. A model with too few rows says so, and if the worker holds no rows and none were given, the panel says so
+  (`reglas.sin_filas`) instead of inventing a tree.
 
 ### 4. Watching the performance: today's figure against the test figure, with its margin
 
@@ -94,6 +95,25 @@ other. An app older than this sprint refuses it (unknown shape), which is the ri
 ## What it does not do
 
 - It does not read the Protocol test again, anywhere. It does not store a margin for the test figure.
-- No rules for the Protocol, for imported models or for a model that no longer has its rows.
+- No rules from rows the app does not have: for an imported model or the Protocol winner the tree needs rows the user provides (addendum).
 - The simulator is not evidence and not a causal claim: it moves a column and asks the model; the data may move others with it.
 - It does not fetch results from another system and does not call a language model.
+
+## Addendum (sprint 20, 2026-10-25) — the rules with rows the user uploads
+
+The decision of the user after sprint 19 (2026-10-25, «2 B»): the model as rules is also built for the Protocol winner and for an
+imported model, by **fitting the tree on rows the user uploads**. Nothing else of the section 3 changes: same depth, same leaf size,
+same threshold of 0.90 / 0.80, same text and SQL, same rule form measured on rows the tree did not see.
+
+- **Where the rows come from.** `run_rules` takes an optional `{headers, rows, truth?}` (an allow-list of keys; a key more breaks the contract
+  _naming it_). The tree is fitted to **what the model predicts on those rows** (75 % to fit, 25 % held aside by the fixed seed), at least
+  40 rows and at most 50,000. `RulesResult.source` says which rows were used: `training` or `uploaded`, and the reader rejects a result
+  whose source is not the one asked.
+- **In «Use the model»** the rows are the file already loaded to score (any model: trained, imported, from Probeta or the Protocol). If the file
+  carries the target, the rules are also measured against the truth (on the held-aside rows that have a result); if not, the screen says so.
+- **In stage 10 of the Protocol** the user picks a CSV with rows shaped like the data. The winner is refitted with the sealed training
+  rows (`fit-winner`, no test), and the tree is built with the uploaded rows. **The truth is never measured there**: the test was opened once
+  in stage 8 and is not opened again, so the envelope carries only the columns the model reads (the target column is dropped in the main
+  thread, before anything leaves it), the request does not ask for the truth, and the reader refuses a result whose `truth` is not empty.
+- **What the rows are not.** They are not training rows and they are not evidence: the tree summarises the model on _those_ rows, so a
+  different file can give different rules. The result and the screen say the tree was built with the rows of the user's file.

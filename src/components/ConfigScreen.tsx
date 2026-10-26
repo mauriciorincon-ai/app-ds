@@ -33,6 +33,11 @@ const LimpiezaPanel = dynamic(
   () => import("./limpieza/LimpiezaPanel").then((m) => m.LimpiezaPanel),
   { ssr: false },
 );
+// S20: el gemelo sintético (cópula, informe y sus textos) también en su chunk, junto a la exploración.
+const GemeloPanel = dynamic(
+  () => import("./gemelo/GemeloPanel").then((m) => m.GemeloPanel),
+  { ssr: false },
+);
 // S20: pronosticar una serie (otro flujo, con su gráfico y sus textos) también en su chunk.
 const PronosticoPanel = dynamic(
   () => import("./pronostico/PronosticoPanel").then((m) => m.PronosticoPanel),
@@ -167,6 +172,16 @@ export function ConfigScreen({
       )}
 
       {getTable && !soloSerie && <ExploracionPanel getTable={getTable} />}
+
+      {/* S20: el gemelo sintético — lo marcado como dato personal no viaja, así que espera al aviso (`ingesta`). */}
+      {getTable && !soloSerie && worker && (
+        <GemeloPanel
+          getTable={getTable}
+          personales={ingesta ? ingesta.personales.map((p) => p.column) : null}
+          worker={worker}
+          datasetName={datasetName}
+        />
+      )}
 
       {dataset.dateColumns.length > 0 && !soloSerie && (
         <p className="rounded-md border border-caution/40 bg-caution/10 p-3 text-sm">

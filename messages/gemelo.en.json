@@ -1,0 +1,69 @@
+{
+  "gemelo": {
+    "titulo": "A synthetic twin of your data",
+    "ayuda": "A new table shaped like yours: each column is spread like in your data and the columns relate to each other like in your data, but no row is a row of yours. It is for sharing a sample without sharing the people. It is built in your browser with a Gaussian copula and a fixed seed (the same file always gives the same twin), and it comes with a report: whether it resembles your data, whether it sits too close to your rows, and whether there are copies. It is a statistical summary, not a permit: the verdict tells you what it found, not that sharing it is lawful.",
+    "filas": "Rows of the twin",
+    "filas_ayuda": "By default as many as your data (up to {max}).",
+    "revisando": "Checking your file for personal data…",
+    "pocas": "With so few rows there is no honest way to imitate the table: at least {min} are needed.",
+    "sin_columnas": "No column can travel to the twin: they are all personal data, free text, identifiers, dates or columns with no variation.",
+    "fuera": {
+      "titulo": "These do not travel to the twin, and why:",
+      "personal": "flagged as possible personal data",
+      "texto_libre": "free text or too many distinct values",
+      "identificador": "identifier (a different value in every row)",
+      "fecha": "date",
+      "constante": "always the same value",
+      "vacia": "almost no data"
+    },
+    "viajan": "{count} columns travel: {lista}.",
+    "viajan_one": "{count} column travels: {lista}.",
+    "boton": "Generate the twin",
+    "calculando": "Generating the twin and measuring how close it sits to your rows…",
+    "relaciones_calculando": "Comparing the relationships…",
+    "error": "The twin could not be generated ({motivo}). Try again.",
+    "veredicto": {
+      "compartir": "Safe to share",
+      "revisar": "Review before sharing",
+      "no_compartir": "Do not share"
+    },
+    "explica": {
+      "compartir": "The columns and the relationships resemble those of your data at least as much as two halves of your own data resemble each other, no row is identical to one of yours, and the synthetic rows are no closer to yours than yours are to each other.",
+      "revisar": "There are no copies, but something does not reach «good»: {razones}. Look at the report before sharing it.",
+      "no_compartir": "The twin is not safe to share: {razones}. A table like this lets rows of yours show through."
+    },
+    "razon": {
+      "copias": "some rows are identical to yours",
+      "cercania": "the synthetic rows sit too close to yours",
+      "columnas": "some column is not spread like in your data",
+      "relaciones": "part of the relationships between columns is lost"
+    },
+    "nivel": {
+      "bien": "good",
+      "revisar": "review",
+      "mal": "bad"
+    },
+    "informe": {
+      "titulo": "The report",
+      "columnas": "Column by column",
+      "columnas_detalle": "Mean difference from your data: {valor} (on a 0 to 1 scale). Two halves of your own data differ {piso} from each other. The one that differs most: “{columna}”, {maxima}.",
+      "relaciones": "Relationships between columns",
+      "relaciones_pearson": "Between numbers ({pares} pairs): the twin's correlations differ {valor} from yours; two halves of your data differ {piso}.",
+      "relaciones_pearson_one": "Between numbers ({pares} pair): the twin's correlation differs {valor} from yours; two halves of your data differ {piso}.",
+      "relaciones_cramer": "Between categories ({pares} pairs): the twin's association differs {valor} from yours; two halves of your data differ {piso}.",
+      "relaciones_cramer_one": "Between categories ({pares} pair): the twin's association differs {valor} from yours; two halves of your data differ {piso}.",
+      "relaciones_ninguna": "There are no pairs of columns to compare.",
+      "cercania": "How close it sits to your rows",
+      "cercania_detalle": "The synthetic row closest to each of your rows is {razon} times the distance at which your rows sit from each other (1 is the same; under {minimo} would be copying). {bajo} % of the synthetic rows sit closer to one of your rows than the closest 5 % of your rows sit to each other (about 5 % is expected).",
+      "copias": "Exact copies",
+      "copias_cero": "No synthetic row is identical to one of yours{extra}.",
+      "copias_cero_extra": " ({n} were drawn again to achieve it)",
+      "copias_n": "{n} synthetic rows are still identical to one of yours after drawing them again: with so few possible combinations the table copies itself.",
+      "copias_n_one": "{n} synthetic row is still identical to one of yours after drawing it again: with so few possible combinations the table copies itself."
+    },
+    "raras": "In {count} columns the categories with fewer than 5 rows were merged into «otras» so they do not travel as they are: {lista}.",
+    "raras_one": "In {count} column the categories with fewer than 5 rows were merged into «otras» so they do not travel as they are: {lista}.",
+    "semilla": "Fixed seed: {semilla}. {n} synthetic rows from {real} of your rows.",
+    "descargar": "Download the twin (.csv)"
+  }
+}

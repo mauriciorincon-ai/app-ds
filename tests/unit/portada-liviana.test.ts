@@ -72,6 +72,11 @@ const LAZY = [
   "src/workers/contrato-pronostico.ts",
   "src/lib/narration/pronostico.ts",
   "src/lib/narration/textos-pronostico.ts",
+  // S20: el gemelo sintético (motor, panel, textos y contrato) llega con la pantalla de configuración (dynamic).
+  "src/engine/gemelo.ts",
+  "src/components/gemelo/GemeloPanel.tsx",
+  "src/lib/narration/textos-gemelo.ts",
+  "src/workers/contrato-gemelo.ts",
   // S8 (ADR 020): el Protocolo DS vive en /protocolo; la portada solo lleva su enlace
   // y la cuenta de etapas (src/engine/protocolo/ids.ts, sin imports).
   "src/components/protocolo/ProtocoloApp.tsx",

@@ -3918,3 +3918,253 @@ def run_forecast(payload_json="{}"):
             "elapsed_ms": _elapsed_ms(started),
         }
     )
+
+
+# --- S20 (ADR 029): el gemelo sintético --------------------------------------------------------------------------------------
+#
+# Una cópula gaussiana con semilla fija: cada columna conserva su distribución (la función de cuantiles de los datos; las categóricas
+# por frecuencias) y entre las columnas se conserva la dependencia (la correlación de las puntuaciones normales de sus rangos). No hay
+# azar que no salga de `seed`: la misma tabla y la misma semilla dan el mismo gemelo. TypeScript decide qué columnas viajan (lo marcado
+# como dato personal, el texto libre, los identificadores y las fechas se quedan fuera y se nombran) y manda solo esas; aquí las
+# categorías con menos de 5 filas se juntan en «otras» (no viajan tal cual), una fila sintética idéntica a una real se vuelve a sacar
+# hasta que no quede ninguna (o se rinde y lo dice) y se mide el informe: columna por columna contra los datos y contra lo que se
+# parecen dos mitades reales entre sí, y qué tan cerca queda cada fila sintética de la real más cercana frente a lo cerca que están
+# entre sí las reales.
+SYNTH_KEYS = frozenset(("headers", "kinds", "rows", "n_rows", "seed"))
+SYNTH_MIN_ROWS = 20
+SYNTH_MIN_OUT = 10
+SYNTH_MAX_ROWS = 50000
+SYNTH_RARE_CATEGORY = 5
+SYNTH_OTHERS = "otras"
+SYNTH_PROXIMITY_MAX = 2000
+SYNTH_RESAMPLE_ROUNDS = 20
+SYNTH_EIGEN_FLOOR = 1e-6
+SYNTH_SIG = 6
+
+
+def _synth_key(values, kinds):
+    """La firma de una fila para saber si dos filas son la misma (los números a 6 cifras significativas, el vacío como None)."""
+    return tuple(
+        None if v is None or (isinstance(v, float) and not math.isfinite(v)) else (float(f"{v:.{SYNTH_SIG}g}") if k == "numeric" else str(v))
+        for v, k in zip(values, kinds)
+    )
+
+
+def _synth_text(value, kind, integer):
+    if value is None or (isinstance(value, float) and not math.isfinite(value)):
+        return ""
+    if kind != "numeric":
+        return str(value)
+    return str(int(round(value))) if integer else f"{float(value):.{SYNTH_SIG}g}"
+
+
+def run_synthesize(payload_json="{}"):
+    """S20 (ADR 029): el gemelo sintético de las columnas que TypeScript manda (`headers` y `kinds` alineados, `rows`), con `n_rows`
+    filas y la semilla `seed`. Devuelve las filas (texto, el vacío como "") y el informe: por columna el KS (números) o la distancia de
+    variación total (categorías) contra los datos y contra dos mitades reales; la cercanía a la fila real más cercana frente a la de las
+    reales entre sí; y cuántas copias exactas quedaron (0 si lo logró)."""
+    started = time.perf_counter()
+    from scipy.stats import ks_2samp, norm
+    from sklearn.neighbors import NearestNeighbors
+
+    p = json.loads(payload_json or "{}")
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in p:
+        if key not in SYNTH_KEYS:
+            _contract(key)
+    headers, kinds, rows, n_out, seed = p.get("headers"), p.get("kinds"), p.get("rows"), p.get("n_rows"), p.get("seed")
+    if not isinstance(headers, list) or not headers or not all(isinstance(h, str) for h in headers) or len(set(headers)) != len(headers):
+        _contract("headers")
+    if not isinstance(kinds, list) or len(kinds) != len(headers) or any(k not in ("numeric", "categorical") for k in kinds):
+        _contract("kinds")
+    if not isinstance(rows, list) or len(rows) > SYNTH_MAX_ROWS or any(not isinstance(r, list) or len(r) != len(headers) for r in rows):
+        _contract("rows")
+    if not isinstance(n_out, int) or isinstance(n_out, bool) or not SYNTH_MIN_OUT <= n_out <= SYNTH_MAX_ROWS:
+        _contract("n_rows")
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        _contract("seed")
+    if len(rows) < SYNTH_MIN_ROWS:
+        raise RuntimeError("too-few-rows")
+
+    d = len(headers)
+    n = len(rows)
+    df = pd.DataFrame(rows, columns=headers).map(_normalize_cell)
+    rng = np.random.RandomState(seed)
+
+    # --- la distribución de cada columna y las puntuaciones normales de cada fila real --------------------------------------
+    Z = np.zeros((n, d))
+    marginals = []
+    real_cols = []  # lo que cada columna dice por fila real, con las categorías raras ya juntas
+    for j, (name, kind) in enumerate(zip(headers, kinds)):
+        col = df[name]
+        if kind == "numeric":
+            values = pd.to_numeric(col, errors="coerce").to_numpy(dtype=float, na_value=np.nan)
+            present = np.isfinite(values)
+            if present.sum() < 2:
+                raise RuntimeError("no-data")
+            sorted_values = np.sort(values[present])
+            ranks = pd.Series(values[present]).rank(method="average").to_numpy()
+            Z[present, j] = norm.ppf((ranks - 0.5) / present.sum())
+            marginals.append({
+                "kind": kind,
+                "sorted": sorted_values,
+                "integer": bool(np.all(sorted_values == np.round(sorted_values))),
+                "miss": float(1.0 - present.mean()),
+            })
+            real_cols.append([None if not ok else float(v) for v, ok in zip(values, present)])
+        else:
+            present = col.notna().to_numpy(dtype=bool)
+            if present.sum() < 2:
+                raise RuntimeError("no-data")
+            counts = col[present].value_counts()
+            ordered = sorted(((c, int(k)) for c, k in counts.items()), key=lambda item: (-item[1], item[0]))
+            kept = [c for c, k in ordered if k >= SYNTH_RARE_CATEGORY]
+            rare = sum(k for c, k in ordered if k < SYNTH_RARE_CATEGORY)
+            others = SYNTH_OTHERS
+            while others in kept:
+                others += "_"
+            cats = kept + ([others] if rare > 0 else [])
+            freq = np.array([dict(ordered)[c] for c in kept] + ([rare] if rare > 0 else []), dtype=float)
+            probs = freq / freq.sum()
+            cum = np.cumsum(probs)
+            lo = np.concatenate(([0.0], cum[:-1]))
+            kept_set = set(kept)
+            labels = np.array([c if c in kept_set else others for c in col[present]], dtype=object)
+            index = {c: i for i, c in enumerate(cats)}
+            at = np.array([index[c] for c in labels])
+            u = lo[at] + rng.uniform(size=len(at)) * (cum[at] - lo[at])
+            Z[present, j] = norm.ppf(np.clip(u, 1e-6, 1 - 1e-6))
+            marginals.append({
+                "kind": kind,
+                "cats": cats,
+                "cum": cum,
+                "miss": float(1.0 - present.mean()),
+                "merged": int(sum(1 for c, k in ordered if k < SYNTH_RARE_CATEGORY)),
+            })
+            full = np.empty(n, dtype=object)
+            full[:] = None
+            full[present] = labels
+            real_cols.append(list(full))
+
+    # --- la dependencia: la correlación de las puntuaciones, con un piso de autovalores para que se pueda factorizar ------------
+    if d >= 2:
+        C = np.nan_to_num(np.corrcoef(Z, rowvar=False), nan=0.0)
+        np.fill_diagonal(C, 1.0)
+    else:
+        C = np.ones((1, 1))
+    w, V = np.linalg.eigh(C)
+    C = (V * np.maximum(w, SYNTH_EIGEN_FLOOR)) @ V.T
+    scale = np.sqrt(np.diag(C))
+    L = np.linalg.cholesky(C / np.outer(scale, scale))
+
+    def draw(m):
+        U = norm.cdf(rng.standard_normal((m, d)) @ L.T)
+        out = np.empty((m, d), dtype=object)
+        for j, mg in enumerate(marginals):
+            u = U[:, j]
+            if mg["kind"] == "numeric":
+                v = np.quantile(mg["sorted"], u)
+                if mg["integer"]:
+                    v = np.round(v)
+                column = np.array([float(x) for x in v], dtype=object)
+            else:
+                at = np.minimum(np.searchsorted(mg["cum"], u, side="right"), len(mg["cats"]) - 1)
+                column = np.array(mg["cats"], dtype=object)[at]
+            column[rng.uniform(size=m) < mg["miss"]] = None
+            out[:, j] = column
+        return out
+
+    # --- ninguna fila sintética es una fila real ---------------------------------------------------------------------------
+    real_keys = {_synth_key([real_cols[j][i] for j in range(d)], kinds) for i in range(n)}
+    synth = draw(n_out)
+    bad = [i for i in range(n_out) if _synth_key(synth[i], kinds) in real_keys]
+    resampled, rounds = 0, 0
+    while bad and rounds < SYNTH_RESAMPLE_ROUNDS:
+        fresh = draw(len(bad))
+        for slot, i in enumerate(bad):
+            synth[i] = fresh[slot]
+        resampled += len(bad)
+        bad = [i for i in bad if _synth_key(synth[i], kinds) in real_keys]
+        rounds += 1
+    copies = len(bad)
+
+    # --- el informe --------------------------------------------------------------------------------------------------------
+    order = np.random.RandomState(seed + 1).permutation(n)
+    half_a, half_b = order[: n // 2], order[n // 2 :]
+
+    def tvd(a, b):
+        ca, cb = pd.Series(a, dtype=object).value_counts(), pd.Series(b, dtype=object).value_counts()
+        if ca.sum() == 0 or cb.sum() == 0:
+            return 0.0
+        names = set(ca.index) | set(cb.index)
+        return float(0.5 * sum(abs(ca.get(c, 0) / ca.sum() - cb.get(c, 0) / cb.sum()) for c in names))
+
+    def ks(a, b):
+        a, b = [x for x in a if x is not None], [x for x in b if x is not None]
+        return float(ks_2samp(a, b).statistic) if len(a) >= 2 and len(b) >= 2 else 0.0
+
+    columns = []
+    for j, (name, kind) in enumerate(zip(headers, kinds)):
+        real = real_cols[j]
+        syn = list(synth[:, j])
+        measure = ks if kind == "numeric" else tvd
+        columns.append({
+            "name": name,
+            "kind": kind,
+            "value": measure(real, syn),
+            "floor": measure([real[i] for i in half_a], [real[i] for i in half_b]),
+        })
+
+    # cercanía: números en desviaciones, categorías en uno-caliente (un cambio de categoría pesa 1), y la distancia a la fila real más
+    # cercana (las sintéticas contra las reales; las reales contra las OTRAS reales)
+    def encode(table_cols):
+        parts = []
+        for j, mg in enumerate(marginals):
+            column = table_cols[j]
+            if mg["kind"] == "numeric":
+                med = float(np.median(mg["sorted"]))
+                std = float(np.std(mg["sorted"])) or 1.0
+                parts.append(np.array([[((med if v is None else float(v)) - med) / std] for v in column]))
+            else:
+                parts.append(np.array([[np.sqrt(0.5) if v == c else 0.0 for c in mg["cats"]] for v in column]))
+        return np.hstack(parts)
+
+    sample = order[:SYNTH_PROXIMITY_MAX]
+    sample_syn = min(n_out, SYNTH_PROXIMITY_MAX)
+    real_enc = encode([[real_cols[j][i] for i in sample] for j in range(d)])
+    syn_enc = encode([list(synth[:sample_syn, j]) for j in range(d)])
+    nn = NearestNeighbors(n_neighbors=2).fit(real_enc)
+    d_real = nn.kneighbors(real_enc)[0][:, 1]
+    d_syn = nn.kneighbors(syn_enc, n_neighbors=1)[0][:, 0]
+    p5_real = float(np.percentile(d_real, 5))
+
+    def text_row(row):
+        return [_synth_text(v, kinds[j], marginals[j].get("integer", False)) for j, v in enumerate(row)]
+
+    return json.dumps({
+        "headers": headers,
+        "kinds": kinds,
+        "n_real": int(n),
+        "n_rows": int(n_out),
+        "seed": int(seed),
+        "rows": [text_row(r) for r in synth],
+        "columns": columns,
+        "proximity": {
+            "median_syn": float(np.median(d_syn)),
+            "median_real": float(np.median(d_real)),
+            "p5_real": p5_real,
+            "share_below": float(np.mean(d_syn < p5_real)),
+            "n_real": int(len(real_enc)),
+            "n_syn": int(len(syn_enc)),
+        },
+        "copies": int(copies),
+        "resampled": int(resampled),
+        "rounds": int(rounds),
+        "rare_merged": [
+            {"column": name, "merged": mg["merged"]}
+            for name, mg in zip(headers, marginals)
+            if mg["kind"] == "categorical" and mg["merged"] > 0
+        ],
+        "elapsed_ms": _elapsed_ms(started),
+    })

@@ -1,0 +1,69 @@
+{
+  "gemelo": {
+    "titulo": "Un gemelo sintético de tus datos",
+    "ayuda": "Una tabla nueva con la forma de la tuya: cada columna se reparte como en tus datos y las columnas se relacionan como en tus datos, pero ninguna fila es una fila tuya. Sirve para compartir una muestra sin compartir las personas. Se arma en tu navegador con una cópula gaussiana y una semilla fija (el mismo archivo da siempre el mismo gemelo), y llega con un informe: si se parece, si queda demasiado cerca de tus filas y si hay copias. Es un resumen estadístico, no un permiso: el veredicto te dice qué encontró, no que sea legal compartirlo.",
+    "filas": "Filas del gemelo",
+    "filas_ayuda": "Por defecto, tantas como tus datos (hasta {max}).",
+    "revisando": "Revisando si hay datos personales en tu archivo…",
+    "pocas": "Con tan pocas filas no hay forma honesta de imitar la tabla: hacen falta al menos {min}.",
+    "sin_columnas": "Ninguna columna puede viajar al gemelo: todas son datos personales, texto libre, identificadores, fechas o columnas sin variación.",
+    "fuera": {
+      "titulo": "No viajan al gemelo, y por eso:",
+      "personal": "marcada como posible dato personal",
+      "texto_libre": "texto libre o con demasiados valores distintos",
+      "identificador": "identificador (un valor distinto por fila)",
+      "fecha": "fecha",
+      "constante": "siempre el mismo valor",
+      "vacia": "casi sin datos"
+    },
+    "viajan": "Viajan {count} columnas: {lista}.",
+    "viajan_one": "Viaja {count} columna: {lista}.",
+    "boton": "Generar el gemelo",
+    "calculando": "Generando el gemelo y midiendo qué tan cerca queda de tus filas…",
+    "relaciones_calculando": "Comparando las relaciones…",
+    "error": "No se pudo generar el gemelo ({motivo}). Vuelve a intentarlo.",
+    "veredicto": {
+      "compartir": "Se puede compartir",
+      "revisar": "Revisar antes de compartir",
+      "no_compartir": "No compartir"
+    },
+    "explica": {
+      "compartir": "Las columnas y las relaciones se parecen a las de tus datos al menos tanto como se parecen dos mitades de tus propios datos entre sí, no hay una fila idéntica a una tuya y las filas sintéticas no quedan más cerca de las tuyas de lo que las tuyas lo están entre sí.",
+      "revisar": "No hay copias, pero algo no llega al nivel de «bien»: {razones}. Mira el informe antes de compartirlo.",
+      "no_compartir": "El gemelo no es seguro de compartir: {razones}. Una tabla así deja ver filas tuyas."
+    },
+    "razon": {
+      "copias": "quedaron filas idénticas a las tuyas",
+      "cercania": "las filas sintéticas quedan demasiado cerca de las tuyas",
+      "columnas": "alguna columna no se reparte como en tus datos",
+      "relaciones": "las relaciones entre columnas se pierden en parte"
+    },
+    "nivel": {
+      "bien": "bien",
+      "revisar": "revisar",
+      "mal": "mal"
+    },
+    "informe": {
+      "titulo": "El informe",
+      "columnas": "Columna por columna",
+      "columnas_detalle": "Diferencia media con tus datos: {valor} (en una escala de 0 a 1). Dos mitades de tus propios datos difieren {piso} entre sí. La que más difiere: «{columna}», {maxima}.",
+      "relaciones": "Relaciones entre columnas",
+      "relaciones_pearson": "Entre números ({pares} parejas): las correlaciones del gemelo difieren {valor} de las tuyas; dos mitades de tus datos difieren {piso}.",
+      "relaciones_pearson_one": "Entre números ({pares} pareja): la correlación del gemelo difiere {valor} de la tuya; dos mitades de tus datos difieren {piso}.",
+      "relaciones_cramer": "Entre categorías ({pares} parejas): la asociación del gemelo difiere {valor} de la tuya; dos mitades de tus datos difieren {piso}.",
+      "relaciones_cramer_one": "Entre categorías ({pares} pareja): la asociación del gemelo difiere {valor} de la tuya; dos mitades de tus datos difieren {piso}.",
+      "relaciones_ninguna": "No hay parejas de columnas que comparar.",
+      "cercania": "Qué tan cerca queda de tus filas",
+      "cercania_detalle": "La fila sintética más cercana a cada una de tus filas está a {razon} veces la distancia a la que están tus filas entre sí (1 es igual; menos de {minimo} sería copiar). {bajo} % de las filas sintéticas quedan más cerca de una fila tuya que el 5 % más cercano de tus filas entre sí (lo esperado es alrededor de 5 %).",
+      "copias": "Copias exactas",
+      "copias_cero": "Ninguna fila sintética es idéntica a una tuya{extra}.",
+      "copias_cero_extra": " (se volvieron a sacar {n} para lograrlo)",
+      "copias_n": "{n} filas sintéticas siguen idénticas a una tuya tras volver a sacarlas: con tan pocas combinaciones posibles la tabla se copia sola.",
+      "copias_n_one": "{n} fila sintética sigue idéntica a una tuya tras volver a sacarla: con tan pocas combinaciones posibles la tabla se copia sola."
+    },
+    "raras": "En {count} columnas las categorías con menos de 5 filas se juntaron en «otras» para que no viajen tal cual: {lista}.",
+    "raras_one": "En {count} columna las categorías con menos de 5 filas se juntaron en «otras» para que no viajen tal cual: {lista}.",
+    "semilla": "Semilla fija: {semilla}. {n} filas sintéticas a partir de {real} filas tuyas.",
+    "descargar": "Descargar el gemelo (.csv)"
+  }
+}

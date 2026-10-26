@@ -175,18 +175,19 @@ function cramer(a: readonly (string | null)[], b: readonly (string | null)[]): {
   return { v: Math.min(1, Math.sqrt(chi2 / (n * grado))), n };
 }
 
-export function explorar(table: CsvTable): Exploracion {
+/**
+ * Las relaciones de la tabla —Pearson entre las numéricas, V de Cramér entre las categóricas—, con las MISMAS medidas y los mismos
+ * topes que la exploración. Las usa también el gemelo (S20) para comparar las relaciones de los datos con las de su copia.
+ */
+export function relaciones(table: CsvTable): {
+  numericas: string[];
+  totalNumericas: number;
+  matriz: (number | null)[][];
+  /** Todas las parejas de categóricas, de mayor a menor asociación (la exploración muestra las primeras). */
+  cramer: ParCramer[];
+} {
   const perfiles = profileTable(table);
   const columnas = perfiles.map((perfil, i) => ({ perfil, celdas: columnValues(table, i) }));
-  const distribuciones: Distribucion[] = [];
-  for (const { perfil, celdas } of columnas) {
-    if (perfil.kind === "numeric") {
-      if (celdas.some((c) => !isNullToken(c))) distribuciones.push(distribucionNumerica(perfil.name, celdas));
-    } else if (celdas.some((c) => !isNullToken(c))) {
-      distribuciones.push(distribucionCategorica(perfil.name, celdas));
-    }
-  }
-
   const numericas = columnas.filter(({ perfil, celdas }) => perfil.kind === "numeric" && celdas.some((c) => !isNullToken(c)));
   const dentro = numericas.slice(0, COLUMNAS_MATRIZ_MAX);
   const vectores = dentro.map(({ celdas }) => celdas.map((c) => (isNullToken(c) ? NaN : parseNumber(c)!)));
@@ -203,14 +204,28 @@ export function explorar(table: CsvTable): Exploracion {
       if (r) pares.push({ a: categoricas[i]!.perfil.name, b: categoricas[j]!.perfil.name, ...r });
     }
   pares.sort((p, q) => q.v - p.v || (p.a + p.b < q.a + q.b ? -1 : 1));
+  return { numericas: dentro.map(({ perfil }) => perfil.name), totalNumericas: numericas.length, matriz, cramer: pares };
+}
 
+export function explorar(table: CsvTable): Exploracion {
+  const perfiles = profileTable(table);
+  const columnas = perfiles.map((perfil, i) => ({ perfil, celdas: columnValues(table, i) }));
+  const distribuciones: Distribucion[] = [];
+  for (const { perfil, celdas } of columnas) {
+    if (perfil.kind === "numeric") {
+      if (celdas.some((c) => !isNullToken(c))) distribuciones.push(distribucionNumerica(perfil.name, celdas));
+    } else if (celdas.some((c) => !isNullToken(c))) {
+      distribuciones.push(distribucionCategorica(perfil.name, celdas));
+    }
+  }
+  const rel = relaciones(table);
   return {
     filas: table.rows.length,
     distribuciones,
-    totalNumericas: numericas.length,
+    totalNumericas: rel.totalNumericas,
     totalCategoricas: columnas.filter(({ perfil, celdas }) => perfil.kind === "categorical" && celdas.some((c) => !isNullToken(c))).length,
-    numericas: dentro.map(({ perfil }) => perfil.name),
-    matriz,
-    cramer: pares.slice(0, PARES_CRAMER_MOSTRADOS),
+    numericas: rel.numericas,
+    matriz: rel.matriz,
+    cramer: rel.cramer.slice(0, PARES_CRAMER_MOSTRADOS),
   };
 }
