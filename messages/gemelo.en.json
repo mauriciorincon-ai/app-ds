@@ -1,7 +1,7 @@
 {
   "gemelo": {
     "titulo": "A synthetic twin of your data",
-    "ayuda": "A new table shaped like yours: each column is spread like in your data and the columns relate to each other like in your data, but no row is a row of yours. It is for sharing a sample without sharing the people. It is built in your browser with a Gaussian copula and a fixed seed (the same file always gives the same twin), and it comes with a report: whether it resembles your data, whether it sits too close to your rows, and whether there are copies. It is a statistical summary, not a permit: the verdict tells you what it found, not that sharing it is lawful.",
+    "ayuda": "A new table shaped like yours: each column is spread like in your data and the columns relate to each other like in your data, and no row is copied from yours: if one comes out identical to a row of yours it is drawn again, and the report counts any that remain. It is for sharing a sample without sharing the people. It is built in your browser with a Gaussian copula and a fixed seed (the same file always gives the same twin), and it comes with a report: whether it resembles your data, whether it sits too close to your rows, and whether there are copies. It is a statistical summary, not a permit: the verdict tells you what it found, not that sharing it is lawful.",
     "filas": "Rows of the twin",
     "filas_ayuda": "By default as many as your data (up to {max}).",
     "revisando": "Checking your file for personal data…",

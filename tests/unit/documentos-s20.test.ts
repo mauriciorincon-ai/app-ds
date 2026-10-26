@@ -283,6 +283,9 @@ describe("frases caducadas: ningún texto dice que vigilar el desempeño no est�
   const textos: Record<string, string> = {
     manual,
     guia,
+    blueprint,
+    brochure: readFileSync("docs/BROCHURE.html", "utf8"),
+    exportado: readFileSync("docs/brochure-export.json", "utf8"),
     glosario: readFileSync("src/content/glosario.ts", "utf8"),
   };
   const recorre = (dir: string): string[] =>
@@ -310,6 +313,10 @@ describe("frases caducadas: ningún texto dice que vigilar el desempeño no est�
     [/un modelo \*\*importado\*\*\s+o el ganador del Protocolo no lo tienen/i, "«un modelo importado o el ganador del Protocolo no lo tienen» (el botón de reglas)"],
     [/No rules for the Protocol, for imported models/i, "«no rules for the Protocol, for imported models» (el ADR 027)"],
     [/(no|sin) (hay )?(datos )?sint[ée]ticos? (todav[íi]a|a[úu]n)|synthetic data (is )?(not|n't) (here )?yet/i, "«todavía no hay datos sintéticos»"],
+    // S20, auditoría M-5 y M-6: el aviso de fechas y la ayuda del gemelo decían lo que el propio sprint volvió falso
+    [/las fechas no se usan para el an[áa]lisis|no entran al an[áa]lisis: la app no parte|(don't|do not) enter the analysis/i, "«las fechas no se usan para el análisis» (con una fecha y un número se pronostica una serie)"],
+    [/ninguna fila es una fila tuya|no row is a row of yours|y ninguna fila tuya|with none of your rows/i, "«ninguna fila es una fila tuya» sin decir que las idénticas se vuelven a sacar y que el informe cuenta las que queden"],
+    [/(en esta versi[óo]n|in this version)[^.]{0,40}(se nombran|se deja fuera|named and left out)/i, "«en esta versión» para las fechas del gemelo (es una decisión, no una promesa)"],
   ];
   for (const [patron, que] of CADUCAS)
     it(`ningún documento ni diccionario dice ${que}`, () => {

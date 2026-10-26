@@ -66,7 +66,7 @@ real 5 %; zero copies. A table of two columns with two categories each (4 possib
 - No dependency, no new call to a model, no new endpoint; the worker answers a new command with the synthetic rows and the figures.
 - The comparison of relationships runs in the main thread after the worker answers (the panel says «comparing the relationships»); it
   uses a sample of at most 4,000 rows for the floor.
-- Dates do not travel to the twin in this version (a date column is named and left out). A twin of a series is the forecast's job
+- Dates do not travel to the twin (a date column is named and left out). A twin of a series is the forecast's job
   (ADR 028), not this one's.
 - The CSV is built and downloaded in the browser with the protection against formulas of every download of the app.
 

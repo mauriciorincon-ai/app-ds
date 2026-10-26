@@ -39,7 +39,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      precio, un consumo, un tiempo: ver _Estimar una cantidad_) y desde el Sprint 007 las de **varias
      categorías** (ver _Clasificar en varias categorías_). Y si no quieres predecir nada, la primera
      opción del menú es **agrupar filas parecidas** (ver _Agrupar filas parecidas, sin objetivo_). Si
-     alguna columna parece una fecha, la app te avisa: las fechas no se usan para el análisis.
+     alguna columna parece una fecha, la app te avisa: las fechas no entran al entrenamiento (con una fecha y un número puedes pronosticar una serie: ver «Pronosticar una serie»).
   3. **Pulsa _Entrenar modelos_.** La primera vez tarda unos segundos mientras se prepara el motor
      de análisis; verás el progreso paso a paso.
   4. **Resultados → lee el veredicto.** Arriba, en grande, aparece el veredicto:
@@ -73,7 +73,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Tamaño máximo del archivo: **5 MB o 50,000 filas**. Por encima, la app avisa (no se cuelga).
   - El chequeo de fuga es una **ayuda honesta, no una garantía**: atrapa los casos evidentes, no
     todos.
-  - Las columnas de fecha se **detectan y avisan**, pero no se usan para el análisis.
+  - Las columnas de fecha se **detectan y avisan**, y no entran al entrenamiento; con una fecha y un número puedes **pronosticar una serie** (ver «Pronosticar una serie»).
   - Formato admitido: **CSV** (con cabecera) y, desde el Sprint 018, **Excel `.xlsx`**. Los valores vacíos, `NA`, `null`, etc. se tratan como
     faltantes.
 
@@ -1068,7 +1068,8 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   **Allí la verdad nunca se mide**: la prueba se abrió una vez en la etapa 8 y no se vuelve a abrir, y la columna del
   objetivo, si tu archivo la trae, no sale de tu navegador ni se usa.
 - **Límites:** necesita filas: las de entrenamiento del modelo que acabas de entrenar (el botón de **Resultados**) o las de
-  un archivo tuyo (todo lo demás). Con **menos de 40 filas** lo dice en vez de inventar un árbol, y son filas que el árbol
+  un archivo tuyo (todo lo demás). Con pocas filas lo dice en vez de inventar un árbol (**menos de 40** de entrenamiento, o **menos de 53** si son las de un
+  archivo tuyo, porque se aparta el 25 % para medirlo), y son filas que el árbol
   resume: **otro archivo puede dar otras reglas**. Profundidad máxima 4; un árbol así casi nunca iguala a un bosque de árboles
   o a un boosting.
 
@@ -1121,7 +1122,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   diferencia) o ⚠ **no supera**: si gana uno simple, o si **la media** le gana a todos, la serie **no muestra una tendencia
   ni una temporada que se pueda proyectar** y el pronóstico es su nivel de siempre. Una serie de ruido, por ejemplo, termina
   así.
-- **El pronóstico:** a los periodos que pidas (por defecto, una temporada: 7 días, 13 semanas o 12 meses), en un **gráfico**
+- **El pronóstico:** a los periodos que pidas (por defecto, 7 días, 13 semanas —un trimestre— o 12 meses), en un **gráfico**
   (la historia en línea continua, el pronóstico en discontinua, las bandas del 80 y del 95 % con su leyenda escrita) y en una
   **tabla**. Las **bandas son empíricas**: salen de los errores que el método ganador tuvo al probarse, por distancia al
   origen; **no son una garantía**. Se descarga en **CSV** (la historia, con lo completado marcado, y el pronóstico con sus
@@ -1135,7 +1136,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 ### El gemelo sintético · desde Sprint 020
 
 - **Qué es:** una tabla nueva **con la forma de la tuya**: cada columna se reparte como en tus datos y las columnas se
-  relacionan como en tus datos, pero **ninguna fila es una fila tuya**. Sirve para compartir una muestra sin compartir a las
+  relacionan como en tus datos, y **ninguna fila se copia de las tuyas**: si una sale idéntica a una tuya se vuelve a sacar, y el informe cuenta las que queden. Sirve para compartir una muestra sin compartir a las
   personas. Está en la pantalla de configuración, **junto a la exploración**: **«Generar el gemelo»**. Se arma en tu navegador
   con una **cópula gaussiana** y una **semilla fija**: el mismo archivo da siempre el mismo gemelo.
 - **Qué no viaja:** lo que el aviso de **datos personales** marcó, el **texto libre**, los **identificadores** y las **fechas**
@@ -1446,7 +1447,7 @@ cuando una te frene.
   más cerca de las tuyas de lo que las tuyas lo están entre sí, pero un grupo muy pequeño puede identificarse por una
   combinación única de valores. Revisa el informe y decide con quien lo vayas a compartir.
 - **¿Por qué el gemelo deja fuera mis fechas?** Una fecha desplazada sin cuidado rompe la serie, y una tal cual identifica un
-  momento. En esta versión se nombran y se dejan fuera.
+  momento. Se nombran y se dejan fuera.
 - **¿Las reglas de un modelo importado salen iguales cada vez?** Con el mismo archivo, sí. Con otro archivo pueden cambiar:
   el árbol resume lo que el modelo predice en las filas que le das.
 

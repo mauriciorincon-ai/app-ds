@@ -127,7 +127,7 @@
       "date": "looks like a date"
     },
     "warnings": {
-      "date": "We found columns that look like dates ({cols}). They don't enter the analysis: the app doesn't split the data by time."
+      "date": "We found columns that look like dates ({cols}). They don't enter training: the app doesn't split the data by time. With a date and a number you can forecast a series (it is an option of the target)."
     },
     "train": "Train models",
     "back": "Change dataset",

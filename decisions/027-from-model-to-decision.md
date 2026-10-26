@@ -107,7 +107,7 @@ same threshold of 0.90 / 0.80, same text and SQL, same rule form measured on row
 
 - **Where the rows come from.** `run_rules` takes an optional `{headers, rows, truth?}` (an allow-list of keys; a key more breaks the contract
   _naming it_). The tree is fitted to **what the model predicts on those rows** (75 % to fit, 25 % held aside by the fixed seed), at least
-  40 rows and at most 50,000. `RulesResult.source` says which rows were used: `training` or `uploaded`, and the reader rejects a result
+  53 rows (40 to fit the tree once the 25 % is set aside; `RULES_MIN_UPLOADED`) and at most 50,000. `RulesResult.source` says which rows were used: `training` or `uploaded`, and the reader rejects a result
   whose source is not the one asked.
 - **In «Use the model»** the rows are the file already loaded to score (any model: trained, imported, from Probeta or the Protocol). If the file
   carries the target, the rules are also measured against the truth (on the held-aside rows that have a result); if not, the screen says so.

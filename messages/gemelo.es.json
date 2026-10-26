@@ -1,7 +1,7 @@
 {
   "gemelo": {
     "titulo": "Un gemelo sintético de tus datos",
-    "ayuda": "Una tabla nueva con la forma de la tuya: cada columna se reparte como en tus datos y las columnas se relacionan como en tus datos, pero ninguna fila es una fila tuya. Sirve para compartir una muestra sin compartir las personas. Se arma en tu navegador con una cópula gaussiana y una semilla fija (el mismo archivo da siempre el mismo gemelo), y llega con un informe: si se parece, si queda demasiado cerca de tus filas y si hay copias. Es un resumen estadístico, no un permiso: el veredicto te dice qué encontró, no que sea legal compartirlo.",
+    "ayuda": "Una tabla nueva con la forma de la tuya: cada columna se reparte como en tus datos y las columnas se relacionan como en tus datos, y ninguna fila se copia de las tuyas: si alguna sale idéntica a una tuya se vuelve a sacar, y el informe cuenta las que queden. Sirve para compartir una muestra sin compartir las personas. Se arma en tu navegador con una cópula gaussiana y una semilla fija (el mismo archivo da siempre el mismo gemelo), y llega con un informe: si se parece, si queda demasiado cerca de tus filas y si hay copias. Es un resumen estadístico, no un permiso: el veredicto te dice qué encontró, no que sea legal compartirlo.",
     "filas": "Filas del gemelo",
     "filas_ayuda": "Por defecto, tantas como tus datos (hasta {max}).",
     "revisando": "Revisando si hay datos personales en tu archivo…",

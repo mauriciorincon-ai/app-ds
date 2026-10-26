@@ -354,7 +354,7 @@
           {
             "id": "U17",
             "nombre": "Un gemelo sintético de tus datos",
-            "que_hace": "Una tabla con la forma de la tuya y ninguna fila tuya, hecha con una cópula gaussiana y una semilla fija. Lo marcado como dato personal, el texto libre, los identificadores y las fechas no viajan; el informe mide parecido y cercanía contra dos mitades reales y puede acabar en «no compartir».",
+            "que_hace": "Una tabla con la forma de la tuya que no copia tus filas (las idénticas se vuelven a sacar y el informe cuenta las que queden), hecha con una cópula gaussiana y una semilla fija. Lo marcado como dato personal, el texto libre, los identificadores y las fechas no viajan; el informe mide parecido y cercanía contra dos mitades reales y puede acabar en «no compartir».",
             "seccion_manual": "El gemelo sintético"
           },
           {
@@ -631,7 +631,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 135921,
+      "valor": 136173,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."

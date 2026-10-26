@@ -127,7 +127,7 @@
       "date": "parece fecha"
     },
     "warnings": {
-      "date": "Detectamos columnas que parecen fecha ({cols}). No entran al análisis: la app no parte los datos por tiempo."
+      "date": "Detectamos columnas que parecen fecha ({cols}). No entran al entrenamiento: la app no parte los datos por tiempo. Con una fecha y un número sí puedes pronosticar una serie (es una opción del objetivo)."
     },
     "train": "Entrenar modelos",
     "back": "Cambiar de dataset",
