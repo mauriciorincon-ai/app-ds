@@ -23,7 +23,10 @@ el valor), propone un plan de limpieza que apruebas o rechazas paso a paso, expl
 error de la cifra del veredicto y comprueba contra tus números el texto que explica el resultado. Desde el Sprint 19
 el modelo también se vuelve una decisión: un «¿qué pasaría si?» que dice qué significa en dinero cambiar una columna,
 el modelo en reglas (texto y SQL) con su fidelidad, y vigilar el desempeño con filas nuevas que traen el resultado real;
-el Protocolo guarda su ganador como archivo para eso.
+el Protocolo guarda su ganador como archivo para eso. Desde el Sprint 20, con una columna de fecha, puedes pronosticar una serie
+(seis métodos con origen móvil y un veredicto contra el mejor método simple, con bandas, gráfico y CSV), armar un gemelo sintético
+de tus datos con un informe que puede acabar en «no compartir», y sacar las reglas de un modelo importado o del ganador del Protocolo
+con las filas de un archivo tuyo.
 
 **Tus datos no salen de tu navegador.** El cómputo de Probeta (pandas y scikit-learn en WebAssembly,
 con Pyodide) corre en un Web Worker de tu equipo; el Protocolo calcula en tu navegador y guarda su
@@ -78,7 +81,10 @@ the value), proposes a cleaning plan that you approve or reject step by step, ex
 margin of error of the verdict's figure and checks the text that explains the result against your numbers. Since
 Sprint 19 the model also becomes a decision: a «what if?» that says what changing a column means in money, the model
 as rules (text and SQL) with its fidelity, and watching the performance with new rows that carry the real result;
-the Protocol saves its winner as a file for that.
+the Protocol saves its winner as a file for that. Since Sprint 20, with a date column, you can forecast a series (six methods
+with a rolling origin and a verdict against the best simple method, with bands, a chart and a CSV), build a synthetic twin of your
+data with a report that can end in «do not share», and get the rules of an imported model or of the Protocol winner from the rows
+of a file of yours.
 
 **Your data never leaves your browser.** Probeta's computation (pandas and scikit-learn in
 WebAssembly, through Pyodide) runs in a Web Worker on your machine; the Protocol computes in your

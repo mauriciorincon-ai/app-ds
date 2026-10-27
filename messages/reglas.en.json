@@ -6,7 +6,8 @@
     "boton": "See the model as rules",
     "calculando": "Building the rules…",
     "error": "The rules could not be built ({motivo}). Try again.",
-    "sin_filas": "This model does not keep the rows it was trained with (an imported model does not carry them): the rules are built in the run where you trained it.",
+    "ayuda_subidas": "A tree of a few questions about your columns, with numbers in their units, that copies what the model decides ON THE ROWS OF YOUR FILE (the one you just loaded). It is meant to take the model to a system where Python does not run, also if you imported it: it does not need the rows it was trained with. It is a summary: it almost never matches the model exactly, and the screen tells you how closely it does.",
+    "sin_filas": "This model does not keep the rows it was trained with (an imported model or the winner of the Protocol does not carry them): the rules are built from a file of rows, the one you load in “Use the model”.",
     "pocas_filas": "With so few rows there is no tree worth building.",
     "fidelidad": {
       "acuerdo": "The rules agree with the model on {pct} % of {n} rows the tree did not see.",
@@ -17,11 +18,16 @@
       "no": "They do not reach the {umbral} % threshold: they are a summary of the model, not the model."
     },
     "verdad": {
+      "ausente": "Your file does not carry the real result: the rules were measured against what the model decides, not against the truth.",
+      "filas": "It was measured on {n} of the held-aside rows that carry the real result.",
+      "filas_one": "It was measured on {n} of the held-aside rows that carries the real result.",
       "accuracy": "Against the truth, the rules are right {reglas} % of the time and the model {modelo} %.",
       "mae": "Against the truth, the rules' mean error is {reglas} and the model's is {modelo}."
     },
     "detalle": "{hojas} rules of up to {profundidad} questions, fitted on {filas} training rows.",
     "detalle_one": "{hojas} rule of up to {profundidad} questions, fitted on {filas} training rows.",
+    "detalle_subidas": "{hojas} rules of up to {profundidad} questions, fitted on {filas} rows of your file.",
+    "detalle_subidas_one": "{hojas} rule of up to {profundidad} questions, fitted on {filas} rows of your file.",
     "descargar_texto": "Download the rules (.txt)",
     "descargar_sql": "Download the SQL (.sql)",
     "lista": "The rules",

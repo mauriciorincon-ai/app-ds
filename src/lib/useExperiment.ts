@@ -62,6 +62,7 @@ import {
   inferUnit,
   prepareClusterRun,
   prepareRun,
+  seriePosible,
   summarizeDataset,
   testClassCounts,
   withoutClusterLeague,
@@ -265,6 +266,8 @@ export type ExperimentState = {
   origen: OrigenArchivo | null;
   /** S18: los posibles datos personales y el plan de limpieza propuesto, con lo decidido (llega tras cargar). */
   ingesta: Ingesta | null;
+  /** S20: el archivo es una serie (fecha + números) sin columnas con qué entrenar: lo único que ofrece es pronosticarla. */
+  soloSerie: boolean;
   edaAlerts: EdaAlert[] | null;
   // S5 — la liga: el plan del objetivo elegido, el reparto con que se entrenó y
   // la elección manual en curso.
@@ -300,6 +303,7 @@ const INITIAL: ExperimentState = {
   sanitation: null,
   origen: null,
   ingesta: null,
+  soloSerie: false,
   edaAlerts: null,
   plan: null,
   clusterPlan: null,
@@ -1238,6 +1242,25 @@ export function useExperiment() {
       // S4: saneamiento estructural pre-split (dedup previene fuga por duplicación,
       // excluye ID/constantes, coacciona numéricas mixtas). Se fija UNA vez aquí.
       const { table, report } = sanitizeTable(parsed.table);
+      if (!report.usable && seriePosible(parsed.table)) {
+        // S20: una serie de dos columnas (la fecha sale como «identificador») no tiene con qué entrenar, pero sí se puede
+        // pronosticar: se configura sobre la tabla tal como llegó y la pantalla ofrece solo eso.
+        tableRef.current = null;
+        rawTableRef.current = parsed.table;
+        sanitationRef.current = null;
+        datasetNameRef.current = name;
+        ingestaRef.current = null;
+        registroLimpiezaRef.current = [];
+        setState({
+          ...INITIAL,
+          phase: "configuring",
+          datasetName: name,
+          dataset: summarizeDataset(parsed.table),
+          origen,
+          soloSerie: true,
+        });
+        return;
+      }
       if (!report.usable) {
         sanitationRef.current = report;
         setState({
@@ -1279,6 +1302,9 @@ export function useExperiment() {
 
   /** S18: la tabla saneada con que se entrena (la exploración la lee al pulsar «Explorar»). */
   const getTable = useCallback(() => tableRef.current, []);
+
+  /** S20: la tabla tal como llegó (con la columna de fecha que el saneamiento descartó), para pronosticar la serie. */
+  const getRawTable = useCallback(() => rawTableRef.current, []);
 
   /** S18: aprobar, rechazar o dejar sin decidir un paso del plan de limpieza. Lo que no está aprobado no se aplica. */
   const decidirLimpieza = useCallback(
@@ -1822,6 +1848,7 @@ export function useExperiment() {
     loadXlsx,
     decidirLimpieza,
     getTable,
+    getRawTable,
     selectTarget,
     selectCluster,
     answerTask,

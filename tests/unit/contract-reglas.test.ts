@@ -31,6 +31,15 @@ const ESQUEMAS: Record<string, ReglasSent> = {
     classes: [],
   },
   "rules-result-numerica": { task: "numerica", numeric: [], categorical: [], classes: null },
+  // S20: el mismo modelo de marketing, con las filas que sube el usuario (sin su objetivo)
+  "rules-result-subidas": {
+    task: "binaria",
+    numeric: ["edad", "ingreso_mensual", "visitas_web", "correos_abiertos"],
+    categorical: ["region", "dispositivo"],
+    classes: ["0", "1"],
+    source: "uploaded",
+    truthAsked: false,
+  },
   "rules-result-agrupar": { task: "agrupar", numeric: [], categorical: [], classes: null },
 };
 
@@ -56,6 +65,8 @@ function enviadoDe(nombre: string): ReglasSent {
     numeric,
     categorical: [...categorical],
     classes: base.task === "binaria" || base.task === "multiclase" ? [...clases] : null,
+    ...(base.source ? { source: base.source } : {}),
+    ...(base.truthAsked !== undefined ? { truthAsked: base.truthAsked } : {}),
   };
 }
 
@@ -186,3 +197,48 @@ describe("el lector de la vigilancia", () => {
       rompe("evaluate-result-numerica", (r) => delete r[campo], campo);
   });
 });
+
+// --- S20: las reglas con las filas que sube el usuario ----------------------------------------------
+
+describe("el lector de las reglas con filas del usuario", () => {
+  const sentSubidas = (extra: Partial<ReglasSent> = {}): ReglasSent => ({ ...enviadoDe("rules-result-subidas"), ...extra });
+
+  it("acepta lo que pipeline.py escribió: de las filas del usuario, sin verdad si no se pidió", () => {
+    const r = fixture("rules-result-subidas");
+    expect(r.source).toBe("uploaded");
+    expect(r.truth).toBeNull();
+    expect(validateRulesResult(r, sentSubidas()).ok).toBe(true);
+  });
+
+  it("el origen de las filas tiene que ser el pedido: filas del usuario donde se esperaban las del entrenamiento, no", () => {
+    const subidas = copia("rules-result-subidas");
+    const v = validateRulesResult(subidas, sentSubidas({ source: "training" }));
+    expect(v.ok).toBe(false);
+    if (!v.ok) expect(v.field).toBe("source");
+    const entrenamiento = copia("rules-result-binaria");
+    const w = validateRulesResult(entrenamiento, { ...enviadoDe("rules-result-binaria"), source: "uploaded", truthAsked: true });
+    expect(w.ok).toBe(false);
+    if (!w.ok) expect(w.field).toBe("source");
+    // sin decir nada, el origen esperado es el del entrenamiento (lo de siempre)
+    const x = copia("rules-result-subidas");
+    expect(validateRulesResult(x, enviadoDe("rules-result-binaria")).ok).toBe(false);
+  });
+
+  it("si no se pidió la verdad (la etapa 10: la prueba ya se abrió) no puede venir medida, y si se pidió puede faltar", () => {
+    const medida = copia("rules-result-subidas");
+    medida.truth = { metric: "accuracy", rules: 0.9, model: 0.9, n: 10 };
+    const v = validateRulesResult(medida, sentSubidas({ truthAsked: false }));
+    expect(v.ok).toBe(false);
+    if (!v.ok) expect(v.field).toBe("truth");
+    // pedida y medida: bien; pedida y sin medir (el archivo no traía el objetivo): bien
+    expect(validateRulesResult(medida, sentSubidas({ truthAsked: true })).ok).toBe(true);
+    expect(validateRulesResult(copia("rules-result-subidas"), sentSubidas({ truthAsked: true })).ok).toBe(true);
+    // pero una verdad que no es de la tarea sigue rechazándose
+    const mala = copia("rules-result-subidas");
+    mala.truth = { metric: "mae", rules: 1, model: 1, n: 10 };
+    const w = validateRulesResult(mala, sentSubidas({ truthAsked: true }));
+    expect(w.ok).toBe(false);
+    if (!w.ok) expect(w.field).toBe("truth");
+  });
+});
+

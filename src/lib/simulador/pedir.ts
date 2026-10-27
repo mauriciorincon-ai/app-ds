@@ -7,6 +7,14 @@ import { pythonContractField } from "@/workers/contract";
 import {
   validateFitWinnerResult,
 } from "@/workers/contrato-ganador";
+import {
+  validateSynthesizeResult,
+  type GemeloSent,
+} from "@/workers/contrato-gemelo";
+import {
+  validateForecastResult,
+  type PronosticoSent,
+} from "@/workers/contrato-pronostico";
 import { validateRulesResult, type ReglasSent } from "@/workers/contrato-reglas";
 import {
   validateSimulateResult,
@@ -21,10 +29,15 @@ import type {
   EvaluateNewPayload,
   EvaluateNewResult,
   FitWinnerResult,
+  ForecastPayload,
+  ForecastResult,
+  RulesPayload,
   RulesResult,
   RunnerResponse,
   SimulatePayload,
   SimulateResult,
+  SynthesizePayload,
+  SynthesizeResult,
 } from "@/workers/protocol";
 import type { Checked } from "@/lib/validate";
 
@@ -38,6 +51,7 @@ export function motivoDeFallo(mensaje: string): string {
 }
 
 const MOTIVOS_CONOCIDOS = [
+  "no-data",
   "no-rows",
   "too-few-rows",
   "no-eval",
@@ -47,8 +61,21 @@ const MOTIVOS_CONOCIDOS = [
 
 function pedir<T>(
   worker: Worker,
-  comando: "simulate" | "fit-winner" | "rules" | "evaluate-new",
-  payload: SimulatePayload | EnvioGanador["payload"] | EvaluateNewPayload | undefined,
+  comando:
+    | "simulate"
+    | "fit-winner"
+    | "rules"
+    | "evaluate-new"
+    | "forecast"
+    | "synthesize",
+  payload:
+    | SimulatePayload
+    | EnvioGanador["payload"]
+    | EvaluateNewPayload
+    | ForecastPayload
+    | RulesPayload
+    | SynthesizePayload
+    | undefined,
   validar: (crudo: unknown) => Checked<T>,
 ): Promise<T> {
   return new Promise((ok, no) => {
@@ -96,12 +123,16 @@ export const pedirAjuste = (
     validateFitWinnerResult(c, envio.sent),
   );
 
-/** El modelo en reglas del modelo retenido (sin payload). */
+/**
+ * El modelo en reglas del modelo retenido. Sin filas, con las de entrenamiento que el modelo conserva; con `payload` (S20), con las
+ * que sube el usuario: entonces `sent.source` es «uploaded» y `sent.truthAsked` dice si se pidió medir contra su objetivo.
+ */
 export const pedirReglas = (
   worker: Worker,
   sent: ReglasSent,
+  payload?: RulesPayload,
 ): Promise<RulesResult> =>
-  pedir(worker, "rules", undefined, (c) => validateRulesResult(c, sent));
+  pedir(worker, "rules", payload, (c) => validateRulesResult(c, sent));
 
 /** Puntúa un CSV nuevo que trae el resultado real y devuelve lo real y lo predicho como números. */
 export const pedirEvaluacion = (
@@ -110,6 +141,23 @@ export const pedirEvaluacion = (
   sent: VigilanciaSent,
 ): Promise<EvaluateNewResult> =>
   pedir(worker, "evaluate-new", payload, (c) => validateEvaluateResult(c, sent));
+
+/** S20: el pronóstico de una serie regular; no usa el modelo que el worker tenga retenido. */
+export const pedirPronostico = (
+  worker: Worker,
+  payload: ForecastPayload,
+  sent: PronosticoSent,
+): Promise<ForecastResult> =>
+  pedir(worker, "forecast", payload, (c) => validateForecastResult(c, sent));
+
+/** S20: el gemelo sintético de las columnas que se dejaron viajar; no usa el modelo que el worker tenga retenido. */
+export const pedirGemelo = (
+  worker: Worker,
+  payload: SynthesizePayload,
+): Promise<SynthesizeResult> =>
+  pedir(worker, "synthesize", payload, (c) =>
+    validateSynthesizeResult(c, { payload } satisfies GemeloSent),
+  );
 
 export type PedirSimulacion = (
   payload: SimulatePayload,

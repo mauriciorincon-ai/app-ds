@@ -60,6 +60,20 @@ export function neutralizeFormula(value: string): string {
 const cell = (value: string) => escapeField(neutralizeFormula(value));
 
 /**
+ * S20: una tabla cualquiera como CSV RFC-4180 (el pronóstico, el gemelo): cada celda de texto pasa por `neutralizeFormula`, de modo
+ * que un valor que empiece con `=`, `+`, `-` o `@` no se ejecute al abrirlo en una hoja de cálculo. Los números van como texto
+ * ya escrito por quien llama.
+ */
+export function buildCsv(
+  headers: readonly string[],
+  rows: readonly (readonly string[])[],
+): string {
+  return (
+    [headers, ...rows].map((line) => line.map(cell).join(",")).join("\n") + "\n"
+  );
+}
+
+/**
  * Serializa la tabla original + predicción + probabilidad como CSV RFC-4180.
  * Preserva TODAS las columnas y filas del usuario (incluidas las que el modelo
  * ignoró: el archivo descargado es su tabla completa, puntuada). S5: si el modelo

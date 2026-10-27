@@ -31,6 +31,10 @@ export type ReglasSent = {
   readonly categorical: readonly string[];
   /** Las clases del modelo (dos y varias clases); `null` en las otras tareas. */
   readonly classes: readonly string[] | null;
+  /** S20: de dónde deben venir las filas del árbol (por omisión, las de entrenamiento del modelo). */
+  readonly source?: "training" | "uploaded";
+  /** S20: con filas del usuario, ¿se pidió medir contra el objetivo del archivo? Si no, la verdad tiene que venir vacía. */
+  readonly truthAsked?: boolean;
 };
 
 const probabilidad = refine(num, (v) => (v as number) <= 1);
@@ -42,6 +46,7 @@ export function validateRulesResult(
   const shaped = check<RulesResult>(
     obj({
       task: oneOf([sent.task]),
+      source: oneOf([sent.source ?? "training"]),
       tree: (v, path) => (isRecord(v) ? null : path),
       numeric: arr(obj({ column: str, median: num })),
       fidelity: obj({
@@ -128,9 +133,14 @@ export function validateRulesResult(
 
   const metricaEsperada = tarea === "cantidad" ? "r2" : "agreement";
   if (r.fidelity.metric !== metricaEsperada) return { ok: false, field: "fidelity" };
+  // La verdad: con las filas de entrenamiento siempre se mide (agrupar, no); con filas del usuario solo si se pidió y el archivo
+  // la trajo — y con filas que no se pidieron medir (la etapa 10 del Protocolo: la prueba ya se abrió una vez) tiene que venir vacía.
+  const subidas = (sent.source ?? "training") === "uploaded";
   if (tarea === "grupo") {
     if (r.truth !== null) return { ok: false, field: "truth" };
-  } else {
+  } else if (subidas && sent.truthAsked !== true) {
+    if (r.truth !== null) return { ok: false, field: "truth" };
+  } else if (r.truth !== null || !subidas) {
     const verdad = tarea === "cantidad" ? "mae" : "accuracy";
     if (r.truth === null || r.truth.metric !== verdad) return { ok: false, field: "truth" };
     if (tarea === "clase" && (r.truth.rules > 1 || r.truth.model > 1))

@@ -55,6 +55,12 @@ const VigilanciaPanel = dynamic(
   { ssr: false },
 );
 
+// S20: el modelo en reglas con las filas del archivo cargado (sirve también a un modelo importado), en su propio chunk.
+const ReglasPanel = dynamic(
+  () => import("./reglas/ReglasPanel").then((m) => m.ReglasPanel),
+  { ssr: false },
+);
+
 const PREVIEW_ROWS = 10;
 
 const IMPORT_STAGES: ProgressStage[] = [
@@ -131,6 +137,7 @@ export function ScoreScreen(props: ScoreScreenProps<ModelMeta>) {
             scoring={scoring}
             onScoreAnother={props.onScoreAnother}
             worker={props.worker}
+            datasetName={props.meta.datasetName}
           />
         )}
       />
@@ -700,6 +707,20 @@ function ScoredResults({
           numerica: (quantitySchema) => inferUnit(quantitySchema.target).symbol,
         })}
       />
+
+      {/* S20: el modelo en reglas con las filas de este archivo (si trae el resultado real, también se mide contra la verdad). */}
+      <ReglasPanel
+        schema={schema}
+        worker={worker}
+        modelo={scoring}
+        datasetName={meta.datasetName}
+        tabla={table}
+        unidadObjetivo={matchByTask(schema, {
+          binaria: () => null,
+          multiclase: () => null,
+          numerica: (quantitySchema) => inferUnit(quantitySchema.target).symbol,
+        })}
+      />
     </div>
   );
 }
@@ -799,11 +820,13 @@ function ClusterScoredResults({
   scoring,
   onScoreAnother,
   worker,
+  datasetName,
 }: {
   schema: ClusterScoringSchema;
   scoring: Scored;
   onScoreAnother: () => void;
   worker?: RefObject<Worker | null>;
+  datasetName: string | null;
 }) {
   const t = useT();
   const { check, table, fileName } = scoring;
@@ -970,6 +993,15 @@ function ClusterScoredResults({
         tabla={table}
         worker={worker}
         modelo={scoring}
+      />
+
+      {/* S20: el modelo en reglas con las filas de este archivo. */}
+      <ReglasPanel
+        schema={schema}
+        worker={worker}
+        modelo={scoring}
+        datasetName={datasetName}
+        tabla={table}
       />
     </div>
   );

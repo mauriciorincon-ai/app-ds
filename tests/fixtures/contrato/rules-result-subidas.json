@@ -1,0 +1,92 @@
+{
+  "task": "binaria",
+  "source": "uploaded",
+  "tree": {
+    "leaf": false,
+    "column": "correos_abiertos",
+    "kind": "numeric",
+    "left": {
+      "leaf": false,
+      "column": "visitas_web",
+      "kind": "numeric",
+      "left": {
+        "leaf": true,
+        "pred": "0",
+        "n": 45
+      },
+      "right": {
+        "leaf": false,
+        "column": "ingreso_mensual",
+        "kind": "numeric",
+        "left": {
+          "leaf": true,
+          "pred": "0",
+          "n": 20
+        },
+        "right": {
+          "leaf": true,
+          "pred": "1",
+          "n": 33
+        },
+        "threshold": 3707.5
+      },
+      "threshold": 19.5
+    },
+    "right": {
+      "leaf": false,
+      "column": "visitas_web",
+      "kind": "numeric",
+      "left": {
+        "leaf": false,
+        "column": "dispositivo",
+        "kind": "categorical",
+        "left": {
+          "leaf": true,
+          "pred": "1",
+          "n": 29
+        },
+        "right": {
+          "leaf": true,
+          "pred": "0",
+          "n": 26
+        },
+        "category": "movil"
+      },
+      "right": {
+        "leaf": true,
+        "pred": "1",
+        "n": 72
+      },
+      "threshold": 19.5
+    },
+    "threshold": 9.5
+  },
+  "numeric": [
+    {
+      "column": "edad",
+      "median": 41
+    },
+    {
+      "column": "ingreso_mensual",
+      "median": 4719
+    },
+    {
+      "column": "visitas_web",
+      "median": 21
+    },
+    {
+      "column": "correos_abiertos",
+      "median": 11
+    }
+  ],
+  "fidelity": {
+    "metric": "agreement",
+    "value": 0.8533333333333334,
+    "n": 75
+  },
+  "truth": null,
+  "depth": 3,
+  "leaves": 6,
+  "n_fit": 225,
+  "elapsed_ms": 17
+}

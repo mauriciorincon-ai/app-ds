@@ -1,5 +1,6 @@
 {
   "task": "binaria",
+  "source": "training",
   "tree": {
     "leaf": false,
     "column": "correos_abiertos",
@@ -70,5 +71,5 @@
   "depth": 3,
   "leaves": 4,
   "n_fit": 150,
-  "elapsed_ms": 26
+  "elapsed_ms": 24
 }

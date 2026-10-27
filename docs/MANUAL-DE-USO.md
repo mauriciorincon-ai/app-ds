@@ -10,7 +10,8 @@ Probeta DS te ayuda a construir un modelo de predicción a partir de tus datos y
 **con franqueza si ese modelo sirve o no**. Está pensada para profesionales que no son científicos de
 datos: tú traes una tabla, eliges qué quieres predecir, y la app entrena un modelo y te da un
 **veredicto honesto**. Si no tienes nada que predecir, también puede **encontrar grupos de filas
-parecidas** y decirte cuánto creerles. Y si prefieres ir despacio, **Protocolo DS** te lleva por
+parecidas** y decirte cuánto creerles; si tu tabla tiene fechas, puede **pronosticar una serie**, y puede armarte un
+**gemelo sintético** de tus datos para compartir una muestra sin compartir a las personas. Y si prefieres ir despacio, **Protocolo DS** te lleva por
 etapas con compuertas, con tus propios datos. Todo ocurre **dentro de tu navegador** — tus datos
 nunca se suben a ningún servidor.
 
@@ -38,7 +39,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
      precio, un consumo, un tiempo: ver _Estimar una cantidad_) y desde el Sprint 007 las de **varias
      categorías** (ver _Clasificar en varias categorías_). Y si no quieres predecir nada, la primera
      opción del menú es **agrupar filas parecidas** (ver _Agrupar filas parecidas, sin objetivo_). Si
-     alguna columna parece una fecha, la app te avisa: las fechas no se usan para el análisis.
+     alguna columna parece una fecha, la app te avisa: las fechas no entran al entrenamiento (con una fecha y un número puedes pronosticar una serie: ver «Pronosticar una serie»).
   3. **Pulsa _Entrenar modelos_.** La primera vez tarda unos segundos mientras se prepara el motor
      de análisis; verás el progreso paso a paso.
   4. **Resultados → lee el veredicto.** Arriba, en grande, aparece el veredicto:
@@ -72,7 +73,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   - Tamaño máximo del archivo: **5 MB o 50,000 filas**. Por encima, la app avisa (no se cuelga).
   - El chequeo de fuga es una **ayuda honesta, no una garantía**: atrapa los casos evidentes, no
     todos.
-  - Las columnas de fecha se **detectan y avisan**, pero no se usan para el análisis.
+  - Las columnas de fecha se **detectan y avisan**, y no entran al entrenamiento; con una fecha y un número puedes **pronosticar una serie** (ver «Pronosticar una serie»).
   - Formato admitido: **CSV** (con cabecera) y, desde el Sprint 018, **Excel `.xlsx`**. Los valores vacíos, `NA`, `null`, etc. se tratan como
     faltantes.
 
@@ -1056,11 +1057,21 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   **el mismo trato de los vacíos** (un número vacío se toma como la mediana de entrenamiento y una categoría vacía
   cuenta como «no es»). Una prueba automática corre ese SQL en otro programa (CPython) sobre las filas que predijo el
   navegador y exige **la misma respuesta en cada fila**.
-- **Límites:** solo para un modelo **entrenado en esta sesión** (necesita las filas de entrenamiento, que viven en
-  la memoria de la pestaña y nunca van al archivo): el botón está en **Resultados**, así que un modelo **importado**
-  o el ganador del Protocolo no lo tienen, y uno entrenado con muy pocas filas lo dice en vez de inventar un
-  árbol. Profundidad máxima 4; un árbol así casi nunca iguala a un bosque
-  de árboles o a un boosting.
+- **Con tus filas (desde Sprint 020):** el árbol también se puede armar **con las filas de un archivo tuyo**. En
+  **«Usar el modelo»**, con el CSV que acabas de cargar para puntuar, aparece **«Ver el modelo en reglas»**, y sirve a
+  **cualquier modelo**, también a uno **importado**, que no conserva las filas con que se entrenó. El árbol copia lo que el
+  modelo predice **en esas filas** (con el 25 % apartado para medir la fidelidad), así que la pantalla dice que se armó con
+  «las filas de tu archivo». Si el archivo **trae el resultado real**, las reglas también se miden frente a la verdad,
+  en las filas apartadas que lo traen; si no, la pantalla dice que se midieron frente al modelo y no frente a la verdad.
+  En la **etapa 10 del Protocolo**, si decides **usarlo**, **«Las reglas del ganador»**: eliges un CSV con filas de la misma
+  forma que tus datos, el ganador se vuelve a ajustar con las filas de entrenamiento y el árbol se arma con las tuyas.
+  **Allí la verdad nunca se mide**: la prueba se abrió una vez en la etapa 8 y no se vuelve a abrir, y la columna del
+  objetivo, si tu archivo la trae, no sale de tu navegador ni se usa.
+- **Límites:** necesita filas: las de entrenamiento del modelo que acabas de entrenar (el botón de **Resultados**) o las de
+  un archivo tuyo (todo lo demás). Con pocas filas lo dice en vez de inventar un árbol (**menos de 40** de entrenamiento, o **menos de 53** si son las de un
+  archivo tuyo, porque se aparta el 25 % para medirlo), y son filas que el árbol
+  resume: **otro archivo puede dar otras reglas**. Profundidad máxima 4; un árbol así casi nunca iguala a un bosque de árboles
+  o a un boosting.
 
 ### Vigilar el desempeño y llevarte el ganador del Protocolo · desde Sprint 019
 
@@ -1088,6 +1099,61 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   guarda las filas de entrenamiento, y la pantalla lo dice antes de descargar). Una versión de la app anterior al
   Sprint 19 no lo abre.
 
+### Pronosticar una serie · desde Sprint 020
+
+- **Qué es:** una pregunta aparte de las tres tareas: **¿qué viene en los próximos periodos?** Sirve cuando tu tabla tiene
+  **una columna de fecha y una de números** (ventas por mes, visitas por día). En la pantalla de configuración, el selector
+  de «¿Qué quieres predecir?» ofrece **«Con una fecha: pronosticar una serie»**. Si tu archivo es solo eso (una fecha y un
+  número, sin más columnas), no hay con qué entrenar un modelo, y la app te ofrece **solo** pronosticar.
+- **Cómo arma la serie:** junta tus filas **por periodo** —día, semana (empieza el lunes) o mes—, sumando o promediando lo que
+  cae en cada uno. **Propone** el periodo por lo que se separan tus fechas y la forma de juntar por el nombre de la columna
+  (una tasa o un precio se promedia, unas ventas se suman); tú lo cambias. Si las fechas tienen el día y el mes en un orden que
+  no se puede saber (05/06), **te pregunta cuál es**. Al sumar datos diarios, los periodos de los extremos que tus datos no
+  cubren enteros se quitan (una suma a medias se leería como una caída) y la pantalla dice cuáles. **Los periodos que faltan se
+  nombran y tú decides**: puedes completarlos con la recta entre sus vecinos (quedan marcados en el CSV), pero solo si son
+  pocos (hasta el 20 %); la app no los rellena sola.
+- **Cómo compite:** seis métodos con **origen móvil**: en cada origen, cada método se ajusta **solo con lo anterior** y tiene
+  que acertar los siguientes periodos que no vio. Son la **media** de siempre, el **ingenuo** (repite el último valor), el
+  **ingenuo estacional** (repite la temporada pasada), la **deriva** (sigue la pendiente de toda la serie), **Holt-Winters**
+  (nivel, tendencia y temporada) y una **regresión con rezagos y calendario**. El error se mide en las unidades de tu columna
+  y también como **error relativo (MASE)**. Gana el más simple de los que quedan a menos de un error estándar del mejor.
+- **El veredicto, franco:** compara al ganador con **el mejor método simple** (los cuatro primeros). Puede decir ✓ **supera**
+  («Holt-Winters supera al ingenuo estacional: se equivoca 5 contra 10, la mitad»), ≈ **empata** (queda a menos del 1 % de
+  diferencia) o ⚠ **no supera**: si gana uno simple, o si **la media** le gana a todos, la serie **no muestra una tendencia
+  ni una temporada que se pueda proyectar** y el pronóstico es su nivel de siempre. Una serie de ruido, por ejemplo, termina
+  así.
+- **El pronóstico:** a los periodos que pidas (por defecto, 7 días, 13 semanas —un trimestre— o 12 meses), en un **gráfico**
+  (la historia en línea continua, el pronóstico en discontinua, las bandas del 80 y del 95 % con su leyenda escrita) y en una
+  **tabla**. Las **bandas son empíricas**: salen de los errores que el método ganador tuvo al probarse, por distancia al
+  origen; **no son una garantía**. Se descarga en **CSV** (la historia, con lo completado marcado, y el pronóstico con sus
+  bandas).
+- **Límites:** una serie a la vez; solo en Probeta (no en el Protocolo); **no se guarda como `.probeta.json`**. Con menos de
+  dos temporadas completas el ingenuo estacional **no compite** y ningún método supone una temporada, y la pantalla lo dice;
+  una serie demasiado corta para tres pliegues dice cuántos periodos le faltan. Se usan los **2 000 periodos más recientes**.
+  Que el veredicto diga «supera» en una serie de ruido es raro pero posible (en 150 series de ruido de 60 meses pasó 1 vez
+  con 12 periodos y 11 con 6): es una regla sobre ventanas que se traslapan, no una prueba de significancia.
+
+### El gemelo sintético · desde Sprint 020
+
+- **Qué es:** una tabla nueva **con la forma de la tuya**: cada columna se reparte como en tus datos y las columnas se
+  relacionan como en tus datos, y **ninguna fila se copia de las tuyas**: si una sale idéntica a una tuya se vuelve a sacar, y el informe cuenta las que queden. Sirve para compartir una muestra sin compartir a las
+  personas. Está en la pantalla de configuración, **junto a la exploración**: **«Generar el gemelo»**. Se arma en tu navegador
+  con una **cópula gaussiana** y una **semilla fija**: el mismo archivo da siempre el mismo gemelo.
+- **Qué no viaja:** lo que el aviso de **datos personales** marcó, el **texto libre**, los **identificadores** y las **fechas**
+  se quedan fuera, y la pantalla **los nombra con su motivo**. Las categorías con **menos de 5 filas** se juntan en «otras»
+  para que no viajen tal cual. Mientras el aviso de datos personales se está armando, no se puede generar.
+- **Las filas:** por defecto, tantas como tus datos (hasta 50 000). Si una fila del gemelo sale **idéntica a una tuya**, se
+  vuelve a sacar; si aun así quedan copias (una tabla con pocas combinaciones posibles se copia sola), **lo dice y el
+  veredicto es «no compartir»**.
+- **El informe:** compara el gemelo con tus datos **y** con lo que se parecen dos mitades de tus propios datos entre sí (una
+  muestra ya difiere de otra muestra real por azar): **columna por columna**; las **relaciones** entre columnas (las mismas
+  medidas de la exploración); y **qué tan cerca queda cada fila sintética de tu fila más cercana** frente a lo cerca que están
+  tus filas entre sí. Cada parte sale con su símbolo y su palabra: ✓ bien, ⚠ revisar, ✕ mal.
+- **El veredicto:** ✓ **se puede compartir**, ⚠ **revisar antes de compartir** (algo de la fidelidad no llega a «bien»,
+  pero no hay una fuga) o ✕ **no compartir** (una copia exacta o filas sintéticas más cerca de las tuyas de lo que las tuyas lo
+  están entre sí). **Es una medición de esta tabla con estas reglas, no un permiso legal ni una garantía de anonimato**: un
+  grupo muy pequeño puede identificarse aunque ninguna fila se repita. Se descarga como **CSV**.
+
 ## Diccionario de términos
 
 Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
@@ -1109,6 +1175,11 @@ cuando una te frene.
 | **Costo esperado** | Lo que cuestan, en promedio, las decisiones si el modelo tiene razón sobre cuán seguro está: se calcula con sus probabilidades y los costos que escribiste, por cada 100 decisiones. No es un resultado medido: para filas hipotéticas no hay respuesta real. |
 | **Fidelidad (del modelo en reglas)** | Cuánto coinciden las reglas con el modelo en filas que el árbol no vio, medida con las mismas reglas que te llevas. Con 0,90 de coincidencia (0,80 de R² al estimar) se llama «el modelo en reglas»; debajo, «un árbol que se parece al modelo». |
 | **Vigilar el desempeño** | Poner la cifra de hoy del modelo, medida con filas nuevas que traen el resultado real, junto a la que sacó en su prueba, con el margen de la de hoy. Dice sigue, revisar o reentrenar. Es distinto del chequeo de deriva, que solo mira si las entradas cambiaron. |
+| **Origen móvil** | Probar un método de pronóstico varias veces hacia adelante: en cada origen se ajusta solo con lo anterior y tiene que acertar los periodos siguientes, que no vio. El error de cada prueba se promedia. Es la forma honesta de medir un pronóstico: ninguna prueba mira el futuro. |
+| **Error relativo (MASE)** | El error medio de un pronóstico dividido por el de repetir el periodo anterior (o la temporada anterior) en toda la serie. Menos de 1: mejor que repetir; más de 1: peor. |
+| **Banda de pronóstico** | El rango donde cayó el 80 % (o el 95 %) de los errores del método ganador al probarse, aplicado al pronóstico. Es empírica y no garantiza nada hacia adelante. |
+| **Gemelo sintético** | Una tabla nueva que imita la forma de la tuya (cada columna y sus relaciones) sin copiar ninguna fila. Se mide contra tus datos y contra dos mitades de tus propios datos, y puede acabar en «no compartir». |
+| **Cópula gaussiana** | La forma de armar el gemelo: cada columna conserva su distribución y las columnas conservan su dependencia, medida como la correlación de sus posiciones en el orden. Con una semilla fija, el mismo archivo da siempre el mismo gemelo. |
 | **Explicación verificada** | Un texto cuyas cifras y orden de columnas se comprobaron contra tu resultado antes de mostrarse. Si no cuadra, se muestra solo lo que sí: las cifras. |
 | **Plan de limpieza** | Los pasos que el código propone para tus datos y que tú apruebas o rechazas uno a uno. Lo que no apruebas no se aplica, y lo que depende de los datos se calcula solo con el entrenamiento. |
 | **Posibles datos personales** | Una columna que parece guardar correos, teléfonos, documentos o nombres de personas. Es un aviso aproximado: nombra la columna y el tipo, nunca un valor. |
@@ -1365,6 +1436,21 @@ cuando una te frene.
 - **¿Guardar el ganador del Protocolo abre otra vez la prueba?** No. Vuelve a ajustar al ganador con las filas de
   entrenamiento, con la misma semilla; una prueba comprueba que predice exactamente lo que predijo cuando se probó.
 
+- **¿El pronóstico me dice lo que va a pasar?** No: dice qué proyecta el método que mejor acertó en las pruebas hacia atrás y
+  cuánto se equivocó en ellas. Si ningún método le gana a uno simple, la pantalla lo dice y el pronóstico es solo el nivel de
+  siempre. Las bandas salen de los errores pasados y no garantizan nada.
+- **¿Por qué no se rellenan solos los periodos que faltan?** Un periodo sin dato puede ser un cero, un olvido o un cierre.
+  Rellenarlo cambia la serie, así que la app lo nombra y te pregunta; con más del 20 % de huecos no lo ofrece.
+- **¿Un archivo de solo una fecha y un número daba error?** Antes sí («no queda nada para modelar»): la fecha se descartaba
+  como identificador. Ahora se configura y se ofrece pronosticarlo; entrenar un modelo con él sigue sin ser posible.
+- **¿Un gemelo sintético es anónimo?** No necesariamente. El informe mide que no haya copias exactas y que las filas no queden
+  más cerca de las tuyas de lo que las tuyas lo están entre sí, pero un grupo muy pequeño puede identificarse por una
+  combinación única de valores. Revisa el informe y decide con quien lo vayas a compartir.
+- **¿Por qué el gemelo deja fuera mis fechas?** Una fecha desplazada sin cuidado rompe la serie, y una tal cual identifica un
+  momento. Se nombran y se dejan fuera.
+- **¿Las reglas de un modelo importado salen iguales cada vez?** Con el mismo archivo, sí. Con otro archivo pueden cambiar:
+  el árbol resume lo que el modelo predice en las filas que le das.
+
 ## Historial
 
 | Sprint | Features añadidas a este manual                                                                                                                                                                                                                                                                                      |
@@ -1389,3 +1475,4 @@ cuando una te frene.
 | 017    | Estrésalo (¿cuánto aguanta tu modelo? el mismo modelo sobre la misma prueba con ruido, una columna revuelta y un corrimiento; en la etapa 8 del Protocolo sin abrir la prueba otra vez, con la línea de robustez en la ficha) y Llévatelo (la receta reproducible, el puntuador portátil y la plantilla de servicio, con el aviso de lo que lleva cada archivo antes de descargar). |
 | 018    | Probeta completa (un Excel `.xlsx` además del CSV, el aviso de posibles datos personales que nunca muestra un valor, el plan de limpieza que apruebas paso a paso y que se calcula solo con el entrenamiento, la exploración con distribuciones, correlaciones y un resumen verificado, el margen de error de la cifra del veredicto, las explicaciones verificadas en las cuatro tareas y la liga contra lo prometido). |
 | 019    | Del modelo a la decisión («¿qué pasaría si?» en dinero, con tus costos, en resultados, en «Usar el modelo» y en la etapa 9 del Protocolo —sin abrir la prueba—; el modelo en reglas con su fidelidad, su texto y su SQL; vigilar el desempeño con filas nuevas que traen el resultado real, con el margen de la cifra de hoy; y el ganador del Protocolo guardado como archivo desde la etapa 10). |
+| 020    | Proyectar y compartir (pronosticar una serie con fecha: periodos que propone el código y tú cambias, los que faltan se nombran, seis métodos con origen móvil, veredicto contra el mejor método simple, bandas, gráfico y CSV; el gemelo sintético con su informe y su veredicto «se puede compartir · revisar · no compartir»; las reglas con las filas de un archivo tuyo, también para un modelo importado y para el ganador del Protocolo). |

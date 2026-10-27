@@ -80,6 +80,19 @@ import type {
 const PREVIEW_ROWS = 20;
 const TEST_SIZE = 0.25;
 
+/**
+ * S20: ¿el archivo, tal como llegó, trae una serie que se pueda pronosticar? Una columna que parece fecha y otra con números. Se
+ * mira la tabla CRUDA: el saneamiento descarta una fecha por «identificador» (un valor distinto por fila), y una serie de dos
+ * columnas, ya saneada, no tiene con qué entrenar.
+ */
+export function seriePosible(table: CsvTable): boolean {
+  const profiles = profileTable(table);
+  return (
+    profiles.some((p) => p.looksLikeDate) &&
+    profiles.some((p) => p.kind === "numeric")
+  );
+}
+
 export function summarizeDataset(table: CsvTable): DatasetSummary {
   const profiles = profileTable(table);
   const dateColumns = profiles

@@ -19,7 +19,7 @@
     "ciclo": "H-2",
     "estado": "inicial",
     "sellado_en": null,
-    "sprints_cerrados": 19,
+    "sprints_cerrados": 20,
     "version_repo": "0.1.0"
   },
   "promesa": {
@@ -29,7 +29,7 @@
     "diferencial": "Entrenar un modelo lo hacen muchas herramientas. Lo que no hace ninguna es enseñar la pantalla en la que su propio producto falla: el veredicto contra el baseline dice «NO supera» cuando no supera, la fuga de datos es imposible por construcción (el preprocesamiento se ajusta solo con la parte de entrenamiento y la UI no ofrece otro camino), y el veredicto sale del conjunto de prueba, que se abre una sola vez, después de elegir el modelo con validación cruzada. El incentivo del mercado es el optimismo; aquí es la honestidad. En Protocolo DS la honestidad además detiene: ninguna etapa se abre sin el criterio de salida de la anterior, la prueba se sella antes de tocar el modelo y se abre una vez, con cada apertura distinta contada, y «no usarlo» es un resultado válido que queda escrito."
   },
   "funcionalidades": {
-    "total": 73,
+    "total": 76,
     "fuente_del_conteo": "docs/MANUAL-DE-USO.md",
     "descartadas": [],
     "grupos": [
@@ -344,6 +344,24 @@
             "nombre": "Vigilar el desempeño",
             "que_hace": "Con filas nuevas que traen el resultado real, la cifra de hoy —con su margen del 95 %— junto a la de la prueba del modelo y un veredicto: sigue, revisar o reentrenar. Los resultados los subes tú; la app no los trae de ningún sistema.",
             "seccion_manual": "Vigilar el desempeño y llevarte el ganador del Protocolo"
+          },
+          {
+            "id": "U16",
+            "nombre": "Pronosticar una serie",
+            "que_hace": "Con una fecha y un número junta las filas por periodo, nombra los que faltan y hace competir seis métodos con origen móvil. El veredicto compara al ganador con el mejor método simple y dice cuándo ninguno le gana; pronóstico con bandas del 80 y del 95 %, gráfico y CSV.",
+            "seccion_manual": "Pronosticar una serie"
+          },
+          {
+            "id": "U17",
+            "nombre": "Un gemelo sintético de tus datos",
+            "que_hace": "Una tabla con la forma de la tuya que no copia tus filas (las idénticas se vuelven a sacar y el informe cuenta las que queden), hecha con una cópula gaussiana y una semilla fija. Lo marcado como dato personal, el texto libre, los identificadores y las fechas no viajan; el informe mide parecido y cercanía contra dos mitades reales y puede acabar en «no compartir».",
+            "seccion_manual": "El gemelo sintético"
+          },
+          {
+            "id": "U18",
+            "nombre": "Las reglas con las filas de tu archivo",
+            "que_hace": "El modelo en reglas también sirve a un modelo importado y al ganador del Protocolo: el árbol se arma con las filas que subes. En el Protocolo la verdad nunca se mide, porque la prueba ya se abrió una vez.",
+            "seccion_manual": "Con tus filas (desde Sprint 020)"
           }
         ]
       },
@@ -533,10 +551,10 @@
     {
       "clave": "funcionalidades",
       "etiqueta": "Funcionalidades",
-      "valor": 73,
+      "valor": 76,
       "unidad": "funcionalidades",
       "fuente": "medido",
-      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (54 de Probeta y 19 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad de la VISION está descartada: lo que aún no existe (S20 y S21) ni se cuenta ni se lista aquí."
+      "detalle": "Contadas contra docs/MANUAL-DE-USO.md (57 de Probeta y 19 de Protocolo DS); el pie de docs/BROCHURE.html declara el mismo número. Ninguna funcionalidad de la VISION está descartada: lo que aún no existe (el S21) ni se cuenta ni se lista aquí."
     },
     {
       "clave": "pantallas",
@@ -613,7 +631,7 @@
     {
       "clave": "peso_brochure",
       "etiqueta": "Peso de este brochure",
-      "valor": 133135,
+      "valor": 136173,
       "unidad": "bytes",
       "fuente": "medido",
       "detalle": "`wc -c docs/BROCHURE.html` (lo recuenta tests/unit/brochure-export.test.ts). Archivo autocontenido: cero CDN y cero peticiones de red, verificado instrumentando el navegador."
@@ -621,10 +639,10 @@
     {
       "clave": "decisiones_registradas",
       "etiqueta": "Decisiones de arquitectura registradas",
-      "valor": 27,
+      "valor": 29,
       "unidad": "ADR",
       "fuente": "medido",
-      "detalle": "Archivos de decisions/ (001–027): el 023 y el 024 son la prueba de estrés y lo que el usuario se lleva; el 025 y el 026, el lector de Excel y el plan de limpieza; el 027, del modelo a la decisión (el «¿qué pasaría si?» en dinero, el modelo en reglas y vigilar el desempeño). Lo recuenta tests/unit/brochure-export.test.ts."
+      "detalle": "Archivos de decisions/ (001–029): el 023 y el 024 son la prueba de estrés y lo que el usuario se lleva; el 025 y el 026, el lector de Excel y el plan de limpieza; el 027, del modelo a la decisión (el «¿qué pasaría si?» en dinero, el modelo en reglas y vigilar el desempeño); el 028, pronosticar una serie; el 029, el gemelo sintético. Lo recuenta tests/unit/brochure-export.test.ts."
     }
   ],
   "stack": [

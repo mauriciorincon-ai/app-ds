@@ -63,6 +63,20 @@ const LAZY = [
   "src/lib/protocolo/ganador.ts",
   "src/lib/protocolo/useGanador.ts",
   "src/components/protocolo/Etapa9Simulador.tsx",
+  // S20: pronosticar una serie (calendario, veredicto, panel, gráfico, textos, contrato y frase) llega con la pantalla de
+  // configuración (dynamic), nunca con la portada.
+  "src/engine/serie.ts",
+  "src/engine/pronostico.ts",
+  "src/components/pronostico/PronosticoPanel.tsx",
+  "src/components/pronostico/GraficoPronostico.tsx",
+  "src/workers/contrato-pronostico.ts",
+  "src/lib/narration/pronostico.ts",
+  "src/lib/narration/textos-pronostico.ts",
+  // S20: el gemelo sintético (motor, panel, textos y contrato) llega con la pantalla de configuración (dynamic).
+  "src/engine/gemelo.ts",
+  "src/components/gemelo/GemeloPanel.tsx",
+  "src/lib/narration/textos-gemelo.ts",
+  "src/workers/contrato-gemelo.ts",
   // S8 (ADR 020): el Protocolo DS vive en /protocolo; la portada solo lleva su enlace
   // y la cuenta de etapas (src/engine/protocolo/ids.ts, sin imports).
   "src/components/protocolo/ProtocoloApp.tsx",
@@ -145,6 +159,12 @@ const LAZY_PROTOCOLO = [
   "src/components/protocolo/Etapa10Form.tsx",
   "src/components/protocolo/Etapa10Constancia.tsx",
   "src/components/protocolo/Etapa10Deriva.tsx",
+  // S20: las reglas del ganador con filas que sube el usuario (el panel, el motor, los textos y la lectura llegan al pintarlas)
+  "src/components/protocolo/Etapa10Reglas.tsx",
+  "src/components/reglas/ReglasPanel.tsx",
+  "src/engine/reglas.ts",
+  "src/lib/narration/reglas.ts",
+  "src/lib/narration/textos-reglas.ts",
   "src/components/protocolo/FichaVista.tsx",
   "src/components/protocolo/textos/etapa10.ts",
   "src/engine/protocolo/ficha.ts",

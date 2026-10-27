@@ -107,7 +107,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   });
   // S19: ¿qué pasaría si? en la etapa 9, con los costos de la etapa 1 y solo las filas de entrenamiento; no registra nada
   const sim9 = page.locator("#etapa-9").getByTestId("simulador-panel");
-  await expect(sim9).toContainText("la prueba se abrió una vez en la etapa 8 y no se vuelve a abrir");
+  await expect(sim9).toContainText(
+    "la prueba se abrió una vez en la etapa 8 y no se vuelve a abrir",
+  );
   await sim9.getByRole("button", { name: "Simular" }).click();
   await expect(sim9.getByTestId("simulador-resumen")).toContainText("De ", {
     timeout: 240_000,
@@ -166,7 +168,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
     .fill("Clientes con menos de seis meses en el banco");
   // la columna de texto del modelo se ofrece sin marcar: tú decides si se guardan los nombres de sus categorías
   const texto = e10.getByTestId("protocolo-texto10");
-  await expect(texto.getByRole("checkbox", { name: "empleo" })).not.toBeChecked();
+  await expect(
+    texto.getByRole("checkbox", { name: "empleo" }),
+  ).not.toBeChecked();
   await expect(texto.getByTestId("protocolo-texto10-estado")).toContainText(
     "Marcadas: 0 de 1",
   );
@@ -231,9 +235,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   await expect(constancia.getByTestId("ficha-seccion-responde")).toContainText(
     "Escrito por el dueño",
   );
-  await expect(constancia.getByTestId("ficha-seccion-vigilancia")).toContainText(
-    "Sin vigilar por decisión del dueño (1): empleo.",
-  );
+  await expect(
+    constancia.getByTestId("ficha-seccion-vigilancia"),
+  ).toContainText("Sin vigilar por decisión del dueño (1): empleo.");
   await expect(constancia).not.toContainText(/protocol\.stage\./);
   await axeBothThemes(page);
   await sinDesborde(page, 360);
@@ -254,7 +258,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   ])
     expect(contenido).toContain(encabezado);
   expect(contenido).toContain("Responde por el modelo: Jefa de retención.");
-  expect(contenido).toContain("Sin vigilar por decisión del dueño (1): empleo.");
+  expect(contenido).toContain(
+    "Sin vigilar por decisión del dueño (1): empleo.",
+  );
   expect(contenido).toContain(
     "Para qué NO usarlo (escrito por el dueño): Clientes con menos de seis meses en el banco",
   );
@@ -292,9 +298,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   await expect(alerta).toContainText("ingreso_mensual");
   await expect(alerta).toContainText("Alerta");
   await expect(deriva).toContainText("esto mide las entradas, no el desempeño");
-  await expect(deriva.getByTestId("protocolo-deriva10-sin-vigilar")).toContainText(
-    "empleo",
-  );
+  await expect(
+    deriva.getByTestId("protocolo-deriva10-sin-vigilar"),
+  ).toContainText("empleo");
   await axeBothThemes(page);
   await sinDesborde(page, 360);
 
@@ -356,19 +362,40 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
   expect(archivoModelo.manifest.origin).toBe("protocolo");
   expect(archivoModelo.manifest.protocol.test_value).toBeGreaterThan(0);
   for (const fila of csv.slice(1).filter(Boolean))
-    expect(textoModelo, `una fila del CSV en el archivo del modelo: ${fila}`).not.toContain(fila);
+    expect(
+      textoModelo,
+      `una fila del CSV en el archivo del modelo: ${fila}`,
+    ).not.toContain(fila);
   await expect(modelo).toContainText("Guardado: modelo-credito-fuga-plantada");
   // la prueba no se volvió a abrir: el cuaderno exportado de nuevo trae las MISMAS aperturas que el de antes de guardar el ganador
   const [exporta2] = await Promise.all([
     page.waitForEvent("download"),
     page.getByRole("button", { name: "Exportar cuaderno" }).click(),
   ]);
-  const despues = JSON.parse(readFileSync((await exporta2.path())!, "utf8")) as {
+  const despues = JSON.parse(
+    readFileSync((await exporta2.path())!, "utf8"),
+  ) as {
     cuaderno: { aperturas?: { clave: string }[] };
   };
   const antesDeGuardar = JSON.parse(exportado) as typeof despues;
   expect(despues.cuaderno.aperturas?.length).toBeGreaterThan(0);
   expect(despues.cuaderno.aperturas).toEqual(antesDeGuardar.cuaderno.aperturas);
+
+  // S20 (adenda del ADR 027): «Las reglas del ganador» con las filas de un CSV que el usuario sube — el árbol se arma con ellas y la
+  // verdad no se mide (el envío salió sin la columna del objetivo)
+  const reglas = e10.getByTestId("protocolo-reglas10");
+  await reglas
+    .getByTestId("protocolo-reglas-csv")
+    .setInputFiles(KIT("credito-fuga-plantada.csv"));
+  await expect(reglas.getByTestId("reglas-lectura")).toBeVisible({
+    timeout: 240_000,
+  });
+  await expect(reglas.getByTestId("reglas-sin-verdad")).toBeVisible();
+  await expect(reglas.getByTestId("reglas-lectura")).toContainText(
+    "filas de tu archivo",
+  );
+  await axeBothThemes(page);
+  expect(peticiones.join("\n")).not.toContain("/api/narrate");
 
   // Probeta lo abre, dice de dónde viene y lo vigila con filas nuevas que traen el resultado real
   await page.goto("/");
@@ -380,7 +407,9 @@ test("etapa 10 con crédito y «usar»: la ficha sale del cuaderno, se descarga 
     "Un modelo guardado desde el Protocolo DS",
   );
   await expect(resumenProtocolo).toContainText("No trae liga");
-  await resumenProtocolo.getByRole("button", { name: "Usar este modelo" }).click();
+  await resumenProtocolo
+    .getByRole("button", { name: "Usar este modelo" })
+    .click();
   await expect(page.getByText(/Arrastra tu CSV nuevo/)).toBeVisible({
     timeout: 240_000,
   });
@@ -415,7 +444,9 @@ test("etapa 10 con precio y «usar»: llega a «Protocolo completo» con su fich
   await e10.getByLabel("Reentrenar cada (meses)").fill("12");
   // aquí sí se marca la columna de texto: sus categorías con soporte entran a lo que se vigila
   await e10.getByRole("checkbox", { name: "barrio" }).check();
-  await expect(e10.getByTestId("protocolo-texto10-estado")).toContainText("Marcadas: 1 de");
+  await expect(e10.getByTestId("protocolo-texto10-estado")).toContainText(
+    "Marcadas: 1 de",
+  );
   await sinDesborde(page, 360);
   await e10.getByRole("button", { name: "Registrar la etapa 10" }).click();
   await expect(e10.getByText("Cumplida")).toBeVisible();

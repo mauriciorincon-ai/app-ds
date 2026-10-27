@@ -433,6 +433,17 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
 - **Vigilar el desempeño (S19)** — en «Usar el modelo», cuando el archivo trae el objetivo: una línea de veredicto con **símbolo y palabra** (✓ Sigue ·
   ⚠ Revisar · ✕ Reentrenar), la cifra de hoy con su intervalo del 95 % junto a la de la prueba, el empate y la nota de lo que se dejó fuera; sin
   objetivo en el archivo dice qué subir. Textos en `messages/vigilancia.{es,en}.json`.
+- **Pronosticar una serie (S20)** — un panel con dos selectores (fecha y número), el periodo, cómo juntar y los periodos a pronosticar; la pregunta del orden
+  día/mes es un grupo de radios; los huecos se nombran en un recuadro con una casilla («Completarlos con la recta…») sin la cual «Pronosticar»
+  (icono `play`) no se habilita. La lectura abre con el veredicto en **símbolo + palabra** (✓ Supera · ≈ Empata · ⚠ No supera), una frase de
+  plantilla, el **gráfico SVG** (historia en línea continua `ink`, pronóstico en discontinua `accent` con guion `6 4`, banda del 80 % `accent/25` y del 95 %
+  `accent/10` con borde punteado `2 3`, un periodo completado como círculo hueco; el color nunca solo: la leyenda escribe cada trazo) con su **tabla
+  accesible** en un `<details>`, la tabla de la liga con las marcas ★ ganador y ◆ mejor simple, y «Descargar el pronóstico (.csv)» (icono `download`).
+  Textos en `messages/pronostico.{es,en}.json`.
+- **El gemelo sintético (S20)** — una tarjeta junto a la exploración: lo que viaja y, en una lista con ✕, lo que no con su motivo; las filas del gemelo; «Generar
+  el gemelo» (icono `sparkle`). El veredicto va en **símbolo + palabra** (✓ Se puede compartir · ⚠ Revisar antes de compartir · ✕ No compartir) y el
+  informe tiene cuatro renglones, cada uno con su nivel escrito (✓ bien · ⚠ revisar · ✕ mal): columna por columna, relaciones, cercanía y copias
+  exactas. «Descargar el gemelo (.csv)» (icono `download`). Textos en `messages/gemelo.{es,en}.json`.
 - **Foco y tema** — `:focus-visible` es un contorno de 2 px en `accent` a 2 px de distancia, para todo lo enfocable; la página
   declara `color-scheme` claro y oscuro para que los controles nativos (radios, casillas, selectores) sigan el tema; el alias
   `--sunken` equivale a `--surface-sunken`.
@@ -444,7 +455,7 @@ Una segunda ruta, `/protocolo`, hecha con los mismos primitivos y la misma palet
    qué se entrenaría y quién compite, y «Entrenar modelos» queda arriba de la vista previa. El
    **SanitationBlock** y el **EdaBlock** lo enmarcan.
 3. **Entrenamiento** → el progreso honesto (qué modelo, en qué fase); en el Nivel 2, cancelar.
-4. **Resultados** → (desde el S17 también «Estrésalo» y «Llévatelo», después de «Usa tu modelo»; desde el S18 el margen de error bajo las métricas; desde el S19 «¿Qué pasaría si?» y «El modelo en reglas» antes de «Estrésalo») el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
+4. **Resultados** → (desde el S17 también «Estrésalo» y «Llévatelo», después de «Usa tu modelo»; desde el S18 el margen de error bajo las métricas; desde el S19 «¿Qué pasaría si?» y «El modelo en reglas» antes de «Estrésalo»; desde el S20 el gemelo y el pronóstico viven en la configuración, junto a la exploración y al selector del objetivo) el **VerdictBanner**; la **LeagueTable** dice por qué ganó quien ganó, y
    métricas, matriz y advertencias lo sostienen. Al estimar (S6), el veredicto va en unidades y el
    **PredichoVsReal** ocupa el lugar de la matriz. Con varias categorías (S7), la matriz es K×K.
    Al agrupar (S7), la **lectura** ocupa el lugar del veredicto, y los grupos y la tabla de

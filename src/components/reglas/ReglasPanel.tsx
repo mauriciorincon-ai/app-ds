@@ -3,14 +3,16 @@
 // S19 (ADR 027): el panel «El modelo en reglas» de la pantalla de resultados de Probeta. Se pide, no se calcula solo: un árbol
 // sustituto sobre las columnas originales que copia lo que el modelo decide, con su FIDELIDAD medida en filas que el árbol no vio. Con
 // fidelidad suficiente se llama «el modelo en reglas»; debajo del umbral se da la cifra y se llama «un árbol que se parece al modelo»,
-// nunca lo primero. Se descarga como texto (en el idioma de la pantalla) y como SQL. Un modelo importado o sin filas lo dice en vez de
-// inventar un árbol. Símbolo + palabra (el color nunca solo); los textos viajan con este chunk.
+// nunca lo primero. Se descarga como texto (en el idioma de la pantalla) y como SQL. S20: con `tabla` (el archivo que el usuario ya
+// cargó para puntuar) el árbol se arma con ESAS filas —sirve a un modelo importado, que no conserva las de su entrenamiento— y la
+// verdad se mide solo si el archivo trae el objetivo. Símbolo + palabra (el color nunca solo); los textos viajan con este chunk.
 import { useRef, useState, type RefObject } from "react";
 import { Button, Card } from "@/components/ui";
-import { matchByTask } from "@/engine/despacho";
+import { matchByTask, matchTask } from "@/engine/despacho";
 import { fidelidadSuficiente, FIDELIDAD_MIN_ACUERDO, FIDELIDAD_MIN_R2 } from "@/engine/reglas";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { useI18n } from "@/i18n/provider";
+import type { CsvTable } from "@/lib/ds/csv";
 import { datasetSlug, downloadTextFile } from "@/lib/files";
 import { sqlDeReglas, textoReglas } from "@/lib/narration/reglas";
 import { TEXTOS_REGLAS } from "@/lib/narration/textos-reglas";
@@ -35,6 +37,8 @@ export type ReglasPanelProps = {
   readonly ocupado?: boolean;
   /** Estimar una cantidad: la unidad del objetivo («kWh»). */
   readonly unidadObjetivo?: string | null;
+  /** S20: las filas del archivo que el usuario cargó; con ellas el árbol se arma sobre lo que el modelo predice en ESAS filas. */
+  readonly tabla?: CsvTable | null;
 };
 
 export function ReglasPanel({
@@ -44,6 +48,7 @@ export function ReglasPanel({
   datasetName,
   ocupado = false,
   unidadObjetivo = null,
+  tabla = null,
 }: ReglasPanelProps) {
   const t = useTextosEtapa(TEXTOS_REGLAS);
   const { locale } = useI18n();
@@ -65,6 +70,7 @@ export function ReglasPanel({
       numerica: () => null,
       agrupar: () => null,
     }),
+    ...(tabla ? { source: "uploaded" as const, truthAsked: true } : {}),
   };
 
   const pedir = async () => {
@@ -73,7 +79,11 @@ export function ReglasPanel({
     pedido.current = true;
     setEstado({ tipo: "calculando" });
     try {
-      const r = await pedirReglas(w, sent);
+      const r = await pedirReglas(
+        w,
+        sent,
+        tabla ? { headers: tabla.headers, rows: tabla.rows, truth: true } : undefined,
+      );
       setEstado({ tipo: "lista", de: modelo, r });
     } catch (e) {
       const motivo = e instanceof Error ? e.message : "worker";
@@ -100,7 +110,9 @@ export function ReglasPanel({
             ? t("reglas.titulo_aprox")
             : t("reglas.titulo")}
         </h2>
-        <p className="mt-1 text-sm text-ink-muted">{t("reglas.ayuda")}</p>
+        <p className="mt-1 text-sm text-ink-muted">
+          {t(tabla ? "reglas.ayuda_subidas" : "reglas.ayuda")}
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Button
             icon="table"
@@ -134,7 +146,7 @@ export function ReglasPanel({
           </p>
         )}
         {lectura && (
-          <Lectura
+          <LecturaReglas
             r={lectura}
             t={t}
             locale={locale}
@@ -147,18 +159,22 @@ export function ReglasPanel({
   );
 }
 
-function Lectura({
+/** La lectura del árbol: fidelidad, veredicto, verdad (si se midió), las reglas y sus dos descargas. La comparte la etapa 10. */
+export function LecturaReglas({
   r,
   t,
   locale,
   unidad,
   datasetName,
+  sinVerdad,
 }: {
   r: RulesResult;
   t: (key: string, params?: Record<string, string | number>) => string;
   locale: "es" | "en";
   unidad: string | null;
   datasetName: string | null;
+  /** El texto de «no se midió contra la verdad» cuando no es el de siempre (la etapa 10: la prueba ya se abrió una vez). */
+  sinVerdad?: string;
 }) {
   const suficiente = fidelidadSuficiente(r);
   const pct = (v: number) => formatQuantity(v * 100, 1);
@@ -177,6 +193,13 @@ function Lectura({
           return t("reglas.verdad.mae", { reglas: q(r.truth.rules), modelo: q(r.truth.model) });
         })()
     : null;
+  // agrupar no tiene verdad contra la cual medirse: ahí no se avisa que falta
+  const tieneVerdad = matchTask(r.task, {
+    binaria: () => true,
+    multiclase: () => true,
+    numerica: () => true,
+    agrupar: () => false,
+  });
   const texto = textoReglas(r, locale, { unidad, fidelidadSuficiente: suficiente });
   const sql = sqlDeReglas(r, locale);
   const base = `reglas-${datasetSlug(datasetName ?? "") || "modelo"}`;
@@ -196,9 +219,21 @@ function Lectura({
           umbral: formatQuantity(umbral * 100, 0),
         })}
       </p>
-      {verdad && <p className="text-sm text-ink-muted">{verdad}</p>}
+      {verdad && (
+        <p className="text-sm text-ink-muted">
+          {verdad}
+          {r.source === "uploaded" && r.truth
+            ? ` ${t("reglas.verdad.filas", { n: formatQuantity(r.truth.n, 0), count: r.truth.n })}`
+            : ""}
+        </p>
+      )}
+      {r.source === "uploaded" && !verdad && tieneVerdad && (
+        <p className="text-sm text-ink-muted" data-testid="reglas-sin-verdad">
+          {sinVerdad ?? t("reglas.verdad.ausente")}
+        </p>
+      )}
       <p className="text-sm text-ink-muted">
-        {t("reglas.detalle", {
+        {t(r.source === "uploaded" ? "reglas.detalle_subidas" : "reglas.detalle", {
           hojas: r.leaves,
           profundidad: r.depth,
           filas: formatQuantity(r.n_fit, 0),

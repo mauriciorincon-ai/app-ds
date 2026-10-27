@@ -285,6 +285,29 @@ describe("useExperiment", () => {
     expect(result.current.state.phase).toBe("empty");
   });
 
+  // S20: una serie de dos columnas (la fecha sale del saneamiento como «identificador») no se entrena, pero SÍ se pronostica.
+  it("una serie de dos columnas (fecha + número) no es un error: se configura solo para pronosticar, con la tabla tal como llegó", () => {
+    const serie = ["mes,ventas", ...Array.from({ length: 24 }, (_, i) => `${2024 + Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, "0")}-01,${100 + i}`)].join("\n");
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(serie, "serie.csv"));
+    expect(result.current.state.phase).toBe("configuring");
+    expect(result.current.state.soloSerie).toBe(true);
+    expect(result.current.state.error).toBeNull();
+    expect(result.current.state.dataset?.headers).toEqual(["mes", "ventas"]);
+    expect(result.current.getRawTable()?.rows).toHaveLength(24);
+    expect(result.current.getTable()).toBeNull();
+    act(() => result.current.reset());
+    expect(result.current.getRawTable()).toBeNull();
+    expect(result.current.state.soloSerie).toBe(false);
+  });
+
+  it("dos columnas sin fecha siguen siendo «nada para modelar»", () => {
+    const { result } = renderHook(() => useExperiment());
+    act(() => result.current.loadCsv(["id,v", ...Array.from({ length: 5 }, (_, i) => `a${i},${i}`)].join("\n"), "ids.csv"));
+    expect(result.current.state.phase).toBe("error");
+    expect(result.current.state.error?.kind).toBe("csv-unusable");
+  });
+
   it("error del runner ⇒ pantalla de error con tipo 'runtime'", () => {
     const { result } = renderHook(() => useExperiment());
     act(() => result.current.loadCsv(CSV, "test.csv"));

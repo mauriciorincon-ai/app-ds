@@ -3102,8 +3102,15 @@ RULES_CATEGORY_MIN_ROWS = 5
 RULES_CATEGORY_MAX = 15
 RULES_HOLDOUT = 0.25
 RULES_MIN_ROWS = 40
+# con las filas que sube el usuario se aparta el 25 % antes de armar el árbol: el menor total que deja RULES_MIN_ROWS de ajuste (53)
+RULES_MIN_UPLOADED = next(
+    n for n in range(RULES_MIN_ROWS, 10 * RULES_MIN_ROWS) if n - max(1, int(round(n * RULES_HOLDOUT))) >= RULES_MIN_ROWS
+)
 RULES_SEED = 0
 EVALUATE_KEYS = frozenset(("headers", "rows"))
+# S20 (ADR 027, adenda): las reglas también se arman con las filas que sube el usuario. `truth` pide medir contra el objetivo del
+# archivo SI lo trae; el Protocolo nunca lo pide (la prueba ya se abrió una vez) y TypeScript quita esa columna antes de enviar.
+RULES_KEYS = frozenset(("headers", "rows", "truth"))
 EVALUATE_MAX_ROWS = 50000
 
 
@@ -3224,15 +3231,43 @@ def _r2(truth, pred):
     return 1.0 - ss_res / ss_tot
 
 
+def _validate_rules_payload(p, schema):
+    for key in p:
+        if key not in RULES_KEYS:
+            _contract(key)
+    headers, rows = p.get("headers"), p.get("rows")
+    needed = list(schema["numeric"]) + list(schema["categorical"])
+    if (
+        not isinstance(headers, list)
+        or not all(isinstance(h, str) for h in headers)
+        or len(set(headers)) != len(headers)
+        or any(f not in headers for f in needed)
+    ):
+        _contract("headers")
+    if (
+        not isinstance(rows, list)
+        or not 1 <= len(rows) <= EVALUATE_MAX_ROWS
+        or any(not isinstance(r, list) or len(r) != len(headers) for r in rows)
+    ):
+        _contract("rows")
+    if "truth" in p and not isinstance(p["truth"], bool):
+        _contract("truth")
+
+
 def run_rules(payload_json="{}"):
-    """S19 (ADR 027): el modelo en reglas. Sin payload. `no-rows` si el modelo no conserva las filas (uno importado)."""
+    """S19 (ADR 027): el modelo en reglas. Sin payload, con las filas de entrenamiento del modelo (`no-rows` si no las conserva: uno
+    importado o el ganador del Protocolo). S20: con `{headers, rows, truth?}` el árbol se ajusta a lo que el modelo predice SOBRE ESAS
+    filas (las que sube el usuario), con el 25 % aparte para medir; la verdad se mide solo si `truth` y el archivo trae el objetivo."""
     started = time.perf_counter()
     if _MODEL is None:
         raise RuntimeError("no-model")
     p = json.loads(payload_json or "{}")
-    for key in p if isinstance(p, dict) else ["payload"]:
-        _contract(key)
+    if not isinstance(p, dict):
+        _contract("payload")
+    uploaded = bool(p)
     schema = _MODEL["schema"]
+    if uploaded:
+        _validate_rules_payload(p, schema)
     task = _task_of(schema)
     numeric = list(schema["numeric"])
     categorical = list(schema["categorical"])
@@ -3295,12 +3330,87 @@ def run_rules(payload_json="{}"):
             "regression": False,
         }
 
-    data = _by_task(task, {
-        "binaria": classification,
-        "multiclase": classification,
-        "numerica": regression,
-        "agrupar": cluster,
-    })()
+    def uploaded_data():
+        features = numeric + categorical
+        df = _build_frame(p["headers"], p["rows"], numeric)
+        X = df[features].reset_index(drop=True)
+        n = len(X)
+        if n < RULES_MIN_UPLOADED:
+            raise RuntimeError("too-few-rows")
+        order = np.random.RandomState(RULES_SEED).permutation(n)
+        n_hold = max(1, int(round(n * RULES_HOLDOUT)))
+        hold, fit = order[:n_hold], order[n_hold:]
+        target = schema.get("target")
+        has_truth = _by_task(task, {
+            "binaria": lambda: True,
+            "multiclase": lambda: True,
+            "numerica": lambda: True,
+            "agrupar": lambda: False,
+        })()
+        wants_truth = p.get("truth") is True and has_truth and target in p["headers"]
+
+        def take(values, idx):
+            return [values[i] for i in idx]
+
+        def classes_data():
+            labels = classes_of()
+            predicted = [labels[int(v)] for v in pipe.predict(X)]
+            truth = None
+            if wants_truth:
+                text = df[target].astype("string")
+                known = text.isin(list(labels)).fillna(False).to_numpy(dtype=bool)
+                truth = [str(v) if k else None for v, k in zip(text.tolist(), known)]
+            return {
+                "fit_X": X.iloc[fit],
+                "fit_y": take(predicted, fit),
+                "hold_X": X.iloc[hold],
+                "hold_model": take(predicted, hold),
+                "hold_truth": None if truth is None else take(truth, hold),
+                "regression": False,
+            }
+
+        def regression_data():
+            predicted = [float(v) for v in pipe.predict(X)]
+            truth = None
+            if wants_truth:
+                values = pd.to_numeric(df[target], errors="coerce").to_numpy(dtype=float, na_value=np.nan)
+                truth = [float(v) if math.isfinite(v) else None for v in values]
+            return {
+                "fit_X": X.iloc[fit],
+                "fit_y": take(predicted, fit),
+                "hold_X": X.iloc[hold],
+                "hold_model": take(predicted, hold),
+                "hold_truth": None if truth is None else take(truth, hold),
+                "regression": True,
+            }
+
+        def cluster_data():
+            groups = [int(v) for v in _score_cluster(_MODEL, X)["predictions"]]
+            return {
+                "fit_X": X.iloc[fit],
+                "fit_y": take(groups, fit),
+                "hold_X": X.iloc[hold],
+                "hold_model": take(groups, hold),
+                "hold_truth": None,
+                "regression": False,
+            }
+
+        return _by_task(task, {
+            "binaria": classes_data,
+            "multiclase": classes_data,
+            "numerica": regression_data,
+            "agrupar": cluster_data,
+        })()
+
+    if uploaded:
+        data = uploaded_data()
+    else:
+        data = _by_task(task, {
+            "binaria": classification,
+            "multiclase": classification,
+            "numerica": regression,
+            "agrupar": cluster,
+        })()
     fit_X, hold_X = data["fit_X"], data["hold_X"]
     if len(fit_X) < RULES_MIN_ROWS:
         raise RuntimeError("too-few-rows")
@@ -3320,26 +3430,37 @@ def run_rules(payload_json="{}"):
     depth, leaves = _rules_shape(root)
     rules_pred = _rules_apply(root, hold_X, medians)
 
+    # la verdad se mide solo en las filas de apartar que la traen (con las filas del entrenamiento, todas)
+    known = (
+        []
+        if data["hold_truth"] is None
+        else [i for i, v in enumerate(data["hold_truth"]) if v is not None]
+    )
     if data["regression"]:
         fidelity = {"metric": "r2", "value": _r2(data["hold_model"], rules_pred), "n": int(len(hold_X))}
-        truth = {
-            "metric": "mae",
-            "rules": float(np.mean(np.abs(np.asarray(rules_pred, dtype=float) - np.asarray(data["hold_truth"])))),
-            "model": float(np.mean(np.abs(np.asarray(data["hold_model"]) - np.asarray(data["hold_truth"])))),
-            "n": int(len(hold_X)),
-        }
+        truth = None
+        if known:
+            t = np.asarray([data["hold_truth"][i] for i in known], dtype=float)
+            truth = {
+                "metric": "mae",
+                "rules": float(np.mean(np.abs(np.asarray([rules_pred[i] for i in known], dtype=float) - t))),
+                "model": float(np.mean(np.abs(np.asarray([data["hold_model"][i] for i in known], dtype=float) - t))),
+                "n": int(len(known)),
+            }
     else:
         fidelity = {"metric": "agreement", "value": _agreement(data["hold_model"], rules_pred), "n": int(len(hold_X))}
         truth = None
-        if data["hold_truth"] is not None:
+        if known:
+            t = [data["hold_truth"][i] for i in known]
             truth = {
                 "metric": "accuracy",
-                "rules": _agreement(data["hold_truth"], rules_pred),
-                "model": _agreement(data["hold_truth"], data["hold_model"]),
-                "n": int(len(hold_X)),
+                "rules": _agreement(t, [rules_pred[i] for i in known]),
+                "model": _agreement(t, [data["hold_model"][i] for i in known]),
+                "n": int(len(known)),
             }
     return json.dumps({
         "task": task,
+        "source": "uploaded" if uploaded else "training",
         "tree": root,
         "numeric": [{"column": c, "median": medians[c]} for c in numeric],
         "fidelity": fidelity,
@@ -3532,3 +3653,527 @@ def run_stress_test(payload_json):
         }
     )
     return json.dumps(result)
+
+
+# --- S20 (ADR 028): pronosticar una serie -------------------------------------------------------------------------------------
+#
+# Un flujo propio, no una cuarta tarea del encarrilador: la serie llega ya regular (TypeScript junta las filas por periodo y
+# completa los huecos que el usuario aprobó) como una lista de números y una temporada; el worker no ve fechas ni columnas. La liga
+# usa ORIGEN MÓVIL que se expande hacia adelante: en cada origen se ajusta cada método SOLO con lo anterior y se le pide que acierte
+# los `h` periodos siguientes (nunca mira el futuro: lo prueba la integración). Todo es determinista —no hay semilla porque no hay
+# azar— y no depende de nada que no esté ya en el worker (numpy, scipy y scikit-learn).
+FORECAST_KEYS = frozenset(("y", "season", "horizon", "period"))
+FORECAST_PERIODS = ("dia", "semana", "mes")
+FORECAST_METHODS = ("media", "ingenuo", "ingenuo_estacional", "deriva", "holt_winters", "rezagos")
+FORECAST_SIMPLE = ("media", "ingenuo", "ingenuo_estacional", "deriva")
+FORECAST_MAX_PERIODS = 2000
+FORECAST_MAX_FOLDS = 12
+FORECAST_MIN_FOLDS = 3
+FORECAST_MIN_TRAIN = 8
+FORECAST_HORIZON_MAX = 120
+FORECAST_LAGS_MAX = 12
+FORECAST_RIDGE_ALPHA = 1.0
+FORECAST_HW_STARTS = ((0.3, 0.1, 0.1), (0.6, 0.05, 0.3), (0.1, 0.01, 0.6))
+FORECAST_BANDS = (0.80, 0.95)
+
+
+def _fc_media(train, h, season):
+    return np.full(h, float(np.mean(train)))
+
+
+def _fc_ingenuo(train, h, season):
+    return np.full(h, float(train[-1]))
+
+
+def _fc_ingenuo_estacional(train, h, season):
+    cycle = np.asarray(train[-season:], dtype=float)
+    return np.array([cycle[i % season] for i in range(h)])
+
+
+def _fc_deriva(train, h, season):
+    slope = (float(train[-1]) - float(train[0])) / (len(train) - 1)
+    return float(train[-1]) + slope * np.arange(1, h + 1)
+
+
+def _fc_holt_winters(train, h, season):
+    """Holt-Winters aditivo (nivel, tendencia y, si hay dos temporadas, temporada), con numpy y scipy: tres arranques fijos del
+    optimizador y se queda con el de menor error de un paso. Sin dos temporadas completas corre como Holt (sin parte estacional)."""
+    from scipy.optimize import minimize
+
+    y = [float(v) for v in train]
+    n = len(y)
+    m = season if season > 1 and n >= 2 * season else 1
+    if m > 1:
+        level0 = sum(y[:m]) / m
+        trend0 = (sum(y[m : 2 * m]) / m - level0) / m
+        seas0 = [v - level0 for v in y[:m]]
+    else:
+        level0, trend0, seas0 = y[0], y[1] - y[0], [0.0]
+
+    def run(params):
+        a, b, g = params
+        level, trend, seas = level0, trend0, list(seas0)
+        sse = 0.0
+        for t in range(n):
+            s = seas[t % m]
+            err = y[t] - (level + trend + s)
+            sse += err * err
+            new_level = a * (y[t] - s) + (1 - a) * (level + trend)
+            trend = b * (new_level - level) + (1 - b) * trend
+            if m > 1:
+                seas[t % m] = g * (y[t] - new_level) + (1 - g) * s
+            level = new_level
+        return sse, level, trend, seas
+
+    best = None
+    for start in FORECAST_HW_STARTS:
+        fit = minimize(
+            lambda p: run(p)[0],
+            np.array(start),
+            method="L-BFGS-B",
+            bounds=[(0.001, 0.999)] * 3,
+            options={"maxiter": 60},
+        )
+        if best is None or fit.fun < best.fun:
+            best = fit
+    _, level, trend, seas = run(best.x)
+    return np.array([level + (i + 1) * trend + seas[(n + i) % m] for i in range(h)])
+
+
+def _fc_lag_count(season):
+    return min(season, FORECAST_LAGS_MAX) if season > 1 else 3
+
+
+def _fc_lag_features(window, t, season, n_lags, seasonal_lag):
+    """Los rezagos del periodo `t` (los `n_lags` anteriores, y el de una temporada atrás si es larga) y el lugar de `t` en su
+    temporada (uno-caliente, solo si la temporada cabe en una docena de periodos)."""
+    row = [window[t - k] for k in range(1, n_lags + 1)]
+    if seasonal_lag:
+        row.append(window[t - season])
+    if 1 < season <= FORECAST_LAGS_MAX:
+        row.extend(1.0 if t % season == j else 0.0 for j in range(season))
+    return row
+
+
+def _fc_rezagos(train, h, season):
+    """Regresión con rezagos y calendario (Ridge), recursiva: cada pronóstico entra como rezago del siguiente. Los valores se
+    estandarizan con la media y la desviación del propio entrenamiento."""
+    y = np.asarray(train, dtype=float)
+    n = len(y)
+    mean, std = float(y.mean()), float(y.std())
+    z = ((y - mean) / (std if std > 0 else 1.0)).tolist()
+    n_lags = _fc_lag_count(season)
+    seasonal_lag = season > FORECAST_LAGS_MAX and n >= 2 * season
+    first = max(n_lags, season if seasonal_lag else 0)
+    if n - first < 5:
+        raise ArithmeticError("short")
+    X = [_fc_lag_features(z, t, season, n_lags, seasonal_lag) for t in range(first, n)]
+    model = Ridge(alpha=FORECAST_RIDGE_ALPHA).fit(np.asarray(X), np.asarray(z[first:]))
+    window = list(z)
+    for t in range(n, n + h):
+        window.append(float(model.predict(np.asarray([_fc_lag_features(window, t, season, n_lags, seasonal_lag)]))[0]))
+    return np.asarray(window[n:]) * (std if std > 0 else 1.0) + mean
+
+
+_FC_FIT = {
+    "media": _fc_media,
+    "ingenuo": _fc_ingenuo,
+    "ingenuo_estacional": _fc_ingenuo_estacional,
+    "deriva": _fc_deriva,
+    "holt_winters": _fc_holt_winters,
+    "rezagos": _fc_rezagos,
+}
+
+
+def _fc_origins(n, h, min_train):
+    """Los orígenes del origen móvil: el último deja justo `h` periodos para medir; hacia atrás de a `max(1, h // 4)`, hasta
+    `FORECAST_MAX_FOLDS` y sin bajar de `min_train` periodos de entrenamiento. Devuelve (orígenes en orden, paso)."""
+    step = max(1, h // 4)
+    origins = []
+    o = n - h
+    while o >= min_train and len(origins) < FORECAST_MAX_FOLDS:
+        origins.append(o)
+        o -= step
+    origins.reverse()
+    return origins, step
+
+
+def run_forecast(payload_json="{}"):
+    """S20 (ADR 028): la liga de pronóstico con origen móvil y el pronóstico a `horizon` periodos con sus bandas.
+
+    Payload: `y` (la serie regular, ya completa), `season` (7, 52 o 12; 1 si no hay), `horizon`, `period`. Una clave más se rechaza
+    nombrándola. Devuelve `viable: false` (con cuánto falta) si la serie no alcanza para tres pliegues honestos."""
+    started = time.perf_counter()
+    p = json.loads(payload_json or "{}")
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in p:
+        if key not in FORECAST_KEYS:
+            _contract(key)
+    y_in, season, h, period = p.get("y"), p.get("season"), p.get("horizon"), p.get("period")
+    if not isinstance(y_in, list) or not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in y_in):
+        _contract("y")
+    if not all(math.isfinite(v) for v in y_in):
+        _contract("y")
+    if not isinstance(season, int) or isinstance(season, bool) or season < 1:
+        _contract("season")
+    if not isinstance(h, int) or isinstance(h, bool) or not 1 <= h <= FORECAST_HORIZON_MAX:
+        _contract("horizon")
+    if period not in FORECAST_PERIODS:
+        _contract("period")
+
+    n_input = len(y_in)
+    y = np.asarray(y_in[-FORECAST_MAX_PERIODS:], dtype=float)
+    n = len(y)
+
+    # ¿hay dos temporadas completas en el entrenamiento de, al menos, tres pliegues? Si no, los métodos estacionales no compiten
+    seasonal_ok = False
+    reason = "no_season"
+    origins, step = _fc_origins(n, h, FORECAST_MIN_TRAIN)
+    if season > 1:
+        seasonal_origins, seasonal_step = _fc_origins(n, h, 2 * season)
+        if len(seasonal_origins) >= FORECAST_MIN_FOLDS:
+            seasonal_ok, origins, step, reason = True, seasonal_origins, seasonal_step, "ok"
+        else:
+            reason = "short"
+    if len(origins) < FORECAST_MIN_FOLDS:
+        needed = h + FORECAST_MIN_FOLDS - 1 + FORECAST_MIN_TRAIN if step == 1 else h + (FORECAST_MIN_FOLDS - 1) * step + FORECAST_MIN_TRAIN
+        return json.dumps({"viable": False, "n": n_input, "needed": int(needed), "horizon": h})
+
+    # sin dos temporadas completas en tres pliegues NINGÚN método supone una temporada (no solo el ingenuo estacional)
+    season_used = season if seasonal_ok else 1
+    league = []
+    errors = {}
+    for name in FORECAST_METHODS:
+        if name == "ingenuo_estacional" and not seasonal_ok:
+            league.append({"name": name, "status": "skipped", "reason": reason, "cv": None, "mase": None})
+            continue
+        fit = _FC_FIT[name]
+        folds, signed = [], []
+        try:
+            for o in origins:
+                predicted = np.asarray(fit(y[:o], h, season_used), dtype=float)
+                if predicted.shape != (h,) or not np.all(np.isfinite(predicted)):
+                    raise ArithmeticError("non-finite")
+                e = y[o : o + h] - predicted
+                signed.append(e)
+                folds.append(float(np.mean(np.abs(e))))
+        except (ArithmeticError, ValueError, np.linalg.LinAlgError):
+            league.append({"name": name, "status": "skipped", "reason": "numeric", "cv": None, "mase": None})
+            continue
+        errors[name] = np.vstack(signed)
+        league.append(
+            {
+                "name": name,
+                "status": "ok",
+                "reason": None,
+                "cv": {"mean": float(np.mean(folds)), "std": float(np.std(folds)), "folds": folds},
+                "mase": None,
+            }
+        )
+
+    # MASE: el error medio dividido por el de «lo mismo que hace una temporada» (o lo mismo que el periodo anterior) en TODA la serie
+    m = season_used
+    scale = float(np.mean(np.abs(y[m:] - y[:-m]))) if n > m else 0.0
+    for row in league:
+        if row["status"] == "ok" and scale > 0:
+            row["mase"] = row["cv"]["mean"] / scale
+
+    best, winner, se = select_one_se(league, len(origins), "lower")
+    ok_simple = [row for row in league if row["status"] == "ok" and row["name"] in FORECAST_SIMPLE]
+    best_simple = min(ok_simple, key=lambda row: row["cv"]["mean"])["name"]  # empate → el primero del orden
+
+    forecast = np.asarray(_FC_FIT[winner](y, h, season_used), dtype=float)
+    e = errors[winner]
+    bands = {}
+    for level in FORECAST_BANDS:
+        tail = (1 - level) / 2
+        lo = np.minimum(np.quantile(e, tail, axis=0), 0.0)
+        hi = np.maximum(np.quantile(e, 1 - tail, axis=0), 0.0)
+        # la banda nunca se angosta al alejarse y siempre contiene al pronóstico
+        bands[level] = (np.minimum.accumulate(lo), np.maximum.accumulate(hi))
+    lo95 = np.minimum(bands[0.95][0], bands[0.80][0])
+    hi95 = np.maximum(bands[0.95][1], bands[0.80][1])
+
+    return json.dumps(
+        {
+            "viable": True,
+            "n": n,
+            "n_input": n_input,
+            "truncated": n_input > n,
+            "season": season,
+            "seasonal_ok": seasonal_ok,
+            "seasonal_reason": reason,
+            "period": period,
+            "horizon": h,
+            "step": step,
+            "origins": [int(o) for o in origins],
+            "scale": scale if scale > 0 else None,
+            "league": league,
+            "best": best,
+            "winner": winner,
+            "best_simple": best_simple,
+            "se": float(se),
+            "forecast": [float(v) for v in forecast],
+            "lo80": [float(v) for v in forecast + bands[0.80][0]],
+            "hi80": [float(v) for v in forecast + bands[0.80][1]],
+            "lo95": [float(v) for v in forecast + lo95],
+            "hi95": [float(v) for v in forecast + hi95],
+            "elapsed_ms": _elapsed_ms(started),
+        }
+    )
+
+
+# --- S20 (ADR 029): el gemelo sintético --------------------------------------------------------------------------------------
+#
+# Una cópula gaussiana con semilla fija: cada columna conserva su distribución (la función de cuantiles de los datos; las categóricas
+# por frecuencias) y entre las columnas se conserva la dependencia (la correlación de las puntuaciones normales de sus rangos). No hay
+# azar que no salga de `seed`: la misma tabla y la misma semilla dan el mismo gemelo. TypeScript decide qué columnas viajan (lo marcado
+# como dato personal, el texto libre, los identificadores y las fechas se quedan fuera y se nombran) y manda solo esas; aquí las
+# categorías con menos de 5 filas se juntan en «otras» (no viajan tal cual), una fila sintética idéntica a una real se vuelve a sacar
+# hasta que no quede ninguna (o se rinde y lo dice) y se mide el informe: columna por columna contra los datos y contra lo que se
+# parecen dos mitades reales entre sí, y qué tan cerca queda cada fila sintética de la real más cercana frente a lo cerca que están
+# entre sí las reales.
+SYNTH_KEYS = frozenset(("headers", "kinds", "rows", "n_rows", "seed"))
+SYNTH_MIN_ROWS = 20
+SYNTH_MIN_OUT = 10
+SYNTH_MAX_ROWS = 50000
+SYNTH_RARE_CATEGORY = 5
+SYNTH_OTHERS = "otras"
+SYNTH_PROXIMITY_MAX = 2000
+SYNTH_RESAMPLE_ROUNDS = 20
+SYNTH_EIGEN_FLOOR = 1e-6
+SYNTH_SIG = 6
+# cifras significativas con que SALE un número del gemelo; SYNTH_SIG (6) es solo la clave con que se cuentan las copias exactas, y el lector TS usa la misma
+SYNTH_OUT_SIG = 10
+
+
+def _synth_key(values, kinds):
+    """La firma de una fila para saber si dos filas son la misma (los números a 6 cifras significativas, el vacío como None)."""
+    return tuple(
+        None if v is None or (isinstance(v, float) and not math.isfinite(v)) else (float(f"{v:.{SYNTH_SIG}g}") if k == "numeric" else str(v))
+        for v, k in zip(values, kinds)
+    )
+
+
+def _synth_text(value, kind, integer):
+    if value is None or (isinstance(value, float) and not math.isfinite(value)):
+        return ""
+    if kind != "numeric":
+        return str(value)
+    if integer:
+        return str(int(round(value)))
+    text = repr(float(f"{float(value):.{SYNTH_OUT_SIG}g}"))
+    return text[:-2] if text.endswith(".0") else text
+
+
+def run_synthesize(payload_json="{}"):
+    """S20 (ADR 029): el gemelo sintético de las columnas que TypeScript manda (`headers` y `kinds` alineados, `rows`), con `n_rows`
+    filas y la semilla `seed`. Devuelve las filas (texto, el vacío como "") y el informe: por columna el KS (números) o la distancia de
+    variación total (categorías) contra los datos y contra dos mitades reales; la cercanía a la fila real más cercana frente a la de las
+    reales entre sí; y cuántas copias exactas quedaron (0 si lo logró)."""
+    started = time.perf_counter()
+    from scipy.stats import ks_2samp, norm
+    from sklearn.neighbors import NearestNeighbors
+
+    p = json.loads(payload_json or "{}")
+    if not isinstance(p, dict):
+        _contract("payload")
+    for key in p:
+        if key not in SYNTH_KEYS:
+            _contract(key)
+    headers, kinds, rows, n_out, seed = p.get("headers"), p.get("kinds"), p.get("rows"), p.get("n_rows"), p.get("seed")
+    if not isinstance(headers, list) or not headers or not all(isinstance(h, str) for h in headers) or len(set(headers)) != len(headers):
+        _contract("headers")
+    if not isinstance(kinds, list) or len(kinds) != len(headers) or any(k not in ("numeric", "categorical") for k in kinds):
+        _contract("kinds")
+    if not isinstance(rows, list) or len(rows) > SYNTH_MAX_ROWS or any(not isinstance(r, list) or len(r) != len(headers) for r in rows):
+        _contract("rows")
+    if not isinstance(n_out, int) or isinstance(n_out, bool) or not SYNTH_MIN_OUT <= n_out <= SYNTH_MAX_ROWS:
+        _contract("n_rows")
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        _contract("seed")
+    if len(rows) < SYNTH_MIN_ROWS:
+        raise RuntimeError("too-few-rows")
+
+    d = len(headers)
+    n = len(rows)
+    df = pd.DataFrame(rows, columns=headers).map(_normalize_cell)
+    rng = np.random.RandomState(seed)
+
+    # --- la distribución de cada columna y las puntuaciones normales de cada fila real --------------------------------------
+    Z = np.zeros((n, d))
+    marginals = []
+    real_cols = []  # lo que cada columna dice por fila real, con las categorías raras ya juntas
+    for j, (name, kind) in enumerate(zip(headers, kinds)):
+        col = df[name]
+        if kind == "numeric":
+            values = pd.to_numeric(col, errors="coerce").to_numpy(dtype=float, na_value=np.nan)
+            present = np.isfinite(values)
+            if present.sum() < 2:
+                raise RuntimeError("no-data")
+            sorted_values = np.sort(values[present])
+            ranks = pd.Series(values[present]).rank(method="average").to_numpy()
+            Z[present, j] = norm.ppf((ranks - 0.5) / present.sum())
+            marginals.append({
+                "kind": kind,
+                "sorted": sorted_values,
+                "integer": bool(np.all(sorted_values == np.round(sorted_values))),
+                "miss": float(1.0 - present.mean()),
+            })
+            real_cols.append([None if not ok else float(v) for v, ok in zip(values, present)])
+        else:
+            present = col.notna().to_numpy(dtype=bool)
+            if present.sum() < 2:
+                raise RuntimeError("no-data")
+            counts = col[present].value_counts()
+            ordered = sorted(((c, int(k)) for c, k in counts.items()), key=lambda item: (-item[1], item[0]))
+            kept = [c for c, k in ordered if k >= SYNTH_RARE_CATEGORY]
+            rare = sum(k for c, k in ordered if k < SYNTH_RARE_CATEGORY)
+            others = SYNTH_OTHERS
+            while others in kept:
+                others += "_"
+            cats = kept + ([others] if rare > 0 else [])
+            freq = np.array([dict(ordered)[c] for c in kept] + ([rare] if rare > 0 else []), dtype=float)
+            probs = freq / freq.sum()
+            cum = np.cumsum(probs)
+            lo = np.concatenate(([0.0], cum[:-1]))
+            kept_set = set(kept)
+            labels = np.array([c if c in kept_set else others for c in col[present]], dtype=object)
+            index = {c: i for i, c in enumerate(cats)}
+            at = np.array([index[c] for c in labels])
+            u = lo[at] + rng.uniform(size=len(at)) * (cum[at] - lo[at])
+            Z[present, j] = norm.ppf(np.clip(u, 1e-6, 1 - 1e-6))
+            marginals.append({
+                "kind": kind,
+                "cats": cats,
+                "cum": cum,
+                "miss": float(1.0 - present.mean()),
+                "merged": int(sum(1 for c, k in ordered if k < SYNTH_RARE_CATEGORY)),
+            })
+            full = np.empty(n, dtype=object)
+            full[:] = None
+            full[present] = labels
+            real_cols.append(list(full))
+
+    # --- la dependencia: la correlación de las puntuaciones, con un piso de autovalores para que se pueda factorizar ------------
+    if d >= 2:
+        C = np.nan_to_num(np.corrcoef(Z, rowvar=False), nan=0.0)
+        np.fill_diagonal(C, 1.0)
+    else:
+        C = np.ones((1, 1))
+    w, V = np.linalg.eigh(C)
+    C = (V * np.maximum(w, SYNTH_EIGEN_FLOOR)) @ V.T
+    scale = np.sqrt(np.diag(C))
+    L = np.linalg.cholesky(C / np.outer(scale, scale))
+
+    def draw(m):
+        U = norm.cdf(rng.standard_normal((m, d)) @ L.T)
+        out = np.empty((m, d), dtype=object)
+        for j, mg in enumerate(marginals):
+            u = U[:, j]
+            if mg["kind"] == "numeric":
+                v = np.quantile(mg["sorted"], u)
+                if mg["integer"]:
+                    v = np.round(v)
+                column = np.array([float(x) for x in v], dtype=object)
+            else:
+                at = np.minimum(np.searchsorted(mg["cum"], u, side="right"), len(mg["cats"]) - 1)
+                column = np.array(mg["cats"], dtype=object)[at]
+            column[rng.uniform(size=m) < mg["miss"]] = None
+            out[:, j] = column
+        return out
+
+    # --- ninguna fila sintética es una fila real ---------------------------------------------------------------------------
+    real_keys = {_synth_key([real_cols[j][i] for j in range(d)], kinds) for i in range(n)}
+    synth = draw(n_out)
+    bad = [i for i in range(n_out) if _synth_key(synth[i], kinds) in real_keys]
+    resampled, rounds = 0, 0
+    while bad and rounds < SYNTH_RESAMPLE_ROUNDS:
+        fresh = draw(len(bad))
+        for slot, i in enumerate(bad):
+            synth[i] = fresh[slot]
+        resampled += len(bad)
+        bad = [i for i in bad if _synth_key(synth[i], kinds) in real_keys]
+        rounds += 1
+    copies = len(bad)
+
+    # --- el informe --------------------------------------------------------------------------------------------------------
+    order = np.random.RandomState(seed + 1).permutation(n)
+    half_a, half_b = order[: n // 2], order[n // 2 :]
+
+    def tvd(a, b):
+        ca, cb = pd.Series(a, dtype=object).value_counts(), pd.Series(b, dtype=object).value_counts()
+        if ca.sum() == 0 or cb.sum() == 0:
+            return 0.0
+        names = set(ca.index) | set(cb.index)
+        return float(0.5 * sum(abs(ca.get(c, 0) / ca.sum() - cb.get(c, 0) / cb.sum()) for c in names))
+
+    def ks(a, b):
+        a, b = [x for x in a if x is not None], [x for x in b if x is not None]
+        return float(ks_2samp(a, b).statistic) if len(a) >= 2 and len(b) >= 2 else 0.0
+
+    columns = []
+    for j, (name, kind) in enumerate(zip(headers, kinds)):
+        real = real_cols[j]
+        syn = list(synth[:, j])
+        measure = ks if kind == "numeric" else tvd
+        columns.append({
+            "name": name,
+            "kind": kind,
+            "value": measure(real, syn),
+            "floor": measure([real[i] for i in half_a], [real[i] for i in half_b]),
+        })
+
+    # cercanía: números en desviaciones, categorías en uno-caliente (un cambio de categoría pesa 1), y la distancia a la fila real más
+    # cercana (las sintéticas contra las reales; las reales contra las OTRAS reales)
+    def encode(table_cols):
+        parts = []
+        for j, mg in enumerate(marginals):
+            column = table_cols[j]
+            if mg["kind"] == "numeric":
+                med = float(np.median(mg["sorted"]))
+                std = float(np.std(mg["sorted"])) or 1.0
+                parts.append(np.array([[((med if v is None else float(v)) - med) / std] for v in column]))
+            else:
+                parts.append(np.array([[np.sqrt(0.5) if v == c else 0.0 for c in mg["cats"]] for v in column]))
+        return np.hstack(parts)
+
+    sample = order[:SYNTH_PROXIMITY_MAX]
+    sample_syn = min(n_out, SYNTH_PROXIMITY_MAX)
+    real_enc = encode([[real_cols[j][i] for i in sample] for j in range(d)])
+    syn_enc = encode([list(synth[:sample_syn, j]) for j in range(d)])
+    nn = NearestNeighbors(n_neighbors=2).fit(real_enc)
+    d_real = nn.kneighbors(real_enc)[0][:, 1]
+    d_syn = nn.kneighbors(syn_enc, n_neighbors=1)[0][:, 0]
+    p5_real = float(np.percentile(d_real, 5))
+
+    def text_row(row):
+        return [_synth_text(v, kinds[j], marginals[j].get("integer", False)) for j, v in enumerate(row)]
+
+    return json.dumps({
+        "headers": headers,
+        "kinds": kinds,
+        "n_real": int(n),
+        "n_rows": int(n_out),
+        "seed": int(seed),
+        "rows": [text_row(r) for r in synth],
+        "columns": columns,
+        "proximity": {
+            "median_syn": float(np.median(d_syn)),
+            "median_real": float(np.median(d_real)),
+            "p5_real": p5_real,
+            "share_below": float(np.mean(d_syn < p5_real)),
+            "n_real": int(len(real_enc)),
+            "n_syn": int(len(syn_enc)),
+        },
+        "copies": int(copies),
+        "resampled": int(resampled),
+        "rounds": int(rounds),
+        "rare_merged": [
+            {"column": name, "merged": mg["merged"]}
+            for name, mg in zip(headers, marginals)
+            if mg["kind"] == "categorical" and mg["merged"] > 0
+        ],
+        "elapsed_ms": _elapsed_ms(started),
+    })

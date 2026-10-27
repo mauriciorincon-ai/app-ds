@@ -4,6 +4,7 @@
 // armada solo con lo que el cuaderno registró (sin recalcular nada ni volver a abrir la prueba), su descarga en
 // Markdown (el generador se importa al tocar «Descargar») y, con «usar», el chequeo de deriva con un CSV
 // nuevo. No necesita los datos cargados: todo sale del cuaderno. Carga diferida (formularios.tsx).
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import {
   armarFicha,
@@ -20,6 +21,12 @@ import { Etapa10Modelo } from "./Etapa10Modelo";
 import { FichaVista } from "./FichaVista";
 import type { PropsConstancia } from "./formulario-base";
 import { TEXTOS_ETAPA_10 } from "./textos/etapa10";
+
+// S20: las reglas del ganador con filas que el usuario sube. El árbol, su lectura y sus textos llegan SOLO al pintar esta sección.
+const Etapa10Reglas = dynamic(
+  () => import("./Etapa10Reglas").then((m) => m.Etapa10Reglas),
+  { ssr: false },
+);
 
 export function Etapa10Constancia({
   evaluadas,
@@ -98,6 +105,10 @@ export function Etapa10Constancia({
       {/* S19: el ganador como archivo, para puntuar y vigilar su desempeño en Probeta. */}
       {ficha.decision === "usar" && (
         <Etapa10Modelo evidencias={evidencias} datos={datos} />
+      )}
+      {/* S20: las reglas del ganador, armadas con las filas que subes (la verdad no se mide: la prueba ya se abrió). */}
+      {ficha.decision === "usar" && (
+        <Etapa10Reglas evidencias={evidencias} datos={datos} />
       )}
       {ficha.decision === "usar" && evidencias[10] && (
         <Etapa10Deriva evidencia={evidencias[10].datos} />

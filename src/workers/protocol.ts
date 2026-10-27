@@ -845,8 +845,20 @@ export type RuleNode =
       right: RuleNode;
     };
 
+/**
+ * S20: las filas con que se arma el árbol cuando las pone el usuario (el archivo que cargó, o el que sube en la etapa 10). `truth`
+ * pide medir contra el objetivo del archivo si lo trae; el Protocolo nunca lo pide ni envía esa columna.
+ */
+export type RulesPayload = {
+  headers: string[];
+  rows: string[][];
+  truth?: boolean;
+};
+
 export type RulesResult = {
   task: TrainTask;
+  /** S20: de dónde salieron las filas del árbol: las de entrenamiento del modelo, o las que subió el usuario. */
+  source: "training" | "uploaded";
   tree: RuleNode;
   /** La mediana de entrenamiento con que se llenan los vacíos de cada numérica. */
   numeric: { column: string; median: number }[];
@@ -998,6 +1010,108 @@ export type ExportResult = {
 
 export type ImportResult = { ok: true };
 
+/** S20 (ADR 028): el pronóstico de una serie regular. El worker recibe números, la temporada y el horizonte; ninguna fecha ni columna. */
+export type ForecastPeriod = "dia" | "semana" | "mes";
+export type ForecastMethod =
+  | "media"
+  | "ingenuo"
+  | "ingenuo_estacional"
+  | "deriva"
+  | "holt_winters"
+  | "rezagos";
+
+export type ForecastPayload = {
+  y: number[];
+  season: number;
+  horizon: number;
+  period: ForecastPeriod;
+};
+
+export type ForecastLeagueRow = {
+  name: ForecastMethod;
+  status: "ok" | "skipped";
+  /** Por qué no compite: menos de dos temporadas, sin temporada o una cuenta que no cerró. */
+  reason: "short" | "no_season" | "numeric" | null;
+  /** El error medio en las unidades de la serie, pliegue por pliegue. */
+  cv: { mean: number; std: number; folds: number[] } | null;
+  /** El error medio dividido por el de repetir el periodo (o la temporada) anterior; `null` en una serie constante. */
+  mase: number | null;
+};
+
+export type ForecastResult =
+  | {
+      viable: false;
+      /** Cuántos periodos trae la serie y cuántos hacen falta para tres pliegues con ese horizonte. */
+      n: number;
+      needed: number;
+      horizon: number;
+    }
+  | {
+      viable: true;
+      /** Periodos usados y recibidos (se usan los 2 000 más recientes). */
+      n: number;
+      n_input: number;
+      truncated: boolean;
+      season: number;
+      seasonal_ok: boolean;
+      seasonal_reason: "ok" | "short" | "no_season";
+      period: ForecastPeriod;
+      horizon: number;
+      step: number;
+      origins: number[];
+      scale: number | null;
+      league: ForecastLeagueRow[];
+      best: ForecastMethod;
+      winner: ForecastMethod;
+      best_simple: ForecastMethod;
+      se: number;
+      forecast: number[];
+      lo80: number[];
+      hi80: number[];
+      lo95: number[];
+      hi95: number[];
+      elapsed_ms: number;
+    };
+
+/**
+ * S20 (ADR 029): el gemelo sintético. El worker recibe SOLO las columnas que TypeScript dejó viajar (lo marcado como dato personal,
+ * el texto libre, los identificadores y las fechas se quedan fuera), con su tipo, las filas y cuántas sintéticas pedir.
+ */
+export type SynthesizePayload = {
+  headers: string[];
+  kinds: ("numeric" | "categorical")[];
+  rows: string[][];
+  n_rows: number;
+  seed: number;
+};
+
+export type SynthesizeResult = {
+  headers: string[];
+  kinds: ("numeric" | "categorical")[];
+  n_real: number;
+  n_rows: number;
+  seed: number;
+  /** Las filas sintéticas como texto; el vacío es "". */
+  rows: string[][];
+  /** Por columna: el KS (números) o la distancia de variación total (categorías) contra los datos, y entre dos mitades reales. */
+  columns: { name: string; kind: "numeric" | "categorical"; value: number; floor: number }[];
+  /** Qué tan cerca queda cada fila sintética de la fila real más cercana, frente a lo cerca que están entre sí las reales. */
+  proximity: {
+    median_syn: number;
+    median_real: number;
+    p5_real: number;
+    share_below: number;
+    n_real: number;
+    n_syn: number;
+  };
+  /** Filas sintéticas idénticas a una real que quedaron tras volver a sacarlas (0 si se logró). */
+  copies: number;
+  resampled: number;
+  rounds: number;
+  rare_merged: { column: string; merged: number }[];
+  elapsed_ms: number;
+};
+
 export type RunnerRequest =
   | { id: number; type: "train"; payload: PipelinePayload | ClusterPayload }
   | { id: number; type: "validate"; payload: ValidationPayload }
@@ -1012,8 +1126,12 @@ export type RunnerRequest =
   | { id: number; type: "simulate"; payload: SimulatePayload }
   | { id: number; type: "fit-winner"; payload: FitWinnerPayload }
   // S19: el modelo en reglas (sin payload) y vigilar el desempeño con un CSV nuevo que trae el resultado.
-  | { id: number; type: "rules" }
+  | { id: number; type: "rules"; payload?: RulesPayload }
   | { id: number; type: "evaluate-new"; payload: EvaluateNewPayload }
+  // S20: el pronóstico de una serie regular (flujo propio; no usa el modelo retenido).
+  | { id: number; type: "forecast"; payload: ForecastPayload }
+  // S20: el gemelo sintético (cópula gaussiana con semilla fija) de las columnas que TypeScript dejó viajar.
+  | { id: number; type: "synthesize"; payload: SynthesizePayload }
   | {
       id: number;
       type: "fit-member";
@@ -1056,6 +1174,8 @@ export type RunnerResponse =
   | { id: number; type: "result"; command: "fit-winner"; result: unknown }
   | { id: number; type: "result"; command: "rules"; result: unknown }
   | { id: number; type: "result"; command: "evaluate-new"; result: unknown }
+  | { id: number; type: "result"; command: "forecast"; result: unknown }
+  | { id: number; type: "result"; command: "synthesize"; result: unknown }
   | { id: number; type: "result"; command: "fit-member"; result: unknown }
   | { id: number; type: "result"; command: "score"; result: unknown }
   | { id: number; type: "result"; command: "cluster-labels"; result: unknown }

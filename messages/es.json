@@ -115,7 +115,9 @@
       "placeholder": "Elige una columna…",
       "help": "Puedes elegir cualquier columna: te decimos qué tipo de predicción sería. La app entrena las de dos categorías (sí/no, 0/1), las de varias categorías (hasta {max}, como un plan o una región) y las cantidades (un precio, un consumo, un tiempo). Si no hay nada que predecir, elige «Sin objetivo» para agrupar filas parecidas.",
       "option": "{column} · {task}",
-      "cluster": "Sin objetivo: agrupar filas parecidas"
+      "cluster": "Sin objetivo: agrupar filas parecidas",
+      "forecast": "Con una fecha: pronosticar una serie",
+      "solo_serie": "Este archivo es una serie: una fecha y números, sin más columnas con qué entrenar un modelo. Lo que sí puedes hacer con él es pronosticarla."
     },
     "profile": {
       "numeric": "numérica",
@@ -125,7 +127,7 @@
       "date": "parece fecha"
     },
     "warnings": {
-      "date": "Detectamos columnas que parecen fecha ({cols}). No entran al análisis: la app no parte los datos por tiempo."
+      "date": "Detectamos columnas que parecen fecha ({cols}). No entran al entrenamiento: la app no parte los datos por tiempo. Con una fecha y un número sí puedes pronosticar una serie (es una opción del objetivo)."
     },
     "train": "Entrenar modelos",
     "back": "Cambiar de dataset",

@@ -233,6 +233,21 @@
           "working": "Ajustando el ganador con las filas de entrenamiento… La prueba no se abre.",
           "saved": "Guardado: {nombre}.",
           "error": "No se pudo guardar el modelo ({motivo}). Vuelve a intentarlo."
+        },
+        "reglas": {
+          "title": "Las reglas del ganador",
+          "body": "Un árbol de pocas preguntas sobre las columnas del modelo que copia lo que el ganador decide en las filas que subes, para llevarlo a un sistema donde no corre Python (texto y SQL). Elige un CSV con filas de la misma forma que tus datos: el ganador se vuelve a ajustar con las filas de entrenamiento, y el árbol se arma con las tuyas.",
+          "never-truth": "Aquí las reglas nunca se miden contra la verdad: la prueba ya se abrió una vez en la etapa 8 y no se vuelve a abrir. La columna del objetivo, si tu archivo la trae, no sale de tu navegador ni se usa: solo viajan las columnas que el modelo lee.",
+          "button": "Elegir un CSV con filas",
+          "need-data": "Carga arriba el archivo con que trabajaste: el ganador se ajusta con sus filas de entrenamiento y la huella confirma que es el mismo.",
+          "other-file": "Este archivo no es el que usaste: el sello de la partición no coincide, así que no se ajusta el ganador.",
+          "working": "Ajustando el ganador y armando el árbol con tus filas… La prueba no se abre.",
+          "csv": "No se pudo leer el archivo como CSV ({motivo}).",
+          "missing": "Al archivo le faltan columnas que el modelo lee: {columnas}.",
+          "too-few": "Con tan pocas filas no hay un árbol que valga la pena: hacen falta al menos {min}.",
+          "error": "No se pudieron armar las reglas ({motivo}). Vuelve a intentarlo.",
+          "sin-verdad": "Las reglas se midieron contra lo que el ganador decide en filas que el árbol no vio, no contra la verdad: la prueba ya se abrió una vez y no se vuelve a abrir.",
+          "from-file": "Reglas armadas con las filas de «{nombre}»."
         }
       }
     }

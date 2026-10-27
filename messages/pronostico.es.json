@@ -1,0 +1,132 @@
+{
+  "pronostico": {
+    "titulo": "Pronosticar una serie",
+    "ayuda": "Con una columna de fecha y otra de números, Probeta junta las filas por periodo, pone a competir seis métodos con origen móvil (cada uno solo ve lo anterior al periodo que intenta acertar) y proyecta los periodos que vienen con una banda de error. Te dice, además, cuándo ningún método supera a uno simple. Corre en tu navegador y la primera vez baja el motor de Python (unos 40 MiB).",
+    "sin_serie": "Para pronosticar hace falta una columna de fecha y otra con números. Este archivo no tiene las dos.",
+    "fecha": "Columna de fecha",
+    "valor": "Columna a pronosticar",
+    "orden": {
+      "pregunta": "Las fechas de «{columna}» se pueden leer de dos maneras (05/06 puede ser 5 de junio o 6 de mayo). ¿En qué orden vienen?",
+      "dia_mes": "Día, mes, año (05/06 = 5 de junio)",
+      "mes_dia": "Mes, día, año (05/06 = 6 de mayo)"
+    },
+    "lectura": {
+      "mezclada": "«{columna}» mezcla fechas escritas de maneras distintas: Probeta no adivina cuál es la buena. Unifica la columna y vuelve a cargar el archivo.",
+      "ninguna": "«{columna}» no se lee como fecha: ningún valor es una fecha real."
+    },
+    "periodo": {
+      "etiqueta": "Un valor por…",
+      "dia": "día",
+      "semana": "semana (empieza el lunes)",
+      "mes": "mes",
+      "propuesto": "Propuesto por la mediana de los saltos entre tus fechas; puedes cambiarlo.",
+      "sin_propuesta": "Tus fechas están muy espaciadas o hay una sola: elige tú el periodo."
+    },
+    "agregado": {
+      "etiqueta": "Las filas de un mismo periodo se…",
+      "suma": "suman (ventas, visitas, kilos)",
+      "promedio": "promedian (precios, tasas, temperaturas)",
+      "propuesto": "Propuesto por el nombre de la columna; cámbialo si no es lo que mides."
+    },
+    "horizonte": "Periodos a pronosticar",
+    "serie": "{n} periodos, de {desde} a {hasta}, armados con {filas} filas ({sin_fecha} sin fecha legible y {sin_valor} sin número, que no entran).",
+    "serie_one": "{n} periodo, de {desde} a {hasta}, armado con {filas} filas ({sin_fecha} sin fecha legible y {sin_valor} sin número, que no entran).",
+    "sin_filas": "Ninguna fila tiene a la vez una fecha legible y un número: no hay serie.",
+    "muy_larga": "El rango de fechas, en este periodo, pasa de {max} periodos. Elige un periodo más ancho.",
+    "una_sola": "Con los periodos completos de los extremos no queda nada que pronosticar.",
+    "quitados": "Se quitaron los periodos de los extremos que tus datos no cubren enteros ({lista}): una suma a medias se leería como una caída.",
+    "huecos": {
+      "titulo": "Faltan {count} periodos: {lista}{mas}.",
+      "titulo_one": "Falta {count} periodo: {lista}{mas}.",
+      "mas": " y otros {resto}",
+      "completar": "Completarlos con la recta entre sus vecinos (queda marcado en el CSV que descargas).",
+      "obligatorio": "Para pronosticar hay que decidir qué hacer con los huecos: no se rellenan solos.",
+      "demasiados": "Faltan demasiados periodos ({pct} %) para completarlos con honestidad. Elige un periodo más ancho."
+    },
+    "boton": "Pronosticar",
+    "calculando": "Pronosticando… cada método se ajusta de nuevo en cada origen.",
+    "error": "No se pudo pronosticar ({motivo}). Vuelve a intentarlo.",
+    "corta": "La serie es demasiado corta para pronosticar {horizonte} periodos con honestidad: tiene {n} y hacen falta al menos {necesarios} para tres pliegues. Baja el horizonte o elige un periodo más fino.",
+    "truncada": "La serie tiene {n_input} periodos: se usaron los {n} más recientes.",
+    "metodo": {
+      "media": "Media histórica",
+      "ingenuo": "Ingenuo (repite el último valor)",
+      "ingenuo_estacional": "Ingenuo estacional (repite la temporada pasada)",
+      "deriva": "Deriva (sigue la pendiente de toda la serie)",
+      "holt_winters": "Holt-Winters (nivel, tendencia y temporada)",
+      "rezagos": "Regresión con rezagos y calendario"
+    },
+    "corto": {
+      "media": "media histórica",
+      "ingenuo": "ingenuo",
+      "ingenuo_estacional": "ingenuo estacional",
+      "deriva": "deriva",
+      "holt_winters": "Holt-Winters",
+      "rezagos": "regresión con rezagos"
+    },
+    "liga": {
+      "titulo": "La liga, con origen móvil",
+      "detalle": "{pliegues} pliegues que se expanden hacia adelante: en cada uno, cada método se ajusta solo con lo anterior y acierta {horizonte} periodos que no vio. El error se mide en las unidades de «{columna}» y la regla de un error estándar elige al más simple entre los que empatan con el mejor.",
+      "metodo": "Método",
+      "error": "Error medio",
+      "mase": "Error relativo (MASE)",
+      "marca": "Marca",
+      "ganador": "★ Ganador",
+      "simple": "◆ Mejor simple",
+      "ganador_simple": "★ ◆ Ganador y mejor simple",
+      "no_compite": "No compite",
+      "razon": {
+        "short": "no hay dos temporadas completas",
+        "no_season": "la serie no tiene temporada",
+        "numeric": "la cuenta no cerró"
+      },
+      "mase_ayuda": "MASE: el error medio dividido por el de repetir el periodo (o la temporada) anterior en toda la serie. Menor de 1: mejor que repetir; mayor de 1: peor."
+    },
+    "temporada": {
+      "sin_dos": "El ingenuo estacional no compite y ningún método supone una temporada: la serie no tiene dos temporadas completas de {temporada} periodos en tres pliegues. Con un horizonte más corto o una serie más larga sí.",
+      "con": "Temporada de {temporada} periodos."
+    },
+    "veredicto": {
+      "titulo": {
+        "supera": "Supera al mejor método simple",
+        "empata": "Empata con el mejor método simple",
+        "no_supera": "No supera a un método simple"
+      },
+      "supera": "«{ganador}» supera a «{referencia}», el mejor método simple: a {horizonte} periodos se equivoca {mae} en promedio (en las unidades de «{columna}»), contra {mae_ref} de «{referencia}»; son {pct} % menos de error, medido en {pliegues} pliegues que no vio.",
+      "empata": "«{ganador}» queda a la par de «{referencia}», el mejor método simple: {mae} contra {mae_ref} de error medio (en las unidades de «{columna}»), una diferencia menor de 1 %. Sin una razón para preferirlo, quédate con el simple.",
+      "simple": "Ningún método elaborado supera a «{ganador}»: se equivoca {mae} en promedio (en las unidades de «{columna}»), medido en {pliegues} pliegues que no vio. Cuando un método simple basta, es el pronóstico más fácil de defender.",
+      "sin_estructura": "Ningún método le gana a la media histórica: la serie no muestra una tendencia ni una temporada que se pueda proyectar con lo que hay. El pronóstico es su nivel de siempre, con un error medio de {mae} (en las unidades de «{columna}»), y la banda dice cuánto se aleja.",
+      "minimo": "Error medio de «{ganador}»: {mae}; del mejor método simple, «{referencia}»: {mae_ref} (en las unidades de «{columna}»)."
+    },
+    "grafico": {
+      "titulo": "La serie y su pronóstico",
+      "etiqueta": "Gráfico de la serie y su pronóstico: {n} periodos de historia y {horizonte} de pronóstico, con bandas del 80 y del 95 %.",
+      "historia": "Línea continua: la historia",
+      "pronostico": "Línea discontinua: el pronóstico",
+      "banda80": "Banda oscura: el 80 % de los errores del backtest",
+      "banda95": "Banda clara: el 95 %",
+      "bandas_nota": "Las bandas son empíricas: salen de los errores que ese método tuvo en {pliegues} pliegues, por distancia al origen. No son una garantía.",
+      "tabla": "Ver el pronóstico en una tabla",
+      "tabla_periodo": "Periodo",
+      "tabla_pronostico": "Pronóstico",
+      "tabla_80": "Banda del 80 %",
+      "tabla_95": "Banda del 95 %",
+      "completado": "Un punto hueco marca un periodo que se completó con la recta entre sus vecinos."
+    },
+    "descargar": "Descargar el pronóstico (.csv)",
+    "csv": {
+      "periodo": "periodo",
+      "tipo": "tipo",
+      "valor": "valor",
+      "inferior80": "inferior_80",
+      "superior80": "superior_80",
+      "inferior95": "inferior_95",
+      "superior95": "superior_95",
+      "completado": "completado",
+      "historia": "historia",
+      "pronostico": "pronostico",
+      "si": "si",
+      "no": "no"
+    }
+  }
+}
