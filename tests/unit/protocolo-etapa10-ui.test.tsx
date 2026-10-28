@@ -754,7 +754,8 @@ describe("en el cuaderno y en la página: «Protocolo completo»", () => {
 type Mensaje = { id: number; type: string; payload?: Record<string, unknown> };
 
 /** Un worker de mentira que contesta como pipeline.py: el eco del ajuste y la exportación que escribió el emisor real. */
-function instalarWorker() {
+function instalarWorker(retener: string | null = null) {
+  const retenidas: (() => void)[] = [];
   const exportacion = JSON.parse(
     readFileSync("tests/fixtures/contrato/export-result.json", "utf8"),
   ) as unknown;
@@ -787,15 +788,17 @@ function instalarWorker() {
               elapsed_ms: 1,
             }
           : exportacion;
-      queueMicrotask(() =>
+      const responder = () =>
         this.oyentes.forEach((f) =>
           f({ data: { id: m.id, type: "result", command: m.type, result: resultado } }),
-        ),
-      );
+        );
+      // `retener`: la respuesta de ese comando espera a que la prueba la libere (para pulsar de nuevo con la exportación en vuelo)
+      if (m.type === retener) retenidas.push(responder);
+      else queueMicrotask(responder);
     }
   }
   vi.stubGlobal("Worker", FalsoWorker);
-  return creados;
+  return Object.assign(creados, { liberar: () => retenidas.splice(0).forEach((f) => f()) });
 }
 
 describe("la etapa 10: llévate el ganador", () => {
@@ -856,6 +859,23 @@ describe("la etapa 10: llévate el ganador", () => {
       expect(archivo.manifest).not.toHaveProperty(k);
     expect(contenido).not.toContain("monto_prestamo\n");
     expect(screen.getByText(/Guardado: modelo-/)).toBeTruthy();
+  });
+
+  it("dos clics seguidos descargan UN archivo y piden UN ajuste y UN export (S21, lote 19-20)", async () => {
+    const creados = instalarWorker("export-model");
+    descargas.length = 0;
+    montarConstancia(A, ENTRADA_USAR, true);
+    const boton = screen.getByRole("button", { name: "Guardar el ganador como .probeta.json" });
+    fireEvent.click(boton);
+    // el ajuste ya terminó y la exportación sigue en vuelo: el botón vuelve a estar a la mano, pero un segundo clic no hace nada
+    await waitFor(() => expect(creados[0]!.map((m) => m.type)).toEqual(["fit-winner", "export-model"]));
+    fireEvent.click(boton);
+    creados.liberar();
+    await waitFor(() => expect(descargas).toHaveLength(1));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(descargas).toHaveLength(1);
+    expect(creados).toHaveLength(1);
+    expect(creados[0]!.map((m) => m.type)).toEqual(["fit-winner", "export-model"]);
   });
 
   it("con otro archivo (el sello de la partición no coincide) lo dice y no ajusta nada", () => {

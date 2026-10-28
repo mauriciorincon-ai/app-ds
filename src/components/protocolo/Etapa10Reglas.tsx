@@ -15,14 +15,14 @@ import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { parseCsvWithLimits } from "@/lib/ds/csv";
 import { TEXTOS_REGLAS } from "@/lib/narration/textos-reglas";
 import { clasesDelGanador, envioGanador } from "@/lib/protocolo/ganador";
-import { useGanador } from "@/lib/protocolo/useGanador";
+import type { Ganador } from "@/lib/protocolo/useGanador";
 import type { DatosCargados } from "@/lib/protocolo/useProtocolo";
 import type { ReglasSent } from "@/workers/contrato-reglas";
 import type { RulesResult } from "@/workers/protocol";
 import { TEXTOS_ETAPA_10 } from "./textos/etapa10";
 
 /** Las filas mínimas que pide `pipeline.py` con filas subidas (RULES_MIN_UPLOADED: 40 de ajuste más el 25 % apartado): solo para el texto; quien decide es el worker. */
-const FILAS_MINIMAS = 53;
+export const FILAS_MINIMAS = 53;
 
 type Estado =
   | { readonly tipo: "inactivo" }
@@ -33,14 +33,16 @@ type Estado =
 export function Etapa10Reglas({
   evidencias,
   datos,
+  ganador,
 }: {
   evidencias: Partial<Record<EtapaId, EvidenciaFicha>>;
   datos: DatosCargados | null;
+  ganador: Ganador;
 }) {
   const t = useTextosEtapa(TEXTOS_ETAPA_10);
   const tr = useTextosEtapa(TEXTOS_REGLAS);
   const { locale } = useI18n();
-  const { reglas } = useGanador();
+  const { reglas } = ganador;
   const entrada = useRef<HTMLInputElement>(null);
   const [estado, setEstado] = useState<Estado>({ tipo: "inactivo" });
   const previas = useMemo<Previas>(

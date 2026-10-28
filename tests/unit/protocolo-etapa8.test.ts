@@ -941,6 +941,7 @@ describe("el resumen para el cuaderno", () => {
       patron: PATRON.patron,
       estresRuido: null,
       estresRival: null,
+      estresRivalId: null,
     });
   });
 });

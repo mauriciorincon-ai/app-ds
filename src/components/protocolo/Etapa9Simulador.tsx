@@ -15,8 +15,20 @@ import { envioGanador, tablaDeEntrenamiento } from "@/lib/protocolo/ganador";
 import { lecturaDeEnvio } from "@/lib/protocolo/prueba8";
 import { useGanador } from "@/lib/protocolo/useGanador";
 import type { PedirSimulacion } from "@/lib/simulador/pedir";
-import { matchByTask } from "@/engine/despacho";
+import { matchByTask, matchTask } from "@/engine/despacho";
+import type { TrainTask } from "@/engine/tarea";
+import { inferUnit } from "@/lib/experiment";
 import type { DatosCargados } from "@/lib/protocolo/useProtocolo";
+
+/** Al estimar, la unidad en que se dice el cambio: la que Probeta infiere del nombre del objetivo (S21, lote 19-18). */
+export function unidadDelObjetivo(forma: TrainTask, objetivo: string): string | null {
+  return matchTask(forma, {
+    binaria: () => null,
+    multiclase: () => null,
+    numerica: () => inferUnit(objetivo).symbol,
+    agrupar: () => null,
+  });
+}
 
 export function Etapa9Simulador({
   datos,
@@ -67,6 +79,7 @@ export function Etapa9Simulador({
       semilla={preparado.envio.payload.seed}
       simular={pedir}
       costosEscritos={preparado.costos}
+      unidadObjetivo={unidadDelObjetivo(preparado.p7.forma, preparado.p7.objetivo)}
       notaEntrenamiento
       ajustando={estado.tipo === "ajustando"}
       modelo={preparado.p7}

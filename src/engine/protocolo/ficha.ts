@@ -396,6 +396,7 @@ export function armarFicha(entrada: EntradaFicha): Ficha | null {
         metrica: rob.metric,
         de: rob.base,
         a: rob.value,
+        rivalId: r8.estresRivalId ?? "",
         rival: rob.rival,
       },
     );

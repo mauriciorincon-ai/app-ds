@@ -283,6 +283,20 @@ describe("la ficha dicha en pantalla y en Markdown", () => {
     },
   );
 
+  it("la robustez NOMBRA al rival sin modelo, en los dos idiomas (S21, lote 17-5)", () => {
+    const linea = (idioma: "es" | "en", ficha: Ficha) =>
+      fichaVista(ficha, tDe(idioma), idioma, nombresDe(USAR.evidencias))
+        .flatMap((s) => s.lineas.map((l) => l.texto))
+        .filter((x) => /^(Robustez|Robustness)/.test(x))
+        .join("\n");
+    const mayoritaria = FICHAS.find(([n]) => n === "la robustez medida (sigue ganando)")![1];
+    const mediana = FICHAS.find(([n]) => n === "la robustez medida (ya no ganaba sin ruido)")![1];
+    expect(linea("es", mayoritaria)).toContain("(Clase mayoritaria:");
+    expect(linea("en", mayoritaria)).toContain("(Majority class:");
+    expect(linea("es", mediana)).toContain("(Mediana:");
+    expect(linea("en", mediana)).toContain("(Median:");
+  });
+
   it("las cifras se dicen como el resto del Protocolo", () => {
     const texto = (idioma: "es" | "en") =>
       fichaVista(FICHAS[3]![1], tDe(idioma), idioma, nombresDe(USAR.evidencias))
