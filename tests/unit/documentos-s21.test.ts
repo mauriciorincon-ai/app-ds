@@ -142,33 +142,35 @@ describe("guía: la ruta «Ensayo general del H-2»", () => {
     ...caja.matchAll(/<li><strong>([A-Za-z0-9]+)<\/strong> · /g),
   ].map((m) => m[1]!.toLowerCase());
   const chips = [...guia.matchAll(/o-ensayo">Ensayo · (\d+) de (\d+)</g)];
+  // el recorrido de un cliente (reordenado el 2026-10-28, antes de correr el ensayo): cada archivo se carga una vez, cada modelo se
+  // entrena una vez y cada parada sigue donde dejó la anterior
   const ORDEN = [
-    "f3",
-    "g4",
-    "g5",
-    "h2",
-    "i2",
-    "f8",
     "e6",
+    "f3",
+    "g5",
+    "g4",
+    "h2",
+    "t5",
+    "i2",
+    "t8",
+    "f8",
+    "t3",
+    "t4",
+    "t2",
+    "t1",
+    "t6",
+    "v3",
     "s1",
+    "u1",
+    "u2",
     "s2",
     "s3",
     "s4",
-    "t1",
-    "t2",
-    "t3",
-    "t4",
-    "t5",
-    "t6",
-    "t7",
-    "t8",
-    "u1",
-    "u2",
     "u3",
+    "v4",
+    "t7",
     "v1",
     "v2",
-    "v3",
-    "v4",
     "w1",
     "w2",
     "r1",
@@ -253,7 +255,7 @@ describe("guía: la ruta «Ensayo general del H-2»", () => {
     expect(minutos).toHaveLength(44);
     const total = minutos.reduce((a, b) => a + b, 0);
     expect(caja).toContain(`unos ${Math.round(total / 10) * 10} minutos`);
-    expect(total).toBe(180);
+    expect(total).toBe(172);
   });
 
   it("las cinco tandas cubren las 44 paradas sin huecos ni solapes, y los minutos de cada una son la suma de los de sus paradas", () => {
@@ -286,7 +288,50 @@ describe("guía: la ruta «Ensayo general del H-2»", () => {
       suma += t;
     }
     expect(siguiente - 1).toBe(44);
-    expect(suma).toBe(180);
+    expect(suma).toBe(172);
+  });
+
+  // cada «parada N» que una parada cita apunta a la parada que dice: al reordenar, la R5 seguía remitiendo a la «parada 28» (era la 34)
+  it("las paradas que se citan entre sí llevan el número de la parada citada", () => {
+    const parada = (id: string) =>
+      guia.slice(
+        guia.indexOf(`<input type="checkbox" id="${id}">`),
+        guia.indexOf(
+          "</li>",
+          guia.indexOf(`<input type="checkbox" id="${id}">`),
+        ),
+      );
+    const numero = (id: string) =>
+      Number(/Ensayo · (\d+) de 44/.exec(parada(id))![1]);
+    const CITAS: [desde: string, citada: string][] = [
+      ["r5", "s5"],
+      ["i2", "u2"],
+      ["u2", "i2"],
+      ["t1", "t7"],
+      ["s1", "t7"],
+      ["t7", "s1"],
+      ["t7", "t8"],
+      ["t3", "t1"],
+      ["v3", "t3"],
+      ["u3", "s4"],
+      ["u3", "v4"],
+      ["v4", "u3"],
+      ["v4", "u2"],
+      ["t8", "f3"],
+      ["t8", "g4"],
+      ["t8", "h2"],
+      ["t8", "i2"],
+    ];
+    for (const [desde, citada] of CITAS)
+      expect(parada(desde), `${desde} cita la ${citada}`).toContain(
+        `parada ${numero(citada)}`,
+      );
+    for (const id of ORDEN)
+      for (const m of parada(id).matchAll(/parada (\d+)/g))
+        expect(
+          Number(m[1]),
+          `${id} cita la parada ${m[1]}`,
+        ).toBeLessThanOrEqual(44);
   });
 });
 
@@ -309,7 +354,11 @@ describe("guía: lo que dicen las paradas es lo que la app dice", () => {
       guia.indexOf('<input type="checkbox" id="e6">'),
       guia.indexOf("</li>", guia.indexOf('<input type="checkbox" id="e6">')),
     );
-    expect(e6).toMatch(/Ensayo · 7 de 44/);
+    expect(e6).toMatch(/Ensayo · 1 de 44/);
+    // la parada misma, no solo la caja: decía «cinco puertas» y «41 funcionalidades» desde el S7 y nadie lo miraba
+    expect(e6).toContain("<strong>77 funcionalidades</strong>");
+    expect(e6).toContain("<strong>Seis puertas</strong>");
+    expect(e6).not.toMatch(/\b41 funcionalidades|Cinco puertas/);
     const caja = guia.slice(
       guia.indexOf('id="ensayo"'),
       guia.indexOf('<div class="kit">'),
@@ -407,7 +456,6 @@ describe("guía: los botones y textos que el bloque V manda pulsar existen en la
       "serie-ventas-con-huecos.csv",
       "marketing-filas-para-reglas.csv",
       "marketing-resultados-sin-cambio.csv",
-      "clientes-con-datos-personales.csv",
       "credito-fuga-plantada.csv",
     ]) {
       expect(v, archivo).toContain(archivo);
@@ -495,10 +543,16 @@ describe("guía: el bloque W (Pregúntale a tus datos) promete lo que la app dic
     expect(w).toContain(
       `${filasOk.params.n} de ${filasOk.params.total} filas entran a la consulta`,
     );
+    // la frase sale del diccionario con su plural, como la dice el panel: con una sola fila es «1 fila … no entra» (el «1 filas» que la
+    // guía citaba lo había armado esta misma prueba a mano, en plural fijo)
     const sinValor = validaciones.find((v) => v.clave === "filas_sin_valor")!;
-    expect(w).toContain(
-      `${sinValor.params.n} filas no tienen valor en la cifra que se calcula y no entran`,
-    );
+    const validacion = pregunta.validacion as unknown as Record<string, string>;
+    const plantilla =
+      sinValor.params.n === 1
+        ? validacion.filas_sin_valor_one!
+        : validacion.filas_sin_valor!.replace("{n}", String(sinValor.params.n));
+    expect(w).toContain(plantilla.replace(/\.$/, ""));
+    expect(w).not.toContain("1 filas");
     // las dos puntas que la guía nombra
     expect(r.grupos[0]!.etiqueta).toBe("norte");
     expect(r.grupos[r.grupos.length - 1]!.etiqueta).toBe("este");
