@@ -69,9 +69,9 @@ el hecho ocurrió (regla 27).
 
 | Punto | Qué | Razón y sitio | Commit |
 |---|---|---|---|
-| 17-3 | `StressResult.elapsed_ms` | telemetría que valida el contrato; ninguna pantalla ni medición la lee; el comentario de `workers/protocol.ts` lo dice así (auditoría A-12) | `0a0d7e1` |
-| 19-23 | `RulesResult.elapsed_ms` | ídem | `0a0d7e1` |
-| 20-09 | `ForecastResult.elapsed_ms`, `SynthesizeResult.{rounds, proximity.p5_real, elapsed_ms}` | los valida el contrato; `elapsed_ms` lo leen las mediciones (`medidas-s21`); `rounds` y `p5_real`, solo la prueba denso/disperso; ninguna pantalla | `0a0d7e1` |
+| 17-3 | `StressResult.elapsed_ms` | telemetría que valida el contrato; ninguna pantalla ni medición la lee; el comentario de `workers/protocol.ts` lo dice así (auditoría A-12) | `2421733` |
+| 19-23 | `RulesResult.elapsed_ms` | ídem | `2421733` |
+| 20-09 | `ForecastResult.elapsed_ms`, `SynthesizeResult.{rounds, proximity.p5_real, elapsed_ms}` | los valida el contrato; `elapsed_ms` lo leen las mediciones (`medidas-s21`); `rounds` y `p5_real`, solo la prueba denso/disperso; ninguna pantalla | `2421733` |
 | 18-9 | `cleaning_plan` sin lector (`model-file.ts:620`) | es el registro de procedencia del plan de limpieza que aprobó el dueño: se guarda y se descarga, y lo lee quien abre el archivo (ADR 026 § `cleaning_plan`) | — |
 | 18-13/14 | `SIN_LUGAR_EN_LA_TAREA` y `FUERA_DE_LA_LISTA_DE_LA_VISION` | los cierra la decisión del usuario (2026-10-26, la del G-Plan por omisión): se aceptan las ausencias por tarea de la liga; `roster.ts`, BLUEPRINT fila 6 y manual lo dicen | `79abe65` |
 | 17-8 | margen de 4,6 KiB de `/protocolo` | H-3, con sitio en `docs/BLUEPRINT.html` (tabla «Lo que queda»); el S21 no cambia el peso (`/protocolo` 288,4 KiB, tope 320) | — |
@@ -100,8 +100,8 @@ Recomendación del auditor: «requiere ajustes». **23 hallazgos: 0 Críticos ·
 | A-09 | Medio | el SQL se prueba con `NULL` donde el motor ve «NA», «-», etc. | la nota del SQL lo dice en los dos idiomas | `24cd356` |
 | A-10 | Medio | un «o» entre columnas distintas pasaba a «y» en silencio | aviso `union-y` | `f8c5340` |
 | A-11 | Medio | `1.234,567` se leía 1 234 567 | el último separador es el decimal; `2023,2024` no es un número | `f8c5340` |
-| A-12 | Medio | comentarios de telemetría con una razón falsa | reescritos con quién lee de verdad; filas 17-3, 19-23 y 20-09 corregidas | `0a0d7e1` |
-| A-13 | Medio | el SRI protege menos de lo que decía | comentario y ADR 024 nombran su alcance (solo `pyodide.js`) | `0a0d7e1` |
+| A-12 | Medio | comentarios de telemetría con una razón falsa | reescritos con quién lee de verdad; filas 17-3, 19-23 y 20-09 corregidas | `2421733` |
+| A-13 | Medio | el SRI protege menos de lo que decía | comentario y ADR 024 nombran su alcance (solo `pyodide.js`) | `2421733` |
 | A-14 | Bajo | fechas imposibles y ventanas enormes pasaban | no se leen; `ventana-grande` | `f8c5340` |
 | A-15 | Bajo | los conteos pequeños salían con decimales | `decimalesDe` (frase, tabla y gráfico) | `24cd356` |
 | A-16 | Bajo | al cambiar lo propuesto desaparecía el control | queda, con «cambiado por ti» | `f8c5340` · `24cd356` |
