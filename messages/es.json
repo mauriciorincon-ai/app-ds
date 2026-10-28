@@ -1211,7 +1211,7 @@
           "aviso": "Tu aviso"
         },
         "help": {
-          "proposito": "Un modelo predictivo anticipa lo que va a pasar; no dice qué pasaría si cambias algo.",
+          "proposito": "Un modelo predictivo anticipa lo que va a pasar; no dice qué pasaría si cambias algo. El «¿Qué pasaría si?» de Probeta solo dice qué diría el modelo con otro valor, no lo que ocurriría de verdad.",
           "poblacion": "A quiénes se aplicará el modelo. Por ejemplo: «clientes con plan activo en México».",
           "periodo_texto": "De cuándo a cuándo son tus datos.",
           "exclusiones": "Qué dejaste fuera y por qué. Si nada, escribe «ninguna».",
@@ -1260,10 +1260,10 @@
           "etapas-previas": "las etapas 1 y 2 cumplidas"
         },
         "stop": {
-          "causal": "Estás buscando una causa. Un modelo predictivo no dice qué pasaría si cambias algo: para eso hace falta un experimento o un diseño causal, no este modelo. El Protocolo se detiene aquí. Si tu pregunta puede reformularse como predicción, corrige esta etapa."
+          "causal": "Estás buscando una causa. Un modelo predictivo no dice qué pasaría si cambias algo: para eso hace falta un experimento o un diseño causal, no este modelo. El «¿Qué pasaría si?» de Probeta solo dice qué diría el modelo con otro valor, no lo que ocurriría de verdad. El Protocolo se detiene aquí. Si tu pregunta puede reformularse como predicción, corrige esta etapa."
         },
         "trap": {
-          "causal": "Predecir no es explicar: aunque el modelo acierte, no te dice qué pasaría si cambias algo. Para saber qué causa qué hace falta un experimento.",
+          "causal": "Predecir no es explicar: aunque el modelo acierte, no te dice qué pasaría si cambias algo. Para saber qué causa qué hace falta un experimento. El «¿Qué pasaría si?» de Probeta solo dice qué diría el modelo con otro valor, no lo que ocurriría de verdad.",
           "muestra-alcanza": "Con {parametros} parámetros candidatos hacen falta al menos {requerido} filas (manda: {manda}). Tienes {disponible}: alcanzan.",
           "muestra-corta": "Con {parametros} parámetros candidatos hacen falta al menos {requerido} filas (manda: {manda}). Tienes {disponible}: no alcanzan, y el modelo puede aprender ruido y fallar en datos nuevos.",
           "parametros-menos": "Declaraste {declarado} parámetros candidatos y tus datos cuentan {contado}: con menos parámetros la muestra que se pide sale más chica. Si descartarás columnas a propósito, está bien; si no, sube el número.",

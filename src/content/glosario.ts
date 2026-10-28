@@ -112,8 +112,8 @@ export const GLOSARIO: Readonly<Record<TerminoId, EntradaGlosario>> = {
   "predecir-o-explicar": {
     termino: { es: "Predecir o explicar", en: "Predict or explain" },
     definicion: {
-      es: "Predecir es anticipar qué pasará; explicar es saber qué lo causa. Un modelo predictivo no dice qué pasaría si cambias algo: para eso hace falta un experimento.",
-      en: "Predicting is anticipating what will happen; explaining is knowing what causes it. A predictive model doesn't tell you what would happen if you changed something: that takes an experiment.",
+      es: "Predecir es anticipar qué pasará; explicar es saber qué lo causa. Un modelo predictivo no dice qué pasaría si cambias algo: para eso hace falta un experimento. El «¿Qué pasaría si?» de Probeta solo dice qué diría el modelo con otro valor, no lo que ocurriría de verdad.",
+      en: "Predicting is anticipating what will happen; explaining is knowing what causes it. A predictive model doesn't tell you what would happen if you changed something: that takes an experiment. Probeta's «What if?» only says what the model would say with another value, not what would really happen.",
     },
   },
   poblacion: {

@@ -67,8 +67,8 @@ export const CONTENIDO_ETAPAS: Readonly<Record<EtapaId, ContenidoEtapa>> = {
       en: "Tell us whether you want to predict or to explain a cause. If it's predicting, write the population, the period and the exclusions, and see whether your rows are enough for the number of candidate variables.",
     },
     porque: {
-      es: "Un modelo que predice bien no dice qué pasaría si cambias algo: eso exige un experimento.\nLa población y el periodo dicen a quién se puede aplicar el modelo y a quién no.\nCon pocas filas y muchas variables, el modelo aprende ruido y falla en datos nuevos.",
-      en: "A model that predicts well doesn't say what would happen if you changed something: that takes an experiment.\nThe population and the period say who the model can be applied to and who it can't.\nWith few rows and many variables, the model learns noise and fails on new data.",
+      es: "Un modelo que predice bien no dice qué pasaría si cambias algo: eso exige un experimento. El «¿Qué pasaría si?» de Probeta solo dice qué diría el modelo con otro valor, no lo que ocurriría de verdad.\nLa población y el periodo dicen a quién se puede aplicar el modelo y a quién no.\nCon pocas filas y muchas variables, el modelo aprende ruido y falla en datos nuevos.",
+      en: "A model that predicts well doesn't say what would happen if you changed something: that takes an experiment. Probeta's «What if?» only says what the model would say with another value, not what would really happen.\nThe population and the period say who the model can be applied to and who it can't.\nWith few rows and many variables, the model learns noise and fails on new data.",
     },
   },
   4: {
