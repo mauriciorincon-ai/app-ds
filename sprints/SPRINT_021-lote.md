@@ -74,7 +74,7 @@ el hecho ocurrió (regla 27).
 | 20-09 | `ForecastResult.elapsed_ms`, `SynthesizeResult.{rounds, proximity.p5_real, elapsed_ms}` | los valida el contrato; `elapsed_ms` lo leen las mediciones (`medidas-s21`); `rounds` y `p5_real`, solo la prueba denso/disperso; ninguna pantalla | `2421733` |
 | 18-9 | `cleaning_plan` sin lector (`model-file.ts:620`) | es el registro de procedencia del plan de limpieza que aprobó el dueño: se guarda y se descarga, y lo lee quien abre el archivo (ADR 026 § `cleaning_plan`) | — |
 | 18-13/14 | `SIN_LUGAR_EN_LA_TAREA` y `FUERA_DE_LA_LISTA_DE_LA_VISION` | los cierra la decisión del usuario (2026-10-26, la del G-Plan por omisión): se aceptan las ausencias por tarea de la liga; `roster.ts`, BLUEPRINT fila 6 y manual lo dicen | `79abe65` |
-| 17-8 | margen de 4,6 KiB de `/protocolo` | H-3, con sitio en `docs/BLUEPRINT.html` (tabla «Lo que queda»); el S21 no cambia el peso (`/protocolo` 288,4 KiB, tope 320) | — |
+| 17-8 | margen de 4,6 KiB de `/protocolo` | H-3, con sitio en `docs/BLUEPRINT.html` (tabla «Lo que queda»); el S21 lo deja en ≈ 4,2 KiB (`/protocolo` 288,7 KiB en la réplica, tope 320) | — |
 | 17/18/19-25 | LCP bimodal de `/protocolo` (2,7 s o 3,4 s con el mismo código) | H-3, con sitio en `docs/BLUEPRINT.html`; el job `lighthouse` oscila en esa ruta y se declara en cada cierre | — |
 
 ### No completado (aplazado, no descartado)
@@ -130,7 +130,7 @@ No se reprodujo: 60 repeticiones del test con traza y `--retries=0` (20 con 3 tr
 
 Tamaños intermedios del gemelo (Node, antes → después): ancho 50 1,1 → 1,1 s · 1 000 2,3 → 1,1 s · 5 000 8,0 → 2,0 s · 10 000 17,6 → 5,0 s.
 La comparación de relaciones, en el hilo principal: 67 a 114 ms en todos los casos. 50 000 filas × 79 columnas sigue siendo H-3.
-Peso de script (réplica de LHCI, transferencia, mediana de 3): `/` 220,1 KiB · `/protocolo` 288,4 KiB; el `main` de hoy (el S20) midió lo mismo, así que el delta del S21 es 0; topes 300 y 320.
+Peso de script (réplica de LHCI, transferencia, mediana de 3): `/` 220,3 KiB · `/protocolo` 288,7 KiB (la réplica de la rama final, tras los pagos de la auditoría); el `main` de hoy (el S20) midió 220,1 y 288,4, así que el delta del S21 es de +0,2 y +0,3 KiB: las tres frases de la referencia cruzada (19-19) viven en el diccionario base; topes 300 y 320.
 
 ## Las demos en rojo de los gates propios nuevos (`scripts/demo-rojo.sh`; cada una nombró lo esperado y volvió a verde tras restaurar)
 
