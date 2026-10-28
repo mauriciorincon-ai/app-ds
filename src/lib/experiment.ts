@@ -884,20 +884,18 @@ export type PreparedClusterRun =
     }
   | { ok: false; error: WorkerErrorKind };
 
-/**
- * S7 (P5) — la entrada de agrupar, APARTE de prepareRun (la rama supervisada no
- * se toca). Sin objetivo ni partición: todas las filas, todas las columnas menos
- * las fechas y las que parecen identificador (listadas con su razón). La distancia
- * usa solo las numéricas si hay al menos CLUSTER_MIN_NUMERIC; si no, también las
- * categóricas (one-hot). Python recibe la decisión y la coteja, no la re-deriva.
- */
-/** Las columnas que agrupar deja fuera por su cuenta: las fechas y las que parecen identificador (S21, lote 18-15). */
-export function columnasQueAgruparExcluye(table: CsvTable): Set<string> {
-  const idLike = new Set(
+/** Las columnas que parecen identificador al agrupar (alertas `id-like` de la exploración). */
+function columnasIdLike(table: CsvTable): Set<string> {
+  return new Set(
     clusterEdaAlerts(table).flatMap((a) =>
       a.kind === "id-like" ? [a.column] : [],
     ),
   );
+}
+
+/** Las columnas que agrupar deja fuera por su cuenta: las fechas y las que parecen identificador (S21, lote 18-15). */
+export function columnasQueAgruparExcluye(table: CsvTable): Set<string> {
+  const idLike = columnasIdLike(table);
   return new Set(
     profileTable(table)
       .filter((p) => p.looksLikeDate || idLike.has(p.name))
@@ -905,17 +903,20 @@ export function columnasQueAgruparExcluye(table: CsvTable): Set<string> {
   );
 }
 
+/**
+ * S7 (P5) — la entrada de agrupar, APARTE de prepareRun (la rama supervisada no
+ * se toca). Sin objetivo ni partición: todas las filas, todas las columnas menos
+ * las fechas y las que parecen identificador (listadas con su razón). La distancia
+ * usa solo las numéricas si hay al menos CLUSTER_MIN_NUMERIC; si no, también las
+ * categóricas (one-hot). Python recibe la decisión y la coteja, no la re-deriva.
+ */
 export function prepareClusterRun(
   table: CsvTable,
   seed: number,
   options: Omit<RunOptions, "ambiguousChoice"> = {},
 ): PreparedClusterRun {
   const rows = table.rows;
-  const idLike = new Set(
-    clusterEdaAlerts(table).flatMap((a) =>
-      a.kind === "id-like" ? [a.column] : [],
-    ),
-  );
+  const idLike = columnasIdLike(table);
   const excluded: ClusterExclusion[] = [];
   const numeric: string[] = [];
   const categorical: string[] = [];
