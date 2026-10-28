@@ -17,6 +17,7 @@
         "nombre": "el nombre de la columna",
         "ambos": "su contenido y el nombre de la columna"
       },
+      "cuota": "Tienen esa forma el {pct} % de las celdas con algo escrito.",
       "fuera": "Probeta ya la dejó fuera al sanear: tiene un valor distinto por fila.",
       "nota": "Es un aviso, no un bloqueo, y la búsqueda es aproximada: no encuentra todo. Probeta no muestra esos valores ni los envía a ningún lado. Si la columna no te sirve para predecir, puedes quitarla en el plan de limpieza."
     },
@@ -59,7 +60,8 @@
         "sin-decidir": "sin decidir, no se aplicó",
         "objetivo": "aprobado, no se aplicó: es la columna que se predice",
         "columna-quitada": "aprobado, no se aplicó: la columna se quitó",
-        "ahora-categoria": "aprobado, no se aplicó: ahora es una categoría"
+        "ahora-categoria": "aprobado, no se aplicó: ahora es una categoría",
+        "ya-excluida": "aprobado, no se aplicó: agrupar ya deja fuera esa columna"
       }
     }
   }

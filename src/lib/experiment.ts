@@ -891,6 +891,20 @@ export type PreparedClusterRun =
  * usa solo las numéricas si hay al menos CLUSTER_MIN_NUMERIC; si no, también las
  * categóricas (one-hot). Python recibe la decisión y la coteja, no la re-deriva.
  */
+/** Las columnas que agrupar deja fuera por su cuenta: las fechas y las que parecen identificador (S21, lote 18-15). */
+export function columnasQueAgruparExcluye(table: CsvTable): Set<string> {
+  const idLike = new Set(
+    clusterEdaAlerts(table).flatMap((a) =>
+      a.kind === "id-like" ? [a.column] : [],
+    ),
+  );
+  return new Set(
+    profileTable(table)
+      .filter((p) => p.looksLikeDate || idLike.has(p.name))
+      .map((p) => p.name),
+  );
+}
+
 export function prepareClusterRun(
   table: CsvTable,
   seed: number,

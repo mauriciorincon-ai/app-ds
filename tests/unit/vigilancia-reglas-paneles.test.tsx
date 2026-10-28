@@ -105,7 +105,7 @@ function puntaje(aciertos: number, n = 60, extra: Partial<Record<string, unknown
     ...extra,
   };
 }
-const F1_PRUEBA = { metric: "f1" as const, valor: 0.8, nPrueba: 50 };
+const F1_PRUEBA = { metric: "f1" as const, valor: 0.8};
 
 describe("vigilar el desempeño", () => {
   it("sin la columna del objetivo lo dice y no le pide nada al worker", () => {
@@ -121,7 +121,12 @@ describe("vigilar el desempeño", () => {
     const { worker, enviados } = doble(() => lista("evaluate-new", puntaje(60, 4, {})));
     // 4 filas no bastan para decidir: pero sí para ver qué viaja
     pintar(<VigilanciaPanel schema={ESQUEMA} worker={worker} tabla={TABLA} referencia={F1_PRUEBA} modelo={{}} />);
+    // S21 (lote 19-01): el panel explica qué mira antes de dar la cifra (la clave `ayuda` tenía texto y nadie lo leía)
+    expect(screen.getByText(/mira cómo le va hoy al modelo frente a lo que sacó en su prueba/)).toBeTruthy();
+    const vivo = screen.getByTestId("vigilancia-vivo"); // S21 (lote 19-15): la región viva ya está antes del resultado
+    expect(vivo.getAttribute("aria-live")).toBe("polite");
     await screen.findByTestId("vigilancia-lectura");
+    expect(vivo.contains(screen.getByTestId("vigilancia-lectura"))).toBe(true);
     expect(enviados).toHaveLength(1);
     const p = enviados[0]!.payload as { headers: string[]; rows: string[][] };
     expect(enviados[0]!.type).toBe("evaluate-new");
@@ -240,8 +245,11 @@ describe("el modelo en reglas", () => {
   it("debajo del umbral se llama «un árbol que se parece al modelo», nunca «el modelo en reglas»", async () => {
     const { worker, enviados } = doble(() => lista("rules", fixture("rules-result-binaria")));
     pintar(<ReglasPanel schema={SCHEMA_REGLAS} worker={worker} modelo={{}} datasetName="marketing.csv" />);
+    const vivo = screen.getByTestId("reglas-vivo"); // S21 (lote 19-14): la región viva ya está antes del resultado
+    expect(vivo.getAttribute("aria-live")).toBe("polite");
     fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     await screen.findByTestId("reglas-lectura");
+    expect(vivo.contains(screen.getByTestId("reglas-lectura"))).toBe(true);
     expect(enviados).toHaveLength(1);
     expect(enviados[0]!.type).toBe("rules");
     expect(enviados[0]!.payload).toBeUndefined();

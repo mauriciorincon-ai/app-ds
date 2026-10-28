@@ -94,9 +94,12 @@ describe("el panel «¿Qué pasaría si?»", () => {
   it("al pulsar viaja solo lo del modelo y la columna cambiada; la lectura dice las decisiones que cambian, verificada", async () => {
     const simular = vi.fn(async (p: SimulatePayload) => responder(p));
     pintar(<SimuladorPanel {...propsBase(simular)} />);
+    const vivo = screen.getByTestId("simulador-vivo"); // S21 (lote 19-13): la región viva ya está antes del resultado
+    expect(vivo.getAttribute("aria-live")).toBe("polite");
     escribir(/Porcentaje/, "50");
     fireEvent.click(screen.getByRole("button", { name: /Simular/ }));
     await screen.findByTestId("simulador-lectura");
+    expect(vivo.contains(screen.getByTestId("simulador-lectura"))).toBe(true);
     expect(simular).toHaveBeenCalledTimes(1);
     const [payload, sent] = simular.mock.calls[0]! as unknown as [SimulatePayload, { n: number }];
     expect(payload.headers).toEqual(["precio", "edad", "region"]);
@@ -164,8 +167,48 @@ describe("el panel «¿Qué pasaría si?»", () => {
   it("una categoría que no existe no se puede elegir: el selector solo trae las de la columna", () => {
     pintar(<SimuladorPanel {...propsBase()} />);
     fireEvent.change(screen.getByLabelText(/Columna a cambiar/), { target: { value: "region" } });
-    const opciones = [...screen.getByLabelText(/Pasar a otra categoría/).querySelectorAll("option")].map((o) => o.textContent);
+    // S21 (lote 19-02): el selector lleva su propia etiqueta («Categoría»), no la de la opción de arriba
+    const opciones = [...screen.getByLabelText(/^Categoría$/).querySelectorAll("option")].map((o) => o.textContent);
     expect(opciones).toEqual(["norte", "sur"]);
+  });
+
+  it("un costo que no es mayor que cero se dice, y no se calla (S21, lote 19-03/04)", async () => {
+    pintar(<SimuladorPanel {...propsBase()} />);
+    expect(screen.queryByText("Escribe un número mayor que cero.")).toBeNull();
+    escribir(/falso positivo/, "0");
+    escribir(/falso negativo/, "30");
+    expect(screen.getByText("Escribe un número mayor que cero.")).toBeTruthy();
+    escribir(/falso positivo/, "10");
+    expect(screen.queryByText("Escribe un número mayor que cero.")).toBeNull();
+  });
+
+  it("con varias clases, si falta el costo de alguna lo dice (S21, lote 19-03/04)", () => {
+    pintar(<SimuladorPanel {...propsBase()} tarea="multiclase" clases={["a", "b", "c"]} positiva={null} />);
+    expect(screen.queryByText(/Escribe el costo de todas las clases/)).toBeNull();
+    escribir(/la clase real es «a»/, "5");
+    expect(screen.getByText("Escribe el costo de todas las clases para ver el dinero.")).toBeTruthy();
+    escribir(/la clase real es «b»/, "7");
+    escribir(/la clase real es «c»/, "9");
+    expect(screen.queryByText(/Escribe el costo de todas las clases/)).toBeNull();
+  });
+
+  it("la respuesta de la columna de antes no pisa el reinicio cuando se cambia de columna (S21, lote 19-11)", async () => {
+    let responderPendiente: () => void = () => undefined;
+    const simular = vi.fn(
+      (p: SimulatePayload) =>
+        new Promise<SimulateResult>((res) => {
+          responderPendiente = () => res(responder(p));
+        }),
+    );
+    pintar(<SimuladorPanel {...propsBase(simular)} />);
+    fireEvent.click(screen.getByRole("button", { name: /Simular/ }));
+    await waitFor(() => expect(simular).toHaveBeenCalledTimes(1));
+    // el usuario cambia de columna mientras la primera respuesta viaja: el panel vuelve a empezar
+    fireEvent.change(screen.getByLabelText(/Columna a cambiar/), { target: { value: "edad" } });
+    responderPendiente();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByTestId("simulador-lectura")).toBeNull();
+    expect((screen.getByRole("button", { name: /Simular/ }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("un valor que no es número se dice sin llamar al worker", async () => {

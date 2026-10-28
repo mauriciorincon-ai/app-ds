@@ -440,14 +440,16 @@ export function PronosticoPanel({
           {t("pronostico.error", { motivo: estado.motivo })}
         </p>
       )}
-      {estado.tipo === "lista" && (
-        <Lectura
-          listo={estado.listo}
-          t={t}
-          locale={locale}
-          nombreArchivo={`pronostico-${datasetSlug(datasetName ?? "") || "serie"}.csv`}
-        />
-      )}
+      <div aria-live="polite" data-testid="pronostico-vivo">
+        {estado.tipo === "lista" && (
+          <Lectura
+            listo={estado.listo}
+            t={t}
+            locale={locale}
+            nombreArchivo={`pronostico-${datasetSlug(datasetName ?? "") || "serie"}.csv`}
+          />
+        )}
+      </div>
     </PanelMarco>
   );
 }

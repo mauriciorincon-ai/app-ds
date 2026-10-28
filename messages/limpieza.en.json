@@ -17,6 +17,7 @@
         "nombre": "the column name",
         "ambos": "its content and the column name"
       },
+      "cuota": "{pct} % of the filled cells have that shape.",
       "fuera": "Probeta already left it out when cleaning: it has a different value on every row.",
       "nota": "This is a notice, not a block, and the search is approximate: it does not find everything. Probeta does not show those values or send them anywhere. If the column is no use for predicting, you can remove it in the cleaning plan."
     },
@@ -59,7 +60,8 @@
         "sin-decidir": "undecided, not applied",
         "objetivo": "approved, not applied: it is the column being predicted",
         "columna-quitada": "approved, not applied: the column was removed",
-        "ahora-categoria": "approved, not applied: it is now a category"
+        "ahora-categoria": "approved, not applied: it is now a category",
+        "ya-excluida": "approved, not applied: grouping already leaves that column out"
       }
     }
   }

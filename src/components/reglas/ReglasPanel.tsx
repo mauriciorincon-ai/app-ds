@@ -147,15 +147,17 @@ export function ReglasPanel({
             {t("reglas.error", { motivo: estado.motivo })}
           </p>
         )}
-        {lectura && (
-          <LecturaReglas
-            r={lectura}
-            t={t}
-            locale={locale}
-            unidad={unidadObjetivo}
-            datasetName={datasetName}
-          />
-        )}
+        <div aria-live="polite" data-testid="reglas-vivo">
+          {lectura && (
+            <LecturaReglas
+              r={lectura}
+              t={t}
+              locale={locale}
+              unidad={unidadObjetivo}
+              datasetName={datasetName}
+            />
+          )}
+        </div>
       </Card>
     </section>
   );

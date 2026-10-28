@@ -188,9 +188,11 @@ export function GemeloPanel({ getTable, personales, worker, datasetName }: Gemel
             {t("gemelo.error", { motivo: estado.motivo })}
           </p>
         )}
-        {estado.tipo === "lista" && (
-          <Informe listo={estado.listo} t={t} nombre={`gemelo-${datasetSlug(datasetName ?? "") || "datos"}.csv`} />
-        )}
+        <div aria-live="polite" data-testid="gemelo-vivo">
+          {estado.tipo === "lista" && (
+            <Informe listo={estado.listo} t={t} nombre={`gemelo-${datasetSlug(datasetName ?? "") || "datos"}.csv`} />
+          )}
+        </div>
       </Card>
     </section>
   );

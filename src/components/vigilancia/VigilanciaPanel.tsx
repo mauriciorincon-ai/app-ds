@@ -130,6 +130,7 @@ export function VigilanciaPanel({
           <p className="mt-1 text-sm text-ink-muted">{t("vigilancia.sin_referencia")}</p>
         ) : (
           <>
+            <p className="mt-1 text-sm text-ink-muted">{t("vigilancia.ayuda", { objetivo: schema.target })}</p>
             {estado.tipo === "midiendo" && (
               <p role="status" className="mt-1 text-sm text-ink-muted">
                 {t("vigilancia.midiendo")}
@@ -151,14 +152,16 @@ export function VigilanciaPanel({
                 {t("vigilancia.sin_filas")}
               </p>
             )}
-            {estado.tipo === "lista" && estado.de === modelo && (
-              <Lectura
-                lectura={estado.lectura}
-                datos={estado.datos}
-                t={t}
-                unidad={unidadObjetivo}
-              />
-            )}
+            <div aria-live="polite" data-testid="vigilancia-vivo">
+              {estado.tipo === "lista" && estado.de === modelo && (
+                <Lectura
+                  lectura={estado.lectura}
+                  datos={estado.datos}
+                  t={t}
+                  unidad={unidadObjetivo}
+                />
+              )}
+            </div>
           </>
         )}
       </Card>
