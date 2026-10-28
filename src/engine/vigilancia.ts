@@ -24,16 +24,12 @@ export type VeredictoVigilancia = (typeof VEREDICTOS_VIGILANCIA)[number];
 export type ReferenciaVigilancia = {
   readonly metric: PrimaryMetric;
   readonly valor: number;
-  /** Las filas de esa prueba, si se conocen. */
-  readonly nPrueba: number | null;
 };
 
 export type LecturaVigilancia = {
   readonly veredicto: VeredictoVigilancia;
   readonly hoy: Intervalo;
   readonly referencia: ReferenciaVigilancia;
-  /** hoy − prueba, crudo (con MAE, negativo = hoy se equivoca menos). */
-  readonly diferencia: number;
   /** Cuánto cuenta como empate, en las unidades de la métrica. */
   readonly empate: number;
   /** Menos de FILAS_PRUEBA_POCAS filas con resultado real: el veredicto es «revisar» pase lo que pase. */
@@ -108,7 +104,6 @@ export function vigilar(
     veredicto: veredictoDe(hoy, referencia, indefinida),
     hoy,
     referencia,
-    diferencia: hoy.valor - referencia.valor,
     empate: empateDe(referencia.metric, referencia.valor),
     pocas: hoy.n < FILAS_PRUEBA_POCAS,
     indefinida,

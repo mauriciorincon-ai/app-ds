@@ -1,11 +1,14 @@
 // S20 (ADR 028): la frase del veredicto del pronóstico, en el idioma de la pantalla, y su comprobación contra los números. La frase
 // sale de una plantilla de los dos idiomas (jamás de un modelo de lenguaje) y pasa por `verificarTexto`: si no dice las cifras del
 // resultado, o dice una ajena, cae a una línea con solo los dos errores.
-import type { CasoVeredicto, VeredictoPronostico } from "@/engine/pronostico";
+import {
+  METODOS,
+  type CasoVeredicto,
+  type VeredictoPronostico,
+} from "@/engine/pronostico";
 import type { Locale } from "@/i18n/config";
 import { textoPropio } from "@/i18n/textos-etapa";
 import { formatQuantity, quantityDecimals } from "@/lib/quantity";
-import type { ForecastMethod } from "@/workers/protocol";
 import { verificarTexto } from "./cifras";
 import { TEXTOS_PRONOSTICO } from "./textos-pronostico";
 
@@ -16,15 +19,6 @@ export const trPronostico = (
   clave: string,
   params?: Parametros,
 ): string => textoPropio(TEXTOS_PRONOSTICO, locale, clave, params) ?? clave;
-
-const METODOS: readonly ForecastMethod[] = [
-  "media",
-  "ingenuo",
-  "ingenuo_estacional",
-  "deriva",
-  "holt_winters",
-  "rezagos",
-];
 
 export type FraseVeredicto = {
   readonly texto: string;

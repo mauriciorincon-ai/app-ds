@@ -12,7 +12,6 @@ import { describe, expect, it } from "vitest";
 import {
   FIDELIDAD_MIN_ACUERDO,
   FIDELIDAD_MIN_R2,
-  columnasDe,
   evaluarReglas,
   fidelidadSuficiente,
   hojasDe,
@@ -79,7 +78,8 @@ describe("las hojas", () => {
   });
 
   it("las columnas que usa, en el orden en que aparecen", () => {
-    expect(columnasDe(ARBOL)).toEqual(["precio", "region"]);
+    const vistas = new Set(hojasDe(ARBOL).flatMap((h) => h.condiciones.map((c) => c.column)));
+    expect([...vistas]).toEqual(["precio", "region"]);
   });
 });
 

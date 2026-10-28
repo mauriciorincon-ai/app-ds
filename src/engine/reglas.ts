@@ -10,8 +10,6 @@
 // «Es el modelo en reglas» solo si la fidelidad —medida en filas que el árbol no vio, con ESTAS reglas— llega al umbral de abajo;
 // debajo se da la cifra y se llama «un árbol que se parece al modelo». Los umbrales son convenciones fijadas por diseño en el ADR
 // 027 (como la brecha de 0,10 y la estabilidad de 0,7 de agrupar, ADR 016).
-import { matchTask } from "@/engine/despacho";
-import type { TrainTask } from "@/engine/tarea";
 import type { RuleNode, RulesResult } from "@/workers/protocol";
 
 /** Acuerdo mínimo con el modelo (dos clases, varias clases y agrupar) para llamarlo «el modelo en reglas». */
@@ -88,14 +86,6 @@ export function hojasDe(raiz: RuleNode): Hoja[] {
   };
   recorrer(raiz);
   return salida;
-}
-
-/** Las columnas que las reglas usan, en el orden en que aparecen. */
-export function columnasDe(raiz: RuleNode): string[] {
-  const vistas = new Set<string>();
-  for (const hoja of hojasDe(raiz))
-    for (const c of hoja.condiciones) vistas.add(c.column);
-  return [...vistas];
 }
 
 /** ¿Llegan las reglas al umbral de fidelidad para llamarse «el modelo en reglas»? */
@@ -186,16 +176,4 @@ export function sqlDe(r: RulesResult, opciones: OpcionesSql): string {
     `  END AS ${identificadorSql(opciones.alias)}`,
     `FROM ${identificadorSql(opciones.tabla)} t;`,
   ].join("\n");
-}
-
-/** Cómo se llama la predicción de una hoja según la tarea: la clase, el grupo (1, 2… o «fuera de todo grupo») o la cantidad. */
-export function tipoDePrediccion(
-  tarea: TrainTask,
-): "clase" | "grupo" | "cantidad" {
-  return matchTask(tarea, {
-    binaria: () => "clase" as const,
-    multiclase: () => "clase" as const,
-    numerica: () => "cantidad" as const,
-    agrupar: () => "grupo" as const,
-  });
 }

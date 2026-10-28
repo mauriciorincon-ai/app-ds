@@ -30,8 +30,8 @@ const hoy = (valor: number, bajo: number, alto: number, n = 300): Intervalo => (
   semilla: 42,
   n,
 });
-const F1: ReferenciaVigilancia = { metric: "f1", valor: 0.8, nPrueba: 50 };
-const MAE: ReferenciaVigilancia = { metric: "mae", valor: 10, nPrueba: 50 };
+const F1: ReferenciaVigilancia = { metric: "f1", valor: 0.8};
+const MAE: ReferenciaVigilancia = { metric: "mae", valor: 10};
 
 describe("las palabras son las del chequeo de deriva de la etapa 10", () => {
   it("sigue · revisar · reentrenar", () => {
@@ -123,11 +123,11 @@ describe("una cifra que no se puede calcular no es una cifra peor (AUDITORÍA A-
       score: sinPositivos.map(() => 0.1),
       elapsed_ms: 1,
     };
-    const lectura = vigilar(datos, { metric: "auc", valor: 0.85, nPrueba: 100 }, { semilla: 42 });
+    const lectura = vigilar(datos, { metric: "auc", valor: 0.85}, { semilla: 42 });
     expect(lectura.indefinida).toBe(true);
     expect(lectura.veredicto).toBe("revisar");
     // el mismo intervalo, sin la marca, SÍ diría «reentrenar»: la marca es lo que lo detiene
-    expect(veredictoDe(lectura.hoy, { metric: "auc", valor: 0.85, nPrueba: 100 })).toBe("reentrenar");
+    expect(veredictoDe(lectura.hoy, { metric: "auc", valor: 0.85})).toBe("reentrenar");
   });
 });
 
@@ -143,7 +143,6 @@ describe("la lectura completa sobre lo que entregó el emisor real", () => {
     expect(a.hoy.n).toBe(raw.n_used);
     expect(a.hoy.bajo).toBeLessThanOrEqual(a.hoy.valor);
     expect(a.hoy.valor).toBeLessThanOrEqual(a.hoy.alto);
-    expect(a.diferencia).toBeCloseTo(a.hoy.valor - F1.valor, 12);
     expect(a.empate).toBe(0.01);
     expect(a.pocas).toBe(false);
   });
@@ -157,7 +156,7 @@ describe("la lectura completa sobre lo que entregó el emisor real", () => {
 
   it("la AUC pide el puntaje por fila: sin él no se inventa", () => {
     expect(() =>
-      vigilar({ ...raw, score: null }, { metric: "auc", valor: 0.8, nPrueba: 50 }, { semilla: 42 }),
+      vigilar({ ...raw, score: null }, { metric: "auc", valor: 0.8}, { semilla: 42 }),
     ).toThrow();
   });
 });

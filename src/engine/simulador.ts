@@ -269,7 +269,6 @@ type Comun = {
 
 export type ComparacionBinaria = Comun & {
   readonly task: "binaria";
-  readonly positiva: string;
   /** Filas donde se actúa (la clase positiva), antes y después. */
   readonly actuan: { readonly antes: number; readonly despues: number };
   /** El umbral de tus costos, o `null` si se actúa donde el modelo lo dice. */
@@ -383,7 +382,6 @@ export function compararSimulacion(
       return {
         ...comun(diferentes(antes, despues), dinero, sinDinero),
         task: "binaria",
-        positiva,
         actuan: {
           antes: antes.filter(Boolean).length,
           despues: despues.filter(Boolean).length,

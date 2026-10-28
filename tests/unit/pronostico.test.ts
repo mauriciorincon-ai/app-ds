@@ -14,6 +14,7 @@ import {
 } from "@/engine/pronostico";
 import { armarSerie } from "@/engine/serie";
 import { fraseVeredicto } from "@/lib/narration/pronostico";
+import { TEXTOS_PRONOSTICO } from "@/lib/narration/textos-pronostico";
 import type { ForecastLeagueRow, ForecastMethod } from "@/workers/protocol";
 
 const NOMBRES: ForecastMethod[] = ["media", "ingenuo", "ingenuo_estacional", "deriva", "holt_winters", "rezagos"];
@@ -136,6 +137,26 @@ describe("la frase del veredicto", () => {
         const f = fraseVeredicto(veredictoDe(r), ctx, locale);
         expect(f.verificada, `${veredictoDe(r).caso}/${locale}`).toBe(true);
       }
+  });
+
+  // S21 (lote 20-02): el respaldo de la frase. Una plantilla que dice una cifra que no está, o calla una que sí, cae a la línea mínima.
+  it("si la plantilla dice una cifra que no está, o calla una que sí, cae a la línea mínima", () => {
+    const veredictos = (TEXTOS_PRONOSTICO.es as unknown as { pronostico: { veredicto: Record<string, string> } }).pronostico.veredicto;
+    const original = veredictos.supera!;
+    try {
+      veredictos.supera = "«{ganador}» supera a «{referencia}»: se equivoca {mae} y {mae_ref}, son 999 % menos de error.";
+      const inventa = fraseVeredicto(supera, ctx, "es");
+      expect(inventa.verificada).toBe(false);
+      expect(inventa.texto).not.toContain("999");
+
+      veredictos.supera = "«{ganador}» supera a «{referencia}», el mejor método simple, en «{columna}».";
+      const calla = fraseVeredicto(supera, ctx, "es");
+      expect(calla.verificada).toBe(false);
+      expect(calla.texto).not.toBe(veredictos.supera);
+    } finally {
+      veredictos.supera = original;
+    }
+    expect(fraseVeredicto(supera, ctx, "es").verificada).toBe(true);
   });
 
   it("un nombre de columna con cifras no cuenta como cifra ajena", () => {
