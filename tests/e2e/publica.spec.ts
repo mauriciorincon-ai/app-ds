@@ -151,3 +151,33 @@ test("el puntuador se niega a abrirse si su modelo cambió (SHA-256) y lo dice, 
   expect(externas).toEqual([]);
   await contexto.close();
 });
+
+// S21 (lote 17-6): el puntuador carga `pyodide.js` con SRI. Si «el CDN» sirve otro archivo, el navegador NO lo ejecuta y el
+// puntuador lo dice (el motor no se prepara) en lugar de correr un script cambiado.
+test("el puntuador no ejecuta un pyodide.js que no es el que declara (SRI) y lo dice", async ({ page, browser, isMobile }) => {
+  test.skip(isMobile, "se prueba una vez, en escritorio");
+  await resultadosDelEjemplo(page);
+  const { ruta } = await descargar(page, "publica-puntuador");
+  const contexto = await browser.newContext({ locale: "es-ES" });
+  const afuera = await contexto.newPage();
+  let servido = 0;
+  await contexto.route(`${CDN}**`, async (route) => {
+    const archivo = basename(new URL(route.request().url()).pathname);
+    if (archivo === "pyodide.js") {
+      servido += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "text/javascript",
+        headers: { "access-control-allow-origin": "*" },
+        body: "window.__ejecutado = true; /* otro archivo */",
+      });
+      return;
+    }
+    await route.abort();
+  });
+  await afuera.goto(`file://${ruta}`);
+  await expect(afuera.locator("#estado")).toContainText("No se pudo preparar el motor", { timeout: 60_000 });
+  expect(servido).toBeGreaterThan(0);
+  expect(await afuera.evaluate(() => (window as unknown as { __ejecutado?: boolean }).__ejecutado)).toBeUndefined();
+  await contexto.close();
+});

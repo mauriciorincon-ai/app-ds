@@ -6,6 +6,7 @@
 //  3. `actions/setup-python` ofrece ESA versión de Python en el runner (ubuntu-latest).
 // Si algo falta, falla nombrándolo: el sprint para y se pregunta, no se improvisa otra versión.
 // Uso: node scripts/verificar-publica.mjs
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
@@ -26,6 +27,11 @@ export function pinsDe(texto) {
     if (m) pins.push({ nombre: m[1], version: m[2] });
   }
   return pins;
+}
+
+/** El SRI de `pyodide.js` que declara la plantilla del puntuador (`sha384-…`), o `null` si no lo declara. */
+export function sriDelPuntuador(html) {
+  return /var PYODIDE_SRI = "(sha384-[A-Za-z0-9+/=]+)"/.exec(html)?.[1] ?? null;
 }
 
 /**
@@ -86,11 +92,26 @@ export async function verificar({
   archivosPyodide,
   pins,
   python,
+  sri = null,
   menor = 14,
 }) {
   const bien = [];
   const fallas = [];
   const base = `https://cdn.jsdelivr.net/pyodide/v${version}/full/`;
+  // S21: el hash que el puntuador exige a `pyodide.js` tiene que ser el del archivo que el CDN sirve de verdad (la versión fija)
+  if (sri !== null) {
+    try {
+      const r = await buscar(base + "pyodide.js");
+      if (!r.ok) fallas.push(`SRI: no se pudo bajar pyodide.js ${version} (${r.status})`);
+      else {
+        const hash = "sha384-" + createHash("sha384").update(Buffer.from(await r.arrayBuffer())).digest("base64");
+        if (hash === sri) bien.push(`SRI de pyodide.js ${version}`);
+        else fallas.push(`SRI: el puntuador exige ${sri} y el CDN sirve ${hash} para pyodide.js ${version}`);
+      }
+    } catch {
+      fallas.push("SRI: no se pudo comprobar pyodide.js en el CDN");
+    }
+  }
   for (const archivo of archivosPyodide) {
     if (await existe(buscar, base + archivo)) bien.push(`CDN de Pyodide ${version}: ${archivo}`);
     else fallas.push(`CDN de Pyodide ${version}: falta ${archivo}`);
@@ -132,6 +153,11 @@ async function principal() {
   for (const archivo of ["requirements-servicio.txt", "requirements-receta.txt"])
     for (const pin of pinsDe(await readFile(resolve(PLANTILLAS, archivo), "utf8")))
       if (!pins.some((p) => p.nombre === pin.nombre && p.version === pin.version)) pins.push(pin);
+  const sri = sriDelPuntuador(await readFile(resolve(PLANTILLAS, "puntuador.html"), "utf8"));
+  if (!sri) {
+    console.error("verificar-publica: puntuador.html no declara `var PYODIDE_SRI = \"sha384-…\"`");
+    process.exit(1);
+  }
   const ci = await readFile(resolve(raiz, ".github", "workflows", "ci.yml"), "utf8");
   const python = /python-version:\s*["']?(3\.\d+\.\d+)["']?/.exec(ci)?.[1];
   if (!python) {
@@ -144,6 +170,7 @@ async function principal() {
     archivosPyodide,
     pins,
     python,
+    sri,
   });
   if (fallas.length > 0) {
     for (const f of fallas) console.error(`✗ ${f}`);
