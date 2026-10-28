@@ -21,7 +21,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { PyodideInterface } from "pyodide";
 import { plan7 } from "@/engine/protocolo/etapa7";
 import {
-  columnasDe,
   evaluarReglas,
   fidelidadSuficiente,
   hojasDe,
@@ -145,7 +144,6 @@ function entrenar(file: string, target: string): Modelo {
     tarea: p.task,
     metrica: p.primary_metric,
     referencia: result.model[p.primary_metric],
-    nPrueba: p.test_idx.length,
   };
 }
 
@@ -301,7 +299,7 @@ describe("el modelo en reglas (Pyodide)", () => {
     expect(r.depth).toBeLessThanOrEqual(4);
     expect(hojasDe(r.tree)).toHaveLength(r.leaves);
     // el árbol solo pregunta por columnas del modelo
-    for (const c of columnasDe(r.tree))
+    for (const c of new Set(hojasDe(r.tree).flatMap((h) => h.condiciones.map((x) => x.column))))
       expect([...m.numericas, ...m.categoricas]).toContain(c);
     // determinista: el mismo modelo, el mismo árbol
     const otra = validateRulesResult(call("run_rules"), sent);
@@ -490,6 +488,8 @@ describe("las reglas con filas que subes (Pyodide)", () => {
     expect(v.value.truth).toBeNull();
     // la prueba sigue sin existir en el worker: lo que la lee dice «no-eval»
     expect(failure("run_stress")).toContain("no-eval");
+    // S21 (lote 20-12): el worker mismo se niega a medir la verdad con el ganador reajustado (hoy lo impide TypeScript; ahora lo impide también Python)
+    expect(failure("run_rules", { headers: usadas, rows, truth: true })).toContain("contract:truth");
   }, 300_000);
 
   it("pocas filas, una columna que el modelo lee y falta, y claves de más se dicen por su nombre", () => {
@@ -529,7 +529,7 @@ describe("vigilar el desempeño (Pyodide)", () => {
     const { datos } = evaluar(m, nuevo);
     return vigilar(
       datos,
-      { metric: m.metrica as never, valor: m.referencia!, nPrueba: m.nPrueba! },
+      { metric: m.metrica as never, valor: m.referencia!},
       { clases: m.clases?.length, semilla: 42 },
     );
   };
@@ -547,7 +547,7 @@ describe("vigilar el desempeño (Pyodide)", () => {
     expect(corrido.veredicto).toBe("reentrenar");
     expect(igual.veredicto).toBe("sigue");
     // el corrido está claramente peor que la prueba y el del mismo mundo no lo está
-    expect(corrido.diferencia).toBeLessThan(igual.diferencia);
+    expect(corrido.hoy.valor).toBeLessThan(igual.hoy.valor);
     // y es determinista: la misma cifra y el mismo margen dos veces
     expect(
       lectura(m, cargar(csvKit("marketing-resultados-corridos.csv"))).hoy,

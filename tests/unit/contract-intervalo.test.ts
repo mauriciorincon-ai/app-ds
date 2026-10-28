@@ -21,6 +21,7 @@ const enviadoDe = (r: Json, clases: number | null = null): IntervaloSent => ({
   primary_metric: r.metric,
   n_test: r.n,
   n_classes: clases,
+  seed: r.seed,
 });
 
 const NOMBRES = ["interval-result", "interval-result-multiclase", "interval-result-numerica"];
@@ -30,6 +31,12 @@ describe("el lector del intervalo", () => {
   it.each(NOMBRES)("acepta lo que pipeline.py escribió: %s", (nombre) => {
     const r = fixture(nombre);
     expect(validateIntervalData(r, enviadoDe(r, clasesDe(r))).ok).toBe(true);
+  });
+
+  it("la semilla que vuelve tiene que ser la del experimento (S21, lote 18-11)", () => {
+    const r = fixture("interval-result");
+    expect(validateIntervalData({ ...r, seed: r.seed + 1 }, enviadoDe(r)).ok).toBe(false);
+    expect(validateIntervalData(r, { ...enviadoDe(r), seed: r.seed + 1 }).ok).toBe(false);
   });
 
   it("dos clases trae el puntaje por fila; las otras dos tareas, no", () => {

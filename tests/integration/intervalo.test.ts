@@ -85,6 +85,7 @@ function entrenar(file: string, target: string) {
     primary_metric: p.primary_metric,
     n_test: p.test_idx.length,
     n_classes: p.classes?.length ?? null,
+    seed: p.seed,
   };
   return { sent, model: result.model, clases: p.classes?.length, seed: p.seed };
 }

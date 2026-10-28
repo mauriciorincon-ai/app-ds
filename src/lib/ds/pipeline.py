@@ -3073,6 +3073,8 @@ def run_fit_winner(payload_json):
         "pipe": pipe,
         "schema": schema,
         "training_profile": _training_profile(X_train, numeric, categorical),
+        # S21 (lote 20-12): el ganador reajustado del Protocolo no mide la verdad con filas de nadie (la prueba ya se abrió una vez)
+        "origin": "protocolo",
     }
     return json.dumps(
         {
@@ -3268,6 +3270,8 @@ def run_rules(payload_json="{}"):
     schema = _MODEL["schema"]
     if uploaded:
         _validate_rules_payload(p, schema)
+        if p.get("truth") is True and _MODEL.get("origin") == "protocolo":
+            _contract("truth")
     task = _task_of(schema)
     numeric = list(schema["numeric"])
     categorical = list(schema["categorical"])
@@ -3837,7 +3841,7 @@ def run_forecast(payload_json="{}"):
         else:
             reason = "short"
     if len(origins) < FORECAST_MIN_FOLDS:
-        needed = h + FORECAST_MIN_FOLDS - 1 + FORECAST_MIN_TRAIN if step == 1 else h + (FORECAST_MIN_FOLDS - 1) * step + FORECAST_MIN_TRAIN
+        needed = h + (FORECAST_MIN_FOLDS - 1) * step + FORECAST_MIN_TRAIN
         return json.dumps({"viable": False, "n": n_input, "needed": int(needed), "horizon": h})
 
     # sin dos temporadas completas en tres pliegues NINGÚN método supone una temporada (no solo el ingenuo estacional)

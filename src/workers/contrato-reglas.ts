@@ -143,6 +143,8 @@ export function validateRulesResult(
   } else if (r.truth !== null || !subidas) {
     const verdad = tarea === "cantidad" ? "mae" : "accuracy";
     if (r.truth === null || r.truth.metric !== verdad) return { ok: false, field: "truth" };
+    // la verdad se mide sobre las filas de la fidelidad que traen el objetivo: nunca pueden ser más (S21, lote 20-11)
+    if (r.truth.n > r.fidelity.n) return { ok: false, field: "truth" };
     if (tarea === "clase" && (r.truth.rules > 1 || r.truth.model > 1))
       return { ok: false, field: "truth" };
   }

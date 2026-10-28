@@ -73,6 +73,7 @@ export function IntervaloPanel({
       primary_metric: de.metric,
       n_test: de.nTest,
       n_classes: de.nClasses,
+      seed: de.seed,
     };
     const id = siguienteIdDePanel();
     const alResponder = (event: MessageEvent<RunnerResponse>) => {

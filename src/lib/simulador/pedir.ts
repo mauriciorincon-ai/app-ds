@@ -80,10 +80,21 @@ function pedir<T>(
 ): Promise<T> {
   return new Promise((ok, no) => {
     const id = siguienteIdDePanel();
+    const limpiar = () => {
+      worker.removeEventListener("message", alResponder);
+      worker.removeEventListener("error", alFallar);
+      worker.removeEventListener("messageerror", alFallar);
+    };
+    // un worker que muere (`error`) o que no puede leer el mensaje (`messageerror`) no responde nunca: sin esto el panel se quedaba
+    // en «calculando» para siempre (S21, lote 19-12)
+    const alFallar = () => {
+      limpiar();
+      no(new Error("worker"));
+    };
     const alResponder = (event: MessageEvent<RunnerResponse>) => {
       const m = event.data;
       if (m.id !== id || m.type === "progress") return;
-      worker.removeEventListener("message", alResponder);
+      limpiar();
       if (m.type === "error") {
         no(new Error(motivoDeFallo(m.message)));
         return;
@@ -100,6 +111,8 @@ function pedir<T>(
       ok(r.value);
     };
     worker.addEventListener("message", alResponder);
+    worker.addEventListener("error", alFallar);
+    worker.addEventListener("messageerror", alFallar);
     worker.postMessage(
       payload === undefined ? { id, type: comando } : { id, type: comando, payload },
     );
