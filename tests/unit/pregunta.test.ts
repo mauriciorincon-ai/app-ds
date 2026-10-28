@@ -6,7 +6,7 @@
 //  · una palabra que es parte del nombre de una columna es de la columna (`ingreso_mensual` no es «por mes»);
 //  · «el último trimestre» se resuelve contra la fecha más reciente de la TABLA, jamás contra el reloj;
 //  · un orden día/mes ambiguo no deja correr; una columna marcada como dato personal no se ofrece para agrupar ni se reconocen sus valores.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { armarCatalogo, sePuedeCorrer, validar } from "@/engine/consulta";
 import { ejemplosDe, leerNumero, leerPregunta } from "@/engine/pregunta";
 import { PREGUNTA_MAX } from "@/engine/pregunta-lexico";
@@ -94,11 +94,11 @@ describe("lo que el lector pregunta, y lo que cambia cuando contestas", () => {
     expect(d.tipo === "consulta" && d.plan.condiciones).toEqual([{ columna: "unidades", operador: ">", valor: "1.5" }]);
   });
 
-  it("la agregación y el periodo PROPUESTOS se marcan; si el usuario los cambia o los dice, dejan de serlo", () => {
+  it("la agregación y el periodo PROPUESTOS se marcan; si el usuario los CAMBIA el control sigue a la mano (auditoría A-16); si la pregunta los DICE, no se proponen", () => {
     const propuesta = leerPregunta("ventas por fecha", cat);
     expect(propuesta.tipo === "consulta" && propuesta.propuestos).toEqual(["periodo", "agregacion"]);
     const cambiada = leerPregunta("ventas por fecha", cat, { agregacion: "promedio", periodo: "mes" });
-    expect(cambiada.tipo === "consulta" && cambiada.propuestos).toEqual([]);
+    expect(cambiada.tipo === "consulta" && cambiada.propuestos).toEqual(["periodo", "agregacion"]);
     expect(cambiada.tipo === "consulta" && cambiada.plan.medida.agregacion).toBe("promedio");
     expect(cambiada.tipo === "consulta" && cambiada.plan.agrupar).toMatchObject({ tipo: "tiempo", periodo: "mes" });
     const dicha = leerPregunta("promedio de ventas por región", cat);
@@ -235,8 +235,89 @@ describe("leerNumero", () => {
     ["1,234.56", { valor: "1234.56" }],
     ["1,500", { ambiguo: ["1.5", "1500"] }],
     ["2.000", { ambiguo: ["2", "2000"] }],
+    // S21 (auditoría A-11): separadores mezclados NO multiplican por mil; el decimal es el que va al final
+    ["1.234,567", { valor: "1234.567" }],
+    ["1,234.567", { valor: "1234.567" }],
+    ["2023,2024", null],
+    ["-5", { valor: "-5" }],
+    ["-2,5", { valor: "-2.5" }],
   ])("%s", (texto, esperado) => {
     expect(leerNumero(texto)).toEqual(esperado);
+  });
+});
+
+// S21 — la auditoría de una pasada (A-01 … A-22): lo que el lector leía mal SIN avisar.
+describe("la auditoría: nada se lee mal en silencio", () => {
+  const cat = catalogoDelKit("ventas-por-region.csv");
+  const gris = armarCatalogo({
+    headers: ["grupo", "monto", "estado"],
+    rows: [
+      ["A", "10", "todos"],
+      ["B", "20", "activo"],
+      ["A", "30", "activo"],
+      ["B", "40", "todos"],
+    ],
+  });
+
+  it("A-02: «A» y «todos» son valores de una columna pero también palabras de relleno: «grupo A» filtra, «de todos» no", () => {
+    const a = leerPregunta("monto del grupo A", gris);
+    expect(a.tipo === "consulta" && a.plan.condiciones).toEqual([{ columna: "grupo", operador: "=", valor: "A" }]);
+    const t = leerPregunta("monto de todos", gris);
+    expect(t.tipo === "consulta" && t.plan.condiciones).toEqual([]);
+  });
+
+  it("A-02: «este» como valor no se confunde con «este mes»", () => {
+    const l = leerPregunta("ventas de este mes", cat);
+    expect(l.tipo === "consulta" && l.plan.condiciones).toEqual([]);
+    expect(l.tipo === "consulta" && l.plan.ventana).not.toBeNull();
+  });
+
+  it("A-08: «constructor» y «__proto__» no son un mes, una unidad ni un periodo", () => {
+    for (const q of ["ventas constructor", "ventas por constructor", "ventas __proto__", "ventas hasta constructor", "ventas ultimo constructor"]) {
+      const l = leerPregunta(q, cat);
+      expect(JSON.stringify(l), q).not.toMatch(/NaN|undefined/);
+      if (l.tipo === "consulta") expect(l.plan.ventana, q).toBeNull();
+    }
+  });
+
+  it("A-10: un «o» entre condiciones de columnas distintas se une con «y» y LO DICE", () => {
+    const l = leerPregunta("ventas con unidades mayor a 30 o ventas mayor a 100", cat);
+    expect(l.tipo).toBe("consulta");
+    if (l.tipo === "consulta") {
+      expect(l.plan.union).toBe("y");
+      expect(l.avisos.map((a) => a.clave)).toContain("union-y");
+    }
+  });
+
+  it("A-14: una fecha imposible o una ventana enorme no se leen: se dicen", () => {
+    for (const q of ["ventas en 2025-13", "ventas desde 2024-02-30", "ventas de los últimos 5000 años", "ventas de los últimos 99999999999999 meses"]) {
+      const l = leerPregunta(q, cat);
+      expect(JSON.stringify(l), q).not.toMatch(/NaN/);
+      if (l.tipo === "consulta") {
+        const v = l.plan.ventana;
+        if (v) {
+          expect(v.desde ?? "", q).toMatch(/^\d{4}-\d{2}-\d{2}$|^$/);
+          expect(Number((v.desde ?? "2000").slice(0, 4)), q).toBeGreaterThan(1900);
+        }
+        expect(l.noLeidas.length + l.avisos.length, q).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("A-21: dos menciones de la misma columna son UNA cifra: no se pregunta «¿cuál medir?»", () => {
+    const l = leerPregunta("ventas usd por region ordenado por ventas", cat);
+    expect(l.tipo).toBe("consulta");
+  });
+
+  it("A-22: el tiempo no depende del reloj: con el reloj en otro año, la misma ventana", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2031-06-15T12:00:00Z"));
+      const l = leerPregunta("ventas del último trimestre por región", cat);
+      expect(l.tipo === "consulta" && l.plan.ventana).toMatchObject({ desde: "2025-10-01", hasta: "2025-12-31" });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

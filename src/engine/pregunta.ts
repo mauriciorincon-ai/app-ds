@@ -14,7 +14,6 @@ import {
 } from "@/engine/protocolo/regla";
 import { proponerAgregado, proponerPeriodo } from "@/engine/serie";
 import {
-  columnaDe,
   rangoDeMes,
   rangoDelPeriodo,
   rangoUltimos,
@@ -29,9 +28,11 @@ import {
 import {
   ADVERBIOS_PERIODO,
   AGREGACIONES,
+  ARTICULOS,
   claves,
   COMPARADORES,
   CONECTORES_Y,
+  CUANTIFICADORES,
   MARCAS_AGRUPAR,
   MESES,
   NEGADORES,
@@ -39,6 +40,7 @@ import {
   OBJETO_DE_CONTEO,
   PERIODOS,
   PREGUNTA_MAX,
+  PREPOSICIONES_DE_VALOR,
   RELLENO,
   TOP_CON_MAS,
   TOP_CON_MENOS,
@@ -81,7 +83,9 @@ export type Aviso = {
     | "dos-grupos"
     | "dos-agregaciones"
     | "dos-ventanas"
-    | "top-grande";
+    | "top-grande"
+    | "union-y"
+    | "ventana-grande";
   readonly params: Readonly<Record<string, string | number>>;
 };
 
@@ -122,11 +126,24 @@ export function leerNumero(
     const v = c(x);
     return v === null ? null : { valor: v };
   };
+  // el signo se lee aparte y se vuelve a poner: «-5» es menos cinco, no cinco (S21, auditoría A-04)
+  if (/^[-−]/.test(t)) {
+    const r = leerNumero(t.slice(1));
+    if (r === null) return null;
+    const neg = (x: string) => (Number(x) === 0 ? x : `-${x}`);
+    return "valor" in r
+      ? { valor: neg(r.valor) }
+      : { ambiguo: [neg(r.ambiguo[0]), neg(r.ambiguo[1])] };
+  }
   if (/^\d+$/.test(t)) return ok(t);
-  if (/^\d{1,3}([.,]\d{3}){2,}$/.test(t)) return ok(t.replace(/[.,]/g, ""));
+  // dos años seguidos, «2023,2024», no son un decimal: se deja sin leer
+  if (/^(19|20)\d{2}[.,](19|20)\d{2}$/.test(t)) return null;
+  // los separadores mezclados dicen cuál es el decimal (el último): «1.234,567» es 1234.567, no 1 234 567 (auditoría A-11)
   if (/^\d{1,3}(\.\d{3})+,\d+$/.test(t))
     return ok(t.replace(/\./g, "").replace(",", "."));
   if (/^\d{1,3}(,\d{3})+\.\d+$/.test(t)) return ok(t.replace(/,/g, ""));
+  // miles con UN solo separador repetido
+  if (/^\d{1,3}([.,])\d{3}(\1\d{3})+$/.test(t)) return ok(t.replace(/[.,]/g, ""));
   if (/^0[.,]\d+$/.test(t)) return ok(t.replace(",", "."));
   if (/^\d{1,3}[.,]\d{3}$/.test(t)) {
     const dec = c(t.replace(",", "."));
@@ -184,14 +201,24 @@ type VentanaPend =
       readonly hasta: Punto | null;
     };
 
-const NOMBRES_UNIDAD: Record<string, PeriodoConsulta> = {};
+// sin prototipo (auditoría A-08): «constructor» no es una unidad ni un periodo
+const NOMBRES_UNIDAD: Record<string, PeriodoConsulta> = Object.create(null);
 for (const [periodo, palabras] of Object.entries(PERIODOS))
   for (const p of palabras)
     if (!ADVERBIOS_PERIODO.has(p))
       NOMBRES_UNIDAD[p] = periodo as PeriodoConsulta;
-const CUALQUIER_PERIODO: Record<string, PeriodoConsulta> = {};
+const CUALQUIER_PERIODO: Record<string, PeriodoConsulta> = Object.create(null);
 for (const [periodo, palabras] of Object.entries(PERIODOS))
   for (const p of palabras) CUALQUIER_PERIODO[p] = periodo as PeriodoConsulta;
+
+/** Cuántas unidades admite «los últimos N …»: lo que cabe en dos siglos de calendario (auditoría A-14). */
+const UNIDADES_MAX: Record<PeriodoConsulta, number> = {
+  dia: 36500,
+  semana: 5200,
+  mes: 1200,
+  trimestre: 400,
+  anio: 100,
+};
 
 const esAnio = (t: Token): boolean =>
   t.tipo === "numero" && /^(19|20)\d{2}$/.test(t.t);
@@ -269,6 +296,8 @@ export function leerPregunta(
     numero: string;
   };
   const comparadores: Comp[] = [];
+  /** Las palabras de «distinto de», «diferente de», «≠»…: sin número detrás, niegan el valor que sigue (auditoría A-01). */
+  const negadoresComparador = new Set<number>();
   for (let i = 0; i < toks.length; i++) {
     let mejor: { op: OperadorConsulta; len: number } | null = null;
     for (const op of Object.keys(COMPARADORES) as OperadorConsulta[]) {
@@ -282,7 +311,10 @@ export function leerPregunta(
       comparadores.push({ op: mejor.op, inicio: i, fin: j + 1, numero: num.t });
       marcar(i, j + 1);
       i = j;
-    } else if (mejor.op === "=" || mejor.op === "!=") marcar(i, j);
+    } else if (mejor.op === "=" || mejor.op === "!=") {
+      if (mejor.op === "!=") for (let k = i; k < j; k++) negadoresComparador.add(k);
+      marcar(i, j);
+    }
   }
 
   // --- 2. «los 5 mayores», «top 3», «bottom 10» ----------------------------------------------------------------------------
@@ -359,6 +391,10 @@ export function leerPregunta(
     const t = toks[i];
     if (!t || usado[i]) return null;
     if (t.tipo === "iso") {
+      // una fecha que no existe («2025-13», «2024-02-30») no se lee: queda en «No leí», no salta al mes que sigue (auditoría A-14)
+      const [y, m, d] = t.t.split("-").map(Number) as [number, number, number | undefined];
+      if (m < 1 || m > 12) return null;
+      if (t.t.length === 10 && new Date(Date.UTC(y, m - 1, d!)).getUTCDate() !== d) return null;
       if (t.t.length === 10)
         return { punto: { tipo: "dia", iso: t.t }, fin: i + 1 };
       return {
@@ -407,6 +443,11 @@ export function leerPregunta(
       const unidad = u !== null ? NOMBRES_UNIDAD[u] : undefined;
       if (!unidad) continue;
       if (n === null && VENTANA_PLURAL.has(p)) continue;
+      if (n !== null && n > UNIDADES_MAX[unidad]) {
+        avisos.push({ clave: "ventana-grande", params: { max: UNIDADES_MAX[unidad] } });
+        marcar(i, j + 1);
+        continue;
+      }
       fijarVentana({ tipo: "relativa", unidad, n: n ?? 1, desfase: 0 });
       marcar(i, j + 1);
     } else if (VENTANA_PASADO.has(p)) {
@@ -550,6 +591,8 @@ export function leerPregunta(
       avisos.push({ clave: "dos-agregaciones", params: {} });
     }
   }
+  /** ¿La pregunta dijo el cálculo con palabras? Si no, sigue siendo «propuesto» aunque el usuario lo cambie (auditoría A-16). */
+  const agregacionEnTexto = agregacion !== null;
   const agregacionRespondida = respuestas["agregacion"] as
     Agregacion | undefined;
   if (agregacionRespondida && agregacionRespondida in AGREGACIONES)
@@ -567,31 +610,51 @@ export function leerPregunta(
   const valores: Valor[] = [];
   /** Dónde estuvo cada valor y de qué columnas podía ser: la mención de la columna pegada al valor («región norte») es su etiqueta. */
   const huellas: { columnas: number[]; inicio: number; fin: number }[] = [];
-  const indiceValores = new Map<
-    string,
-    { info: Info; valor: string; tokens: string[] }[]
-  >();
+  type EntradaValor = { info: Info; valor: string; tokens: string[] };
+  const indiceValores = new Map<string, EntradaValor[]>();
+  /** Los valores que además son palabras de relleno («este», «A», «todos»): solo se leen con contexto (auditoría A-02). */
+  const indiceRelleno = new Map<string, EntradaValor[]>();
   for (const info of infos) {
     if (info.col.tipo !== "categoria") continue;
     for (const v of info.col.distintos) {
       const normal = normalizar(v).trim();
-      if (/^\d+([.,]\d+)?$/.test(normal) || RELLENO.has(normal)) continue;
+      if (/^\d+([.,]\d+)?$/.test(normal)) continue;
       if (listaAgg.some(({ f }) => f.length === 1 && f[0] === normal)) continue;
-      // «ciudad_07» se reconoce escrito así y escrito «ciudad 07»
-      const formas = new Set([v, v.replace(/_/g, " ")]);
-      for (const forma of formas) {
+      const destino = RELLENO.has(normal) ? indiceRelleno : indiceValores;
+      // «ciudad_07» se reconoce escrito así y escrito «ciudad 07» (el tokenizador ya las vuelve la misma lista)
+      const vistas = new Set<string>();
+      for (const forma of new Set([v, v.replace(/_/g, " ")])) {
         const tokensValor = tokenizar(forma).map((t) => t.t);
-        if (tokensValor.length === 0) continue;
-        const lista = indiceValores.get(tokensValor[0]!) ?? [];
+        if (tokensValor.length === 0 || vistas.has(tokensValor.join(" "))) continue;
+        vistas.add(tokensValor.join(" "));
+        const lista = destino.get(tokensValor[0]!) ?? [];
         lista.push({ info, valor: v, tokens: tokensValor });
-        indiceValores.set(tokensValor[0]!, lista);
+        destino.set(tokensValor[0]!, lista);
       }
     }
   }
+  /** ¿La palabra de antes nombra la columna de este valor («grupo A»)? */
+  const pegadoALaColumna = (c: EntradaValor, i: number): boolean => {
+    const p = palabraEn(i - 1);
+    return p !== null && c.info.tokens.some((tn) => compartenClave(tn, p));
+  };
+  /** Un valor que es palabra de relleno cuenta como valor tras una preposición («del este», «sin el este») o pegado a su columna. */
+  const candidatosDeRelleno = (i: number, w: string): EntradaValor[] | undefined => {
+    const lista = indiceRelleno.get(w);
+    if (!lista || CUANTIFICADORES.has(w)) return undefined;
+    const prev = palabraEn(i - 1);
+    const trasPreposicion =
+      w.length > 1 &&
+      prev !== null &&
+      (PREPOSICIONES_DE_VALOR.has(prev) ||
+        (ARTICULOS.has(prev) && (palabraEn(i - 2) ?? "") !== "" && PREPOSICIONES_DE_VALOR.has(palabraEn(i - 2)!)));
+    const buenas = lista.filter((c) => trasPreposicion || pegadoALaColumna(c, i));
+    return buenas.length > 0 ? buenas : undefined;
+  };
   for (let i = 0; i < toks.length; i++) {
     const t = toks[i]!;
     if (usado[i] || t.tipo === "iso") continue;
-    const candidatos = indiceValores.get(t.t);
+    const candidatos = indiceValores.get(t.t) ?? candidatosDeRelleno(i, t.t);
     if (!candidatos) continue;
     let mejorLargo = 0;
     let aciertos: { info: Info; valor: string }[] = [];
@@ -637,6 +700,10 @@ export function leerPregunta(
     // un negador justo antes («sin norte», «except north»)
     let negado = false;
     for (let b = i - 1; b >= Math.max(0, i - 3); b--) {
+      if (negadoresComparador.has(b)) {
+        negado = true;
+        break;
+      }
       const w = palabraEn(b);
       if (w === null) continue;
       if (NEGADORES.has(w)) {
@@ -905,6 +972,12 @@ export function leerPregunta(
           condicionesFinales[0]!.columna === condicionesFinales[1]!.columna
         ? "o"
         : "y";
+  // «unidades mayor a 30 o ventas mayor a 100»: entre columnas distintas solo se lee «y», y se dice (auditoría A-10)
+  if (
+    union === "y" &&
+    toks.some((t, i) => !usado[i] && t.tipo === "palabra" && (t.t === "o" || t.t === "u" || t.t === "or"))
+  )
+    avisos.push({ clave: "union-y", params: {} });
 
   // la medida
   let medidaColumna: string | null = null;
@@ -936,10 +1009,8 @@ export function leerPregunta(
     }
     const elegidaPorElUsuario =
       respuestaMedida !== undefined ? nombres.get(respuestaMedida) : undefined;
-    const nMenciones = unicas.length;
     if (elegidaPorElUsuario) medidaColumna = elegidaPorElUsuario.col.nombre;
-    else if (nombres.size === 1 && nMenciones === 1)
-      medidaColumna = [...nombres.keys()][0]!;
+    else if (nombres.size === 1) medidaColumna = [...nombres.keys()][0]!;
     else {
       medidaPendiente = true;
       abiertas.push({
@@ -1019,7 +1090,7 @@ export function leerPregunta(
         columna: g.col.nombre,
         periodo: elegido ?? propuestosTiempo(),
       };
-      if (!elegido) propuestos.push("periodo");
+      propuestos.push("periodo");
     } else agrupar = { tipo: "categoria", columna: g.col.nombre };
   }
 
@@ -1029,8 +1100,10 @@ export function leerPregunta(
 
   // la agregación y la medida
   let agg: Agregacion;
-  if (agregacion !== null) agg = agregacion;
-  else if (medidaColumna !== null) {
+  if (agregacion !== null) {
+    agg = agregacion;
+    if (!agregacionEnTexto) propuestos.push("agregacion");
+  } else if (medidaColumna !== null) {
     agg = proponerAgregado(medidaColumna);
     propuestos.push("agregacion");
   } else {
@@ -1241,5 +1314,3 @@ export function ejemplosDe(cat: Catalogo, idioma: "es" | "en"): string[] {
     );
   return salida.slice(0, 3);
 }
-
-export { columnaDe };

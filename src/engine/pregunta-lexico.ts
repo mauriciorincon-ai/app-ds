@@ -28,10 +28,6 @@ export function claves(palabra: string): string[] {
   return [...k];
 }
 
-/** Las palabras de un texto (letras, dígitos y guion bajo), ya normalizadas. Los números se leen aparte (`tokenizar`). */
-export const palabrasDe = (texto: string): string[] =>
-  normalizar(texto).match(/[\p{L}_]+[\p{L}\p{N}_]*|\p{N}+/gu) ?? [];
-
 export type Token = {
   readonly t: string;
   readonly tipo: "palabra" | "numero" | "iso";
@@ -39,23 +35,27 @@ export type Token = {
 
 const ISO_COMPLETA = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_MES = /^\d{4}-\d{2}$/;
-const NUMERO = /^\d+(?:[.,]\d+)*$/;
+const NUMERO = /^[-−]?\d+(?:[.,]\d+)*$/;
 
 /**
  * La pregunta como lista de tokens: palabras, números (con su separador tal cual: «1,5», «1.500») y fechas ISO (`2025-03-01`,
  * `2025-03`). Los símbolos de comparación pasan a sus palabras («>=» → «al menos») para que una sola gramática los lea.
  */
 export function tokenizar(pregunta: string): Token[] {
-  const texto = normalizar(pregunta)
+  // «≠» se descompone en «=» y una marca al normalizar: se cambia antes de que la marca se pierda
+  const texto = normalizar(pregunta.replace(/≠/g, " distinto de "))
     .replace(/>=|≥/g, " al menos ")
     .replace(/<=|≤/g, " como maximo ")
     .replace(/!=|≠/g, " distinto de ")
     .replace(/>/g, " mas de ")
     .replace(/</g, " menos de ")
-    .replace(/=/g, " igual a ");
+    .replace(/=/g, " igual a ")
+    // «ventas_usd» se lee como «ventas usd»: así se escribe el nombre de la columna tal como la app lo imprime (S21, auditoría A-06)
+    .replace(/_/g, " ");
   const crudos =
     texto.match(
-      /\d{4}-\d{2}(?:-\d{2})?|\d+(?:[.,]\d+)*|[\p{L}_][\p{L}\p{N}_]*/gu,
+      // fechas ISO, números (con su signo: «-5» no es «5»), y palabras
+      /\d{4}-\d{2}(?:-\d{2})?|(?<![\p{L}\p{N}])[-−]\d+(?:[.,]\d+)*|\d+(?:[.,]\d+)*|\p{L}[\p{L}\p{N}]*/gu,
     ) ?? [];
   return crudos.map((t): Token => {
     if (ISO_COMPLETA.test(t) || ISO_MES.test(t)) return { t, tipo: "iso" };
@@ -309,7 +309,8 @@ export const VENTANA_PLURAL: ReadonlySet<string> = new Set([
   "past",
 ]);
 
-export const MESES: Record<string, number> = {
+// sin prototipo: «constructor» y «__proto__» son palabras como cualquier otra, no un mes (S21, auditoría A-08)
+export const MESES: Record<string, number> = Object.assign(Object.create(null) as Record<string, number>, {
   enero: 1,
   febrero: 2,
   marzo: 3,
@@ -335,7 +336,7 @@ export const MESES: Record<string, number> = {
   october: 10,
   november: 11,
   december: 12,
-};
+});
 
 export const VENTANA_DESDE = frases([
   "desde",
@@ -382,8 +383,6 @@ export const TOP_CON_MENOS = frases([
   "with least",
   "with lowest",
 ]);
-/** Cuántos «mayores» o «menores» admite una pregunta. */
-export const TOP_MAX = 50;
 
 export const NEGADORES: ReadonlySet<string> = new Set([
   "sin",
@@ -393,6 +392,8 @@ export const NEGADORES: ReadonlySet<string> = new Set([
   "without",
   "not",
   "menos",
+  // «ventas no premium» (los comparadores «no más de», «no menos de» se leen antes y no llegan aquí)
+  "no",
 ]);
 
 /** Lo que se cuenta cuando la pregunta dice «cuántas filas hay» o «how many rows»: es el objeto de «contar», no una palabra sin leer. */
@@ -526,6 +527,40 @@ export const RELLENO: ReadonlySet<string> = new Set([
   "our",
   "your",
   "there",
+]);
+
+/**
+ * Palabras de relleno que son también valores de una columna («el este», «grupo A», «todos»). Solo se leen como valor con contexto:
+ * después de una preposición («del este», «sin el este») o pegadas a la palabra de su columna («grupo A»); un cuantificador
+ * («todos», «all») jamás: «monto de todos» es el total. (S21, auditoría A-02)
+ */
+export const PREPOSICIONES_DE_VALOR: ReadonlySet<string> = new Set([
+  "del",
+  "de",
+  "en",
+  "sin",
+  "solo",
+  "para",
+  "por",
+  "in",
+  "of",
+  "only",
+  "without",
+  "except",
+  "excepto",
+  "from",
+  "to",
+]);
+export const ARTICULOS: ReadonlySet<string> = new Set(["el", "la", "los", "las", "al", "the"]);
+export const CUANTIFICADORES: ReadonlySet<string> = new Set([
+  "todos",
+  "todas",
+  "todo",
+  "toda",
+  "all",
+  "each",
+  "every",
+  "cada",
 ]);
 
 /** El tope de caracteres de una pregunta. */

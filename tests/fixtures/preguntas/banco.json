@@ -2708,5 +2708,377 @@
       "noLeidas": [],
       "avisos": []
     }
+  },
+  {
+    "id": "auditoria-a01-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas diferente de premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-2",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas producto != premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-3",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas producto ≠ premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-4",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales different from premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "product",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-5",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales product not equal to premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "product",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a02-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas del este",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "region",
+            "operador": "=",
+            "valor": "este"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a02-2",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas sin el este",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "region",
+            "operador": "!=",
+            "valor": "este"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a02-3",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas solo del este y oeste",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "region",
+            "operador": "=",
+            "valor": "este"
+          },
+          {
+            "columna": "region",
+            "operador": "=",
+            "valor": "oeste"
+          }
+        ],
+        "union": "o",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a04-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas con unidades mayor a -5",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "unidades",
+            "operador": ">",
+            "valor": "-5"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a05-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas no premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a05-2",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas con unidades no mas de 100",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "unidades",
+            "operador": "<=",
+            "valor": "100"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a06-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "suma de ventas_usd por region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
   }
 ]
