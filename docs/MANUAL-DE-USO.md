@@ -1045,7 +1045,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
 
 - **Qué es:** un **árbol de pocas preguntas** sobre tus columnas, con los números en sus unidades y las categorías
   como «es / no es», que **copia lo que el modelo decide**. Sirve para llevar el modelo a un sistema donde no corre
-  Python. Está en **Resultados**, y se pide con **«Ver el modelo en reglas»**.
+  Python. Está en **Resultados**, y se pide con **«Armar las reglas»**.
 - **Su fidelidad, siempre primero:** se mide en **filas que el árbol no vio** (la prueba retenida; al agrupar, el 25 %
   que se aparta) y con **las mismas reglas que te llevas**: cuánto **coinciden con el modelo** (o, al estimar, cuánto
   explican de lo que el modelo estima, R²) y cuánto **aciertan frente a la verdad**, junto al modelo.
@@ -1058,7 +1058,7 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   cuenta como «no es»). Una prueba automática corre ese SQL en otro programa (CPython) sobre las filas que predijo el
   navegador y exige **la misma respuesta en cada fila**.
 - **Con tus filas (desde Sprint 020):** el árbol también se puede armar **con las filas de un archivo tuyo**. En
-  **«Usar el modelo»**, con el CSV que acabas de cargar para puntuar, aparece **«Ver el modelo en reglas»**, y sirve a
+  **«Usar el modelo»**, con el CSV que acabas de cargar para puntuar, aparece **«Armar las reglas»**, y sirve a
   **cualquier modelo**, también a uno **importado**, que no conserva las filas con que se entrenó. El árbol copia lo que el
   modelo predice **en esas filas** (con el 25 % apartado para medir la fidelidad), así que la pantalla dice que se armó con
   «las filas de tu archivo». Si el archivo **trae el resultado real**, las reglas también se miden frente a la verdad,

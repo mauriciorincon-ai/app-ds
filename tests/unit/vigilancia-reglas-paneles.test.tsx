@@ -232,7 +232,7 @@ describe("el modelo en reglas", () => {
   it("no se calcula hasta pulsar el botón (que lleva su icono a la izquierda)", () => {
     const { worker, enviados } = doble(() => lista("rules", fixture("rules-result-binaria")));
     pintar(<ReglasPanel schema={SCHEMA_REGLAS} worker={worker} modelo={{}} datasetName="marketing.csv" />);
-    const boton = screen.getByRole("button", { name: "Ver el modelo en reglas" });
+    const boton = screen.getByRole("button", { name: "Armar las reglas" });
     expect(boton.firstElementChild?.tagName.toLowerCase()).toBe("svg");
     expect(enviados).toHaveLength(0);
   });
@@ -240,7 +240,7 @@ describe("el modelo en reglas", () => {
   it("debajo del umbral se llama «un árbol que se parece al modelo», nunca «el modelo en reglas»", async () => {
     const { worker, enviados } = doble(() => lista("rules", fixture("rules-result-binaria")));
     pintar(<ReglasPanel schema={SCHEMA_REGLAS} worker={worker} modelo={{}} datasetName="marketing.csv" />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     await screen.findByTestId("reglas-lectura");
     expect(enviados).toHaveLength(1);
     expect(enviados[0]!.type).toBe("rules");
@@ -266,14 +266,14 @@ describe("el modelo en reglas", () => {
       assign: { method: "nearest-centroid", sample_rows: null },
     } as never;
     pintar(<ReglasPanel schema={esquema} worker={worker} modelo={{}} datasetName="Segmentos clientes.csv" />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     await screen.findByTestId("reglas-lectura");
     expect(screen.getByRole("heading", { name: "El modelo en reglas" })).toBeTruthy();
     expect(screen.getByTestId("reglas-veredicto").textContent).toContain("✓");
     fireEvent.click(screen.getByRole("button", { name: "Descargar las reglas (.txt)" }));
     fireEvent.click(screen.getByRole("button", { name: "Descargar el SQL (.sql)" }));
     expect(descargas.map((d) => d.nombre)).toEqual(["reglas-segmentos-clientes.txt", "reglas-segmentos-clientes.sql"]);
-    expect(descargas[0]!.contenido).toContain("Reglas que copian al modelo");
+    expect(descargas[0]!.contenido).toContain("Reglas derivadas del modelo");
     expect(descargas[0]!.contenido).toContain("Grupo ");
     expect(descargas[1]!.contenido).toMatch(/^SELECT t\.\*,\n {2}CASE\n/);
     expect(descargas[1]!.contenido).toContain('AS "prediccion"');
@@ -287,7 +287,7 @@ describe("el modelo en reglas", () => {
       cleanup();
       const { worker } = doble(() => ({ id: 0, type: "error", message: `RuntimeError: ${clave}` }));
       pintar(<ReglasPanel schema={SCHEMA_REGLAS} worker={worker} modelo={{}} datasetName={null} />);
-      fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+      fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
       expect((await screen.findByTestId("reglas-aviso")).textContent).toMatch(texto);
       expect(screen.queryByTestId("reglas-lectura")).toBeNull();
     }
@@ -296,13 +296,13 @@ describe("el modelo en reglas", () => {
   it("una respuesta rechazada por el lector se dice sin valores; una lectura de otro modelo no se enseña", async () => {
     const malo = doble(() => lista("rules", { task: "binaria" }));
     const { rerender } = pintar(<ReglasPanel schema={SCHEMA_REGLAS} worker={malo.worker} modelo={{}} datasetName={null} />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     expect((await screen.findByRole("alert")).textContent).toContain("contrato");
     cleanup();
     const ok = doble(() => lista("rules", fixture("rules-result-binaria")));
     const A = {};
     const vista = pintar(<ReglasPanel schema={SCHEMA_REGLAS} worker={ok.worker} modelo={A} datasetName={null} />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     await screen.findByTestId("reglas-lectura");
     vista.rerender(
       <I18nProvider>
@@ -317,7 +317,7 @@ describe("el modelo en reglas", () => {
     localStorage.setItem(LOCALE_STORAGE_KEY, "en");
     const { worker } = doble(() => lista("rules", fixture("rules-result-binaria")));
     pintar(<ReglasPanel schema={SCHEMA_REGLAS} worker={worker} modelo={{}} datasetName={null} />);
-    fireEvent.click(screen.getByRole("button", { name: "See the model as rules" }));
+    fireEvent.click(screen.getByRole("button", { name: "Build the rules" }));
     await waitFor(() => expect(screen.getByRole("heading", { name: "A tree that resembles the model" })).toBeTruthy());
   });
 });
@@ -345,7 +345,7 @@ describe("el modelo en reglas con las filas del archivo (S20)", () => {
     pintar(<ReglasPanel schema={SCHEMA} worker={worker} modelo={{}} datasetName="mis-filas.csv" tabla={TABLA} />);
     expect(screen.getByText(/EN LAS FILAS DE TU ARCHIVO/)).toBeTruthy();
     expect(enviados).toHaveLength(0);
-    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     await screen.findByTestId("reglas-lectura");
     expect(enviados).toHaveLength(1);
     const payload = enviados[0]!.payload as { headers: string[]; rows: string[][]; truth?: boolean };
@@ -360,7 +360,7 @@ describe("el modelo en reglas con las filas del archivo (S20)", () => {
   it("si el archivo no trae el resultado real lo dice: las reglas se midieron contra el modelo, no contra la verdad", async () => {
     const { worker } = doble(() => lista("rules", subidas()));
     pintar(<ReglasPanel schema={SCHEMA} worker={worker} modelo={{}} datasetName={null} tabla={TABLA} />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     await screen.findByTestId("reglas-lectura");
     expect(screen.getByTestId("reglas-sin-verdad").textContent).toMatch(/no trae el resultado real/);
   });
@@ -368,14 +368,14 @@ describe("el modelo en reglas con las filas del archivo (S20)", () => {
   it("con muy pocas filas dice que no hay un árbol que valga la pena", async () => {
     const { worker } = doble(() => ({ id: 0, type: "error", message: "RuntimeError: too-few-rows" }));
     pintar(<ReglasPanel schema={SCHEMA} worker={worker} modelo={{}} datasetName={null} tabla={{ ...TABLA, rows: TABLA.rows.slice(0, 5) }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     expect((await screen.findByTestId("reglas-aviso")).textContent).toMatch(/no hay un árbol que valga la pena/);
   });
 
   it("el lector rechaza una respuesta cuyas filas no son las pedidas (las del entrenamiento donde se pidieron las del archivo)", async () => {
     const { worker } = doble(() => lista("rules", fixture("rules-result-binaria")));
     pintar(<ReglasPanel schema={SCHEMA} worker={worker} modelo={{}} datasetName={null} tabla={TABLA} />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver el modelo en reglas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Armar las reglas" }));
     expect((await screen.findByRole("alert")).textContent).toContain("contrato: source");
   });
 });

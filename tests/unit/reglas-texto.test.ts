@@ -28,7 +28,7 @@ describe("el texto de las reglas", () => {
       const numeradas = lineas.filter((l) => /^\d+\. /.test(l));
       expect(numeradas).toHaveLength(hojas.length);
       expect(numeradas.map((l) => Number(l.split(".")[0]))).toEqual(hojas.map((_, i) => i + 1));
-      expect(lineas[0]).toContain(locale === "es" ? "Reglas que copian al modelo" : "Rules that copy the model");
+      expect(lineas[0]).toContain(locale === "es" ? "Reglas derivadas del modelo" : "Rules derived from the model");
       expect(lineas[1]).toMatch(/\d+(\.\d)? %/);
       expect(texto.endsWith("\n")).toBe(true);
     });
@@ -84,6 +84,15 @@ describe("los grupos", () => {
       expect(sql).toContain(`THEN '${etiqueta}'`);
       expect(texto).toContain(`«${etiqueta}»`);
     }
+  });
+
+  it("el marcador de la tabla del SQL se dice en el idioma de la pantalla (S21, 19-17)", () => {
+    const r = fixture("rules-result-binaria");
+    expect(sqlDeReglas(r, "es")).toContain('FROM "tu_tabla"');
+    expect(sqlDeReglas(r, "en")).toContain('FROM "your_table"');
+    expect(sqlDeReglas(r, "en")).not.toContain("tu_tabla");
+    // quien la nombra a mano (el gate de CPython) manda sobre el idioma
+    expect(sqlDeReglas(r, "en", "tu_tabla")).toContain('FROM "tu_tabla"');
   });
 
   it("el SQL de estimar trae números, no textos", () => {

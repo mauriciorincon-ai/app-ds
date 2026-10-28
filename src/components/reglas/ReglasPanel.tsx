@@ -106,9 +106,11 @@ export function ReglasPanel({
     <section aria-labelledby="reglas-title" data-testid="reglas-panel">
       <Card className="p-5">
         <h2 id="reglas-title" className="text-sm font-semibold">
-          {lectura && !fidelidadSuficiente(lectura)
-            ? t("reglas.titulo_aprox")
-            : t("reglas.titulo")}
+          {!lectura
+            ? t("reglas.titulo_previo")
+            : fidelidadSuficiente(lectura)
+              ? t("reglas.titulo")
+              : t("reglas.titulo_aprox")}
         </h2>
         <p className="mt-1 text-sm text-ink-muted">
           {t(tabla ? "reglas.ayuda_subidas" : "reglas.ayuda")}

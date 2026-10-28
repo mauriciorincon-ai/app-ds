@@ -51,7 +51,8 @@ function condicionTexto(c: CondicionRegla, locale: Locale): string {
 export function sqlDeReglas(
   r: RulesResult,
   locale: Locale,
-  tabla = "tu_tabla",
+  // el marcador de la tabla se dice en el idioma de la pantalla; el alias de la columna es el mismo en los dos (es un identificador)
+  tabla = locale === "en" ? "your_table" : "tu_tabla",
   alias = "prediccion",
 ): string {
   return sqlDe(r, {

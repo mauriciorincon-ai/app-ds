@@ -207,7 +207,7 @@ describe("guía: lo que dicen las paradas es lo que la app dice", () => {
     for (const texto of [
       "Puntuar otro CSV",
       "Simular",
-      "Ver el modelo en reglas",
+      "Armar las reglas",
       "Descargar las reglas (.txt)",
       "Descargar el SQL (.sql)",
       "Guardar el ganador como .probeta.json",
@@ -254,7 +254,7 @@ describe("guía: los botones y textos que el bloque V manda pulsar existen en la
       "marcada como posible dato personal",
       "Ninguna fila sintética es idéntica a una tuya",
       "Semilla fija: {semilla}",
-      "Ver el modelo en reglas",
+      "Armar las reglas",
       "Puntuar otro CSV",
       "Exportar modelo",
       "Cargar modelo guardado",
