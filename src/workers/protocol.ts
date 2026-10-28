@@ -874,6 +874,7 @@ export type RulesResult = {
   depth: number;
   leaves: number;
   n_fit: number;
+  /** Telemetría (S21, lote): la leen las mediciones (`medidas-s21`) y el registro del worker, no una pantalla; por eso el lector no la usa. */
   elapsed_ms: number;
 };
 
@@ -992,6 +993,7 @@ export type StressResult = {
   }[];
   /** Las numéricas más afectadas corridas este múltiplo de su desviación (el paso del tiempo). */
   shift: { level: number; columns: string[]; value: number }[];
+  /** Telemetría (S21, lote): la leen las mediciones (`medidas-s21`) y el registro del worker, no una pantalla; por eso el lector no la usa. */
   elapsed_ms: number;
   /** Solo en la etapa 8: el mejor rival sin modelo en la misma métrica y la misma prueba (en Probeta lo da el veredicto). */
   baseline?: { name: string; value: number };
@@ -1070,6 +1072,7 @@ export type ForecastResult =
       hi80: number[];
       lo95: number[];
       hi95: number[];
+      /** Telemetría (S21, lote): la leen las mediciones (`medidas-s21`), no una pantalla; por eso el lector no la usa. */
       elapsed_ms: number;
     };
 
@@ -1109,6 +1112,7 @@ export type SynthesizeResult = {
   resampled: number;
   rounds: number;
   rare_merged: { column: string; merged: number }[];
+  /** Telemetría (S21, lote): la leen las mediciones (`medidas-s21`) y el registro del worker, no una pantalla; por eso el lector no la usa. */
   elapsed_ms: number;
 };
 
