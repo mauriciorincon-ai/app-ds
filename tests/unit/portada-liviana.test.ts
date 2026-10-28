@@ -72,6 +72,14 @@ const LAZY = [
   "src/workers/contrato-pronostico.ts",
   "src/lib/narration/pronostico.ts",
   "src/lib/narration/textos-pronostico.ts",
+  // S21: «Pregúntale a tus datos» (lector, consulta, panel, gráfico y textos) llega con la pantalla de configuración (dynamic).
+  "src/engine/consulta.ts",
+  "src/engine/pregunta.ts",
+  "src/engine/pregunta-lexico.ts",
+  "src/components/pregunta/PreguntaPanel.tsx",
+  "src/components/pregunta/GraficoConsulta.tsx",
+  "src/lib/narration/consulta.ts",
+  "src/lib/narration/textos-pregunta.ts",
   // S20: el gemelo sintético (motor, panel, textos y contrato) llega con la pantalla de configuración (dynamic).
   "src/engine/gemelo.ts",
   "src/components/gemelo/GemeloPanel.tsx",
@@ -198,6 +206,14 @@ const LAZY_PROTOCOLO = [
   "src/workers/contrato-simulador.ts",
   "src/workers/contrato-ganador.ts",
   // (src/workers/contract.ts ya llega desde el S10 por useProtocolo → quantity.ts: no se vigila aquí)
+  // S21: «Pregúntale a tus datos» tampoco llega a /protocolo.
+  "src/engine/consulta.ts",
+  "src/engine/pregunta.ts",
+  "src/engine/pregunta-lexico.ts",
+  "src/components/pregunta/PreguntaPanel.tsx",
+  "src/components/pregunta/GraficoConsulta.tsx",
+  "src/lib/narration/consulta.ts",
+  "src/lib/narration/textos-pregunta.ts",
 ];
 
 function resolveSpec(from: string, spec: string): string | null {

@@ -1,0 +1,210 @@
+{
+  "pregunta": {
+    "titulo": "Ask your data",
+    "ayuda": "Write a question using the words of your columns («sales by region last quarter»). Probeta reads it with fixed rules, not with a language model: it shows the query in words and in SQL, checks it, and only runs when you ask. The question and your data never leave your browser. What it does not understand, it says; what could be two things, it asks.",
+    "etiqueta": "Your question",
+    "placeholder": "sales by region last quarter",
+    "ejemplos": "Try:",
+    "entender": "Understand the question",
+    "correr": "Run the query",
+    "revisando": "Checking the table for personal data before reading your question…",
+    "orden": {
+      "pregunta": "The dates in «{columna}» can be read two ways (05/06 can be June 5 or May 6). Which order do they come in?",
+      "dia_mes": "Day, month, year (05/06 = June 5)",
+      "mes_dia": "Month, day, year (05/06 = May 6)"
+    },
+    "no_entendi": {
+      "vacia": "Write a question first.",
+      "muy_larga": "The question is too long (over {max} characters): make it shorter.",
+      "nada": "I found nothing in your question that I recognize from this table (columns, values, periods). Write it with the words of your columns.",
+      "sin_medida": "You ask for a calculation on numbers, but this table has no column of numbers.",
+      "sin_fecha": "Your question is about time, but this table has no column of dates that Probeta can read."
+    },
+    "sin_leer": "I did not read: {lista}. The query below does not use those words.",
+    "aviso": {
+      "condiciones-max": "Only up to {max} conditions are read; the rest are left out.",
+      "dos-grupos": "It groups by one thing at a time; the second one is left out.",
+      "dos-agregaciones": "There are two calculations in the question (sum, average…); the first was used.",
+      "dos-ventanas": "There are two time periods in the question; the first was used.",
+      "top-grande": "You can ask for up to {max} (you asked for {n}): that part was not read."
+    },
+    "abierta": {
+      "titulo": "Before going on, I need you to choose",
+      "medida": "There is more than one figure in your question. Which one do you want to measure?",
+      "agrupar": "«{palabra}» could be more than one column. Which one to group by?",
+      "fecha": "Your table has more than one column of dates. Which one to use?",
+      "valor": "«{valor}» is in more than one column. Which one?",
+      "columna": "Which column does the {numero} apply to?",
+      "numero": "«{texto}» can be read two ways. Which is it?",
+      "anio": "Which year is {mes} in?"
+    },
+    "meses": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
+    },
+    "entendida": {
+      "titulo": "How I understood your question",
+      "en_palabras": "In words",
+      "sql": "In SQL",
+      "sql_nota": "This is what runs here, written in SQL (SQLite): dates are read as YYYY-MM-DD and empty cells are left out. The table name is just a placeholder.",
+      "propuesto": "proposed",
+      "propuesto_ayuda": "Your question did not say it; Probeta proposes it. Change it if it is not what you want.",
+      "calcular": "Calculate",
+      "periodo": "Group by"
+    },
+    "agregacion": {
+      "suma": "the sum",
+      "promedio": "the average",
+      "conteo": "the count",
+      "minimo": "the minimum",
+      "maximo": "the maximum",
+      "mediana": "the median"
+    },
+    "periodo": {
+      "dia": "day",
+      "semana": "week (starts on Monday)",
+      "mes": "month",
+      "trimestre": "quarter",
+      "anio": "year"
+    },
+    "unidad": {
+      "dia": "day",
+      "semana": "week",
+      "mes": "month",
+      "trimestre": "quarter",
+      "anio": "year"
+    },
+    "unidades": {
+      "dia": "days",
+      "semana": "weeks",
+      "mes": "months",
+      "trimestre": "quarters",
+      "anio": "years"
+    },
+    "palabras": {
+      "base": "I will calculate {medida}{grupo}{ventana}{filtro}{orden}.",
+      "medida": {
+        "suma": "the sum of «{columna}»",
+        "promedio": "the average of «{columna}»",
+        "minimo": "the minimum of «{columna}»",
+        "maximo": "the maximum of «{columna}»",
+        "mediana": "the median of «{columna}»",
+        "conteo_col": "how many values «{columna}» has",
+        "conteo_filas": "how many rows there are"
+      },
+      "agrupar": {
+        "categoria": ", split by «{columna}»",
+        "tiempo": ", split by {periodo} of «{columna}»"
+      },
+      "ventana": {
+        "ultimo": ", in the last {unidad} of the table (from {desde} to {hasta})",
+        "pasado": ", in the {unidad} before the last one of the table (from {desde} to {hasta})",
+        "ultimos": ", in the last {n} {unidad} of the table (from {desde} to {hasta})",
+        "anio": ", from {desde} to {hasta}",
+        "mes": ", from {desde} to {hasta}",
+        "rango": ", from {desde} to {hasta}",
+        "desde": ", since {desde}",
+        "hasta": ", until {hasta}"
+      },
+      "donde": ", only with the rows where {filtros}",
+      "filtro": {
+        "eq": "«{columna}» is «{valor}»",
+        "ne": "«{columna}» is not «{valor}»",
+        "gt": "«{columna}» is greater than {valor}",
+        "ge": "«{columna}» is at least {valor}",
+        "lt": "«{columna}» is less than {valor}",
+        "le": "«{columna}» is at most {valor}"
+      },
+      "union": {
+        "y": " and ",
+        "o": " or "
+      },
+      "top_desc": ", showing the {n} largest",
+      "top_asc": ", showing the {n} smallest"
+    },
+    "validacion": {
+      "titulo": "Before running, this is what I checked",
+      "nivel": {
+        "ok": "good",
+        "aviso": "careful",
+        "error": "cannot run"
+      },
+      "medida_ok": "The column «{columna}» exists and works for this calculation.",
+      "medida_filas": "Rows are counted: no column of numbers is needed.",
+      "medida_no_existe": "The column «{columna}» does not exist in the table.",
+      "medida_no_numerica": "«{columna}» is not a column of numbers: that cannot be calculated from it. Pick another one or change the calculation to a count.",
+      "medida_sin_columna": "It is missing which column of numbers that calculation is made on.",
+      "grupo_ok": "It groups by «{columna}».",
+      "grupo_no_existe": "The column «{columna}» does not exist in the table.",
+      "grupo_personal": "«{columna}» is marked as possible personal data: it is not grouped by.",
+      "grupo_numerica": "«{columna}» is a column of numbers: it is not grouped by (each value would be a group).",
+      "grupo_fecha": "«{columna}» is a date: group it by day, week, month, quarter or year.",
+      "grupo_no_es_fecha": "«{columna}» is not a column of dates: it cannot be grouped by period.",
+      "grupo_muchos": "There would be {n} groups by «{columna}» (the maximum is {max}). Ask for «the 10 largest» or filter first.",
+      "filtro_ok": "The filter on «{columna}» is well written.",
+      "filtro_columna_no_existe": "The column «{columna}» does not exist in the table.",
+      "filtro_mal": "The filter on «{columna}» cannot be applied: that operator or that value does not fit its type.",
+      "filtro_valor_no_existe": "«{valor}» is not a value of «{columna}».",
+      "ventana_ok": "The time period is inside the dates of the table.",
+      "ventana_incompleta": "careful: the table ends on {hasta}, so that last period is incomplete.",
+      "ventana_sin_fecha": "«{columna}» is not a column of dates.",
+      "ventana_sin_filas": "No row falls in that time period.",
+      "fecha_ambigua": "It is missing which order the dates of «{columna}» come in (day/month or month/day).",
+      "filas_ok": "{n} of {total} rows go into the query.",
+      "filas_sin_fecha": "{n} rows have no readable date and are left out.",
+      "filas_sin_grupo": "{n} rows have no value in the group column and are left out.",
+      "filas_sin_valor": "{n} rows have no value in the figure being calculated and are left out.",
+      "sin_filas": "No row meets what you ask.",
+      "plan_invalido": "The query cannot be built with this table."
+    },
+    "resultado": {
+      "titulo": "Result",
+      "filas_usadas": "{n} of {total} rows went into the query.",
+      "cortado": "Showing {n} of {total} groups.",
+      "tabla": "See the result as a table",
+      "grupo": "Group",
+      "valor": "Value",
+      "filas": "Rows",
+      "sin_grupo": "Total",
+      "descargar": "Download the result (.csv)",
+      "csv_filas": "rows",
+      "nada": "The query returned nothing.",
+      "calculando": "Calculating…"
+    },
+    "frase": {
+      "sin_grupo": "{medida}: {valor}, over {filas} rows.",
+      "categoria": "By «{grupo}», {medida} was {total}: «{primero}» is first with {v1}{pct} and «{ultimo}» is last with {vn}.",
+      "pct": ", {pct} % of the total",
+      "tiempo": "By {periodo}, {medida}: goes from {v0} in {b0} to {vn} in {bn}; the best {periodo} was {bmax} with {vmax}.",
+      "un_grupo": "{medida} in «{primero}»: {v1}, over {filas} rows.",
+      "minimo": "The result has {n} groups; see the table.",
+      "medida": {
+        "suma": "the sum of «{columna}»",
+        "promedio": "the average of «{columna}»",
+        "minimo": "the minimum of «{columna}»",
+        "maximo": "the maximum of «{columna}»",
+        "mediana": "the median of «{columna}»",
+        "conteo_col": "the count of «{columna}»",
+        "conteo_filas": "the number of rows"
+      }
+    },
+    "grafico": {
+      "barras": "Bars of {medida}: {n} groups",
+      "linea": "Line of {medida}: {n} periods",
+      "leyenda_barras": "Each bar is a group; its length is the figure, written beside it. A negative figure carries the sign «−».",
+      "leyenda_linea": "Each point is a period; the line joins them in order. The figures at the ends are written.",
+      "minimo": "minimum",
+      "maximo": "maximum"
+    }
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "pregunta": {
+    "titulo": "Pregúntale a tus datos",
+    "ayuda": "Escribe una pregunta con las palabras de tus columnas («ventas del último trimestre por región»). Probeta la lee con reglas fijas, no con un modelo de lenguaje: te muestra la consulta en palabras y en SQL, la valida y solo corre cuando tú lo pides. La pregunta y tus datos no salen de tu navegador. Lo que no entiende, lo dice; lo que puede ser dos cosas, te lo pregunta.",
+    "etiqueta": "Tu pregunta",
+    "placeholder": "ventas por región del último trimestre",
+    "ejemplos": "Prueba con:",
+    "entender": "Entender la pregunta",
+    "correr": "Correr la consulta",
+    "revisando": "Revisando si hay datos personales en la tabla antes de leer tu pregunta…",
+    "orden": {
+      "pregunta": "Las fechas de «{columna}» se pueden leer de dos maneras (05/06 puede ser 5 de junio o 6 de mayo). ¿En qué orden vienen?",
+      "dia_mes": "Día, mes, año (05/06 = 5 de junio)",
+      "mes_dia": "Mes, día, año (05/06 = 6 de mayo)"
+    },
+    "no_entendi": {
+      "vacia": "Escribe una pregunta primero.",
+      "muy_larga": "La pregunta es muy larga (más de {max} caracteres): hazla más corta.",
+      "nada": "No encontré en tu pregunta nada que reconozca de esta tabla (columnas, valores, periodos). Escríbela con las palabras de tus columnas.",
+      "sin_medida": "Pides un cálculo sobre números, pero esta tabla no tiene ninguna columna de números.",
+      "sin_fecha": "Tu pregunta habla del tiempo, pero esta tabla no tiene una columna de fechas que Probeta pueda leer."
+    },
+    "sin_leer": "No leí: {lista}. La consulta de abajo no usa esas palabras.",
+    "aviso": {
+      "condiciones-max": "Solo se leen hasta {max} condiciones; las demás no entran.",
+      "dos-grupos": "Solo se agrupa por una cosa a la vez; la segunda no entra.",
+      "dos-agregaciones": "Hay dos cálculos en la pregunta (suma, promedio…); se usó el primero.",
+      "dos-ventanas": "Hay dos periodos de tiempo en la pregunta; se usó el primero.",
+      "top-grande": "Se pueden pedir hasta {max} (pediste {n}): esa parte no se leyó."
+    },
+    "abierta": {
+      "titulo": "Antes de seguir, necesito que elijas",
+      "medida": "Hay más de una cifra en tu pregunta. ¿Cuál quieres medir?",
+      "agrupar": "«{palabra}» puede ser más de una columna. ¿Por cuál agrupar?",
+      "fecha": "Tu tabla tiene más de una columna de fechas. ¿Cuál usar?",
+      "valor": "«{valor}» está en más de una columna. ¿De cuál?",
+      "columna": "¿A qué columna se aplica el {numero}?",
+      "numero": "«{texto}» se puede leer de dos maneras. ¿Cuál es?",
+      "anio": "¿De qué año es {mes}?"
+    },
+    "meses": {
+      "1": "enero",
+      "2": "febrero",
+      "3": "marzo",
+      "4": "abril",
+      "5": "mayo",
+      "6": "junio",
+      "7": "julio",
+      "8": "agosto",
+      "9": "septiembre",
+      "10": "octubre",
+      "11": "noviembre",
+      "12": "diciembre"
+    },
+    "entendida": {
+      "titulo": "Así entendí tu pregunta",
+      "en_palabras": "En palabras",
+      "sql": "En SQL",
+      "sql_nota": "Es lo que corre aquí, dicho en SQL (SQLite): las fechas se leen como AAAA-MM-DD y las celdas vacías no entran. El nombre de la tabla es solo un marcador.",
+      "propuesto": "propuesto",
+      "propuesto_ayuda": "Tu pregunta no lo decía; Probeta lo propone. Cámbialo si no es lo que quieres.",
+      "calcular": "Calcular",
+      "periodo": "Agrupar por"
+    },
+    "agregacion": {
+      "suma": "la suma",
+      "promedio": "el promedio",
+      "conteo": "el conteo",
+      "minimo": "el mínimo",
+      "maximo": "el máximo",
+      "mediana": "la mediana"
+    },
+    "periodo": {
+      "dia": "día",
+      "semana": "semana (empieza el lunes)",
+      "mes": "mes",
+      "trimestre": "trimestre",
+      "anio": "año"
+    },
+    "unidad": {
+      "dia": "día",
+      "semana": "semana",
+      "mes": "mes",
+      "trimestre": "trimestre",
+      "anio": "año"
+    },
+    "unidades": {
+      "dia": "días",
+      "semana": "semanas",
+      "mes": "meses",
+      "trimestre": "trimestres",
+      "anio": "años"
+    },
+    "palabras": {
+      "base": "Voy a calcular {medida}{grupo}{ventana}{filtro}{orden}.",
+      "medida": {
+        "suma": "la suma de «{columna}»",
+        "promedio": "el promedio de «{columna}»",
+        "minimo": "el mínimo de «{columna}»",
+        "maximo": "el máximo de «{columna}»",
+        "mediana": "la mediana de «{columna}»",
+        "conteo_col": "cuántos valores tiene «{columna}»",
+        "conteo_filas": "cuántas filas hay"
+      },
+      "agrupar": {
+        "categoria": ", separada por «{columna}»",
+        "tiempo": ", separada por {periodo} de «{columna}»"
+      },
+      "ventana": {
+        "ultimo": ", en el último {unidad} de la tabla (del {desde} al {hasta})",
+        "pasado": ", en el {unidad} anterior al último de la tabla (del {desde} al {hasta})",
+        "ultimos": ", en los últimos {n} {unidad} de la tabla (del {desde} al {hasta})",
+        "anio": ", del {desde} al {hasta}",
+        "mes": ", del {desde} al {hasta}",
+        "rango": ", del {desde} al {hasta}",
+        "desde": ", desde el {desde}",
+        "hasta": ", hasta el {hasta}"
+      },
+      "donde": ", solo con las filas donde {filtros}",
+      "filtro": {
+        "eq": "«{columna}» es «{valor}»",
+        "ne": "«{columna}» no es «{valor}»",
+        "gt": "«{columna}» es mayor que {valor}",
+        "ge": "«{columna}» es al menos {valor}",
+        "lt": "«{columna}» es menor que {valor}",
+        "le": "«{columna}» es como máximo {valor}"
+      },
+      "union": {
+        "y": " y ",
+        "o": " o "
+      },
+      "top_desc": ", mostrando los {n} mayores",
+      "top_asc": ", mostrando los {n} menores"
+    },
+    "validacion": {
+      "titulo": "Antes de correr, esto es lo que comprobé",
+      "nivel": {
+        "ok": "bien",
+        "aviso": "ojo",
+        "error": "no se puede"
+      },
+      "medida_ok": "La columna «{columna}» existe y sirve para esta cuenta.",
+      "medida_filas": "Se cuentan filas: no hace falta ninguna columna de números.",
+      "medida_no_existe": "La columna «{columna}» no existe en la tabla.",
+      "medida_no_numerica": "«{columna}» no es una columna de números: no se le puede sacar eso. Elige otra o cambia el cálculo a un conteo.",
+      "medida_sin_columna": "Falta decir de qué columna de números se hace esa cuenta.",
+      "grupo_ok": "Se agrupa por «{columna}».",
+      "grupo_no_existe": "La columna «{columna}» no existe en la tabla.",
+      "grupo_personal": "«{columna}» está marcada como posible dato personal: no se agrupa por ella.",
+      "grupo_numerica": "«{columna}» es una columna de números: no se agrupa por ella (cada valor sería un grupo).",
+      "grupo_fecha": "«{columna}» es una fecha: agrúpala por día, semana, mes, trimestre o año.",
+      "grupo_no_es_fecha": "«{columna}» no es una columna de fechas: no se puede agrupar por periodo.",
+      "grupo_muchos": "Saldrían {n} grupos por «{columna}» (el máximo es {max}). Pide «los 10 mayores» o filtra antes.",
+      "filtro_ok": "El filtro sobre «{columna}» está bien escrito.",
+      "filtro_columna_no_existe": "La columna «{columna}» no existe en la tabla.",
+      "filtro_mal": "El filtro sobre «{columna}» no se puede aplicar: ese operador o ese valor no caben en su tipo.",
+      "filtro_valor_no_existe": "«{valor}» no es un valor de «{columna}».",
+      "ventana_ok": "El periodo de tiempo está dentro de las fechas de la tabla.",
+      "ventana_incompleta": "ojo: la tabla llega hasta el {hasta}, así que ese último periodo está incompleto.",
+      "ventana_sin_fecha": "«{columna}» no es una columna de fechas.",
+      "ventana_sin_filas": "Ninguna fila cae en ese periodo de tiempo.",
+      "fecha_ambigua": "Falta saber en qué orden vienen las fechas de «{columna}» (día/mes o mes/día).",
+      "filas_ok": "{n} de {total} filas entran a la consulta.",
+      "filas_sin_fecha": "{n} filas no tienen una fecha legible y no entran.",
+      "filas_sin_grupo": "{n} filas no tienen valor en la columna del grupo y no entran.",
+      "filas_sin_valor": "{n} filas no tienen valor en la cifra que se calcula y no entran.",
+      "sin_filas": "Ninguna fila cumple lo que pides.",
+      "plan_invalido": "La consulta no se puede armar con esta tabla."
+    },
+    "resultado": {
+      "titulo": "Resultado",
+      "filas_usadas": "{n} de {total} filas entraron a la consulta.",
+      "cortado": "Se muestran {n} de {total} grupos.",
+      "tabla": "Ver el resultado en una tabla",
+      "grupo": "Grupo",
+      "valor": "Valor",
+      "filas": "Filas",
+      "sin_grupo": "Total",
+      "descargar": "Descargar el resultado (.csv)",
+      "csv_filas": "filas",
+      "nada": "La consulta no devolvió nada.",
+      "calculando": "Calculando…"
+    },
+    "frase": {
+      "sin_grupo": "{medida}: {valor}, sobre {filas} filas.",
+      "categoria": "Por «{grupo}», {medida} fue {total}: «{primero}» va primero con {v1}{pct} y «{ultimo}» queda al final con {vn}.",
+      "pct": ", el {pct} % del total",
+      "tiempo": "Por {periodo}, {medida}: pasa de {v0} en {b0} a {vn} en {bn}; el mejor {periodo} fue {bmax} con {vmax}.",
+      "un_grupo": "{medida} en «{primero}»: {v1}, sobre {filas} filas.",
+      "minimo": "El resultado tiene {n} grupos; mira la tabla.",
+      "medida": {
+        "suma": "la suma de «{columna}»",
+        "promedio": "el promedio de «{columna}»",
+        "minimo": "el mínimo de «{columna}»",
+        "maximo": "el máximo de «{columna}»",
+        "mediana": "la mediana de «{columna}»",
+        "conteo_col": "el conteo de «{columna}»",
+        "conteo_filas": "el número de filas"
+      }
+    },
+    "grafico": {
+      "barras": "Barras de {medida}: {n} grupos",
+      "linea": "Línea de {medida}: {n} periodos",
+      "leyenda_barras": "Cada barra es un grupo; su largo es la cifra, escrita al lado. Una cifra negativa lleva el signo «−».",
+      "leyenda_linea": "Cada punto es un periodo; la línea los une en orden. Las cifras de los extremos van escritas.",
+      "minimo": "mínimo",
+      "maximo": "máximo"
+    }
+  }
+}
