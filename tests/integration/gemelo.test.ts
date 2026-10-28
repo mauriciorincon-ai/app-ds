@@ -121,6 +121,42 @@ describe("el gemelo del kit", () => {
     expect(valido(grande, raw).copies).toBe(0);
   });
 
+  it("la cercanía con categóricas de miles de valores usa una matriz dispersa y da lo mismo que la densa (S21, M-4)", () => {
+    // 700 + 700 categorías: por encima de SYNTH_SPARSE_FROM (512) → dispersa; la misma tabla con el umbral subido → densa
+    const n = 3500;
+    const filas = Array.from({ length: n }, (_, i) => [String(10 + ((i * 37) % 101) / 3), `a_${(i * 7919) % 700}`, `b_${(i * 104729) % 700}`]);
+    const payload: SynthesizePayload = { headers: ["x", "a", "b"], kinds: ["numeric", "categorical", "categorical"], rows: filas, n_rows: 600, seed: 5 };
+    const dispersa = call(payload);
+    py.runPython("SYNTH_SPARSE_FROM = 10**9");
+    let densa: SynthesizeResult;
+    try {
+      densa = call(payload);
+    } finally {
+      py.runPython("SYNTH_SPARSE_FROM = 512");
+    }
+    expect(dispersa.rows).toEqual(densa.rows);
+    expect(dispersa.copies).toBe(densa.copies);
+    for (const k of ["median_syn", "median_real", "p5_real", "share_below"] as const)
+      expect(dispersa.proximity[k]).toBeCloseTo(densa.proximity[k], 8);
+    expect(dispersa.proximity.n_real).toBe(densa.proximity.n_real);
+    expect(dispersa.proximity.n_syn).toBe(densa.proximity.n_syn);
+  }, 300_000);
+
+  it("el peor caso que deja pasar la puerta (50 000 filas, 3 categóricas de 10 000 valores) termina en el presupuesto del S21 (30 s)", () => {
+    const n = 50_000;
+    const mult = [7919, 104729, 1299709];
+    const filas = Array.from({ length: n }, (_, i) => [
+      String(50 + ((i * 37) % 101) / 3),
+      ...mult.map((m, j) => `c${j}_${(i * m) % 10_000}`),
+    ]);
+    const tabla: CsvTable = { headers: ["x", "c0", "c1", "c2"], rows: filas };
+    const plan = planGemelo(tabla, []);
+    expect(plan.incluidas).toHaveLength(4);
+    const raw = call(envioGemelo(tabla, plan, n));
+    expect(raw.elapsed_ms).toBeLessThanOrEqual(30_000);
+    expect(raw.rows).toHaveLength(n);
+  }, 300_000);
+
   it("n filas pedidas es lo que sale, también más que las reales", () => {
     const grande = call({ ...payload, n_rows: 500 });
     expect(grande.rows).toHaveLength(500);

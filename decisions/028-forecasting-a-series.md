@@ -99,3 +99,13 @@ and the screen says how many folds they come from and that they are not a guaran
 - Hyndman, R. J. & Koehler, A. B. (2006), «Another look at measures of forecast accuracy», _International Journal of Forecasting_ 22(4):
   the MASE.
 - Hastie, Tibshirani & Friedman, _The Elements of Statistical Learning_ §7.10: the one-standard-error rule, as in ADR 009.
+
+## Addendum (Sprint 021) — the long daily series, measured
+
+The sprint 20 left Holt-Winters on 2,000 daily periods without a figure. It was measured with the real Pyodide (Node, same WebAssembly
+engine and Python as the browser; the production-build run in the browser is in the sprint 21 closing): **seasonal series of 2,000 and
+2,100 days, season 7, horizons 7, 30 and 120, 12 folds, three starts and `maxiter = 60`: 7.3 to 9.2 s** in total for the league of six
+methods, against the budget fixed _before_ measuring (45 s). In the browser (production build, Chromium, 2,000 daily rows through the
+real screen, horizons 7, 30 and 120): **13.5 s the first time (it includes downloading the Python engine) and 8.4 s and 6.9 s after it**.
+No cap was lowered and no start was removed. The screen already says
+«forecasting…» while it runs; there is still no cancel button (the worker is separate, so the page does not freeze).
