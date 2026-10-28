@@ -4,7 +4,7 @@
 // línea (SVG) para los periodos en orden. Siempre con la cifra ESCRITA junto a cada barra o punto y con la tabla como equivalente
 // accesible: el color nunca es lo único que dice algo (un valor negativo lleva el signo «−» y una barra de otro tono).
 import type { FilaResultado } from "@/engine/consulta";
-import { formatQuantity, quantityDecimals } from "@/lib/quantity";
+import { formatQuantity } from "@/lib/quantity";
 import { niceTicks } from "@/lib/scatter";
 
 export type TextosGraficoConsulta = {
@@ -18,13 +18,14 @@ type Props = {
   readonly grupos: readonly FilaResultado[];
   readonly modo: "barras" | "linea";
   readonly textos: TextosGraficoConsulta;
+  /** Los decimales de las cifras: los decide `decimalesDe` (un conteo no lleva ninguno). */
+  readonly decimales: number;
 };
 
 const firmado = (v: number, decimales: number): string =>
   v < 0 ? `−${formatQuantity(-v, decimales)}` : formatQuantity(v, decimales);
 
-export function GraficoConsulta({ grupos, modo, textos }: Props) {
-  const decimales = quantityDecimals(grupos.map((g) => g.valor));
+export function GraficoConsulta({ grupos, modo, textos, decimales }: Props) {
   return (
     <figure data-testid="pregunta-grafico" data-modo={modo} className="mt-3">
       {modo === "barras" ? (

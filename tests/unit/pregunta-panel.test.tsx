@@ -98,13 +98,19 @@ describe("la consulta se enseña antes de correr", () => {
     expect(screen.queryByTestId("pregunta-resultado")).toBeNull();
   });
 
-  it("cambiar lo propuesto cambia la consulta y deja de estar marcado", async () => {
+  it("cambiar lo propuesto cambia la consulta, dice «cambiado por ti» y el control sigue a la mano (auditoría A-16)", async () => {
     pintar(TABLA);
     await preguntar("ventas por región");
     const select = within(await screen.findByTestId("pregunta-propuestos")).getByRole("combobox");
+    expect(within(screen.getByTestId("pregunta-propuestos")).getByText("propuesto")).toBeTruthy();
     fireEvent.change(select, { target: { value: "promedio" } });
     expect(screen.getByTestId("pregunta-palabras").textContent).toContain("el promedio de «ventas_usd»");
-    expect(screen.queryByTestId("pregunta-propuestos")).toBeNull();
+    const marco = screen.getByTestId("pregunta-propuestos");
+    expect(within(marco).getByText("cambiado por ti")).toBeTruthy();
+    expect(within(marco).queryByText("propuesto")).toBeNull();
+    // se puede volver a cambiar sin repetir la pregunta
+    fireEvent.change(within(marco).getByRole("combobox"), { target: { value: "suma" } });
+    expect(screen.getByTestId("pregunta-palabras").textContent).toContain("la suma de «ventas_usd»");
   });
 
   it("lo que no se leyó se dice, y la consulta mostrada no lo usa", async () => {

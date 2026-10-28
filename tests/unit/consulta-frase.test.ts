@@ -10,7 +10,7 @@ import {
   type Resultado,
 } from "@/engine/consulta";
 import { leerPregunta } from "@/engine/pregunta";
-import { enPalabras, fraseResultado, recontar } from "@/lib/narration/consulta";
+import { decimalesDe, enPalabras, fraseResultado, recontar } from "@/lib/narration/consulta";
 import { TEXTOS_PREGUNTA } from "@/lib/narration/textos-pregunta";
 import { catalogoDelKit } from "../fixtures/preguntas/ayudas";
 
@@ -50,6 +50,33 @@ describe("la frase del resultado", () => {
     const f = fraseResultado(plan, cat, correr(plan, cat), "en");
     expect(f.verificada).toBe(true);
     expect(f.texto).toMatch(/^the sum of «unidades»: [\d,]+, over 832 rows\.$/);
+  });
+
+  it("con un cálculo que no se suma (promedio, máximo, mínimo, mediana) por categoría no dice «Total» (auditoría A-03)", () => {
+    for (const q of ["promedio de ventas usd por region", "maximo de ventas usd por region", "minimo de ventas usd por region", "mediana de unidades por producto"]) {
+      const plan = consulta(q);
+      for (const idioma of ["es", "en"] as const) {
+        const f = fraseResultado(plan, cat, correr(plan, cat), idioma);
+        expect(f.verificada, `${q}/${idioma}`).toBe(true);
+        expect(f.texto, `${q}/${idioma}`).not.toMatch(/\bTotal\b|\btotal\b/);
+        expect(f.texto, `${q}/${idioma}`).toMatch(/«\w+»/);
+      }
+    }
+  });
+
+  it("los conteos se dicen sin decimales aunque sean pocos (auditoría A-15)", () => {
+    const c = armarCatalogo({
+      headers: ["zona", "x"],
+      rows: [...Array.from({ length: 9 }, () => ["norte", "1"]), ...Array.from({ length: 11 }, () => ["sur", "1"])],
+    });
+    const l = leerPregunta("cuántas filas hay por zona", c);
+    if (l.tipo !== "consulta") throw new Error("no es una consulta");
+    const r = correr(l.plan, c);
+    expect(decimalesDe(l.plan, r.grupos.map((g) => g.valor))).toBe(0);
+    const f = fraseResultado(l.plan, c, r, "es");
+    expect(f.verificada).toBe(true);
+    expect(f.texto).toContain("11");
+    expect(f.texto).not.toMatch(/\d\.\d{2}/);
   });
 
   it("con un solo grupo no habla de «primero» y «último»", () => {

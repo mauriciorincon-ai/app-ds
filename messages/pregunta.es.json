@@ -26,7 +26,9 @@
       "dos-grupos": "Solo se agrupa por una cosa a la vez; la segunda no entra.",
       "dos-agregaciones": "Hay dos cálculos en la pregunta (suma, promedio…); se usó el primero.",
       "dos-ventanas": "Hay dos periodos de tiempo en la pregunta; se usó el primero.",
-      "top-grande": "Se pueden pedir hasta {max} (pediste {n}): esa parte no se leyó."
+      "top-grande": "Se pueden pedir hasta {max} (pediste {n}): esa parte no se leyó.",
+      "union-y": "Las dos condiciones son de columnas distintas y se unen con «y»; un «o» entre ellas no se lee.",
+      "ventana-grande": "Un periodo así de largo no se lee (hasta {max} de esa unidad): esa parte no se leyó."
     },
     "abierta": {
       "titulo": "Antes de seguir, necesito que elijas",
@@ -56,11 +58,12 @@
       "titulo": "Así entendí tu pregunta",
       "en_palabras": "En palabras",
       "sql": "En SQL",
-      "sql_nota": "Es lo que corre aquí, dicho en SQL (SQLite): las fechas se leen como AAAA-MM-DD y las celdas vacías no entran. El nombre de la tabla es solo un marcador.",
+      "sql_nota": "Es lo que corre aquí, dicho en SQL (SQLite): las fechas se leen como AAAA-MM-DD y las celdas vacías no entran. Aquí también cuentan como vacías «NA», «N/A», «null», «nan», «none» y «-», y un texto dentro de una columna de números; en tu base tienen que estar como NULL para que dé lo mismo. El nombre de la tabla es solo un marcador.",
       "propuesto": "propuesto",
       "propuesto_ayuda": "Tu pregunta no lo decía; Probeta lo propone. Cámbialo si no es lo que quieres.",
       "calcular": "Calcular",
-      "periodo": "Agrupar por"
+      "periodo": "Agrupar por",
+      "cambiado": "cambiado por ti"
     },
     "agregacion": {
       "suma": "la suma",
@@ -165,7 +168,11 @@
       "filas_sin_grupo": "{n} filas no tienen valor en la columna del grupo y no entran.",
       "filas_sin_valor": "{n} filas no tienen valor en la cifra que se calcula y no entran.",
       "sin_filas": "Ninguna fila cumple lo que pides.",
-      "plan_invalido": "La consulta no se puede armar con esta tabla."
+      "plan_invalido": "La consulta no se puede armar con esta tabla.",
+      "ventana_antes": "ojo: el periodo empieza el {desde}, antes de la primera fecha de la tabla ({minimo}); lo que falta no se cuenta.",
+      "filas_sin_fecha_one": "1 fila no tiene una fecha legible y no entra.",
+      "filas_sin_grupo_one": "1 fila no tiene valor en la columna del grupo y no entra.",
+      "filas_sin_valor_one": "1 fila no tiene valor en la cifra que se calcula y no entra."
     },
     "resultado": {
       "titulo": "Resultado",
@@ -184,6 +191,7 @@
     "frase": {
       "sin_grupo": "{medida}: {valor}, sobre {filas} filas.",
       "categoria": "Por «{grupo}», {medida} fue {total}: «{primero}» va primero con {v1}{pct} y «{ultimo}» queda al final con {vn}.",
+      "categoria_sin_total": "Por «{grupo}», {medida}: «{primero}» va primero con {v1} y «{ultimo}» queda al final con {vn}.",
       "pct": ", el {pct} % del total",
       "tiempo": "Por {periodo}, {medida}: pasa de {v0} en {b0} a {vn} en {bn}; el mejor {periodo} fue {bmax} con {vmax}.",
       "un_grupo": "{medida} en «{primero}»: {v1}, sobre {filas} filas.",

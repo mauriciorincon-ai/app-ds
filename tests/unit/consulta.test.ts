@@ -187,8 +187,26 @@ describe("la validación, antes de correr", () => {
   });
   it("las filas que no entran se dicen con su cuenta", () => {
     const v = validar(plan({ agrupar: porZona }), cat);
-    expect(v.find((x) => x.clave === "filas_sin_grupo")?.params).toEqual({ n: 1 });
-    expect(v.find((x) => x.clave === "filas_sin_valor")?.params).toEqual({ n: 1 });
+    // `count` hace que «1 fila» se diga en singular (auditoría A-20)
+    expect(v.find((x) => x.clave === "filas_sin_grupo")?.params).toEqual({ n: 1, count: 1 });
+    expect(v.find((x) => x.clave === "filas_sin_valor")?.params).toEqual({ n: 1, count: 1 });
+  });
+  it("el tope de grupos vale también por periodo: 1 500 días no se pueden correr, 50 meses sí (auditoría A-07)", () => {
+    const dias = Array.from({ length: GRUPOS_MAX + 1000 }, (_, i) => [new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10), "1"]);
+    const c = armarCatalogo({ headers: ["dia", "v"], rows: dias });
+    const base: QueryPlan = { ...plan({ medida: { agregacion: "suma", columna: "v" } }), agrupar: { tipo: "tiempo", columna: "dia", periodo: "dia" } };
+    expect(validar(base, c).find((x) => x.clave === "grupo_muchos")?.nivel).toBe("error");
+    expect(sePuedeCorrer(validar({ ...base, top: 10, orden: "desc" }, c))).toBe(true);
+    const porMes: QueryPlan = { ...base, agrupar: { tipo: "tiempo", columna: "dia", periodo: "mes" } };
+    expect(validar(porMes, c).some((x) => x.clave === "grupo_muchos")).toBe(false);
+  });
+  it("un periodo que empieza antes de la primera fecha de la tabla lo dice, y no dice que está «dentro» (auditoría A-17)", () => {
+    const antes = { columna: "dia", desde: "2020-01-01", hasta: "2024-12-31", descripcion: { clave: "anio", params: {} } } as const;
+    const v = validar(plan({ ventana: antes }), cat);
+    expect(v.find((x) => x.clave === "ventana_antes")?.nivel).toBe("aviso");
+    expect(v.some((x) => x.clave === "ventana_ok")).toBe(false);
+    const dentro = { columna: "dia", desde: "2024-02-01", hasta: "2024-03-31", descripcion: { clave: "anio", params: {} } } as const;
+    expect(validar(plan({ ventana: dentro }), cat).some((x) => x.clave === "ventana_antes")).toBe(false);
   });
 });
 

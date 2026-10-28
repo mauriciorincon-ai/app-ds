@@ -22,14 +22,18 @@ import {
   type Resultado,
 } from "@/engine/consulta";
 import { ejemplosDe, leerPregunta, type Lectura } from "@/engine/pregunta";
-import { PREGUNTA_MAX } from "@/engine/pregunta-lexico";
+import {
+  AGREGACIONES,
+  PERIODOS as PERIODOS_LEXICO,
+  PREGUNTA_MAX,
+} from "@/engine/pregunta-lexico";
 import { useI18n } from "@/i18n/provider";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import type { CsvTable } from "@/lib/ds/csv";
 import { datasetSlug, downloadTextFile } from "@/lib/files";
-import { enPalabras, fraseResultado } from "@/lib/narration/consulta";
+import { decimalesDe, enPalabras, fraseResultado } from "@/lib/narration/consulta";
 import { TEXTOS_PREGUNTA } from "@/lib/narration/textos-pregunta";
-import { formatQuantity, quantityDecimals } from "@/lib/quantity";
+import { formatQuantity } from "@/lib/quantity";
 import { GraficoConsulta } from "./GraficoConsulta";
 
 export type PreguntaPanelProps = {
@@ -42,21 +46,9 @@ export type PreguntaPanelProps = {
 
 const SIMBOLO = { ok: "✓", aviso: "⚠", error: "✕" } as const;
 const GRUPOS_EN_GRAFICO = 30;
-const AGREGACIONES_DE_NUMEROS: readonly Agregacion[] = [
-  "suma",
-  "promedio",
-  "conteo",
-  "minimo",
-  "maximo",
-  "mediana",
-];
-const PERIODOS: readonly PeriodoConsulta[] = [
-  "dia",
-  "semana",
-  "mes",
-  "trimestre",
-  "anio",
-];
+// las listas salen del léxico, no de una copia a mano (auditoría A-18)
+const AGREGACIONES_DE_NUMEROS = Object.keys(AGREGACIONES) as Agregacion[];
+const PERIODOS = Object.keys(PERIODOS_LEXICO) as PeriodoConsulta[];
 
 type Corrido = { readonly clave: string; readonly resultado: Resultado };
 
@@ -353,7 +345,11 @@ export function PreguntaPanel({
                           className="rounded-full border border-caution/40 px-2 py-0.5 text-xs text-caution"
                           title={t("pregunta.entendida.propuesto_ayuda")}
                         >
-                          {t("pregunta.entendida.propuesto")}
+                          {t(
+                            respuestas["agregacion"] !== undefined
+                              ? "pregunta.entendida.cambiado"
+                              : "pregunta.entendida.propuesto",
+                          )}
                         </span>
                       </span>
                       <select
@@ -382,7 +378,11 @@ export function PreguntaPanel({
                             className="rounded-full border border-caution/40 px-2 py-0.5 text-xs text-caution"
                             title={t("pregunta.entendida.propuesto_ayuda")}
                           >
-                            {t("pregunta.entendida.propuesto")}
+                            {t(
+                              respuestas["periodo"] !== undefined
+                                ? "pregunta.entendida.cambiado"
+                                : "pregunta.entendida.propuesto",
+                            )}
                           </span>
                         </span>
                         <select
@@ -538,7 +538,7 @@ function ResultadoConsulta({
   const { locale } = useI18n();
   const frase = fraseResultado(plan, catalogo, resultado, locale);
   const grupos = resultado.grupos;
-  const decimales = quantityDecimals(grupos.map((g) => g.valor));
+  const decimales = decimalesDe(plan, grupos.map((g) => g.valor));
   const enTiempo =
     plan.agrupar?.tipo === "tiempo" && plan.top === null && grupos.length >= 3;
   const paraGrafico = enTiempo ? grupos : grupos.slice(0, GRUPOS_EN_GRAFICO);
@@ -581,6 +581,7 @@ function ResultadoConsulta({
           {plan.agrupar && (
             <GraficoConsulta
               grupos={paraGrafico}
+              decimales={decimales}
               modo={enTiempo ? "linea" : "barras"}
               textos={{
                 etiqueta: t(

@@ -165,6 +165,11 @@ export function recontar(
 
 // --- la frase -------------------------------------------------------------------------------------------------------------
 
+/** Cuántos decimales se escriben: los conteos son enteros, y las demás cifras los que pide la más pequeña (auditoría A-15). */
+export function decimalesDe(plan: QueryPlan, valores: readonly number[]): number {
+  return plan.medida.agregacion === "conteo" ? 0 : quantityDecimals(valores);
+}
+
 export type FraseConsulta = {
   readonly texto: string;
   /** Falso si la plantilla no cuadró con la recuenta y se cayó a la línea mínima. */
@@ -190,7 +195,7 @@ export function fraseResultado(
   if (!cuenta.coincide) return minima;
 
   const valores = cuenta.valores;
-  const decimales = quantityDecimals([
+  const decimales = decimalesDe(plan, [
     ...valores,
     ...(cuenta.total !== null ? [cuenta.total] : []),
   ]);
@@ -239,10 +244,11 @@ export function fraseResultado(
       total !== null && total > 0 && todosPositivos
         ? Math.round((valores[0]! / total) * 100)
         : null;
-    texto = tr("pregunta.frase.categoria", {
+    // sin un total que decir (promedio, mínimo, máximo, mediana) la frase no inventa uno (auditoría A-03)
+    texto = tr(total !== null ? "pregunta.frase.categoria" : "pregunta.frase.categoria_sin_total", {
       grupo: g.columna,
       medida,
-      total: total !== null ? f(total) : tr("pregunta.resultado.sin_grupo"),
+      total: total !== null ? f(total) : "",
       primero: primero.etiqueta,
       ultimo: ultimo.etiqueta,
       v1: f(valores[0]!),

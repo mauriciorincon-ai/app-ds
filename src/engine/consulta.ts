@@ -519,22 +519,30 @@ export function validar(plan: QueryPlan, cat: Catalogo): Validacion[] {
     if (!f || f.tipo !== "fecha")
       v("ventana_sin_fecha", "error", { columna: plan.ventana.columna });
     else if (f.ambigua) v("fecha_ambigua", "error", { columna: f.nombre });
-    else if (
-      f.maximo !== null &&
-      plan.ventana.hasta !== null &&
-      plan.ventana.hasta > f.maximo &&
-      plan.ventana.desde !== null &&
-      plan.ventana.desde <= f.maximo
-    )
-      v("ventana_incompleta", "aviso", { hasta: f.maximo });
-    else
-      v(
-        "ventana_ok",
-        "ok",
-        plan.ventana.desde && plan.ventana.hasta
-          ? { desde: plan.ventana.desde, hasta: plan.ventana.hasta }
-          : {},
-      );
+    else {
+      const incompleta =
+        f.maximo !== null &&
+        plan.ventana.hasta !== null &&
+        plan.ventana.hasta > f.maximo &&
+        plan.ventana.desde !== null &&
+        plan.ventana.desde <= f.maximo;
+      // el periodo empieza antes de la primera fecha de la tabla: lo que falta no se cuenta, y se dice (auditoría A-17)
+      const antes =
+        f.minimo !== null &&
+        plan.ventana.desde !== null &&
+        plan.ventana.desde < f.minimo;
+      if (incompleta) v("ventana_incompleta", "aviso", { hasta: f.maximo });
+      if (antes)
+        v("ventana_antes", "aviso", { desde: plan.ventana.desde, minimo: f.minimo });
+      if (!incompleta && !antes)
+        v(
+          "ventana_ok",
+          "ok",
+          plan.ventana.desde && plan.ventana.hasta
+            ? { desde: plan.ventana.desde, hasta: plan.ventana.hasta }
+            : {},
+        );
+    }
   }
 
   // las filas
@@ -550,21 +558,13 @@ export function validar(plan: QueryPlan, cat: Catalogo): Validacion[] {
           "error",
         );
       else v("filas_ok", "ok", { n: s.filas.length, total: cat.filas });
-      if (s.sinFecha > 0) v("filas_sin_fecha", "aviso", { n: s.sinFecha });
-      if (s.sinGrupo > 0) v("filas_sin_grupo", "aviso", { n: s.sinGrupo });
-      if (s.sinValor > 0) v("filas_sin_valor", "aviso", { n: s.sinValor });
-      if (plan.agrupar?.tipo === "categoria" && plan.top === null) {
-        const grupos = new Set(
-          s.filas.map(
-            (i) =>
-              (
-                columnaDe(cat, plan.agrupar!.columna) as Extract<
-                  ColumnaCat,
-                  { tipo: "categoria" }
-                >
-              ).valores[i],
-          ),
-        );
+      // `count` hace que «1 fila» se diga en singular (auditoría A-20)
+      if (s.sinFecha > 0) v("filas_sin_fecha", "aviso", { n: s.sinFecha, count: s.sinFecha });
+      if (s.sinGrupo > 0) v("filas_sin_grupo", "aviso", { n: s.sinGrupo, count: s.sinGrupo });
+      if (s.sinValor > 0) v("filas_sin_valor", "aviso", { n: s.sinValor, count: s.sinValor });
+      // el tope de grupos vale igual por categoría que por periodo: 1 500 días son 1 500 filas de tabla y 1 500 puntos (auditoría A-07)
+      if (plan.agrupar && plan.top === null) {
+        const grupos = new Set(s.filas.map((i) => claveDeFila(plan, cat, i)));
         if (grupos.size > GRUPOS_MAX)
           v("grupo_muchos", "error", {
             columna: plan.agrupar.columna,
