@@ -10,8 +10,8 @@ Probeta DS te ayuda a construir un modelo de predicción a partir de tus datos y
 **con franqueza si ese modelo sirve o no**. Está pensada para profesionales que no son científicos de
 datos: tú traes una tabla, eliges qué quieres predecir, y la app entrena un modelo y te da un
 **veredicto honesto**. Si no tienes nada que predecir, también puede **encontrar grupos de filas
-parecidas** y decirte cuánto creerles; si tu tabla tiene fechas, puede **pronosticar una serie**, y puede armarte un
-**gemelo sintético** de tus datos para compartir una muestra sin compartir a las personas. Y si prefieres ir despacio, **Protocolo DS** te lleva por
+parecidas** y decirte cuánto creerles; si tu tabla tiene fechas, puede **pronosticar una serie**, puede armarte un
+**gemelo sintético** de tus datos para compartir una muestra sin compartir a las personas, y puedes **preguntarle a tus datos** con tus propias palabras («ventas del último trimestre por región») y ver la cuenta que hizo. Y si prefieres ir despacio, **Protocolo DS** te lleva por
 etapas con compuertas, con tus propios datos. Todo ocurre **dentro de tu navegador** — tus datos
 nunca se suben a ningún servidor.
 
@@ -1154,6 +1154,52 @@ esquina superior derecha puedes cambiar el idioma entre **Español** e **English
   están entre sí). **Es una medición de esta tabla con estas reglas, no un permiso legal ni una garantía de anonimato**: un
   grupo muy pequeño puede identificarse aunque ninguna fila se repita. Se descarga como **CSV**.
 
+### Pregúntale a tus datos · desde Sprint 021
+
+- **Qué es:** una caja de texto en la pantalla de configuración, **junto a la exploración**, donde escribes una pregunta sobre tu tabla con las
+  palabras de tus columnas: **«ventas del último trimestre por región»**, **«promedio de unidades por mes»**, **«las 3 regiones con más ventas»**,
+  **«cuántas filas hay por producto»**, **«sales by region last quarter»**. Está **siempre** a la mano (no depende de qué elijas predecir) y funciona
+  con una tabla sola, sin entrenar nada. **No usa un modelo de lenguaje**: lee la pregunta con reglas fijas, en el navegador; **ni la pregunta ni
+  un valor de tus datos salen de tu computadora**. Mientras el aviso de datos personales se arma, la caja espera.
+- **Cómo se usa:** escribes la pregunta y pulsas **«Entender la pregunta»** (o eliges uno de los ejemplos de **«Prueba con:»**, armados con las columnas
+  de tu tabla). La app te enseña **cómo la entendió**, **antes de calcular nada**: la consulta **en palabras** («Voy a calcular la suma de “ventas_usd”,
+  separada por “region”, en el último trimestre de la tabla…»), la misma consulta **en SQL** (lo que corre aquí, dicho en SQLite), y una lista de
+  **lo que comprobó**, cada renglón con su símbolo y su palabra: ✓ bien, ⚠ ojo, ✕ no se puede. **Solo corre cuando pulsas «Correr la consulta»**; y
+  mientras haya un ✕ el botón está apagado.
+- **Qué entiende:** una cuenta —**suma, promedio, conteo** (de filas o de valores de una columna), **mínimo, máximo o mediana**—; **agrupar** por una
+  columna de categorías o por **día, semana (empieza el lunes), mes, trimestre o año** de una fecha; **filtrar** por un valor que aparezca en la
+  pregunta («de premium», «sin norte») y por comparaciones de números («con más de 30 unidades», «al menos 500», «under 100»), hasta **dos
+  condiciones**; un **periodo de tiempo** («el último trimestre», «los últimos 3 meses», «en 2025», «en marzo», «desde 2025-03-01»); y ordenar o pedir
+  **«los N mayores o menores»** (hasta 50, también dicho «las 3 regiones con más ventas»). Español e inglés, con o sin tildes y en plural.
+  **El tiempo se cuenta desde la fecha más reciente de tu tabla, nunca desde el reloj**: «el último trimestre» es el trimestre del calendario que
+  contiene esa fecha, y si la tabla termina a mitad de periodo, la app te avisa de que ese periodo está incompleto.
+- **Lo que pregunta:** cuando algo puede ser dos cosas, **te lo pregunta con opciones** y no deja correr hasta que eliges: una palabra que calza con
+  **dos columnas**; un valor que está en **dos columnas** (si «norte» está en la región y en la bodega, «ventas del norte» pregunta de cuál); un
+  orden de fecha que se puede leer de dos maneras (05/06); **dos columnas de fechas**; un número como «1,500» (¿uno y medio o mil quinientos?);
+  a qué columna se aplica una comparación; cuál de dos cifras medir; de qué año es un mes.
+- **Lo que propone:** si tu pregunta no dice qué cuenta hacer, la app **propone una** (una suma, salvo que el nombre de la columna hable de un
+  promedio, un precio o una tasa) y, si agrupas por una fecha sin decir el periodo, propone uno. Lo propuesto va marcado **«propuesto»** y lo
+  cambias antes de correr.
+- **Lo que no leyó:** si en tu pregunta hay palabras que la app no pudo usar (un «contiene», una tercera condición, un segundo agrupador), lo dice en
+  **«No leí: …»** y **la consulta que se muestra es exactamente la que corre, sin esas palabras**. Si no reconoce nada de tu tabla, dice que no
+  entendió y qué sí leyó; no adivina.
+- **Las comprobaciones:** que las columnas existan y sirvan para la cuenta (no se suma una columna de texto), que el valor de un filtro exista en su
+  columna, que el periodo de tiempo tenga filas, que el resultado no pase de **500 grupos** (si pasa, pide «los 10 mayores» o un filtro), y **cuántas
+  filas quedan fuera** por una celda vacía, una fecha ilegible o un grupo sin valor: se dicen, no se pierden en silencio. Una columna marcada como
+  **posible dato personal** no se ofrece para agrupar.
+- **El resultado:** una **tabla**, un **gráfico** (barras de HTML por categoría, una línea por periodo; la cifra va escrita y la tabla es su
+  equivalente accesible) y **una frase** con las cifras («Por «region», la suma de «unidades» fue 22,087: «norte» va primero con 6,909, el 31 % del total y «este» queda al final con 4,263.», con `ventas-por-region.csv`). La frase sale de
+  una plantilla y **se verifica**: la app vuelve a hacer la cuenta por otro camino y, si no coincide con la del motor, muestra solo una línea
+  mínima que no afirma ninguna cifra. Se descarga en **CSV**.
+- **Una celda vacía no entra a nada:** ni a la cifra, ni al grupo, ni a la fecha, ni a un filtro (tampoco con «sin»). El SQL que se muestra lo dice con
+  `IS NOT NULL`, y el mismo SQL, ejecutado en SQLite sobre las mismas tablas, **da el mismo resultado** que la pantalla (es una de las pruebas del producto).
+- **Con qué probarla:** `ventas-por-region.csv` (y `sales-by-region.csv`, el mismo mundo en inglés) del kit de prueba: 832 filas, 104 semanas,
+  celdas vacías, y «norte» en dos columnas.
+- **Límites:** una tabla a la vez, **una cuenta por pregunta**; sin uniones, subconsultas ni «contiene»; hasta 300 caracteres. Lee la **tabla tal como llegó**
+  (sin el saneamiento, que quitaría filas repetidas y cambiaría las sumas). **El lector no traduce entre idiomas**: si tus columnas están en español
+  y escribes en inglés, dice que no entendió. **Puede equivocarse al leer**; por eso te enseña la consulta antes de correr y espera tu botón. No
+  pronostica ni entrena nada desde la pregunta; para eso están el pronóstico y la liga.
+
 ## Diccionario de términos
 
 Las palabras que verás en la app, en una línea cada una. No necesitas memorizarlas: vuelve aquí
@@ -1180,6 +1226,10 @@ cuando una te frene.
 | **Banda de pronóstico** | El rango donde cayó el 80 % (o el 95 %) de los errores del método ganador al probarse, aplicado al pronóstico. Es empírica y no garantiza nada hacia adelante. |
 | **Gemelo sintético** | Una tabla nueva que imita la forma de la tuya (cada columna y sus relaciones) sin copiar ninguna fila. Se mide contra tus datos y contra dos mitades de tus propios datos, y puede acabar en «no compartir». |
 | **Cópula gaussiana** | La forma de armar el gemelo: cada columna conserva su distribución y las columnas conservan su dependencia, medida como la correlación de sus posiciones en el orden. Con una semilla fija, el mismo archivo da siempre el mismo gemelo. |
+| **Consulta** | Una cuenta sobre tu tabla dicha de forma exacta: qué calcular, por cuál columna agrupar, con qué filtros y en qué periodo. «Pregúntale a tus datos» la arma desde tu pregunta y te la enseña, en palabras y en SQL, antes de correrla. |
+| **SQL** | El lenguaje en que se escriben las consultas a una tabla. Aquí se muestra lo que corre, dicho en SQLite, para que lo leas o lo lleves a otra herramienta; el nombre de la tabla es solo un marcador. |
+| **Propuesto** | Lo que tu pregunta no decía y Probeta eligió por ti (el cálculo, el periodo de una fecha). Va marcado y se cambia antes de correr. |
+| **No leí** | La lista de palabras de tu pregunta que la app no pudo usar. La consulta que se muestra no las usa. |
 | **Explicación verificada** | Un texto cuyas cifras y orden de columnas se comprobaron contra tu resultado antes de mostrarse. Si no cuadra, se muestra solo lo que sí: las cifras. |
 | **Plan de limpieza** | Los pasos que el código propone para tus datos y que tú apruebas o rechazas uno a uno. Lo que no apruebas no se aplica, y lo que depende de los datos se calcula solo con el entrenamiento. |
 | **Posibles datos personales** | Una columna que parece guardar correos, teléfonos, documentos o nombres de personas. Es un aviso aproximado: nombra la columna y el tipo, nunca un valor. |
@@ -1450,6 +1500,16 @@ cuando una te frene.
   momento. Se nombran y se dejan fuera.
 - **¿Las reglas de un modelo importado salen iguales cada vez?** Con el mismo archivo, sí. Con otro archivo pueden cambiar:
   el árbol resume lo que el modelo predice en las filas que le das.
+- **¿«Pregúntale a tus datos» usa inteligencia artificial?** No. Lee tu pregunta con reglas fijas, dentro de tu navegador, y no llama a ningún
+  modelo de lenguaje. Por eso entiende una gramática acotada y, cuando duda, te pregunta; y por eso la pregunta y tus datos no viajan.
+- **¿Y si la app entendió mal mi pregunta?** Puede pasar. Por eso la consulta se enseña en palabras y en SQL, con sus comprobaciones y lo que
+  propuso, antes de correr; lo que no leyó va en «No leí: …»; y nada corre hasta que pulsas «Correr la consulta». Si algo no es lo que querías,
+  escribe la pregunta de otra forma o cambia lo propuesto.
+- **¿Por qué «el último trimestre» no es el de hoy?** Porque la app cuenta desde la fecha más reciente de tu tabla, no desde el reloj: una tabla que
+  termina en diciembre de 2025 tiene su «último trimestre» en el cuarto de 2025 aunque hoy sea otro día.
+- **¿Por qué las sumas no coinciden con las de la exploración?** La pregunta lee tu tabla tal como llegó. El saneamiento que prepara el modelo quita
+  filas exactamente repetidas y columnas de identificadores, y eso cambia sumas y conteos.
+- **¿Puedo pedir dos cosas a la vez (ventas y unidades por región)?** No: es una cuenta por pregunta. Haz una y luego la otra.
 
 ## Historial
 
@@ -1476,3 +1536,4 @@ cuando una te frene.
 | 018    | Probeta completa (un Excel `.xlsx` además del CSV, el aviso de posibles datos personales que nunca muestra un valor, el plan de limpieza que apruebas paso a paso y que se calcula solo con el entrenamiento, la exploración con distribuciones, correlaciones y un resumen verificado, el margen de error de la cifra del veredicto, las explicaciones verificadas en las cuatro tareas y la liga contra lo prometido). |
 | 019    | Del modelo a la decisión («¿qué pasaría si?» en dinero, con tus costos, en resultados, en «Usar el modelo» y en la etapa 9 del Protocolo —sin abrir la prueba—; el modelo en reglas con su fidelidad, su texto y su SQL; vigilar el desempeño con filas nuevas que traen el resultado real, con el margen de la cifra de hoy; y el ganador del Protocolo guardado como archivo desde la etapa 10). |
 | 020    | Proyectar y compartir (pronosticar una serie con fecha: periodos que propone el código y tú cambias, los que faltan se nombran, seis métodos con origen móvil, veredicto contra el mejor método simple, bandas, gráfico y CSV; el gemelo sintético con su informe y su veredicto «se puede compartir · revisar · no compartir»; las reglas con las filas de un archivo tuyo, también para un modelo importado y para el ganador del Protocolo). |
+| 021    | Pregúntale a tus datos (escribes una pregunta con las palabras de tus columnas y ves, antes de correr, la consulta en palabras y en SQL con sus comprobaciones y lo que se propuso; lo ambiguo se pregunta con opciones y lo que no se leyó se dice; el tiempo se cuenta desde la fecha más reciente de la tabla; el resultado sale en tabla, gráfico, frase verificada y CSV; ni la pregunta ni los datos salen del navegador, y no usa un modelo de lenguaje); cierre del hito H-2. |
