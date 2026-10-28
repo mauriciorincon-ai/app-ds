@@ -65,8 +65,9 @@ td.num{font-variant-numeric:tabular-nums}
 // en las versiones del modelo) se baja del CDN público de Pyodide. Lo que arrastras NO sale de tu navegador.
 var PYODIDE = "314.0.2";
 var INDEX = "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE + "/full/";
-// S21: el motor se carga con SRI. Es el hash del `pyodide.js` de ESA versión; `verificar-publica` lo cruza con el CDN y una prueba con el
-// paquete fijado, así que subir PYODIDE sin cambiar esto rompe la CI en lugar de dejar el puntuador sin integridad.
+// S21: el cargador se carga con SRI. Es el hash del `pyodide.js` de ESA versión; `verificar-publica` lo cruza con el CDN y una prueba con el
+// paquete fijado, así que subir PYODIDE sin cambiar esto rompe la CI. Alcance: cubre `pyodide.js`, el cargador; lo que ese cargador baja
+// después del mismo CDN (el .wasm, la biblioteca estándar, el lock y las wheels) NO lleva esta comprobación (ADR 024).
 var PYODIDE_SRI = "sha384-Y0xVpf8xnYY2wjyRPIe9ZRoE61jRI5ihohgCmZlml2k7pWtPdL7ebjaNml0Esgzg";
 var MAX_BYTES = 5 * 1024 * 1024, MAX_FILAS = 50000;
 var TXT = {

@@ -69,9 +69,9 @@ el hecho ocurrió (regla 27).
 
 | Punto | Qué | Razón y sitio | Commit |
 |---|---|---|---|
-| 17-3 | `StressResult.elapsed_ms` | telemetría que leen las mediciones; comentario en `workers/protocol.ts` | `79abe65` |
-| 19-23 | `RulesResult.elapsed_ms` | ídem | `79abe65` |
-| 20-09 | `ForecastResult.elapsed_ms`, `SynthesizeResult.{rounds, proximity.p5_real, elapsed_ms}` | ídem | `79abe65` |
+| 17-3 | `StressResult.elapsed_ms` | telemetría que valida el contrato; ninguna pantalla ni medición la lee; el comentario de `workers/protocol.ts` lo dice así (auditoría A-12) | `0a0d7e1` |
+| 19-23 | `RulesResult.elapsed_ms` | ídem | `0a0d7e1` |
+| 20-09 | `ForecastResult.elapsed_ms`, `SynthesizeResult.{rounds, proximity.p5_real, elapsed_ms}` | los valida el contrato; `elapsed_ms` lo leen las mediciones (`medidas-s21`); `rounds` y `p5_real`, solo la prueba denso/disperso; ninguna pantalla | `0a0d7e1` |
 | 18-9 | `cleaning_plan` sin lector (`model-file.ts:620`) | es el registro de procedencia del plan de limpieza que aprobó el dueño: se guarda y se descarga, y lo lee quien abre el archivo (ADR 026 § `cleaning_plan`) | — |
 | 18-13/14 | `SIN_LUGAR_EN_LA_TAREA` y `FUERA_DE_LA_LISTA_DE_LA_VISION` | los cierra la decisión del usuario (2026-10-26, la del G-Plan por omisión): se aceptan las ausencias por tarea de la liga; `roster.ts`, BLUEPRINT fila 6 y manual lo dicen | `79abe65` |
 | 17-8 | margen de 4,6 KiB de `/protocolo` | H-3, con sitio en `docs/BLUEPRINT.html` (tabla «Lo que queda»); el S21 no cambia el peso (`/protocolo` 288,4 KiB, tope 320) | — |
@@ -82,6 +82,42 @@ el hecho ocurrió (regla 27).
 | Punto | Qué | Por qué | A dónde va |
 |---|---|---|---|
 | 17-7 | e2e de un booster (lightgbm, xgboost) en el puntuador | Es el orden de recorte ② del plan aprobado: exige forzar el modelo en el Nivel 2 y bajar sus wheels dentro del navegador, y lo que queda sin ver es solo la rama de carga de esos dos paquetes en `prepararMotor`. La receta y el servicio de CADA modelo corren en CPython y `puntuar.py` puntúa igual que la app para todo el roster (Node + Pyodide) | H-3 (pruebas esenciales de lo que cambia) |
+
+## La auditoría de una pasada (Sonnet 5.5 · high · solo lectura · 20:13:17 a 20:24:40, 11 min)
+
+Recomendación del auditor: «requiere ajustes». **23 hallazgos: 0 Críticos · 4 Altos · 8 Medios · 11 Bajos. Todos pagados** (la regla del hito: también los medios y los bajos). Cada ajuste con su prueba; los que se pagaron antes de escribir su prueba se vieron fallar con una demo en rojo.
+
+| Id | Sev. | Qué era | Pago | Commit |
+|---|---|---|---|---|
+| A-01 | Alto | «distinto de», «diferente de», «≠», «not equal to» invertían el filtro sin decirlo | el operador `!=` sin número niega el valor que sigue; «≠» se cambia antes de normalizar | `f8c5340` |
+| A-02 | Alto | un valor que es palabra de relleno («este», «A») se ignoraba sin aviso | se lee tras una preposición o pegado a su columna; «todos»/«all» jamás | `f8c5340` |
+| A-03 | Alto | promedio, mínimo, máximo y mediana por categoría decían «fue Total» | frase propia sin total | `24cd356` |
+| A-04 | Alto | «menor a -5» se leía «menor a 5» | el signo viaja en el número | `f8c5340` |
+| A-05 | Medio | «ventas no premium» no negaba | «no» entre los negadores | `f8c5340` |
+| A-06 | Medio | `ventas_usd` escrito como la app lo imprime no se leía | el guion bajo es espacio al tokenizar | `f8c5340` |
+| A-07 | Medio | el tope de 500 grupos no valía por periodo | `validar` cuenta las cubetas igual que las categorías | `24cd356` |
+| A-08 | Medio | «constructor» y `__proto__` se leían como mes o unidad | mapas sin prototipo | `f8c5340` |
+| A-09 | Medio | el SQL se prueba con `NULL` donde el motor ve «NA», «-», etc. | la nota del SQL lo dice en los dos idiomas | `24cd356` |
+| A-10 | Medio | un «o» entre columnas distintas pasaba a «y» en silencio | aviso `union-y` | `f8c5340` |
+| A-11 | Medio | `1.234,567` se leía 1 234 567 | el último separador es el decimal; `2023,2024` no es un número | `f8c5340` |
+| A-12 | Medio | comentarios de telemetría con una razón falsa | reescritos con quién lee de verdad; filas 17-3, 19-23 y 20-09 corregidas | `0a0d7e1` |
+| A-13 | Medio | el SRI protege menos de lo que decía | comentario y ADR 024 nombran su alcance (solo `pyodide.js`) | `0a0d7e1` |
+| A-14 | Bajo | fechas imposibles y ventanas enormes pasaban | no se leen; `ventana-grande` | `f8c5340` |
+| A-15 | Bajo | los conteos pequeños salían con decimales | `decimalesDe` (frase, tabla y gráfico) | `24cd356` |
+| A-16 | Bajo | al cambiar lo propuesto desaparecía el control | queda, con «cambiado por ti» | `f8c5340` · `24cd356` |
+| A-17 | Bajo | «dentro de las fechas» aunque empezara antes | aviso `ventana_antes` | `24cd356` |
+| A-18 | Bajo | exports muertos y listas copiadas a mano | borrados; las listas salen del léxico | `f8c5340` · `24cd356` |
+| A-19 | Bajo | docblock de `prepareClusterRun` mal puesto y lógica duplicada | un helper `columnasIdLike` | `d6bae4f` |
+| A-20 | Bajo | «1 filas» | variantes `_one` | `24cd356` |
+| A-21 | Bajo | una columna nombrada dos veces abría «¿cuál medir?» | una sola columna es una sola cifra | `f8c5340` |
+| A-22 | Bajo | la prueba «contra la tabla, no contra el reloj» no fijaba el reloj | `vi.setSystemTime` | `f8c5340` |
+| A-23 | Bajo | el plan decía que agrupar por números pregunta; el código lo marca error de validación | **desviación declarada** en el cierre (el ADR 030 ya lo decía así) | — |
+
+Casilla 4 (frases caducadas): 0 frases aplazadas vencidas en los documentos y los textos; las afirmaciones «lo que no se leyó se dice» del manual, el ADR, el brochure y la guía W2 eran falsas en A-01, A-02 y A-04 y dejan de serlo con los pagos. Repasada otra vez sobre el diff de los pagos: sin coincidencias nuevas.
+
+### Flaky `teclado-probeta` (20-17)
+
+No se reprodujo: 60 repeticiones del test con traza y `--retries=0` (20 con 3 trabajadores y 40 con 6, la segunda con la auditoría y los gates corriendo a la vez), 0 fallos; la falla original (1 de 168 en el S20) no dejó traza. Se declara, no se da por cerrado: el job `e2e` ahora **sube `test-results/` también cuando el job pasa** (`ci.yml`), así que el próximo spec que falle y pase en su reintento deja su traza.
 
 ## Las dos medidas del S20 (presupuesto fijado antes de medir)
 

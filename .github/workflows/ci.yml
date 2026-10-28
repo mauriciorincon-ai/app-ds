@@ -119,8 +119,11 @@ jobs:
       - run: pnpm test:e2e        # incluye scans axe (@axe-core/playwright); falla con CERO pruebas (kit v1.28.0)
       # El primer reintento graba trace (playwright.config `trace: on-first-retry`) con
       # consola, errores y DOM — se sube SOLO cuando algo falla (kit v1.26.0).
+      # S21 (lote 20-17): TAMBIÉN cuando el job pasa. Un spec que falla y pasa en su reintento (el flaky de `teclado-probeta`, 1 de 168
+      # en el S20, no se reprodujo en 60 repeticiones locales con traza) deja su traza en `test-results/`; con `if: failure()` el job
+      # verde la tiraba. Sin tests reintentados la carpeta está vacía y no se sube nada.
       - uses: actions/upload-artifact@v7
-        if: failure()
+        if: ${{ !cancelled() }}
         with:
           name: playwright-test-results
           path: test-results/

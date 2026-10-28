@@ -874,7 +874,7 @@ export type RulesResult = {
   depth: number;
   leaves: number;
   n_fit: number;
-  /** Telemetría (S21, lote): la leen las mediciones (`medidas-s21`) y el registro del worker, no una pantalla; por eso el lector no la usa. */
+  /** Telemetría: la valida el contrato y los tests de integración la ponen a cero para comparar resultados; ninguna pantalla ni medición la lee. */
   elapsed_ms: number;
 };
 
@@ -993,7 +993,7 @@ export type StressResult = {
   }[];
   /** Las numéricas más afectadas corridas este múltiplo de su desviación (el paso del tiempo). */
   shift: { level: number; columns: string[]; value: number }[];
-  /** Telemetría (S21, lote): la leen las mediciones (`medidas-s21`) y el registro del worker, no una pantalla; por eso el lector no la usa. */
+  /** Telemetría: la valida el contrato y los tests de integración la ponen a cero para comparar resultados; ninguna pantalla ni medición la lee. */
   elapsed_ms: number;
   /** Solo en la etapa 8: el mejor rival sin modelo en la misma métrica y la misma prueba (en Probeta lo da el veredicto). */
   baseline?: { name: string; value: number };
@@ -1072,7 +1072,7 @@ export type ForecastResult =
       hi80: number[];
       lo95: number[];
       hi95: number[];
-      /** Telemetría (S21, lote): la leen las mediciones (`medidas-s21`), no una pantalla; por eso el lector no la usa. */
+      /** Telemetría: la validan los contratos y la leen las mediciones (`medidas-s21`); ninguna pantalla la usa. */
       elapsed_ms: number;
     };
 
@@ -1102,6 +1102,7 @@ export type SynthesizeResult = {
   proximity: {
     median_syn: number;
     median_real: number;
+    /** El 5.º percentil de la cercanía entre filas reales: lo valida el contrato y lo compara la prueba denso/disperso; ninguna pantalla lo lee. */
     p5_real: number;
     share_below: number;
     n_real: number;
@@ -1110,9 +1111,10 @@ export type SynthesizeResult = {
   /** Filas sintéticas idénticas a una real que quedaron tras volver a sacarlas (0 si se logró). */
   copies: number;
   resampled: number;
+  /** Cuántas veces se volvió a sacar la muestra para quitar copias exactas: lo valida el contrato; ninguna pantalla lo lee. */
   rounds: number;
   rare_merged: { column: string; merged: number }[];
-  /** Telemetría (S21, lote): la leen las mediciones (`medidas-s21`) y el registro del worker, no una pantalla; por eso el lector no la usa. */
+  /** Telemetría: la validan los contratos y la leen las mediciones (`medidas-s21`); ninguna pantalla la usa. */
   elapsed_ms: number;
 };
 
