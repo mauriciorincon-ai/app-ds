@@ -142,7 +142,11 @@ describe("el gemelo del kit", () => {
     expect(dispersa.proximity.n_syn).toBe(densa.proximity.n_syn);
   }, 300_000);
 
-  it("el peor caso que deja pasar la puerta (50 000 filas, 3 categóricas de 10 000 valores) termina en el presupuesto del S21 (30 s)", () => {
+  // El presupuesto de TIEMPO (30 s, medido en solitario: 13,7 s) vive en `medidas-s21.test.ts` (MEDIR=1): en la suite entera, con 25 archivos de
+  // Pyodide a la vez, el mismo caso tardó 45 s una vez y 25 s otra, y un gate que depende del reloj de la CI es un gate intermitente. Aquí se
+  // vigila lo que no depende del reloj: que el peor caso TERMINA y que la memoria de WebAssembly se queda lejos del techo (la matriz densa
+  // llegaba a 1 829 MiB de 2 048; la dispersa, a 322).
+  it("el peor caso que deja pasar la puerta (50 000 filas, 3 categóricas de 10 000 valores) termina y la memoria queda lejos del techo de 2 GiB", () => {
     const n = 50_000;
     const mult = [7919, 104729, 1299709];
     const filas = Array.from({ length: n }, (_, i) => [
@@ -153,8 +157,9 @@ describe("el gemelo del kit", () => {
     const plan = planGemelo(tabla, []);
     expect(plan.incluidas).toHaveLength(4);
     const raw = call(envioGemelo(tabla, plan, n));
-    expect(raw.elapsed_ms).toBeLessThanOrEqual(30_000);
     expect(raw.rows).toHaveLength(n);
+    const heap = (py as unknown as { _module: { HEAPU8: Uint8Array } })._module.HEAPU8.length / 1024 / 1024;
+    expect(heap, "MiB del heap de WebAssembly tras el peor caso").toBeLessThan(1024);
   }, 300_000);
 
   it("n filas pedidas es lo que sale, también más que las reales", () => {
