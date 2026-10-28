@@ -1,0 +1,92 @@
+<!-- @dsCard group="Componentes · S19" name="¿Qué pasaría si?, reglas y vigilancia" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Del modelo a la decisión — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 66ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 28px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .muted { color: #586172; }
+  .card { max-width: 640px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 16px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); margin-bottom: 12px; }
+  .card h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+  .card p { font-size: 14px; margin: 6px 0 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+    border-radius: 8px; border: 1px solid #e4e4dc; background: #fff; color: #14181f; font-size: 14px;
+  }
+  .btn.pri { background: #0e6e6b; border-color: #0e6e6b; color: #fff; }
+  .btn[disabled], .btn.off { opacity: .5; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px;
+    font-size: 12px; font-weight: 600; border: 1px solid #e4e4dc; background: #f2f2ec; color: #14181f;
+  }
+  .badge.pos { background: #e6f2ec; color: #1c7c4a; border-color: #c4e0d1; }
+  .badge.cau { background: #f6eddc; color: #8a5a0c; border-color: #e8d3a8; }
+  .badge.neg { background: #f6e4e2; color: #a5372f; border-color: #e6bfbb; }
+  .aviso { margin: 10px 0 0; padding: 10px 12px; border-left: 4px solid #8a5a0c; background: #f6eddc; border-radius: 6px; font-size: 14px; }
+  .pos { color: #1c7c4a; } .cau { color: #8a5a0c; } .neg { color: #a5372f; }
+  table { border-collapse: collapse; font-size: 14px; max-width: 640px; width: 100%; background: #fff; }
+  th, td { text-align: left; padding: 6px 10px; border: 1px solid #e4e4dc; }
+  th { background: #f2f2ec; font-size: 12px; }
+  td.n { text-align: right; font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .why { max-width: 640px; font-size: 13px; color: #586172; line-height: 1.6; background: #f2f2ec; border-radius: 8px; padding: 14px 16px; }
+  .why b { color: #14181f; }
+  .fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .bar { display: grid; grid-template-columns: minmax(5rem, 1fr) 2fr auto; align-items: center; gap: 8px; font-size: 14px; max-width: 640px; margin: 4px 0; }
+  .riel { height: 16px; border-radius: 4px; background: #f2f2ec; }
+  .riel > span { display: block; height: 100%; border-radius: 4px; background: #0e6e6b; }
+</style>
+</head>
+<body>
+  <h1>Del modelo a la decisión</h1>
+  <p class="sub">Tres patrones del S19: el «¿qué pasaría si?» en dinero, el modelo en reglas con su fidelidad primero, y vigilar el desempeño con símbolo y palabra. Cifras de ejemplo.</p>
+  <h2>¿Qué pasaría si?</h2>
+  <div class="card">
+    <h3>¿Qué pasaría si…?</h3>
+    <p class="muted" style="font-size:13px">Columna «visitas_web» · subir 50 % · todas las filas · costos 10 / 30 USD</p>
+    <p><span class="btn pri"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg> Simular</span></p>
+    <p>De 200 filas, el modelo recomienda actuar en <span class="mono">62</span> y, con el cambio, en <span class="mono">71</span>: cambian <span class="mono">9</span> decisiones. Con tus costos, el costo esperado por cada 100 decisiones pasa de <span class="mono">1 240</span> USD a <span class="mono">1 180</span> USD.</p>
+    <p><span class="badge pos">✓ Verificada contra tus números</span></p>
+    <p class="cau" role="status">⚠ 12 filas quedan fuera de lo que el modelo vio al entrenar.</p>
+  </div>
+  <p class="why"><b>Anatomía:</b> una frase con la insignia (símbolo + texto), las notas (filas tocadas, muestra de 5 000, filas fuera de lo que el modelo vio) y, con varias opciones, una tabla antes/con el cambio. Es una simulación con las probabilidades del propio modelo, no una medición. En la etapa 9 dice que lo simulado no entra al cuaderno.</p>
+
+  <h2>El modelo en reglas</h2>
+  <div class="card">
+    <h3>Reglas a partir del modelo</h3>
+    <p class="muted" style="font-size:13px">Antes de armarlas, la tarjeta no se llama «El modelo en reglas»: ese nombre se gana con la fidelidad.</p>
+    <p><span class="btn pri">Armar las reglas</span></p>
+  </div>
+  <div class="card">
+    <h3>Un árbol que se parece al modelo</h3>
+    <p class="cau"><b>⚠ No llegan al umbral de 90 %:</b> son un resumen del modelo, no el modelo.</p>
+    <p class="muted" style="font-size:13px">Las reglas coinciden con el modelo en el <span class="mono">84 %</span> de <span class="mono">60</span> filas que el árbol no vio.</p>
+    <ol class="mono" style="font-size:12px;padding-left:20px"><li>Si "visitas_web" es mayor que 12 y "region" es "norte", entonces «1» (31 filas).</li><li>En cualquier otro caso, entonces «0» (29 filas).</li></ol>
+    <p><span class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg> Descargar las reglas (.txt)</span> <span class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg> Descargar el SQL (.sql)</span></p>
+  </div>
+  <div class="card">
+    <h3>El modelo en reglas</h3>
+    <p class="pos"><b>✓ Llegan al umbral de 90 %</b></p>
+  </div>
+  <p class="why"><b>Anatomía:</b> la lectura pone <b>primero la fidelidad</b> y su veredicto con símbolo y palabra, después lo que aciertan frente a la verdad, el texto de las reglas en una región enfocable y dos descargas (texto y SQL <code>CASE WHEN</code>, con la tabla llamada «tu_tabla» o «your_table» según el idioma).</p>
+
+  <h2>Vigilar el desempeño</h2>
+  <div class="card">
+    <p class="pos"><b>✓ Sigue:</b> hoy le va como en su prueba. <span class="mono muted">hoy 0.81 (95 %: de 0.74 a 0.87) · prueba 0.82</span></p>
+    <p class="cau"><b>⚠ Revisar:</b> hoy le va peor que en su prueba, pero con estas filas no se puede asegurar que sea más que azar. <span class="mono muted">hoy 0.76 · prueba 0.82</span></p>
+    <p class="neg"><b>✕ Reentrenar:</b> hoy le va claramente peor que en su prueba, más allá del margen de error. <span class="mono muted">hoy 0.58 (95 %: de 0.51 a 0.65) · prueba 0.82</span></p>
+  </div>
+  <p class="why"><b>Anatomía:</b> una línea de veredicto con <b>símbolo y palabra</b> (✓ Sigue · ⚠ Revisar · ✕ Reentrenar), la cifra de hoy con su intervalo del 95 % junto a la de la prueba, el empate y la nota de lo que se dejó fuera. Sin el resultado real en el archivo, dice qué subir.</p>
+</body>
+</html>

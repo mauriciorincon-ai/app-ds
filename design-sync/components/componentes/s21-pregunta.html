@@ -1,0 +1,107 @@
+<!-- @dsCard group="Componentes · S21" name="Pregúntale a tus datos: consulta, validación y resultado" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pregúntale a tus datos — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 66ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 28px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .muted { color: #586172; }
+  .card { max-width: 640px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 16px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); margin-bottom: 12px; }
+  .card h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+  .card p { font-size: 14px; margin: 6px 0 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+    border-radius: 8px; border: 1px solid #e4e4dc; background: #fff; color: #14181f; font-size: 14px;
+  }
+  .btn.pri { background: #0e6e6b; border-color: #0e6e6b; color: #fff; }
+  .btn[disabled], .btn.off { opacity: .5; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px;
+    font-size: 12px; font-weight: 600; border: 1px solid #e4e4dc; background: #f2f2ec; color: #14181f;
+  }
+  .badge.pos { background: #e6f2ec; color: #1c7c4a; border-color: #c4e0d1; }
+  .badge.cau { background: #f6eddc; color: #8a5a0c; border-color: #e8d3a8; }
+  .badge.neg { background: #f6e4e2; color: #a5372f; border-color: #e6bfbb; }
+  .aviso { margin: 10px 0 0; padding: 10px 12px; border-left: 4px solid #8a5a0c; background: #f6eddc; border-radius: 6px; font-size: 14px; }
+  .pos { color: #1c7c4a; } .cau { color: #8a5a0c; } .neg { color: #a5372f; }
+  table { border-collapse: collapse; font-size: 14px; max-width: 640px; width: 100%; background: #fff; }
+  th, td { text-align: left; padding: 6px 10px; border: 1px solid #e4e4dc; }
+  th { background: #f2f2ec; font-size: 12px; }
+  td.n { text-align: right; font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .why { max-width: 640px; font-size: 13px; color: #586172; line-height: 1.6; background: #f2f2ec; border-radius: 8px; padding: 14px 16px; }
+  .why b { color: #14181f; }
+  .fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .bar { display: grid; grid-template-columns: minmax(5rem, 1fr) 2fr auto; align-items: center; gap: 8px; font-size: 14px; max-width: 640px; margin: 4px 0; }
+  .riel { height: 16px; border-radius: 4px; background: #f2f2ec; }
+  .riel > span { display: block; height: 100%; border-radius: 4px; background: #0e6e6b; }
+</style>
+</head>
+<body>
+  <h1>Pregúntale a tus datos</h1>
+  <p class="sub">Un patrón de tres tiempos que <b>nunca corre solo</b>: preguntar, ver la consulta con lo que se comprobó, y recién entonces correr. Sin modelo de lenguaje: el lector es código y la pregunta no sale del navegador. Cifras de <code>ventas-por-region.csv</code>.</p>
+  <h2>1 · Preguntar</h2>
+  <div class="card">
+    <label class="muted" style="font-size:12px" for="p">Tu pregunta</label>
+    <div class="fila" style="margin-top:4px"><span id="p" class="card" style="margin:0;padding:10px 12px;flex:1;min-width:240px">ventas del último trimestre por región</span><span class="btn pri"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg> Entender la pregunta</span></div>
+    <p class="muted" style="font-size:13px">Prueba con: <span class="badge">ventas usd por region</span> <span class="badge">unidades por mes</span> <span class="badge">cuántos por producto</span></p>
+  </div>
+
+  <h2>2 · La consulta a la vista, antes de correr</h2>
+  <div class="card" role="group" aria-label="Antes de seguir, necesito que elijas">
+    <p><b>Antes de seguir, necesito que elijas</b></p>
+    <p>«norte» está en más de una columna. ¿De cuál?</p>
+    <p><span class="mono">(●)</span> region &nbsp; <span class="mono">( )</span> bodega</p>
+  </div>
+  <div class="card">
+    <p class="cau" role="status"><b>No leí:</b> contienen. La consulta de abajo no usa esas palabras.</p>
+    <h3>Así entendí tu pregunta</h3>
+    <p><b>En palabras</b> · Voy a calcular <b>la suma</b> <span class="badge cau">propuesto</span> de «ventas_usd», separada por «region», en el último trimestre de la tabla (del <span class="mono">2025-10-01</span> al <span class="mono">2025-12-31</span>).</p>
+    <p><b>En SQL</b></p>
+    <pre class="mono" style="font-size:12px;background:#f2f2ec;border-radius:8px;padding:12px;overflow:auto;margin:6px 0">SELECT "region" AS "region", SUM("ventas_usd") AS "suma_ventas_usd", COUNT(*) AS "n"
+FROM "tu_tabla"
+WHERE "fecha" &gt;= '2025-10-01' AND "fecha" &lt;= '2025-12-31'
+  AND "region" IS NOT NULL AND "ventas_usd" IS NOT NULL
+GROUP BY 1 ORDER BY 2 DESC, 1 ASC;</pre>
+    <p class="muted" style="font-size:13px">Es lo que corre aquí, dicho en SQL: las fechas se leen como AAAA-MM-DD y las celdas vacías no entran. El nombre de la tabla es solo un marcador.</p>
+    <h3 style="margin-top:12px">Antes de correr, esto es lo que comprobé</h3>
+    <ul style="list-style:none;padding:0;margin:0;font-size:14px">
+      <li class="pos">✓ <b>bien</b> — La columna «ventas_usd» existe y sirve para esta cuenta.</li>
+      <li class="pos">✓ <b>bien</b> — Se agrupa por «region».</li>
+      <li class="cau">⚠ <b>ojo</b> — la tabla llega hasta el 2025-12-22, así que ese último periodo está incompleto.</li>
+      <li class="pos">✓ <b>bien</b> — 95 de 832 filas entran a la consulta.</li>
+      <li class="neg">✕ <b>no se puede</b> — «unidades» es una columna de números: no se agrupa por ella. <span class="muted">(con un ✕ el botón de abajo se apaga)</span></li>
+    </ul>
+    <p style="margin-top:12px"><span class="btn pri"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg> Correr la consulta</span> <span class="btn pri off"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg> Correr la consulta <span class="muted" style="color:#fff">(apagado)</span></span></p>
+  </div>
+
+  <h2>3 · El resultado</h2>
+  <div class="card">
+    <h3>Resultado</h3>
+    <p>Por «region», la suma de «ventas_usd» fue <span class="mono">102,515</span>: «norte» va primero con <span class="mono">33,561</span>, el 33 % del total y «este» queda al final con <span class="mono">19,412</span>.</p>
+    <div class="bar"><span>norte</span><span class="riel" aria-hidden="true"><span style="width:100%"></span></span><span class="mono">33,561</span></div>
+    <div class="bar"><span>sur</span><span class="riel" aria-hidden="true"><span style="width:78%"></span></span><span class="mono">26,330</span></div>
+    <div class="bar"><span>oeste</span><span class="riel" aria-hidden="true"><span style="width:69%"></span></span><span class="mono">23,212</span></div>
+    <div class="bar"><span>este</span><span class="riel" aria-hidden="true"><span style="width:58%"></span></span><span class="mono">19,412</span></div>
+    <p class="muted" style="font-size:13px">Cada barra es un grupo; su largo es la cifra, escrita al lado. Una cifra negativa lleva el signo «−».</p>
+    <details><summary>Ver el resultado en una tabla</summary>
+      <table style="margin-top:8px"><tr><th scope="col">Grupo</th><th scope="col">Valor</th><th scope="col">Filas</th></tr>
+        <tr><td>norte</td><td class="n">33,561.41</td><td class="n">24</td></tr><tr><td>sur</td><td class="n">26,329.66</td><td class="n">24</td></tr>
+        <tr><td>oeste</td><td class="n">23,212.23</td><td class="n">23</td></tr><tr><td>este</td><td class="n">19,412.11</td><td class="n">24</td></tr></table>
+    </details>
+    <p style="margin-top:10px"><span class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg> Descargar el resultado (.csv)</span></p>
+  </div>
+  <p class="why"><b>Anatomía:</b> lo ambiguo es un grupo de <b>radios</b> con su pregunta y no deja avanzar; <b>«No leí: …»</b> y los avisos van en <code>caution</code> con <code>role="status"</code>; lo que la pregunta no decía lleva la palabra <b>«propuesto»</b> y se cambia antes de correr; cada comprobación lleva <b>símbolo + palabra</b> (✓ bien · ⚠ ojo · ✕ no se puede) y un ✕ apaga «Correr la consulta». La frase sale de una plantilla y se verifica con una recuenta por otro camino; el gráfico (barras de HTML por categoría, línea SVG por periodo) escribe sus cifras y tiene su tabla accesible. La región de la lectura es <code>aria-live="polite"</code>.</p>
+</body>
+</html>
