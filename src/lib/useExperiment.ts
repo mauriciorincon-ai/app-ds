@@ -60,6 +60,7 @@ import {
   clusterSent,
   clusterSentOf,
   inferUnit,
+  columnasQueAgruparExcluye,
   prepareClusterRun,
   prepareRun,
   seriePosible,
@@ -1442,7 +1443,18 @@ export function useExperiment() {
     (objetivo: string | null): PlanAplicado | null => {
       const ingesta = ingestaRef.current;
       if (!ingesta || ingesta.plan.length === 0) return null;
-      return aplicarDecisiones(ingesta.plan, ingesta.decisiones, objetivo);
+      // al agrupar (sin objetivo), lo que el agrupador ya deja fuera por su cuenta no se registra como aplicado (S21, lote 18-15)
+      const table = tableRef.current;
+      const excluidas =
+        objetivo === null && table
+          ? columnasQueAgruparExcluye(table)
+          : undefined;
+      return aplicarDecisiones(
+        ingesta.plan,
+        ingesta.decisiones,
+        objetivo,
+        excluidas,
+      );
     },
     [],
   );

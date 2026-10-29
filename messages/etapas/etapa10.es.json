@@ -195,9 +195,9 @@
             "calibracion": "Calibración medida: Brier {brier} frente a {brierBase} de decir siempre la tasa base.",
             "calibracion-sin-probabilidades": "Calibración: no se pudo medir, el ganador no da probabilidades.",
             "calibracion-no-aplica": "Calibración: no aplica al estimar una cantidad.",
-            "robustez": "Robustez medida (etapa 8): con {nivel} % de ruido en los números, {metrica} pasa de {de} a {a} y sigue ganándole a su mejor rival sin modelo ({rival}).",
-            "robustez-cae": "Robustez (etapa 8): con {nivel} % de ruido en los números, {metrica} pasa de {de} a {a} y deja de ganarle a su mejor rival sin modelo ({rival}). Queda escrito.",
-            "robustez-ya-perdia": "Robustez (etapa 8): el ruido no es la causa; antes de agregarlo, {metrica} ({de}) ya no le ganaba a su mejor rival sin modelo ({rival}).",
+            "robustez": "Robustez medida (etapa 8): con {nivel} % de ruido en los números, {metrica} pasa de {de} a {a} y sigue ganándole a su mejor rival sin modelo ({rivalNombre}: {rival}).",
+            "robustez-cae": "Robustez (etapa 8): con {nivel} % de ruido en los números, {metrica} pasa de {de} a {a} y deja de ganarle a su mejor rival sin modelo ({rivalNombre}: {rival}). Queda escrito.",
+            "robustez-ya-perdia": "Robustez (etapa 8): el ruido no es la causa; antes de agregarlo, {metrica} ({de}) ya no le ganaba a su mejor rival sin modelo ({rivalNombre}: {rival}).",
             "robustez-sin-medir": "Robustez: no se midió. La prueba de estrés de la etapa 8 es opcional y no se corrió con esta apertura de la prueba."
           },
           "vigilancia": {

@@ -26,7 +26,9 @@ el modelo en reglas (texto y SQL) con su fidelidad, y vigilar el desempeño con 
 el Protocolo guarda su ganador como archivo para eso. Desde el Sprint 20, con una columna de fecha, puedes pronosticar una serie
 (seis métodos con origen móvil y un veredicto contra el mejor método simple, con bandas, gráfico y CSV), armar un gemelo sintético
 de tus datos con un informe que puede acabar en «no compartir», y sacar las reglas de un modelo importado o del ganador del Protocolo
-con las filas de un archivo tuyo.
+con las filas de un archivo tuyo. Desde el Sprint 21, con cualquier tabla, puedes preguntarle a tus datos con tus propias palabras
+(«ventas del último trimestre por región»): la app te enseña cómo entendió la pregunta, en palabras y en SQL, antes de correrla, y no
+usa un modelo de lenguaje para eso.
 
 **Tus datos no salen de tu navegador.** El cómputo de Probeta (pandas y scikit-learn en WebAssembly,
 con Pyodide) corre en un Web Worker de tu equipo; el Protocolo calcula en tu navegador y guarda su
@@ -84,7 +86,9 @@ as rules (text and SQL) with its fidelity, and watching the performance with new
 the Protocol saves its winner as a file for that. Since Sprint 20, with a date column, you can forecast a series (six methods
 with a rolling origin and a verdict against the best simple method, with bands, a chart and a CSV), build a synthetic twin of your
 data with a report that can end in «do not share», and get the rules of an imported model or of the Protocol winner from the rows
-of a file of yours.
+of a file of yours. Since Sprint 21, with any table, you can ask your data in your own words
+(«sales of the last quarter by region»): the app shows you how it understood the question, in words and in SQL, before running it, and
+it uses no language model for that.
 
 **Your data never leaves your browser.** Probeta's computation (pandas and scikit-learn in
 WebAssembly, through Pyodide) runs in a Web Worker on your machine; the Protocol computes in your

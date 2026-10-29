@@ -46,11 +46,11 @@ Judging a twin against a fixed number («KS < 0.1») is unfair: a sample of 200 
 chance. Every figure is therefore read **against how much two halves of the real data differ from each other** (the «floor»), with a
 fixed minimum floor so large data does not ask the impossible:
 
-| Part | Measure | Floor | «good» | «review» | «bad» |
-| --- | --- | --- | --- | --- | --- |
-| Column by column | mean KS (numbers) / total variation distance (categories) twin–data | the same between two seeded halves of the data (min 0.03) | ≤ 1.25 × floor | ≤ 2 × floor | more |
-| Relationships | mean \|Δ\| of Pearson (numbers) and of Cramér's V (categories), twin–data, with **the measures of the exploration of sprint 18** (`relaciones`) | the same between halves, averaged over 6 seeded splits (min 0.05) | ≤ 1.25 × floor | ≤ 2 × floor | more |
-| Closeness | distance from each synthetic row to the nearest real row (numbers in deviations, categories one-hot with a change weighing 1; at most 2,000 rows each side) against the distance from each real row to the nearest _other_ real row | — | median ratio ≥ 0.8 and ≤ 15 % of the synthetic rows closer than the closest 5 % of the real ones | ratio ≥ 0.5 and ≤ 25 % | less |
+| Part             | Measure                                                                                                                                                                                                                             | Floor                                                             | «good»                                                                                           | «review»               | «bad» |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------- | ----- |
+| Column by column | mean KS (numbers) / total variation distance (categories) twin–data                                                                                                                                                                 | the same between two seeded halves of the data (min 0.03)         | ≤ 1.25 × floor                                                                                   | ≤ 2 × floor            | more  |
+| Relationships    | mean \|Δ\| of Pearson (numbers) and of Cramér's V (categories), twin–data, with **the measures of the exploration of sprint 18** (`relaciones`)                                                                                     | the same between halves, averaged over 6 seeded splits (min 0.05) | ≤ 1.25 × floor                                                                                   | ≤ 2 × floor            | more  |
+| Closeness        | distance from each synthetic row to the nearest real row (numbers in deviations, categories one-hot with a change weighing 1; at most 2,000 rows each side) against the distance from each real row to the nearest _other_ real row | —                                                                 | median ratio ≥ 0.8 and ≤ 15 % of the synthetic rows closer than the closest 5 % of the real ones | ratio ≥ 0.5 and ≤ 25 % | less  |
 
 **The verdict.** _Do not share_ is a question of privacy: any exact copy, or a «bad» closeness. _Review_ is a question of fidelity (or a
 doubtful closeness): something is not «good» but nothing leaks. Otherwise, _safe to share_. The sentence says the reasons.
@@ -77,3 +77,18 @@ real 5 %; zero copies. A table of two columns with two categories each (4 possib
 - DataCebo, _SDMetrics_ documentation: the column-shape (KS, total variation), column-pair (correlation, contingency) and
   distance-to-closest-record measures this report adapts.
 - Sklar's theorem (1959): a joint distribution is its marginals plus a copula.
+
+## Addendum (Sprint 021) — proximity with categorical columns of thousands of values, measured and paid
+
+The sprint 20 audit (M-4) suspected that the nearest-real-row proximity built a dense one-hot matrix (2,000 rows × the sum of the
+categories of every categorical column). It was measured with the real Pyodide on 50,000 rows with a categorical column of 50, 1,000,
+5,000 and 10,000 values (each of at least 5 rows, so none is merged into «other») and three such columns (width 30,000), always letting
+`planGemelo` through. Budget fixed before measuring: **≤ 30 s without the worker dying**. Dense: 1.1 s, 2.3 s, 8.0 s, 17.6 s and
+**51.9 s with the WebAssembly heap at 1.8 GiB** (the 32-bit ceiling is 2 GiB: a crash in a browser). The fix is not a cap on the
+columns: above `SYNTH_SPARSE_FROM = 512` one-hot columns the same matrix is built with `scipy.sparse` and `NearestNeighbors` runs
+brute force on it. Same distances (a test compares the dense and the sparse result on one table, row by row and to 8 decimals),
+**1.1 s, 1.1 s, 2.0 s, 5.0 s and 13.7 s, heap flat at 322 MiB**. Below the threshold the code path is the old one, byte for byte.
+In the browser (production build, Chromium, the worst case through the real screen: 50,000 rows, three categorical columns of 10,000
+values, width 30,000, 49,000 twin rows asked on the second run): **17.4 s the first time (it includes downloading the Python engine)
+and 12.4 s after it**, the worker alive. The relations comparison, which runs on the main thread, took about 100 ms on those same 50,000 rows (it only reads columns of up to
+20 categories); 50,000 rows × 79 columns stays an H-3 item.

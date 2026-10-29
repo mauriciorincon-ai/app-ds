@@ -44,6 +44,9 @@ _FACTORIES_BY_TASK = {
 # suma) puede diferir en las últimas cifras; esto es mucho más fino que lo que se lee en pantalla (dos decimales).
 TOLERANCIA = 1e-6
 
+# El formato de la declaración que esta receta sabe leer (S21): con otro, se niega y lo dice en lugar de fingir que reproduce.
+FORMATO = "probeta-receta/1"
+
 
 class Falla(Exception):
     """Algo que el usuario puede arreglar (su archivo, sus versiones): se dice y se sale con código 2."""
@@ -209,7 +212,8 @@ def preparar(decl, cabecera, filas):
 
 TEXTOS = {
     "es": {
-        "titulo": "Receta de «{miembro}» · {tarea} · objetivo «{objetivo}» · archivo original: {archivo}",
+        "titulo": "Receta de «{miembro}» · {tarea} · objetivo «{objetivo}» · archivo original: {archivo} · armada por {app}",
+        "formato": "esta receta declara el formato «{f}» y yo solo sé leer «{ok}»: no se puede comprobar nada con ella",
         "filas": "Filas leídas: {leidas} · tras sanear: {saneadas} · entrenamiento: {train} · prueba: {test} · semilla: {semilla}",
         "particion": "✕ NO reproduce: la partición da {train}/{test} y la app tuvo {et}/{ep}. ¿Es el mismo archivo?",
         "cabecera": ("métrica", "esperada", "obtenida", "diferencia"),
@@ -232,7 +236,8 @@ TEXTOS = {
         "ilegible": "no se pudo leer el archivo ({tipo})",
     },
     "en": {
-        "titulo": "Recipe of «{miembro}» · {tarea} · target «{objetivo}» · original file: {archivo}",
+        "titulo": "Recipe of «{miembro}» · {tarea} · target «{objetivo}» · original file: {archivo} · built by {app}",
+        "formato": "this recipe declares the format «{f}» and I can only read «{ok}»: nothing can be checked with it",
         "filas": "Rows read: {leidas} · after sanitising: {saneadas} · training: {train} · test: {test} · seed: {semilla}",
         "particion": "✕ does NOT reproduce: the split gives {train}/{test} and the app had {et}/{ep}. Is it the same file?",
         "cabecera": ("metric", "expected", "obtained", "difference"),
@@ -307,7 +312,9 @@ def _cifra(valor):
 
 def correr(ruta):
     decl = DECLARACION
-    print(t("titulo", miembro=decl["miembro"], tarea=decl["tarea"], objetivo=decl["objetivo"], archivo=decl["archivo"]))
+    if decl.get("formato") != FORMATO:
+        raise Falla(t("formato", f=decl.get("formato"), ok=FORMATO))
+    print(t("titulo", miembro=decl["miembro"], tarea=decl["tarea"], objetivo=decl["objetivo"], archivo=decl["archivo"], app=decl["app"]))
     avisar_versiones()
     cabecera, filas = leer_csv(ruta)
     leidas = len(filas)

@@ -5,6 +5,7 @@ import type { CsvTable, ColumnProfile } from "@/lib/ds/csv";
 import {
   applyMemberFit,
   assembleResult,
+  columnasQueAgruparExcluye,
   estimateEncodedWidth,
   prepareRun,
   summarizeDataset,
@@ -26,6 +27,19 @@ function metrics(overrides: Partial<Metrics> = {}): Metrics {
     ...overrides,
   };
 }
+
+describe("columnasQueAgruparExcluye (S21, lote 18-15)", () => {
+  it("son las fechas y los identificadores; las demás columnas se quedan", () => {
+    const filas = Array.from({ length: 40 }, (_, i) => [
+      `id${i}`,
+      `2025-01-${String((i % 28) + 1).padStart(2, "0")}`,
+      String(10 + (i % 7)),
+      i % 2 ? "a" : "b",
+    ]);
+    const fuera = columnasQueAgruparExcluye(table(["codigo", "dia", "edad", "grupo"], filas));
+    expect([...fuera].sort()).toEqual(["codigo", "dia"]);
+  });
+});
 
 describe("summarizeDataset", () => {
   it("perfila columnas y detecta candidatos a objetivo y fechas", () => {

@@ -3073,6 +3073,8 @@ def run_fit_winner(payload_json):
         "pipe": pipe,
         "schema": schema,
         "training_profile": _training_profile(X_train, numeric, categorical),
+        # S21 (lote 20-12): el ganador reajustado del Protocolo no mide la verdad con filas de nadie (la prueba ya se abrió una vez)
+        "origin": "protocolo",
     }
     return json.dumps(
         {
@@ -3268,6 +3270,8 @@ def run_rules(payload_json="{}"):
     schema = _MODEL["schema"]
     if uploaded:
         _validate_rules_payload(p, schema)
+        if p.get("truth") is True and _MODEL.get("origin") == "protocolo":
+            _contract("truth")
     task = _task_of(schema)
     numeric = list(schema["numeric"])
     categorical = list(schema["categorical"])
@@ -3837,7 +3841,7 @@ def run_forecast(payload_json="{}"):
         else:
             reason = "short"
     if len(origins) < FORECAST_MIN_FOLDS:
-        needed = h + FORECAST_MIN_FOLDS - 1 + FORECAST_MIN_TRAIN if step == 1 else h + (FORECAST_MIN_FOLDS - 1) * step + FORECAST_MIN_TRAIN
+        needed = h + (FORECAST_MIN_FOLDS - 1) * step + FORECAST_MIN_TRAIN
         return json.dumps({"viable": False, "n": n_input, "needed": int(needed), "horizon": h})
 
     # sin dos temporadas completas en tres pliegues NINGÚN método supone una temporada (no solo el ingenuo estacional)
@@ -3941,6 +3945,9 @@ SYNTH_MAX_ROWS = 50000
 SYNTH_RARE_CATEGORY = 5
 SYNTH_OTHERS = "otras"
 SYNTH_PROXIMITY_MAX = 2000
+# desde cuántas columnas uno-caliente (la suma de las categorías de todas las categóricas) la cercanía usa una matriz dispersa: con
+# categóricas de miles de valores la densa pesaba cientos de MiB y tardaba un minuto (S21, medido); por debajo, la misma de siempre
+SYNTH_SPARSE_FROM = 512
 SYNTH_RESAMPLE_ROUNDS = 20
 SYNTH_EIGEN_FLOOR = 1e-6
 SYNTH_SIG = 6
@@ -3965,6 +3972,33 @@ def _synth_text(value, kind, integer):
         return str(int(round(value)))
     text = repr(float(f"{float(value):.{SYNTH_OUT_SIG}g}"))
     return text[:-2] if text.endswith(".0") else text
+
+
+def _synth_encode(marginals, table_cols, sparse):
+    """Números en desviaciones, categorías en uno-caliente (un cambio de categoría pesa 1). Densa, o dispersa (`scipy.sparse`, misma
+    matriz sin los ceros) cuando las categorías son miles: las distancias son las mismas."""
+    from scipy import sparse as sp
+    parts = []
+    for j, mg in enumerate(marginals):
+        column = table_cols[j]
+        if mg["kind"] == "numeric":
+            med = float(np.median(mg["sorted"]))
+            std = float(np.std(mg["sorted"])) or 1.0
+            dense = np.array([[((med if v is None else float(v)) - med) / std] for v in column])
+            parts.append(sp.csr_matrix(dense) if sparse else dense)
+        elif sparse:
+            index = {c: k for k, c in enumerate(mg["cats"])}
+            filas, columnas = [], []
+            for r, v in enumerate(column):
+                k = index.get(v)
+                if k is not None:
+                    filas.append(r)
+                    columnas.append(k)
+            parts.append(sp.csr_matrix(
+                (np.full(len(filas), np.sqrt(0.5)), (filas, columnas)), shape=(len(column), len(mg["cats"]))))
+        else:
+            parts.append(np.array([[np.sqrt(0.5) if v == c else 0.0 for c in mg["cats"]] for v in column]))
+    return sp.hstack(parts, format="csr") if sparse else np.hstack(parts)
 
 
 def run_synthesize(payload_json="{}"):
@@ -4127,23 +4161,14 @@ def run_synthesize(payload_json="{}"):
 
     # cercanía: números en desviaciones, categorías en uno-caliente (un cambio de categoría pesa 1), y la distancia a la fila real más
     # cercana (las sintéticas contra las reales; las reales contra las OTRAS reales)
-    def encode(table_cols):
-        parts = []
-        for j, mg in enumerate(marginals):
-            column = table_cols[j]
-            if mg["kind"] == "numeric":
-                med = float(np.median(mg["sorted"]))
-                std = float(np.std(mg["sorted"])) or 1.0
-                parts.append(np.array([[((med if v is None else float(v)) - med) / std] for v in column]))
-            else:
-                parts.append(np.array([[np.sqrt(0.5) if v == c else 0.0 for c in mg["cats"]] for v in column]))
-        return np.hstack(parts)
+    n_hot = sum(len(mg["cats"]) for mg in marginals if mg["kind"] == "categorical")
+    sparse = n_hot > SYNTH_SPARSE_FROM
 
     sample = order[:SYNTH_PROXIMITY_MAX]
     sample_syn = min(n_out, SYNTH_PROXIMITY_MAX)
-    real_enc = encode([[real_cols[j][i] for i in sample] for j in range(d)])
-    syn_enc = encode([list(synth[:sample_syn, j]) for j in range(d)])
-    nn = NearestNeighbors(n_neighbors=2).fit(real_enc)
+    real_enc = _synth_encode(marginals, [[real_cols[j][i] for i in sample] for j in range(d)], sparse)
+    syn_enc = _synth_encode(marginals, [list(synth[:sample_syn, j]) for j in range(d)], sparse)
+    nn = NearestNeighbors(n_neighbors=2, algorithm="brute" if sparse else "auto").fit(real_enc)
     d_real = nn.kneighbors(real_enc)[0][:, 1]
     d_syn = nn.kneighbors(syn_enc, n_neighbors=1)[0][:, 0]
     p5_real = float(np.percentile(d_real, 5))
@@ -4164,8 +4189,8 @@ def run_synthesize(payload_json="{}"):
             "median_real": float(np.median(d_real)),
             "p5_real": p5_real,
             "share_below": float(np.mean(d_syn < p5_real)),
-            "n_real": int(len(real_enc)),
-            "n_syn": int(len(syn_enc)),
+            "n_real": int(real_enc.shape[0]),
+            "n_syn": int(syn_enc.shape[0]),
         },
         "copies": int(copies),
         "resampled": int(resampled),

@@ -100,7 +100,6 @@ describe("el ganador del Protocolo como archivo (Pyodide)", () => {
     expect(referencia).toEqual({
       metric: abre.payload.primary_metric,
       valor: test.metric.value,
-      nPrueba: abre.payload.test.length,
     });
     const datos = call("run_evaluate", { headers: a.tabla.headers, rows: a.tabla.rows }) as Parameters<typeof vigilar>[0];
     const lectura = vigilar(datos, referencia, { clases: 2, semilla: 42 });

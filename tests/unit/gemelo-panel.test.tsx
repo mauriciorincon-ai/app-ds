@@ -103,8 +103,11 @@ describe("el gemelo y su informe", () => {
   it("manda solo las columnas del plan con la semilla fija y enseña el veredicto con símbolo y palabra, y el informe", async () => {
     const { worker, enviados } = doble(() => fixture());
     panel(worker, []);
+    const vivo = screen.getByTestId("gemelo-vivo"); // S21 (lote 20-B): la región viva ya está antes del resultado
+    expect(vivo.getAttribute("aria-live")).toBe("polite");
     fireEvent.click(screen.getByRole("button", { name: "Generar el gemelo" }));
     await screen.findByTestId("gemelo-lectura");
+    expect(vivo.contains(screen.getByTestId("gemelo-lectura"))).toBe(true);
     expect(enviados).toHaveLength(1);
     expect(enviados[0]!.type).toBe("synthesize");
     expect(Object.keys(enviados[0]!.payload!).sort()).toEqual(["headers", "kinds", "n_rows", "rows", "seed"]);

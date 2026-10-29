@@ -169,10 +169,7 @@ export function armarSerie(
   periodo: Periodo,
   agregado: Agregado,
 ): ArmarSerie {
-  const acumulado = new Map<
-    number,
-    { suma: number; n: number; vistos: number }
-  >();
+  const acumulado = new Map<number, { suma: number; n: number }>();
   let sinFecha = 0;
   let sinValor = 0;
   const dias = new Set<number>();
@@ -187,7 +184,7 @@ export function armarSerie(
       return;
     }
     const k = indiceDe(f, periodo);
-    const a = acumulado.get(k) ?? { suma: 0, n: 0, vistos: 0 };
+    const a = acumulado.get(k) ?? { suma: 0, n: 0 };
     a.suma += v;
     a.n += 1;
     acumulado.set(k, a);

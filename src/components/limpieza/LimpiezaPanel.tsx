@@ -73,6 +73,9 @@ export function LimpiezaPanel({
                   tipo: t(`limpieza.personales.tipo.${aviso.tipo}`),
                   via: t(`limpieza.personales.via.${aviso.via}`),
                 })}
+                {aviso.cuota !== null
+                  ? ` ${t("limpieza.personales.cuota", { pct: Math.round(aviso.cuota * 100) })}`
+                  : ""}
                 {aviso.fuera ? ` ${t("limpieza.personales.fuera")}` : ""}
               </li>
             ))}

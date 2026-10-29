@@ -25,6 +25,8 @@ export type IntervaloSent = {
   readonly n_test: number;
   /** Solo en varias categorías: cuántas clases (las etiquetas van de 0 a K−1). */
   readonly n_classes: number | null;
+  /** La semilla del experimento: el worker la devuelve y tiene que ser la misma (S21, lote 18-11). */
+  readonly seed: number;
 };
 
 export type DatosIntervalo = {
@@ -48,7 +50,7 @@ export function validateIntervalData(
       task: oneOf([sent.task]),
       metric: oneOf([sent.primary_metric]),
       n: refine(int, (v) => v === sent.n_test),
-      seed: int,
+      seed: refine(int, (v) => v === sent.seed),
       y: arr(num),
       pred: arr(num),
       score: nullable(arr(num)),

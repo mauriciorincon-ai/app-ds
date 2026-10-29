@@ -15,6 +15,7 @@ import { useI18n } from "@/i18n/provider";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { downloadTextFile } from "@/lib/files";
 import { fichaVista, nombresDe } from "@/lib/protocolo/ficha-texto";
+import { useGanador } from "@/lib/protocolo/useGanador";
 import { Button } from "@/components/ui";
 import { Etapa10Deriva } from "./Etapa10Deriva";
 import { Etapa10Modelo } from "./Etapa10Modelo";
@@ -36,6 +37,8 @@ export function Etapa10Constancia({
   const t = useTextosEtapa(TEXTOS_ETAPA_10);
   const { locale } = useI18n();
   const [descargado, setDescargado] = useState<string | null>(null);
+  // S21 (lote 20-16): UN solo worker del ganador para el archivo del modelo y para las reglas
+  const ganador = useGanador();
   const evidencias = useMemo(() => evidenciasCumplidas(evaluadas), [evaluadas]);
   const carga = useMemo(
     () => (cuaderno ? cargaDe(cuaderno, evidencias[10]?.huella ?? null) : null),
@@ -104,11 +107,11 @@ export function Etapa10Constancia({
       </section>
       {/* S19: el ganador como archivo, para puntuar y vigilar su desempeño en Probeta. */}
       {ficha.decision === "usar" && (
-        <Etapa10Modelo evidencias={evidencias} datos={datos} />
+        <Etapa10Modelo evidencias={evidencias} datos={datos} ganador={ganador} />
       )}
       {/* S20: las reglas del ganador, armadas con las filas que subes (la verdad no se mide: la prueba ya se abrió). */}
       {ficha.decision === "usar" && (
-        <Etapa10Reglas evidencias={evidencias} datos={datos} />
+        <Etapa10Reglas evidencias={evidencias} datos={datos} ganador={ganador} />
       )}
       {ficha.decision === "usar" && evidencias[10] && (
         <Etapa10Deriva evidencia={evidencias[10].datos} />

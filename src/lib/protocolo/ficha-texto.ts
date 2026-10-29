@@ -62,6 +62,9 @@ export function parametrosTexto(
         salida[clave] = t(`protocol.stage.6.scheme.${valor}`);
       else if (clave === "metrica")
         salida[clave] = t(`results.metrics.${valor}`);
+      else if (clave === "rivalId")
+        // el rival sin modelo de la prueba de estrés: su nombre en el idioma de la ficha («Clase mayoritaria», «Mediana»…)
+        salida.rivalNombre = valor === "" ? "—" : t(`results.baselines.${valor}`);
       else if (clave === "ganador")
         salida[clave] = t(`results.candidates.short.${valor}`);
       else if (clave === "segmento") salida[clave] = segmentoTexto(t, valor);

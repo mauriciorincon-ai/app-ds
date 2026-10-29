@@ -6,7 +6,7 @@
 // ver cuántas decisiones cambian y qué significa en dinero con los costos escritos. Los costos de Probeta usan los campos y la
 // lectura de números de la etapa 1 (`campos.tsx`), no copias. Texto con símbolo + palabra (el color nunca solo); sin
 // diccionario en la página: los textos viajan con este chunk.
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   CampoSelect,
   CampoTexto,
@@ -148,6 +148,8 @@ export function SimuladorPanel(props: SimuladorProps) {
   const [porClase, setPorClase] = useState<Record<string, string>>({});
   const [unidadTexto, setUnidadTexto] = useState("");
   const [estado, setEstado] = useState<Estado>({ tipo: "inactivo" });
+  // cuál es la simulación vigente: la respuesta de una anterior (otra columna, otro intento) no pisa lo que la pantalla ya muestra
+  const vigente = useRef(0);
 
   const tipoCondicion = (nombre: string) =>
     nombre === ""
@@ -232,6 +234,7 @@ export function SimuladorPanel(props: SimuladorProps) {
       return;
     }
     const s = preparada.simulacion;
+    const mia = ++vigente.current;
     setEstado({ tipo: "midiendo" });
     try {
       const r = await simular(
@@ -249,6 +252,7 @@ export function SimuladorPanel(props: SimuladorProps) {
           positive: positiva,
         },
       );
+      if (vigente.current !== mia) return;
       const escritos = costosEscritos ?? {
         costos: costosPedidos(),
         unidad: unidadTexto.trim() === "" ? null : unidadTexto.trim(),
@@ -272,6 +276,7 @@ export function SimuladorPanel(props: SimuladorProps) {
         },
       });
     } catch (e) {
+      if (vigente.current !== mia) return;
       setEstado({
         tipo: "error",
         motivo: e instanceof Error ? e.message : "worker",
@@ -293,6 +298,19 @@ export function SimuladorPanel(props: SimuladorProps) {
     agrupar: () => false,
   });
   const costosCampos = costosEscritos === null && conCostos;
+
+  /**
+   * Lo que hay escrito en los costos y no alcanza para ver el dinero se DICE (S21, lote 19-03/04): un costo que no es mayor que
+   * cero, o una clase sin costo cuando las otras ya lo tienen. Sin nada escrito no se dice nada.
+   */
+  const problemaDeCostos = (): "invalido" | "clases_faltan" | null => {
+    const campos = esBinaria ? [fp, fn] : (clases ?? []).map((k) => porClase[k] ?? "");
+    const escritos = campos.filter((x) => x.trim() !== "");
+    if (escritos.length === 0) return null;
+    if (escritos.some((x) => !costoValido(leerNumero(x)))) return "invalido";
+    return !esBinaria && escritos.length < campos.length ? "clases_faltan" : null;
+  };
+  const problemaCostos = costosCampos ? problemaDeCostos() : null;
 
   return (
     <section
@@ -321,6 +339,7 @@ export function SimuladorPanel(props: SimuladorProps) {
               opciones={columnas.map((c) => ({ valor: c, texto: c }))}
               onCambio={(v) => {
                 setColumna(v);
+                vigente.current += 1;
                 setEstado({ tipo: "inactivo" });
               }}
             />
@@ -354,7 +373,7 @@ export function SimuladorPanel(props: SimuladorProps) {
               </div>
             ) : (
               <CampoSelect
-                etiqueta={t("simulador.cambio.categoria")}
+                etiqueta={t("simulador.cambio.categoria_valor")}
                 valor={categoriaElegida}
                 opciones={categorias.map((c) => ({ valor: c, texto: c }))}
                 onCambio={setCategoria}
@@ -531,6 +550,14 @@ export function SimuladorPanel(props: SimuladorProps) {
                     />
                   ))
                 )}
+                {problemaCostos !== null && (
+                  <p role="status" className="text-sm text-negative">
+                    <span aria-hidden="true" className="mr-1">
+                      ✕
+                    </span>
+                    {t(`simulador.costos.${problemaCostos}`)}
+                  </p>
+                )}
                 <CampoTexto
                   etiqueta={t("simulador.costos.unidad")}
                   valor={unidadTexto}
@@ -577,9 +604,11 @@ export function SimuladorPanel(props: SimuladorProps) {
             {t("simulador.error", { motivo: estado.motivo })}
           </p>
         )}
-        {estado.tipo === "lista" && estado.lectura.de === modelo && (
-          <LecturaSimulacion lectura={estado.lectura} t={t} locale={locale} />
-        )}
+        <div aria-live="polite" data-testid="simulador-vivo">
+          {estado.tipo === "lista" && estado.lectura.de === modelo && (
+            <LecturaSimulacion lectura={estado.lectura} t={t} locale={locale} />
+          )}
+        </div>
       </Card>
     </section>
   );

@@ -4,7 +4,7 @@ import { axeBothThemes } from "./axe-temas";
 
 // S20 (ADR 027, adenda) — las reglas de un modelo IMPORTADO, que no conserva las filas de su entrenamiento: con las filas del archivo
 // que se carga en «Usar el modelo» el árbol se arma (y su SQL se descarga). Si el archivo trae el resultado real, también se mide contra
-// la verdad; si no, la pantalla lo dice. Entrenar → exportar → recargar → importar → puntuar un archivo → «Ver el modelo en reglas».
+// la verdad; si no, la pantalla lo dice. Entrenar → exportar → recargar → importar → puntuar un archivo → «Armar las reglas».
 
 const kit = (name: string) => resolve(process.cwd(), "docs/kit-de-prueba", name);
 
@@ -27,7 +27,7 @@ test("un modelo importado arma sus reglas con las filas del archivo cargado; con
   // filas sin el resultado real: el árbol se arma con ellas y la pantalla dice que no hay verdad contra la cual medirlo
   await page.locator('input[accept^=".csv,text/csv"]').setInputFiles(kit("marketing-filas-para-reglas.csv"));
   await expect(page.getByRole("button", { name: /Descargar CSV puntuado/i })).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("button", { name: "Ver el modelo en reglas" }).click();
+  await page.getByRole("button", { name: "Armar las reglas" }).click();
   await expect(page.getByTestId("reglas-lectura")).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId("reglas-lectura")).toContainText("filas de tu archivo");
   await expect(page.getByTestId("reglas-sin-verdad")).toBeVisible();
@@ -41,7 +41,7 @@ test("un modelo importado arma sus reglas con las filas del archivo cargado; con
   await page.getByRole("button", { name: /Puntuar otro CSV/i }).click();
   await page.locator('input[accept^=".csv,text/csv"]').setInputFiles(kit("marketing-resultados-sin-cambio.csv"));
   await expect(page.getByRole("button", { name: /Descargar CSV puntuado/i })).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("button", { name: "Ver el modelo en reglas" }).click();
+  await page.getByRole("button", { name: "Armar las reglas" }).click();
   await expect(page.getByTestId("reglas-lectura")).toContainText("Frente a la verdad, las reglas aciertan", { timeout: 60_000 });
   await expect(page.getByTestId("reglas-sin-verdad")).toHaveCount(0);
 });

@@ -38,6 +38,11 @@ const GemeloPanel = dynamic(
   () => import("./gemelo/GemeloPanel").then((m) => m.GemeloPanel),
   { ssr: false },
 );
+// S21: «Pregúntale a tus datos» (el lector de preguntas, su consulta, su gráfico y sus textos) también en su chunk.
+const PreguntaPanel = dynamic(
+  () => import("./pregunta/PreguntaPanel").then((m) => m.PreguntaPanel),
+  { ssr: false },
+);
 // S20: pronosticar una serie (otro flujo, con su gráfico y sus textos) también en su chunk.
 const PronosticoPanel = dynamic(
   () => import("./pronostico/PronosticoPanel").then((m) => m.PronosticoPanel),
@@ -179,6 +184,15 @@ export function ConfigScreen({
           getTable={getTable}
           personales={ingesta ? ingesta.personales.map((p) => p.column) : null}
           worker={worker}
+          datasetName={datasetName}
+        />
+      )}
+
+      {/* S21: preguntar a la tabla tal como llegó; lo marcado como dato personal no se ofrece para agrupar, así que espera al aviso. */}
+      {getRawTable && (
+        <PreguntaPanel
+          getTable={getRawTable}
+          personales={ingesta ? ingesta.personales.map((p) => p.column) : null}
           datasetName={datasetName}
         />
       )}

@@ -495,6 +495,47 @@ function serieRuido(seed = 2002) {
   return toCsv(["mes", "visitas"], rows);
 }
 
+// S21: las ventas semanales por región para «Pregúntale a tus datos» (todo de ficción). Dos años de lunes (2024-01-01 a 2025-12-22) ×
+// cuatro regiones × dos ventas por semana. Trae lo que la pregunta tiene que saber leer: una fecha, una categoría de pocos valores, un
+// valor que está en dos columnas (`norte` en la región y en la bodega, para que «ventas del norte» PREGUNTE), celdas vacías en la
+// medida y en el producto, y un último trimestre incompleto. El mismo mundo en español y en inglés (los nombres de las columnas son
+// las palabras que el lector compara con la pregunta).
+function ventasPorRegion(idioma = "es", seed = 2101) {
+  const rng = mulberry32(seed);
+  const en = idioma === "en";
+  const regiones = en ? ["north", "south", "east", "west"] : ["norte", "sur", "este", "oeste"];
+  const productos = en ? ["basic", "standard", "premium"] : ["basico", "estandar", "premium"];
+  const bodegas = en ? ["north", "central", "south"] : ["norte", "central", "sur"];
+  const base = [1.3, 1.0, 0.8, 1.1];
+  const factor = [0.7, 1.0, 1.6];
+  const rows = [];
+  for (let w = 0; w < 104; w++) {
+    const fecha = new Date(Date.UTC(2024, 0, 1 + 7 * w)).toISOString().slice(0, 10);
+    const estacion = 1 + 0.25 * Math.sin((2 * Math.PI * (w % 52)) / 52) + 0.002 * w;
+    for (let r = 0; r < regiones.length; r++) {
+      for (let k = 0; k < 2; k++) {
+        const p = Math.floor(rng() * productos.length);
+        const unidades = Math.max(1, Math.round((18 + 10 * rng()) * base[r] * estacion));
+        const ventas = unidades * (42 + 6 * gaussian(rng)) * factor[p];
+        const vacioVentas = rng() < 0.02;
+        const vacioProducto = rng() < 0.01;
+        rows.push([
+          fecha,
+          regiones[r],
+          vacioProducto ? "" : productos[p],
+          vacioVentas ? "" : round(ventas, 2),
+          unidades,
+          pick(rng, bodegas),
+        ]);
+      }
+    }
+  }
+  const headers = en
+    ? ["date", "region", "product", "sales_usd", "units", "warehouse"]
+    : ["fecha", "region", "producto", "ventas_usd", "unidades", "bodega"];
+  return toCsv(headers, rows);
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   await mkdir(kitDir, { recursive: true });
@@ -547,6 +588,9 @@ async function main() {
     "serie-ventas-mensual.csv": serieMensual(),
     "serie-ruido.csv": serieRuido(),
     "serie-ventas-con-huecos.csv": serieMensual(2001, [17, 18, 40]),
+    // S21: «Pregúntale a tus datos»: ventas semanales por región, en español y en inglés (el mismo mundo).
+    "ventas-por-region.csv": ventasPorRegion("es"),
+    "sales-by-region.csv": ventasPorRegion("en"),
   };
   for (const [name, content] of Object.entries(kitOnly)) {
     await writeFile(resolve(kitDir, name), content, "utf8");

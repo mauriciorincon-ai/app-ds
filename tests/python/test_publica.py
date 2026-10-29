@@ -63,6 +63,29 @@ class TestReceta(unittest.TestCase):
         self.assertRegex(r.stdout, r"NO reproduce|does NOT reproduce")
         self.assertIn("auc", r.stdout)
 
+    def test_una_receta_de_otro_formato_se_niega_y_lo_dice(self):
+        # S21 (lote 17-4): la receta LEE el formato que declara; con uno que no conoce no finge reproducir
+        caso = next(c for c in _matriz() if c["id"] == "binaria__hgb")
+        texto = (SALIDA / caso["receta"]).read_text(encoding="utf-8")
+        alterada = texto.replace('"formato": "probeta-receta/1"', '"formato": "probeta-receta/9"', 1)
+        self.assertNotEqual(alterada, texto)
+        with tempfile.TemporaryDirectory() as d:
+            ruta = Path(d) / "receta.py"
+            ruta.write_text(alterada, encoding="utf-8")
+            r = _correr([str(ruta), str(RAIZ / caso["csv"])])
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn("probeta-receta/9", r.stdout)
+        self.assertNotRegex(r.stdout, r"✓ (reproduce|reproduces)")
+
+    def test_la_receta_dice_que_app_la_armo(self):
+        # S21 (lote 17-4): la declaración trae `app` y la receta lo imprime junto al título
+        caso = next(c for c in _matriz() if c["id"] == "binaria__hgb")
+        texto = (SALIDA / caso["receta"]).read_text(encoding="utf-8")
+        app = re.search(r'"app": "([^"]+)"', texto).group(1)
+        r = _correr([str(SALIDA / caso["receta"]), str(RAIZ / caso["csv"])])
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn(app, r.stdout.splitlines()[0])
+
     def test_un_bosque_tolera_lo_declarado_y_no_mas(self):
         caso = next(c for c in _matriz() if c["id"] == "binaria__forest")
         chica, _ = self._alterada(caso, 0.02)  # dentro de la tolerancia aproximada: lo dice «aproximado»

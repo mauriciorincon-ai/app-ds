@@ -17,23 +17,19 @@ export function referenciaDe(
       return {
         metric: m.protocol.metric,
         valor: m.protocol.test_value,
-        nPrueba: m.protocol.n_test,
       };
     return matchByTask(m, {
       binaria: (b) => ({
         metric: b.verdict.primaryMetric,
         valor: b.verdict.modelScore,
-        nPrueba: b.dataset.n_test,
       }),
       multiclase: (b) => ({
         metric: b.verdict.primaryMetric,
         valor: b.verdict.modelScore,
-        nPrueba: b.dataset.n_test,
       }),
       numerica: (b) => ({
         metric: b.verdict.primaryMetric,
         valor: b.verdict.modelScore,
-        nPrueba: b.dataset.n_test,
       }),
       agrupar: () => null,
     });
@@ -43,17 +39,14 @@ export function referenciaDe(
     binaria: (r) => ({
       metric: r.verdict.primaryMetric,
       valor: r.verdict.modelScore,
-      nPrueba: r.nTest,
     }),
     multiclase: (r) => ({
       metric: r.verdict.primaryMetric,
       valor: r.verdict.modelScore,
-      nPrueba: r.nTest,
     }),
     numerica: (r) => ({
       metric: r.verdict.primaryMetric,
       valor: r.verdict.modelScore,
-      nPrueba: r.nTest,
     }),
     agrupar: () => null,
   });

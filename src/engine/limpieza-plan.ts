@@ -36,7 +36,7 @@ export type SpecLimpieza = {
 };
 
 export type MotivoNoAplicado =
-  "objetivo" | "columna-quitada" | "ahora-categoria";
+  "objetivo" | "columna-quitada" | "ahora-categoria" | "ya-excluida";
 
 export type RegistroPaso = {
   id: string;
@@ -61,12 +61,14 @@ export type PlanAplicado = {
 /**
  * Pura y determinista: el mismo plan con las mismas decisiones da siempre lo mismo. Un paso sobre la columna que se quiere
  * predecir no se aplica (se dice en el registro), y los pasos de una columna que se quita o que pasa a ser categoría
- * tampoco.
+ * tampoco. S21: `excluidas` son las columnas que la tarea ya deja fuera por su cuenta (al agrupar, un identificador o una fecha):
+ * un paso estadístico sobre ellas no se aplica ni se dice «aplicado» (quitar la columna sí, el plan la quitó primero).
  */
 export function aplicarDecisiones(
   plan: readonly PasoLimpieza[],
   decisiones: Decisiones,
   objetivo: string | null,
+  excluidas: ReadonlySet<string> = new Set(),
 ): PlanAplicado {
   const aprobado = (p: PasoLimpieza) => decisiones[p.id] === "aprobado";
   const quitar = new Set(
@@ -105,6 +107,8 @@ export function aplicarDecisiones(
         categoricas.has(p.columna)
       )
         motivo = "ahora-categoria";
+      else if (p.tipo !== "quitar-columna" && excluidas.has(p.columna))
+        motivo = "ya-excluida";
     }
     const aplicado = decision === "aprobado" && motivo === null;
     if (aplicado) {

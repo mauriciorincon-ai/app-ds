@@ -1,9 +1,10 @@
 {
   "reglas": {
     "titulo": "El modelo en reglas",
+    "titulo_previo": "Reglas a partir del modelo",
     "titulo_aprox": "Un árbol que se parece al modelo",
     "ayuda": "Un árbol de pocas preguntas sobre tus columnas, con los números en sus unidades, que copia lo que el modelo decide. Sirve para llevarlo a un sistema donde no corre Python. Es un resumen: casi nunca iguala al modelo, y la pantalla te dice cuánto se le parece.",
-    "boton": "Ver el modelo en reglas",
+    "boton": "Armar las reglas",
     "calculando": "Armando las reglas…",
     "error": "No se pudieron armar las reglas ({motivo}). Vuelve a intentarlo.",
     "ayuda_subidas": "Un árbol de pocas preguntas sobre tus columnas, con los números en sus unidades, que copia lo que el modelo decide EN LAS FILAS DE TU ARCHIVO (el que acabas de cargar). Sirve para llevar el modelo a un sistema donde no corre Python, también si lo importaste: no necesita las filas con que se entrenó. Es un resumen: casi nunca iguala al modelo, y la pantalla te dice cuánto se le parece.",
@@ -34,7 +35,7 @@
     "grupo": "Grupo {n}",
     "fuera": "Fuera de todo grupo",
     "texto": {
-      "cabecera": "Reglas que copian al modelo ({tipo})",
+      "cabecera": "Reglas derivadas del modelo ({tipo})",
       "tipo": {
         "clase": "predicen una categoría",
         "cantidad": "estiman una cantidad",

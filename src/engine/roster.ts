@@ -96,6 +96,8 @@ export const ROSTER_BY_TASK: Record<TrainTask, readonly MemberId[]> = {
  * S18: la liga contra la VISION. La VISION (v2.1.0) nombra los modelos de la liga y un test (`liga-vision.test.ts`) cruza esos
  * nombres con el roster de CADA tarea: si uno falta de una tarea, tiene que estar aquí con su razón; y si está aquí y el roster
  * ya lo lleva, la razón caducó y el test lo dice. Las razones son de dominio (qué estima cada familia), no excusas.
+ * S21: el usuario aceptó estas ausencias por tarea (decisión del 2026-10-26, la que el plan del G-Plan traía por omisión): Lasso y la
+ * lineal no clasifican, la logística y Naive Bayes no estiman. Ninguna se construye; esta tabla y el BLUEPRINT (fila 6) las dicen.
  */
 export const SIN_LUGAR_EN_LA_TAREA: Readonly<
   Partial<Record<TrainTask, Readonly<Record<string, string>>>>

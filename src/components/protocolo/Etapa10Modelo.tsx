@@ -5,17 +5,18 @@
 // ENTRENAMIENTO (la prueba no se abre y esto no es una apertura), en un worker que se crea al pulsar el botón. Pide los datos cargados:
 // el sello de la partición confirma que son los mismos con que se trabajó. El archivo lleva el modelo con los rangos y las categorías
 // que vio al entrenar; con los vecinos más cercanos lleva también las filas de entrenamiento, y lo dice ANTES de descargar.
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui";
 import type { EvidenciaFicha } from "@/engine/protocolo/ficha";
 import type { EtapaId, Previas } from "@/engine/protocolo/etapas";
 import { numero, texto } from "@/engine/protocolo/valores";
+import { isMemberId, MEMBERS } from "@/engine/roster";
 import { METRIC_RULES, type PrimaryMetric } from "@/engine/verdict";
 import { useTextosEtapa } from "@/i18n/textos-etapa";
 import { downloadTextFile } from "@/lib/files";
 import { modelFileName } from "@/lib/model-file";
 import { envioGanador } from "@/lib/protocolo/ganador";
-import { useGanador } from "@/lib/protocolo/useGanador";
+import type { Ganador } from "@/lib/protocolo/useGanador";
 import type { DatosCargados } from "@/lib/protocolo/useProtocolo";
 import { TEXTOS_ETAPA_10 } from "./textos/etapa10";
 
@@ -33,14 +34,18 @@ function bloqueDe(previas: Previas) {
 export function Etapa10Modelo({
   evidencias,
   datos,
+  ganador,
 }: {
   evidencias: Partial<Record<EtapaId, EvidenciaFicha>>;
   datos: DatosCargados | null;
+  ganador: Ganador;
 }) {
   const t = useTextosEtapa(TEXTOS_ETAPA_10);
-  const { estado, exportar } = useGanador();
+  const { estado, exportar } = ganador;
   const [guardado, setGuardado] = useState<string | null>(null);
   const [fallo, setFallo] = useState<string | null>(null);
+  // un segundo clic con la exportación en vuelo no la repite (S21, lote 19-20): el botón vuelve a estar a la mano al terminar el ajuste
+  const guardando = useRef(false);
   const previas = useMemo<Previas>(
     () =>
       Object.fromEntries(
@@ -61,7 +66,8 @@ export function Etapa10Modelo({
   const ocupado = estado.tipo === "ajustando";
 
   async function guardar() {
-    if (!envio || !datos || !bloque) return;
+    if (!envio || !datos || !bloque || guardando.current) return;
+    guardando.current = true;
     setFallo(null);
     setGuardado(null);
     try {
@@ -85,6 +91,8 @@ export function Etapa10Modelo({
       setGuardado(nombre);
     } catch (e) {
       setFallo(e instanceof Error ? e.message : "worker");
+    } finally {
+      guardando.current = false;
     }
   }
 
@@ -97,7 +105,8 @@ export function Etapa10Modelo({
       <p className="text-ink-muted">{t("protocol.stage.10.model.body")}</p>
       <p className="text-ink-muted">
         {t(
-          bloque.ganador === "knn"
+          isMemberId(bloque.ganador) &&
+            MEMBERS[bloque.ganador].family === "neighbors"
             ? "protocol.stage.10.model.contains-knn"
             : "protocol.stage.10.model.contains",
         )}

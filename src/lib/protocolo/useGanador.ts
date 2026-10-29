@@ -31,7 +31,9 @@ export function useGanador() {
   const [estado, setEstado] = useState<EstadoGanador>({ tipo: "inactivo" });
   const workerRef = useRef<Worker | null>(null);
   const ajustadoRef = useRef<string | null>(null);
-  const enCursoRef = useRef<Promise<void> | null>(null);
+  const enCursoRef = useRef<{ clave: string; promesa: Promise<void> } | null>(
+    null,
+  );
 
   useEffect(
     () => () => {
@@ -61,26 +63,35 @@ export function useGanador() {
       if (ajustadoRef.current === clave && workerRef.current)
         return Promise.resolve(workerRef.current);
       const worker = workerDe();
-      if (enCursoRef.current === null || ajustadoRef.current !== clave) {
+      // un mismo ajuste que sigue en vuelo se espera, no se manda otra vez (S21, lote 19-10)
+      if (enCursoRef.current?.clave !== clave) {
         setEstado({ tipo: "ajustando" });
-        enCursoRef.current = pedirAjuste(worker, envio).then(
-          () => {
-            ajustadoRef.current = clave;
-            enCursoRef.current = null;
-            setEstado({ tipo: "listo" });
-          },
-          (e: unknown) => {
-            ajustadoRef.current = null;
-            enCursoRef.current = null;
-            setEstado({
-              tipo: "error",
-              motivo: e instanceof Error ? e.message : "worker",
-            });
-            throw e;
-          },
-        );
+        const propio = {
+          clave,
+          promesa: pedirAjuste(worker, envio).then(
+            () => {
+              if (enCursoRef.current === propio) {
+                ajustadoRef.current = clave;
+                enCursoRef.current = null;
+                setEstado({ tipo: "listo" });
+              }
+            },
+            (e: unknown) => {
+              if (enCursoRef.current === propio) {
+                ajustadoRef.current = null;
+                enCursoRef.current = null;
+                setEstado({
+                  tipo: "error",
+                  motivo: e instanceof Error ? e.message : "worker",
+                });
+              }
+              throw e;
+            },
+          ),
+        };
+        enCursoRef.current = propio;
       }
-      return enCursoRef.current.then(() => worker);
+      return enCursoRef.current!.promesa.then(() => worker);
     },
     [workerDe],
   );
@@ -125,3 +136,6 @@ export function useGanador() {
 
   return { estado, ajustar, simular, exportar, reglas };
 }
+
+/** Lo que `useGanador()` entrega: la constancia de la etapa 10 crea UNO y se lo pasa al modelo y a las reglas (un solo worker). */
+export type Ganador = ReturnType<typeof useGanador>;

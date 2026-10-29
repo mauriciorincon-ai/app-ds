@@ -83,8 +83,11 @@ describe("el flujo del panel", () => {
   it("al pulsar manda SOLO números (sin fechas ni nombres de columna) y enseña veredicto, liga, gráfico y tabla", async () => {
     const { worker, enviados } = doble(() => fixture("forecast-result"));
     panel(kit("serie-ventas-mensual.csv"), worker);
+    const vivo = screen.getByTestId("pronostico-vivo"); // S21 (lote 20-B): la región viva ya está antes del resultado
+    expect(vivo.getAttribute("aria-live")).toBe("polite");
     fireEvent.click(screen.getByRole("button", { name: "Pronosticar" }));
     await waitFor(() => expect(screen.getByTestId("pronostico-lectura")).toBeInTheDocument());
+    expect(vivo.contains(screen.getByTestId("pronostico-lectura"))).toBe(true);
     expect(enviados).toHaveLength(1);
     const { type, payload } = enviados[0]!;
     expect(type).toBe("forecast");

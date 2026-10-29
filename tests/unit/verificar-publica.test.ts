@@ -1,11 +1,13 @@
 // S17 (ADR 024): el gate de versiones y CDN de lo que el usuario se lleva. Corre sin red (la búsqueda se inyecta) y demuestra
 // que FALLA —y nombra qué— cuando una wheel de Pyodide no está, un pin de PyPI no existe o no trae wheel para Linux, o el
 // runner no ofrece el Python. (La CI lo corre contra la red de verdad: `node scripts/verificar-publica.mjs`.)
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   compatible,
   pinsDe,
+  sriDelPuntuador,
   verificar,
   type Buscar,
 } from "../../scripts/verificar-publica.mjs";
@@ -69,6 +71,36 @@ function buscar(cambios: Partial<Record<string, ReturnType<typeof respuesta>>> =
     return respuesta(true, MANIFIESTO);
   };
 }
+
+// S21 (lote 17-6): el puntuador baja `pyodide.js` del CDN público; con SRI, un CDN comprometido o un archivo cambiado no se ejecuta.
+describe("el SRI de pyodide.js en el puntuador", () => {
+  const plantilla = readFileSync("src/lib/ds/plantillas/puntuador.html", "utf8");
+  const calculado = () =>
+    "sha384-" + createHash("sha384").update(readFileSync("node_modules/pyodide/pyodide.js")).digest("base64");
+
+  it("el que declara la plantilla es el del pyodide.js del paquete fijado", () => {
+    expect(sriDelPuntuador(plantilla)).toBe(calculado());
+  });
+
+  it("el motor se carga CON integrity y crossOrigin (sin eso el SRI no se exige)", () => {
+    expect(plantilla).toMatch(/s\.integrity\s*=/);
+    expect(plantilla).toMatch(/s\.crossOrigin\s*=\s*"anonymous"/);
+    expect(plantilla).toMatch(/cargarScript\(INDEX \+ "pyodide\.js", PYODIDE_SRI\)/);
+  });
+
+  it("DEMO EN ROJO: si el CDN sirve otro archivo, la verificación falla y lo dice", async () => {
+    const bytes = readFileSync("node_modules/pyodide/pyodide.js");
+    const sirve = (contenido: Buffer): Buscar => async (url) =>
+      url.endsWith("/pyodide.js")
+        ? { ok: true, status: 200, json: async () => ({}), arrayBuffer: async () => contenido.buffer.slice(contenido.byteOffset, contenido.byteOffset + contenido.byteLength) as ArrayBuffer }
+        : respuesta(true, url.includes("pypi.org") ? PYPI_BIEN : MANIFIESTO);
+    const bien = await verificar({ buscar: sirve(bytes), ...ENTRADA, sri: calculado() });
+    expect(bien.fallas).toEqual([]);
+    expect(bien.bien).toContainEqual(expect.stringContaining("SRI de pyodide.js"));
+    const mal = await verificar({ buscar: sirve(Buffer.from("otro archivo")), ...ENTRADA, sri: calculado() });
+    expect(mal.fallas).toEqual([expect.stringContaining("SRI")]);
+  });
+});
 
 describe("verificar (con red inyectada)", () => {
   it("con todo en su sitio, no hay fallas", async () => {

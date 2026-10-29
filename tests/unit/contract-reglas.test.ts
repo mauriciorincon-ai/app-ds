@@ -139,6 +139,8 @@ describe("el lector del modelo en reglas", () => {
     rompe("rules-result-binaria", (r) => (r.truth = null), "truth");
     rompe("rules-result-binaria", (r) => (r.truth.metric = "mae"), "truth");
     rompe("rules-result-binaria", (r) => (r.truth.rules = 1.5), "truth");
+    // S21 (lote 20-11): la verdad se mide sobre las filas que se midió la fidelidad, así que no puede haber más
+    rompe("rules-result-binaria", (r) => (r.truth.n = r.fidelity.n + 1), "truth");
     rompe("rules-result-numerica", (r) => (r.truth.metric = "accuracy"), "truth");
     rompe("rules-result-agrupar", (r) => (r.truth = { metric: "accuracy", rules: 1, model: 1, n: 5 }), "truth");
   });

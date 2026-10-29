@@ -241,6 +241,24 @@ describe("aplicarDecisiones", () => {
     },
   ];
 
+  it("lo que la tarea ya deja fuera (agrupar: un identificador o una fecha) no se registra como aplicado (S21, lote 18-15)", () => {
+    const decisiones = {
+      "vacio-indicador:edad": "aprobado" as const,
+      "vacio-categoria:canal": "aprobado" as const,
+      "quitar-columna:correo": "aprobado" as const,
+    };
+    const antes = aplicarDecisiones(plan, decisiones, null);
+    expect(antes.limpieza?.indicador_vacio).toEqual(["edad"]);
+    const aplicado = aplicarDecisiones(plan, decisiones, null, new Set(["edad", "correo"]));
+    const edad = aplicado.registro.find((r) => r.id === "vacio-indicador:edad")!;
+    expect(edad.aplicado).toBe(false);
+    expect(edad.motivo).toBe("ya-excluida");
+    expect(aplicado.limpieza?.indicador_vacio).toEqual([]);
+    expect(aplicado.limpieza?.sin_dato).toEqual(["canal"]);
+    // quitar una columna sí se aplica aunque la tarea también la dejara fuera: el plan la quitó primero
+    expect(aplicado.registro.find((r) => r.id === "quitar-columna:correo")!.aplicado).toBe(true);
+  });
+
   it("lo no decidido no se aplica", () => {
     const aplicado = aplicarDecisiones(plan, {}, "y");
     expect(aplicado.quitar).toEqual([]);

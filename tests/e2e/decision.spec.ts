@@ -54,7 +54,7 @@ test("entrenar → ¿qué pasaría si? → el modelo en reglas → vigilar el de
 
   // el modelo en reglas: la fidelidad primero; con 200 filas casi nunca llega al umbral y no se llama «el modelo en reglas»
   const reglas = page.getByTestId("reglas-panel");
-  await reglas.getByRole("button", { name: "Ver el modelo en reglas" }).click();
+  await reglas.getByRole("button", { name: "Armar las reglas" }).click();
   await expect(reglas.getByTestId("reglas-lectura")).toBeVisible({
     timeout: 120_000,
   });

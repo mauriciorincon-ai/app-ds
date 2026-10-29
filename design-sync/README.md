@@ -66,7 +66,7 @@ ambigua; desde S7, **varias categorías** — la exactitud balanceada, la matriz
 por categoría — y **agrupar sin objetivo**: la lectura ● / ⚠ / ○, qué distingue a cada grupo y la
 tabla de agrupadores; desde S8 hasta S16, **Protocolo DS** — la tarjeta de etapa con sus seis estados,
 la compuerta que rechaza, la confirmación de dos síes, el término del glosario, las casillas, la ficha con
-la fuente de cada línea y el chequeo de deriva).
+la fuente de cada línea y el chequeo de deriva; desde S17 hasta S21, lo que se suma alrededor del modelo — «Estrésalo» y «Llévatelo», el aviso de datos personales, el plan de limpieza, la exploración y el margen de error, el «¿qué pasaría si?», el modelo en reglas y vigilar el desempeño, el pronóstico de una serie y el gemelo sintético, y «Pregúntale a tus datos» con su patrón de consulta, validación y resultado, siempre con símbolo y palabra).
 
 ## Snippet idiomático
 

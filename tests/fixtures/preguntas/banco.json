@@ -1,0 +1,3084 @@
+[
+  {
+    "id": "ventas-por-region-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas del último trimestre por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-10-01",
+          "hasta": "2025-12-31",
+          "clave": "ultimo"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-2",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-3",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "promedio de ventas por producto",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "producto"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-4",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "total de unidades por mes",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "unidades"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "fecha",
+          "periodo": "mes"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-5",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "cuántas ventas por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-6",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "cuántos por producto",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": null
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "producto"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-7",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas mensuales",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "fecha",
+          "periodo": "mes"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-8",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por trimestre",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "fecha",
+          "periodo": "trimestre"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-9",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por año",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "fecha",
+          "periodo": "anio"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-10",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas en 2025 por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-01-01",
+          "hasta": "2025-12-31",
+          "clave": "anio"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-11",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas en marzo de 2025",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-03-01",
+          "hasta": "2025-03-31",
+          "clave": "mes"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-12",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas en marzo",
+    "esperado": {
+      "tipo": "pregunta",
+      "abiertas": [
+        {
+          "id": "anio:3",
+          "tipo": "anio",
+          "opciones": [
+            "2024",
+            "2025"
+          ]
+        }
+      ],
+      "noLeidas": []
+    }
+  },
+  {
+    "id": "ventas-por-region-13",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas desde marzo de 2025 hasta mayo de 2025",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-03-01",
+          "hasta": "2025-05-31",
+          "clave": "rango"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-14",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas entre 2024-03-01 y 2024-05-31",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2024-03-01",
+          "hasta": "2024-05-31",
+          "clave": "rango"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-15",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas de la región norte",
+    "esperado": {
+      "tipo": "pregunta",
+      "abiertas": [
+        {
+          "id": "valor:norte",
+          "tipo": "valor",
+          "opciones": [
+            "region",
+            "bodega"
+          ]
+        }
+      ],
+      "noLeidas": []
+    }
+  },
+  {
+    "id": "ventas-por-region-16",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas del producto premium por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-17",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas sin premium por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-18",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas de premium y estandar",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "=",
+            "valor": "premium"
+          },
+          {
+            "columna": "producto",
+            "operador": "=",
+            "valor": "estandar"
+          }
+        ],
+        "union": "o",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-19",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por producto, los 3 mayores",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "producto"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "desc",
+        "top": 3
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-20",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por región, los 2 menores",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "asc",
+        "top": 2
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-21",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "top 3 regiones por ventas",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "desc",
+        "top": 3
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-22",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "unidades promedio por semana",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "unidades"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "fecha",
+          "periodo": "semana"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-23",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas con unidades mayores a 30 por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "unidades",
+            "operador": ">",
+            "valor": "30"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-24",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas con más de 30 unidades",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "unidades",
+            "operador": ">",
+            "valor": "30"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-25",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "promedio de ventas por bodega",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "bodega"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-26",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "máximo de ventas por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "maximo",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-27",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "mínimo de unidades por producto",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "minimo",
+          "columna": "unidades"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "producto"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-28",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "mediana de ventas por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "mediana",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-29",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas de los últimos 3 meses",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-10-01",
+          "hasta": "2025-12-31",
+          "clave": "ultimos"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-30",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas del mes pasado",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-11-01",
+          "hasta": "2025-11-30",
+          "clave": "pasado"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-31",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas de la última semana por producto",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "producto"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-12-22",
+          "hasta": "2025-12-28",
+          "clave": "ultimo"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-32",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas del 2025",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-01-01",
+          "hasta": "2025-12-31",
+          "clave": "anio"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-33",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por clima",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [
+        "clima"
+      ],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-34",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "hola",
+    "esperado": {
+      "tipo": "no-entendi",
+      "motivo": "nada",
+      "noLeidas": [
+        "hola"
+      ]
+    }
+  },
+  {
+    "id": "ventas-por-region-35",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por región y producto",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [
+        "producto"
+      ],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-36",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por fecha",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "fecha",
+          "periodo": "semana"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "periodo",
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-37",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas y unidades por región",
+    "esperado": {
+      "tipo": "pregunta",
+      "abiertas": [
+        {
+          "id": "medida",
+          "tipo": "medida",
+          "opciones": [
+            "ventas_usd",
+            "unidades"
+          ]
+        }
+      ],
+      "noLeidas": []
+    }
+  },
+  {
+    "id": "ventas-por-region-38",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas de norte con más de 30 unidades",
+    "esperado": {
+      "tipo": "pregunta",
+      "abiertas": [
+        {
+          "id": "valor:norte",
+          "tipo": "valor",
+          "opciones": [
+            "region",
+            "bodega"
+          ]
+        }
+      ],
+      "noLeidas": []
+    }
+  },
+  {
+    "id": "ventas-por-region-39",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "total de ventas del producto premium en 2025 por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": {
+          "columna": "fecha",
+          "desde": "2025-01-01",
+          "hasta": "2025-12-31",
+          "clave": "anio"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-40",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "unidades > 30 por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "unidades"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "unidades",
+            "operador": ">",
+            "valor": "30"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-41",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por región sin oeste",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "region",
+            "operador": "!=",
+            "valor": "oeste"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-42",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por región con unidades al menos 1,500",
+    "esperado": {
+      "tipo": "pregunta",
+      "abiertas": [
+        {
+          "id": "numero:1,500",
+          "tipo": "numero",
+          "opciones": [
+            "1.5",
+            "1500"
+          ]
+        }
+      ],
+      "noLeidas": []
+    }
+  },
+  {
+    "id": "ventas-por-region-43",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas por región con unidades más de 1,5",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "unidades",
+            "operador": ">",
+            "valor": "1.5"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-44",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "promedio de ventas semanal",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "fecha",
+          "periodo": "semana"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-1",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales by region last quarter",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "date",
+          "desde": "2025-10-01",
+          "hasta": "2025-12-31",
+          "clave": "ultimo"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-2",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales by region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-3",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "average sales by product",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "product"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-4",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "total units by month",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "units"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "date",
+          "periodo": "mes"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-5",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "how many sales by region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-6",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "how many by product",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": null
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "product"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-7",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "monthly sales",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "date",
+          "periodo": "mes"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-8",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales in 2025 by region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "date",
+          "desde": "2025-01-01",
+          "hasta": "2025-12-31",
+          "clave": "anio"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-9",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales in March 2025",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "date",
+          "desde": "2025-03-01",
+          "hasta": "2025-03-31",
+          "clave": "mes"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-10",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales in March",
+    "esperado": {
+      "tipo": "pregunta",
+      "abiertas": [
+        {
+          "id": "anio:3",
+          "tipo": "anio",
+          "opciones": [
+            "2024",
+            "2025"
+          ]
+        }
+      ],
+      "noLeidas": []
+    }
+  },
+  {
+    "id": "sales-by-region-11",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales between March 2025 and May 2025",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "date",
+          "desde": "2025-03-01",
+          "hasta": "2025-05-31",
+          "clave": "rango"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-12",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales of premium by region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "product",
+            "operador": "=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-13",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales except premium by region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "product",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-14",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "top 3 regions by sales",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "desc",
+        "top": 3
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-15",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales by product, bottom 2",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "product"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "asc",
+        "top": 2
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-16",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "average units per week",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "units"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "date",
+          "periodo": "semana"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-17",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales with units over 30 by region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [
+          {
+            "columna": "units",
+            "operador": ">",
+            "valor": "30"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-18",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales for the last 3 months",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "date",
+          "desde": "2025-10-01",
+          "hasta": "2025-12-31",
+          "clave": "ultimos"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-19",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales last month by product",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "product"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "date",
+          "desde": "2025-12-01",
+          "hasta": "2025-12-31",
+          "clave": "ultimo"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-20",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales by region and product",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [
+        "product"
+      ],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-21",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "median sales by region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "mediana",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-22",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "max sales by region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "maximo",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-23",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "minimum units by product",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "minimo",
+          "columna": "units"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "product"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-24",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales of north",
+    "esperado": {
+      "tipo": "pregunta",
+      "abiertas": [
+        {
+          "id": "valor:north",
+          "tipo": "valor",
+          "opciones": [
+            "region",
+            "warehouse"
+          ]
+        }
+      ],
+      "noLeidas": []
+    }
+  },
+  {
+    "id": "sales-by-region-25",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales by date",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "date",
+          "periodo": "semana"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "periodo",
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-26",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales and units by region",
+    "esperado": {
+      "tipo": "pregunta",
+      "abiertas": [
+        {
+          "id": "medida",
+          "tipo": "medida",
+          "opciones": [
+            "sales_usd",
+            "units"
+          ]
+        }
+      ],
+      "noLeidas": []
+    }
+  },
+  {
+    "id": "marketing-campania-1",
+    "tabla": "marketing-campania.csv",
+    "pregunta": "promedio de ingreso mensual por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "ingreso_mensual"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "marketing-campania-2",
+    "tabla": "marketing-campania.csv",
+    "pregunta": "visitas web por dispositivo",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "visitas_web"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "dispositivo"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "marketing-campania-3",
+    "tabla": "marketing-campania.csv",
+    "pregunta": "cuántos por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": null
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "marketing-campania-4",
+    "tabla": "marketing-campania.csv",
+    "pregunta": "promedio de edad de los que convirtieron",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "edad"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [
+        "convirtieron"
+      ],
+      "avisos": []
+    }
+  },
+  {
+    "id": "marketing-campania-5",
+    "tabla": "marketing-campania.csv",
+    "pregunta": "ventas por mes",
+    "esperado": {
+      "tipo": "no-entendi",
+      "motivo": "sin-fecha",
+      "noLeidas": [
+        "ventas"
+      ]
+    }
+  },
+  {
+    "id": "marketing-campania-6",
+    "tabla": "marketing-campania.csv",
+    "pregunta": "edad por región",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "edad"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "tiendas-ciudades-1",
+    "tabla": "tiendas-ciudades.csv",
+    "pregunta": "ventas mes usd por ciudad, los 5 mayores",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_mes_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "ciudad"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "desc",
+        "top": 5
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "tiendas-ciudades-2",
+    "tabla": "tiendas-ciudades.csv",
+    "pregunta": "promedio de visitas mes por ciudad",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "visitas_mes"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "ciudad"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "tiendas-ciudades-3",
+    "tabla": "tiendas-ciudades.csv",
+    "pregunta": "superficie m2 de ciudad 07",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "superficie_m2"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "ciudad",
+            "operador": "=",
+            "valor": "ciudad_07"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "tiendas-ciudades-4",
+    "tabla": "tiendas-ciudades.csv",
+    "pregunta": "total de ventas mes usd",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_mes_usd"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "bajas-con-fuga-1",
+    "tabla": "bajas-con-fuga.csv",
+    "pregunta": "cuántos clientes por plan",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": "cliente_id"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "plan"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "bajas-con-fuga-2",
+    "tabla": "bajas-con-fuga.csv",
+    "pregunta": "promedio de tickets soporte por plan",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "tickets_soporte"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "plan"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "bajas-con-fuga-3",
+    "tabla": "bajas-con-fuga.csv",
+    "pregunta": "uso mensual gb por mes",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "uso_mensual_gb"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "mes_observado",
+          "periodo": "mes"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "bajas-con-fuga-4",
+    "tabla": "bajas-con-fuga.csv",
+    "pregunta": "bajas por canal",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": null
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "canal"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [
+        "bajas"
+      ],
+      "avisos": []
+    }
+  },
+  {
+    "id": "bajas-con-fuga-5",
+    "tabla": "bajas-con-fuga.csv",
+    "pregunta": "total de uso mensual gb del último mes por plan",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "uso_mensual_gb"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "plan"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "mes_observado",
+          "desde": "2025-11-01",
+          "hasta": "2025-11-30",
+          "clave": "ultimo"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "serie-ventas-mensual-1",
+    "tabla": "serie-ventas-mensual.csv",
+    "pregunta": "ventas por año",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "mes",
+          "periodo": "anio"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "serie-ventas-mensual-2",
+    "tabla": "serie-ventas-mensual.csv",
+    "pregunta": "ventas del último año",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "mes",
+          "desde": "2025-01-01",
+          "hasta": "2025-12-31",
+          "clave": "ultimo"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "serie-ventas-mensual-3",
+    "tabla": "serie-ventas-mensual.csv",
+    "pregunta": "promedio de ventas en 2023",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "promedio",
+          "columna": "ventas"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "mes",
+          "desde": "2023-01-01",
+          "hasta": "2023-12-31",
+          "clave": "anio"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "serie-ventas-mensual-4",
+    "tabla": "serie-ventas-mensual.csv",
+    "pregunta": "ventas desde 2024",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "mes",
+          "desde": "2024-01-01",
+          "hasta": null,
+          "clave": "desde"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "serie-ventas-mensual-5",
+    "tabla": "serie-ventas-mensual.csv",
+    "pregunta": "ventas hasta marzo de 2022",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas"
+        },
+        "agrupar": null,
+        "condiciones": [],
+        "union": "",
+        "ventana": {
+          "columna": "mes",
+          "desde": null,
+          "hasta": "2022-03-31",
+          "clave": "hasta"
+        },
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "serie-ventas-mensual-6",
+    "tabla": "serie-ventas-mensual.csv",
+    "pregunta": "ventas trimestrales",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "mes",
+          "periodo": "trimestre"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-top-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "las 3 regiones con más ventas",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "desc",
+        "top": 3
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-top-2",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "los 2 productos con menos unidades",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "unidades"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "producto"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "asc",
+        "top": 2
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-top-3",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "los 3 meses con más ventas",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "tiempo",
+          "columna": "fecha",
+          "periodo": "mes"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "desc",
+        "top": 3
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-top-1",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "the 3 regions with the most sales",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": "desc",
+        "top": 3
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "ventas-por-region-filas-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "cuántas filas hay por producto",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": null
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "producto"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "sales-by-region-rows-1",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "how many rows are there per region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "conteo",
+          "columna": null
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas diferente de premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-2",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas producto != premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-3",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas producto ≠ premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-4",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales different from premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "product",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a01-5",
+    "tabla": "sales-by-region.csv",
+    "pregunta": "sales product not equal to premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "sales_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "product",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a02-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas del este",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "region",
+            "operador": "=",
+            "valor": "este"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a02-2",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas sin el este",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "region",
+            "operador": "!=",
+            "valor": "este"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a02-3",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas solo del este y oeste",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "region",
+            "operador": "=",
+            "valor": "este"
+          },
+          {
+            "columna": "region",
+            "operador": "=",
+            "valor": "oeste"
+          }
+        ],
+        "union": "o",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a04-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas con unidades mayor a -5",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "unidades",
+            "operador": ">",
+            "valor": "-5"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a05-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas no premium",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "producto",
+            "operador": "!=",
+            "valor": "premium"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a05-2",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "ventas con unidades no mas de 100",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": null,
+        "condiciones": [
+          {
+            "columna": "unidades",
+            "operador": "<=",
+            "valor": "100"
+          }
+        ],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [
+        "agregacion"
+      ],
+      "noLeidas": [],
+      "avisos": []
+    }
+  },
+  {
+    "id": "auditoria-a06-1",
+    "tabla": "ventas-por-region.csv",
+    "pregunta": "suma de ventas_usd por region",
+    "esperado": {
+      "tipo": "consulta",
+      "plan": {
+        "medida": {
+          "agregacion": "suma",
+          "columna": "ventas_usd"
+        },
+        "agrupar": {
+          "tipo": "categoria",
+          "columna": "region"
+        },
+        "condiciones": [],
+        "union": "",
+        "ventana": null,
+        "orden": null,
+        "top": null
+      },
+      "propuestos": [],
+      "noLeidas": [],
+      "avisos": []
+    }
+  }
+]

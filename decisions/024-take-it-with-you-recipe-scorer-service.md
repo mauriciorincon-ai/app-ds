@@ -53,7 +53,11 @@ WebAssembly), which is a different machine from the one a service will run on.
    recipe, altered model, altered versions and a model that does not open all make it fail).
 8. **The scorer validates before it deserialises.** Format, `payload_encoding`, SHA-256 and Pyodide version are checked in the page
    before anything is loaded (ADR 007); a changed file says so and never downloads the engine. Its only host is the public CDN, in the
-   version pinned by `package.json`.
+   version pinned by `package.json`. Sprint 21 adds a Subresource Integrity hash (`sha384`) to the one script the page loads itself,
+   `pyodide.js`: a test compares it with the file of the pinned package and `verificar-publica` with what the CDN serves. **Its reach is
+   that loader only**: the `.wasm`, the standard library, the lock file and the wheels that the loader then downloads from the same CDN
+   carry no integrity check; guarding them would mean pinning the hash of each file (about 20) or hosting the engine, which this sprint
+   does not do.
 
 ## Consequences
 

@@ -82,6 +82,24 @@ describe("datos personales", () => {
       );
   });
 
+  it("dice qué parte de las celdas tiene la forma cuando lo supo por el contenido, y nada cuando fue solo por el nombre (S21, lote 18-12)", () => {
+    pintar(ingesta);
+    const lineas = screen.getAllByText(/parece guardar/);
+    const conCuota = ingesta.personales.filter((a) => a.cuota !== null);
+    const soloNombre = ingesta.personales.filter((a) => a.cuota === null);
+    expect(conCuota.length).toBeGreaterThan(0);
+    for (const a of conCuota) {
+      const li = lineas.find((x) => x.textContent!.includes(`«${a.column}»`))!;
+      expect(li.textContent, a.column).toContain(
+        `${Math.round(a.cuota! * 100)} % de las celdas`,
+      );
+    }
+    for (const a of soloNombre) {
+      const li = lineas.find((x) => x.textContent!.includes(`«${a.column}»`))!;
+      expect(li.textContent, a.column).not.toContain("% de las celdas");
+    }
+  });
+
   it("dice cuáles el saneamiento ya dejó fuera por tener un valor distinto por fila, y solo esas", () => {
     expect(
       ingesta.personales

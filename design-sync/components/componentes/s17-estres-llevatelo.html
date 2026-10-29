@@ -1,0 +1,81 @@
+<!-- @dsCard group="Componentes · S17" name="Estrésalo y Llévatelo" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estrésalo y Llévatelo — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 66ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 28px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .muted { color: #586172; }
+  .card { max-width: 640px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 16px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); margin-bottom: 12px; }
+  .card h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+  .card p { font-size: 14px; margin: 6px 0 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+    border-radius: 8px; border: 1px solid #e4e4dc; background: #fff; color: #14181f; font-size: 14px;
+  }
+  .btn.pri { background: #0e6e6b; border-color: #0e6e6b; color: #fff; }
+  .btn[disabled], .btn.off { opacity: .5; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px;
+    font-size: 12px; font-weight: 600; border: 1px solid #e4e4dc; background: #f2f2ec; color: #14181f;
+  }
+  .badge.pos { background: #e6f2ec; color: #1c7c4a; border-color: #c4e0d1; }
+  .badge.cau { background: #f6eddc; color: #8a5a0c; border-color: #e8d3a8; }
+  .badge.neg { background: #f6e4e2; color: #a5372f; border-color: #e6bfbb; }
+  .aviso { margin: 10px 0 0; padding: 10px 12px; border-left: 4px solid #8a5a0c; background: #f6eddc; border-radius: 6px; font-size: 14px; }
+  .pos { color: #1c7c4a; } .cau { color: #8a5a0c; } .neg { color: #a5372f; }
+  table { border-collapse: collapse; font-size: 14px; max-width: 640px; width: 100%; background: #fff; }
+  th, td { text-align: left; padding: 6px 10px; border: 1px solid #e4e4dc; }
+  th { background: #f2f2ec; font-size: 12px; }
+  td.n { text-align: right; font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .why { max-width: 640px; font-size: 13px; color: #586172; line-height: 1.6; background: #f2f2ec; border-radius: 8px; padding: 14px 16px; }
+  .why b { color: #14181f; }
+  .fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .bar { display: grid; grid-template-columns: minmax(5rem, 1fr) 2fr auto; align-items: center; gap: 8px; font-size: 14px; max-width: 640px; margin: 4px 0; }
+  .riel { height: 16px; border-radius: 4px; background: #f2f2ec; }
+  .riel > span { display: block; height: 100%; border-radius: 4px; background: #0e6e6b; }
+</style>
+</head>
+<body>
+  <h1>Estrésalo y Llévatelo</h1>
+  <p class="sub">Dos tarjetas del S17. «Estrésalo» mide el <b>mismo modelo</b>, sin reentrenar, con ruido, una columna revuelta y un corrimiento; «Llévatelo» entrega la receta, el puntuador y el servicio, con el aviso <b>antes</b> de descargar. Cifras de ejemplo. Nada comunica solo con color.</p>
+  <h2>Estrésalo</h2>
+  <div class="card">
+    <div class="fila"><h3>¿Cuánto aguanta tu modelo?</h3><span class="btn pri"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg> Estrésalo</span></div>
+    <p>Con 10 % de ruido en los números, tu exactitud cae de <span class="mono">0.82</span> a <span class="mono">0.78</span>.</p>
+    <p class="pos" role="status"><b>✓ Sigue ganándole a su mejor rival sin modelo</b> con 10 % de ruido.</p>
+    <table>
+      <caption class="muted" style="text-align:left;font-size:12px;padding:6px 0">Ruido en los números</caption>
+      <tr><th scope="col">Ruido</th><th scope="col">Exactitud</th><th scope="col">Cambio</th></tr>
+      <tr><th scope="row">5 %</th><td class="n">0.81</td><td>● casi igual</td></tr>
+      <tr><th scope="row">10 %</th><td class="n">0.78</td><td class="cau">▼ peor</td></tr>
+      <tr><th scope="row">20 %</th><td class="n">0.71</td><td class="cau">▼ peor</td></tr>
+    </table>
+    <p class="muted" style="font-size:13px">Es una lectura, no una garantía. Semilla fija: el mismo modelo da la misma cifra.</p>
+  </div>
+  <p class="why"><b>Anatomía:</b> botón con icono <b>play</b> («Volver a medir» con el de reintento cuando ya hay lectura), una frase con los números del usuario, una línea de criterio con <b>✓ o ⚠ y su palabra</b>, y tres tablas con encabezados de fila y de columna. Cada fila dice <b>▼ peor · ● casi igual · ▲ mejor</b>. En la etapa 8 del Protocolo es la misma vista, y no abre la prueba otra vez.</p>
+
+  <h2>Llévatelo</h2>
+  <div class="card">
+    <h3>Llévatelo</h3>
+    <div class="aviso" role="status"><b>⚠ Antes de descargar:</b> el modelo lleva los rangos y las categorías de tus columnas (y, con vecinos más cercanos, filas del entrenamiento). La receta no lleva ninguna fila.</div>
+    <div class="fila" style="margin-top:12px"><div><b>Receta reproducible</b><br /><span class="muted" style="font-size:13px">Un .py que, con tu CSV, repite lo que hizo la app y dice si reproduce.</span></div><span class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg> Descargar la receta</span></div>
+    <div class="fila" style="margin-top:12px"><div><b>Puntuador portátil</b><br /><span class="muted" style="font-size:13px">Un .html con el modelo adentro; quien lo abre arrastra un CSV.</span></div><span class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg> Descargar el puntuador</span></div>
+    <div class="fila" style="margin-top:12px"><div><b>Plantilla de servicio</b><br /><span class="muted" style="font-size:13px">Un .zip con FastAPI y versiones fijas. No se ofrece con vecinos más cercanos: su estructura no se abre en Python de 64 bits.</span></div><span class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg> Descargar la plantilla</span></div>
+    <p class="pos" role="status" style="margin-top:12px"><b>✓ Descargado:</b> receta-campania.py</p>
+  </div>
+  <p class="why"><b>Anatomía:</b> el recuadro de aviso (<b>⚠ + palabra</b>) va <b>antes</b> de las tres salidas; cada fila lleva título, una línea, la nota de lo que no se ofrece y su razón, y un botón secundario con icono <b>download</b>. El estado cabe en una línea con <code>role="status"</code>. Probeta no despliega nada ni guarda credenciales.</p>
+</body>
+</html>

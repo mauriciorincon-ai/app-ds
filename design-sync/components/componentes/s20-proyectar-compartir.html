@@ -1,0 +1,102 @@
+<!-- @dsCard group="Componentes · S20" name="Pronóstico de una serie y gemelo sintético" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proyectar y compartir — Probeta DS</title>
+<style>
+  body {
+    margin: 0; padding: 28px; background: #fafaf7; color: #14181f;
+    font-family: "Geist", system-ui, sans-serif;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: #586172; margin: 0 0 20px; max-width: 66ch; font-size: 14px; }
+  h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #586172;
+    margin: 28px 0 10px; font-family: "Geist Mono", ui-monospace, monospace;
+  }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .muted { color: #586172; }
+  .card { max-width: 640px; background: #fff; border: 1px solid #e4e4dc; border-radius: 10px; padding: 16px; box-shadow: 0 1px 2px rgb(20 24 31 / .06); margin-bottom: 12px; }
+  .card h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+  .card p { font-size: 14px; margin: 6px 0 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px;
+    border-radius: 8px; border: 1px solid #e4e4dc; background: #fff; color: #14181f; font-size: 14px;
+  }
+  .btn.pri { background: #0e6e6b; border-color: #0e6e6b; color: #fff; }
+  .btn[disabled], .btn.off { opacity: .5; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px;
+    font-size: 12px; font-weight: 600; border: 1px solid #e4e4dc; background: #f2f2ec; color: #14181f;
+  }
+  .badge.pos { background: #e6f2ec; color: #1c7c4a; border-color: #c4e0d1; }
+  .badge.cau { background: #f6eddc; color: #8a5a0c; border-color: #e8d3a8; }
+  .badge.neg { background: #f6e4e2; color: #a5372f; border-color: #e6bfbb; }
+  .aviso { margin: 10px 0 0; padding: 10px 12px; border-left: 4px solid #8a5a0c; background: #f6eddc; border-radius: 6px; font-size: 14px; }
+  .pos { color: #1c7c4a; } .cau { color: #8a5a0c; } .neg { color: #a5372f; }
+  table { border-collapse: collapse; font-size: 14px; max-width: 640px; width: 100%; background: #fff; }
+  th, td { text-align: left; padding: 6px 10px; border: 1px solid #e4e4dc; }
+  th { background: #f2f2ec; font-size: 12px; }
+  td.n { text-align: right; font-family: "Geist Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .why { max-width: 640px; font-size: 13px; color: #586172; line-height: 1.6; background: #f2f2ec; border-radius: 8px; padding: 14px 16px; }
+  .why b { color: #14181f; }
+  .fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .bar { display: grid; grid-template-columns: minmax(5rem, 1fr) 2fr auto; align-items: center; gap: 8px; font-size: 14px; max-width: 640px; margin: 4px 0; }
+  .riel { height: 16px; border-radius: 4px; background: #f2f2ec; }
+  .riel > span { display: block; height: 100%; border-radius: 4px; background: #0e6e6b; }
+</style>
+</head>
+<body>
+  <h1>Proyectar y compartir</h1>
+  <p class="sub">Dos patrones del S20: pronosticar una serie con su veredicto franco contra el mejor método simple, y el gemelo sintético con un informe que puede acabar en «no compartir». Cifras de ejemplo.</p>
+  <h2>Pronosticar una serie</h2>
+  <div class="card">
+    <div class="fila"><h3>Pronosticar una serie</h3><span class="btn pri"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg> Pronosticar</span></div>
+    <p class="muted" style="font-size:13px">Un valor por mes · las filas se suman · 12 periodos a pronosticar</p>
+    <p class="pos"><b>✓ Supera al mejor método simple.</b></p>
+    <p>«Holt-Winters» supera a «ingenuo estacional», el mejor método simple: a 12 periodos se equivoca <span class="mono">5.1</span> en promedio, contra <span class="mono">9.8</span>; son <span class="mono">48 %</span> menos de error, medido en 9 pliegues que no vio.</p>
+    <p class="cau"><span class="badge cau">⚠ No supera</span> <span class="badge">≈ Empata</span> <span class="muted" style="font-size:13px">— las otras dos respuestas del veredicto</span></p>
+  </div>
+  <svg viewBox="0 0 560 170" width="100%" role="img" aria-label="Gráfico de la serie y su pronóstico: la historia en línea continua, el pronóstico en discontinua y dos bandas" style="max-width:640px;background:#fff;border:1px solid #e4e4dc;border-radius:10px">
+    <rect x="360" y="40" width="180" height="80" fill="#0e6e6b" opacity=".10" stroke="#0e6e6b" stroke-dasharray="2 3" />
+    <rect x="360" y="58" width="180" height="46" fill="#0e6e6b" opacity=".25" />
+    <polyline fill="none" stroke="#14181f" stroke-width="2" points="20,120 60,110 100,115 140,95 180,100 220,85 260,92 300,75 340,80" />
+    <polyline fill="none" stroke="#0e6e6b" stroke-width="2" stroke-dasharray="6 4" points="340,80 380,72 420,78 460,66 500,70 540,60" />
+    <circle cx="180" cy="100" r="4" fill="#fff" stroke="#14181f" stroke-width="2" />
+    <text x="20" y="160" font-size="11" fill="#586172" font-family="Geist Mono, monospace">2021-01</text>
+    <text x="480" y="160" font-size="11" fill="#586172" font-family="Geist Mono, monospace">2026-12</text>
+  </svg>
+  <p class="muted" style="font-size:13px;max-width:640px">Historia en línea continua · pronóstico en discontinua · banda del 80 % (más oscura) y del 95 % (con borde punteado) · un periodo completado como círculo hueco. Las bandas son empíricas: no son una garantía.</p>
+  <table>
+    <tr><th scope="col">Método</th><th scope="col">Error</th><th scope="col">Marca</th></tr>
+    <tr><td>Holt-Winters</td><td class="n">5.1</td><td>★ Ganador</td></tr>
+    <tr><td>Ingenuo estacional</td><td class="n">9.8</td><td>◆ Mejor simple</td></tr>
+    <tr><td>Media</td><td class="n">14.2</td><td></td></tr>
+  </table>
+  <p style="margin-top:10px"><span class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg> Descargar el pronóstico (.csv)</span></p>
+  <p class="why"><b>Anatomía:</b> veredicto en <b>símbolo + palabra</b> (✓ Supera · ≈ Empata · ⚠ No supera); el gráfico escribe cada trazo en su leyenda y tiene su <b>tabla accesible</b> en un <code>&lt;details&gt;</code>; la pregunta del orden día/mes es un grupo de radios y los huecos se nombran y se completan solo con una casilla.</p>
+
+  <h2>El gemelo sintético</h2>
+  <div class="card">
+    <div class="fila"><h3>Un gemelo sintético de tus datos</h3><span class="btn pri">Generar el gemelo</span></div>
+    <p class="muted" style="font-size:13px">Viajan 4 columnas. No viajan al gemelo, y por eso:</p>
+    <ul style="font-size:14px;padding-left:18px;margin:4px 0">
+      <li class="neg">✕ <b>correo</b> — marcada como posible dato personal</li>
+      <li class="neg">✕ <b>fecha_alta</b> — las fechas no viajan</li>
+    </ul>
+    <p class="pos"><b>✓ Se puede compartir</b></p>
+    <table>
+      <tr><th scope="col">Informe</th><th scope="col">Nivel</th></tr>
+      <tr><td>Columna por columna</td><td class="pos">✓ bien</td></tr>
+      <tr><td>Relaciones entre columnas</td><td class="cau">⚠ revisar</td></tr>
+      <tr><td>Cercanía a la fila real más cercana</td><td class="pos">✓ bien</td></tr>
+      <tr><td>Copias exactas</td><td class="pos">✓ bien (cero)</td></tr>
+    </table>
+    <p style="margin-top:10px"><span class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg> Descargar el gemelo (.csv)</span></p>
+    <p class="muted" style="font-size:13px">Es una medición de esta tabla con estas reglas, no un permiso legal ni una garantía de anonimato. Semilla fija.</p>
+  </div>
+  <p class="why"><b>Anatomía:</b> lo que viaja y, en una lista con <b>✕</b>, lo que no con su motivo; el veredicto en <b>símbolo + palabra</b> (✓ Se puede compartir · ⚠ Revisar antes de compartir · ✕ No compartir); el informe en cuatro renglones, cada uno con su nivel escrito.</p>
+</body>
+</html>

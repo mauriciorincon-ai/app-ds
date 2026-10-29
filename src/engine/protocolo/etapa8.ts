@@ -1065,6 +1065,8 @@ export type ResumenEtapa8 = {
   /** S17: la métrica con 10 % de ruido y el mejor rival sin modelo en la misma prueba (`null` si no se corrió el estrés). */
   readonly estresRuido: number | null;
   readonly estresRival: number | null;
+  /** S21: quién es ese rival («majority», «logistic», «median», «linear»), para decirlo en la ficha. */
+  readonly estresRivalId: string | null;
 };
 
 export function resumenEtapa8(datos: DatosEtapa): ResumenEtapa8 {
@@ -1089,6 +1091,7 @@ export function resumenEtapa8(datos: DatosEtapa): ResumenEtapa8 {
     patron: texto(datos.respuestas, "patron"),
     estresRuido: numero(c, "estres_ruido"),
     estresRival: numero(c, "estres_rival"),
+    estresRivalId: texto(c, "estres_rival_id"),
   };
 }
 
